@@ -1265,8 +1265,8 @@ local function CreateModUI()
             end)
         end
 
-        CreateSpeedControl(310, -20, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateSpeedControl(310, -60, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
+        CreateSpeedControl(335, -20, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
+        CreateSpeedControl(335, -60, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
 
         local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
@@ -1337,7 +1337,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(310, -100, "Phạm Vi: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(335, -100, "Phạm Vi: ", "Mod_CustomAttackRange", 1)
 
         -- Thêm vạch kẻ dọc phân chia
         local vLineGo = GameObject("VerticalSeparator")
