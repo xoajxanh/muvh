@@ -1,0 +1,623 @@
+1001: Lorencia
+100201: Dungeon
+100202: Dungeon
+100203: Dungeon
+1003: Devias
+1004: Noria
+100501: Lost Tower
+100502: Lost Tower
+100503: Lost Tower
+100504: Lost Tower
+100505: Lost Tower
+100506: Lost Tower
+100507: Lost Tower
+1007: Chiến Trường Cổ
+1008: Atlantis (Chuyển 0 Lv.100)
+1009: Tarkan (Chuyển 0 Lv.150)
+1010: Quảng Trường Quỷ
+1011: Icarus (Chuyển 0 Lv.250)
+101101: Icarus (Chuyển 0 Lv.250)
+101102: Icarus (Chuyển 0 Lv.250)
+1012: Huyết Lâu
+1013: Thách Đấu BOSS Guild
+1019: Pháo Đài Đỏ
+1025: Miếu Thần Kalima
+1031: Vực Roland-Thường
+103101: Vực Roland
+103102: Vực Roland
+1032: Vùng Đất Ma Luyện
+1034: Aida (Chuyển 0 Lv.200)
+1035: Pháo Đài Hồn Sói
+1038: Phế Tích Kanturu (Chuyển 0 Lv.300)
+103801: Phế Tích Kanturu (Chuyển 0 Lv.300)
+1039: Di Chỉ Kanturu (Chuyển 0 Lv.350)
+103901: Di Chỉ Kanturu (Chuyển 0 Lv.350)
+1040: Tháp Tinh Luyện Kanturu
+104003: Tháp Tinh Luyện
+104004: Tháp Tinh Luyện
+104005: Tháp Tinh Luyện
+104006: Tháp Tinh Luyện
+104007: Tháp Tinh Luyện
+104008: Tháp Tinh Luyện
+104009: Tháp Tinh Luyện
+104010: Tháp Tinh Luyện
+104011: Tháp Tinh Luyện
+104012: Tháp Tinh Luyện
+104013: Tháp Tinh Luyện
+104014: Tháp Tinh Luyện
+104015: Tháp Tinh Luyện
+1042: Doanh Trại Bakas
+1043: Phòng Nghỉ Bakas
+1047: Huyễn Ảnh Tự Viện
+1052: Huyễn Thuật Viên
+105201: Huyễn Thuật Bí Cảnh
+105202: Huyễn Thuật Bí Cảnh
+105203: Huyễn Thuật Bí Cảnh
+105204: Huyễn Thuật Bí Cảnh
+105205: Huyễn Thuật Bí Cảnh
+105206: Huyễn Thuật Bí Cảnh
+105207: Huyễn Thuật Bí Cảnh
+105208: Huyễn Thuật Bí Cảnh
+105209: Huyễn Thuật Bí Cảnh
+105210: Huyễn Thuật Bí Cảnh
+105211: Huyễn Thuật Bí Cảnh
+105212: Huyễn Thuật Bí Cảnh
+105213: Huyễn Thuật Bí Cảnh
+105214: Huyễn Thuật Bí Cảnh
+105215: Huyễn Thuật Bí Cảnh
+105301: Bí Cảnh Hội Viên
+105302: Bí Cảnh Hội Viên
+105303: Bí Cảnh Hội Viên
+105304: Bí Cảnh Hội Viên
+105305: Bí Cảnh Hội Viên
+105306: Bí Cảnh Hội Viên
+105307: Bí Cảnh Hội Viên
+105308: Bí Cảnh Hội Viên
+105309: Bí Cảnh Hội Viên
+105310: Bí Cảnh Hội Viên
+105311: Bí Cảnh Hội Viên
+105312: Bí Cảnh Hội Viên
+105313: Bí Cảnh Hội Viên
+105314: Bí Cảnh Hội Viên
+105315: Bí Cảnh Hội Viên
+1057: An Ninh Trì
+1058: Thành Băng
+105801: Thành Băng
+105802: Thành Băng
+1063: Vùng Đất Noel
+1090: Thánh Vực
+1090001: Thiên Đường-Cao
+1090002: Thiên Đường-Cao
+1090003: Thiên Đường-Cao
+1090011: Luyện Ngục Khổ Nạn
+1090012: Luyện Ngục Khổ Nạn
+1090013: Luyện Ngục Khổ Nạn
+1090021: Vực Sâu Vô Tận
+1090022: Vực Sâu Vô Tận
+1090023: Vực Sâu Vô Tận
+1090031: Hành Lang Thống Khổ
+1090032: Hành Lang Thống Khổ
+1090033: Hành Lang Thống Khổ
+1091: Thần Chi Quốc Độ
+1092: Rừng Vĩnh Ca
+1093: Vùng Đất Mục Nát
+109301: Vùng Đất Mục Nát
+1094: Tứ Phong Bình Nguyên
+109401: Tứ Phong Bình Nguyên
+1010001: Quảng Trường Quỷ
+1010002: Quảng Trường Quỷ
+1010003: Quảng Trường Quỷ
+1010004: Quảng Trường Quỷ
+1010005: Quảng Trường Quỷ
+1010006: Quảng Trường Quỷ
+1010007: Quảng Trường Quỷ
+1010008: Quảng Trường Quỷ
+1010009: Quảng Trường Quỷ
+1010010: Quảng Trường Quỷ
+1010011: Quảng Trường Quỷ
+1010012: Quảng Trường Quỷ
+1010013: Quảng Trường Quỷ
+1010014: Quảng Trường Quỷ
+1010015: Quảng Trường Quỷ
+1010016: Quảng Trường Quỷ
+1010017: Quảng Trường Quỷ
+1010018: Quảng Trường Quỷ
+1010019: Quảng Trường Quỷ
+1010020: Quảng Trường Quỷ
+1010021: Quảng Trường Quỷ
+1010022: Quảng Trường Quỷ
+1010023: Quảng Trường Quỷ
+1010024: Quảng Trường Quỷ
+1010025: Quảng Trường Quỷ
+1010026: Quảng Trường Quỷ
+1010027: Quảng Trường Quỷ
+1010028: Quảng Trường Quỷ
+1010029: Quảng Trường Quỷ
+1010030: Quảng Trường Quỷ
+1010031: Quảng Trường Quỷ
+1010032: Quảng Trường Quỷ
+1010033: Quảng Trường Quỷ
+1010034: Quảng Trường Quỷ
+1010035: Quảng Trường Quỷ
+1010036: Quảng Trường Quỷ
+1010037: Quảng Trường Quỷ
+1010038: Quảng Trường Quỷ
+1010039: Quảng Trường Quỷ
+1010040: Quảng Trường Quỷ
+1010041: Quảng Trường Quỷ
+1010042: Quảng Trường Quỷ
+1010043: Quảng Trường Quỷ
+1010044: Quảng Trường Quỷ
+1010045: Quảng Trường Quỷ
+1010046: Quảng Trường Quỷ
+1010047: Quảng Trường Quỷ
+1010048: Quảng Trường Quỷ
+1010049: Quảng Trường Quỷ
+1010050: Quảng Trường Quỷ
+1010051: Quảng Trường Quỷ
+1010052: Quảng Trường Quỷ
+1010053: Quảng Trường Quỷ
+1010054: Quảng Trường Quỷ
+1010055: Quảng Trường Quỷ
+1012001: Huyết Lâu
+1012002: Huyết Lâu
+1012003: Huyết Lâu
+1012004: Huyết Lâu
+1012005: Huyết Lâu
+1012006: Huyết Lâu
+1012007: Huyết Lâu
+1012008: Huyết Lâu
+1012009: Huyết Lâu
+1012010: Huyết Lâu
+1012011: Huyết Lâu
+1012012: Huyết Lâu
+1012013: Huyết Lâu
+1012014: Huyết Lâu
+1012015: Huyết Lâu
+1012016: Huyết Lâu
+1012017: Huyết Lâu
+1012018: Huyết Lâu
+1012019: Huyết Lâu
+1012020: Huyết Lâu
+1012021: Huyết Lâu
+1012022: Huyết Lâu
+1012023: Huyết Lâu
+1012024: Huyết Lâu
+1012025: Huyết Lâu
+1012026: Huyết Lâu
+1012027: Huyết Lâu
+1012028: Huyết Lâu
+1012029: Huyết Lâu
+1012030: Huyết Lâu
+1012031: Huyết Lâu
+1012032: Huyết Lâu
+1012033: Huyết Lâu
+1012034: Huyết Lâu
+1012035: Huyết Lâu
+1012036: Huyết Lâu
+1012037: Huyết Lâu
+1012038: Huyết Lâu
+1012039: Huyết Lâu
+1012040: Huyết Lâu
+1012041: Huyết Lâu
+1012042: Huyết Lâu
+1012043: Huyết Lâu
+1012044: Huyết Lâu
+1012045: Huyết Lâu
+1012046: Huyết Lâu
+1012047: Huyết Lâu
+1012048: Huyết Lâu
+1012049: Huyết Lâu
+1012050: Huyết Lâu
+1012051: Huyết Lâu
+1012052: Huyết Lâu
+1012053: Huyết Lâu
+1012054: Huyết Lâu
+1012055: Huyết Lâu
+1013001: BOSS Guild
+1025001: Ải
+1025002: Thẻ
+1025003: Thẻ
+1025004: Thẻ
+1025005: Thẻ
+102501: [Liên] Miếu Thần Kalima 1
+102502: [Liên] Miếu Thần Kalima 2
+102503: [Liên] Miếu Thần Kalima 3
+102504: [Liên] Miếu Thần Kalima 4
+102505: [Liên] Miếu Thần Kalima 5
+102601: Miếu Thần Kalima
+102602: Miếu Thần Kalima
+102603: Miếu Thần Kalima
+102604: Miếu Thần Kalima
+102605: Miếu Thần Kalima
+1035001: Pháo Đài Hồn Sói
+1031001: Vực Roland
+1019001: Pháo Đài Đỏ - Phó bản sự kiện
+1059001: Thủ Lĩnh Cá Nhân 1 - Băng Hậu
+1059002: Thủ Lĩnh Cá Nhân 2 - Gordon Ma Quỷ
+1059003: Thủ Lĩnh Cá Nhân 3 - Ma Vương Baroque
+1059004: Thủ Lĩnh Cá Nhân 4 - Ma Vương Zaikan
+1059005: Thủ Lĩnh Cá Nhân 5 - Thiên Ma Phoenix
+1059006: Thủ Lĩnh Cá Nhân 6 - Kẻ Đồ Sát
+1059007: Thủ Lĩnh Cá Nhân 7 - Ma Vương Lời Nguyền
+1059008: Thủ Lĩnh Cá Nhân 8 - Nhện Băng Sương Khổng Lồ
+1059009: Thủ Lĩnh Cá Nhân 9 - Người Khổng Lồ Sấm Sét
+100701: Lãnh Địa Hội Viên
+100702: Lãnh Địa Hội Viên
+100703: Lãnh Địa Hội Viên
+100704: Lãnh Địa Hội Viên
+100705: Lãnh Địa Hội Viên
+100706: Lãnh Địa Hội Viên
+100707: Lãnh Địa Hội Viên
+10020101: Phòng Luyện Công Hội Viên
+10020201: Phòng Luyện Công Hội Viên
+10080101: Phòng Luyện Công Hội Viên
+10090101: Phòng Luyện Công Hội Viên
+10340101: Phòng Luyện Công Hội Viên
+10380101: Phòng Luyện Công Hội Viên
+101401: Phòng Luyện Công
+101402: Phòng Luyện Công
+101403: Hội Viên Tầng 1 (Chuyển 0 Lv.100)
+101404: Hội Viên Tầng 2 (Chuyển 0 Lv.150)
+101405: Hội Viên Tầng 3 (Chuyển 0 Lv.200)
+101406: Hội Viên Tầng 4 (Chuyển 0 Lv.250)
+101407: Hội Viên Tầng 5 (Chuyển 0 Lv.300)
+101408: Hội Viên Tầng 6 (Chuyển 0 Lv.350)
+101411: Hội Viên Tầng 7 (Chuyển 1)
+101412: Hội Viên Tầng 8 (Chuyển 2)
+101413: Hội Viên Tầng 9 (Chuyển 3)
+101414: Hội Viên Tầng 10 (Chuyển 4)
+101415: Hội Viên Tầng 11 (Chuyển 5)
+101416: Hội Viên Tầng 12 (Chuyển 6)
+101417: Hội Viên Tầng 13 (Chuyển 7)
+101418: Hội Viên Tầng 14 (Chuyển 8)
+101421: Hội Viên Tầng 15 (Chuyển 9)
+101422: Hội Viên Tầng 16 (Chuyển 10)
+101423: Hội Viên Tầng 17 (Chuyển 11)
+101424: Hội Viên Tầng 18 (Chuyển 12)
+101425: Hội Viên Tầng 19 (Chuyển 13)
+101426: Hội Viên Tầng 20 (Chuyển 14)
+101427: Hội Viên Tầng 21 (Chuyển 15)
+101428: Hội Viên Tầng 22 (Chuyên 16)
+101431: Hội Viên Tầng 23 (Chuyển 17)
+101432: Hội Viên Tầng 24 (Chuyển 18)
+101433: Hội Viên Tầng 25 (Chuyển 19)
+101434: Hội Viên Tầng 26 (Chuyển 3 Lv.150)
+101435: Hội Viên Tầng 27 (Chuyển 3 Lv.200)
+101436: Hội Viên Tầng 28 (Chuyển 3 Lv.250)
+101437: Hội Viên Tầng 29 (Chuyển 3 Lv.300)
+101438: Hội Viên Tầng 30 (Chuyển 3 Lv.350)
+101441: Hội Viên Tầng 31 (Chuyển 4)
+101442: Hội Viên Tầng 32 (Chuyển 4 Lv.50)
+101443: Hội Viên Tầng 33 (Chuyển 4 Lv.100)
+101444: Hội Viên Tầng 34 (Chuyển 4 Lv.150)
+101445: Hội Viên Tầng 35 (Chuyển 4 Lv.200)
+101446: Hội Viên Tầng 36 (Chuyển 4 Lv.250)
+101447: Hội Viên Tầng 37 (Chuyển 4 Lv.300)
+101448: Hội Viên Tầng 38 (Chuyển 4 Lv.350)
+101451: Hội Viên Tầng 39 (Chuyển 5)
+101452: Hội Viên Tầng 40 (Chuyển 5 Lv.50)
+101453: Hội Viên Tầng 41 (Chuyển 5 Lv.100)
+101454: Hội Viên Tầng 42 (Chuyển 5 Lv.150)
+101455: Hội Viên Tầng 43 (Chuyển 5 Lv.200)
+101456: Hội Viên Tầng 44 (Chuyển 5 Lv.250)
+101457: Hội Viên Tầng 45 (Chuyển 5 Lv.300)
+101458: Hội Viên Tầng 46 (Chuyển 5 Lv.350)
+101461: Hội Viên Tầng 47 (Chuyển 6)
+101462: Hội Viên Tầng 48 (Chuyển 6 Lv.50)
+101463: Hội Viên Tầng 49 (Chuyển 6 Lv.100)
+101464: Hội Viên Tầng 50 (Chuyển 6 Lv.150)
+101465: Hội Viên Tầng 51 (Chuyển 6 Lv.200)
+101466: Hội Viên Tầng 52 (Chuyển 6 Lv.250)
+101467: Hội Viên Tầng 53 (Chuyển 6 Lv.300)
+101468: Hội Viên Tầng 54 (Chuyển 6 Lv.350)
+1011091: Thánh Vực
+1011092: Thánh Vực
+2001: Cảnh Trác Việt
+2002: Cảnh Trác Việt
+2003: Cảnh Trác Việt
+2004: Cảnh Trác Việt
+2005: Cảnh Trác Việt
+2006: Cảnh Trác Việt
+2007: Cảnh Trác Việt
+2008: Cảnh Trác Việt
+2101000: BOSS Phúc Lợi 1
+2101001: BOSS Phúc Lợi 1
+2101002: BOSS Phúc Lợi 2
+2101003: BOSS Phúc Lợi 3
+2101004: BOSS Phúc Lợi 2
+2101005: BOSS Phúc Lợi 5
+2101006: BOSS Phúc Lợi 6
+2101007: BOSS Phúc Lợi 3
+2101008: BOSS Phúc Lợi 8
+2101009: BOSS Phúc Lợi 9
+2101010: BOSS Phúc Lợi 10
+2101011: BOSS Phúc Lợi 4
+2101012: BOSS Phúc Lợi 12
+2101013: BOSS Phúc Lợi 13
+2101014: BOSS Phúc Lợi 14
+2101015: BOSS Phúc Lợi 5
+2101016: BOSS Phúc Lợi 16
+2101017: BOSS Phúc Lợi 17
+2101018: BOSS Phúc Lợi 18
+2101019: BOSS Phúc Lợi 6
+2101020: BOSS Phúc Lợi 20
+2101021: BOSS Phúc Lợi 21
+2101022: BOSS Phúc Lợi 22
+2101023: BOSS Phúc Lợi 7
+2101024: BOSS Phúc Lợi 24
+2101025: BOSS Phúc Lợi 25
+2101026: BOSS Phúc Lợi 26
+2101027: BOSS Phúc Lợi 8
+2101028: BOSS Phúc Lợi 28
+2101029: BOSS Phúc Lợi 29
+2101030: BOSS Phúc Lợi 30
+2101031: BOSS Phúc Lợi 9
+2101032: BOSS Phúc Lợi 32
+2101033: BOSS Phúc Lợi 33
+2101034: BOSS Phúc Lợi 34
+2101035: BOSS Phúc Lợi 10
+2101036: BOSS Phúc Lợi 36
+2101037: BOSS Phúc Lợi 37
+2101038: BOSS Phúc Lợi 38
+2101039: BOSS Phúc Lợi 11
+2101040: BOSS Phúc Lợi 40
+2101041: BOSS Phúc Lợi 41
+2101042: BOSS Phúc Lợi 42
+2101043: BOSS Phúc Lợi 12
+2101044: BOSS Phúc Lợi 44
+2101045: BOSS Phúc Lợi 45
+2101046: BOSS Phúc Lợi 46
+2101047: BOSS Phúc Lợi 13
+2101048: BOSS Phúc Lợi 48
+2101049: BOSS Phúc Lợi 49
+2101050: BOSS Phúc Lợi 50
+2101051: BOSS Phúc Lợi 14
+2101052: BOSS Phúc Lợi 52
+2101053: BOSS Phúc Lợi 53
+2101054: BOSS Phúc Lợi 54
+2101055: BOSS Phúc Lợi 15
+2101056: BOSS Phúc Lợi 56
+2101057: BOSS Phúc Lợi 57
+2101058: BOSS Phúc Lợi 58
+2101059: BOSS Phúc Lợi 16
+2101060: BOSS Phúc Lợi 60
+2101061: BOSS Phúc Lợi 61
+2101062: BOSS Phúc Lợi 62
+2101063: BOSS Phúc Lợi 17
+2101064: BOSS Phúc Lợi 64
+2101065: BOSS Phúc Lợi 65
+2101066: BOSS Phúc Lợi 66
+2101067: BOSS Phúc Lợi 18
+100510: Vực Sâu Hắc Ám
+4100201: Man Hoang-Dungeon (Chuyển 1)
+5100201: Vực Sâu-Dungeon (Chuyển 2)
+6100201: Hàn Sương-Dungeon (Chuyển 3)
+7100201: Hồng Yên-Dungeon (Chuyển 4)
+8100201: Lôi Minh-Dungeon (Chuyển 5)
+9100201: Nguyệt Ảnh-Dungeon (Chuyển 6)
+4100202: Man Hoang-Dungeon (Chuyển 1)
+5100202: Vực Sâu-Dungeon (Chuyển 2)
+6100202: Hàn Sương-Dungeon (Chuyển 3)
+7100202: Hồng Yên-Dungeon (Chuyển 4)
+8100202: Lôi Minh-Dungeon (Chuyển 5)
+9100202: Nguyệt Ảnh-Dungeon (Chuyển 6)
+4100203: Man Hoang-Dungeon (Chuyển 1)
+5100203: Vực Sâu-Dungeon (Chuyển 2)
+6100203: Hàn Sương-Dungeon (Chuyển 3)
+7100203: Hồng Yên-Dungeon (Chuyển 4)
+8100203: Lôi Minh-Dungeon (Chuyển 5)
+9100203: Nguyệt Ảnh-Dungeon (Chuyển 6)
+4100501: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100501: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100501: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100501: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100501: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100501: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100502: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100502: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100502: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100502: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100502: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100502: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100503: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100503: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100503: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100503: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100503: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100503: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100504: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100504: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100504: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100504: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100504: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100504: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100505: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100505: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100505: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100505: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100505: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100505: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100506: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100506: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100506: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100506: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100506: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100506: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+4100507: Man Hoang-Lost Tower (Chuyển 1 Lv.50)
+5100507: Vực Sâu-Lost Tower (Chuyển 2 Lv.50)
+6100507: Hàn Sương-Lost Tower (Chuyển 3 Lv.50)
+7100507: Hồng Yên-Lost Tower (Chuyển 4 Lv.50)
+8100507: Lôi Minh-Lost Tower (Chuyển 5 Lv.50)
+9100507: Nguyệt Ảnh-Lost Tower (Chuyển 6 Lv.50)
+41008: Man Hoang-Atlantis (Chuyển 1 Lv.100)
+51008: Vực Sâu-Atlantis (Chuyển 2 Lv.100)
+61008: Hàn Sương-Atlantis (Chuyển 3 Lv.100)
+71008: Hồng Yên-Atlantis (Chuyển 4 Lv.100)
+81008: Lôi Minh-Atlantis (Chuyển 5 Lv.100)
+91008: Nguyệt Ảnh-Atlantis (Chuyển 6 Lv.100)
+41009: Man Hoang-Tarkan (Chuyển 1 Lv.150)
+51009: Vực Sâu-Tarkan (Chuyển 2 Lv.150)
+61009: Hàn Sương-Tarkan (Chuyển 3 Lv.150)
+71009: Hồng Yên-Tarkan (Chuyển 4 Lv.150)
+81009: Lôi Minh-Tarkan (Chuyển 5 Lv.150)
+91009: Nguyệt Ảnh-Tarkan (Chuyển 6 Lv.150)
+41034: Man Hoang-Aida (Chuyển 1 Lv.200)
+51034: Vực Sâu-Aida (Chuyển 2 Lv.200)
+61034: Hàn Sương-Aida (Chuyển 3 Lv.200)
+71034: Hồng Yên-Aida (Chuyển 4 Lv.200)
+81034: Lôi Minh-Aida (Chuyển 5 Lv.200)
+91034: Nguyệt Ảnh-Aida (Chuyển 6 Lv.200)
+41011: Man Hoang-Icarus (Chuyển 1 Lv.250)
+51011: Vực Sâu-Icarus (Chuyển 2 Lv.250)
+61011: Hàn Sương-Icarus (Chuyển 3 Lv.250)
+71011: Hồng Yên-Icarus (Chuyển 4 Lv.250)
+81011: Lôi Minh-Icarus (Chuyển 5 Lv.250)
+91011: Nguyệt Ảnh-Icarus (Chuyển 6 Lv.250)
+4101101: Man Hoang-Icarus (Chuyển 1 Lv.250)
+5101101: Vực Sâu-Icarus (Chuyển 2 Lv.250)
+6101101: Hàn Sương-Icarus (Chuyển 3 Lv.250)
+7101101: Hồng Yên-Icarus (Chuyển 4 Lv.250)
+8101101: Lôi Minh-Icarus (Chuyển 5 Lv.250)
+9101101: Nguyệt Ảnh-Icarus (Chuyển 6 Lv.250)
+4101102: Man Hoang-Icarus (Chuyển 1 Lv.250)
+5101102: Vực Sâu-Icarus (Chuyển 2 Lv.250)
+6101102: Hàn Sương-Icarus (Chuyển 3 Lv.250)
+7101102: Hồng Yên-Icarus (Chuyển 4 Lv.250)
+8101102: Lôi Minh-Icarus (Chuyển 5 Lv.250)
+9101102: Nguyệt Ảnh-Icarus (Chuyển 6 Lv.250)
+41038: Man Hoang-Phế Tích Kanturu (Chuyển 1 Lv.300)
+51038: Vực Sâu-Phế Tích Kanturu (Chuyển 2 Lv.300)
+61038: Hàn Sương-Phế Tích Kanturu (Chuyển 3 Lv.300)
+71038: Hồng Yên-Phế Tích Kanturu (Chuyển 4 Lv.300)
+81038: Lôi Minh-Phế Tích Kanturu (Chuyển 5 Lv.300)
+91038: Nguyệt Ảnh-Phế Tích Kanturu (Chuyển 6 Lv.300)
+4103801: Man Hoang-Phế Tích Kanturu (Chuyển 1 Lv.300)
+5103801: Vực Sâu-Phế Tích Kanturu (Chuyển 2 Lv.300)
+6103801: Hàn Sương-Phế Tích Kanturu (Chuyển 3 Lv.300)
+7103801: Hồng Yên-Phế Tích Kanturu (Chuyển 4 Lv.300)
+8103801: Lôi Minh-Phế Tích Kanturu (Chuyển 5 Lv.300)
+9103801: Nguyệt Ảnh-Phế Tích Kanturu (Chuyển 6 Lv.300)
+41039: Man Hoang-Di Chỉ Kanturu (Chuyển 1 Lv.350)
+51039: Vực Sâu-Di Chỉ Kanturu (Chuyển 2 Lv.350)
+61039: Hàn Sương-Di Chỉ Kanturu (Chuyển 3 Lv.350)
+71039: Hồng Yên-Di Chỉ Kanturu (Chuyển 4 Lv.350)
+81039: Lôi Minh-Di Chỉ Kanturu (Chuyển 5 Lv.350)
+91039: Nguyệt Ảnh-Di Chỉ Kanturu (Chuyển 6 Lv.350)
+4103901: Man Hoang-Di Chỉ Kanturu (Chuyển 1 Lv.350)
+5103901: Vực Sâu-Di Chỉ Kanturu (Chuyển 2 Lv.350)
+6103901: Hàn Sương-Di Chỉ Kanturu (Chuyển 3 Lv.350)
+7103901: Hồng Yên-Di Chỉ Kanturu (Chuyển 4 Lv.350)
+8103901: Lôi Minh-Di Chỉ Kanturu (Chuyển 5 Lv.350)
+9103901: Nguyệt Ảnh-Di Chỉ Kanturu (Chuyển 6 Lv.350)
+102701: Miếu Thần Kalima
+102702: Miếu Thần Kalima
+102703: Miếu Thần Kalima
+102704: Miếu Thần Kalima
+102801: Miếu Thần Kalima
+102802: Miếu Thần Kalima
+102803: Miếu Thần Kalima
+102804: Miếu Thần Kalima
+102805: Miếu Thần Kalima
+102806: Miếu Thần Kalima
+101058: Thành Băng (Chuyển 1)
+10105801: Thành Băng (Chuyển 1)
+10105802: Thành Băng (Chuyển 1)
+101057: An Ninh Trì (Chuyển 2)
+101094: Tứ Phong Bình Nguyên (Chuyển 3)
+101093: Vùng Đất Mục Nát (Chuyển 4)
+101095: Vùng Đất Ma Hóa (Chuyển 5)
+101092: Rừng Vĩnh Ca (Chuyển 6)
+101096: Rừng Sương Mù (Chuyển 7)
+1074: Philea (Chuyển 8)
+1075: Hồ Nixsis (Chuyển 9)
+1076: Hồ Dị Hóa (Chuyển 10)
+10123: Đầm Lầy Đen (Chuyển 11)
+1012301: Đầm Lầy Vực Sâu-(Chuyển 12)
+10132: Vực Tiêu Xà (Chuyển 13)
+10133: Vực Đen (Chuyển 14)
+10137: Phế Tích Liệt Diễm (Chuyển 15)
+106401: Vùng Đất Thí Luyện
+106402: Vùng Đất Thí Luyện
+106403: Vùng Đất Thí Luyện
+106404: Vùng Đất Thí Luyện
+106405: Vùng Đất Thí Luyện
+106406: Vùng Đất Thí Luyện
+106407: Vùng Đất Thí Luyện
+106408: Vùng Đất Thí Luyện
+106409: Vùng Đất Thí Luyện
+106410: Vùng Đất Thí Luyện
+106411: Vùng Đất Thí Luyện
+106412: Vùng Đất Thí Luyện
+106413: Vùng Đất Thí Luyện
+106414: Vùng Đất Thí Luyện
+106501: Vùng Đất Thí Luyện Hội Viên
+106502: Vùng Đất Thí Luyện Hội Viên
+106503: Vùng Đất Thí Luyện Hội Viên
+106504: Vùng Đất Thí Luyện Hội Viên
+106505: Vùng Đất Thí Luyện Hội Viên
+106506: Vùng Đất Thí Luyện Hội Viên
+106507: Vùng Đất Thí Luyện Hội Viên
+106508: Vùng Đất Thí Luyện Hội Viên
+106509: Vùng Đất Thí Luyện Hội Viên
+106510: Vùng Đất Thí Luyện Hội Viên
+106511: Vùng Đất Thí Luyện Hội Viên
+106512: Vùng Đất Thí Luyện Hội Viên
+106513: Vùng Đất Thí Luyện Hội Viên
+106514: Vùng Đất Thí Luyện Hội Viên
+106705: Luyện Ngục Khổ Nạn
+106701: Luyện Ngục Khổ Nạn
+106702: Luyện Ngục Khổ Nạn
+106703: Luyện Ngục Khổ Nạn
+106704: Luyện Ngục Khổ Nạn
+106706: Luyện Ngục Khổ Nạn
+106707: Luyện Ngục Khổ Nạn
+106708: Luyện Ngục Khổ Nạn
+106709: Luyện Ngục Khổ Nạn
+106710: Luyện Ngục Khổ Nạn
+106711: Luyện Ngục Khổ Nạn
+106712: Luyện Ngục Khổ Nạn
+106713: Luyện Ngục Khổ Nạn
+106805: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106801: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106802: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106803: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106804: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106806: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106807: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106808: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106809: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106810: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106811: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106812: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+106813: Luyện Ngục Luyện Ngục Khổ Nạn Hội Viên
+1071: Phế Tích Current
+1072: Công Thành Chiến Liên Server
+1077: Khốn Thú Đấu
+107301: Chuyển 3-BOSS Thánh Hoàn (Hội Viên
+107302: Chuyển 4-BOSS Thánh Hoàn (Hội Viên
+107303: Chuyển 5-BOSS Thánh Hoàn (Hội Viên
+107304: Chuyển 6-BOSS Thánh Hoàn (Hội Viên
+107305: Chuyển 7-BOSS Thánh Hoàn (Hội Viên
+107306: Chuyển 8-BOSS Thánh Hoàn (Hội Viên
+107307: Chuyển 9-BOSS Thánh Hoàn (Hội Viên
+107308: Chuyển 10-BOSS Thánh Hoàn (Hội Viên
+107309: Chuyển 11-BOSS Thánh Hoàn (Hội Viên
+107310: Chuyển 12-BOSS Thánh Hoàn (Hội Viên
+107311: Chuyển 13-BOSS Thánh Hoàn (Hội Viên
+107312: Chuyển 14-BOSS Thánh Hoàn (Hội Viên
+107313: Chuyển 15-BOSS Thánh Hoàn (Hội Viên
+1095: 3v3
+240001: Bản đồ ẩn
+250001: Khu Xương Cốt
+250002: Khu Xương Cốt
+260001: Hang Động Vàng
+270001: Hành Lang Pháp Trận
+270002: Hành Lang Pháp Trận
+10206: Đoạt Cờ Guild
+103910: Khe Hở Thời Không Tầng 1-6
+103911: Khe Hở Thời Không Tầng 7
+270003: Vết Nứt Ma Uyên
+280001: Bí Cảnh Phi Thăng
+10207: Đoạt Cờ Tranh Bá
+103921: Tranh Bá Bốn Phương

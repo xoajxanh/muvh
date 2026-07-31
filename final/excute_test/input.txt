@@ -1,0 +1,70 @@
+local function DoLog(msg)
+    print("[ClimbTower Test] " .. tostring(msg))
+end
+
+DoLog("====== TEST TIẾP CẬN BOSS SỚM (FIX 4 - RANGE 2) ======")
+local success, err = pcall(function()
+    if not _G.RoleManager or not _G.RoleManager.me then
+        DoLog("Lỗi: RoleManager.me không tồn tại!")
+        return
+    end
+
+    -- 1. Tắt Auto để nhân vật chuyên tâm chạy đường dài
+    if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+    if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+
+    local targetX = 27
+    local targetY = 211
+    local foundBoss = false
+    
+    local monsterRoles = _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if monsterRoles then
+        for lid, role in pairs(monsterRoles) do
+            if role.hp and role.hp > 0 then
+                local x = role.serverCoord and role.serverCoord.x or (role.data and role.data.x)
+                local y = role.serverCoord and role.serverCoord.y or (role.data and role.data.y)
+                if x and y then
+                    targetX = tonumber(x)
+                    targetY = tonumber(y)
+                    foundBoss = true
+                    DoLog("Đã thấy Boss, cập nhật toạ độ thực tế: X:" .. targetX .. " Y:" .. targetY)
+                    break
+                end
+            end
+        end
+    end
+    
+    if not foundBoss then
+        DoLog("Boss chưa xuất hiện, chạy tới toạ độ gốc: X:" .. targetX .. " Y:" .. targetY)
+    end
+    
+    if _G.FloatingWordUtility then 
+        _G.FloatingWordUtility.QuickMsg("Đang PathFind chạy tới chân Boss!") 
+    end
+
+    -- SỬ DỤNG LẠI HÀM CŨ NHƯNG CÓ TRUYỀN KHOẢNG CÁCH DỪNG = 2
+    -- Nếu bắt chạy tới đúng toạ độ 0 khoảng cách, ô lưới đó có thể bị Boss đè lấp (vật cản)
+    -- khiến PathFind bị lỗi và không thể di chuyển (đứng im tại chỗ).
+    local pathResult = _G.RoleManager.me:MoveTo({x = targetX, y = targetY}, 2, function()
+        -- Khi nhân vật cách Boss 2 ô lưới (vừa đúng tầm đánh và chạm chân)
+        if _G.RoleManager and _G.RoleManager.me then
+            if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("AutoFight") end
+            if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("AutoFight") end
+            if _G.FloatingWordUtility then 
+                _G.FloatingWordUtility.QuickMsg("Đã tới nơi, bắt đầu Auto đập Boss!") 
+            end
+            DoLog("Đã tới đích, bật lại Auto!")
+        end
+    end)
+    
+    if not pathResult then
+        DoLog("Cảnh báo: Hàm MoveTo trả về false, có thể không tìm được đường!")
+    else
+        DoLog("Đã ra lệnh MoveTo thành công, đang chạy...")
+    end
+end)
+
+if not success then
+    DoLog("LỖI LUA NGHIÊM TRỌNG: " .. tostring(err))
+end
+DoLog("=========================================")

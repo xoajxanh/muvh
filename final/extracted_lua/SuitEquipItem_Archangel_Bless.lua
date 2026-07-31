@@ -1,0 +1,3 @@
+local SuitEquipItem_Archangel_Bless = {}
+setmetatable(SuitEquipItem_Archangel_Bless, LuaClass.SuitEquipItem_Base)
+return SuitEquipItem_Archangel_Bless

@@ -1,0 +1,7 @@
+=== SUCCESS ===
+
+[LOGS]:
+[ClimbTower Test] ====== TEST TIẾP CẬN BOSS SỚM (FIX 3 - CÓ LOG LỖI) ======	
+[ClimbTower Test] Đã thấy Boss, lấy toạ độ thực tế: X:29 Y:212	
+[ClimbTower Test] Đang gọi PathFinderManager.MoveToPos...	
+[ClimbTower Test] =========================================	

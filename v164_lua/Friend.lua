@@ -1,0 +1,32 @@
+FriendMessage = {
+  ReqOpenFriendPanel = 13001,
+  ResFriendInfo = 13002,
+  ReqAddFriend = 13003,
+  ReqDeleteFriend = 13004,
+  ReqCheckApply = 13005,
+  ResFriendRalationChange = 13006,
+  ReqEditRemark = 13007,
+  ResPersonalInfo = 13008,
+  ReqSearchByName = 13009,
+  ResSearchByName = 13010,
+  ReqFriendSelfPanelInfo = 13011,
+  ResFriendSelfPanelInfo = 13012,
+  ReqGetFriendRecommend = 13013,
+  ResFriendIntimacyInfo = 13014,
+  ResFriendRelationInfo = 13015
+}
+MessageIDToName[13001] = "FriendPackage.OpenFriendPanelReq"
+MessageIDToName[13002] = "FriendPackage.FriendInfo"
+MessageIDToName[13003] = "FriendPackage.AddFriendReq"
+MessageIDToName[13004] = "FriendPackage.DeleteFriendReq"
+MessageIDToName[13005] = "FriendPackage.CheckApplyReq"
+MessageIDToName[13006] = "FriendPackage.ResFriendChange"
+MessageIDToName[13007] = "FriendPackage.EditRemarkReq"
+MessageIDToName[13008] = "FriendPackage.FriendBaseInfo"
+MessageIDToName[13009] = "FriendPackage.SearchByNameReq"
+MessageIDToName[13010] = "FriendPackage.SearchByNameRes"
+MessageIDToName[13011] = "FriendPackage.FriendSelfPanelInfoReq"
+MessageIDToName[13012] = "FriendPackage.FriendSelfPanelInfo"
+MessageIDToName[13014] = "FriendPackage.FriendIntimacyInfo"
+MessageIDToName[13015] = "FriendPackage.FriendRelationInfo"
+Protobuf.LoadProto("Friend.proto")

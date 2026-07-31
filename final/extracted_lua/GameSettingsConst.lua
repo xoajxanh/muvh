@@ -1,0 +1,101 @@
+C_ResolutionQuality = {
+  SD = 0.5,
+  HD = 0.8,
+  FHD = 1
+}
+C_FrameRate = {
+  LOW = 30,
+  MID = 45,
+  HIGH = 55
+}
+C_DefaultGameSettings = {
+  optionalMaxPlayers = 50,
+  defaultMaxScreenHeight = 1080,
+  defaultMinScreenHeight = 540,
+  BaseConfig = {
+    musicVolume = 0.5,
+    soundVolume = 0.5,
+    speechVolume = 0.5,
+    joyStickMode = EJoyStickMode.Free
+  },
+  PerformanceConfig = {
+    [EPerformanceQuality.Low] = {
+      LOD = 100,
+      hidePlayerModelCamp = EBattleCamp.None,
+      hideSkillEffectCamp = EBattleCamp.None,
+      hideSummonMonster = true,
+      hideMonsterModel = false,
+      hideMonsterSkillEffect = false,
+      hidePlayerWingCamp = EBattleCamp.All,
+      hidePlayerBootCamp = EBattleCamp.All,
+      limitMaxVisiblePlayers = true,
+      maxVisiblePlayers = 10,
+      resolution = C_ResolutionQuality.SD,
+      frameRate = C_FrameRate.LOW,
+      maxInstantiateCount = 1,
+      showWeatherEffect = false,
+      showSceneAnimals = false,
+      showShadow = false,
+      maxSkillEffectCount = 5
+    },
+    [EPerformanceQuality.Middle] = {
+      LOD = 500,
+      hidePlayerModelCamp = EBattleCamp.None,
+      hideSkillEffectCamp = EBattleCamp.None,
+      hideSummonMonster = true,
+      hideMonsterModel = false,
+      hideMonsterSkillEffect = false,
+      hidePlayerWingCamp = EBattleCamp.All,
+      hidePlayerBootCamp = EBattleCamp.All,
+      limitMaxVisiblePlayers = true,
+      maxVisiblePlayers = 20,
+      resolution = C_ResolutionQuality.HD,
+      frameRate = C_FrameRate.MID,
+      maxInstantiateCount = 1,
+      showWeatherEffect = true,
+      showSceneAnimals = true,
+      showShadow = true,
+      maxSkillEffectCount = 10
+    },
+    [EPerformanceQuality.High] = {
+      LOD = 900,
+      hidePlayerModelCamp = EBattleCamp.None,
+      hideSkillEffectCamp = EBattleCamp.None,
+      hideSummonMonster = false,
+      hideMonsterModel = false,
+      hideMonsterSkillEffect = false,
+      hidePlayerWingCamp = EBattleCamp.None,
+      hidePlayerBootCamp = EBattleCamp.None,
+      limitMaxVisiblePlayers = true,
+      maxVisiblePlayers = 30,
+      resolution = C_ResolutionQuality.FHD,
+      frameRate = C_FrameRate.HIGH,
+      maxInstantiateCount = 1,
+      showWeatherEffect = true,
+      showSceneAnimals = true,
+      showShadow = true,
+      maxSkillEffectCount = 15
+    }
+  }
+}
+C_UISettings = {
+  MainMenuUITime = 0.3,
+  MainUIDistance = 350,
+  MainRowCount = 4,
+  MainFuncInitPos = Vector2.New(54, -80),
+  MainFuncDistance = Vector2.New(-80, 80),
+  SkillUIMoveTime = 0.4,
+  SkillUIScaleTime = 0.1,
+  SkillUIDelayScaleTime = 0.1,
+  MainActivityRowCount = 2,
+  MainActivityMaxPos = Vector3.New(74, -10, 0),
+  MainActivityInitPos = Vector2.New(0, 56),
+  MainActivityInitPosOut_x = -10,
+  MainActivityDistance = Vector2.New(-80, -76),
+  MainActivityOffsetleft = 0,
+  MainActivityInterval = 0.2,
+  MainActivityDev = Vector3.New(25, 0, 0),
+  MainActivityDevNegative = Vector3.New(-25, 0, 0),
+  MainActivityPushTime = 0.3,
+  MainActivityPopTime = 0.1
+}

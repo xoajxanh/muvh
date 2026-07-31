@@ -1,0 +1,623 @@
+1001: Lorencia
+100201: Dungeon
+100202: Dungeon
+100203: Dungeon
+1003: Devias
+1004: Noria
+100501: Lost Tower
+100502: Lost Tower
+100503: Lost Tower
+100504: Lost Tower
+100505: Lost Tower
+100506: Lost Tower
+100507: Lost Tower
+1007: Chin Trng C
+1008: Atlantis (Chuyn 0 Lv.100)
+1009: Tarkan (Chuyn 0 Lv.150)
+1010: Qung Trng Qu
+1011: Icarus (Chuyn 0 Lv.250)
+101101: Icarus (Chuyn 0 Lv.250)
+101102: Icarus (Chuyn 0 Lv.250)
+1012: Huyt Lu
+1013: Thch u BOSS Guild
+1019: Pho i 
+1025: Miu Thn Kalima
+1031: Vc Roland-Thng
+103101: Vc Roland
+103102: Vc Roland
+1032: Vng t Ma Luyn
+1034: Aida (Chuyn 0 Lv.200)
+1035: Pho i Hn Si
+1038: Ph Tch Kanturu (Chuyn 0 Lv.300)
+103801: Ph Tch Kanturu (Chuyn 0 Lv.300)
+1039: Di Ch Kanturu (Chuyn 0 Lv.350)
+103901: Di Ch Kanturu (Chuyn 0 Lv.350)
+1040: Thp Tinh Luyn Kanturu
+104003: Thp Tinh Luyn
+104004: Thp Tinh Luyn
+104005: Thp Tinh Luyn
+104006: Thp Tinh Luyn
+104007: Thp Tinh Luyn
+104008: Thp Tinh Luyn
+104009: Thp Tinh Luyn
+104010: Thp Tinh Luyn
+104011: Thp Tinh Luyn
+104012: Thp Tinh Luyn
+104013: Thp Tinh Luyn
+104014: Thp Tinh Luyn
+104015: Thp Tinh Luyn
+1042: Doanh Tri Bakas
+1043: Phng Ngh Bakas
+1047: Huyn nh T Vin
+1052: Huyn Thut Vin
+105201: Huyn Thut B Cnh
+105202: Huyn Thut B Cnh
+105203: Huyn Thut B Cnh
+105204: Huyn Thut B Cnh
+105205: Huyn Thut B Cnh
+105206: Huyn Thut B Cnh
+105207: Huyn Thut B Cnh
+105208: Huyn Thut B Cnh
+105209: Huyn Thut B Cnh
+105210: Huyn Thut B Cnh
+105211: Huyn Thut B Cnh
+105212: Huyn Thut B Cnh
+105213: Huyn Thut B Cnh
+105214: Huyn Thut B Cnh
+105215: Huyn Thut B Cnh
+105301: B Cnh Hi Vin
+105302: B Cnh Hi Vin
+105303: B Cnh Hi Vin
+105304: B Cnh Hi Vin
+105305: B Cnh Hi Vin
+105306: B Cnh Hi Vin
+105307: B Cnh Hi Vin
+105308: B Cnh Hi Vin
+105309: B Cnh Hi Vin
+105310: B Cnh Hi Vin
+105311: B Cnh Hi Vin
+105312: B Cnh Hi Vin
+105313: B Cnh Hi Vin
+105314: B Cnh Hi Vin
+105315: B Cnh Hi Vin
+1057: An Ninh Tr
+1058: Thnh Bng
+105801: Thnh Bng
+105802: Thnh Bng
+1063: Vng t Noel
+1090: Thnh Vc
+1090001: Thin ng-Cao
+1090002: Thin ng-Cao
+1090003: Thin ng-Cao
+1090011: Luyn Ngc Kh Nn
+1090012: Luyn Ngc Kh Nn
+1090013: Luyn Ngc Kh Nn
+1090021: Vc Su V Tn
+1090022: Vc Su V Tn
+1090023: Vc Su V Tn
+1090031: Hnh Lang Thng Kh
+1090032: Hnh Lang Thng Kh
+1090033: Hnh Lang Thng Kh
+1091: Thn Chi Quc 
+1092: Rng Vnh Ca
+1093: Vng t Mc Nt
+109301: Vng t Mc Nt
+1094: T Phong Bnh Nguyn
+109401: T Phong Bnh Nguyn
+1010001: Qung Trng Qu
+1010002: Qung Trng Qu
+1010003: Qung Trng Qu
+1010004: Qung Trng Qu
+1010005: Qung Trng Qu
+1010006: Qung Trng Qu
+1010007: Qung Trng Qu
+1010008: Qung Trng Qu
+1010009: Qung Trng Qu
+1010010: Qung Trng Qu
+1010011: Qung Trng Qu
+1010012: Qung Trng Qu
+1010013: Qung Trng Qu
+1010014: Qung Trng Qu
+1010015: Qung Trng Qu
+1010016: Qung Trng Qu
+1010017: Qung Trng Qu
+1010018: Qung Trng Qu
+1010019: Qung Trng Qu
+1010020: Qung Trng Qu
+1010021: Qung Trng Qu
+1010022: Qung Trng Qu
+1010023: Qung Trng Qu
+1010024: Qung Trng Qu
+1010025: Qung Trng Qu
+1010026: Qung Trng Qu
+1010027: Qung Trng Qu
+1010028: Qung Trng Qu
+1010029: Qung Trng Qu
+1010030: Qung Trng Qu
+1010031: Qung Trng Qu
+1010032: Qung Trng Qu
+1010033: Qung Trng Qu
+1010034: Qung Trng Qu
+1010035: Qung Trng Qu
+1010036: Qung Trng Qu
+1010037: Qung Trng Qu
+1010038: Qung Trng Qu
+1010039: Qung Trng Qu
+1010040: Qung Trng Qu
+1010041: Qung Trng Qu
+1010042: Qung Trng Qu
+1010043: Qung Trng Qu
+1010044: Qung Trng Qu
+1010045: Qung Trng Qu
+1010046: Qung Trng Qu
+1010047: Qung Trng Qu
+1010048: Qung Trng Qu
+1010049: Qung Trng Qu
+1010050: Qung Trng Qu
+1010051: Qung Trng Qu
+1010052: Qung Trng Qu
+1010053: Qung Trng Qu
+1010054: Qung Trng Qu
+1010055: Qung Trng Qu
+1012001: Huyt Lu
+1012002: Huyt Lu
+1012003: Huyt Lu
+1012004: Huyt Lu
+1012005: Huyt Lu
+1012006: Huyt Lu
+1012007: Huyt Lu
+1012008: Huyt Lu
+1012009: Huyt Lu
+1012010: Huyt Lu
+1012011: Huyt Lu
+1012012: Huyt Lu
+1012013: Huyt Lu
+1012014: Huyt Lu
+1012015: Huyt Lu
+1012016: Huyt Lu
+1012017: Huyt Lu
+1012018: Huyt Lu
+1012019: Huyt Lu
+1012020: Huyt Lu
+1012021: Huyt Lu
+1012022: Huyt Lu
+1012023: Huyt Lu
+1012024: Huyt Lu
+1012025: Huyt Lu
+1012026: Huyt Lu
+1012027: Huyt Lu
+1012028: Huyt Lu
+1012029: Huyt Lu
+1012030: Huyt Lu
+1012031: Huyt Lu
+1012032: Huyt Lu
+1012033: Huyt Lu
+1012034: Huyt Lu
+1012035: Huyt Lu
+1012036: Huyt Lu
+1012037: Huyt Lu
+1012038: Huyt Lu
+1012039: Huyt Lu
+1012040: Huyt Lu
+1012041: Huyt Lu
+1012042: Huyt Lu
+1012043: Huyt Lu
+1012044: Huyt Lu
+1012045: Huyt Lu
+1012046: Huyt Lu
+1012047: Huyt Lu
+1012048: Huyt Lu
+1012049: Huyt Lu
+1012050: Huyt Lu
+1012051: Huyt Lu
+1012052: Huyt Lu
+1012053: Huyt Lu
+1012054: Huyt Lu
+1012055: Huyt Lu
+1013001: BOSS Guild
+1025001: i
+1025002: Th
+1025003: Th
+1025004: Th
+1025005: Th
+102501: [Lin] Miu Thn Kalima 1
+102502: [Lin] Miu Thn Kalima 2
+102503: [Lin] Miu Thn Kalima 3
+102504: [Lin] Miu Thn Kalima 4
+102505: [Lin] Miu Thn Kalima 5
+102601: Miu Thn Kalima
+102602: Miu Thn Kalima
+102603: Miu Thn Kalima
+102604: Miu Thn Kalima
+102605: Miu Thn Kalima
+1035001: Pho i Hn Si
+1031001: Vc Roland
+1019001: Pho i  - Ph bn s kin
+1059001: Th Lnh C Nhn 1 - Bng Hu
+1059002: Th Lnh C Nhn 2 - Gordon Ma Qu
+1059003: Th Lnh C Nhn 3 - Ma Vng Baroque
+1059004: Th Lnh C Nhn 4 - Ma Vng Zaikan
+1059005: Th Lnh C Nhn 5 - Thin Ma Phoenix
+1059006: Th Lnh C Nhn 6 - K  St
+1059007: Th Lnh C Nhn 7 - Ma Vng Li Nguyn
+1059008: Th Lnh C Nhn 8 - Nhn Bng Sng Khng L
+1059009: Th Lnh C Nhn 9 - Ngi Khng L Sm St
+100701: Lnh a Hi Vin
+100702: Lnh a Hi Vin
+100703: Lnh a Hi Vin
+100704: Lnh a Hi Vin
+100705: Lnh a Hi Vin
+100706: Lnh a Hi Vin
+100707: Lnh a Hi Vin
+10020101: Phng Luyn Cng Hi Vin
+10020201: Phng Luyn Cng Hi Vin
+10080101: Phng Luyn Cng Hi Vin
+10090101: Phng Luyn Cng Hi Vin
+10340101: Phng Luyn Cng Hi Vin
+10380101: Phng Luyn Cng Hi Vin
+101401: Phng Luyn Cng
+101402: Phng Luyn Cng
+101403: Hi Vin Tng 1 (Chuyn 0 Lv.100)
+101404: Hi Vin Tng 2 (Chuyn 0 Lv.150)
+101405: Hi Vin Tng 3 (Chuyn 0 Lv.200)
+101406: Hi Vin Tng 4 (Chuyn 0 Lv.250)
+101407: Hi Vin Tng 5 (Chuyn 0 Lv.300)
+101408: Hi Vin Tng 6 (Chuyn 0 Lv.350)
+101411: Hi Vin Tng 7 (Chuyn 1)
+101412: Hi Vin Tng 8 (Chuyn 2)
+101413: Hi Vin Tng 9 (Chuyn 3)
+101414: Hi Vin Tng 10 (Chuyn 4)
+101415: Hi Vin Tng 11 (Chuyn 5)
+101416: Hi Vin Tng 12 (Chuyn 6)
+101417: Hi Vin Tng 13 (Chuyn 7)
+101418: Hi Vin Tng 14 (Chuyn 8)
+101421: Hi Vin Tng 15 (Chuyn 9)
+101422: Hi Vin Tng 16 (Chuyn 10)
+101423: Hi Vin Tng 17 (Chuyn 11)
+101424: Hi Vin Tng 18 (Chuyn 12)
+101425: Hi Vin Tng 19 (Chuyn 13)
+101426: Hi Vin Tng 20 (Chuyn 14)
+101427: Hi Vin Tng 21 (Chuyn 15)
+101428: Hi Vin Tng 22 (Chuyn 16)
+101431: Hi Vin Tng 23 (Chuyn 17)
+101432: Hi Vin Tng 24 (Chuyn 18)
+101433: Hi Vin Tng 25 (Chuyn 19)
+101434: Hi Vin Tng 26 (Chuyn 3 Lv.150)
+101435: Hi Vin Tng 27 (Chuyn 3 Lv.200)
+101436: Hi Vin Tng 28 (Chuyn 3 Lv.250)
+101437: Hi Vin Tng 29 (Chuyn 3 Lv.300)
+101438: Hi Vin Tng 30 (Chuyn 3 Lv.350)
+101441: Hi Vin Tng 31 (Chuyn 4)
+101442: Hi Vin Tng 32 (Chuyn 4 Lv.50)
+101443: Hi Vin Tng 33 (Chuyn 4 Lv.100)
+101444: Hi Vin Tng 34 (Chuyn 4 Lv.150)
+101445: Hi Vin Tng 35 (Chuyn 4 Lv.200)
+101446: Hi Vin Tng 36 (Chuyn 4 Lv.250)
+101447: Hi Vin Tng 37 (Chuyn 4 Lv.300)
+101448: Hi Vin Tng 38 (Chuyn 4 Lv.350)
+101451: Hi Vin Tng 39 (Chuyn 5)
+101452: Hi Vin Tng 40 (Chuyn 5 Lv.50)
+101453: Hi Vin Tng 41 (Chuyn 5 Lv.100)
+101454: Hi Vin Tng 42 (Chuyn 5 Lv.150)
+101455: Hi Vin Tng 43 (Chuyn 5 Lv.200)
+101456: Hi Vin Tng 44 (Chuyn 5 Lv.250)
+101457: Hi Vin Tng 45 (Chuyn 5 Lv.300)
+101458: Hi Vin Tng 46 (Chuyn 5 Lv.350)
+101461: Hi Vin Tng 47 (Chuyn 6)
+101462: Hi Vin Tng 48 (Chuyn 6 Lv.50)
+101463: Hi Vin Tng 49 (Chuyn 6 Lv.100)
+101464: Hi Vin Tng 50 (Chuyn 6 Lv.150)
+101465: Hi Vin Tng 51 (Chuyn 6 Lv.200)
+101466: Hi Vin Tng 52 (Chuyn 6 Lv.250)
+101467: Hi Vin Tng 53 (Chuyn 6 Lv.300)
+101468: Hi Vin Tng 54 (Chuyn 6 Lv.350)
+1011091: Thnh Vc
+1011092: Thnh Vc
+2001: Cnh Trc Vit
+2002: Cnh Trc Vit
+2003: Cnh Trc Vit
+2004: Cnh Trc Vit
+2005: Cnh Trc Vit
+2006: Cnh Trc Vit
+2007: Cnh Trc Vit
+2008: Cnh Trc Vit
+2101000: BOSS Phc Li 1
+2101001: BOSS Phc Li 1
+2101002: BOSS Phc Li 2
+2101003: BOSS Phc Li 3
+2101004: BOSS Phc Li 2
+2101005: BOSS Phc Li 5
+2101006: BOSS Phc Li 6
+2101007: BOSS Phc Li 3
+2101008: BOSS Phc Li 8
+2101009: BOSS Phc Li 9
+2101010: BOSS Phc Li 10
+2101011: BOSS Phc Li 4
+2101012: BOSS Phc Li 12
+2101013: BOSS Phc Li 13
+2101014: BOSS Phc Li 14
+2101015: BOSS Phc Li 5
+2101016: BOSS Phc Li 16
+2101017: BOSS Phc Li 17
+2101018: BOSS Phc Li 18
+2101019: BOSS Phc Li 6
+2101020: BOSS Phc Li 20
+2101021: BOSS Phc Li 21
+2101022: BOSS Phc Li 22
+2101023: BOSS Phc Li 7
+2101024: BOSS Phc Li 24
+2101025: BOSS Phc Li 25
+2101026: BOSS Phc Li 26
+2101027: BOSS Phc Li 8
+2101028: BOSS Phc Li 28
+2101029: BOSS Phc Li 29
+2101030: BOSS Phc Li 30
+2101031: BOSS Phc Li 9
+2101032: BOSS Phc Li 32
+2101033: BOSS Phc Li 33
+2101034: BOSS Phc Li 34
+2101035: BOSS Phc Li 10
+2101036: BOSS Phc Li 36
+2101037: BOSS Phc Li 37
+2101038: BOSS Phc Li 38
+2101039: BOSS Phc Li 11
+2101040: BOSS Phc Li 40
+2101041: BOSS Phc Li 41
+2101042: BOSS Phc Li 42
+2101043: BOSS Phc Li 12
+2101044: BOSS Phc Li 44
+2101045: BOSS Phc Li 45
+2101046: BOSS Phc Li 46
+2101047: BOSS Phc Li 13
+2101048: BOSS Phc Li 48
+2101049: BOSS Phc Li 49
+2101050: BOSS Phc Li 50
+2101051: BOSS Phc Li 14
+2101052: BOSS Phc Li 52
+2101053: BOSS Phc Li 53
+2101054: BOSS Phc Li 54
+2101055: BOSS Phc Li 15
+2101056: BOSS Phc Li 56
+2101057: BOSS Phc Li 57
+2101058: BOSS Phc Li 58
+2101059: BOSS Phc Li 16
+2101060: BOSS Phc Li 60
+2101061: BOSS Phc Li 61
+2101062: BOSS Phc Li 62
+2101063: BOSS Phc Li 17
+2101064: BOSS Phc Li 64
+2101065: BOSS Phc Li 65
+2101066: BOSS Phc Li 66
+2101067: BOSS Phc Li 18
+100510: Vc Su Hc m
+4100201: Man Hoang-Dungeon (Chuyn 1)
+5100201: Vc Su-Dungeon (Chuyn 2)
+6100201: Hn Sng-Dungeon (Chuyn 3)
+7100201: Hng Yn-Dungeon (Chuyn 4)
+8100201: Li Minh-Dungeon (Chuyn 5)
+9100201: Nguyt nh-Dungeon (Chuyn 6)
+4100202: Man Hoang-Dungeon (Chuyn 1)
+5100202: Vc Su-Dungeon (Chuyn 2)
+6100202: Hn Sng-Dungeon (Chuyn 3)
+7100202: Hng Yn-Dungeon (Chuyn 4)
+8100202: Li Minh-Dungeon (Chuyn 5)
+9100202: Nguyt nh-Dungeon (Chuyn 6)
+4100203: Man Hoang-Dungeon (Chuyn 1)
+5100203: Vc Su-Dungeon (Chuyn 2)
+6100203: Hn Sng-Dungeon (Chuyn 3)
+7100203: Hng Yn-Dungeon (Chuyn 4)
+8100203: Li Minh-Dungeon (Chuyn 5)
+9100203: Nguyt nh-Dungeon (Chuyn 6)
+4100501: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100501: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100501: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100501: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100501: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100501: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100502: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100502: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100502: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100502: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100502: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100502: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100503: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100503: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100503: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100503: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100503: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100503: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100504: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100504: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100504: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100504: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100504: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100504: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100505: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100505: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100505: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100505: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100505: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100505: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100506: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100506: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100506: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100506: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100506: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100506: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+4100507: Man Hoang-Lost Tower (Chuyn 1 Lv.50)
+5100507: Vc Su-Lost Tower (Chuyn 2 Lv.50)
+6100507: Hn Sng-Lost Tower (Chuyn 3 Lv.50)
+7100507: Hng Yn-Lost Tower (Chuyn 4 Lv.50)
+8100507: Li Minh-Lost Tower (Chuyn 5 Lv.50)
+9100507: Nguyt nh-Lost Tower (Chuyn 6 Lv.50)
+41008: Man Hoang-Atlantis (Chuyn 1 Lv.100)
+51008: Vc Su-Atlantis (Chuyn 2 Lv.100)
+61008: Hn Sng-Atlantis (Chuyn 3 Lv.100)
+71008: Hng Yn-Atlantis (Chuyn 4 Lv.100)
+81008: Li Minh-Atlantis (Chuyn 5 Lv.100)
+91008: Nguyt nh-Atlantis (Chuyn 6 Lv.100)
+41009: Man Hoang-Tarkan (Chuyn 1 Lv.150)
+51009: Vc Su-Tarkan (Chuyn 2 Lv.150)
+61009: Hn Sng-Tarkan (Chuyn 3 Lv.150)
+71009: Hng Yn-Tarkan (Chuyn 4 Lv.150)
+81009: Li Minh-Tarkan (Chuyn 5 Lv.150)
+91009: Nguyt nh-Tarkan (Chuyn 6 Lv.150)
+41034: Man Hoang-Aida (Chuyn 1 Lv.200)
+51034: Vc Su-Aida (Chuyn 2 Lv.200)
+61034: Hn Sng-Aida (Chuyn 3 Lv.200)
+71034: Hng Yn-Aida (Chuyn 4 Lv.200)
+81034: Li Minh-Aida (Chuyn 5 Lv.200)
+91034: Nguyt nh-Aida (Chuyn 6 Lv.200)
+41011: Man Hoang-Icarus (Chuyn 1 Lv.250)
+51011: Vc Su-Icarus (Chuyn 2 Lv.250)
+61011: Hn Sng-Icarus (Chuyn 3 Lv.250)
+71011: Hng Yn-Icarus (Chuyn 4 Lv.250)
+81011: Li Minh-Icarus (Chuyn 5 Lv.250)
+91011: Nguyt nh-Icarus (Chuyn 6 Lv.250)
+4101101: Man Hoang-Icarus (Chuyn 1 Lv.250)
+5101101: Vc Su-Icarus (Chuyn 2 Lv.250)
+6101101: Hn Sng-Icarus (Chuyn 3 Lv.250)
+7101101: Hng Yn-Icarus (Chuyn 4 Lv.250)
+8101101: Li Minh-Icarus (Chuyn 5 Lv.250)
+9101101: Nguyt nh-Icarus (Chuyn 6 Lv.250)
+4101102: Man Hoang-Icarus (Chuyn 1 Lv.250)
+5101102: Vc Su-Icarus (Chuyn 2 Lv.250)
+6101102: Hn Sng-Icarus (Chuyn 3 Lv.250)
+7101102: Hng Yn-Icarus (Chuyn 4 Lv.250)
+8101102: Li Minh-Icarus (Chuyn 5 Lv.250)
+9101102: Nguyt nh-Icarus (Chuyn 6 Lv.250)
+41038: Man Hoang-Ph Tch Kanturu (Chuyn 1 Lv.300)
+51038: Vc Su-Ph Tch Kanturu (Chuyn 2 Lv.300)
+61038: Hn Sng-Ph Tch Kanturu (Chuyn 3 Lv.300)
+71038: Hng Yn-Ph Tch Kanturu (Chuyn 4 Lv.300)
+81038: Li Minh-Ph Tch Kanturu (Chuyn 5 Lv.300)
+91038: Nguyt nh-Ph Tch Kanturu (Chuyn 6 Lv.300)
+4103801: Man Hoang-Ph Tch Kanturu (Chuyn 1 Lv.300)
+5103801: Vc Su-Ph Tch Kanturu (Chuyn 2 Lv.300)
+6103801: Hn Sng-Ph Tch Kanturu (Chuyn 3 Lv.300)
+7103801: Hng Yn-Ph Tch Kanturu (Chuyn 4 Lv.300)
+8103801: Li Minh-Ph Tch Kanturu (Chuyn 5 Lv.300)
+9103801: Nguyt nh-Ph Tch Kanturu (Chuyn 6 Lv.300)
+41039: Man Hoang-Di Ch Kanturu (Chuyn 1 Lv.350)
+51039: Vc Su-Di Ch Kanturu (Chuyn 2 Lv.350)
+61039: Hn Sng-Di Ch Kanturu (Chuyn 3 Lv.350)
+71039: Hng Yn-Di Ch Kanturu (Chuyn 4 Lv.350)
+81039: Li Minh-Di Ch Kanturu (Chuyn 5 Lv.350)
+91039: Nguyt nh-Di Ch Kanturu (Chuyn 6 Lv.350)
+4103901: Man Hoang-Di Ch Kanturu (Chuyn 1 Lv.350)
+5103901: Vc Su-Di Ch Kanturu (Chuyn 2 Lv.350)
+6103901: Hn Sng-Di Ch Kanturu (Chuyn 3 Lv.350)
+7103901: Hng Yn-Di Ch Kanturu (Chuyn 4 Lv.350)
+8103901: Li Minh-Di Ch Kanturu (Chuyn 5 Lv.350)
+9103901: Nguyt nh-Di Ch Kanturu (Chuyn 6 Lv.350)
+102701: Miu Thn Kalima
+102702: Miu Thn Kalima
+102703: Miu Thn Kalima
+102704: Miu Thn Kalima
+102801: Miu Thn Kalima
+102802: Miu Thn Kalima
+102803: Miu Thn Kalima
+102804: Miu Thn Kalima
+102805: Miu Thn Kalima
+102806: Miu Thn Kalima
+101058: Thnh Bng (Chuyn 1)
+10105801: Thnh Bng (Chuyn 1)
+10105802: Thnh Bng (Chuyn 1)
+101057: An Ninh Tr (Chuyn 2)
+101094: T Phong Bnh Nguyn (Chuyn 3)
+101093: Vng t Mc Nt (Chuyn 4)
+101095: Vng t Ma Ha (Chuyn 5)
+101092: Rng Vnh Ca (Chuyn 6)
+101096: Rng Sng M (Chuyn 7)
+1074: Philea (Chuyn 8)
+1075: H Nixsis (Chuyn 9)
+1076: H D Ha (Chuyn 10)
+10123: m Ly en (Chuyn 11)
+1012301: m Ly Vc Su-(Chuyn 12)
+10132: Vc Tiu X (Chuyn 13)
+10133: Vc en (Chuyn 14)
+10137: Ph Tch Lit Dim (Chuyn 15)
+106401: Vng t Th Luyn
+106402: Vng t Th Luyn
+106403: Vng t Th Luyn
+106404: Vng t Th Luyn
+106405: Vng t Th Luyn
+106406: Vng t Th Luyn
+106407: Vng t Th Luyn
+106408: Vng t Th Luyn
+106409: Vng t Th Luyn
+106410: Vng t Th Luyn
+106411: Vng t Th Luyn
+106412: Vng t Th Luyn
+106413: Vng t Th Luyn
+106414: Vng t Th Luyn
+106501: Vng t Th Luyn Hi Vin
+106502: Vng t Th Luyn Hi Vin
+106503: Vng t Th Luyn Hi Vin
+106504: Vng t Th Luyn Hi Vin
+106505: Vng t Th Luyn Hi Vin
+106506: Vng t Th Luyn Hi Vin
+106507: Vng t Th Luyn Hi Vin
+106508: Vng t Th Luyn Hi Vin
+106509: Vng t Th Luyn Hi Vin
+106510: Vng t Th Luyn Hi Vin
+106511: Vng t Th Luyn Hi Vin
+106512: Vng t Th Luyn Hi Vin
+106513: Vng t Th Luyn Hi Vin
+106514: Vng t Th Luyn Hi Vin
+106705: Luyn Ngc Kh Nn
+106701: Luyn Ngc Kh Nn
+106702: Luyn Ngc Kh Nn
+106703: Luyn Ngc Kh Nn
+106704: Luyn Ngc Kh Nn
+106706: Luyn Ngc Kh Nn
+106707: Luyn Ngc Kh Nn
+106708: Luyn Ngc Kh Nn
+106709: Luyn Ngc Kh Nn
+106710: Luyn Ngc Kh Nn
+106711: Luyn Ngc Kh Nn
+106712: Luyn Ngc Kh Nn
+106713: Luyn Ngc Kh Nn
+106805: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106801: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106802: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106803: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106804: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106806: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106807: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106808: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106809: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106810: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106811: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106812: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+106813: Luyn Ngc Luyn Ngc Kh Nn Hi Vin
+1071: Ph Tch Current
+1072: Cng Thnh Chin Lin Server
+1077: Khn Th u
+107301: Chuyn 3-BOSS Thnh Hon (Hi Vin
+107302: Chuyn 4-BOSS Thnh Hon (Hi Vin
+107303: Chuyn 5-BOSS Thnh Hon (Hi Vin
+107304: Chuyn 6-BOSS Thnh Hon (Hi Vin
+107305: Chuyn 7-BOSS Thnh Hon (Hi Vin
+107306: Chuyn 8-BOSS Thnh Hon (Hi Vin
+107307: Chuyn 9-BOSS Thnh Hon (Hi Vin
+107308: Chuyn 10-BOSS Thnh Hon (Hi Vin
+107309: Chuyn 11-BOSS Thnh Hon (Hi Vin
+107310: Chuyn 12-BOSS Thnh Hon (Hi Vin
+107311: Chuyn 13-BOSS Thnh Hon (Hi Vin
+107312: Chuyn 14-BOSS Thnh Hon (Hi Vin
+107313: Chuyn 15-BOSS Thnh Hon (Hi Vin
+1095: 3v3
+240001: Bn  n
+250001: Khu Xng Ct
+250002: Khu Xng Ct
+260001: Hang ng Vng
+270001: Hnh Lang Php Trn
+270002: Hnh Lang Php Trn
+10206: ot C Guild
+103910: Khe H Thi Khng Tng 1-6
+103911: Khe H Thi Khng Tng 7
+270003: Vt Nt Ma Uyn
+280001: B Cnh Phi Thng
+10207: ot C Tranh B
+103921: Tranh B Bn Phng
