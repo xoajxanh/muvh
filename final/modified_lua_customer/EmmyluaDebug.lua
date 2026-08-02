@@ -1210,9 +1210,19 @@ local function CreateModUI()
             end)
         end)
 
-        -- Speed Hack UI
-        _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_RunSpeed", 1.0)
-        _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_AtkSpeed", 1.0)
+        -- UI State Variables Initialization
+        if _G.RunSpeedMultiplier == nil then _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_RunSpeedMultiplier", 1.0) end
+        if _G.AtkSpeedMultiplier == nil then _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_AtkSpeedMultiplier", 1.0) end
+        if _G.Mod_CustomAttackRange == nil then _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt("Mod_CustomAttackRange", 0) end
+        if _G.Mod_AntiCC == nil then _G.Mod_AntiCC = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AntiCC", 0) == 1 end
+        if _G.AutoPick_FilterNormal == nil then _G.AutoPick_FilterNormal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_FilterNormal", 0) == 1 end
+        if _G.AutoPick_Limit == nil then _G.AutoPick_Limit = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Limit", 2) end
+        if _G.AutoPick_Limit == 0 then _G.AutoPick_Limit = 2 end
+        if _G.AutoJumpBoss_Enabled == nil then _G.AutoJumpBoss_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoJumpBoss_Enabled", 1) == 1 end
+        _G.AutoPick_FilterRune = true
+        _G.AutoPick_FilterBone = true
+        _G.AutoPick_Count = 0
+        _G.Mod_PickedItems = {}
 
         local function CreateSpeedControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
@@ -1342,35 +1352,35 @@ local function CreateModUI()
             end
 
             mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(1, _G[valueVarName] - step)
+                _G[valueVarName] = math.max(0, _G[valueVarName] - step)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(50, _G[valueVarName] + step)
+                _G[valueVarName] = math.min(100, _G[valueVarName] + step)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             m5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(1, _G[valueVarName] - (step * 5))
+                _G[valueVarName] = math.max(0, _G[valueVarName] - (step * 5))
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(50, _G[valueVarName] + (step * 5))
+                _G[valueVarName] = math.min(100, _G[valueVarName] + (step * 5))
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(355, -100, "Phạm Vi: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(355, -100, "Phạm Vi Bot: ", "Mod_CustomAttackRange", 1)
 
         -- Thêm vạch kẻ dọc phân chia
         local vLineGo = GameObject("VerticalSeparator")
@@ -1384,19 +1394,6 @@ local function CreateModUI()
         local vLineImg = vLineGo:AddComponent(typeof(Image))
         vLineImg.color = Color(0.4, 0.4, 0.4, 1)
 
-
-        -- Auto-Loot State
-        if _G.AutoPick_Enabled == nil then _G.AutoPick_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Enabled", 0) == 1 end
-        if _G.Mod_AutoApproachTowerBoss == nil then _G.Mod_AutoApproachTowerBoss = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoApproachTowerBoss", 1) == 1 end
-        if _G.Mod_CustomAttackRange == nil then _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt("Mod_CustomAttackRange", 0) end
-        _G.AutoPick_FilterRune = true
-        _G.AutoPick_FilterBone = true
-        if _G.AutoPick_FilterNormal == nil then _G.AutoPick_FilterNormal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_FilterNormal", 0) == 1 end
-        if _G.AutoPick_Limit == nil then _G.AutoPick_Limit = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Limit", 2) end
-        if _G.AutoPick_Limit == 0 then _G.AutoPick_Limit = 2 end
-        if _G.AutoJumpBoss_Enabled == nil then _G.AutoJumpBoss_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoJumpBoss_Enabled", 1) == 1 end
-        _G.AutoPick_Count = 0
-        _G.Mod_PickedItems = {}
 
         local function CreateToggle(label, varName, xPos, yPos)
             local tGo = GameObject(varName .. "_Toggle")
@@ -1715,6 +1712,9 @@ local function CreateModUI()
             -- Giữ lại vạch ngăn cách cho chức năng khác
             currentY = currentY - 20
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX + 20, currentY)
+            currentY = currentY - 25
+            
+            CreateToggle("KHÁNG CC / SLOW", "Mod_AntiCC", rightColX + 20, currentY)
             currentY = currentY - 25
             
             _G.ModUpdateKundunUI = function()
@@ -2222,7 +2222,7 @@ local function CreateModUI()
                             _G.Mod_PickedItems = _G.Mod_PickedItems or {}
                             local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
                             
-                            if isAlreadyPicked or (_G.AutoPick_Count < _G.AutoPick_Limit) then
+                            if isAlreadyPicked or (_G.AutoPick_Limit > 1 and _G.AutoPick_Count < _G.AutoPick_Limit) then
                                 local lootCount = _G.Mod_IsAdmin and 10 or 1
                                 if lootCount > 1 then
                                     if _G.Timer and _G.Timer.StartLoop then
@@ -2286,7 +2286,7 @@ local function CreateModUI()
                     if _G.AutoPick_Enabled and _G.Mod_AllDropItems then
                         local currentTime = Time.time or os.time()
                         for id, dropItemData in pairs(_G.Mod_AllDropItems) do
-                            if not _G.Mod_IgnoredDropItems[id] then
+                            if not _G.Mod_IgnoredDropItems[id] and not (_G.Mod_PickedItems and _G.Mod_PickedItems[id]) then
                                 local eType = dropItemData.type
                                 local isRune = (eType == 19 or eType == 28)
                                 local isBone = (eType == 24 or eType == 26)
@@ -2307,40 +2307,51 @@ local function CreateModUI()
                                 end
                                 
                                 if shouldPick then
-                                    -- Add a dynamic cooldown per item based on Admin flag
-                                    local cooldown = _G.Mod_IsAdmin and 0.1 or 0.5
-                                    if not dropItemData.modLastReqTime or (currentTime - dropItemData.modLastReqTime > cooldown) then
-                                        _G.Mod_PickedItems = _G.Mod_PickedItems or {}
-                                        local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
-                                        
-                                        if isAlreadyPicked or (_G.AutoPick_Count < _G.AutoPick_Limit) then
-                                            if not _G.Mod_BatchLootIds then _G.Mod_BatchLootIds = {} end
-                                            if not _G.Mod_BatchLootNames then _G.Mod_BatchLootNames = {} end
-                                            table.insert(_G.Mod_BatchLootIds, dropItemData.id)
-                                            
-                                            dropItemData.modLastReqTime = currentTime
-                                            _G.LastPickupTime = currentTime
-                                            
-                                            if not isAlreadyPicked then
-                                                _G.Mod_PickedItems[dropItemData.id] = true
-                                                _G.AutoPick_Count = _G.AutoPick_Count + 1
-                                            end
-                                            
-                                            local itemId = dropItemData.item and dropItemData.item.itemId or "???"
-                                            table.insert(_G.Mod_BatchLootNames, "Item [" .. tostring(itemId) .. "]")
-                                            
-                                            -- Run to item if we haven't already
-                                            if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                                                pcall(function()
-                                                    _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
-                                                end)
-                                            end
-                                        end
-                                    end
+                                    local score = 0
+                                    local itemId = dropItemData.item and dropItemData.item.itemId or 0
+                                    if dropItemData.quality then score = score + dropItemData.quality * 10000 end
+                                    if dropItemData.item and dropItemData.item.maxLevel then score = score + dropItemData.item.maxLevel * 1000 end
+                                    score = score + (itemId % 100) -- Phẩm/Level phân biệt ở số cuối của ID
+                                    dropItemData.modScore = score
+                                    if not _G.Mod_ValidDropItems then _G.Mod_ValidDropItems = {} end
+                                    table.insert(_G.Mod_ValidDropItems, dropItemData)
                                 else
                                     _G.Mod_IgnoredDropItems[id] = true
                                 end
                             end
+                        end
+                        
+                        if _G.Mod_ValidDropItems and #_G.Mod_ValidDropItems > 0 then
+                            table.sort(_G.Mod_ValidDropItems, function(a, b) return (a.modScore or 0) > (b.modScore or 0) end)
+                            local cooldown = _G.Mod_IsAdmin and 0.1 or 0.5
+                            local maxToPick = _G.AutoPick_Limit - (_G.AutoPick_Count or 0)
+                            if maxToPick > 0 then
+                                if not _G.Mod_BatchLootIds then _G.Mod_BatchLootIds = {} end
+                                if not _G.Mod_BatchLootNames then _G.Mod_BatchLootNames = {} end
+                                
+                                local pickedThisTick = 0
+                                for i, dropItemData in ipairs(_G.Mod_ValidDropItems) do
+                                    if pickedThisTick >= maxToPick then break end
+                                    if not dropItemData.modLastReqTime or (currentTime - dropItemData.modLastReqTime > cooldown) then
+                                        table.insert(_G.Mod_BatchLootIds, dropItemData.id)
+                                        dropItemData.modLastReqTime = currentTime
+                                        _G.LastPickupTime = currentTime
+                                        _G.Mod_PickedItems = _G.Mod_PickedItems or {}
+                                        _G.Mod_PickedItems[dropItemData.id] = true
+                                        _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                        local itemId = dropItemData.item and dropItemData.item.itemId or "???"
+                                        table.insert(_G.Mod_BatchLootNames, "Item [" .. tostring(itemId) .. "] Score: " .. tostring(dropItemData.modScore))
+                                        
+                                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                                            pcall(function()
+                                                _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
+                                            end)
+                                        end
+                                        pickedThisTick = pickedThisTick + 1
+                                    end
+                                end
+                            end
+                            _G.Mod_ValidDropItems = {}
                         end
                         
                         if _G.Mod_BatchLootIds and #_G.Mod_BatchLootIds > 0 then
@@ -2391,6 +2402,37 @@ end
         if _G.RoleManager and not _G.Mod_HookedRoleManager_Monster then
             _G.Mod_HookedRoleManager_Monster = true
             -- Removed faulty CreateMonster hook. Boss logic moved to Timer.
+        end
+        
+        if _G.BuffAttributeCalculator and not _G.Mod_HookedBuffAttributeCalculator then
+            _G.Mod_HookedBuffAttributeCalculator = true
+            local original_CalcBuffAttribute = _G.BuffAttributeCalculator.CalcBuffAttribute
+            _G.BuffAttributeCalculator.CalcBuffAttribute = function(rid)
+                local result = original_CalcBuffAttribute(rid)
+                if _G.Mod_AntiCC then
+                    if result.moveSpeed_mul and result.moveSpeed_mul < 0 then
+                        result.moveSpeed_mul = 0
+                    end
+                    if result.attackSpeedIncrease_fAdd and result.attackSpeedIncrease_fAdd < 0 then
+                        result.attackSpeedIncrease_fAdd = 0
+                    end
+                end
+                return result
+            end
+        end
+        
+        if _G.RoleBuffData and not _G.Mod_HookedRoleBuffData then
+            _G.Mod_HookedRoleBuffData = true
+            local original_AddState = _G.RoleBuffData.AddState
+            _G.RoleBuffData.AddState = function(self, state)
+                if _G.Mod_AntiCC then
+                    -- 1 = IMPRISON, 2 = SLOW_DOWN, 64 = SILENT
+                    if state == 1 or state == 2 or state == 64 then
+                        return
+                    end
+                end
+                return original_AddState(self, state)
+            end
         end
 
 local status, err = pcall(function()
