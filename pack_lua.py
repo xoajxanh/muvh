@@ -1,7 +1,7 @@
 import os
 import UnityPy
 
-src_bundle = "D:/MUVH/android/test_apk/lua.mu2"
+src_bundle = "D:/MUVH/android/mu-decompiled/test_apk/lua.mu2"
 extracted_dir = r"final/extracted_lua"
 dest_bundle = r"final/new_lua/lua.mu2"
 

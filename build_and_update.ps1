@@ -17,13 +17,14 @@ foreach ($ver in $versions) {
     
     $packedFile = "final\new_lua\lua.mu2"
     $newBundlesFile = "final\new_bundles\bundles.txt"
-    $apkPath = "D:\MUVH\android\test_apk\v1\MU_$ver.apk"
+    $apkPath = "D:\MUVH\android\mu-decompiled\test_apk\v1\MU_$ver.apk"
     $winrar = "C:\Program Files\WinRAR\WinRAR.exe"
     
     # Check if target APK exists, otherwise copy from base
     if (-not (Test-Path $apkPath)) {
+        Write-Host "Creating backup for specific version..."
         Write-Host "Base APK MU_$ver.apk not found in test_apk\v1. Creating a copy from MU.apk..."
-        Copy-Item "D:\MUVH\android\test_apk\v1\MU.apk" $apkPath
+        Copy-Item "D:\MUVH\android\mu-decompiled\test_apk\v1\MU.apk" $apkPath
     }
 
     Write-Host "4. Calculating MD5 and Size..."
@@ -34,7 +35,7 @@ foreach ($ver in $versions) {
     New-Item -ItemType Directory -Force -Path "final\new_bundles" | Out-Null
     python -c "
 import sys
-with open('D:/MUVH/android/test_apk/bundles.txt', 'r', encoding='utf-8') as f:
+with open('D:/MUVH/android/mu-decompiled/test_apk/bundles.txt', 'r', encoding='utf-8') as f:
     lines = f.readlines()
 with open('final/new_bundles/bundles.txt', 'w', encoding='utf-8') as f:
     for line in lines:

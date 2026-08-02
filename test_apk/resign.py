@@ -4,8 +4,8 @@ import subprocess
 import shutil
 import datetime
 
-apk_dir = r"D:\MUVH\android\test_apk\v1"
-signer_jar = r"D:\MUVH\android\test_apk\uber-apk-signer.jar"
+apk_dir = r"D:\MUVH\android\mu-decompiled\test_apk\v1"
+signer_jar = r"D:\MUVH\android\mu-decompiled\test_apk\uber-apk-signer.jar"
 
 def remove_meta_inf(apk_path):
     temp_apk = apk_path + ".tmp"
@@ -61,7 +61,7 @@ else:
         "-a", cloned_apk_path,
         "--allowResign",
         "--overwrite",
-        "--ks", r"D:\MUVH\android\test_apk\bndltool.keystore",
+        "--ks", r"D:\MUVH\android\mu-decompiled\test_apk\bndltool.keystore",
         "--ksAlias", "BNDLTOOL",
         "--ksKeyPass", "123456",
         "--ksPass", "123456"

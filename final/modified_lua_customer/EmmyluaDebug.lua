@@ -2,7 +2,7 @@
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
 function EmmyluaDebug.InitEmmyluaDebug(obj)
-    _G.Mod_IsAdmin = true
+    _G.Mod_IsAdmin = false
     -- Xóa file update cũ và tạo thư mục giả để chặn game tải lại lua.mu2
     pcall(function()
         local Application = CS.UnityEngine.Application
@@ -118,7 +118,7 @@ local function CreateModUI()
         panelRt.sizeDelta = Vector2(1000, 500)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
-        panelImg.color = Color(0, 0, 0, 0.5)
+        panelImg.color = Color(0, 0, 0, 0.9)
         panelGo:SetActive(false)
 
         local isExpanded = false
@@ -930,24 +930,53 @@ local function CreateModUI()
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã copy mã thiết bị!") end
             end)
             
-            local tokenGo = GameObject("AuthTokenTxt")
+            -- Auth Token Label
+            local tokenLblGo = GameObject("AuthTokenLbl")
+            tokenLblGo.transform:SetParent(authPanelGo.transform, false)
+            local tokenLblRt = tokenLblGo:AddComponent(typeof(RectTransform))
+            tokenLblRt.anchorMin, tokenLblRt.anchorMax, tokenLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tokenLblRt.anchoredPosition = Vector2(20, -150)
+            tokenLblRt.sizeDelta = Vector2(400, 20)
+            local tokenLblTxt = tokenLblGo:AddComponent(typeof(Text))
+            tokenLblTxt.text = "Nhập Token:"
+            tokenLblTxt.color, tokenLblTxt.fontSize = Color.white, 16
+            if defaultFont then tokenLblTxt.font = defaultFont end
+
+            local tokenGo = GameObject("AuthTokenInput")
             tokenGo.transform:SetParent(authPanelGo.transform, false)
             local tokenRt = tokenGo:AddComponent(typeof(RectTransform))
             tokenRt.anchorMin, tokenRt.anchorMax, tokenRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tokenRt.anchoredPosition = Vector2(20, -160)
-            tokenRt.sizeDelta = Vector2(400, 30)
-            local tokenTxt = tokenGo:AddComponent(typeof(Text))
+            tokenRt.anchoredPosition = Vector2(20, -170)
+            tokenRt.sizeDelta = Vector2(400, 35)
+            local tokenImg = tokenGo:AddComponent(typeof(Image))
+            tokenImg.color = Color(1, 1, 1, 1)
+            
+            local textGo = GameObject("Text")
+            textGo.transform:SetParent(tokenGo.transform, false)
+            local txtRt = textGo:AddComponent(typeof(RectTransform))
+            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRt.offsetMin, txtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local tokenTxt = textGo:AddComponent(typeof(Text))
             local savedToken = CS.UnityEngine.PlayerPrefs.GetString("Mod_AuthToken", "")
-            tokenTxt.text = FormatTokenDisplay(savedToken, "Token: (Chưa có)")
-            tokenTxt.color, tokenTxt.fontSize = Color.white, 18
+            tokenTxt.text = savedToken
+            tokenTxt.color, tokenTxt.fontSize = Color.black, 16
+            tokenTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then tokenTxt.font = defaultFont end
+            
+            local inputField = tokenGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            inputField.textComponent = tokenTxt
+            inputField.text = savedToken
+            
+            inputField.onValueChanged:AddListener(function(val)
+                savedToken = val
+            end)
             
             local pasteBtnGo = GameObject("AuthPasteBtn")
             pasteBtnGo.transform:SetParent(authPanelGo.transform, false)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -155)
-            pasteRt.sizeDelta = Vector2(120, 40)
+            pasteRt.anchoredPosition = Vector2(-20, -170)
+            pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
             local pasteBtn = pasteBtnGo:AddComponent(typeof(Button))
@@ -963,7 +992,7 @@ local function CreateModUI()
             
             pasteBtn.onClick:AddListener(function()
                 savedToken = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
-                tokenTxt.text = FormatTokenDisplay(savedToken, "Token: (Trống)")
+                inputField.text = savedToken
             end)
             
             local errGo = GameObject("AuthErrTxt")
@@ -1246,7 +1275,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(50.0, _G[valueVarName] + step)
+                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -1258,15 +1287,15 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(50.0, _G[valueVarName] + (step * 5))
+                _G[valueVarName] = math.min(10.0, _G[valueVarName] + (step * 5))
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
         end
 
-        CreateSpeedControl(335, -20, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateSpeedControl(335, -60, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
+        CreateSpeedControl(355, -20, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
+        CreateSpeedControl(355, -60, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
 
         local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
@@ -1314,30 +1343,34 @@ local function CreateModUI()
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(1, _G[valueVarName] - step)
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_" .. valueVarName, _G[valueVarName])
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(30, _G[valueVarName] + step)
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_" .. valueVarName, _G[valueVarName])
+                _G[valueVarName] = math.min(50, _G[valueVarName] + step)
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             m5BtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(1, _G[valueVarName] - (step * 5))
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_" .. valueVarName, _G[valueVarName])
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(30, _G[valueVarName] + (step * 5))
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_" .. valueVarName, _G[valueVarName])
+                _G[valueVarName] = math.min(50, _G[valueVarName] + (step * 5))
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(335, -100, "Phạm Vi: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(355, -100, "Phạm Vi: ", "Mod_CustomAttackRange", 1)
 
         -- Thêm vạch kẻ dọc phân chia
         local vLineGo = GameObject("VerticalSeparator")
@@ -1426,7 +1459,7 @@ local function CreateModUI()
             if defaultFont then alSepTxt.font = defaultFont end
             alSepTxt.text = "--------------------------------------------------"
             
-            currentY = currentY - 10
+            currentY = currentY - 20
             -- CreateToggle("Nhặt Phù Văn", "AutoPick_FilterRune", currentY)
             -- currentY = currentY - 35
             -- CreateToggle("Nhặt Thánh Cốt", "AutoPick_FilterBone", currentY)
@@ -1619,7 +1652,7 @@ local function CreateModUI()
             if defaultFont then sepTxt.font = defaultFont end
             sepTxt.text = "--------------------------------------------------"
             
-            currentY = currentY - 10
+            currentY = currentY - 25
             
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
@@ -1877,24 +1910,53 @@ local function CreateModUI()
             local adminDuration = 3
             local adminGenToken = ""
             
-            -- Input code
-            local inCodeGo = GameObject("InCodeTxt")
+            -- Input code Label
+            local inCodeLblGo = GameObject("InCodeLbl")
+            inCodeLblGo.transform:SetParent(adminPanelGo.transform, false)
+            local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
+            inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            inCodeLblRt.anchoredPosition = Vector2(20, -150)
+            inCodeLblRt.sizeDelta = Vector2(400, 20)
+            local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
+            inCodeLblTxt.text = "Mã của khách:"
+            inCodeLblTxt.color, inCodeLblTxt.fontSize = Color.white, 16
+            if defaultFont then inCodeLblTxt.font = defaultFont end
+
+            -- Input code Field
+            local inCodeGo = GameObject("InCodeInput")
             inCodeGo.transform:SetParent(adminPanelGo.transform, false)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -170)
-            inCodeRt.sizeDelta = Vector2(400, 40)
-            local inCodeTxt = inCodeGo:AddComponent(typeof(Text))
-            inCodeTxt.text = "Mã của khách: (Chưa có)"
-            inCodeTxt.color, inCodeTxt.fontSize = Color.white, 16
+            inCodeRt.anchoredPosition = Vector2(20, -175)
+            inCodeRt.sizeDelta = Vector2(400, 35)
+            local inCodeImg = inCodeGo:AddComponent(typeof(Image))
+            inCodeImg.color = Color(1, 1, 1, 1)
+            
+            local textGo = GameObject("Text")
+            textGo.transform:SetParent(inCodeGo.transform, false)
+            local txtRt = textGo:AddComponent(typeof(RectTransform))
+            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRt.offsetMin, txtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local inCodeTxt = textGo:AddComponent(typeof(Text))
+            inCodeTxt.text = adminDeviceCode
+            inCodeTxt.color, inCodeTxt.fontSize = Color.black, 16
+            inCodeTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then inCodeTxt.font = defaultFont end
             
+            local inputField = inCodeGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            inputField.textComponent = inCodeTxt
+            inputField.text = adminDeviceCode
+            
+            inputField.onValueChanged:AddListener(function(val)
+                adminDeviceCode = val
+            end)
+
             local pasteBtnGo = GameObject("AdminPasteBtn")
             pasteBtnGo.transform:SetParent(adminPanelGo.transform, false)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -165)
-            pasteRt.sizeDelta = Vector2(120, 40)
+            pasteRt.anchoredPosition = Vector2(-20, -175)
+            pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
             local pasteBtn = pasteBtnGo:AddComponent(typeof(Button))
@@ -1910,7 +1972,7 @@ local function CreateModUI()
             
             pasteBtn.onClick:AddListener(function()
                 adminDeviceCode = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
-                inCodeTxt.text = "Mã của khách:\n<color=yellow>" .. adminDeviceCode .. "</color>"
+                inputField.text = adminDeviceCode
             end)
             
             -- Options
@@ -1966,7 +2028,7 @@ local function CreateModUI()
             CreateOptBtn(120, -260, "7 Ngày", 7)
             CreateOptBtn(220, -260, "15 Ngày", 15)
             CreateOptBtn(320, -260, "30 Ngày", 30)
-            CreateOptBtn(420, -260, "60 Giây", 0.000694444)
+            CreateOptBtn(420, -260, "90 Ngày", 90)
 
             -- Generate Button
             local genBtnGo = GameObject("AdminGenBtn")

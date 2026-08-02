@@ -4,7 +4,7 @@ import shutil
 import UnityPy
 from concurrent.futures import ThreadPoolExecutor
 
-src_file = r"d:\MUVH\android\test_apk\lua.mu2"
+src_file = r"d:\MUVH\android\mu-decompiled\test_apk\lua.mu2"
 temp_dir = r"d:\MUVH\android\mu-decompiled\temp_v164"
 dest_dir = r"d:\MUVH\android\mu-decompiled\v164_lua"
 unluac_jar = r"d:\MUVH\android\mu-decompiled\unluac.jar"

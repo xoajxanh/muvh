@@ -1,8 +1,9 @@
 @echo off
 set "WINRAR=C:\Program Files\WinRAR\WinRAR.exe"
-set "APK_PATH=D:\MUVH\android\test_apk\v1\MU.apk"
+set "APK_PATH=D:\MUVH\android\mu-decompiled\test_apk\v1\MU.apk"
 set "LUA_FILE=D:\MUVH\android\mu-decompiled\final\new_lua\lua.mu2"
-set "BUNDLES_FILE=D:\MUVH\android\test_apk\bundles.txt"
+set "WORKING_DIR=%~dp0"
+set "BUNDLES_FILE=D:\MUVH\android\mu-decompiled\test_apk\bundles.txt"
 
 echo Dang cap nhat APK bang WinRAR (Che do Store)...
 

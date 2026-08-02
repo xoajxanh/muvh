@@ -24,4 +24,4 @@ def extract_assets(src, dest):
             count += 1
     print(f"Extracted {count} TextAssets to {dest}")
 
-extract_assets(r"d:\MUVH\android\test_apk\lua.mu2", r"final/temp_lua")
+extract_assets(r"d:\MUVH\android\mu-decompiled\test_apk\lua.mu2", r"final/temp_lua")
