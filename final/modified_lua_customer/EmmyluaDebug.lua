@@ -115,13 +115,36 @@ local function CreateModUI()
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
         panelRt.anchoredPosition = Vector2(90, 70)
-        panelRt.sizeDelta = Vector2(1000, 500)
+        panelRt.sizeDelta = Vector2(720, 580)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0, 0, 0, 0.9)
         panelGo:SetActive(false)
 
+        
         local isExpanded = false
+        _G.ModMainTab = _G.ModMainTab or "CO_BAN"
+        _G.CoBanUIList = {}
+        _G.NangCaoUIList = {}
+        _G.AdminUIList = {}
+
+        local function RefreshMainTabs()
+            for _, go in ipairs(_G.CoBanUIList) do
+                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN") end
+            end
+            for _, go in ipairs(_G.NangCaoUIList) do
+                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "NANG_CAO") end
+            end
+            if _G.Mod_IsAdmin then
+                for _, go in ipairs(_G.AdminUIList) do
+                    if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "ADMIN") end
+                end
+            end
+            if _G.ModMainTab == "CO_BAN" then
+                if _G.ModUpdateCountText then _G.ModUpdateCountText() end
+            end
+        end
+
         local btnComp = btnGo:AddComponent(typeof(Button))
         
         local testBtnGo = GameObject("FOVMinusBtn")
@@ -130,11 +153,12 @@ local function CreateModUI()
         testRt.anchorMin = Vector2(0, 1)
         testRt.anchorMax = Vector2(0, 1)
         testRt.pivot = Vector2(0, 1)
-        testRt.anchoredPosition = Vector2(10, -20)
+        testRt.anchoredPosition = Vector2(40, -60)
         testRt.sizeDelta = Vector2(40, 30)
 
         local testImg = testBtnGo:AddComponent(typeof(Image))
         testImg.color = Color(0.4, 0.4, 0.4, 1)
+        table.insert(_G.CoBanUIList, testBtnGo)
 
         local testTxtGo = GameObject("FOVMinusText")
         testTxtGo.transform:SetParent(testBtnGo.transform, false)
@@ -156,7 +180,7 @@ local function CreateModUI()
         fovValRt.anchorMin = Vector2(0, 1)
         fovValRt.anchorMax = Vector2(0, 1)
         fovValRt.pivot = Vector2(0, 1)
-        fovValRt.anchoredPosition = Vector2(50, -20)
+        fovValRt.anchoredPosition = Vector2(80, -60)
         fovValRt.sizeDelta = Vector2(160, 30)
         local fovValTxt = fovValGo:AddComponent(typeof(Text))
         fovValTxt.raycastTarget = false
@@ -165,6 +189,7 @@ local function CreateModUI()
         fovValTxt.fontSize = 18
         fovValTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then fovValTxt.font = defaultFont end
+        table.insert(_G.CoBanUIList, fovValGo)
 
         local plusBtnGo = GameObject("FOVPlusBtn")
         plusBtnGo.transform:SetParent(panelGo.transform, false)
@@ -172,11 +197,12 @@ local function CreateModUI()
         plusRt.anchorMin = Vector2(0, 1)
         plusRt.anchorMax = Vector2(0, 1)
         plusRt.pivot = Vector2(0, 1)
-        plusRt.anchoredPosition = Vector2(210, -20)
+        plusRt.anchoredPosition = Vector2(240, -60)
         plusRt.sizeDelta = Vector2(40, 30)
 
         local plusImg = plusBtnGo:AddComponent(typeof(Image))
         plusImg.color = Color(0.4, 0.4, 0.4, 1)
+        table.insert(_G.CoBanUIList, plusBtnGo)
 
         local plusTxtGo = GameObject("FOVPlusText")
         plusTxtGo.transform:SetParent(plusBtnGo.transform, false)
@@ -284,17 +310,18 @@ local function CreateModUI()
                 rt.anchorMin = Vector2(0, 1)
                 rt.anchorMax = Vector2(0, 1)
                 rt.pivot = Vector2(0, 1)
-                rt.sizeDelta = Vector2(670, 20)
+                rt.sizeDelta = Vector2(700, 20)
                 local txt = sepGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color(0.4, 0.4, 0.4, 1)
                 txt.fontSize = 16
-                txt.alignment = TextAnchor.MiddleCenter
+                txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
                 txt.text = "----------------------------------------------------------------------------------------------------------------"
                 sepUIPool[index] = { go = sepGo, txt = txt, rt = rt }
+                table.insert(_G.CoBanUIList, sepGo)
             end
-            sepUIPool[index].rt.anchoredPosition = Vector2(0, posY)
+            sepUIPool[index].rt.anchoredPosition = Vector2(40, posY)
             return sepUIPool[index]
         end
 
@@ -307,7 +334,7 @@ local function CreateModUI()
                 rt.anchorMin = Vector2(0, 1)
                 rt.anchorMax = Vector2(0, 1)
                 rt.pivot = Vector2(0, 1)
-                rt.sizeDelta = Vector2(780, 30)
+                rt.sizeDelta = Vector2(720, 30)
                 local txt = titleGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color(1, 0.8, 0, 1)
@@ -315,8 +342,9 @@ local function CreateModUI()
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
                 titleUIPool[index] = { go = titleGo, txt = txt, rt = rt }
+                table.insert(_G.CoBanUIList, titleGo)
             end
-            titleUIPool[index].rt.anchoredPosition = Vector2(10, posY)
+            titleUIPool[index].rt.anchoredPosition = Vector2(40, posY)
             return titleUIPool[index]
         end
         
@@ -336,6 +364,7 @@ local function CreateModUI()
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
                 rowUIPool[rowIndex] = { go = rowGo, txt = txt, rt = rt }
+                table.insert(_G.CoBanUIList, rowGo)
             end
             rowUIPool[rowIndex].rt.anchoredPosition = Vector2(posX, posY)
             return rowUIPool[rowIndex]
@@ -369,6 +398,7 @@ local function CreateModUI()
                 
                 local btn = btnGo:AddComponent(typeof(Button))
                 btnUIPool[btnIndex] = { go = btnGo, txt = txt, btn = btn, rt = rt }
+                table.insert(_G.CoBanUIList, btnGo)
             end
             btnUIPool[btnIndex].rt.anchoredPosition = Vector2(posX, posY)
             btnUIPool[btnIndex].rt.sizeDelta = Vector2(width, 30)
@@ -379,14 +409,14 @@ local function CreateModUI()
             pcall(function()
                 if not isExpanded then return end
                 local currentSec = _G.Time.GetServerSecondTime()
-                local currentPosY = -100
+                local currentPosY = -140
                 local titleIdx = 1
                 local rowIdx = 1
                 local btnIdx = 1
                 local sepIdx = 1
                 
-                local tabBtnC7 = GetLineButton(btnIdx, 10, currentPosY, 100)
-                tabBtnC7.go:SetActive(true)
+                local tabBtnC7 = GetLineButton(btnIdx, 40, currentPosY, 100)
+                tabBtnC7.go:SetActive(_G.ModMainTab == "CO_BAN")
                 tabBtnC7.txt.text = "<color=" .. (_G.ModBossTab == "C7" and "#00FF00" or "#FFFFFF") .. ">[ TAB: C7 ]</color>"
                 tabBtnC7.btn.onClick:RemoveAllListeners()
                 tabBtnC7.btn.onClick:AddListener(function()
@@ -395,8 +425,8 @@ local function CreateModUI()
                 end)
                 btnIdx = btnIdx + 1
 
-                local tabBtnC8 = GetLineButton(btnIdx, 120, currentPosY, 100)
-                tabBtnC8.go:SetActive(true)
+                local tabBtnC8 = GetLineButton(btnIdx, 150, currentPosY, 100)
+                tabBtnC8.go:SetActive(_G.ModMainTab == "CO_BAN")
                 tabBtnC8.txt.text = "<color=" .. (_G.ModBossTab == "C8" and "#00FF00" or "#FFFFFF") .. ">[ TAB: C8 ]</color>"
                 tabBtnC8.btn.onClick:RemoveAllListeners()
                 tabBtnC8.btn.onClick:AddListener(function()
@@ -410,12 +440,12 @@ local function CreateModUI()
                 local mapsConfig = _G.ModBossTab == "C8" and mapsConfig_c8 or mapsConfig_c7
                 for i, mapCfg in ipairs(mapsConfig) do
                     local sep = GetDashedLine(sepIdx, currentPosY)
-                    sep.go:SetActive(true)
+                    sep.go:SetActive(_G.ModMainTab == "CO_BAN")
                     sepIdx = sepIdx + 1
                     currentPosY = currentPosY - 25
 
                     local title = GetTitleLabel(titleIdx, currentPosY)
-                    title.go:SetActive(true)
+                    title.go:SetActive(_G.ModMainTab == "CO_BAN")
                     title.txt.text = mapCfg.title
                     
                     titleIdx = titleIdx + 1
@@ -434,11 +464,11 @@ local function CreateModUI()
                         for c = 1, 3 do
                             local cfg = colBosses[c][r]
                             if cfg then
-                                local startX = 10 + (c - 1) * 220
+                                local startX = 40 + (c - 1) * 220
                                 local yPos = currentPosY - (r - 1) * 35
                                 
                                 local uiBtn = GetLineButton(btnIdx, startX, yPos, 215)
-                                uiBtn.go:SetActive(true)
+                                uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
                                 
                                 local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
                                 local statusStr = "--:--"
@@ -557,7 +587,7 @@ local function CreateModUI()
                 
                 local requiredHeight = math.abs(currentPosY) + 20
                 if requiredHeight < 500 then requiredHeight = 500 end
-                panelRt.sizeDelta = Vector2(1000, requiredHeight)
+                panelRt.sizeDelta = Vector2(720, 580)
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end)
         end
@@ -768,6 +798,24 @@ local function CreateModUI()
                     if isExpanded then
                         UpdateBossWatchUIText()
                         if _G.ModUpdateCountText then _G.ModUpdateCountText() end
+                        if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+                        
+                        -- Auto PK Logic
+                        if _G.Mod_AutoPK_Enabled and _G.QiJiHelperData and _G.RoleManager and _G.RoleManager.me then
+                            if not _G.QiJiHelperData.isAutoFight then
+                                _G.RoleManager.me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+                                if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate then
+                                    _G.AutoTaskManage.SetCurRoleOperate(6) -- AutoTaskOperateType.AutoFight
+                                end
+                            end
+                        end
+                        
+                        -- Auto PK Guild Logic
+                        if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
+                            if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
+                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                            end
+                        end
                         
                         if _G.IsAutoRefresh then
                             local currentSec = _G.Time.GetServerSecondTime()
@@ -947,7 +995,7 @@ local function CreateModUI()
             local tokenRt = tokenGo:AddComponent(typeof(RectTransform))
             tokenRt.anchorMin, tokenRt.anchorMax, tokenRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             tokenRt.anchoredPosition = Vector2(20, -170)
-            tokenRt.sizeDelta = Vector2(400, 35)
+            tokenRt.sizeDelta = Vector2(550, 35)
             local tokenImg = tokenGo:AddComponent(typeof(Image))
             tokenImg.color = Color(1, 1, 1, 1)
             
@@ -1094,7 +1142,8 @@ local function CreateModUI()
                     isExpanded = not isExpanded
                     panelGo:SetActive(isExpanded)
                     if isExpanded then 
-                        UpdateFOVLabel() 
+                        UpdateFOVLabel()
+                        RefreshMainTabs()
                         if _G.NetManager and _G.MapMessage then
                             _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
                             _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, {type = 16})
@@ -1118,10 +1167,11 @@ local function CreateModUI()
         rmRt.anchorMin = Vector2(0, 1)
         rmRt.anchorMax = Vector2(0, 1)
         rmRt.pivot = Vector2(0, 1)
-        rmRt.anchoredPosition = Vector2(10, -60)
+        rmRt.anchoredPosition = Vector2(40, -100)
         rmRt.sizeDelta = Vector2(40, 30)
         local rmImg = refreshMinusBtnGo:AddComponent(typeof(Image))
         rmImg.color = Color(0.2, 0.2, 0.2, 1)
+        table.insert(_G.CoBanUIList, refreshMinusBtnGo)
         local rmTxt = GameObject("Text"):AddComponent(typeof(Text))
         rmTxt.raycastTarget = false
         rmTxt.transform:SetParent(refreshMinusBtnGo.transform, false)
@@ -1137,10 +1187,11 @@ local function CreateModUI()
         rpRt.anchorMin = Vector2(0, 1)
         rpRt.anchorMax = Vector2(0, 1)
         rpRt.pivot = Vector2(0, 1)
-        rpRt.anchoredPosition = Vector2(210, -60)
+        rpRt.anchoredPosition = Vector2(240, -100)
         rpRt.sizeDelta = Vector2(40, 30)
         local rpImg = refreshPlusBtnGo:AddComponent(typeof(Image))
         rpImg.color = Color(0.2, 0.2, 0.2, 1)
+        table.insert(_G.CoBanUIList, refreshPlusBtnGo)
         local rpTxt = GameObject("Text"):AddComponent(typeof(Text))
         rpTxt.raycastTarget = false
         rpTxt.transform:SetParent(refreshPlusBtnGo.transform, false)
@@ -1156,10 +1207,11 @@ local function CreateModUI()
         tgRt.anchorMin = Vector2(0, 1)
         tgRt.anchorMax = Vector2(0, 1)
         tgRt.pivot = Vector2(0, 1)
-        tgRt.anchoredPosition = Vector2(50, -60)
+        tgRt.anchoredPosition = Vector2(80, -100)
         tgRt.sizeDelta = Vector2(160, 30)
         local rtImg = refreshToggleGo:AddComponent(typeof(Image))
         rtImg.color = Color(0.2, 0.2, 0.2, 0)
+        table.insert(_G.CoBanUIList, refreshToggleGo)
         local rtTxt = GameObject("Text"):AddComponent(typeof(Text))
         rtTxt.raycastTarget = false
         rtTxt.transform:SetParent(refreshToggleGo.transform, false)
@@ -1179,6 +1231,7 @@ local function CreateModUI()
             end)
         end
         UpdateRefreshLabel()
+        RefreshMainTabs()
 
         local rmBtnComp = refreshMinusBtnGo:AddComponent(typeof(Button))
         rmBtnComp.onClick:AddListener(function()
@@ -1235,6 +1288,7 @@ local function CreateModUI()
             vRt.anchoredPosition = Vector2(centerX - 80, yPos)
             vRt.sizeDelta = Vector2(160, 30)
             local vTxt = valGo:AddComponent(typeof(Text))
+            table.insert(_G.CoBanUIList, valGo)
             vTxt.raycastTarget = false
             vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
             vTxt.alignment = TextAnchor.MiddleCenter
@@ -1266,6 +1320,7 @@ local function CreateModUI()
                 txt.fontSize = 18
                 txt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
+                table.insert(_G.CoBanUIList, btnGo)
                 return btnGo:AddComponent(typeof(Button))
             end
 
@@ -1304,8 +1359,8 @@ local function CreateModUI()
             end)
         end
 
-        CreateSpeedControl(355, -20, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateSpeedControl(355, -60, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
+        CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
+        CreateSpeedControl(415, -100, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
 
         local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
@@ -1316,6 +1371,7 @@ local function CreateModUI()
             vRt.anchoredPosition = Vector2(centerX - 80, yPos)
             vRt.sizeDelta = Vector2(160, 30)
             local vTxt = valGo:AddComponent(typeof(Text))
+            table.insert(_G.CoBanUIList, valGo)
             vTxt.raycastTarget = false
             vTxt.text = string.format("%s%d", prefix, _G[valueVarName] or 0)
             vTxt.alignment = TextAnchor.MiddleCenter
@@ -1339,6 +1395,7 @@ local function CreateModUI()
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18, TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
+                table.insert(_G.CoBanUIList, btnGo)
                 return btnGo:AddComponent(typeof(Button))
             end
 
@@ -1380,19 +1437,9 @@ local function CreateModUI()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(355, -100, "Phạm Vi Bot: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(415, -140, "Phạm Vi Bot: ", "Mod_CustomAttackRange", 1)
 
-        -- Thêm vạch kẻ dọc phân chia
-        local vLineGo = GameObject("VerticalSeparator")
-        vLineGo.transform:SetParent(panelGo.transform, false)
-        local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
-        vLineRt.anchorMin = Vector2(0, 0)
-        vLineRt.anchorMax = Vector2(0, 1)
-        vLineRt.pivot = Vector2(0, 1)
-        vLineRt.offsetMin = Vector2(670, 10)
-        vLineRt.offsetMax = Vector2(672, -10)
-        local vLineImg = vLineGo:AddComponent(typeof(Image))
-        vLineImg.color = Color(0.4, 0.4, 0.4, 1)
+
 
 
         local function CreateToggle(label, varName, xPos, yPos)
@@ -1406,6 +1453,7 @@ local function CreateModUI()
             tRt.sizeDelta = Vector2(300, 30)
 
             local btn = tGo:AddComponent(typeof(Button))
+            table.insert(_G.NangCaoUIList, tGo)
             local txt = tGo:AddComponent(typeof(Text))
             txt.raycastTarget = true
             txt.fontSize = 18
@@ -1434,14 +1482,38 @@ local function CreateModUI()
         end
 
         local function CreateAutoLootUI()
-            local currentY = -20
-            local rightColX = 680
+            local currentY = -60
+            local rightColX = 20
 
-            CreateToggle("NHẶT ĐỒ SIÊU TỐC", "AutoPick_Enabled", rightColX + 20, currentY)
-            currentY = currentY - 20
+            local titleGo = GameObject("AutoLootTitle")
+            titleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, titleGo)
+            local titleRt = titleGo:AddComponent(typeof(RectTransform))
+            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleRt.anchoredPosition = Vector2(rightColX + 35, currentY)
+            titleRt.sizeDelta = Vector2(300, 20)
+            local titleTxt = titleGo:AddComponent(typeof(Text))
+            titleTxt.raycastTarget = false
+            titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
+            titleTxt.color = Color(1, 0.8, 0, 1)
+            titleTxt.fontSize = 18
+            titleTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then titleTxt.font = defaultFont end
+            
+            currentY = currentY - 30
+
+            CreateToggle("- TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY)
+            currentY = currentY - 30
+            
+            CreateToggle("- NHẶT TỨC THÌ (ADMIN)", "AutoPick_InstantLoot", rightColX, currentY)
+            currentY = currentY - 30
+            
+            CreateToggle("- NHẶT NGẪU NHIÊN (ADMIN)", "AutoPick_RandomLoot", rightColX, currentY)
+            currentY = currentY - 30
             
             local alSepGo = GameObject("AutoLootSeparator")
             alSepGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, alSepGo)
             local alSepRt = alSepGo:AddComponent(typeof(RectTransform))
             alSepRt.anchorMin = Vector2(0, 1)
             alSepRt.anchorMax = Vector2(0, 1)
@@ -1465,11 +1537,12 @@ local function CreateModUI()
             -- Limit Control
             local lValGo = GameObject("LimitValText")
             lValGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, lValGo)
             local lvRt = lValGo:AddComponent(typeof(RectTransform))
             lvRt.anchorMin = Vector2(0, 1)
             lvRt.anchorMax = Vector2(0, 1)
             lvRt.pivot = Vector2(0, 1)
-            lvRt.anchoredPosition = Vector2(rightColX + 20, currentY)
+            lvRt.anchoredPosition = Vector2(rightColX, currentY)
             lvRt.sizeDelta = Vector2(160, 30)
             local lvTxt = lValGo:AddComponent(typeof(Text))
             lvTxt.raycastTarget = false
@@ -1481,11 +1554,12 @@ local function CreateModUI()
 
             local lMinusGo = GameObject("LimitMinusBtn")
             lMinusGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, lMinusGo)
             local lmRt = lMinusGo:AddComponent(typeof(RectTransform))
             lmRt.anchorMin = Vector2(0, 1)
             lmRt.anchorMax = Vector2(0, 1)
             lmRt.pivot = Vector2(0, 1)
-            lmRt.anchoredPosition = Vector2(rightColX + 190, currentY)
+            lmRt.anchoredPosition = Vector2(rightColX + 170, currentY)
             lmRt.sizeDelta = Vector2(40, 30)
             local lmImg = lMinusGo:AddComponent(typeof(Image))
             lmImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -1505,11 +1579,12 @@ local function CreateModUI()
 
             local lPlusGo = GameObject("LimitPlusBtn")
             lPlusGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, lPlusGo)
             local lpRt = lPlusGo:AddComponent(typeof(RectTransform))
             lpRt.anchorMin = Vector2(0, 1)
             lpRt.anchorMax = Vector2(0, 1)
             lpRt.pivot = Vector2(0, 1)
-            lpRt.anchoredPosition = Vector2(rightColX + 240, currentY)
+            lpRt.anchoredPosition = Vector2(rightColX + 220, currentY)
             lpRt.sizeDelta = Vector2(40, 30)
             local lpImg = lPlusGo:AddComponent(typeof(Image))
             lpImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -1548,6 +1623,7 @@ local function CreateModUI()
             currentY = currentY - 45
             local rstBtnGo = GameObject("ResetPickBtn")
             rstBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, rstBtnGo)
             local rstRt = rstBtnGo:AddComponent(typeof(RectTransform))
             rstRt.anchorMin = Vector2(0, 1)
             rstRt.anchorMax = Vector2(0, 1)
@@ -1586,6 +1662,7 @@ local function CreateModUI()
             currentY = currentY - 30
             local hintGo = GameObject("ResetHint")
             hintGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, hintGo)
             local hintRt = hintGo:AddComponent(typeof(RectTransform))
             hintRt.anchorMin = Vector2(0, 1)
             hintRt.anchorMax = Vector2(0, 1)
@@ -1603,11 +1680,12 @@ local function CreateModUI()
             currentY = currentY - 25
             local currCountGo = GameObject("CurrentCountText")
             currCountGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, currCountGo)
             local ccRt = currCountGo:AddComponent(typeof(RectTransform))
             ccRt.anchorMin = Vector2(0, 1)
             ccRt.anchorMax = Vector2(0, 1)
             ccRt.pivot = Vector2(0, 1)
-            ccRt.anchoredPosition = Vector2(rightColX + 20, currentY)
+            ccRt.anchoredPosition = Vector2(rightColX, currentY)
             ccRt.sizeDelta = Vector2(260, 20)
             local ccTxt = currCountGo:AddComponent(typeof(Text))
             ccTxt.raycastTarget = false
@@ -1625,47 +1703,112 @@ local function CreateModUI()
                 end)
             end
 
+            -- Move options from Kundun UI
+            currentY = currentY - 20
+            local sep2Go = GameObject("BossThapSeparator")
+            sep2Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, sep2Go)
+            local sep2Rt = sep2Go:AddComponent(typeof(RectTransform))
+            sep2Rt.anchorMin = Vector2(0, 1)
+            sep2Rt.anchorMax = Vector2(0, 1)
+            sep2Rt.pivot = Vector2(0, 1)
+            sep2Rt.anchoredPosition = Vector2(rightColX, currentY)
+            sep2Rt.sizeDelta = Vector2(250, 20)
+            local sep2Txt = sep2Go:AddComponent(typeof(Text))
+            sep2Txt.raycastTarget = false
+            sep2Txt.color = Color(0.4, 0.4, 0.4, 1)
+            sep2Txt.fontSize = 16
+            sep2Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sep2Txt.font = defaultFont end
+            sep2Txt.text = "------------------------------------------"
+            
+            currentY = currentY - 20
+            CreateToggle("- TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX, currentY)
+            currentY = currentY - 30
+            
+            CreateToggle("- VÔ HẠN PB (HL, QTQ)", "Mod_InfiniteInstance", rightColX, currentY)
+            currentY = currentY - 30
+            
+            CreateToggle("- AUTO PK (TỰ ĐÁNH)", "Mod_AutoPK_Enabled", rightColX, currentY)
+            currentY = currentY - 30
+            
+            CreateToggle("- TỰ CHUYỂN PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX, currentY)
+            currentY = currentY - 30
         end 
 
         CreateAutoLootUI()
 
         local function CreateKundunUI()
-            local currentY = -200
-            local rightColX = 680
+            local currentY = -60
+            local rightColX2 = 380
             
-            local sepGo = GameObject("KundunSeparator")
-            sepGo.transform:SetParent(panelGo.transform, false)
-            local sepRt = sepGo:AddComponent(typeof(RectTransform))
-            sepRt.anchorMin = Vector2(0, 1)
-            sepRt.anchorMax = Vector2(0, 1)
-            sepRt.pivot = Vector2(0, 1)
-            sepRt.anchoredPosition = Vector2(rightColX, currentY)
-            sepRt.sizeDelta = Vector2(300, 20)
-            local sepTxt = sepGo:AddComponent(typeof(Text))
-            sepTxt.raycastTarget = false
-            sepTxt.color = Color(0.4, 0.4, 0.4, 1)
-            sepTxt.fontSize = 16
-            sepTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sepTxt.font = defaultFont end
-            sepTxt.text = "--------------------------------------------------"
-            
-            currentY = currentY - 25
+            -- Vạch dọc phân cách
+            local vLineGo = GameObject("VerticalSeparator")
+            vLineGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, vLineGo)
+            local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
+            vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            vLineRt.anchoredPosition = Vector2(360, -40)
+            vLineRt.sizeDelta = Vector2(2, 400)
+            local vLineImg = vLineGo:AddComponent(typeof(Image))
+            vLineImg.color = Color(0.4, 0.4, 0.4, 1)
             
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, titleGo)
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin = Vector2(0, 1)
             titleRt.anchorMax = Vector2(0, 1)
             titleRt.pivot = Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(rightColX, currentY)
-            titleRt.sizeDelta = Vector2(300, 20)
+            titleRt.anchoredPosition = Vector2(rightColX2 + 10, currentY)
+            titleRt.sizeDelta = Vector2(250, 20)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ THÔNG TIN KUNDUN BOSS ]"
             titleTxt.color = Color(1, 0.8, 0, 1)
             titleTxt.fontSize = 18
-            titleTxt.alignment = TextAnchor.MiddleCenter
+            titleTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then titleTxt.font = defaultFont end
+            
+            currentY = currentY - 30
+
+            -- Tab C7 / C8
+            local function CreateTabBtn(label, tabName, xPos, yPos)
+                local btnGo = GameObject("NangCaoTab_" .. tabName)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, btnGo)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(xPos, yPos)
+                rt.sizeDelta = Vector2(90, 30)
+                
+                local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
+                img.color = CS.UnityEngine.Color(1, 1, 1, 0)
+                
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.color = Color.white
+                txt.fontSize = 17
+                txt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then txt.font = defaultFont end
+                
+                local btn = btnGo:AddComponent(typeof(Button))
+                btn.onClick:AddListener(function()
+                    _G.ModBossTab = tabName
+                    if _G.UpdateBossWatchUIText then _G.UpdateBossWatchUIText() end
+                    if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+                end)
+                return { go = btnGo, txt = txt, btn = btn }
+            end
+            
+            local tabC7 = CreateTabBtn("[ TAB: C7 ]", "C7", rightColX2, currentY)
+            local tabC8 = CreateTabBtn("[ TAB: C8 ]", "C8", rightColX2 + 100, currentY)
+            _G.NangCaoTabBtns = { C7 = tabC7, C8 = tabC8 }
             
             currentY = currentY - 30
             
@@ -1673,11 +1816,12 @@ local function CreateModUI()
             for i = 1, 2 do
                 local rowGo = GameObject("KundunRow_" .. i)
                 rowGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, rowGo)
                 local rt = rowGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin = Vector2(0, 1)
                 rt.anchorMax = Vector2(0, 1)
                 rt.pivot = Vector2(0, 1)
-                rt.anchoredPosition = Vector2(rightColX + 20, currentY)
+                rt.anchoredPosition = Vector2(rightColX2, currentY)
                 rt.sizeDelta = Vector2(260, 25)
                 local txt = rowGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
@@ -1691,34 +1835,13 @@ local function CreateModUI()
                 currentY = currentY - 25
             end
 
-            -- Thêm ngăn cách và nút Boss Tháp
-            currentY = currentY - 10
-            local sep2Go = GameObject("BossThapSeparator")
-            sep2Go.transform:SetParent(panelGo.transform, false)
-            local sep2Rt = sep2Go:AddComponent(typeof(RectTransform))
-            sep2Rt.anchorMin = Vector2(0, 1)
-            sep2Rt.anchorMax = Vector2(0, 1)
-            sep2Rt.pivot = Vector2(0, 1)
-            sep2Rt.anchoredPosition = Vector2(rightColX, currentY)
-            sep2Rt.sizeDelta = Vector2(300, 20)
-            local sep2Txt = sep2Go:AddComponent(typeof(Text))
-            sep2Txt.raycastTarget = false
-            sep2Txt.color = Color(0.4, 0.4, 0.4, 1)
-            sep2Txt.fontSize = 16
-            sep2Txt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sep2Txt.font = defaultFont end
-            sep2Txt.text = "--------------------------------------------------"
-            
-            -- Giữ lại vạch ngăn cách cho chức năng khác
-            currentY = currentY - 20
-            CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX + 20, currentY)
-            currentY = currentY - 25
-            
-            CreateToggle("KHÁNG CC / SLOW", "Mod_AntiCC", rightColX + 20, currentY)
-            currentY = currentY - 25
-            
             _G.ModUpdateKundunUI = function()
                 pcall(function()
+                    if _G.NangCaoTabBtns then
+                        _G.NangCaoTabBtns.C7.txt.text = "<color=" .. (_G.ModBossTab == "C7" and "#00FF00" or "#FFFFFF") .. ">[ TAB: C7 ]</color>"
+                        _G.NangCaoTabBtns.C8.txt.text = "<color=" .. (_G.ModBossTab == "C8" and "#00FF00" or "#FFFFFF") .. ">[ TAB: C8 ]</color>"
+                    end
+                    
                     if not _G.KundunUILabelPool then return end
                     
                     local kundunConfigs = {}
@@ -1836,23 +1959,15 @@ local function CreateModUI()
                 end)..({ '', '==', '=' })[#data%3+1])
             end
 
-            local adminPanelGo = GameObject("AdminPanel")
-            adminPanelGo.transform:SetParent(modRoot.transform, false)
-            local adminRt = adminPanelGo:AddComponent(typeof(RectTransform))
-            adminRt.anchorMin, adminRt.anchorMax, adminRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-            adminRt.anchoredPosition = Vector2(90, 70)
-            adminRt.sizeDelta = Vector2(600, 480)
-            local adminImg = adminPanelGo:AddComponent(typeof(Image))
-            adminImg.color = Color(0.05, 0.05, 0.2, 0.95)
-            adminPanelGo:SetActive(false)
-            _G.adminPanelGo = adminPanelGo
+            
             
             -- Title
             local titleGo = GameObject("AdminTitle")
-            titleGo.transform:SetParent(adminPanelGo.transform, false)
+            titleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, titleGo)
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            titleRt.anchoredPosition = Vector2(0, -10)
+            titleRt.anchoredPosition = Vector2(0, -60)
             titleRt.sizeDelta = Vector2(500, 30)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.text = "=== ADMIN CONTROL PANEL ==="
@@ -1861,10 +1976,11 @@ local function CreateModUI()
 
             -- Execute Script Section
             local execBtnGo = GameObject("AdminExecBtn")
-            execBtnGo.transform:SetParent(adminPanelGo.transform, false)
+            execBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, execBtnGo)
             local execRt = execBtnGo:AddComponent(typeof(RectTransform))
             execRt.anchorMin, execRt.anchorMax, execRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            execRt.anchoredPosition = Vector2(0, -50)
+            execRt.anchoredPosition = Vector2(0, -100)
             execRt.sizeDelta = Vector2(250, 40)
             local execImg = execBtnGo:AddComponent(typeof(Image))
             execImg.color = Color(0.8, 0.2, 0.2, 1)
@@ -1885,10 +2001,11 @@ local function CreateModUI()
 
             -- Separator
             local sepGo = GameObject("AdminSep")
-            sepGo.transform:SetParent(adminPanelGo.transform, false)
+            sepGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, sepGo)
             local sepRt = sepGo:AddComponent(typeof(RectTransform))
             sepRt.anchorMin, sepRt.anchorMax, sepRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            sepRt.anchoredPosition = Vector2(0, -100)
+            sepRt.anchoredPosition = Vector2(0, -150)
             sepRt.sizeDelta = Vector2(500, 20)
             local sepTxt = sepGo:AddComponent(typeof(Text))
             sepTxt.text = "--------------------------------------------------------"
@@ -1896,10 +2013,11 @@ local function CreateModUI()
             
             -- Token Generator Title
             local tokTitleGo = GameObject("TokTitle")
-            tokTitleGo.transform:SetParent(adminPanelGo.transform, false)
+            tokTitleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, tokTitleGo)
             local tokRt = tokTitleGo:AddComponent(typeof(RectTransform))
             tokRt.anchorMin, tokRt.anchorMax, tokRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            tokRt.anchoredPosition = Vector2(0, -120)
+            tokRt.anchoredPosition = Vector2(0, -170)
             tokRt.sizeDelta = Vector2(500, 30)
             local tokTxt = tokTitleGo:AddComponent(typeof(Text))
             tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN"
@@ -1912,10 +2030,11 @@ local function CreateModUI()
             
             -- Input code Label
             local inCodeLblGo = GameObject("InCodeLbl")
-            inCodeLblGo.transform:SetParent(adminPanelGo.transform, false)
+            inCodeLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, inCodeLblGo)
             local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
             inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -150)
+            inCodeLblRt.anchoredPosition = Vector2(20, -200)
             inCodeLblRt.sizeDelta = Vector2(400, 20)
             local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
             inCodeLblTxt.text = "Mã của khách:"
@@ -1924,11 +2043,12 @@ local function CreateModUI()
 
             -- Input code Field
             local inCodeGo = GameObject("InCodeInput")
-            inCodeGo.transform:SetParent(adminPanelGo.transform, false)
+            inCodeGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, inCodeGo)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -175)
-            inCodeRt.sizeDelta = Vector2(400, 35)
+            inCodeRt.anchoredPosition = Vector2(20, -225)
+            inCodeRt.sizeDelta = Vector2(550, 35)
             local inCodeImg = inCodeGo:AddComponent(typeof(Image))
             inCodeImg.color = Color(1, 1, 1, 1)
             
@@ -1952,10 +2072,11 @@ local function CreateModUI()
             end)
 
             local pasteBtnGo = GameObject("AdminPasteBtn")
-            pasteBtnGo.transform:SetParent(adminPanelGo.transform, false)
+            pasteBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, pasteBtnGo)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -175)
+            pasteRt.anchoredPosition = Vector2(-20, -225)
             pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
@@ -1977,10 +2098,11 @@ local function CreateModUI()
             
             -- Options
             local optsTitleGo = GameObject("OptsTitle")
-            optsTitleGo.transform:SetParent(adminPanelGo.transform, false)
+            optsTitleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, optsTitleGo)
             local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
             optsRt.anchorMin, optsRt.anchorMax, optsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optsRt.anchoredPosition = Vector2(20, -230)
+            optsRt.anchoredPosition = Vector2(20, -280)
             optsRt.sizeDelta = Vector2(150, 30)
             local optsTxt = optsTitleGo:AddComponent(typeof(Text))
             optsTxt.text = "Chọn thời hạn:"
@@ -1988,10 +2110,11 @@ local function CreateModUI()
             if defaultFont then optsTxt.font = defaultFont end
             
             local optDurationText = GameObject("OptDurTxt")
-            optDurationText.transform:SetParent(adminPanelGo.transform, false)
+            optDurationText.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, optDurationText)
             local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
             optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optDTkRt.anchoredPosition = Vector2(170, -230)
+            optDTkRt.anchoredPosition = Vector2(170, -280)
             optDTkRt.sizeDelta = Vector2(400, 30)
             local optDTkTxt = optDurationText:AddComponent(typeof(Text))
             optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
@@ -2000,7 +2123,8 @@ local function CreateModUI()
 
             local function CreateOptBtn(x, y, label, durVal)
                 local btnGo = GameObject("OptBtn_" .. durVal)
-                btnGo.transform:SetParent(adminPanelGo.transform, false)
+                btnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, btnGo)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
@@ -2024,18 +2148,19 @@ local function CreateModUI()
                 end)
             end
             
-            CreateOptBtn(20, -260, "3 Ngày", 3)
-            CreateOptBtn(120, -260, "7 Ngày", 7)
-            CreateOptBtn(220, -260, "15 Ngày", 15)
-            CreateOptBtn(320, -260, "30 Ngày", 30)
-            CreateOptBtn(420, -260, "90 Ngày", 90)
+            CreateOptBtn(20, -310, "3 Ngày", 3)
+            CreateOptBtn(120, -310, "7 Ngày", 7)
+            CreateOptBtn(220, -310, "15 Ngày", 15)
+            CreateOptBtn(320, -310, "30 Ngày", 30)
+            CreateOptBtn(420, -310, "90 Ngày", 90)
 
             -- Generate Button
             local genBtnGo = GameObject("AdminGenBtn")
-            genBtnGo.transform:SetParent(adminPanelGo.transform, false)
+            genBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, genBtnGo)
             local genRt = genBtnGo:AddComponent(typeof(RectTransform))
             genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            genRt.anchoredPosition = Vector2(0, -320)
+            genRt.anchoredPosition = Vector2(0, -370)
             genRt.sizeDelta = Vector2(250, 45)
             local genImg = genBtnGo:AddComponent(typeof(Image))
             genImg.color = Color(0, 0.8, 0, 1)
@@ -2052,21 +2177,39 @@ local function CreateModUI()
             
             -- Token Result
             local resGo = GameObject("ResTxt")
-            resGo.transform:SetParent(adminPanelGo.transform, false)
+            resGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, resGo)
             local resRt = resGo:AddComponent(typeof(RectTransform))
             resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            resRt.anchoredPosition = Vector2(20, -390)
-            resRt.sizeDelta = Vector2(400, 60)
-            local resTxt = resGo:AddComponent(typeof(Text))
-            resTxt.text = "Token Result: ..."
-            resTxt.color, resTxt.fontSize = Color.cyan, 14
-            if defaultFont then resTxt.font = defaultFont end
+            resRt.anchoredPosition = Vector2(20, -440)
+            resRt.sizeDelta = Vector2(550, 60)
+            local resTextGo = GameObject("Text")
+            resTextGo.transform:SetParent(resGo.transform, false)
+            local resTextRt = resTextGo:AddComponent(typeof(RectTransform))
+            resTextRt.anchorMin, resTextRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            resTextRt.sizeDelta = Vector2(0, 0)
+            local resTextComp = resTextGo:AddComponent(typeof(Text))
+            resTextComp.raycastTarget = false
+            resTextComp.color = Color.cyan
+            resTextComp.fontSize = 14
+            resTextComp.alignment = TextAnchor.UpperLeft
+            if defaultFont then resTextComp.font = defaultFont end
+            
+            local resTxt
+            pcall(function()
+                local resImg = resGo:AddComponent(typeof(Image))
+                resImg.color = Color(0, 0, 0, 0.5)
+                resTxt = resGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                resTxt.textComponent = resTextComp
+                resTxt.text = ""
+            end)
 
             local copyTokBtnGo = GameObject("CopyTokBtn")
-            copyTokBtnGo.transform:SetParent(adminPanelGo.transform, false)
+            copyTokBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, copyTokBtnGo)
             local ctRt = copyTokBtnGo:AddComponent(typeof(RectTransform))
             ctRt.anchorMin, ctRt.anchorMax, ctRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            ctRt.anchoredPosition = Vector2(-20, -390)
+            ctRt.anchoredPosition = Vector2(-20, -440)
             ctRt.sizeDelta = Vector2(120, 40)
             local ctImg = copyTokBtnGo:AddComponent(typeof(Image))
             ctImg.color = Color(0.2, 0.6, 1, 1)
@@ -2112,7 +2255,7 @@ local function CreateModUI()
                 end)
                 if status2 and b64Token then
                     adminGenToken = b64Token
-                    resTxt.text = "Token Result:\n" .. b64Token
+                    resTxt.text = b64Token
                     CS.UnityEngine.GUIUtility.systemCopyBuffer = b64Token
                     if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã tạo và tự động Copy Token!") end
                 else
@@ -2120,43 +2263,126 @@ local function CreateModUI()
                 end
             end)
             
-            local btnGo = GameObject("FloatingAdminBtn")
-            btnGo.transform:SetParent(modRoot.transform, false)
-            local rect = btnGo:AddComponent(typeof(RectTransform))
-            rect.anchorMin = Vector2(0, 0)
-            rect.anchorMax = Vector2(0, 0)
-            rect.pivot = Vector2(0, 0)
-            rect.anchoredPosition = Vector2(20, 150)
-            rect.sizeDelta = Vector2(60, 60)
             
-            local img = btnGo:AddComponent(typeof(Image))
-            img.color = Color(1, 0.5, 0, 0.9)
             
-            local btnComp = btnGo:AddComponent(typeof(Button))
             
-            local txtGo = GameObject("AdminBtnText")
-            txtGo.transform:SetParent(btnGo.transform, false)
-            local txtRt = txtGo:AddComponent(typeof(RectTransform))
-            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            txtRt.offsetMin, txtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local txt = txtGo:AddComponent(typeof(Text))
-            txt.raycastTarget = false
-            txt.text = "ADMIN"
-            txt.color = Color.white
-            txt.fontSize = 15
-            txt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then txt.font = defaultFont end
-            
-            btnComp.onClick:AddListener(function()
-                pcall(function()
-                    local isActive = adminPanelGo.activeSelf
-                    adminPanelGo:SetActive(not isActive)
-                    if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
-                    if _G.authPanelGo and _G.authPanelGo.activeSelf then _G.authPanelGo:SetActive(false) end
-                end)
-            end)
-        end 
+        end
+        -- Main Tab Buttons
+        local isAd = _G.Mod_IsAdmin
+        local width = isAd and 220 or 330
+        
+        local tabCoBanGo = GameObject("TabCoBanBtn")
+        tabCoBanGo.transform:SetParent(panelGo.transform, false)
+        
+        
+        local tabCoBanRt = tabCoBanGo:AddComponent(typeof(RectTransform))
+        tabCoBanRt.anchorMin, tabCoBanRt.anchorMax, tabCoBanRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+        tabCoBanRt.anchoredPosition = Vector2(10, -10)
+        tabCoBanRt.sizeDelta = Vector2(width, 40)
+        local tabCoBanImg = tabCoBanGo:AddComponent(typeof(Image))
+        
+        local tabCoBanTxtGo = GameObject("Text")
+        tabCoBanTxtGo.transform:SetParent(tabCoBanGo.transform, false)
+        local tabCoBanTxtRt = tabCoBanTxtGo:AddComponent(typeof(RectTransform))
+        tabCoBanTxtRt.anchorMin, tabCoBanTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        tabCoBanTxtRt.sizeDelta = Vector2(0, 0)
+        local tabCoBanTxt = tabCoBanTxtGo:AddComponent(typeof(Text))
+        tabCoBanTxt.raycastTarget, tabCoBanTxt.fontSize, tabCoBanTxt.alignment = false, 20, TextAnchor.MiddleCenter
+        if defaultFont then tabCoBanTxt.font = defaultFont end
+        local tabCoBanBtn = tabCoBanGo:AddComponent(typeof(Button))
 
+        local tabNangCaoGo = GameObject("TabNangCaoBtn")
+        tabNangCaoGo.transform:SetParent(panelGo.transform, false)
+        
+        
+        local tabNangCaoRt = tabNangCaoGo:AddComponent(typeof(RectTransform))
+        tabNangCaoRt.anchorMin, tabNangCaoRt.anchorMax, tabNangCaoRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+        tabNangCaoRt.anchoredPosition = Vector2(isAd and 240 or 350, -10)
+        tabNangCaoRt.sizeDelta = Vector2(width, 40)
+        local tabNangCaoImg = tabNangCaoGo:AddComponent(typeof(Image))
+        
+        local tabNangCaoTxtGo = GameObject("Text")
+        tabNangCaoTxtGo.transform:SetParent(tabNangCaoGo.transform, false)
+        local tabNangCaoTxtRt = tabNangCaoTxtGo:AddComponent(typeof(RectTransform))
+        tabNangCaoTxtRt.anchorMin, tabNangCaoTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        tabNangCaoTxtRt.sizeDelta = Vector2(0, 0)
+        local tabNangCaoTxt = tabNangCaoTxtGo:AddComponent(typeof(Text))
+        tabNangCaoTxt.raycastTarget, tabNangCaoTxt.fontSize, tabNangCaoTxt.alignment = false, 20, TextAnchor.MiddleCenter
+        if defaultFont then tabNangCaoTxt.font = defaultFont end
+        local tabNangCaoBtn = tabNangCaoGo:AddComponent(typeof(Button))
+        
+        local tabAdminGo, tabAdminImg, tabAdminTxt, tabAdminBtn
+        if isAd then
+            tabAdminGo = GameObject("TabAdminBtn")
+            tabAdminGo.transform:SetParent(panelGo.transform, false)
+            
+            
+            local tabAdminRt = tabAdminGo:AddComponent(typeof(RectTransform))
+            tabAdminRt.anchorMin, tabAdminRt.anchorMax, tabAdminRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tabAdminRt.anchoredPosition = Vector2(470, -10)
+            tabAdminRt.sizeDelta = Vector2(width, 40)
+            tabAdminImg = tabAdminGo:AddComponent(typeof(Image))
+            
+            local tabAdminTxtGo = GameObject("Text")
+            tabAdminTxtGo.transform:SetParent(tabAdminGo.transform, false)
+            local tabAdminTxtRt = tabAdminTxtGo:AddComponent(typeof(RectTransform))
+            tabAdminTxtRt.anchorMin, tabAdminTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            tabAdminTxtRt.sizeDelta = Vector2(0, 0)
+            tabAdminTxt = tabAdminTxtGo:AddComponent(typeof(Text))
+            tabAdminTxt.raycastTarget, tabAdminTxt.fontSize, tabAdminTxt.alignment = false, 20, TextAnchor.MiddleCenter
+            if defaultFont then tabAdminTxt.font = defaultFont end
+            tabAdminBtn = tabAdminGo:AddComponent(typeof(Button))
+        end
+
+        local function UpdateTabColors()
+            tabCoBanImg.color = Color(0.2, 0.2, 0.2, 1)
+            tabNangCaoImg.color = Color(0.2, 0.2, 0.2, 1)
+            if isAd then tabAdminImg.color = Color(0.2, 0.2, 0.2, 1) end
+            
+            tabCoBanTxt.color = Color(0.6, 0.6, 0.6, 1)
+            tabNangCaoTxt.color = Color(0.6, 0.6, 0.6, 1)
+            if isAd then tabAdminTxt.color = Color(0.6, 0.6, 0.6, 1) end
+
+            if _G.ModMainTab == "CO_BAN" then
+                tabCoBanImg.color = Color(0.2, 0.6, 0.2, 1)
+                tabCoBanTxt.color = Color.white
+                tabCoBanTxt.text = "[ CƠ BẢN ]"
+                tabNangCaoTxt.text = "NÂNG CAO"
+                if isAd then tabAdminTxt.text = "ADMIN" end
+            elseif _G.ModMainTab == "NANG_CAO" then
+                tabNangCaoImg.color = Color(0.2, 0.6, 0.2, 1)
+                tabNangCaoTxt.color = Color.white
+                tabCoBanTxt.text = "CƠ BẢN"
+                tabNangCaoTxt.text = "[ NÂNG CAO ]"
+                if isAd then tabAdminTxt.text = "ADMIN" end
+            elseif _G.ModMainTab == "ADMIN" and isAd then
+                tabAdminImg.color = Color(0.2, 0.6, 0.2, 1)
+                tabAdminTxt.color = Color.white
+                tabCoBanTxt.text = "CƠ BẢN"
+                tabNangCaoTxt.text = "NÂNG CAO"
+                tabAdminTxt.text = "[ ADMIN ]"
+            end
+        end
+        UpdateTabColors()
+
+        tabCoBanBtn.onClick:AddListener(function()
+            _G.ModMainTab = "CO_BAN"
+            UpdateTabColors()
+            RefreshMainTabs()
+        end)
+        tabNangCaoBtn.onClick:AddListener(function()
+            _G.ModMainTab = "NANG_CAO"
+            UpdateTabColors()
+            RefreshMainTabs()
+        end)
+        if isAd then
+            tabAdminBtn.onClick:AddListener(function()
+                _G.ModMainTab = "ADMIN"
+                UpdateTabColors()
+                RefreshMainTabs()
+            end)
+        end
+        
         if _G.Mod_IsAdmin then
             CreateAdminUI()
         end
@@ -2190,26 +2416,26 @@ local function CreateModUI()
                 original_AddDropSceneCellPos(item)
                 
                 if item and item.data then
+                    item.data.modDropTime = Time.time or os.time()
                     _G.Mod_AllDropItems[item.data.id] = item.data
                 end
 
-                if _G.AutoPick_Enabled then
+                if _G.AutoPick_Enabled and _G.Mod_IsAdmin and _G.AutoPick_InstantLoot then
                     local dropItemData = item.data
                     if not _G.Mod_IgnoredDropItems[dropItemData.id] then
                         local currentTime = Time.time or os.time()
+                        
                         local eType = dropItemData.type
                         local isRune = (eType == 19 or eType == 28)
                         local isBone = (eType == 24 or eType == 26)
                         local isNormal = (not isRune and not isBone)
-                        if isNormal and not _G.AutoPick_FilterNormal then
-                            isNormal = false
-                        end
-
+                        if isNormal and not _G.AutoPick_FilterNormal then isNormal = false end
+                        
                         local shouldPick = false
                         if isRune and _G.AutoPick_FilterRune then shouldPick = true end
                         if isBone and _G.AutoPick_FilterBone then shouldPick = true end
                         if isNormal then shouldPick = true end
-
+                        
                         if shouldPick then
                             if _G.PickupManager and _G.PickupManager.IsCanPickUpDropItem then
                                 if not _G.PickupManager.IsCanPickUpDropItem(dropItemData) then
@@ -2223,15 +2449,11 @@ local function CreateModUI()
                             local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
                             
                             if isAlreadyPicked or (_G.AutoPick_Limit > 1 and _G.AutoPick_Count < _G.AutoPick_Limit) then
-                                local lootCount = _G.Mod_IsAdmin and 10 or 1
-                                if lootCount > 1 then
-                                    if _G.Timer and _G.Timer.StartLoop then
-                                        _G.Timer.StartLoop(0.1, lootCount, function()
-                                            if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
-                                        end)
-                                    else
-                                        _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                                    end
+                                local lootCount = 10
+                                if _G.Timer and _G.Timer.StartLoop then
+                                    _G.Timer.StartLoop(0.02, lootCount, function()
+                                        if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
+                                    end)
                                 else
                                     _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                 end
@@ -2285,8 +2507,38 @@ local function CreateModUI()
                 pcall(function()
                     if _G.AutoPick_Enabled and _G.Mod_AllDropItems then
                         local currentTime = Time.time or os.time()
+                        local hasDinoNearby = false
+                        if not _G.Mod_IsAdmin and _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            local players = _G.RoleManager.GetRolesByType(1)
+                            if players then
+                                for _, p in pairs(players) do
+                                    if p.name and p.name == "Dino" then
+                                        hasDinoNearby = true
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                        
+                        local hasItems = false
                         for id, dropItemData in pairs(_G.Mod_AllDropItems) do
-                            if not _G.Mod_IgnoredDropItems[id] and not (_G.Mod_PickedItems and _G.Mod_PickedItems[id]) then
+                            if not _G.Mod_IgnoredDropItems[id] then
+                                hasItems = true
+                                break
+                            end
+                        end
+                        
+                        if not hasItems then
+                            _G.Mod_DinoDelayStart = nil
+                        elseif hasDinoNearby then
+                            _G.Mod_DinoDelayStart = _G.Mod_DinoDelayStart or currentTime
+                            if currentTime - _G.Mod_DinoDelayStart < 1.0 then
+                                return
+                            end
+                        end
+                        
+                        for id, dropItemData in pairs(_G.Mod_AllDropItems) do
+                            if not _G.Mod_IgnoredDropItems[id] then
                                 local eType = dropItemData.type
                                 local isRune = (eType == 19 or eType == 28)
                                 local isBone = (eType == 24 or eType == 26)
@@ -2322,23 +2574,44 @@ local function CreateModUI()
                         end
                         
                         if _G.Mod_ValidDropItems and #_G.Mod_ValidDropItems > 0 then
-                            table.sort(_G.Mod_ValidDropItems, function(a, b) return (a.modScore or 0) > (b.modScore or 0) end)
+                            local useRandom = true
+                            if _G.Mod_IsAdmin and _G.AutoPick_RandomLoot == false then
+                                useRandom = false
+                            end
+
+                            if not useRandom then
+                                table.sort(_G.Mod_ValidDropItems, function(a, b) return (a.modScore or 0) > (b.modScore or 0) end)
+                            else
+                                local n = #_G.Mod_ValidDropItems
+                                while n > 1 do
+                                    local k = math.random(n)
+                                    _G.Mod_ValidDropItems[n], _G.Mod_ValidDropItems[k] = _G.Mod_ValidDropItems[k], _G.Mod_ValidDropItems[n]
+                                    n = n - 1
+                                end
+                            end
+                            
                             local cooldown = _G.Mod_IsAdmin and 0.1 or 0.5
                             local maxToPick = _G.AutoPick_Limit - (_G.AutoPick_Count or 0)
-                            if maxToPick > 0 then
-                                if not _G.Mod_BatchLootIds then _G.Mod_BatchLootIds = {} end
-                                if not _G.Mod_BatchLootNames then _G.Mod_BatchLootNames = {} end
+                            if not _G.Mod_BatchLootIds then _G.Mod_BatchLootIds = {} end
+                            if not _G.Mod_BatchLootNames then _G.Mod_BatchLootNames = {} end
+                            
+                            local pickedThisTick = 0
+                            for i, dropItemData in ipairs(_G.Mod_ValidDropItems) do
+                                _G.Mod_PickedItems = _G.Mod_PickedItems or {}
+                                local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
                                 
-                                local pickedThisTick = 0
-                                for i, dropItemData in ipairs(_G.Mod_ValidDropItems) do
-                                    if pickedThisTick >= maxToPick then break end
+                                if isAlreadyPicked or pickedThisTick < maxToPick then
                                     if not dropItemData.modLastReqTime or (currentTime - dropItemData.modLastReqTime > cooldown) then
                                         table.insert(_G.Mod_BatchLootIds, dropItemData.id)
                                         dropItemData.modLastReqTime = currentTime
                                         _G.LastPickupTime = currentTime
-                                        _G.Mod_PickedItems = _G.Mod_PickedItems or {}
-                                        _G.Mod_PickedItems[dropItemData.id] = true
-                                        _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                        
+                                        if not isAlreadyPicked then
+                                            _G.Mod_PickedItems[dropItemData.id] = true
+                                            _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                            pickedThisTick = pickedThisTick + 1
+                                        end
+                                        
                                         local itemId = dropItemData.item and dropItemData.item.itemId or "???"
                                         table.insert(_G.Mod_BatchLootNames, "Item [" .. tostring(itemId) .. "] Score: " .. tostring(dropItemData.modScore))
                                         
@@ -2347,7 +2620,6 @@ local function CreateModUI()
                                                 _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
                                             end)
                                         end
-                                        pickedThisTick = pickedThisTick + 1
                                     end
                                 end
                             end
@@ -2404,36 +2676,25 @@ end
             -- Removed faulty CreateMonster hook. Boss logic moved to Timer.
         end
         
-        if _G.BuffAttributeCalculator and not _G.Mod_HookedBuffAttributeCalculator then
-            _G.Mod_HookedBuffAttributeCalculator = true
-            local original_CalcBuffAttribute = _G.BuffAttributeCalculator.CalcBuffAttribute
-            _G.BuffAttributeCalculator.CalcBuffAttribute = function(rid)
-                local result = original_CalcBuffAttribute(rid)
-                if _G.Mod_AntiCC then
-                    if result.moveSpeed_mul and result.moveSpeed_mul < 0 then
-                        result.moveSpeed_mul = 0
-                    end
-                    if result.attackSpeedIncrease_fAdd and result.attackSpeedIncrease_fAdd < 0 then
-                        result.attackSpeedIncrease_fAdd = 0
-                    end
+        _G.Mod_BypassInstanceEnter = function(self, control, originalFunc, uiid)
+            if _G.Mod_InfiniteInstance then
+                if _G.TeamUpQuicklyData then
+                    _G.TeamUpQuicklyData.SetInstanceUI(self.name)
                 end
-                return result
+                if _G.UIManager then _G.UIManager.Hide(uiid) end
+                
+                if _G.NetManager and _G.InstanceMatchMessage then
+                    local mapId = self.ContentData and self.ContentData.mapId or 0
+                    _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
+                        instanceId = mapId
+                    })
+                end
+            else
+                if originalFunc then originalFunc(self, control) end
             end
         end
-        
-        if _G.RoleBuffData and not _G.Mod_HookedRoleBuffData then
-            _G.Mod_HookedRoleBuffData = true
-            local original_AddState = _G.RoleBuffData.AddState
-            _G.RoleBuffData.AddState = function(self, state)
-                if _G.Mod_AntiCC then
-                    -- 1 = IMPRISON, 2 = SLOW_DOWN, 64 = SILENT
-                    if state == 1 or state == 2 or state == 64 then
-                        return
-                    end
-                end
-                return original_AddState(self, state)
-            end
-        end
+
+
 
 local status, err = pcall(function()
     if _G.UIManager and not _G.MyModHooked then
@@ -2442,6 +2703,7 @@ local status, err = pcall(function()
         
         local original_Show = _G.UIManager.Show
         _G.UIManager.Show = function(name, args, animation)
+
             -- CHẶN UPDATE TRƯỚC KHI GỌI HÀM SHOW GỐC
             if name == "Main_MainMenuUI" then
                 pcall(function()
@@ -2451,6 +2713,42 @@ local status, err = pcall(function()
             
             local ret = nil
             if original_Show then ret = original_Show(name, args, animation) end
+            
+            pcall(function()
+                if name == "Instance_BloodCastleUI" then
+                    if _G.Instance_BloodCastleUI and not _G.Mod_HookedBloodCastle then
+                        _G.Mod_HookedBloodCastle = true
+                        local original_btn_enterOnClick = _G.Instance_BloodCastleUI.btn_enterOnClick
+                        _G.Instance_BloodCastleUI.btn_enterOnClick = function(self, control)
+                            if _G.Mod_BypassInstanceEnter then
+                                _G.Mod_BypassInstanceEnter(self, control, original_btn_enterOnClick, _G.UIID.Instance_BloodCastleUI)
+                            else
+                                if original_btn_enterOnClick then original_btn_enterOnClick(self, control) end
+                            end
+                        end
+                    end
+                    local inst = _G.UIManager and _G.UIManager.GetUI and _G.UIManager.GetUI(_G.UIID.Instance_BloodCastleUI)
+                    if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
+                        inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
+                    end
+                elseif name == "Instance_DemonPlazaUI" then
+                    if _G.Instance_DemonPlazaUI and not _G.Mod_HookedDemonPlaza then
+                        _G.Mod_HookedDemonPlaza = true
+                        local original_btn_enterOnClick_DP = _G.Instance_DemonPlazaUI.btn_enterOnClick
+                        _G.Instance_DemonPlazaUI.btn_enterOnClick = function(self, control)
+                            if _G.Mod_BypassInstanceEnter then
+                                _G.Mod_BypassInstanceEnter(self, control, original_btn_enterOnClick_DP, _G.UIID.Instance_DemonPlazaUI)
+                            else
+                                if original_btn_enterOnClick_DP then original_btn_enterOnClick_DP(self, control) end
+                            end
+                        end
+                    end
+                    local inst = _G.UIManager and _G.UIManager.GetUI and _G.UIManager.GetUI(_G.UIID.Instance_DemonPlazaUI)
+                    if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
+                        inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
+                    end
+                end
+            end)
             
             if name == "Main_MainMenuUI" then
                 if not _G.MyModCreated then
