@@ -1,0 +1,20 @@
+if _G.RoleManager and _G.RoleManager.GetRolesByType then
+    local players = _G.RoleManager.GetRolesByType(1)
+    if players then
+        local foundPlayers = {}
+        for _, p in pairs(players) do
+            if p.name then
+                table.insert(foundPlayers, p.name)
+            end
+        end
+        if #foundPlayers > 0 then
+            WriteLog("[Test] Những người xung quanh: " .. table.concat(foundPlayers, ", "))
+        else
+            WriteLog("[Test] Không có ai xung quanh cả.")
+        end
+    else
+        WriteLog("[Test] GetRolesByType(1) trả về nil.")
+    end
+else
+    WriteLog("[Test] RoleManager không tồn tại.")
+end
