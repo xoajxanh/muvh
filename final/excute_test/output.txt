@@ -1,7 +1,48 @@
 === SUCCESS ===
 
 [LOGS]:
-[ClimbTower Test] ====== TEST TIẾP CẬN BOSS SỚM (FIX 3 - CÓ LOG LỖI) ======	
-[ClimbTower Test] Đã thấy Boss, lấy toạ độ thực tế: X:29 Y:212	
-[ClimbTower Test] Đang gọi PathFinderManager.MoveToPos...	
-[ClimbTower Test] =========================================	
+
+[RETURN]:
+=== DUMP SKILLS ===
+ID: 84008005 | Bảo Hộ Cực Tốc | isGroup: false | Type: 0 | CD: Ready
+ID: 10320007 | Dược Thần Lv7 | isGroup: false | Type: 0 | CD: Ready
+ID: 13601027 | Huỳnh Thạch (Hỏa) | isGroup: false | Type: 0 | CD: Ready
+ID: 12100106 | Hỏa Long | isGroup: true | Type: 4 | CD: Ready
+ID: 20221003 | Thánh Hồn Thiên Sứ-Phá Khiên 3 | isGroup: false | Type: 0 | CD: Ready
+ID: 33010063 | Tỉ lệ tấn công thành công tăng thêm | isGroup: false | Type: 0 | CD: Ready
+ID: 12030106 | Cầu Lửa | isGroup: false | Type: 8 | CD: Ready
+ID: 13603029 | Huỳnh Thạch (Băng) | isGroup: false | Type: 0 | CD: Ready
+ID: 84007004 | Hơi Thở Phục Sinh | isGroup: false | Type: 0 | CD: Ready
+ID: 410104 | Tỉ lệ tấn công thành công tăng thêm | isGroup: false | Type: 0 | CD: Ready
+ID: 33020018 | Công Tốc tăng | isGroup: false | Type: 0 | CD: Ready
+ID: 10300007 | Thủ Hộ Lv7 | isGroup: false | Type: 0 | CD: Ready
+ID: 14040107 | Sét Đánh | isGroup: true | Type: 4 | CD: Ready
+ID: 12140108 | Cực Quang | isGroup: false | Type: 8 | CD: Ready
+ID: 12080106 | Đóng băng | isGroup: false | Type: 8 | CD: Ready
+ID: 12370001 | Vòng Thời Không Lv1 | isGroup: false | Type: 0 | CD: Ready
+ID: 10000501 | Tấn công thường (Hai tay) | isGroup: false | Type: 2 | CD: Ready
+ID: 14050106 | Đột Kích Bóng Đêm | isGroup: false | Type: 0 | CD: Ready
+ID: 84009004 | Cường Hóa Cực Quang | isGroup: false | Type: 0 | CD: Ready
+ID: 10200401 | Ánh Sáng Đại Thiên Sứ Lv1 | isGroup: false | Type: 0 | CD: Ready
+ID: 13602026 | Huỳnh Thạch (Thủy) | isGroup: false | Type: 0 | CD: Ready
+ID: 12160110 | Nổ Lửa | isGroup: false | Type: 8 | CD: Ready
+ID: 10200303 | Thiên Sứ Giáng Thế Lv3 | isGroup: false | Type: 0 | CD: Ready
+ID: 10000201 | Tấn công thường (Vũ khí cán ngắn) | isGroup: false | Type: 2 | CD: Ready
+ID: 14020101 | Huyền Nguyệt Trảm | isGroup: false | Type: 8 | CD: Ready
+ID: 12040106 | Sóng Chân Không | isGroup: false | Type: 8 | CD: Ready
+ID: 84006004 | Đòn Đánh Xuyên Thấu | isGroup: false | Type: 0 | CD: Ready
+ID: 10310007 | Trác Việt Lv7 | isGroup: false | Type: 0 | CD: Ready
+ID: 14030101 | Kiếm Lửa Tấn Công | isGroup: false | Type: 8 | CD: Ready
+ID: 12170106 | Thuật Hỏa Diệm Hủy Diệt | isGroup: true | Type: 4 | CD: Ready
+ID: 12050107 | Sét Bàn Tay | isGroup: false | Type: 8 | CD: Ready
+ID: 10040101 | Liên Kích Kỹ | isGroup: false | Type: 0 | CD: Ready
+ID: 10200104 | Đại Thiên Sứ Phù Hộ Lv4 | isGroup: false | Type: 0 | CD: Ready
+ID: 10000301 | Tấn công thường (Vũ khí cán dài) | isGroup: false | Type: 2 | CD: Ready
+ID: 12110106 | Lốc Xoáy Rồng | isGroup: true | Type: 4 | CD: Ready
+ID: 12120106 | Sóng Rồng Đen | isGroup: true | Type: 4 | CD: Ready
+ID: 84005004 | Tinh Thông Chiến Đấu | isGroup: false | Type: 0 | CD: Ready
+ID: 12130106 | Thuật Lửa Địa Ngục | isGroup: true | Type: 4 | CD: Ready
+ID: 14150107 | Ma Hồn Thủ Hộ | isGroup: false | Type: 5 | CD: Ready
+ID: 10000101 | Tấn công thường | isGroup: false | Type: 2 | CD: Ready
+ID: 12070106 | Thiên Thạch | isGroup: false | Type: 8 | CD: Ready
+ID: 11070101 | Chém Xoáy Chấn Động | isGroup: true | Type: 4 | CD: Ready

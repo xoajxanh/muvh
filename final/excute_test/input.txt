@@ -1,21 +1,44 @@
-local players = _G.RoleManager.GetRolesByTypeAndRangeAlive({_G.ERoleType.Player}, 20, nil)
-local count = 0
-local msg = "Quét thấy:\n"
+local out = {}
+local function append(str) table.insert(out, str) end
 
-if players and #players > 0 then
-    for i, v in ipairs(players) do
-        -- Bỏ qua chính bản thân mình
-        if v.id ~= _G.RoleManager.me.id then
-            local name = v.name or "Unknown"
-            local level = v.level or 0
-            msg = msg .. "- " .. name .. " (Lv." .. level .. ")\n"
-            count = count + 1
+local me = _G.RoleManager and _G.RoleManager.me
+if not me then return "RoleManager.me is nil" end
+
+append("=== DUMP SKILLS ===")
+if me.skills then
+    for k, skill in pairs(me.skills) do
+        local sid = skill.sid or skill.id or skill.skillId
+        if sid then
+            local isGroup = false
+            if _G.QiJiHelperData and _G.QiJiHelperData.IsGroupSkill then
+                isGroup = _G.QiJiHelperData.IsGroupSkill(sid)
+            end
+            
+            local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
+            local name = tblSkill and tblSkill.name or "Unknown"
+            local autoSkillType = tblSkill and tblSkill.autoSkillType or "N/A"
+            local cdInfo = "Ready"
+            
+            if tblSkill and me.cd then
+                local cdMsg = me.cd[tblSkill.groupId]
+                local endTime = cdMsg and cdMsg.endTime or 0
+                local publicCdMsg = me.cd[1]
+                local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
+                local finalEndTime = math.max(endTime, publicEndTime)
+                
+                if _G.Time then
+                    local now = _G.Time.GetServerTime()
+                    if finalEndTime > now then
+                        cdInfo = "On CD (" .. tostring(finalEndTime - now) .. ")"
+                    end
+                end
+            end
+            
+            append(string.format("ID: %s | %s | isGroup: %s | Type: %s | CD: %s", tostring(sid), tostring(name), tostring(isGroup), tostring(autoSkillType), tostring(cdInfo)))
         end
     end
+else
+    append("No skills found in me.skills")
 end
 
-if count > 0 then
-    _G.FloatingTipUtility.QuickMsg(msg)
-else
-    _G.FloatingTipUtility.QuickMsg("Không có ai ở gần đây!")
-end
+return table.concat(out, "\n")
