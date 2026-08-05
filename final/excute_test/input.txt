@@ -1,31 +1,59 @@
-local function LogMsg(msg)
-    local t = os.date("%H:%M:%S")
-    _G.Mod_DebugMsg("[" .. t .. "] " .. msg)
-end
+-- Script Test Vô hạn phó bản Huyết Lâu / Quảng Trường Quỷ
+-- Chạy script này SAU KHI ĐÃ MỞ GIAO DIỆN Huyết Lâu hoặc QTQ trên màn hình để lấy đúng mapId hiện tại của nhân vật.
 
-if not _G.QiJiHelperController then return end
+local isSuccess = false
 
-local skills = _G.ViewData.meData.skills or {}
-for _, v in pairs(skills) do
-    local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
-    if skillData and skillData.autoSkillType == 8 then
-        local selfSelSkill = _G.QiJiHelperData.GetSelfSelSkill(tostring(skillData.groupId))
-        local isOpen = selfSelSkill and selfSelSkill.isOpen or false
-        LogMsg("Skill: " .. v.sid .. " | isOpen = " .. tostring(isOpen))
+-- 1. Xử lý Huyết Lâu (Blood Castle)
+if _G.Instance_BloodCastleUI and _G.Instance_BloodCastleUI.ContentData then
+    local mapId = _G.Instance_BloodCastleUI.ContentData.mapId
+    if _G.NetManager and _G.InstanceMatchMessage then
+        _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
+            instanceId = mapId
+        })
         
-        _G.QiJiHelperController.SetSelfSelSkill(v.sid, not isOpen)
+        -- THỬ GỬI THÊM LỆNH ENTER VÀO MAP TRỰC TIẾP (BỎ QUA MATCHING TEAM)
+        if _G.InstanceMessage and _G.InstanceMessage.ReqEnterInstance then
+            _G.NetManager.Send(_G.InstanceMessage.ReqEnterInstance, {
+                instanceId = mapId
+            })
+        end
         
-        local afterOpen = _G.QiJiHelperData.GetSelfSelSkill(tostring(skillData.groupId)).isOpen
-        LogMsg("--> After Set: " .. tostring(afterOpen))
+        if _G.UIManager then _G.UIManager.Hide(_G.UIID.Instance_BloodCastleUI) end
+        
+        local msg = "[TEST] Đã gửi ReqInstanceMatchCreateTeam & ReqEnterInstance Huyết Lâu với mapId: " .. tostring(mapId)
+        print(msg)
+        if _G.LogMsg then _G.LogMsg(msg) end
+        isSuccess = true
     end
 end
 
-_G.QiJiHelperController.Save()
-if _G.UIManager and _G.UIManager.GetUiByName then
-    local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
-    if ui and ui.Refresh then
-        ui:Refresh()
-        LogMsg("Đã Refresh UI nếu đang mở!")
+-- 2. Xử lý Quảng Trường Quỷ (Demon Plaza / Devil Square)
+if not isSuccess and _G.Instance_DemonPlazaUI and _G.Instance_DemonPlazaUI.ContentData then
+    local mapId = _G.Instance_DemonPlazaUI.ContentData.mapId
+    if _G.NetManager and _G.InstanceMatchMessage then
+        _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
+            instanceId = mapId
+        })
+        
+        -- THỬ GỬI THÊM LỆNH ENTER VÀO MAP TRỰC TIẾP (BỎ QUA MATCHING TEAM)
+        if _G.InstanceMessage and _G.InstanceMessage.ReqEnterInstance then
+            _G.NetManager.Send(_G.InstanceMessage.ReqEnterInstance, {
+                instanceId = mapId
+            })
+        end
+        
+        if _G.UIManager then _G.UIManager.Hide(_G.UIID.Instance_DemonPlazaUI) end
+        
+        local msg = "[TEST] Đã gửi ReqInstanceMatchCreateTeam & ReqEnterInstance QTQ với mapId: " .. tostring(mapId)
+        print(msg)
+        if _G.LogMsg then _G.LogMsg(msg) end
+        isSuccess = true
     end
 end
-LogMsg("Done!")
+
+-- 3. Thông báo lỗi nếu chưa mở UI
+if not isSuccess then
+    local err = "[TEST] LỖI: Vui lòng mở giao diện Huyết Lâu hoặc Quảng Trường Quỷ trước khi chạy script!"
+    print(err)
+    if _G.LogMsg then _G.LogMsg(err) end
+end

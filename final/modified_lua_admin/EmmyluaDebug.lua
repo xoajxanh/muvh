@@ -1,4 +1,4 @@
-﻿-- EmmyluaDebug.lua
+-- EmmyluaDebug.lua
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
 function EmmyluaDebug.InitEmmyluaDebug(obj)
@@ -898,36 +898,38 @@ local function CreateModUI()
     -- PRIORITY 0: BOSS ẨN
     if _G.UIManager and _G.UIManager.IsVisible then
         if _G.UIManager.IsVisible("Tip_MonsterTipUI") then
-            if _G.Mod_AutoFarmBoss_State == 5 or _G.Mod_AutoFarmBoss_State == 6 then return end -- Chờ nhặt đồ xong hoặc đánh xong mới vào
-            
-            if not _G.Mod_MapAn_UI_SeenTime then
-                _G.Mod_MapAn_UI_SeenTime = currentSec
-            end
-            
-            if currentSec < _G.Mod_MapAn_UI_SeenTime + 3 then
-                return -- Chờ 3 giây trước khi click vào
-            end
-            
-            _G.Mod_MapAn_UI_SeenTime = nil
-            
-            local tipUi = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Tip_MonsterTipUI")
-            if tipUi and tipUi.DimensionalCracksData then
-                if _G.Mod_AutoFarmBoss_EnterHiddenMap then
-                    LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Bắn thẳng Request Triệu hồi Kim Cương...")
-                    if _G.networkRequest and _G.networkRequest.ReqCallBoss then
-                        _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id, tipUi.DimensionalCracksData.mid, 2)
-                    end
-                    if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
-                    
-                    _G.Mod_AutoFarmBoss_State = 0
-                    _G.Mod_AutoFarmBoss_Target = nil
-                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
-                else
-                    LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT. Bỏ qua và đóng UI để không vướng màn hình.")
-                    if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
+            if _G.Mod_AutoFarmBoss_State == 5 or _G.Mod_AutoFarmBoss_State == 6 then 
+                -- Do nothing, let the state machine run below so it can finish picking up items
+            else
+                if not _G.Mod_MapAn_UI_SeenTime then
+                    _G.Mod_MapAn_UI_SeenTime = currentSec
                 end
+                
+                if currentSec < _G.Mod_MapAn_UI_SeenTime + 3 then
+                    return -- Chờ 3 giây trước khi click vào, TẠM DỪNG các state khác
+                end
+                
+                _G.Mod_MapAn_UI_SeenTime = nil
+                
+                local tipUi = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Tip_MonsterTipUI")
+                if tipUi and tipUi.DimensionalCracksData then
+                    if _G.Mod_AutoFarmBoss_EnterHiddenMap then
+                        LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Bắn thẳng Request Triệu hồi Kim Cương...")
+                        if _G.networkRequest and _G.networkRequest.ReqCallBoss then
+                            _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id, tipUi.DimensionalCracksData.mid, 2)
+                        end
+                        if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
+                        
+                        _G.Mod_AutoFarmBoss_State = 0
+                        _G.Mod_AutoFarmBoss_Target = nil
+                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                    else
+                        LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT. Bỏ qua và đóng UI để không vướng màn hình.")
+                        if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
+                    end
+                end
+                return
             end
-            return
         else
             _G.Mod_MapAn_UI_SeenTime = nil
         end
@@ -1043,6 +1045,7 @@ local function CreateModUI()
                 _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
             end
         end
+        return -- DỪNG TẠI ĐÂY KHI ĐANG TRONG MAP ẨN, KHÔNG CHO CHẠY TIẾP XUỐNG LOGIC BOSS BÌNH THƯỜNG
     end
     
     if _G.Mod_AutoFarmBoss_LastState ~= _G.Mod_AutoFarmBoss_State or _G.Mod_AutoFarmBoss_LastMap ~= currentMapId then
@@ -2417,7 +2420,7 @@ end
             local tRt = tGo:AddComponent(typeof(RectTransform))
             tRt.anchorMin, tRt.anchorMax, tRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             tRt.anchoredPosition = Vector2(xPos, yPos)
-            tRt.sizeDelta = Vector2(250, 35)
+            tRt.sizeDelta = Vector2(260, 35)
 
             local bg = GameObject("Bg")
             bg.transform:SetParent(tGo.transform, false)
@@ -2610,7 +2613,7 @@ end
             rstRt.anchorMax = Vector2(0, 1)
             rstRt.pivot = Vector2(0, 1)
             rstRt.anchoredPosition = Vector2(rightColX, currentY)
-            rstRt.sizeDelta = Vector2(260, 30)
+            rstRt.sizeDelta = Vector2(260, 35)
 
             local rstImg = rstBtnGo:AddComponent(typeof(Image))
             rstImg.color = Color(0.6, 0.2, 0.2, 1)
@@ -2640,7 +2643,7 @@ end
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
             end)
 
-            currentY = currentY - 33
+            currentY = currentY - 38
             local hintGo = GameObject("ResetHint")
             hintGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, hintGo)
