@@ -37,3 +37,22 @@ The custom Mod Menu is injected via `EmmyluaDebug.lua`.
   - **Kundun UI:** Sửa lỗi hiển thị UI Kundun. Phục hồi logic chuẩn của game, hiển thị `(Max)` khi người chơi đạt giới hạn số lần nhặt trong ngày để tránh hiển thị bộ đếm rác. Căn chỉnh lại khoảng cách UI để các nút không bị đè lên nhau.
   - **Thực thi script (Exec):** Đưa nút EXEC ra màn hình chính, làm nút hình vuông màu đỏ nằm thẳng hàng phía trên nút Mod để kích hoạt script nóng từ `input.luac` (hữu ích cho việc Dump và test nhanh).
 - **Next Step:** Tiếp tục theo dõi phản hồi từ người dùng về radar bắt Boss Tháp và Hỏa Long. Nếu ổn định, có thể mở rộng logic Radar này cho các Boss map dã ngoại hoặc sự kiện khác. Bản lưu trữ hiện tại đang được khoá cứng ở thư mục `final/modified_lua_v6/`.
+
+## 6. Current Task State (v7 - Auto Farm Boss Hoang Dã & Map Ẩn)
+- **Goal:** Xây dựng cỗ máy Auto Farm Boss (Hoang Dã, Trang Sức, Luyện Ngục, v.v.) tự động chuyển map, đánh boss, nhặt đồ và vòng lặp khép kín.
+- **Progress (v7):**
+  - **State Machine Architecture (Vòng lặp 6 trạng thái):**
+    - `State 0 (Idle & Request)`: Đứng tại Lorencia, định kỳ 15s gửi request lấy dữ liệu Boss từ Server (`ReqGetBossMapAndCount`, `ReqBossStateByType`). Áp dụng thuật toán Random `baseScore` kết hợp trạng thái Boss để chọn mục tiêu ưu tiên (chống kẹt ở 1 Boss).
+    - `State 1 (Return Home)`: Xử lý các luồng ngắt quãng (Boss chết, HP thấp, hết giờ) -> Tự động dùng `SceneController` Dịch chuyển về Lorencia (Map 1001) để lấy đà.
+    - `State 2 (Teleport to Boss)`: Dịch chuyển chuẩn xác đến Map và Line của Boss được Target.
+    - `State 3 (Verification)`: Kiểm tra an toàn trước khi đánh. Xử lý triệt để bug `role.maxHp == nil` do server chưa đồng bộ kịp. Kiểm tra nếu HP >= 90% (hoặc quái vô chủ/chính chủ) thì mới chuyển State 4, nếu không (HP < 90%) thì đánh dấu Ignore 2 phút và về State 1. Có cơ chế Wait 10s nếu chưa thấy Boss nhưng Server vẫn báo sống.
+    - `State 4 (Fighting)`: Kích hoạt AutoFight. Cập nhật % HP liên tục lên màn hình. Theo dõi đến khi Boss chết hẳn -> tắt AutoFight -> đợi 5s cho việc tự động nhặt đồ rơi -> Chuyển về State 1.
+    - `State 5 (Waiting for Spawn)`: Chờ đợi thông minh. Nếu Boss đã chết nhưng thời gian hồi sinh `< 25s`, Bot sẽ chủ động đứng tại Map đợi Boss sinh ra (để giành first hit) thay vì bay về Lorencia.
+  - **UI/UX Menu Mod:**
+    - Cải tiến toàn bộ các Checkbox cũ trong Tab Nâng Cao thành **Big Buttons** (Giống nút Auto Farm Boss). Màu sắc đồng bộ (Xanh: BẬT, Đỏ: TẮT).
+    - Căn chỉnh khoảng cách trục Y (dãn 45px) để các nút không bị đè vào nhau.
+    - Nút `TỰ VÀO MAP ẨN` (đã được thay bằng `HIỆN MÁU KUNDUN`) được căn thẳng lề trái chuẩn xác với nút Auto Farm Boss chính.
+  - **Kundun HP Radar:**
+    - Khắc phục sự cố ẩn Máu, `bossType = nil` và `roleType = nil` của KUNDUN từ phía Server.
+    - Logic khắc phục: Quét toàn bộ `RoleManager.GetRolesByType(2)` xung quanh mỗi 3s, matching regex `string.find(string.lower(d.name), "kundun")` để ép hiển thị % HP lên màn hình mà không cần phụ thuộc vào target hay thuộc tính.
+- **Next Step:** Theo dõi độ ổn định của hệ thống Auto Farm Boss đa map, kiểm tra việc giành quyền sở hữu Boss và nhặt đồ. Tiếp tục tối ưu hóa nếu có báo cáo từ User.
