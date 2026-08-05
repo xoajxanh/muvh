@@ -872,7 +872,7 @@ local function CreateModUI()
         if _G.Mod_AutoFarmBoss_State ~= 0 then
             _G.Mod_AutoFarmBoss_State = 0
             _G.Mod_AutoFarmBoss_Target = nil
-            LogMsg("Đã TẮT Auto Farm.")
+            LogMsg("[FSM] Đã TẮT Auto Farm.")
         end
         return 
     end
@@ -880,122 +880,177 @@ local function CreateModUI()
     local currentMapId = _G.SceneData and _G.SceneData.mapId
     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
     
+    if currentMapId ~= 240001 and _G.Mod_MapAn_SingleSkillsDisabled then
+        if _G.QiJiHelperController and _G.QiJiHelperController.SetSelfSelSkill then
+            for skillId, _ in pairs(_G.Mod_MapAn_SingleSkillsDisabled) do
+                _G.QiJiHelperController.SetSelfSelSkill(skillId, true)
+            end
+            if _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+            if _G.UIManager and _G.UIManager.GetUiByName then
+                local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+                if ui and ui.Refresh then ui:Refresh() end
+            end
+        end
+        _G.Mod_MapAn_SingleSkillsDisabled = nil
+        LogMsg("[MAP ẨN] Đã bật lại các Skill Đơn mục tiêu")
+    end
+    
     -- PRIORITY 0: BOSS ẨN
     if _G.UIManager and _G.UIManager.IsVisible then
         if _G.UIManager.IsVisible("Tip_MonsterTipUI") then
-            local isLooting = (_G.Mod_AutoFarmBoss_State == 6) or (_G.Mod_MapAn_ClearTime ~= nil)
-            if not isLooting then
-                local tipUi = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Tip_MonsterTipUI")
-                if tipUi and tipUi.DimensionalCracksData then
-                    if _G.Mod_AutoFarmBoss_EnterHiddenMap then
-                        LogMsg("[BOSS ẨN] Triệu hồi Kim Cương...")
-                        if _G.networkRequest and _G.networkRequest.ReqCallBoss then
-                            _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id, tipUi.DimensionalCracksData.mid, 2)
-                        end
-                        if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
-                        
-                        _G.Mod_AutoFarmBoss_State = 0
-                        _G.Mod_AutoFarmBoss_Target = nil
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
-                    else
-                        LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT")
-                        if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
+            if _G.Mod_AutoFarmBoss_State == 5 or _G.Mod_AutoFarmBoss_State == 6 then return end -- Chờ nhặt đồ xong hoặc đánh xong mới vào
+            
+            if not _G.Mod_MapAn_UI_SeenTime then
+                _G.Mod_MapAn_UI_SeenTime = currentSec
+            end
+            
+            if currentSec < _G.Mod_MapAn_UI_SeenTime + 3 then
+                return -- Chờ 3 giây trước khi click vào
+            end
+            
+            _G.Mod_MapAn_UI_SeenTime = nil
+            
+            local tipUi = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Tip_MonsterTipUI")
+            if tipUi and tipUi.DimensionalCracksData then
+                if _G.Mod_AutoFarmBoss_EnterHiddenMap then
+                    LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Bắn thẳng Request Triệu hồi Kim Cương...")
+                    if _G.networkRequest and _G.networkRequest.ReqCallBoss then
+                        _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id, tipUi.DimensionalCracksData.mid, 2)
                     end
+                    if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
+                    
+                    _G.Mod_AutoFarmBoss_State = 0
+                    _G.Mod_AutoFarmBoss_Target = nil
+                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                else
+                    LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT. Bỏ qua và đóng UI để không vướng màn hình.")
+                    if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
                 end
             end
+            return
+        else
+            _G.Mod_MapAn_UI_SeenTime = nil
         end
     end
     
     -- PRIORITY 1: THEO DÕI VÀ DỌN QUÁI TRONG MAP ẨN
-    if _G.TranScriptData and _G.TranScriptData.InTranscript and currentMapId == 240001 then
-        if currentSec >= (_G.Mod_MapAn_LastScanTime or 0) + 5 then
-            _G.Mod_MapAn_LastScanTime = currentSec
-            
-            local quaiThuong = 0
-            local quaiBoss = 0
-            local hpBoss = 0
-            
-            if _G.RoleManager then
-                local monsters = _G.RoleManager.GetRolesByType(1) or {}
-                for _, role in pairs(monsters) do
-                    if role.hp and role.hp > 0 then quaiThuong = quaiThuong + 1 end
+    if _G.TranScriptData and _G.TranScriptData.InTranscript then
+        if currentMapId == 240001 then
+            if not _G.Mod_MapAn_SingleSkillsDisabled then
+                _G.Mod_MapAn_SingleSkillsDisabled = {}
+                local toggledAny = false
+                if _G.QiJiHelperController and _G.QiJiHelperData and _G.ClientTable and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills then
+                    for _, v in pairs(_G.ViewData.meData.skills) do
+                        local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
+                        if skillData and skillData.autoSkillType == 8 then -- AutoSkillEnum.SelfSelIndSkill
+                            local selfSelSkill = _G.QiJiHelperData.GetSelfSelSkill(tostring(skillData.groupId))
+                            if selfSelSkill and selfSelSkill.isOpen then
+                                _G.Mod_MapAn_SingleSkillsDisabled[v.sid] = true
+                                _G.QiJiHelperController.SetSelfSelSkill(v.sid, false)
+                                toggledAny = true
+                            end
+                        end
+                    end
+                end
+                if toggledAny then
+                    if _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+                    if _G.UIManager and _G.UIManager.GetUiByName then
+                        local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+                        if ui and ui.Refresh then ui:Refresh() end
+                    end
+                    LogMsg("[MAP ẨN] Đã tắt tạm các Skill Đơn mục tiêu (Chỉ dùng AOE)")
+                end
+            end
+
+            if currentSec >= (_G.Mod_MapAn_LastScanTime or 0) + 5 then
+                _G.Mod_MapAn_LastScanTime = currentSec
+                
+                local quaiThuong = 0
+                local quaiBoss = 0
+                local hpBoss = 0
+                
+                if _G.RoleManager then
+                    local monsters = _G.RoleManager.GetRolesByType(1) or {}
+                    for _, role in pairs(monsters) do
+                        if role.hp and role.hp > 0 then quaiThuong = quaiThuong + 1 end
+                    end
+                    
+                    local bosses = _G.RoleManager.GetRolesByType(2) or {}
+                    for _, role in pairs(bosses) do
+                        if role.hp and role.hp > 0 then 
+                            quaiBoss = quaiBoss + 1 
+                            hpBoss = role.hp
+                        end
+                    end
+                    
+                    local elites = _G.RoleManager.GetRolesByType(3) or {}
+                    for _, role in pairs(elites) do
+                        if role.hp and role.hp > 0 then 
+                            quaiBoss = quaiBoss + 1 
+                            hpBoss = role.hp
+                        end
+                    end
                 end
                 
-                local bosses = _G.RoleManager.GetRolesByType(2) or {}
-                for _, role in pairs(bosses) do
-                    if role.hp and role.hp > 0 then 
-                        quaiBoss = quaiBoss + 1 
-                        hpBoss = role.hp
+                _G.Mod_MapAn_LastQuaiThuong = quaiThuong
+                _G.Mod_MapAn_LastQuaiBoss = quaiBoss
+                _G.Mod_MapAn_LastHpBoss = hpBoss
+            end
+            
+            local quaiThuong = _G.Mod_MapAn_LastQuaiThuong or 0
+            local quaiBoss = _G.Mod_MapAn_LastQuaiBoss or 0
+            local hpBoss = _G.Mod_MapAn_LastHpBoss or 0
+            
+            if quaiBoss > 0 or quaiThuong > 0 then
+                _G.Mod_MapAn_ClearTime = nil
+                
+                -- Log mỗi 5s độc lập với hàm Scan
+                if currentSec >= (_G.Mod_MapAn_LastLogTime or 0) + 5 then
+                    LogMsg(string.format("[MAP ẨN] Boss/Elite: %d | Quái: %d", quaiBoss, quaiThuong))
+                    _G.Mod_MapAn_LastLogTime = currentSec
+                end
+                
+                if _G.RoleManager.me and _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
+                    if _G.RoleManager.me.SetAutoTaskFight then 
+                        _G.RoleManager.me:SetAutoTaskFight("None") 
                     end
                 end
                 
-                local elites = _G.RoleManager.GetRolesByType(3) or {}
-                for _, role in pairs(elites) do
-                    if role.hp and role.hp > 0 then 
-                        quaiBoss = quaiBoss + 1 
-                        hpBoss = role.hp
+                if _G.RoleManager.me and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                    if _G.RoleManager.me.SetAutoFight then
+                        _G.RoleManager.me:SetAutoFight("AutoFight")
                     end
                 end
-            end
-            
-            _G.Mod_MapAn_LastQuaiThuong = quaiThuong
-            _G.Mod_MapAn_LastQuaiBoss = quaiBoss
-            _G.Mod_MapAn_LastHpBoss = hpBoss
-        end
-        
-        local quaiThuong = _G.Mod_MapAn_LastQuaiThuong or 0
-        local quaiBoss = _G.Mod_MapAn_LastQuaiBoss or 0
-        local hpBoss = _G.Mod_MapAn_LastHpBoss or 0
-        
-        if quaiBoss > 0 or quaiThuong > 0 then
-            _G.Mod_MapAn_ClearTime = nil
-            
-            -- Log mỗi 5s độc lập với hàm Scan
-            if currentSec >= (_G.Mod_MapAn_LastLogTime or 0) + 5 then
-                LogMsg(string.format("[MAP ẨN] Boss/Elite: %d | Quái: %d", quaiBoss, quaiThuong))
-                _G.Mod_MapAn_LastLogTime = currentSec
-            end
-            
-            if _G.RoleManager.me and _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
-                if _G.RoleManager.me.SetAutoTaskFight then 
-                    _G.RoleManager.me:SetAutoTaskFight("None") 
-                end
-            end
-            
-            if _G.RoleManager.me and not _G.RoleManager.me.isAutoFight then
-                if _G.RoleManager.me.SetAutoFight then
-                    _G.RoleManager.me:SetAutoFight("AutoFight")
-                end
-            end
-        else
-            if not _G.Mod_MapAn_ClearTime then
-                _G.Mod_MapAn_ClearTime = currentSec + 5
-                LogMsg("[MAP ẨN] Chờ 5s nhặt đồ rồi rời đi...")
-            elseif currentSec >= _G.Mod_MapAn_ClearTime then
-                if _G.RoleManager.me then
-                    if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
-                        if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+            else
+                if not _G.Mod_MapAn_ClearTime then
+                    _G.Mod_MapAn_ClearTime = currentSec + 5
+                    LogMsg("[MAP ẨN] Sạch bóng quân thù! Chờ 5s nhặt đồ rồi rời đi...")
+                elseif currentSec >= _G.Mod_MapAn_ClearTime then
+                    if _G.RoleManager.me then
+                        if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
+                            if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+                        end
+                        if _G.RoleManager.me.isAutoFight then
+                            if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                        end
+                        if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
                     end
-                    if _G.RoleManager.me.isAutoFight then
-                        if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                    if ExitDungeon() then
+                        _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
+                        _G.Mod_FarmStats.hidden = _G.Mod_FarmStats.hidden + 1
+                        if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
+                        LogMsg("[MAP ẨN] Đã tắt Auto Fight và thoát phó bản Boss Ẩn thành công!")
                     end
-                    if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
+                    _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
                 end
-                if ExitDungeon() then
-                    _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                    _G.Mod_FarmStats.hidden = _G.Mod_FarmStats.hidden + 1
-                    if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                    --LogMsg("[MAP ẨN] Đã tắt Auto Fight và thoát phó bản Boss Ẩn thành công!")
-                end
-                _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
             end
         end
-        return
+        return -- LUÔN RETURN KHI INTRANSCRIPT ĐỂ KHÔNG CHẠY FSM THƯỜNG
     end
     
     if _G.Mod_AutoFarmBoss_LastState ~= _G.Mod_AutoFarmBoss_State or _G.Mod_AutoFarmBoss_LastMap ~= currentMapId then
         local mapName = GetMapName(currentMapId)
-        --LogMsg(string.format("[FSM Tracker] State: %s | Map: %s (%s)", tostring(_G.Mod_AutoFarmBoss_State), tostring(currentMapId), mapName))
+        LogMsg(string.format("[FSM Tracker] State: %s | Map: %s (%s)", tostring(_G.Mod_AutoFarmBoss_State), tostring(currentMapId), mapName))
         _G.Mod_AutoFarmBoss_LastState = _G.Mod_AutoFarmBoss_State
         _G.Mod_AutoFarmBoss_LastMap = currentMapId
     end
@@ -1053,12 +1108,12 @@ local function CreateModUI()
             end
             
             if foundCombatBoss then
-                LogMsg("Đang ở cạnh Boss " .. tostring(foundCombatBoss.cfg.name) .. ", đập luôn!")
+                LogMsg("Đang ở cạnh Boss " .. tostring(foundCombatBoss.cfg.name) .. " (ID:"..tostring(foundCombatBoss.cfg.id).."), đập luôn! (State 0 -> 5)")
                 _G.Mod_AutoFarmBoss_Target = foundCombatBoss
                 _G.Mod_AutoFarmBoss_State = 5
                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
             else
-                LogMsg("Bắt đầu lấy dữ liệu Boss...")
+                LogMsg("Bắt đầu lấy dữ liệu Boss... (State 0 -> 2)")
                 _G.Mod_AutoFarmBoss_State = 2
                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
             end
@@ -1072,7 +1127,7 @@ local function CreateModUI()
             end
             
             if ExitDungeon() then
-                LogMsg("Đang thoát phó bản...")
+                LogMsg("Đang thoát phó bản/Instance... (State 1)")
                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
                 return
             end
@@ -1210,14 +1265,14 @@ local function CreateModUI()
             
             if #candidates > 0 then
                 table.sort(candidates, function(a, b) return a.score > b.score end)
-                LogMsg("--- TOP 3 BOSSES ---")
+                LogMsg("--- TOP 3 BOSSES SCORE ---")
                 for i=1, math.min(3, #candidates) do
                     local c = candidates[i]
                     local st = c.isAlive and "SỐNG" or ("Chết (Còn "..c.wait.."s)")
-                    LogMsg(string.format("%d. %s (ID:%s, Map:%s) | %s", i, c.name, c.id, c.mapName, st))
+                    LogMsg(string.format("%d. %s (ID:%s, Map:%s) | Điểm: %d | %s", i, c.name, c.id, c.mapName, c.score, st))
                 end
             else
-                LogMsg("--- KHÔNG TÌM THẤY BOSS ĐỂ FARM ---")
+                LogMsg("--- BÁO CÁO QUÉT BOSS (KHÔNG TÌM THẤY ỨNG VIÊN) ---")
                 local countConfig = 0
                 local countNoData = 0
                 local function DebugConfig(mapsConfig)
@@ -1253,7 +1308,7 @@ local function CreateModUI()
                 end
                 DebugConfig(_G.Mod_MapsConfig_c7)
                 DebugConfig(_G.Mod_MapsConfig_c8)
-                --LogMsg(string.format("Tổng theo dõi: %d Boss. (Không có data từ Server cho %d Boss)", countConfig, countNoData))
+                LogMsg(string.format("Tổng theo dõi: %d Boss. (Không có data từ Server cho %d Boss)", countConfig, countNoData))
             end
             
             if bestBoss then
@@ -1290,7 +1345,7 @@ local function CreateModUI()
                         LogMsg("Không có Boss quanh đây. Chờ check lại...")
                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
                     else
-                        LogMsg("Hoàn toàn không có Boss! Rút về Lorencia")
+                        LogMsg("Hoàn toàn không có Boss! Rút về Lorencia (State 2 -> 1)")
                         _G.Mod_AutoFarmBoss_State = 1
                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                     end
@@ -1330,7 +1385,7 @@ local function CreateModUI()
             if currentMapId ~= target.mapCfg.mapId then
                 _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
                 if _G.Mod_AutoFarmBoss_TargetWait > 3 then
-                    LogMsg("Lỗi: Không thể bay tới Map Boss (Chờ 3s). Bỏ qua điểm này 60s")
+                    LogMsg("Lỗi: Không thể bay tới Map Boss (Chờ 3s). Bỏ qua điểm này 60s! (State 4 -> 1)")
                     _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_State = 1
@@ -1387,9 +1442,9 @@ local function CreateModUI()
                     if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("AutoFight") end
                     _G.Mod_AutoFarmBoss_State = 5
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                    LogMsg("Đủ điều kiện, Bật Auto đập!")
+                    LogMsg("Đủ điều kiện, Bật Auto đập! (State 4 -> 5)")
                 else
-                    LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 1 phút!")
+                    LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 1 phút! (State 4 -> 1)")
                     _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_State = 1
@@ -1399,7 +1454,7 @@ local function CreateModUI()
             else
                 _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
                 if _G.Mod_AutoFarmBoss_BossWait > 2 then
-                    LogMsg("Boss không thỏa mãn. Rút về Lorencia...")
+                    LogMsg("Không thấy Boss (Trống hoặc Đang hồi sinh). Rút về Lorencia lấy Data xếp hạng lại... (State 4 -> 1)")
                     _G.Mod_AutoFarmBoss_BossWait = 0
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_State = 1
@@ -1424,7 +1479,7 @@ local function CreateModUI()
             end
             
             -- Đảm bảo Auto Fight đang bật
-            if _G.RoleManager.me and not _G.RoleManager.me.isAutoFight then
+            if _G.RoleManager.me and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                 if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("AutoFight") end
             end
             
@@ -1443,7 +1498,7 @@ local function CreateModUI()
                             foundBoss = true
                             local maxHp = role.maxHp or role.maxHP or role.hp or 1
                             local hpPct = (role.hp / maxHp) * 100
-                            LogMsg(string.format("Đang đánh %s - HP: %.2f%%", d.name or target.cfg.name, hpPct))
+                            LogMsg(string.format("Đang phang %s - HP: %.2f%%", d.name or target.cfg.name, hpPct))
                             break
                         end
                     end
@@ -1453,29 +1508,24 @@ local function CreateModUI()
             if not foundBoss then
                 _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
                 if _G.Mod_AutoFarmBoss_TargetWait >= 2 then
-                    LogMsg("Boss chết hoặc biến mất! Chờ nhặt đồ...")
+                    LogMsg("Boss chết hoặc biến mất! Chờ nhặt đồ... (State 5 -> 6)")
                     
-                    if target and target.cfg then
-                        _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                        local bId = target.cfg.id
-                        _G.Mod_FarmStats.bosses[bId] = (_G.Mod_FarmStats.bosses[bId] or 0) + 1
-                        if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                    end
+                    _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
+                    _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) + 1
+                    if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     
-                    if _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
-                    if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
-                    _G.Mod_AutoFarmBoss_State = 6
                     _G.Mod_AutoFarmBoss_TargetWait = 0
+                    _G.Mod_AutoFarmBoss_State = 6
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 else
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
                 end
             else
                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
+                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
             end
             
-        -- STATE 6: LOOT & CLEANUP
+        -- STATE 6: LOOT WAIT
         elseif _G.Mod_AutoFarmBoss_State == 6 then
             LogMsg("Đang chờ 5s nhặt đồ rồi rút về Lorencia...")
             _G.Mod_AutoFarmBoss_Target = nil
@@ -1484,10 +1534,8 @@ local function CreateModUI()
             _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
         end
     end)
-    
     if not status then
-        LogMsg("Lỗi nội bộ Mod_AutoFarmBoss_Update: " .. tostring(err))
-        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+        LogMsg("LỖI AUTO FARM: " .. tostring(err))
     end
 end
 
