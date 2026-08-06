@@ -3946,8 +3946,6 @@ end
                     local eType = dropItemData.type
                     local isRune = (eType == 19 or eType == 28)
                     local isBone = (eType == 24 or eType == 26)
-                    local isNormal = (not isRune and not isBone)
-                    if isNormal and not _G.AutoPick_FilterNormal then isNormal = false end
                     
                     local shouldPick = false
                     if isRune then
@@ -3984,7 +3982,6 @@ end
                         if levelMatch and qualMatch then shouldPick = true end
                     end
                     if isBone then shouldPick = true end
-                    if isNormal then shouldPick = true end
                     
                     if shouldPick then
                         if _G.PickupManager and _G.PickupManager.IsCanPickUpDropItem then
@@ -4033,15 +4030,6 @@ end
                                 local itemId = dropItemData.item and dropItemData.item.itemId or "???"
                                 if _G.WriteLog then
                                     _G.WriteLog("[AutoLoot] Nhặt (Tức thì): Item [ID: " .. tostring(itemId) .. "]")
-                                end
-                                
-                                if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                                    pcall(function()
-                                        if _G.WriteLog then
-                                            _G.WriteLog(string.format("[AutoLoot] (Tức thì) MoveTo ItemId=%s, X=%s, Y=%s", tostring(itemId), tostring(dropItemData.x), tostring(dropItemData.y)))
-                                        end
-                                        _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
-                                    end)
                                 end
                             end
                             
