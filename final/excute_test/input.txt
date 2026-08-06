@@ -1,59 +1,39 @@
--- Script Test Vô hạn phó bản Huyết Lâu / Quảng Trường Quỷ
--- Chạy script này SAU KHI ĐÃ MỞ GIAO DIỆN Huyết Lâu hoặc QTQ trên màn hình để lấy đúng mapId hiện tại của nhân vật.
+local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+if not items then
+    _G.WriteLog('[SmeltTest] BagInfoData.TotalItems is nil')
+    return
+end
 
-local isSuccess = false
+local recycleItems = {}
+local recycleNames = {}
 
--- 1. Xử lý Huyết Lâu (Blood Castle)
-if _G.Instance_BloodCastleUI and _G.Instance_BloodCastleUI.ContentData then
-    local mapId = _G.Instance_BloodCastleUI.ContentData.mapId
-    if _G.NetManager and _G.InstanceMatchMessage then
-        _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
-            instanceId = mapId
-        })
+for k, item in pairs(items) do
+    if item and item.tblItem then
+        local subType = item.tblItem.subType or 0
+        local quality = item.tblItem.quality or 0
         
-        -- THỬ GỬI THÊM LỆNH ENTER VÀO MAP TRỰC TIẾP (BỎ QUA MATCHING TEAM)
-        if _G.InstanceMessage and _G.InstanceMessage.ReqEnterInstance then
-            _G.NetManager.Send(_G.InstanceMessage.ReqEnterInstance, {
-                instanceId = mapId
-            })
+        -- Nhẫn (subType = 18) và Chuyển 6 (quality = 6)
+        if subType == 18 and quality == 6 then
+            table.insert(recycleItems, item.id)
+            local name = item.tblItem.name or 'Unknown'
+            table.insert(recycleNames, name)
         end
-        
-        if _G.UIManager then _G.UIManager.Hide(_G.UIID.Instance_BloodCastleUI) end
-        
-        local msg = "[TEST] Đã gửi ReqInstanceMatchCreateTeam & ReqEnterInstance Huyết Lâu với mapId: " .. tostring(mapId)
-        print(msg)
-        if _G.LogMsg then _G.LogMsg(msg) end
-        isSuccess = true
     end
 end
 
--- 2. Xử lý Quảng Trường Quỷ (Demon Plaza / Devil Square)
-if not isSuccess and _G.Instance_DemonPlazaUI and _G.Instance_DemonPlazaUI.ContentData then
-    local mapId = _G.Instance_DemonPlazaUI.ContentData.mapId
-    if _G.NetManager and _G.InstanceMatchMessage then
-        _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
-            instanceId = mapId
-        })
-        
-        -- THỬ GỬI THÊM LỆNH ENTER VÀO MAP TRỰC TIẾP (BỎ QUA MATCHING TEAM)
-        if _G.InstanceMessage and _G.InstanceMessage.ReqEnterInstance then
-            _G.NetManager.Send(_G.InstanceMessage.ReqEnterInstance, {
-                instanceId = mapId
-            })
-        end
-        
-        if _G.UIManager then _G.UIManager.Hide(_G.UIID.Instance_DemonPlazaUI) end
-        
-        local msg = "[TEST] Đã gửi ReqInstanceMatchCreateTeam & ReqEnterInstance QTQ với mapId: " .. tostring(mapId)
-        print(msg)
-        if _G.LogMsg then _G.LogMsg(msg) end
-        isSuccess = true
+if #recycleItems > 0 then
+    _G.WriteLog('[SmeltTest] Đã tìm thấy ' .. tostring(#recycleItems) .. ' món Nhẫn Chuyển 6!')
+    for i, name in ipairs(recycleNames) do
+        _G.WriteLog(' - Chuẩn bị tách: ' .. tostring(name))
     end
-end
-
--- 3. Thông báo lỗi nếu chưa mở UI
-if not isSuccess then
-    local err = "[TEST] LỖI: Vui lòng mở giao diện Huyết Lâu hoặc Quảng Trường Quỷ trước khi chạy script!"
-    print(err)
-    if _G.LogMsg then _G.LogMsg(err) end
+    
+    -- Gửi lệnh phân giải (Tách trang bị) lên server
+    if _G.networkRequest and _G.networkRequest.ReqEquipDecompose then
+        _G.networkRequest.ReqEquipDecompose(recycleItems)
+        _G.WriteLog('[SmeltTest] Đã gửi lệnh ReqEquipDecompose tách thành công!')
+    else
+        _G.WriteLog('[SmeltTest] LỖI: Không tìm thấy hàm ReqEquipDecompose!')
+    end
+else
+    _G.WriteLog('[SmeltTest] Trong túi không có món Nhẫn Chuyển 6 nào (subType=18, quality=6) để tách.')
 end

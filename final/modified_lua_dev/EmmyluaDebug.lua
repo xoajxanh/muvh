@@ -898,6 +898,63 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+            _G.Mod_ExecuteAutoSmelt = function()
+                local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                if not items then return end
+                
+                local recycleItems = {}
+                for k, item in pairs(items) do
+                    if item and item.tblItem then
+                        local subType = item.tblItem.subType or 0
+                        local quality = item.tblItem.quality or 0
+                        local isExcellent = false
+                        
+                        if item.serverInfo and item.serverInfo.excellentList and #item.serverInfo.excellentList > 0 then
+                            isExcellent = true
+                        end
+                        if quality >= 5 then isExcellent = true end
+                        
+                        if isExcellent then
+                            local shouldSmelt = false
+                            if subType == 18 then
+                                if quality == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
+                                elseif quality == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
+                                elseif quality == 8 and _G.Mod_SmeltConfig.Ring_C8 then shouldSmelt = true end
+                            elseif subType == 19 then
+                                if quality == 6 and _G.Mod_SmeltConfig.Necklace_C6 then shouldSmelt = true
+                                elseif quality == 7 and _G.Mod_SmeltConfig.Necklace_C7 then shouldSmelt = true
+                                elseif quality == 8 and _G.Mod_SmeltConfig.Necklace_C8 then shouldSmelt = true end
+                            elseif subType == 26 then
+                                if quality == 6 and _G.Mod_SmeltConfig.Earring_C6 then shouldSmelt = true
+                                elseif quality == 7 and _G.Mod_SmeltConfig.Earring_C7 then shouldSmelt = true
+                                elseif quality == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
+                            end
+                            
+                            if shouldSmelt then
+                                table.insert(recycleItems, item.id)
+                            end
+                        end
+                    end
+                end
+                
+                if #recycleItems > 0 then
+                    local batch = {}
+                    local batchSize = 0
+                    for i, id in ipairs(recycleItems) do
+                        table.insert(batch, id)
+                        batchSize = batchSize + 1
+                        if batchSize >= 4 or i == #recycleItems then
+                            if _G.networkRequest and _G.networkRequest.ReqEquipDecompose then
+                                _G.networkRequest.ReqEquipDecompose(batch)
+                                LogMsg("Đã gửi yêu cầu tách " .. tostring(batchSize) .. " món trang sức Trác Việt!")
+                            end
+                            batch = {}
+                            batchSize = 0
+                        end
+                    end
+                end
+            end
+
             _G.Mod_AutoFarmBoss_Update = function()
     if not _G.Mod_AutoFarmBoss_Enabled then 
         if _G.Mod_AutoFarmBoss_State ~= 0 then
@@ -1380,6 +1437,10 @@ local function CreateModUI()
                     LogMsg("Không có Boss! Chờ ở Lorencia...")
                     _G.Mod_AutoFarmBoss_State = 2
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                    
+                    if _G.Mod_ExecuteAutoSmelt then
+                        _G.Mod_ExecuteAutoSmelt()
+                    end
                 else
                     if currentSec - (_G.Mod_AutoFarmBoss_ReqSentTime or 0) < 15 then
                         LogMsg("Không có Boss quanh đây. Chờ check lại...")
@@ -2633,7 +2694,7 @@ end
             CreateSmallToggle("LV7", "AutoPick_Rune_L7", rightColX + 155, currentY, 45)
             CreateSmallToggle(">LV7", "AutoPick_Rune_L7M", rightColX + 205, currentY, 50)
             
-            currentY = currentY - 35
+            currentY = currentY - 40
             
             local rL2 = GameObject("RuneLbl2")
             rL2.transform:SetParent(panelGo.transform, false)
@@ -2665,7 +2726,7 @@ end
             lvRt.anchorMax = Vector2(0, 1)
             lvRt.pivot = Vector2(0, 1)
             lvRt.anchoredPosition = Vector2(rightColX, currentY)
-            lvRt.sizeDelta = Vector2(160, 30)
+            lvRt.sizeDelta = Vector2(180, 30)
             local lvTxt = lValGo:AddComponent(typeof(Text))
             lvTxt.raycastTarget = false
             lvTxt.text = "SỐ LƯỢNG NHẶT: " .. tostring(_G.AutoPick_Limit)
@@ -2681,7 +2742,7 @@ end
             lmRt.anchorMin = Vector2(0, 1)
             lmRt.anchorMax = Vector2(0, 1)
             lmRt.pivot = Vector2(0, 1)
-            lmRt.anchoredPosition = Vector2(rightColX + 170, currentY)
+            lmRt.anchoredPosition = Vector2(rightColX + 190, currentY)
             lmRt.sizeDelta = Vector2(40, 30)
             local lmImg = lMinusGo:AddComponent(typeof(Image))
             lmImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -2706,7 +2767,7 @@ end
             lpRt.anchorMin = Vector2(0, 1)
             lpRt.anchorMax = Vector2(0, 1)
             lpRt.pivot = Vector2(0, 1)
-            lpRt.anchoredPosition = Vector2(rightColX + 220, currentY)
+            lpRt.anchoredPosition = Vector2(rightColX + 240, currentY)
             lpRt.sizeDelta = Vector2(40, 30)
             local lpImg = lPlusGo:AddComponent(typeof(Image))
             lpImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -2730,7 +2791,7 @@ end
                     _G.AutoPick_Limit = _G.AutoPick_Limit - 1
                     CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Limit", _G.AutoPick_Limit)
                     CS.UnityEngine.PlayerPrefs.Save()
-                    lvTxt.text = "- Số lượng nhặt: " .. tostring(_G.AutoPick_Limit)
+                    lvTxt.text = "SỐ LƯỢNG NHẶT: " .. tostring(_G.AutoPick_Limit)
                 end
             end)
             
@@ -2739,13 +2800,13 @@ end
                 _G.AutoPick_Limit = _G.AutoPick_Limit + 1
                 CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Limit", _G.AutoPick_Limit)
                 CS.UnityEngine.PlayerPrefs.Save()
-                lvTxt.text = "- Số lượng nhặt: " .. tostring(_G.AutoPick_Limit)
+                lvTxt.text = "SỐ LƯỢNG NHẶT: " .. tostring(_G.AutoPick_Limit)
             end)
 
 
             -- Move options from Kundun UI
             local rightColX2 = 20
-            currentY = currentY - 20
+            currentY = currentY - 25
             local sep2Go = GameObject("BossThapSeparator")
             sep2Go.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, sep2Go)
@@ -2763,7 +2824,7 @@ end
             if defaultFont then sep2Txt.font = defaultFont end
             sep2Txt.text = "------------------------------------------------------------------------------------------"
             
-            currentY = currentY - 45
+            currentY = currentY - 25
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, titleGo)
@@ -2781,7 +2842,7 @@ end
             titleTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then titleTxt.font = defaultFont end
             
-            currentY = currentY - 45
+            currentY = currentY - 35
 
             -- Tab C7 / C8
             local function CreateTabBtn(label, tabName, xPos, yPos)
@@ -2821,7 +2882,7 @@ end
             local tabC8 = CreateTabBtn("[ BOSS C8 ]", "C8", rightColX2 + 110, currentY)
             _G.NangCaoTabBtns = { C7 = tabC7, C8 = tabC8 }
             
-            currentY = currentY - 35
+            currentY = currentY - 25
 
             local rightColX3 = 20
             local sep3Go = GameObject("BossThapSeparator")
@@ -3034,6 +3095,108 @@ end
                 end)
                 UpdateHiddenToggle()
             end)
+
+            -- AUTO SMELT UI
+            local smeltStartX = 290
+            local smeltY = -70
+            
+            -- local smeltTitleGo = GameObject("SmeltTitle")
+            -- smeltTitleGo.transform:SetParent(panelGo.transform, false)
+            -- table.insert(_G.AutoBossUIList, smeltTitleGo)
+            -- local smeltTitleRt = smeltTitleGo:AddComponent(typeof(RectTransform))
+            -- smeltTitleRt.anchorMin, smeltTitleRt.anchorMax, smeltTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            -- smeltTitleRt.anchoredPosition = Vector2(smeltStartX, smeltY)
+            -- smeltTitleRt.sizeDelta = Vector2(250, 30)
+            -- local smeltTitleTxt = smeltTitleGo:AddComponent(typeof(Text))
+            -- smeltTitleTxt.raycastTarget = false
+            -- smeltTitleTxt.text = "TỰ TÁCH ĐỒ TRÁC VIỆT"
+            -- smeltTitleTxt.color = Color(1, 0.8, 0, 1)
+            -- smeltTitleTxt.fontSize = 17
+            -- smeltTitleTxt.alignment = TextAnchor.MiddleLeft
+            -- if defaultFont then smeltTitleTxt.font = defaultFont end
+            
+            -- smeltY = smeltY - 30
+            
+            local function CreateSmeltToggle(label, varName, x, y, width)
+                local btnGo = GameObject("SmeltToggle_" .. varName)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, btnGo)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(width, 25)
+                
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(btnGo.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+                
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.text = label
+                txt.fontSize = 15
+                txt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+                
+                if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
+                if _G.Mod_SmeltConfig[varName] == nil then
+                    pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
+                    if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
+                end
+                
+                local function UpdateVisual()
+                    if _G.Mod_SmeltConfig[varName] then
+                        bgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        txt.color = Color.white
+                    else
+                        bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        txt.color = Color(0.8, 0.8, 0.8, 1)
+                    end
+                end
+                UpdateVisual()
+                
+                local btn = btnGo:AddComponent(typeof(Button))
+                btn.onClick:AddListener(function()
+                    _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName, _G.Mod_SmeltConfig[varName] and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateVisual()
+                end)
+            end
+            
+            local function CreateSmeltRow(rowLabel, typePrefix, y)
+                local lblGo = GameObject("SmeltLbl_" .. typePrefix)
+                lblGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, lblGo)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, y)
+                lblRt.sizeDelta = Vector2(120, 25)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = false
+                lblTxt.text = rowLabel
+                lblTxt.color = Color.white
+                lblTxt.fontSize = 15
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+                
+                CreateSmeltToggle("C6", typePrefix .. "_C6", smeltStartX + 125, y, 40)
+                CreateSmeltToggle("C7", typePrefix .. "_C7", smeltStartX + 170, y, 40)
+                CreateSmeltToggle("C8", typePrefix .. "_C8", smeltStartX + 215, y, 40)
+            end
+            
+            CreateSmeltRow("TÁCH NHẪN", "Ring", smeltY)
+            CreateSmeltRow("TÁCH DÂY", "Necklace", smeltY - 30)
+            CreateSmeltRow("TÁCH KHUYÊN", "Earring", smeltY - 60)
             
             currentY = currentY - 50
             
