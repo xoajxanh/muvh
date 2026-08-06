@@ -1877,15 +1877,28 @@ end
                         end
                         local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15, _G.RoleTargetManager.GetCanAttackRole)
                         if players and #players > 0 then
-                            table.sort(players, modSortRole)
-                            local target = players[1]
-                            if _G.RoleManager.me.SetTarget then
-                                _G.RoleManager.me:SetTarget(target)
-                            else
-                                _G.RoleManager.me.TargetAvatar = target
+                            local target = nil
+                            if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                for _, p in ipairs(players) do
+                                    if p.name == _G.Mod_LockTarget_Name then
+                                        target = p
+                                        break
+                                    end
+                                end
+                            elseif not _G.Mod_LockTarget_Enabled then
+                                table.sort(players, modSortRole)
+                                target = players[1]
                             end
-                            if _G.RoleManager.me.SetAutoFight then
-                                _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                            
+                            if target then
+                                if _G.RoleManager.me.SetTarget then
+                                    _G.RoleManager.me:SetTarget(target)
+                                else
+                                    _G.RoleManager.me.TargetAvatar = target
+                                end
+                                if _G.RoleManager.me.SetAutoFight then
+                                    _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                                end
                             end
                         end
                     end
@@ -3512,6 +3525,106 @@ end
             currentY = currentY - 45
             
             CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
+            currentY = currentY - 45
+
+            -- Toggle KHÓA MỤC TIÊU
+            local tGoLock = GameObject("Mod_LockTarget_Enabled_Toggle")
+            tGoLock.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, tGoLock)
+            
+            local tRtLock = tGoLock:AddComponent(typeof(RectTransform))
+            tRtLock.anchorMin, tRtLock.anchorMax, tRtLock.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tRtLock.anchoredPosition = Vector2(rightColX2, currentY)
+            tRtLock.sizeDelta = Vector2(140, 30)
+
+            local bgLock = GameObject("Bg")
+            bgLock.transform:SetParent(tGoLock.transform, false)
+            local bgRtLock = bgLock:AddComponent(typeof(RectTransform))
+            bgRtLock.anchorMin, bgRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            bgRtLock.sizeDelta = Vector2(0, 0)
+            local bgImgLock = bgLock:AddComponent(typeof(Image))
+
+            local txtGoLock = GameObject("Text")
+            txtGoLock.transform:SetParent(tGoLock.transform, false)
+            local txtRtLock = txtGoLock:AddComponent(typeof(RectTransform))
+            txtRtLock.anchorMin, txtRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRtLock.sizeDelta = Vector2(0, 0)
+            local txtLock = txtGoLock:AddComponent(typeof(Text))
+            txtLock.raycastTarget = false
+            txtLock.fontSize = 15
+            txtLock.alignment = TextAnchor.MiddleCenter
+            if defaultFont then txtLock.font = defaultFont end
+
+            local btnLock = tGoLock:AddComponent(typeof(Button))
+            
+            if _G.Mod_LockTarget_Enabled == nil then
+                _G.Mod_LockTarget_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) == 1
+            end
+
+            local function UpdateLockLabel()
+                if _G.Mod_LockTarget_Enabled then
+                    bgImgLock.color = Color(0.2, 0.5, 0.2, 1)
+                    txtLock.text = "KHÓA MỤC TIÊU"
+                    txtLock.color = Color.white
+                else
+                    bgImgLock.color = Color(0.3, 0.3, 0.3, 1)
+                    txtLock.text = "KHÓA MỤC TIÊU"
+                    txtLock.color = Color(0.7, 0.7, 0.7, 1)
+                end
+            end
+            UpdateLockLabel()
+
+            btnLock.onClick:AddListener(function()
+                _G.Mod_LockTarget_Enabled = not _G.Mod_LockTarget_Enabled
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", _G.Mod_LockTarget_Enabled and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLockLabel()
+            end)
+
+            -- Text Field cho Khóa mục tiêu
+            local lockTgtGo = GameObject("LockTargetInput")
+            lockTgtGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, lockTgtGo)
+            local lockRt = lockTgtGo:AddComponent(typeof(RectTransform))
+            lockRt.anchorMin, lockRt.anchorMax, lockRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            lockRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
+            lockRt.sizeDelta = Vector2(115, 30)
+            
+            local lockBg = GameObject("Bg")
+            lockBg.transform:SetParent(lockTgtGo.transform, false)
+            local lockBgRt = lockBg:AddComponent(typeof(RectTransform))
+            lockBgRt.anchorMin, lockBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            lockBgRt.sizeDelta = Vector2(0, 0)
+            local lockImg = lockBg:AddComponent(typeof(Image))
+            lockImg.color = Color(0.1, 0.1, 0.1, 1)
+            
+            local lockTxtGo = GameObject("Text")
+            lockTxtGo.transform:SetParent(lockTgtGo.transform, false)
+            local lockTxtRt = lockTxtGo:AddComponent(typeof(RectTransform))
+            lockTxtRt.anchorMin, lockTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            lockTxtRt.offsetMin, lockTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local lockTxt = lockTxtGo:AddComponent(typeof(Text))
+            
+            if _G.Mod_LockTarget_Name == nil then
+                _G.Mod_LockTarget_Name = CS.UnityEngine.PlayerPrefs.GetString("Mod_LockTarget_Name", "")
+            end
+            
+            lockTxt.text = _G.Mod_LockTarget_Name
+            lockTxt.color, lockTxt.fontSize = Color.white, 15
+            lockTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then lockTxt.font = defaultFont end
+            
+            local lockField = lockTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            lockField.textComponent = lockTxt
+            lockField.text = _G.Mod_LockTarget_Name
+            
+            lockField.onValueChanged:AddListener(function(val)
+                _G.Mod_LockTarget_Name = val
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_LockTarget_Name", val)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+            end)
             currentY = currentY - 45
 
             CreateToggle("AUTO HỒI SINH KTĐ", "Mod_AutoRevive_KTD", rightColX2, currentY)
