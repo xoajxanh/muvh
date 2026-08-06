@@ -1,39 +1,22 @@
-local items = _G.BagInfoData and _G.BagInfoData.TotalItems
-if not items then
-    _G.WriteLog('[SmeltTest] BagInfoData.TotalItems is nil')
-    return
+﻿local function modSortRole(a, b)
+    local distA = a.tempPathFindingDistance or 9999
+    local distB = b.tempPathFindingDistance or 9999
+    return distA < distB
 end
 
-local recycleItems = {}
-local recycleNames = {}
-
-for k, item in pairs(items) do
-    if item and item.tblItem then
-        local subType = item.tblItem.subType or 0
-        local quality = item.tblItem.quality or 0
-        
-        -- Nhẫn (subType = 18) và Chuyển 6 (quality = 6)
-        if subType == 18 and quality == 6 then
-            table.insert(recycleItems, item.id)
-            local name = item.tblItem.name or 'Unknown'
-            table.insert(recycleNames, name)
-        end
-    end
-end
-
-if #recycleItems > 0 then
-    _G.WriteLog('[SmeltTest] Đã tìm thấy ' .. tostring(#recycleItems) .. ' món Nhẫn Chuyển 6!')
-    for i, name in ipairs(recycleNames) do
-        _G.WriteLog(' - Chuẩn bị tách: ' .. tostring(name))
-    end
-    
-    -- Gửi lệnh phân giải (Tách trang bị) lên server
-    if _G.networkRequest and _G.networkRequest.ReqEquipDecompose then
-        _G.networkRequest.ReqEquipDecompose(recycleItems)
-        _G.WriteLog('[SmeltTest] Đã gửi lệnh ReqEquipDecompose tách thành công!')
+local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15, _G.RoleTargetManager.GetCanAttackRole)
+if players and #players > 0 then
+    table.sort(players, modSortRole)
+    local target = players[1]
+    if _G.RoleManager.me.SetTarget then
+        _G.RoleManager.me:SetTarget(target)
     else
-        _G.WriteLog('[SmeltTest] LỖI: Không tìm thấy hàm ReqEquipDecompose!')
+        _G.RoleManager.me.TargetAvatar = target
+    end
+    if _G.RoleManager.me.SetAutoFight then
+        _G.RoleManager.me:SetAutoFight('ReleaseSkill')
+        _G.FloatingWordUtility.QuickMsg('Da tim thay '..tostring(target.name)..' va lap tuc tan cong!')
     end
 else
-    _G.WriteLog('[SmeltTest] Trong túi không có món Nhẫn Chuyển 6 nào (subType=18, quality=6) để tách.')
+    _G.FloatingWordUtility.QuickMsg('Khong tim thay ke dich nao o gan de danh!')
 end
