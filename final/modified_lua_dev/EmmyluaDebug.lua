@@ -73,6 +73,37 @@ local function CreateModUI()
             pcall(function() _G.Mod_ShowKundunHP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ShowKundunHP", 0) == 1 end)
         end
         
+        _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
+            if not _G.Mod_FarmStats then return end
+            local str = "hidden:" .. tostring(_G.Mod_FarmStats.hidden or 0)
+            if _G.Mod_FarmStats.bosses then
+                for k, v in pairs(_G.Mod_FarmStats.bosses) do
+                    str = str .. ";" .. tostring(k) .. ":" .. tostring(v)
+                end
+            end
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_FarmStatsData", str)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
+        
+        if not _G.Mod_FarmStats_Loaded then
+            _G.Mod_FarmStats = { hidden = 0, bosses = {} }
+            local str = CS.UnityEngine.PlayerPrefs.GetString("Mod_FarmStatsData", "")
+            if str ~= "" then
+                for p in string.gmatch(str, "([^;]+)") do
+                    local kStr, vStr = string.match(p, "([^:]+):(%d+)")
+                    if kStr and vStr then
+                        if kStr == "hidden" then
+                            _G.Mod_FarmStats.hidden = tonumber(vStr) or 0
+                        else
+                            local bossId = tonumber(kStr)
+                            if bossId then _G.Mod_FarmStats.bosses[bossId] = tonumber(vStr) end
+                        end
+                    end
+                end
+            end
+            _G.Mod_FarmStats_Loaded = true
+        end
+        
         local GameObject = CS.UnityEngine.GameObject
         local RectTransform = CS.UnityEngine.RectTransform
         local Canvas = CS.UnityEngine.Canvas
@@ -872,7 +903,7 @@ local function CreateModUI()
         if _G.Mod_AutoFarmBoss_State ~= 0 then
             _G.Mod_AutoFarmBoss_State = 0
             _G.Mod_AutoFarmBoss_Target = nil
-            LogMsg("[FSM] Đã TẮT Auto Farm.")
+            LogMsg("Đã TẮT Auto Farm.")
         end
         return 
     end
@@ -914,7 +945,7 @@ local function CreateModUI()
                 local tipUi = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Tip_MonsterTipUI")
                 if tipUi and tipUi.DimensionalCracksData then
                     if _G.Mod_AutoFarmBoss_EnterHiddenMap then
-                        LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Bắn thẳng Request Triệu hồi Kim Cương...")
+                        LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Triệu hồi Kim Cương...")
                         if _G.networkRequest and _G.networkRequest.ReqCallBoss then
                             _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id, tipUi.DimensionalCracksData.mid, 2)
                         end
@@ -924,7 +955,7 @@ local function CreateModUI()
                         _G.Mod_AutoFarmBoss_Target = nil
                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
                     else
-                        LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT. Bỏ qua và đóng UI để không vướng màn hình.")
+                        LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT")
                         if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
                     end
                 end
@@ -1007,7 +1038,7 @@ local function CreateModUI()
             
             -- Log mỗi 5s độc lập với hàm Scan
             if currentSec >= (_G.Mod_MapAn_LastLogTime or 0) + 5 then
-                LogMsg(string.format("[MAP ẨN] Boss/Elite: %d | Quái: %d", quaiBoss, quaiThuong))
+                LogMsg(string.format("[MAP ẨN] Boss: %d", quaiBoss))
                 _G.Mod_MapAn_LastLogTime = currentSec
             end
             
@@ -1025,7 +1056,17 @@ local function CreateModUI()
         else
             if not _G.Mod_MapAn_ClearTime then
                 _G.Mod_MapAn_ClearTime = currentSec + 5
-                LogMsg("[MAP ẨN] Sạch bóng quân thù! Chờ 5s nhặt đồ rồi rời đi...")
+                
+                if not _G.Mod_MapAn_Recorded then
+                    _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
+                    _G.Mod_FarmStats.hidden = _G.Mod_FarmStats.hidden + 1
+                    _G.Mod_MapAn_Recorded = true
+                    if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
+                    if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
+                    LogMsg("[MAP ẨN] Sạch bóng quân thù! Đã ghi nhận thống kê. Chờ 5s nhặt đồ rồi rời đi...")
+                else
+                    LogMsg("[MAP ẨN] Sạch bóng quân thù! Chờ 5s nhặt đồ rồi rời đi...")
+                end
             elseif currentSec >= _G.Mod_MapAn_ClearTime then
                 if _G.RoleManager.me then
                     if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
@@ -1037,9 +1078,6 @@ local function CreateModUI()
                     if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
                 end
                 if ExitDungeon() then
-                    _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                    _G.Mod_FarmStats.hidden = _G.Mod_FarmStats.hidden + 1
-                    if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     LogMsg("[MAP ẨN] Đã tắt Auto Fight và thoát phó bản Boss Ẩn thành công!")
                 end
                 _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
@@ -1047,6 +1085,8 @@ local function CreateModUI()
         end
         return -- DỪNG TẠI ĐÂY KHI ĐANG TRONG MAP ẨN, KHÔNG CHO CHẠY TIẾP XUỐNG LOGIC BOSS BÌNH THƯỜNG
     end
+    
+    _G.Mod_MapAn_Recorded = false
     
     if _G.Mod_AutoFarmBoss_LastState ~= _G.Mod_AutoFarmBoss_State or _G.Mod_AutoFarmBoss_LastMap ~= currentMapId then
         local mapName = GetMapName(currentMapId)
@@ -1328,7 +1368,7 @@ local function CreateModUI()
                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                     end
                 else
-                    LogMsg(string.format("Chưa có Boss! Gần nhất: %s (Map %s) còn %ds. Đứng chờ ở Lorencia 5s...", bestBoss.cfg.name, GetMapName(bestBoss.mapCfg.mapId), bestBoss.wait))
+                    LogMsg(string.format("Chưa có Boss! Gần nhất: %s còn %ds", bestBoss.cfg.name, bestBoss.wait))
                     _G.Mod_AutoFarmBoss_Target = nil
                     if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
@@ -1385,7 +1425,7 @@ local function CreateModUI()
             if currentMapId ~= target.mapCfg.mapId then
                 _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
                 if _G.Mod_AutoFarmBoss_TargetWait > 3 then
-                    LogMsg("Lỗi: Không thể bay tới Map Boss (Chờ 3s). Bỏ qua điểm này 60s")
+                    LogMsg("Lỗi: Không thể bay tới Map Boss. Bỏ qua điểm này 60s")
                     _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_State = 1
@@ -1512,6 +1552,7 @@ local function CreateModUI()
                     
                     _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                     _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) + 1
+                    if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
                     if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     
                     _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -2242,8 +2283,14 @@ end
         if _G.AutoPick_Limit == nil then _G.AutoPick_Limit = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Limit", 2) end
         if _G.AutoPick_Limit == 0 then _G.AutoPick_Limit = 2 end
         if _G.AutoJumpBoss_Enabled == nil then _G.AutoJumpBoss_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoJumpBoss_Enabled", 1) == 1 end
-        _G.AutoPick_FilterRune = true
-        _G.AutoPick_FilterBone = true
+        if _G.AutoPick_Rune_L5L == nil then _G.AutoPick_Rune_L5L = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_L5L", 1) == 1 end
+        if _G.AutoPick_Rune_L5 == nil then _G.AutoPick_Rune_L5 = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_L5", 1) == 1 end
+        if _G.AutoPick_Rune_L6 == nil then _G.AutoPick_Rune_L6 = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_L6", 1) == 1 end
+        if _G.AutoPick_Rune_L7 == nil then _G.AutoPick_Rune_L7 = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_L7", 1) == 1 end
+        if _G.AutoPick_Rune_L7M == nil then _G.AutoPick_Rune_L7M = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_L7M", 1) == 1 end
+        if _G.AutoPick_Rune_Luc == nil then _G.AutoPick_Rune_Luc = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_Luc", 1) == 1 end
+        if _G.AutoPick_Rune_Lam == nil then _G.AutoPick_Rune_Lam = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_Lam", 1) == 1 end
+        if _G.AutoPick_Rune_Do == nil then _G.AutoPick_Rune_Do = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Rune_Do", 1) == 1 end
         _G.AutoPick_Count = 0
         _G.Mod_PickedItems = {}
 
@@ -2443,14 +2490,89 @@ end
             local btn = tGo:AddComponent(typeof(Button))
 
             local function UpdateLabel()
+                local extra = ""
+                if varName == "AutoPick_Enabled" then
+                    extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
+                end
                 if _G[varName] then
                     bgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    txt.text = label .. ": ON"
+                    txt.text = label .. ": ON" .. extra
                     txt.color = Color.white
                 else
                     bgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    txt.text = label .. ": OFF"
+                    txt.text = label .. ": OFF" .. extra
                     txt.color = Color.white
+                end
+            end
+            UpdateLabel()
+
+            if varName == "AutoPick_Enabled" then
+                _G.ModUpdateCountText = function()
+                    pcall(UpdateLabel)
+                end
+            end
+
+            btn.onClick:AddListener(function()
+                _G[varName] = not _G[varName]
+                if varName == "AutoPick_Enabled" and _G[varName] then
+                    _G.AutoPick_Count = 0
+                    _G.LastPickupTime = 0
+                    _G.Mod_IgnoredDropItems = {}
+                    _G.Mod_AllDropItems = {}
+                    _G.Mod_PickedItems = {}
+                end
+                
+                local prefKey = string.sub(varName, 1, 4) == "Mod_" and varName or ("Mod_" .. varName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[varName] and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+                pcall(function()
+                    if _G.EventManager and _G.Event and _G.Event.QiJiHelper_SetAutoPickup then
+                        _G.EventManager.Dispatch(_G.Event.QiJiHelper_SetAutoPickup)
+                    end
+                end)
+            end)
+        end
+
+        local function CreateSmallToggle(label, varName, xPos, yPos, width)
+            local tGo = GameObject(varName .. "_Toggle")
+            tGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, tGo)
+            
+            local tRt = tGo:AddComponent(typeof(RectTransform))
+            tRt.anchorMin, tRt.anchorMax, tRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tRt.anchoredPosition = Vector2(xPos, yPos)
+            tRt.sizeDelta = Vector2(width, 30)
+
+            local bg = GameObject("Bg")
+            bg.transform:SetParent(tGo.transform, false)
+            local bgRt = bg:AddComponent(typeof(RectTransform))
+            bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            bgRt.sizeDelta = Vector2(0, 0)
+            local bgImg = bg:AddComponent(typeof(Image))
+
+            local txtGo = GameObject("Text")
+            txtGo.transform:SetParent(tGo.transform, false)
+            local txtRt = txtGo:AddComponent(typeof(RectTransform))
+            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRt.sizeDelta = Vector2(0, 0)
+            local txt = txtGo:AddComponent(typeof(Text))
+            txt.raycastTarget = false
+            txt.fontSize = 15
+            txt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then txt.font = defaultFont end
+
+            local btn = tGo:AddComponent(typeof(Button))
+
+            local function UpdateLabel()
+                if _G[varName] then
+                    bgImg.color = Color(0.2, 0.5, 0.2, 1)
+                    txt.text = label
+                    txt.color = Color.white
+                else
+                    bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    txt.text = label
+                    txt.color = Color(0.7, 0.7, 0.7, 1)
                 end
             end
             UpdateLabel()
@@ -2461,11 +2583,6 @@ end
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[varName] and 1 or 0)
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
-                pcall(function()
-                    if _G.EventManager and _G.Event and _G.Event.QiJiHelper_SetAutoPickup then
-                        _G.EventManager.Dispatch(_G.Event.QiJiHelper_SetAutoPickup)
-                    end
-                end)
             end)
         end
 
@@ -2494,29 +2611,50 @@ end
             currentY = currentY - 45
             
 
+            local rL1 = GameObject("RuneLbl1")
+            rL1.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, rL1)
+            local rl1Rt = rL1:AddComponent(typeof(RectTransform))
+            rl1Rt.anchorMin, rl1Rt.anchorMax, rl1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            rl1Rt.anchoredPosition = Vector2(rightColX, currentY)
+            rl1Rt.sizeDelta = Vector2(260, 20)
+            local rl1Txt = rL1:AddComponent(typeof(Text))
+            rl1Txt.raycastTarget = false
+            rl1Txt.text = "Nhặt Phù văn (Cấp):"
+            rl1Txt.color = Color(1, 1, 0.5, 1)
+            rl1Txt.fontSize = 16
+            rl1Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then rl1Txt.font = defaultFont end
             
-            -- local alSepGo = GameObject("AutoLootSeparator")
-            -- alSepGo.transform:SetParent(panelGo.transform, false)
-            -- table.insert(_G.NangCaoUIList, alSepGo)
-            -- local alSepRt = alSepGo:AddComponent(typeof(RectTransform))
-            -- alSepRt.anchorMin = Vector2(0, 1)
-            -- alSepRt.anchorMax = Vector2(0, 1)
-            -- alSepRt.pivot = Vector2(0, 1)
-            -- alSepRt.anchoredPosition = Vector2(rightColX, currentY)
-            -- alSepRt.sizeDelta = Vector2(300, 20)
-            -- local alSepTxt = alSepGo:AddComponent(typeof(Text))
-            -- alSepTxt.raycastTarget = false
-            -- alSepTxt.color = Color(0.4, 0.4, 0.4, 1)
-            -- alSepTxt.fontSize = 16
-            -- alSepTxt.alignment = TextAnchor.MiddleLeft
-            -- if defaultFont then alSepTxt.font = defaultFont end
-            -- alSepTxt.text = "-----------------------------------------------------------------"
+            currentY = currentY - 25
+            CreateSmallToggle("<LV5", "AutoPick_Rune_L5L", rightColX, currentY, 50)
+            CreateSmallToggle("LV5", "AutoPick_Rune_L5", rightColX + 55, currentY, 45)
+            CreateSmallToggle("LV6", "AutoPick_Rune_L6", rightColX + 105, currentY, 45)
+            CreateSmallToggle("LV7", "AutoPick_Rune_L7", rightColX + 155, currentY, 45)
+            CreateSmallToggle(">LV7", "AutoPick_Rune_L7M", rightColX + 205, currentY, 50)
             
-            -- currentY = currentY - 20
-            -- CreateToggle("Nhặt Phù Văn", "AutoPick_FilterRune", currentY)
-            -- currentY = currentY - 35
-            -- CreateToggle("Nhặt Thánh Cốt", "AutoPick_FilterBone", currentY)
-            -- currentY = currentY - 40
+            currentY = currentY - 35
+            
+            local rL2 = GameObject("RuneLbl2")
+            rL2.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, rL2)
+            local rl2Rt = rL2:AddComponent(typeof(RectTransform))
+            rl2Rt.anchorMin, rl2Rt.anchorMax, rl2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            rl2Rt.anchoredPosition = Vector2(rightColX, currentY)
+            rl2Rt.sizeDelta = Vector2(100, 20)
+            local rl2Txt = rL2:AddComponent(typeof(Text))
+            rl2Txt.raycastTarget = false
+            rl2Txt.text = "Màu sắc:"
+            rl2Txt.color = Color(1, 1, 0.5, 1)
+            rl2Txt.fontSize = 16
+            rl2Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then rl2Txt.font = defaultFont end
+            
+            CreateSmallToggle("Lục", "AutoPick_Rune_Luc", rightColX + 70, currentY + 5, 50)
+            CreateSmallToggle("Lam", "AutoPick_Rune_Lam", rightColX + 125, currentY + 5, 50)
+            CreateSmallToggle("Đỏ", "AutoPick_Rune_Do", rightColX + 180, currentY + 5, 50)
+            
+            currentY = currentY - 35
 
             -- Limit Control
             local lValGo = GameObject("LimitValText")
@@ -2530,7 +2668,7 @@ end
             lvRt.sizeDelta = Vector2(160, 30)
             local lvTxt = lValGo:AddComponent(typeof(Text))
             lvTxt.raycastTarget = false
-            lvTxt.text = "- Số lượng nhặt: " .. tostring(_G.AutoPick_Limit)
+            lvTxt.text = "SỐ LƯỢNG NHẶT: " .. tostring(_G.AutoPick_Limit)
             lvTxt.color = Color.white
             lvTxt.fontSize = 18
             lvTxt.alignment = TextAnchor.MiddleLeft
@@ -2604,88 +2742,6 @@ end
                 lvTxt.text = "- Số lượng nhặt: " .. tostring(_G.AutoPick_Limit)
             end)
 
-            currentY = currentY - 45
-            local rstBtnGo = GameObject("ResetPickBtn")
-            rstBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, rstBtnGo)
-            local rstRt = rstBtnGo:AddComponent(typeof(RectTransform))
-            rstRt.anchorMin = Vector2(0, 1)
-            rstRt.anchorMax = Vector2(0, 1)
-            rstRt.pivot = Vector2(0, 1)
-            rstRt.anchoredPosition = Vector2(rightColX, currentY)
-            rstRt.sizeDelta = Vector2(260, 35)
-
-            local rstImg = rstBtnGo:AddComponent(typeof(Image))
-            rstImg.color = Color(0.6, 0.2, 0.2, 1)
-
-            local rstTxtGo = GameObject("ResetPickText")
-            rstTxtGo.transform:SetParent(rstBtnGo.transform, false)
-            local rstTxtRt = rstTxtGo:AddComponent(typeof(RectTransform))
-            rstTxtRt.anchorMin = Vector2(0, 0)
-            rstTxtRt.anchorMax = Vector2(1, 1)
-            rstTxtRt.sizeDelta = Vector2(0, 0)
-            local rstTxt = rstTxtGo:AddComponent(typeof(Text))
-            rstTxt.raycastTarget = false
-            rstTxt.text = "RESET LƯỢT NHẶT"
-            rstTxt.color = Color.white
-            rstTxt.fontSize = 17
-            rstTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then rstTxt.font = defaultFont end
-
-            local rBtnComp = rstBtnGo:AddComponent(typeof(Button))
-            rBtnComp.onClick:AddListener(function()
-                _G.AutoPick_Count = 0
-                _G.LastPickupTime = 0
-                _G.Mod_IgnoredDropItems = {}
-                _G.Mod_AllDropItems = {}
-                _G.Mod_PickedItems = {}
-                WriteLog("[AutoLoot] Manual Reset Triggered! Count is now 0")
-                if _G.ModUpdateCountText then _G.ModUpdateCountText() end
-            end)
-
-            currentY = currentY - 38
-            local hintGo = GameObject("ResetHint")
-            hintGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, hintGo)
-            local hintRt = hintGo:AddComponent(typeof(RectTransform))
-            hintRt.anchorMin = Vector2(0, 1)
-            hintRt.anchorMax = Vector2(0, 1)
-            hintRt.pivot = Vector2(0, 1)
-            hintRt.anchoredPosition = Vector2(rightColX - 25, currentY)
-            hintRt.sizeDelta = Vector2(350, 20)
-            local hintTxt = hintGo:AddComponent(typeof(Text))
-            hintTxt.raycastTarget = false
-            hintTxt.text = "(Ấn nút này mỗi lần chuẩn bị đánh Kundun)"
-            hintTxt.color = Color(0.7, 0.7, 0.7, 1)
-            hintTxt.fontSize = 14
-            hintTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then hintTxt.font = defaultFont end
-            
-            -- currentY = currentY - 25
-            -- local currCountGo = GameObject("CurrentCountText")
-            -- currCountGo.transform:SetParent(panelGo.transform, false)
-            -- table.insert(_G.NangCaoUIList, currCountGo)
-            -- local ccRt = currCountGo:AddComponent(typeof(RectTransform))
-            -- ccRt.anchorMin = Vector2(0, 1)
-            -- ccRt.anchorMax = Vector2(0, 1)
-            -- ccRt.pivot = Vector2(0, 1)
-            -- ccRt.anchoredPosition = Vector2(rightColX, currentY)
-            -- ccRt.sizeDelta = Vector2(260, 20)
-            -- local ccTxt = currCountGo:AddComponent(typeof(Text))
-            -- ccTxt.raycastTarget = false
-            -- ccTxt.text = "Số lượt nhặt hiện tại: 0"
-            -- ccTxt.color = Color(0.6, 1, 0.6, 1)
-            -- ccTxt.fontSize = 16
-            -- ccTxt.alignment = TextAnchor.MiddleCenter
-            -- if defaultFont then ccTxt.font = defaultFont end
-
-            _G.ModUpdateCountText = function()
-                pcall(function()
-                    if rstTxt and not rstTxt:Equals(nil) then
-                        rstTxt.text = "RESET LƯỢT NHẶT (" .. tostring(_G.AutoPick_Count or 0) .. ")"
-                    end
-                end)
-            end
 
             -- Move options from Kundun UI
             local rightColX2 = 20
@@ -2901,11 +2957,11 @@ end
             local function UpdateMasterToggle()
                 if _G.Mod_AutoFarmBoss_Enabled then
                     mtBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    mtTxt.text = "AUTO FARM BOSS: ON"
+                    mtTxt.text = "AUTO FARM: ON"
                     mtTxt.color = Color.white
                 else
                     mtBgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    mtTxt.text = "AUTO FARM BOSS: OFF"
+                    mtTxt.text = "AUTO FARM: OFF"
                     mtTxt.color = Color(0.9, 0.9, 0.9, 1)
                 end
             end
@@ -3181,6 +3237,7 @@ end
                     local rBtn = resetBtnGo:AddComponent(typeof(Button))
                     rBtn.onClick:AddListener(function()
                         _G.Mod_FarmStats = { hidden = 0, bosses = {} }
+                        if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
                         if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     end)
                     
@@ -3249,8 +3306,8 @@ end
             table.insert(_G.NangCaoUIList, vLineGo)
             local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
             vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            vLineRt.anchoredPosition = Vector2(360, -40)
-            vLineRt.sizeDelta = Vector2(2, 580)
+            vLineRt.anchoredPosition = Vector2(360, -45)
+            vLineRt.sizeDelta = Vector2(2, 535)
             local vLineImg = vLineGo:AddComponent(typeof(Image))
             vLineImg.color = Color(0.4, 0.4, 0.4, 1)
 
@@ -3872,7 +3929,7 @@ end
                     
                     if mapId == 1077 then
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.02, 10, function()
+                            _G.Timer.StartLoop(0.1, 3, function()
                                 if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
                             end)
                         else
@@ -3893,8 +3950,40 @@ end
                     if isNormal and not _G.AutoPick_FilterNormal then isNormal = false end
                     
                     local shouldPick = false
-                    if isRune and _G.AutoPick_FilterRune then shouldPick = true end
-                    if isBone and _G.AutoPick_FilterBone then shouldPick = true end
+                    if isRune then
+                        local rLevel = dropItemData.configId % 10
+                        local rColor = 0
+                        local cfg = _G.ClientTable and _G.ClientTable.cfg_Item_itemManager and _G.ClientTable.cfg_Item_itemManager:TryGetValue(dropItemData.configId)
+                        if not cfg then
+                            cfg = _G.ClientTable and _G.ClientTable.cfg_Item_equipManager and _G.ClientTable.cfg_Item_equipManager:TryGetValue(dropItemData.configId)
+                        end
+                        if cfg and cfg.subType then
+                            if cfg.type == 19 then
+                                rColor = math.floor(cfg.subType / 1000)
+                            elseif cfg.type == 28 then
+                                local lastDigit = cfg.subType % 10
+                                if lastDigit == 1 then rColor = 3     -- Đỏ
+                                elseif lastDigit == 2 then rColor = 2 -- Lam
+                                elseif lastDigit == 3 then rColor = 1 -- Lục
+                                end
+                            end
+                        end
+                        
+                        local levelMatch = false
+                        if rLevel < 5 and _G.AutoPick_Rune_L5L then levelMatch = true end
+                        if rLevel == 5 and _G.AutoPick_Rune_L5 then levelMatch = true end
+                        if rLevel == 6 and _G.AutoPick_Rune_L6 then levelMatch = true end
+                        if rLevel == 7 and _G.AutoPick_Rune_L7 then levelMatch = true end
+                        if rLevel > 7 and _G.AutoPick_Rune_L7M then levelMatch = true end
+                        
+                        local qualMatch = false
+                        if rColor == 1 and _G.AutoPick_Rune_Luc then qualMatch = true end
+                        if rColor == 2 and _G.AutoPick_Rune_Lam then qualMatch = true end
+                        if rColor >= 3 and _G.AutoPick_Rune_Do then qualMatch = true end
+                        
+                        if levelMatch and qualMatch then shouldPick = true end
+                    end
+                    if isBone then shouldPick = true end
                     if isNormal then shouldPick = true end
                     
                     if shouldPick then
@@ -3907,7 +3996,7 @@ end
                     
                     if shouldPick then
                         local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
-                        if not isAlreadyPicked and (_G.AutoPick_Limit > 1 and (_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                        if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
                             
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
@@ -3925,10 +4014,10 @@ end
                                 end
                             end
                             
-                            local lootCount = _G.Mod_IsAdmin and 10 or 5
+                            local lootCount = _G.Mod_IsAdmin and 10 or 10
                             local delayTime = _G.Mod_IsAdmin and 0.05 or 0.2
                             local initialDelay = 0
-                            if hasDinoNearby or not _G.Mod_IsAdmin then
+                            if hasDinoNearby and isBone then
                                 initialDelay = math.random(100, 300) / 1000
                             end
                             
