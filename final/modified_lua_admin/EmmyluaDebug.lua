@@ -2945,6 +2945,64 @@ end
                 currentY = currentY - 25
             end
 
+            -- Toggle BÁO TELEGRAM
+            if _G.Mod_IsAdmin then
+                local tGoTele = GameObject("Mod_TeleNotify_Enabled_Toggle")
+                tGoTele.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, tGoTele)
+                
+                local tRtTele = tGoTele:AddComponent(typeof(RectTransform))
+                tRtTele.anchorMin, tRtTele.anchorMax, tRtTele.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tRtTele.anchoredPosition = Vector2(rightColX2, currentY)
+                tRtTele.sizeDelta = Vector2(140, 30)
+
+                local bgTele = GameObject("Bg")
+                bgTele.transform:SetParent(tGoTele.transform, false)
+                local bgRtTele = bgTele:AddComponent(typeof(RectTransform))
+                bgRtTele.anchorMin, bgRtTele.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRtTele.sizeDelta = Vector2(0, 0)
+                local bgImgTele = bgTele:AddComponent(typeof(Image))
+
+                local txtGoTele = GameObject("Text")
+                txtGoTele.transform:SetParent(tGoTele.transform, false)
+                local txtRtTele = txtGoTele:AddComponent(typeof(RectTransform))
+                txtRtTele.anchorMin, txtRtTele.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRtTele.sizeDelta = Vector2(0, 0)
+                local txtTele = txtGoTele:AddComponent(typeof(Text))
+                txtTele.raycastTarget = false
+                txtTele.fontSize = 15
+                txtTele.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txtTele.font = defaultFont end
+
+                local btnTele = tGoTele:AddComponent(typeof(Button))
+                
+                if _G.Mod_TeleNotify_Enabled == nil then
+                    _G.Mod_TeleNotify_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_TeleNotify_Enabled", 0) == 1
+                end
+
+                local function UpdateTeleLabel()
+                    if _G.Mod_TeleNotify_Enabled then
+                        bgImgTele.color = Color(0.2, 0.5, 0.2, 1)
+                        txtTele.text = "BÁO TELEGRAM"
+                        txtTele.color = Color.white
+                    else
+                        bgImgTele.color = Color(0.3, 0.3, 0.3, 1)
+                        txtTele.text = "BÁO TELEGRAM"
+                        txtTele.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateTeleLabel()
+
+                btnTele.onClick:AddListener(function()
+                    _G.Mod_TeleNotify_Enabled = not _G.Mod_TeleNotify_Enabled
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_TeleNotify_Enabled", _G.Mod_TeleNotify_Enabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateTeleLabel()
+                end)
+                
+                currentY = currentY - 35
+            end
+
             _G.ModUpdateKundunUI = function()
                 pcall(function()
                     if _G.NangCaoTabBtns then
@@ -2963,6 +3021,9 @@ end
                         table.insert(kundunConfigs, { name = "PHÙ VĂN:", bossType = 17, bossId = 20211007, limit = 300 })
                     end
                     
+                    local teleMsg = "🔥 Tiến độ KUNDUN BOSS (" .. _G.ModBossTab .. "):\n"
+                    local shouldNotify = false
+
                     for i, cfg in ipairs(kundunConfigs) do
                         local txt = _G.KundunUILabelPool[i]
                         if txt then
@@ -2981,12 +3042,34 @@ end
                             end
                             
                             local threshold = (cfg.bossType == 17) and 15 or 5
-                            local colorTag = (cfg.limit - count <= threshold) and "<color=#00FF00>" or "<color=#FFFFFF>"
+                            local isGreen = (cfg.limit - count <= threshold)
+                            if isGreen then shouldNotify = true end
+
+                            local colorTag = isGreen and "<color=#00FF00>" or "<color=#FFFFFF>"
                             if count >= cfg.limit then
                                 txt.text = cfg.name .. string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
+                                teleMsg = teleMsg .. "- " .. cfg.name .. " " .. count .. "/" .. cfg.limit .. " (Hiện)\n"
                             else
                                 txt.text = cfg.name .. string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
+                                teleMsg = teleMsg .. "- " .. cfg.name .. " " .. count .. "/" .. cfg.limit .. " (" .. rCount .. ")\n"
                             end
+                        end
+                    end
+                    
+                    if _G.Mod_IsAdmin and _G.Mod_TeleNotify_Enabled and shouldNotify then
+                        local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                        _G.LastTeleNotifySec = _G.LastTeleNotifySec or 0
+                        if currentSec - _G.LastTeleNotifySec >= 120 then
+                            _G.LastTeleNotifySec = currentSec
+                            local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+                            local chatId = "-5255708823"
+                            
+                            local function SendTeleAsync()
+                                local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(teleMsg)
+                                pcall(function() CS.UnityEngine.WWW(url) end)
+                            end
+                            SendTeleAsync()
+                            if _G.WriteLog then _G.WriteLog("[Telegram] Đã gửi cảnh báo Boss Kundun sắp ra!") end
                         end
                     end
                 end)

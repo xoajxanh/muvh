@@ -1,22 +1,43 @@
-﻿local function modSortRole(a, b)
-    local distA = a.tempPathFindingDistance or 9999
-    local distB = b.tempPathFindingDistance or 9999
-    return distA < distB
+local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+local chatId = "-5255708823"
+
+local count = 0
+local rCount = 0
+local limit = 400
+if _G.SceneData and _G.SceneData.GetAncientBossData then
+    local isSatisfy, info = _G.SceneData:GetAncientBossData(17, 20211008)
+    if info and info.refreshCount then
+        rCount = info.refreshCount
+    end
+    if isSatisfy == true then
+        count = limit
+    elseif isSatisfy == false and info and info.count then
+        count = info.count
+    end
 end
 
-local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15, _G.RoleTargetManager.GetCanAttackRole)
-if players and #players > 0 then
-    table.sort(players, modSortRole)
-    local target = players[1]
-    if _G.RoleManager.me.SetTarget then
-        _G.RoleManager.me:SetTarget(target)
-    else
-        _G.RoleManager.me.TargetAvatar = target
-    end
-    if _G.RoleManager.me.SetAutoFight then
-        _G.RoleManager.me:SetAutoFight('ReleaseSkill')
-        _G.FloatingWordUtility.QuickMsg('Da tim thay '..tostring(target.name)..' va lap tuc tan cong!')
-    end
+local c8_status = ""
+if count >= limit then
+    c8_status = string.format("Phù văn map c8: %d / %d (Hiện)", count, limit)
 else
-    _G.FloatingWordUtility.QuickMsg('Khong tim thay ke dich nao o gan de danh!')
+    c8_status = string.format("Phù văn map c8: %d / %d (%d)", count, limit, rCount)
+end
+
+local msg = "[Test] " .. c8_status
+
+local status, err = pcall(function()
+    local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(msg)
+    CS.UnityEngine.WWW(url)
+end)
+
+if not status then
+    pcall(function()
+        local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.Networking.UnityWebRequest.EscapeURL(msg)
+        local req = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
+        req:SendWebRequest()
+    end)
+end
+
+if _G.FloatingWordUtility then
+    _G.FloatingWordUtility.QuickMsg("Đã gửi Test Telegram! " .. tostring(c8_status))
 end
