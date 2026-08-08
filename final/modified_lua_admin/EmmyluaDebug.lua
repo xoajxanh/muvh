@@ -875,7 +875,7 @@ local function CreateModUI()
                         if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
                     if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController.ReqExitUnionMap() end
                     end
-                    _G.Mod_DebugMsg("Đang thoát phó bản Boss...")
+                    --_G.Mod_DebugMsg("Đang thoát phó bản Boss...")
                     return true
                 end
                 return false
@@ -1475,6 +1475,7 @@ local function CreateModUI()
             end
             _G.Mod_AutoFarmBoss_State = 4
             _G.Mod_AutoFarmBoss_TargetWait = 0
+            _G.Mod_AutoFarmBoss_DidJiggle = false
             _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
             
         -- STATE 4: WAIT & VALIDATE
@@ -1497,6 +1498,22 @@ local function CreateModUI()
                 else
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 end
+                return
+            end
+            
+            if not _G.Mod_AutoFarmBoss_DidJiggle then
+                _G.Mod_AutoFarmBoss_DidJiggle = true
+                if _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+                    local meX = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.x or (_G.RoleManager.me.data and _G.RoleManager.me.data.x) or 0
+                    local meY = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.y or (_G.RoleManager.me.data and _G.RoleManager.me.data.y) or 0
+                    if meX > 0 and meY > 0 then
+                        local dx = math.random(-2, 2)
+                        local dy = math.random(-2, 2)
+                        if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                        _G.RoleManager.me:MoveTo({x = meX + dx, y = meY + dy})
+                    end
+                end
+                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 return
             end
             
@@ -1794,7 +1811,7 @@ end
                                                     local endTime = cdMsg and cdMsg.endTime or 0
                                                     local publicCdMsg = me.cd and me.cd[1]
                                                     local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
-                                                    local finalEndTime = math.max(endTime, publicEndTime)
+                            local finalEndTime = math.max(endTime, publicEndTime)
                                                     
                                                     if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
                                                         local tblaction = _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
@@ -1825,6 +1842,57 @@ end
                             end
                         end
                         -- Removed EventManager.Dispatch hook for UniversalPointDataChanged to improve performance
+                    end)
+                    
+                    pcall(function()
+                        if not _G.Mod_IsAdmin or not _G.Mod_TeleNotify_Enabled then return end
+                        
+                        local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                        if currentSec - (_G.LastTeleCheckSec or 0) < 5 then return end
+                        _G.LastTeleCheckSec = currentSec
+                    
+                        local allKunduns = {
+                            { tab = "C7", name = "THÁNH CỐT", bossType = 16, bossId = 20201007, limit = 70, threshold = 5 },
+                            { tab = "C7", name = "PHÙ VĂN", bossType = 17, bossId = 20211007, limit = 300, threshold = 15 },
+                            { tab = "C8", name = "THÁNH CỐT", bossType = 16, bossId = 20201008, limit = 70, threshold = 5 },
+                            { tab = "C8", name = "PHÙ VĂN", bossType = 17, bossId = 20211008, limit = 400, threshold = 15 }
+                        }
+                        
+                        _G.LastTeleNotifySec_Boss = _G.LastTeleNotifySec_Boss or {}
+                    
+                        if _G.SceneData and _G.SceneData.GetAncientBossData then
+                            for _, cfg in ipairs(allKunduns) do
+                                local count = 0
+                                local isSatisfy, info = _G.SceneData:GetAncientBossData(cfg.bossType, cfg.bossId)
+                                
+                                if isSatisfy == true then
+                                    count = cfg.limit
+                                elseif isSatisfy == false and info and info.count then
+                                    count = info.count
+                                end
+                                
+                                if cfg.limit - count <= cfg.threshold then
+                                    local bossKey = cfg.tab .. "_" .. cfg.name
+                                    local lastNotify = _G.LastTeleNotifySec_Boss[bossKey] or 0
+                                    
+                                    if currentSec - lastNotify >= 120 then
+                                        _G.LastTeleNotifySec_Boss[bossKey] = currentSec
+                                        
+                                        local rCount = (info and info.refreshCount) and info.refreshCount or 0
+                                        local msgText = (count >= cfg.limit) and "Hiện" or tostring(rCount)
+                                        local msg = string.format("🔴 KUNDUN %s: %s Sắp Ra!\n- Số lượng: %d / %d (%s)", cfg.tab, cfg.name, count, cfg.limit, msgText)
+                                        
+                                        local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+                                        local chatId = "-5255708823"
+                                        local function SendTeleAsync()
+                                            local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(msg)
+                                            pcall(function() CS.UnityEngine.WWW(url) end)
+                                        end
+                                        SendTeleAsync()
+                                    end
+                                end
+                            end
+                        end
                     end)
                     
                     pcall(function()
@@ -2942,7 +3010,7 @@ end
                 txt.text = ""
                 
                 table.insert(_G.KundunUILabelPool, txt)
-                currentY = currentY - 25
+                currentY = currentY - 30
             end
 
             -- Toggle BÁO TELEGRAM
@@ -3021,9 +3089,6 @@ end
                         table.insert(kundunConfigs, { name = "PHÙ VĂN:", bossType = 17, bossId = 20211007, limit = 300 })
                     end
                     
-                    local teleMsg = "🔥 Tiến độ KUNDUN BOSS (" .. _G.ModBossTab .. "):\n"
-                    local shouldNotify = false
-
                     for i, cfg in ipairs(kundunConfigs) do
                         local txt = _G.KundunUILabelPool[i]
                         if txt then
@@ -3043,33 +3108,13 @@ end
                             
                             local threshold = (cfg.bossType == 17) and 15 or 5
                             local isGreen = (cfg.limit - count <= threshold)
-                            if isGreen then shouldNotify = true end
 
                             local colorTag = isGreen and "<color=#00FF00>" or "<color=#FFFFFF>"
                             if count >= cfg.limit then
                                 txt.text = cfg.name .. string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
-                                teleMsg = teleMsg .. "- " .. cfg.name .. " " .. count .. "/" .. cfg.limit .. " (Hiện)\n"
                             else
                                 txt.text = cfg.name .. string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
-                                teleMsg = teleMsg .. "- " .. cfg.name .. " " .. count .. "/" .. cfg.limit .. " (" .. rCount .. ")\n"
                             end
-                        end
-                    end
-                    
-                    if _G.Mod_IsAdmin and _G.Mod_TeleNotify_Enabled and shouldNotify then
-                        local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
-                        _G.LastTeleNotifySec = _G.LastTeleNotifySec or 0
-                        if currentSec - _G.LastTeleNotifySec >= 120 then
-                            _G.LastTeleNotifySec = currentSec
-                            local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
-                            local chatId = "-5255708823"
-                            
-                            local function SendTeleAsync()
-                                local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(teleMsg)
-                                pcall(function() CS.UnityEngine.WWW(url) end)
-                            end
-                            SendTeleAsync()
-                            if _G.WriteLog then _G.WriteLog("[Telegram] Đã gửi cảnh báo Boss Kundun sắp ra!") end
                         end
                     end
                 end)
