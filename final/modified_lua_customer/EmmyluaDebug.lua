@@ -1,9 +1,247 @@
 -- EmmyluaDebug.lua
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
+
+--------------------------------------------------------------------------------
+-- ACTIVE SYSTEM CORE (Remote Config & Active Validation)
+--------------------------------------------------------------------------------
+_G.Mod_IsActive = false
+_G.Mod_ActiveConfig = nil
+_G.Mod_RawConfigPayload = ""
+_G.Mod_ActiveStatusMsg = "Chưa kích hoạt bản quyền!"
+
+_G.Mod_Config_FOV_Min = 30
+_G.Mod_Config_FOV_Max = 70
+_G.Mod_Config_BossRefresh_Min = 2
+_G.Mod_Config_BossRefresh_Max = 10
+_G.Mod_Config_MaxMoveSpeed = 1.5
+_G.Mod_Config_MaxAttackSpeed = 2.0
+_G.Mod_Config_MaxMonsterRange = 20
+_G.Mod_Config_MaxPickupCount = 50
+_G.Mod_Config_ActiveBasicTab = true
+_G.Mod_Config_ActiveAdvancedTab = true
+_G.Mod_Config_ActiveAutoFarmTab = true
+_G.Mod_Config_CurrentRebirth = 8
+_G.Mod_Config_AdminTelegram = {"admin1", "admin2"}
+
+local SECRET_SALT = "MUVH_SECRET_SALT_XOAI"
+
+local function Mod_CalculateMD5(str)
+    if not str or str == "" then return "" end
+    local ok, res = pcall(function()
+        local md5 = CS.System.Security.Cryptography.MD5.Create()
+        local bytes = CS.System.Text.Encoding.UTF8:GetBytes(str)
+        local hash = md5:ComputeHash(bytes)
+        local sb = CS.System.Text.StringBuilder()
+        for i = 0, hash.Length - 1 do
+            sb:Append(hash[i]:ToString("x2"))
+        end
+        return sb:ToString()
+    end)
+    if ok and res then return res end
+    return ""
+end
+
+local function Mod_Base64Decode(b64Str)
+    if not b64Str or b64Str == "" then return nil end
+    local ok, res = pcall(function()
+        local bytes = CS.System.Convert.FromBase64String(b64Str)
+        return CS.System.Text.Encoding.UTF8:GetString(bytes)
+    end)
+    if ok and res then return res end
+    return nil
+end
+
+local function Mod_ParseJSON(str)
+    if not str or str == "" then return nil end
+    local function parseValue(valStr)
+        valStr = string.gsub(valStr, "^%s*(.-)%s*$", "%1")
+        if valStr == "true" then return true end
+        if valStr == "false" then return false end
+        if valStr == "null" then return nil end
+        if string.sub(valStr, 1, 1) == '"' and string.sub(valStr, -1) == '"' then
+            return string.sub(valStr, 2, -2)
+        end
+        local num = tonumber(valStr)
+        if num then return num end
+        return valStr
+    end
+    local result = {}
+    for k, v in string.gmatch(str, '"([^"]+)":%s*([^,{}%]]+)') do
+        result[k] = parseValue(v)
+    end
+    local arrKey, arrBody = string.match(str, '"([^"]+)":%s*%[([^%]]+)%]')
+    if arrKey and arrBody then
+        local arr = {}
+        for item in string.gmatch(arrBody, '"([^"]+)"') do
+            table.insert(arr, item)
+        end
+        result[arrKey] = arr
+    end
+    return result
+end
+
+local function Mod_GetDeviceSerialMD5()
+    local rawSerial = ""
+    pcall(function()
+        rawSerial = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
+    end)
+    if not rawSerial or rawSerial == "" then rawSerial = "UNKNOWN_DEVICE_ID" end
+    return Mod_CalculateMD5(rawSerial)
+end
+
+local function Mod_GetCharacterUID()
+    local uid = ""
+    pcall(function()
+        if _G.RoleManager and _G.RoleManager.me then
+            if _G.RoleManager.me.id then uid = tostring(_G.RoleManager.me.id) end
+            if uid == "" and _G.RoleManager.me.roleId then uid = tostring(_G.RoleManager.me.roleId) end
+        end
+        if uid == "" and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id then
+            uid = tostring(_G.ViewData.meData.id)
+        end
+    end)
+    return uid
+end
+
+local function Mod_DecryptPayload(payloadB64)
+    if not payloadB64 or payloadB64 == "" then return nil, "Payload rỗng" end
+    local decoded = Mod_Base64Decode(payloadB64)
+    if not decoded then return nil, "Không thể giải mã Base64" end
+    local jsonStr, signature = string.match(decoded, "^(.*)|([a-fA-F0-9]+)$")
+    if not jsonStr or not signature then return nil, "Cấu trúc Payload không hợp lệ" end
+    local expectedSig = Mod_CalculateMD5(jsonStr .. SECRET_SALT)
+    if string.lower(expectedSig) ~= string.lower(signature) then return nil, "Chữ ký MD5 không hợp lệ!" end
+    local configObj = Mod_ParseJSON(jsonStr)
+    if not configObj then return nil, "Không thể đọc dữ liệu JSON" end
+    return configObj, nil
+end
+
+local function Mod_FetchRemotePayload()
+    local payload = ""
+    pcall(function()
+        local path = CS.UnityEngine.Application.persistentDataPath .. "/fake_config.json"
+        if CS.System.IO.File.Exists(path) then
+            payload = CS.System.IO.File.ReadAllText(path)
+        else
+            local devPath = "D:/MUVH/android/mu-decompiled/final/fake_config.json"
+            if CS.System.IO.File.Exists(devPath) then
+                payload = CS.System.IO.File.ReadAllText(devPath)
+            end
+        end
+    end)
+    return payload
+end
+
+local function Mod_ValidateConfig(config)
+    if not config then return false, "Chưa có cấu hình kích hoạt!" end
+    local currentTime = os.time()
+    if config.expire_time and currentTime > tonumber(config.expire_time) then
+        return false, "Tài khoản / Cấu hình đã hết hạn sử dụng!"
+    end
+    local currentSerialMD5 = Mod_GetDeviceSerialMD5()
+    if config.serial_number and config.serial_number ~= "" then
+        local configSerialMD5 = Mod_CalculateMD5(config.serial_number)
+        if config.serial_number ~= currentSerialMD5 and configSerialMD5 ~= currentSerialMD5 then
+            return false, "Mã thiết bị (Serial MD5) không trùng khớp!"
+        end
+    end
+    local currentUID = Mod_GetCharacterUID()
+    if currentUID ~= "" and config.uid and tostring(config.uid) ~= "" then
+        if tostring(config.uid) ~= currentUID then
+            return false, "Mã nhân vật (UID) không trùng khớp!"
+        end
+    end
+    return true, "OK"
+end
+
+local function Mod_ApplyConfig(config)
+    _G.Mod_ActiveConfig = config
+    _G.Mod_IsActive = true
+    _G.Mod_ActiveStatusMsg = "Đã kích hoạt bản quyền thành công"
+    if config.fov_min then _G.Mod_Config_FOV_Min = tonumber(config.fov_min) end
+    if config.fov_max then _G.Mod_Config_FOV_Max = tonumber(config.fov_max) end
+    if config.boss_refresh_min then _G.Mod_Config_BossRefresh_Min = tonumber(config.boss_refresh_min) end
+    if config.boss_refresh_max then _G.Mod_Config_BossRefresh_Max = tonumber(config.boss_refresh_max) end
+    if config.max_move_speed then _G.Mod_Config_MaxMoveSpeed = tonumber(config.max_move_speed) end
+    if config.max_attack_speed then _G.Mod_Config_MaxAttackSpeed = tonumber(config.max_attack_speed) end
+    if config.max_monster_range then _G.Mod_Config_MaxMonsterRange = tonumber(config.max_monster_range) end
+    if config.max_pickup_count then _G.Mod_Config_MaxPickupCount = tonumber(config.max_pickup_count) end
+    if config.active_basic_tab ~= nil then _G.Mod_Config_ActiveBasicTab = config.active_basic_tab end
+    if config.active_advanced_tab ~= nil then _G.Mod_Config_ActiveAdvancedTab = config.active_advanced_tab end
+    if config.active_autofarm_tab ~= nil then _G.Mod_Config_ActiveAutoFarmTab = config.active_autofarm_tab end
+    if config.current_rebirth then _G.Mod_Config_CurrentRebirth = tonumber(config.current_rebirth) end
+    if config.admin_telegram_usernames then _G.Mod_Config_AdminTelegram = config.admin_telegram_usernames end
+
+    if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+end
+
+local lastCheckTime = 0
+local function Mod_UpdatePeriodicCheck()
+    local now = os.time()
+    if now - lastCheckTime < 60 then return end
+    lastCheckTime = now
+
+    local remotePayload = Mod_FetchRemotePayload()
+    if remotePayload == "" then
+        _G.Mod_IsActive = false
+        _G.Mod_ActiveStatusMsg = "Chưa có file cấu hình kích hoạt trên hệ thống!"
+        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+        return
+    end
+
+    if _G.Mod_RawConfigPayload == "" then
+        _G.Mod_RawConfigPayload = remotePayload
+        local config, err = Mod_DecryptPayload(remotePayload)
+        if config then
+            local valid, reason = Mod_ValidateConfig(config)
+            if valid then
+                Mod_ApplyConfig(config)
+            else
+                _G.Mod_IsActive = false
+                _G.Mod_ActiveStatusMsg = reason
+            end
+        else
+            _G.Mod_IsActive = false
+            _G.Mod_ActiveStatusMsg = err or "Giải mã cấu hình thất bại"
+        end
+        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+        return
+    end
+
+    if remotePayload ~= _G.Mod_RawConfigPayload then
+        _G.Mod_RawConfigPayload = remotePayload
+        local config, err = Mod_DecryptPayload(remotePayload)
+        if config then
+            local valid, reason = Mod_ValidateConfig(config)
+            if valid then
+                Mod_ApplyConfig(config)
+                _G.Mod_ActiveStatusMsg = "Có cấu hình mới được cập nhật, yêu cầu khởi động lại game!"
+            else
+                _G.Mod_IsActive = false
+                _G.Mod_ActiveStatusMsg = reason
+            end
+        else
+            _G.Mod_IsActive = false
+            _G.Mod_ActiveStatusMsg = err or "Cấu hình mới không hợp lệ"
+        end
+        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+    end
+end
+
+_G.Mod_CheckActiveConfigNow = function()
+    lastCheckTime = 0
+    _G.Mod_RawConfigPayload = ""
+    Mod_UpdatePeriodicCheck()
+end
+
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsDev = false
     
+    pcall(function()
+        Mod_UpdatePeriodicCheck()
+    end)
+
     _G.Mod_IsDebug = true
     _G.Mod_DebugMsg = function(msg)
         if _G.Mod_IsDebug then
@@ -274,6 +512,7 @@ local function CreateModUI()
         modRoot:AddComponent(typeof(GraphicRaycaster))
 
         local btnGo = GameObject("FloatingModBtn")
+        _G.FloatingModBtnGo = btnGo
         btnGo.transform:SetParent(modRoot.transform, false)
         local rt = btnGo:AddComponent(typeof(RectTransform))
         rt.anchorMin = Vector2(0, 0)
@@ -299,6 +538,7 @@ local function CreateModUI()
         if defaultFont then txt.font = defaultFont end
 
         local pkBtnGo = GameObject("FloatingPKBtn")
+        _G.FloatingPKBtnGo = pkBtnGo
         pkBtnGo.transform:SetParent(modRoot.transform, false)
         local pkRt = pkBtnGo:AddComponent(typeof(RectTransform))
         pkRt.anchorMin = Vector2(0, 0)
@@ -323,8 +563,11 @@ local function CreateModUI()
         pkTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then pkTxt.font = defaultFont end
 
+        pkBtnGo:SetActive(_G.Mod_IsActive == true)
+
         local pkBtnComp = pkBtnGo:AddComponent(typeof(Button))
         pkBtnComp.onClick:AddListener(function()
+            if not _G.Mod_IsActive then return end
             _G.Mod_AutoPK_Enabled = not _G.Mod_AutoPK_Enabled
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
             CS.UnityEngine.PlayerPrefs.Save()
@@ -355,7 +598,339 @@ local function CreateModUI()
         panelImg.color = Color(0, 0, 0, 0.8)
         panelGo:SetActive(false)
 
-        
+        ---------------------------------------------------------
+        -- Standalone AuthPanel UI (Active Notice Screen)
+        ---------------------------------------------------------
+        local authPanelGo = GameObject("AuthPanel")
+        authPanelGo.transform:SetParent(modRoot.transform, false)
+        local authRt = authPanelGo:AddComponent(typeof(RectTransform))
+        authRt.anchorMin = Vector2(0, 0)
+        authRt.anchorMax = Vector2(0, 0)
+        authRt.pivot = Vector2(0, 0)
+        authRt.anchoredPosition = Vector2(90, 70)
+        authRt.sizeDelta = Vector2(650, 480)
+        local authImg = authPanelGo:AddComponent(typeof(Image))
+        authImg.color = Color(0.1, 0.1, 0.12, 0.95)
+        authPanelGo:SetActive(false)
+        _G.authPanelGo = authPanelGo
+
+        local activeNoticeTxt = nil
+        local activeSerialTxt = nil
+        local activeUidTxt = nil
+        local activeTgContainerGo = nil
+
+        -- 1. Title Header
+        local actTitleGo = GameObject("ActivePanelTitle")
+        actTitleGo.transform:SetParent(authPanelGo.transform, false)
+        local atRt = actTitleGo:AddComponent(typeof(RectTransform))
+        atRt.anchorMin = Vector2(0, 1)
+        atRt.anchorMax = Vector2(1, 1)
+        atRt.pivot = Vector2(0.5, 1)
+        atRt.anchoredPosition = Vector2(0, -15)
+        atRt.sizeDelta = Vector2(0, 40)
+        local atTxt = actTitleGo:AddComponent(typeof(Text))
+        atTxt.text = "XÁC THỰC BẢN QUYỀN MOD"
+        atTxt.font = defaultFont
+        atTxt.fontSize = 24
+        atTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        atTxt.color = Color(1.0, 0.84, 0.0, 1.0)
+        atTxt.alignment = TextAnchor.MiddleCenter
+
+        -- 2. Status Banner Text
+        local actNoticeGo = GameObject("ActiveNoticeBanner")
+        actNoticeGo.transform:SetParent(authPanelGo.transform, false)
+        local anRt = actNoticeGo:AddComponent(typeof(RectTransform))
+        anRt.anchorMin = Vector2(0, 1)
+        anRt.anchorMax = Vector2(1, 1)
+        anRt.pivot = Vector2(0.5, 1)
+        anRt.anchoredPosition = Vector2(0, -55)
+        anRt.sizeDelta = Vector2(-40, 45)
+        activeNoticeTxt = actNoticeGo:AddComponent(typeof(Text))
+        activeNoticeTxt.text = _G.Mod_ActiveStatusMsg or "Bản Mod chưa được kích hoạt!"
+        activeNoticeTxt.font = defaultFont
+        activeNoticeTxt.fontSize = 16
+        activeNoticeTxt.color = Color(1.0, 0.35, 0.35, 1.0)
+        activeNoticeTxt.alignment = TextAnchor.MiddleCenter
+
+        -- 3. Serial MD5 Box
+        local sLabelGo = GameObject("ActiveSerialLabel")
+        sLabelGo.transform:SetParent(authPanelGo.transform, false)
+        local slRt = sLabelGo:AddComponent(typeof(RectTransform))
+        slRt.anchorMin = Vector2(0, 1)
+        slRt.anchorMax = Vector2(1, 1)
+        slRt.pivot = Vector2(0, 1)
+        slRt.anchoredPosition = Vector2(30, -105)
+        slRt.sizeDelta = Vector2(590, 25)
+        local slTxt = sLabelGo:AddComponent(typeof(Text))
+        slTxt.text = "1. Mã thiết bị (Serial Number MD5):"
+        slTxt.font = defaultFont
+        slTxt.fontSize = 15
+        slTxt.color = Color.cyan
+
+        local sBoxGo = GameObject("ActiveSerialBox")
+        sBoxGo.transform:SetParent(authPanelGo.transform, false)
+        local sbRt = sBoxGo:AddComponent(typeof(RectTransform))
+        sbRt.anchorMin = Vector2(0, 1)
+        sbRt.anchorMax = Vector2(0, 1)
+        sbRt.pivot = Vector2(0, 1)
+        sbRt.anchoredPosition = Vector2(30, -135)
+        sbRt.sizeDelta = Vector2(460, 40)
+        local sbImg = sBoxGo:AddComponent(typeof(Image))
+        sbImg.color = Color(0.18, 0.20, 0.25, 1)
+
+        local sTxtGo = GameObject("Txt")
+        sTxtGo.transform:SetParent(sBoxGo.transform, false)
+        local stRt = sTxtGo:AddComponent(typeof(RectTransform))
+        stRt.anchorMin = Vector2(0, 0)
+        stRt.anchorMax = Vector2(1, 1)
+        stRt.sizeDelta = Vector2(-20, 0)
+        stRt.anchoredPosition = Vector2(10, 0)
+        activeSerialTxt = sTxtGo:AddComponent(typeof(Text))
+        activeSerialTxt.font = defaultFont
+        activeSerialTxt.fontSize = 15
+        activeSerialTxt.color = Color.white
+        activeSerialTxt.alignment = TextAnchor.MiddleLeft
+
+        local sCopyGo = GameObject("ActiveSerialCopyBtn")
+        sCopyGo.transform:SetParent(authPanelGo.transform, false)
+        local scRt = sCopyGo:AddComponent(typeof(RectTransform))
+        scRt.anchorMin = Vector2(0, 1)
+        scRt.anchorMax = Vector2(0, 1)
+        scRt.pivot = Vector2(0, 1)
+        scRt.anchoredPosition = Vector2(500, -135)
+        scRt.sizeDelta = Vector2(120, 40)
+        local scImg = sCopyGo:AddComponent(typeof(Image))
+        scImg.color = Color(0.2, 0.5, 0.8, 1)
+        local scTxtG = GameObject("Txt")
+        scTxtG.transform:SetParent(sCopyGo.transform, false)
+        local sctRt = scTxtG:AddComponent(typeof(RectTransform))
+        sctRt.anchorMin = Vector2(0, 0)
+        sctRt.anchorMax = Vector2(1, 1)
+        sctRt.sizeDelta = Vector2(0, 0)
+        local sctTxt = scTxtG:AddComponent(typeof(Text))
+        sctTxt.text = "Copy MD5"
+        sctTxt.font = defaultFont
+        sctTxt.fontSize = 15
+        sctTxt.color = Color.white
+        sctTxt.alignment = TextAnchor.MiddleCenter
+        local scBtn = sCopyGo:AddComponent(typeof(Button))
+        scBtn.onClick:AddListener(function()
+            local val = activeSerialTxt and activeSerialTxt.text or ""
+            if val ~= "" then
+                pcall(function() CS.UnityEngine.GUIUtility.systemCopyBuffer = val end)
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Serial MD5!") end
+            end
+        end)
+
+        -- 4. UID Box
+        local uLabelGo = GameObject("ActiveUIDLabel")
+        uLabelGo.transform:SetParent(authPanelGo.transform, false)
+        local ulRt = uLabelGo:AddComponent(typeof(RectTransform))
+        ulRt.anchorMin = Vector2(0, 1)
+        ulRt.anchorMax = Vector2(1, 1)
+        ulRt.pivot = Vector2(0, 1)
+        ulRt.anchoredPosition = Vector2(30, -185)
+        ulRt.sizeDelta = Vector2(590, 25)
+        local ulTxt = uLabelGo:AddComponent(typeof(Text))
+        ulTxt.text = "2. Mã nhân vật (Character UID):"
+        ulTxt.font = defaultFont
+        ulTxt.fontSize = 15
+        ulTxt.color = Color.cyan
+
+        local uBoxGo = GameObject("ActiveUIDBox")
+        uBoxGo.transform:SetParent(authPanelGo.transform, false)
+        local ubRt = uBoxGo:AddComponent(typeof(RectTransform))
+        ubRt.anchorMin = Vector2(0, 1)
+        ubRt.anchorMax = Vector2(0, 1)
+        ubRt.pivot = Vector2(0, 1)
+        ubRt.anchoredPosition = Vector2(30, -215)
+        ubRt.sizeDelta = Vector2(460, 40)
+        local ubImg = uBoxGo:AddComponent(typeof(Image))
+        ubImg.color = Color(0.18, 0.20, 0.25, 1)
+
+        local uTxtGo = GameObject("Txt")
+        uTxtGo.transform:SetParent(uBoxGo.transform, false)
+        local utRt = uTxtGo:AddComponent(typeof(RectTransform))
+        utRt.anchorMin = Vector2(0, 0)
+        utRt.anchorMax = Vector2(1, 1)
+        utRt.sizeDelta = Vector2(-20, 0)
+        utRt.anchoredPosition = Vector2(10, 0)
+        activeUidTxt = uTxtGo:AddComponent(typeof(Text))
+        activeUidTxt.font = defaultFont
+        activeUidTxt.fontSize = 14
+        activeUidTxt.color = Color.white
+        activeUidTxt.alignment = TextAnchor.MiddleLeft
+
+        local uCopyGo = GameObject("ActiveUIDCopyBtn")
+        uCopyGo.transform:SetParent(authPanelGo.transform, false)
+        local ucRt = uCopyGo:AddComponent(typeof(RectTransform))
+        ucRt.anchorMin = Vector2(0, 1)
+        ucRt.anchorMax = Vector2(0, 1)
+        ucRt.pivot = Vector2(0, 1)
+        ucRt.anchoredPosition = Vector2(500, -215)
+        ucRt.sizeDelta = Vector2(120, 40)
+        local ucImg = uCopyGo:AddComponent(typeof(Image))
+        ucImg.color = Color(0.2, 0.5, 0.8, 1)
+        local ucTxtG = GameObject("Txt")
+        ucTxtG.transform:SetParent(uCopyGo.transform, false)
+        local uctRt = ucTxtG:AddComponent(typeof(RectTransform))
+        uctRt.anchorMin = Vector2(0, 0)
+        uctRt.anchorMax = Vector2(1, 1)
+        uctRt.sizeDelta = Vector2(0, 0)
+        local uctTxt = ucTxtG:AddComponent(typeof(Text))
+        uctTxt.text = "Copy UID"
+        uctTxt.font = defaultFont
+        uctTxt.fontSize = 15
+        uctTxt.color = Color.white
+        uctTxt.alignment = TextAnchor.MiddleCenter
+        local ucBtn = uCopyGo:AddComponent(typeof(Button))
+        ucBtn.onClick:AddListener(function()
+            local val = activeUidTxt and activeUidTxt.text or ""
+            if val ~= "" and not string.find(val, "Vui lòng") then
+                pcall(function() CS.UnityEngine.GUIUtility.systemCopyBuffer = val end)
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Character UID!") end
+            else
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa đăng nhập nhân vật để lấy UID!") end
+            end
+        end)
+
+        -- 5. Telegram Admin Container
+        activeTgContainerGo = GameObject("ActiveTgContainer")
+        activeTgContainerGo.transform:SetParent(authPanelGo.transform, false)
+        local tgRt = activeTgContainerGo:AddComponent(typeof(RectTransform))
+        tgRt.anchorMin = Vector2(0, 1)
+        tgRt.anchorMax = Vector2(1, 1)
+        tgRt.pivot = Vector2(0.5, 1)
+        tgRt.anchoredPosition = Vector2(0, -265)
+        tgRt.sizeDelta = Vector2(-60, 90)
+
+        -- 6. Reload / Re-check Button
+        local reloadGo = GameObject("ActiveReloadBtn")
+        reloadGo.transform:SetParent(authPanelGo.transform, false)
+        local rRt = reloadGo:AddComponent(typeof(RectTransform))
+        rRt.anchorMin = Vector2(0.5, 0)
+        rRt.anchorMax = Vector2(0.5, 0)
+        rRt.pivot = Vector2(0.5, 0)
+        rRt.anchoredPosition = Vector2(0, 25)
+        rRt.sizeDelta = Vector2(300, 45)
+        local rImg = reloadGo:AddComponent(typeof(Image))
+        rImg.color = Color(0.18, 0.65, 0.32, 1)
+        local rTxtG = GameObject("Txt")
+        rTxtG.transform:SetParent(reloadGo.transform, false)
+        local rtRt = rTxtG:AddComponent(typeof(RectTransform))
+        rtRt.anchorMin = Vector2(0, 0)
+        rtRt.anchorMax = Vector2(1, 1)
+        rtRt.sizeDelta = Vector2(0, 0)
+        local rtTxt = rTxtG:AddComponent(typeof(Text))
+        rtTxt.text = "Kiểm Tra Khôi Phục Active"
+        rtTxt.font = defaultFont
+        rtTxt.fontSize = 17
+        rtTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        rtTxt.color = Color.white
+        rtTxt.alignment = TextAnchor.MiddleCenter
+        local rBtn = reloadGo:AddComponent(typeof(Button))
+
+        local function RefreshAuthPanelData()
+            local serialMD5 = Mod_GetDeviceSerialMD5()
+            local uid = Mod_GetCharacterUID()
+            if activeSerialTxt and not activeSerialTxt:Equals(nil) then activeSerialTxt.text = serialMD5 end
+            if activeUidTxt and not activeUidTxt:Equals(nil) then
+                if uid ~= "" then
+                    activeUidTxt.text = uid
+                    activeUidTxt.color = Color.white
+                else
+                    activeUidTxt.text = "Vui lòng đăng nhập nhân vật để lấy UID"
+                    activeUidTxt.color = Color(1.0, 0.7, 0.3, 1.0)
+                end
+            end
+            if activeNoticeTxt and not activeNoticeTxt:Equals(nil) then
+                activeNoticeTxt.text = _G.Mod_ActiveStatusMsg or "Chưa được kích hoạt bản quyền!"
+            end
+            
+            if activeTgContainerGo and not activeTgContainerGo:Equals(nil) then
+                for i = activeTgContainerGo.transform.childCount - 1, 0, -1 do
+                    local child = activeTgContainerGo.transform:GetChild(i)
+                    CS.UnityEngine.Object.Destroy(child.gameObject)
+                end
+                local admins = _G.Mod_Config_AdminTelegram or {"admin1", "admin2"}
+                local btnWidth = 280
+                local btnHeight = 40
+                local gap = 20
+                local startX = -((#admins * btnWidth + (#admins - 1) * gap) / 2) + (btnWidth / 2)
+                
+                for idx, adminUser in ipairs(admins) do
+                    local bGo = GameObject("TgBtn_" .. idx)
+                    bGo.transform:SetParent(activeTgContainerGo.transform, false)
+                    local bRt = bGo:AddComponent(typeof(RectTransform))
+                    bRt.anchorMin = Vector2(0.5, 0.5)
+                    bRt.anchorMax = Vector2(0.5, 0.5)
+                    bRt.pivot = Vector2(0.5, 0.5)
+                    bRt.anchoredPosition = Vector2(startX + (idx - 1) * (btnWidth + gap), 0)
+                    bRt.sizeDelta = Vector2(btnWidth, btnHeight)
+                    
+                    local bImg = bGo:AddComponent(typeof(Image))
+                    bImg.color = Color(0.0, 0.54, 0.83, 1)
+                    
+                    local txtG = GameObject("Txt")
+                    txtG.transform:SetParent(bGo.transform, false)
+                    local tRt = txtG:AddComponent(typeof(RectTransform))
+                    tRt.anchorMin = Vector2(0, 0)
+                    tRt.anchorMax = Vector2(1, 1)
+                    tRt.sizeDelta = Vector2(0, 0)
+                    local txtC = txtG:AddComponent(typeof(Text))
+                    txtC.text = "Admin Telegram (@" .. tostring(adminUser) .. ")"
+                    txtC.font = defaultFont
+                    txtC.fontSize = 15
+                    txtC.fontStyle = CS.UnityEngine.FontStyle.Bold
+                    txtC.color = Color.white
+                    txtC.alignment = TextAnchor.MiddleCenter
+                    
+                    local btnC = bGo:AddComponent(typeof(Button))
+                    btnC.onClick:AddListener(function()
+                        local msg = ""
+                        local hasSerial = (serialMD5 ~= "")
+                        local hasUID = (uid ~= "" and uid ~= "Vui lòng đăng nhập nhân vật để lấy UID")
+                        if hasSerial and hasUID then
+                            msg = "Hi Admin, nho active giup em:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
+                        else
+                            msg = "Hi"
+                        end
+                        local urlMsg = CS.UnityEngine.WWW.EscapeURL(msg)
+                        local telegramUrl = "https://t.me/" .. tostring(adminUser) .. "?text=" .. urlMsg
+                        pcall(function() CS.UnityEngine.Application.OpenURL(telegramUrl) end)
+                    end)
+                end
+            end
+        end
+
+        rBtn.onClick:AddListener(function()
+            if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
+            if _G.Mod_IsActive then
+                authPanelGo:SetActive(false)
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt bản quyền thành công!") end
+                if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+            else
+                RefreshAuthPanelData()
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(_G.Mod_ActiveStatusMsg or "Chưa tìm thấy kích hoạt hợp lệ!") end
+            end
+        end)
+
+        _G.Mod_UpdateUI_ActiveState = function()
+            pcall(function()
+                if _G.FloatingModBtnGo and not _G.FloatingModBtnGo:Equals(nil) then
+                    _G.FloatingModBtnGo:SetActive(true)
+                end
+                if _G.FloatingPKBtnGo and not _G.FloatingPKBtnGo:Equals(nil) then
+                    _G.FloatingPKBtnGo:SetActive(_G.Mod_IsActive == true)
+                end
+                if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
+                    if _G.Mod_IsActive then
+                        _G.authPanelGo:SetActive(false)
+                    end
+                end
+            end)
+        end
+
         local isExpanded = false
         if not _G.ModMainTab then
             pcall(function() _G.ModMainTab = CS.UnityEngine.PlayerPrefs.GetString("ModMainTab", "CO_BAN") end)
@@ -367,14 +942,29 @@ local function CreateModUI()
         _G.AdminUIList = {}
 
         local function RefreshMainTabs()
+            _G.Mod_UpdateUI_ActiveState()
+
+            if _G.Mod_Config_ActiveBasicTab == false and _G.ModMainTab == "CO_BAN" then
+                if _G.Mod_Config_ActiveAdvancedTab ~= false then _G.ModMainTab = "NANG_CAO"
+                elseif _G.Mod_Config_ActiveAutoFarmTab ~= false then _G.ModMainTab = "AUTO_BOSS" end
+            end
+            if _G.Mod_Config_ActiveAdvancedTab == false and _G.ModMainTab == "NANG_CAO" then
+                if _G.Mod_Config_ActiveBasicTab ~= false then _G.ModMainTab = "CO_BAN"
+                elseif _G.Mod_Config_ActiveAutoFarmTab ~= false then _G.ModMainTab = "AUTO_BOSS" end
+            end
+            if _G.Mod_Config_ActiveAutoFarmTab == false and _G.ModMainTab == "AUTO_BOSS" then
+                if _G.Mod_Config_ActiveBasicTab ~= false then _G.ModMainTab = "CO_BAN"
+                elseif _G.Mod_Config_ActiveAdvancedTab ~= false then _G.ModMainTab = "NANG_CAO" end
+            end
+
             for _, go in ipairs(_G.CoBanUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN") end
+                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN" and _G.Mod_Config_ActiveBasicTab ~= false) end
             end
             for _, go in ipairs(_G.NangCaoUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "NANG_CAO") end
+                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "NANG_CAO" and _G.Mod_Config_ActiveAdvancedTab ~= false) end
             end
             for _, go in ipairs(_G.AutoBossUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "AUTO_BOSS") end
+                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "AUTO_BOSS" and _G.Mod_Config_ActiveAutoFarmTab ~= false) end
             end
 
             if _G.ModRefreshAutoBossConfigUI then
@@ -386,6 +976,25 @@ local function CreateModUI()
         end
 
         local btnComp = btnGo:AddComponent(typeof(Button))
+        btnComp.onClick:AddListener(function()
+            pcall(function()
+                if _G.Mod_IsActive then
+                    if authPanelGo and authPanelGo.activeSelf then authPanelGo:SetActive(false) end
+                    isExpanded = not isExpanded
+                    panelGo:SetActive(isExpanded)
+                    if isExpanded then RefreshMainTabs() end
+                else
+                    if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
+                    if authPanelGo then
+                        local showAuth = not authPanelGo.activeSelf
+                        authPanelGo:SetActive(showAuth)
+                        if showAuth then RefreshAuthPanelData() end
+                    end
+                end
+            end)
+        end)
+
+        _G.Mod_UpdateUI_ActiveState()
         
         local testBtnGo = GameObject("FOVMinusBtn")
         testBtnGo.transform:SetParent(panelGo.transform, false)
@@ -1035,6 +1644,14 @@ local function CreateModUI()
             end
 
             _G.Mod_AutoFarmBoss_Update = function()
+    Mod_UpdatePeriodicCheck()
+
+    if not _G.Mod_IsActive then
+        _G.Mod_AutoFarmBoss_State = 0
+        _G.Mod_AutoFarmBoss_Target = nil
+        return
+    end
+
     if not _G.Mod_AutoFarmBoss_Enabled then 
         if _G.Mod_AutoFarmBoss_State ~= 0 then
             _G.Mod_AutoFarmBoss_State = 0
@@ -4170,6 +4787,10 @@ local status, err = pcall(function()
                 if not _G.MyModCreated then
                     _G.MyModCreated = true
                     CreateModUI()
+                else
+                    if _G.Mod_UpdateFloatingButtonsVisibility then
+                        _G.Mod_UpdateFloatingButtonsVisibility()
+                    end
                 end
             end
             

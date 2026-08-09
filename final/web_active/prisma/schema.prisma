@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(uuid())
+  username     String      @unique
+  passwordHash String
+  displayName  String
+  role         String      // "ADMIN" or "SALE"
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  tokens       Token[]     @relation("UserTokens")
+  tokenNotes   TokenNote[] @relation("UserTokenNotes")
+}
+
+model VipPackage {
+  id                      String   @id @default(uuid())
+  name                    String
+  durationDays            Int
+  fovMin                  Int      @default(20)
+  fovMax                  Int      @default(90)
+  bossRefreshMin          Int      @default(1)
+  bossRefreshMax          Int      @default(60)
+  maxMoveSpeed            Float    @default(2.5)
+  maxAttackSpeed          Float    @default(2.5)
+  maxMonsterRange         Int      @default(50)
+  maxPickupCount          Int      @default(100)
+  activeTabBasic          Boolean  @default(true)
+  activeTabAdvanced       Boolean  @default(true)
+  activeTabAutofarm       Boolean  @default(true)
+  characterReincarnation Int      @default(8)
+  adminTelegrams          String   @default("[\"@admin1\", \"@admin2\"]")
+  price                   Float    @default(0)
+  createdAt               DateTime @default(now())
+  tokens                  Token[]
+}
+
+model Token {
+  id                      String      @id @default(uuid())
+  tokenKey                String      @unique @default(uuid())
+  deviceSnMd5             String
+  characterUid            String
+  packageId               String?
+  vipPackage              VipPackage? @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  durationDays            Int
+  expireAt                DateTime
+  fovMin                  Int         @default(20)
+  fovMax                  Int         @default(90)
+  bossRefreshMin          Int         @default(1)
+  bossRefreshMax          Int         @default(60)
+  maxMoveSpeed            Float       @default(2.5)
+  maxAttackSpeed          Float       @default(2.5)
+  maxMonsterRange         Int         @default(50)
+  maxPickupCount          Int         @default(100)
+  activeTabBasic          Boolean     @default(true)
+  activeTabAdvanced       Boolean     @default(true)
+  activeTabAutofarm       Boolean     @default(true)
+  characterReincarnation Int         @default(8)
+  adminTelegrams          String      @default("[\"@admin1\", \"@admin2\"]")
+  price                   Float       @default(0)
+  isCustom                Boolean     @default(false)
+  encryptedToken          String      @db.NVarChar(Max)
+  createdById             String
+  createdBy               User        @relation("UserTokens", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+  notes                   TokenNote[]
+
+  @@index([deviceSnMd5, characterUid])
+}
+
+model TokenNote {
+  id          String   @id @default(uuid())
+  tokenId     String
+  token       Token    @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdById String
+  createdBy   User     @relation("UserTokenNotes", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  action      String   // CREATE, UPDATE
+  detail      String   @db.NVarChar(Max)
+  createdAt   DateTime @default(now())
+}

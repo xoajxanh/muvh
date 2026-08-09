@@ -1,0 +1,83 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getSessionUser } from '@/lib/auth';
+import { prisma, ensureInitialSeed } from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: NextRequest) {
+  await ensureInitialSeed();
+  const session = await getSessionUser(req);
+  if (!session) {
+    return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
+  }
+
+  const packages = await prisma.vipPackage.findMany({
+    orderBy: { durationDays: 'asc' },
+  });
+
+  return NextResponse.json({ packages });
+}
+
+export async function POST(req: NextRequest) {
+  const session = await getSessionUser(req);
+  if (!session || session.role !== 'ADMIN') {
+    return NextResponse.json({ error: 'Chỉ Admin mới có quyền tạo gói VIP' }, { status: 403 });
+  }
+
+  try {
+    const body = await req.json();
+    const {
+      name,
+      durationDays,
+      fovMin,
+      fovMax,
+      bossRefreshMin,
+      bossRefreshMax,
+      maxMoveSpeed,
+      maxAttackSpeed,
+      maxMonsterRange,
+      maxPickupCount,
+      activeTabBasic,
+      activeTabAdvanced,
+      activeTabAutofarm,
+      characterReincarnation,
+      adminTelegrams,
+      price,
+    } = body;
+
+    if (!name || !durationDays) {
+      return NextResponse.json({ error: 'Tên gói và số ngày hết hạn là bắt buộc' }, { status: 400 });
+    }
+
+    const telegramsList = Array.isArray(adminTelegrams)
+      ? JSON.stringify(adminTelegrams)
+      : typeof adminTelegrams === 'string'
+      ? JSON.stringify(adminTelegrams.split(',').map((s) => s.trim()).filter(Boolean))
+      : '["@admin1", "@admin2"]';
+
+    const newPkg = await prisma.vipPackage.create({
+      data: {
+        name: name.trim(),
+        durationDays: Number(durationDays),
+        fovMin: Number(fovMin ?? 20),
+        fovMax: Number(fovMax ?? 90),
+        bossRefreshMin: Number(bossRefreshMin ?? 1),
+        bossRefreshMax: Number(bossRefreshMax ?? 60),
+        maxMoveSpeed: Number(maxMoveSpeed ?? 2.5),
+        maxAttackSpeed: Number(maxAttackSpeed ?? 2.5),
+        maxMonsterRange: Number(maxMonsterRange ?? 50),
+        maxPickupCount: Number(maxPickupCount ?? 100),
+        activeTabBasic: Boolean(activeTabBasic ?? true),
+        activeTabAdvanced: Boolean(activeTabAdvanced ?? true),
+        activeTabAutofarm: Boolean(activeTabAutofarm ?? true),
+        characterReincarnation: Number(characterReincarnation ?? 8),
+        adminTelegrams: telegramsList,
+        price: Number(price ?? 0),
+      },
+    });
+
+    return NextResponse.json({ success: true, package: newPkg });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message || 'Lỗi khi tạo gói VIP' }, { status: 500 });
+  }
+}
