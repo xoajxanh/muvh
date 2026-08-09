@@ -554,28 +554,33 @@ export default function TokenDetailPage() {
                       </div>
                     </div>
 
+                    {/* Separated Delay Nhặt Min & Delay Nhặt Max labels & inputs */}
                     <div>
-                      <label className="block font-semibold text-slate-300 mb-1">Delay Nhặt Min / Max (ms)</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          value={pickupDelayMin}
-                          onChange={(e) => {
-                            setPickupDelayMin(Number(e.target.value));
-                            setIsCustom(true);
-                          }}
-                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
-                        />
-                        <input
-                          type="number"
-                          value={pickupDelayMax}
-                          onChange={(e) => {
-                            setPickupDelayMax(Number(e.target.value));
-                            setIsCustom(true);
-                          }}
-                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
-                        />
-                      </div>
+                      <label className="block font-semibold text-slate-300 mb-1">Delay Nhặt Tối Thiểu (ms)</label>
+                      <input
+                        type="number"
+                        value={pickupDelayMin}
+                        onChange={(e) => {
+                          setPickupDelayMin(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
+                        placeholder="Ví dụ: 100"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Delay Nhặt Tối Đa (ms)</label>
+                      <input
+                        type="number"
+                        value={pickupDelayMax}
+                        onChange={(e) => {
+                          setPickupDelayMax(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
+                        placeholder="Ví dụ: 500"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
+                      />
                     </div>
 
                     <div>
@@ -593,7 +598,49 @@ export default function TokenDetailPage() {
                       </select>
                     </div>
 
-                    <div className="sm:col-span-2">
+                    {/* Active Tabs Toggles in Edit Form */}
+                    <div className="sm:col-span-2 pt-3 border-t border-slate-800 flex flex-wrap gap-6 text-xs font-semibold">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={activeTabBasic}
+                          onChange={(e) => {
+                            setActiveTabBasic(e.target.checked);
+                            setIsCustom(true);
+                          }}
+                          className="rounded bg-slate-900 border-slate-800 text-cyan-500 focus:ring-cyan-500"
+                        />
+                        <span className="text-slate-200">Active Tab Cơ Bản</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={activeTabAdvanced}
+                          onChange={(e) => {
+                            setActiveTabAdvanced(e.target.checked);
+                            setIsCustom(true);
+                          }}
+                          className="rounded bg-slate-900 border-slate-800 text-cyan-500 focus:ring-cyan-500"
+                        />
+                        <span className="text-slate-200">Active Tab Nâng Cao</span>
+                      </label>
+
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={activeTabAutofarm}
+                          onChange={(e) => {
+                            setActiveTabAutofarm(e.target.checked);
+                            setIsCustom(true);
+                          }}
+                          className="rounded bg-slate-900 border-slate-800 text-cyan-500 focus:ring-cyan-500"
+                        />
+                        <span className="text-slate-200">Active Tab AUTO Farm / Boss</span>
+                      </label>
+                    </div>
+
+                    <div className="sm:col-span-2 pt-2 border-t border-slate-800">
                       <label className="block font-semibold text-slate-300 mb-1">Chọn Admin Telegram Contact (Tối đa 2):</label>
                       <div className="flex flex-wrap gap-2">
                         {systemTelegrams.map((contact) => {
@@ -699,6 +746,13 @@ export default function TokenDetailPage() {
                       <span className="text-slate-400 block text-[10px]">FOV Min / Max</span>
                       <span className="font-bold text-slate-200">
                         {token.fovMin} - {token.fovMax}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Phạm Vi Quái / Số Nhặt Max</span>
+                      <span className="font-bold text-slate-200">
+                        {token.maxMonsterRange}m / {token.maxPickupCount} item
                       </span>
                     </div>
 

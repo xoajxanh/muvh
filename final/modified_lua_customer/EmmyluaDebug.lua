@@ -7,24 +7,25 @@ EmmyluaDebug = {}
 --------------------------------------------------------------------------------
 _G.Mod_IsActive = false
 _G.Mod_ActiveConfig = nil
+_G.Mod_HasFetchedConfig = false
 _G.Mod_RawConfigPayload = ""
 _G.Mod_ActiveStatusMsg = "Bản Mod chưa được kích hoạt!"
 
 _G.Mod_Config_FOV_Min = 30
-_G.Mod_Config_FOV_Max = 70
-_G.Mod_Config_BossRefresh_Min = 2
-_G.Mod_Config_BossRefresh_Max = 10
+_G.Mod_Config_FOV_Max = 50
+_G.Mod_Config_BossRefresh_Min = 3
+_G.Mod_Config_BossRefresh_Max = 60
 _G.Mod_Config_MaxMoveSpeed = 1.5
 _G.Mod_Config_MaxAttackSpeed = 2.0
-_G.Mod_Config_MaxMonsterRange = 20
-_G.Mod_Config_MaxPickupCount = 50
+_G.Mod_Config_MaxMonsterRange = 12
+_G.Mod_Config_MaxPickupCount = 5
 _G.Mod_Config_PickupDelay_Min = 100
 _G.Mod_Config_PickupDelay_Max = 500
 _G.Mod_Config_ActiveBasicTab = true
 _G.Mod_Config_ActiveAdvancedTab = true
 _G.Mod_Config_ActiveAutoFarmTab = true
 _G.Mod_Config_CurrentRebirth = 8
-_G.Mod_Config_AdminTelegram = {"admin1", "admin2"}
+_G.Mod_Config_AdminTelegram = {"legend92vn"}
 
 local SECRET_SALT = "MUVH_SECRET_SALT_XOAI"
 
@@ -137,13 +138,25 @@ local function Mod_GetCharacterUID()
 end
 
 local function Mod_DecryptPayload(payloadB64)
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4.1] Giai ma Base64 Envelope, Do dai = " .. tostring(#payloadB64)) end
     if not payloadB64 or payloadB64 == "" then return nil, "Payload rỗng" end
     local decoded = Mod_Base64Decode(payloadB64)
-    if not decoded then return nil, "Không thể giải mã Base64" end
+    if not decoded then
+        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI] Mod_Base64Decode giai ma thoi ban Base64 that bai!") end
+        return nil, "Không thể giải mã Base64"
+    end
     local jsonStr, signature = string.match(decoded, "^(.*)|([a-fA-F0-9]+)$")
-    if not jsonStr or not signature then return nil, "Cấu trúc Payload không hợp lệ" end
+    if not jsonStr or not signature then
+        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI] Cau truc Envelope khong chua ky tu '|' va MD5 signature!") end
+        return nil, "Cấu trúc Payload không hợp lệ"
+    end
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4.2] Tách JSON String len = " .. tostring(#jsonStr) .. ", Signature = " .. tostring(signature)) end
     local expectedSig = Mod_CalculateMD5(jsonStr .. SECRET_SALT)
-    if string.lower(expectedSig) ~= string.lower(signature) then return nil, "Chữ ký MD5 không hợp lệ!" end
+    if string.lower(expectedSig) ~= string.lower(signature) then
+        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI CHU KY] Expected MD5=" .. tostring(expectedSig) .. " != Server Signature=" .. tostring(signature)) end
+        return nil, "Chữ ký MD5 không hợp lệ!"
+    end
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4.3] Chu ky MD5 Salt TRUNG KHOP 100%! Dang parse Config JSON...") end
     local configObj = Mod_ParseJSON(jsonStr)
     if not configObj then return nil, "Không thể đọc dữ liệu JSON" end
     return configObj, nil
@@ -154,28 +167,35 @@ local API_BASE_URL = "http://g3events.asia/api/v1/config"
 local function Mod_ValidateConfig(config)
     if not config then return false, "Chưa có cấu hình kích hoạt!" end
     local currentTime = os.time()
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 1] Kiem tra expire_time: config=" .. tostring(config.expire_time) .. ", os.time()=" .. tostring(currentTime)) end
     if config.expire_time and currentTime > tonumber(config.expire_time) then
+        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI HET HAN] Tai khoan / Cau hinh da het han su dung!") end
         return false, "Tài khoản / Cấu hình đã hết hạn sử dụng!"
     end
     local currentSerialMD5 = Mod_GetDeviceSerialMD5()
     local cfgSN = config.device_sn_hash or config.serial_number
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 2] Kiem tra Device Serial: config=" .. tostring(cfgSN) .. ", current=" .. tostring(currentSerialMD5)) end
     if cfgSN and tostring(cfgSN) ~= "" then
         local cfgSNStr = tostring(cfgSN)
         local cfgSNMD5 = Mod_CalculateMD5(cfgSNStr)
         if cfgSNStr ~= currentSerialMD5 and cfgSNMD5 ~= currentSerialMD5 then
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI SERIAL] Device Serial mismatch!") end
             return false, "Mã thiết bị (Serial MD5) không trùng khớp!"
         end
     end
     local cfgUID = config.character_uid or config.uid
+    local currentUID = Mod_GetCharacterUID()
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 3] Kiem tra Character UID: config=" .. tostring(cfgUID) .. ", current=" .. tostring(currentUID)) end
     if cfgUID and tostring(cfgUID) ~= "" then
-        local currentUID = Mod_GetCharacterUID()
         if currentUID == "" then
             return false, "Vui lòng đăng nhập nhân vật trong game để xác thực UID!"
         end
         if tostring(cfgUID) ~= currentUID then
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI UID] Character UID mismatch!") end
             return false, "Mã nhân vật (UID) không trùng khớp!"
         end
     end
+    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE SUCCESS] Tat ca thong so hop le 100%!") end
     return true, "OK"
 end
 
@@ -188,6 +208,20 @@ local function Mod_FormatExpireDate(ts)
     end)
     if ok and res then return res end
     return tostring(ts)
+end
+
+local function Mod_ValidateConfig(config)
+    if not config then return false, "Config rỗng!" end
+    if config.expire_time then
+        local expNum = tonumber(config.expire_time)
+        if expNum and expNum > 0 then
+            local now = os.time()
+            if now > expNum then
+                return false, "Bản quyền đã hết hạn!"
+            end
+        end
+    end
+    return true, "OK"
 end
 
 local function Mod_ApplyConfig(config)
@@ -203,11 +237,53 @@ local function Mod_ApplyConfig(config)
     if config.max_pickup_count then _G.Mod_Config_MaxPickupCount = tonumber(config.max_pickup_count) end
     if config.pickup_delay_min then _G.Mod_Config_PickupDelay_Min = tonumber(config.pickup_delay_min) end
     if config.pickup_delay_max then _G.Mod_Config_PickupDelay_Max = tonumber(config.pickup_delay_max) end
-    if config.active_basic_tab ~= nil then _G.Mod_Config_ActiveBasicTab = config.active_basic_tab end
-    if config.active_advanced_tab ~= nil then _G.Mod_Config_ActiveAdvancedTab = config.active_advanced_tab end
-    if config.active_autofarm_tab ~= nil then _G.Mod_Config_ActiveAutoFarmTab = config.active_autofarm_tab end
-    if config.character_reincarnation then _G.Mod_Config_CurrentRebirth = tonumber(config.character_reincarnation) end
-    if config.admin_telegrams then _G.Mod_Config_AdminTelegram = config.admin_telegrams end
+    
+    if config.active_basic_tab ~= nil then _G.Mod_Config_ActiveBasicTab = config.active_basic_tab
+    elseif config.active_tab_basic ~= nil then _G.Mod_Config_ActiveBasicTab = config.active_tab_basic end
+    
+    if config.active_advanced_tab ~= nil then _G.Mod_Config_ActiveAdvancedTab = config.active_advanced_tab
+    elseif config.active_tab_advanced ~= nil then _G.Mod_Config_ActiveAdvancedTab = config.active_tab_advanced end
+    
+    if config.active_autofarm_tab ~= nil then _G.Mod_Config_ActiveAutoFarmTab = config.active_autofarm_tab
+    elseif config.active_tab_autofarm ~= nil then _G.Mod_Config_ActiveAutoFarmTab = config.active_tab_autofarm end
+
+    if config.character_reincarnation then
+        local reb = tonumber(config.character_reincarnation)
+        if reb and reb >= 3 and reb <= 12 then
+            _G.Mod_Config_CurrentRebirth = reb
+            _G.ModBossTab = "C" .. tostring(reb)
+            _G.ModAutoBossConfigTab = "C" .. tostring(reb)
+        end
+    end
+
+    if _G.RunSpeedMultiplier and _G.Mod_Config_MaxMoveSpeed then
+        _G.RunSpeedMultiplier = math.min(_G.RunSpeedMultiplier, _G.Mod_Config_MaxMoveSpeed)
+    end
+    if _G.AtkSpeedMultiplier and _G.Mod_Config_MaxAttackSpeed then
+        _G.AtkSpeedMultiplier = math.min(_G.AtkSpeedMultiplier, _G.Mod_Config_MaxAttackSpeed)
+    end
+    if _G.Mod_CustomAttackRange and _G.Mod_Config_MaxMonsterRange then
+        _G.Mod_CustomAttackRange = math.min(_G.Mod_CustomAttackRange, _G.Mod_Config_MaxMonsterRange)
+    end
+    if _G.AutoPick_Limit and _G.Mod_Config_MaxPickupCount then
+        _G.AutoPick_Limit = math.min(_G.AutoPick_Limit, _G.Mod_Config_MaxPickupCount)
+    end
+
+    -- Clamping current FOV to new remote config boundaries
+    local maxFov = _G.Mod_Config_FOV_Max or 50
+    local minFov = _G.Mod_Config_FOV_Min or 35
+    _G.currentFOV = _G.currentFOV or maxFov
+    if _G.currentFOV > maxFov then _G.currentFOV = maxFov end
+    if _G.currentFOV < minFov then _G.currentFOV = minFov end
+    if _G.fovValTxt and not _G.fovValTxt:Equals(nil) then
+        _G.fovValTxt.text = "FOV: " .. tostring(_G.currentFOV)
+    end
+    if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) end
+    if _G.RefreshMainTabs then _G.RefreshMainTabs() end
+    if _G.ParseBossData then pcall(_G.ParseBossData) end
+    if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+    if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+    if _G.ModRefreshAutoBossConfigUI then pcall(_G.ModRefreshAutoBossConfigUI) end
 
     local expireStr = Mod_FormatExpireDate(config.expire_time)
     _G.Mod_ActiveStatusMsg = "Đã kích hoạt thành công! Hạn dùng: " .. expireStr .. " | FOV Max: " .. tostring(_G.Mod_Config_FOV_Max) .. " | Tốc đánh: " .. tostring(_G.Mod_Config_MaxAttackSpeed)
@@ -217,6 +293,7 @@ local function Mod_ApplyConfig(config)
     end
 
     if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+    if _G.RefreshMainTabs then _G.RefreshMainTabs() end
 end
 
 local function Mod_FetchRemotePayloadFromAPI(callback)
@@ -225,7 +302,7 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
     local url = API_BASE_URL .. "?sn=" .. tostring(serialMD5) .. "&uid=" .. tostring(uid)
     
     if _G.WriteLog then
-        _G.WriteLog("[ActiveCheck] [BUOC 1] Gui yeu cau den API: " .. tostring(url))
+        _G.WriteLog("[ActiveCheck] [BUOC 1] Gui request API: " .. tostring(url))
     end
 
     pcall(function()
@@ -234,20 +311,21 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
         local asyncOp = req:SendWebRequest()
         
         local count = 0
+        local hasFinished = false
+        local timerObj = nil
         if _G.Timer and _G.Timer.StartLoop then
-            _G.Timer.StartLoop(0.2, 50, function()
+            timerObj = _G.Timer.StartLoop(0.05, 100, function()
+                if hasFinished then return end
                 count = count + 1
                 local isDone = false
                 pcall(function() isDone = req.isDone end)
-                if isDone or count >= 50 then
+                if isDone or count >= 100 then
+                    hasFinished = true
+                    if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
                     local payload = ""
                     local isSuccess = false
                     pcall(function()
-                        local isErr = false
-                        pcall(function()
-                            if req.isNetworkError or req.isHttpError then isErr = true end
-                        end)
-                        if not isErr and req.downloadHandler then
+                        if req.downloadHandler and req.downloadHandler.text then
                             payload = req.downloadHandler.text
                             if payload and payload ~= "" then
                                 isSuccess = true
@@ -256,7 +334,7 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
                         req:Dispose()
                     end)
                     if _G.WriteLog then
-                        _G.WriteLog("[ActiveCheck] [BUOC 2] Nhan phan hoi thanh cong = " .. tostring(isSuccess) .. ", Do dai Payload = " .. tostring(#payload))
+                        _G.WriteLog("[ActiveCheck] [BUOC 2] Response payload len = " .. tostring(#payload) .. ", text = " .. tostring(payload))
                     end
                     if callback then callback(isSuccess, payload) end
                 end
@@ -281,6 +359,8 @@ local function Mod_UpdatePeriodicCheck(onFinish)
 
     Mod_FetchRemotePayloadFromAPI(function(isSuccess, remotePayload)
         isCheckingAPI = false
+        _G.Mod_HasFetchedConfig = true
+
         if not isSuccess or not remotePayload or remotePayload == "" then
             _G.Mod_IsActive = false
             _G.Mod_ActiveStatusMsg = "Lỗi kết nối mạng / Không thể kết nối Server API!"
@@ -341,10 +421,9 @@ end
 
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsDev = false
-    
-    pcall(function()
-        Mod_UpdatePeriodicCheck()
-    end)
+    _G.Mod_HasFetchedConfig = false
+    _G.Mod_IsActive = false
+    _G.Mod_ActiveConfig = nil
 
     _G.Mod_IsDebug = true
     _G.Mod_DebugMsg = function(msg)
@@ -595,6 +674,9 @@ local function CreateModUI()
         local Image = CS.UnityEngine.UI.Image
         local Text = CS.UnityEngine.UI.Text
         local Button = CS.UnityEngine.UI.Button
+        local InputField = CS.UnityEngine.UI.InputField
+        local Toggle = CS.UnityEngine.UI.Toggle
+        local Slider = CS.UnityEngine.UI.Slider
         local Font = CS.UnityEngine.Font
         local Resources = CS.UnityEngine.Resources
         local TextAnchor = CS.UnityEngine.TextAnchor
@@ -1076,6 +1158,10 @@ local function CreateModUI()
                 _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, statusMsg)
                     if isActive then
                         if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
+                        if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then
+                            _G.ModMenuPanelGo:SetActive(true)
+                            if RefreshMainTabs then RefreshMainTabs() end
+                        end
                         if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt bản quyền thành công!") end
                         if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
                     else
@@ -1131,6 +1217,16 @@ local function CreateModUI()
                 elseif _G.Mod_Config_ActiveAdvancedTab ~= false then _G.ModMainTab = "NANG_CAO" end
             end
 
+            if _G.tabCoBanGo and not _G.tabCoBanGo:Equals(nil) then
+                _G.tabCoBanGo:SetActive(_G.Mod_Config_ActiveBasicTab ~= false)
+            end
+            if _G.tabNangCaoGo and not _G.tabNangCaoGo:Equals(nil) then
+                _G.tabNangCaoGo:SetActive(_G.Mod_Config_ActiveAdvancedTab ~= false)
+            end
+            if _G.tabAutoBossGo and not _G.tabAutoBossGo:Equals(nil) then
+                _G.tabAutoBossGo:SetActive(_G.Mod_Config_ActiveAutoFarmTab ~= false)
+            end
+
             for _, go in ipairs(_G.CoBanUIList) do
                 if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN" and _G.Mod_Config_ActiveBasicTab ~= false) end
             end
@@ -1148,6 +1244,7 @@ local function CreateModUI()
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
             end
         end
+        _G.RefreshMainTabs = RefreshMainTabs
 
         _G.Mod_UpdateUI_ActiveState()
         
@@ -1162,6 +1259,19 @@ local function CreateModUI()
 
         local testImg = testBtnGo:AddComponent(typeof(Image))
         testImg.color = Color(0.4, 0.4, 0.4, 1)
+        local testBtn = testBtnGo:AddComponent(typeof(Button))
+        if testBtn then
+            testBtn.onClick:AddListener(function()
+                local minFov = _G.Mod_Config_FOV_Min or 35
+                local maxFov = _G.Mod_Config_FOV_Max or 50
+                _G.currentFOV = math.max((_G.currentFOV or maxFov) - 5, minFov)
+                if _G.currentFOV > maxFov then _G.currentFOV = maxFov end
+                if _G.fovValTxt and not _G.fovValTxt:Equals(nil) then
+                    _G.fovValTxt.text = "FOV: " .. tostring(_G.currentFOV)
+                end
+                if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) end
+            end)
+        end
         table.insert(_G.CoBanUIList, testBtnGo)
 
         local testTxtGo = GameObject("FOVMinusText")
@@ -1193,6 +1303,7 @@ local function CreateModUI()
         fovValTxt.fontSize = 18
         fovValTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then fovValTxt.font = defaultFont end
+        _G.fovValTxt = fovValTxt
         table.insert(_G.CoBanUIList, fovValGo)
 
         local plusBtnGo = GameObject("FOVPlusBtn")
@@ -1206,6 +1317,19 @@ local function CreateModUI()
 
         local plusImg = plusBtnGo:AddComponent(typeof(Image))
         plusImg.color = Color(0.4, 0.4, 0.4, 1)
+        local plusBtn = plusBtnGo:AddComponent(typeof(Button))
+        if plusBtn then
+            plusBtn.onClick:AddListener(function()
+                local minFov = _G.Mod_Config_FOV_Min or 35
+                local maxFov = _G.Mod_Config_FOV_Max or 50
+                _G.currentFOV = math.min((_G.currentFOV or minFov) + 5, maxFov)
+                if _G.currentFOV < minFov then _G.currentFOV = minFov end
+                if _G.fovValTxt and not _G.fovValTxt:Equals(nil) then
+                    _G.fovValTxt.text = "FOV: " .. tostring(_G.currentFOV)
+                end
+                if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) end
+            end)
+        end
         table.insert(_G.CoBanUIList, plusBtnGo)
 
         local plusTxtGo = GameObject("FOVPlusText")
@@ -1222,7 +1346,22 @@ local function CreateModUI()
         plusTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then plusTxt.font = defaultFont end
 
-                _G.Mod_MapsConfig_c7 = {
+                _G.Mod_MapsConfig_c3 = _G.Mod_MapsConfig_c3 or {}
+        _G.Mod_MapsConfig_c4 = _G.Mod_MapsConfig_c4 or {}
+        _G.Mod_MapsConfig_c5 = _G.Mod_MapsConfig_c5 or {}
+        _G.Mod_MapsConfig_c6 = _G.Mod_MapsConfig_c6 or {}
+        _G.Mod_MapsConfig_c9 = _G.Mod_MapsConfig_c9 or {}
+        _G.Mod_MapsConfig_c10 = _G.Mod_MapsConfig_c10 or {}
+        _G.Mod_MapsConfig_c11 = _G.Mod_MapsConfig_c11 or {}
+        _G.Mod_MapsConfig_c12 = _G.Mod_MapsConfig_c12 or {}
+
+        local function GetMapsConfigByTier(tierTag)
+            local key = "Mod_MapsConfig_" .. string.lower(tierTag or "c7")
+            return _G[key] or {}
+        end
+        _G.GetMapsConfigByTier = GetMapsConfigByTier
+
+        _G.Mod_MapsConfig_c7 = {
             {
                 mapId = 101096,
                 title = "Hoang Dã C7",
@@ -1412,36 +1551,30 @@ local function CreateModUI()
         local function UpdateBossWatchUIText()
             pcall(function()
                 if not isExpanded then return end
-                local currentSec = _G.Time.GetServerSecondTime()
+                local currentSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
                 local currentPosY = -140
                 local titleIdx = 1
                 local rowIdx = 1
                 local btnIdx = 1
                 local sepIdx = 1
                 
-                local tabBtnC7 = GetLineButton(btnIdx, 40, currentPosY, 100)
-                tabBtnC7.go:SetActive(_G.ModMainTab == "CO_BAN")
-                tabBtnC7.txt.text = "<color=" .. (_G.ModBossTab == "C7" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C7 ]</color>"
-                tabBtnC7.btn.onClick:RemoveAllListeners()
-                tabBtnC7.btn.onClick:AddListener(function()
-                    _G.ModBossTab = "C7"
-                    UpdateBossWatchUIText()
-                end)
-                btnIdx = btnIdx + 1
-
-                local tabBtnC8 = GetLineButton(btnIdx, 150, currentPosY, 100)
-                tabBtnC8.go:SetActive(_G.ModMainTab == "CO_BAN")
-                tabBtnC8.txt.text = "<color=" .. (_G.ModBossTab == "C8" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C8 ]</color>"
-                tabBtnC8.btn.onClick:RemoveAllListeners()
-                tabBtnC8.btn.onClick:AddListener(function()
-                    _G.ModBossTab = "C8"
-                    UpdateBossWatchUIText()
-                end)
-                btnIdx = btnIdx + 1
-                
+                local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
+                for tIdx, tag in ipairs(tierTags) do
+                    local tBtn = GetLineButton(btnIdx, 40 + (tIdx - 1) * 65, currentPosY, 62)
+                    tBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
+                    tBtn.txt.text = "<color=" .. (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
+                    tBtn.txt.fontSize = 14
+                    tBtn.btn.onClick:RemoveAllListeners()
+                    local thisTag = tag
+                    tBtn.btn.onClick:AddListener(function()
+                        _G.ModBossTab = thisTag
+                        UpdateBossWatchUIText()
+                    end)
+                    btnIdx = btnIdx + 1
+                end
                 currentPosY = currentPosY - 25
 
-                local mapsConfig = _G.ModBossTab == "C8" and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
+                local mapsConfig = GetMapsConfigByTier(_G.ModBossTab)
                 for i, mapCfg in ipairs(mapsConfig) do
                     local sep = GetDashedLine(sepIdx, currentPosY)
                     sep.go:SetActive(_G.ModMainTab == "CO_BAN")
@@ -1622,6 +1755,8 @@ local function CreateModUI()
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end)
         end
+        _G.ParseBossData = ParseBossData
+        ParseBossData()
         
         if _G.SavedFOV == nil then
             pcall(function()
@@ -1799,9 +1934,7 @@ local function CreateModUI()
             end
 
             _G.Mod_AutoFarmBoss_Update = function()
-    Mod_UpdatePeriodicCheck()
-
-    if not _G.Mod_IsActive then
+                if not _G.Mod_IsActive then
         _G.Mod_AutoFarmBoss_State = 0
         _G.Mod_AutoFarmBoss_Target = nil
         return
@@ -2830,32 +2963,6 @@ end
             end)
         end
 
-        local testBtnComp = testBtnGo:AddComponent(typeof(Button))
-        _G.ModCallbacks.OnFOVMinus = function()
-            pcall(function()
-                local cam = CS.UnityEngine.Camera.main
-                if cam then
-                    cam.fieldOfView = cam.fieldOfView - 5
-                    UpdateFOVLabel()
-                    SaveFOV(cam.fieldOfView)
-                end
-            end)
-        end
-        testBtnComp.onClick:AddListener(_G.ModCallbacks.OnFOVMinus)
-
-        local plusBtnComp = plusBtnGo:AddComponent(typeof(Button))
-        _G.ModCallbacks.OnFOVPlus = function()
-            pcall(function()
-                local cam = CS.UnityEngine.Camera.main
-                if cam then
-                    cam.fieldOfView = cam.fieldOfView + 5
-                    UpdateFOVLabel()
-                    SaveFOV(cam.fieldOfView)
-                end
-            end)
-        end
-        plusBtnComp.onClick:AddListener(_G.ModCallbacks.OnFOVPlus)
-
         -- Auth UI
         local function CreateAuthUI()
             local authPanelGo = GameObject("AuthPanel")
@@ -3309,7 +3416,10 @@ end
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
+                local maxCap = 10.0
+                if valueVarName == "RunSpeedMultiplier" then maxCap = _G.Mod_Config_MaxMoveSpeed or 2.5
+                elseif valueVarName == "AtkSpeedMultiplier" then maxCap = _G.Mod_Config_MaxAttackSpeed or 2.5 end
+                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + step)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -3321,7 +3431,10 @@ end
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + (step * 5))
+                local maxCap = 10.0
+                if valueVarName == "RunSpeedMultiplier" then maxCap = _G.Mod_Config_MaxMoveSpeed or 2.5
+                elseif valueVarName == "AtkSpeedMultiplier" then maxCap = _G.Mod_Config_MaxAttackSpeed or 2.5 end
+                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + (step * 5))
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -3385,7 +3498,8 @@ end
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(100, _G[valueVarName] + step)
+                local maxCap = _G.Mod_Config_MaxMonsterRange or 12
+                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + step)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -3399,7 +3513,8 @@ end
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(100, _G[valueVarName] + (step * 5))
+                local maxCap = _G.Mod_Config_MaxMonsterRange or 12
+                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + (step * 5))
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -3642,7 +3757,12 @@ end
             
             local lpBtnComp = lPlusGo:AddComponent(typeof(Button))
             lpBtnComp.onClick:AddListener(function()
-                _G.AutoPick_Limit = _G.AutoPick_Limit + 1
+                local maxCap = _G.Mod_Config_MaxPickupCount or 5
+                if (_G.AutoPick_Limit or 0) < maxCap then
+                    _G.AutoPick_Limit = (_G.AutoPick_Limit or 0) + 1
+                else
+                    _G.AutoPick_Limit = maxCap
+                end
                 CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Limit", _G.AutoPick_Limit)
                 CS.UnityEngine.PlayerPrefs.Save()
                 lvTxt.text = "SỐ LƯỢNG NHẶT: " .. tostring(_G.AutoPick_Limit)
@@ -3724,9 +3844,13 @@ end
                 return { go = btnGo, txt = txt, btn = btn }
             end
             
-            local tabC7 = CreateTabBtn("[ BOSS C7 ]", "C7", rightColX2, currentY)
-            local tabC8 = CreateTabBtn("[ BOSS C8 ]", "C8", rightColX2 + 110, currentY)
-            _G.NangCaoTabBtns = { C7 = tabC7, C8 = tabC8 }
+            local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
+            _G.NangCaoTabBtns = {}
+            for tIdx, tag in ipairs(tierTags) do
+                local tabBtn = CreateTabBtn("[" .. tag .. "]", tag, rightColX2 + (tIdx - 1) * 65, currentY)
+                tabBtn.txt.fontSize = 14
+                _G.NangCaoTabBtns[tag] = tabBtn
+            end
             
             currentY = currentY - 25
 
@@ -3772,51 +3896,66 @@ end
                 currentY = currentY - 30
             end
 
-
-
             _G.ModUpdateKundunUI = function()
                 pcall(function()
+                    local kundunTiers = GetKundunTiers and GetKundunTiers() or {"C7", "C8"}
                     if _G.NangCaoTabBtns then
-                        _G.NangCaoTabBtns.C7.txt.text = "<color=" .. (_G.ModBossTab == "C7" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C7 ]</color>"
-                        _G.NangCaoTabBtns.C8.txt.text = "<color=" .. (_G.ModBossTab == "C8" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C8 ]</color>"
+                        for tag, tBtn in pairs(_G.NangCaoTabBtns) do
+                            local showThis = false
+                            for _, kt in ipairs(kundunTiers) do
+                                if kt == tag then showThis = true; break end
+                            end
+                            if tBtn.go then tBtn.go:SetActive(_G.ModMainTab == "NANG_CAO" and showThis) end
+                            if showThis and tBtn.txt then
+                                local isSel = (_G.ModBossTab == tag)
+                                tBtn.txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
+                            end
+                        end
                     end
                     
                     if not _G.KundunUILabelPool then return end
                     
+                    local tierNum = tonumber(string.match(_G.ModBossTab or "C8", "%d+")) or 8
                     local kundunConfigs = {}
-                    if _G.ModBossTab == "C8" then
-                        table.insert(kundunConfigs, { name = "THÁNH CỐT:", bossType = 16, bossId = 20201008, limit = 70 })
-                        table.insert(kundunConfigs, { name = "PHÙ VĂN:", bossType = 17, bossId = 20211008, limit = 400 })
-                    else
-                        table.insert(kundunConfigs, { name = "THÁNH CỐT:", bossType = 16, bossId = 20201007, limit = 70 })
-                        table.insert(kundunConfigs, { name = "PHÙ VĂN:", bossType = 17, bossId = 20211007, limit = 300 })
+                    if tierNum >= 4 then
+                        table.insert(kundunConfigs, { name = "THÁNH CỐT:", bossType = 16, bossId = 20201000 + tierNum, limit = 70 })
+                    end
+                    if tierNum >= 6 then
+                        local limit17 = (tierNum >= 8) and 400 or 300
+                        table.insert(kundunConfigs, { name = "PHÙ VĂN:", bossType = 17, bossId = 20211000 + tierNum, limit = limit17 })
                     end
                     
-                    for i, cfg in ipairs(kundunConfigs) do
+                    for i = 1, 2 do
                         local txt = _G.KundunUILabelPool[i]
+                        local cfg = kundunConfigs[i]
                         if txt then
-                            local count = 0
-                            local rCount = 0
-                            if _G.SceneData and _G.SceneData.GetAncientBossData then
-                                local isSatisfy, info = _G.SceneData:GetAncientBossData(cfg.bossType, cfg.bossId)
-                                if info and info.refreshCount then
-                                    rCount = info.refreshCount
+                            if cfg then
+                                txt.gameObject:SetActive(true)
+                                local count = 0
+                                local rCount = 0
+                                if _G.SceneData and _G.SceneData.GetAncientBossData then
+                                    local isSatisfy, info = _G.SceneData:GetAncientBossData(cfg.bossType, cfg.bossId)
+                                    if info and info.refreshCount then
+                                        rCount = info.refreshCount
+                                    end
+                                    if isSatisfy == true then
+                                        count = cfg.limit
+                                    elseif isSatisfy == false and info and info.count then
+                                        count = info.count
+                                    end
                                 end
-                                if isSatisfy == true then
-                                    count = cfg.limit
-                                elseif isSatisfy == false and info and info.count then
-                                    count = info.count
-                                end
-                            end
-                            
-                            local threshold = (cfg.bossType == 17) and 15 or 5
-                            local isGreen = (cfg.limit - count <= threshold)
+                                
+                                local threshold = (cfg.bossType == 17) and 15 or 5
+                                local isGreen = (cfg.limit - count <= threshold)
 
-                            local colorTag = isGreen and "<color=#00FF00>" or "<color=#FFFFFF>"
-                            if count >= cfg.limit then
-                                txt.text = cfg.name .. string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
+                                local colorTag = isGreen and "<color=#00FF00>" or "<color=#FFFFFF>"
+                                if count >= cfg.limit then
+                                    txt.text = cfg.name .. string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
+                                else
+                                    txt.text = cfg.name .. string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
+                                end
                             else
-                                txt.text = cfg.name .. string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
+                                txt.gameObject:SetActive(false)
                             end
                         end
                     end
@@ -4088,7 +4227,7 @@ end
             
             local currentY = -170
             
-            -- Tier Tabs (C7/C8)
+            -- Tier Tabs (C3-C12)
             local function CreateTierTab(label, tabName, xPos)
                 local btnGo = GameObject("AutoBossTier_" .. tabName)
                 btnGo.transform:SetParent(panelGo.transform, false)
@@ -4096,7 +4235,7 @@ end
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, currentY)
-                rt.sizeDelta = Vector2(120, 30)
+                rt.sizeDelta = Vector2(60, 30)
                 
                 local img = btnGo:AddComponent(typeof(Image))
                 img.color = Color(1, 1, 1, 0)
@@ -4108,16 +4247,20 @@ end
                 txtRt.sizeDelta = Vector2(0, 0)
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
-                txt.fontSize = 18
-                txt.alignment = TextAnchor.MiddleLeft
+                txt.fontSize = 14
+                txt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
                 
                 local btn = btnGo:AddComponent(typeof(Button))
                 return { go = btnGo, txt = txt, btn = btn }
             end
             
-            local tierC7 = CreateTierTab("[ BOSS C7 ]", "C7", startX)
-            local tierC8 = CreateTierTab("[ BOSS C8 ]", "C8", startX + 130)
+            local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
+            local tierTabBtns = {}
+            for tIdx, tag in ipairs(tierTags) do
+                local tBtn = CreateTierTab("[" .. tag .. "]", tag, startX + (tIdx - 1) * 65)
+                tierTabBtns[tag] = tBtn
+            end
             
             currentY = currentY - 40
             local gridStartY = currentY
@@ -4148,8 +4291,12 @@ end
             end
             
             local function UpdateTierTabs()
-                tierC7.txt.text = "<color=" .. (_G.ModAutoBossConfigTab == "C7" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C7 ]</color>"
-                tierC8.txt.text = "<color=" .. (_G.ModAutoBossConfigTab == "C8" and "#00FF00" or "#FFFFFF") .. ">[ BOSS C8 ]</color>"
+                for _, tag in ipairs(tierTags) do
+                    if tierTabBtns[tag] and tierTabBtns[tag].txt then
+                        local isSel = (_G.ModAutoBossConfigTab == tag)
+                        tierTabBtns[tag].txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
+                    end
+                end
                 
                 -- Hide all config toggles
                 for _, btnData in ipairs(configPool) do
@@ -4157,104 +4304,106 @@ end
                 end
                 
                 -- Render the current tier's bosses
-                local mapsConfig = _G.ModAutoBossConfigTab == "C7" and _G.Mod_MapsConfig_c7 or _G.Mod_MapsConfig_c8
+                local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(_G.ModAutoBossConfigTab) or {}
                 local py = gridStartY
                 local poolIdx = 1
                 
-                for _, mapCfg in ipairs(mapsConfig) do
-                    -- Title
-                    local btnData = configPool[poolIdx]
-                    if not btnData then
-                        btnData = CreateConfigBtn(poolIdx)
-                        table.insert(configPool, btnData)
-                    end
-                    btnData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
-                    btnData.rt.anchoredPosition = Vector2(startX, py)
-                    btnData.rt.sizeDelta = Vector2(680, 25)
-                    
-                    local mapTotalKilled = 0
-                    if _G.Mod_FarmStats and _G.Mod_FarmStats.bosses and mapCfg.bosses then
-                        for _, cfg in ipairs(mapCfg.bosses) do
-                            mapTotalKilled = mapTotalKilled + (_G.Mod_FarmStats.bosses[cfg.id] or 0)
+                if mapsConfig and #mapsConfig > 0 then
+                    for _, mapCfg in ipairs(mapsConfig) do
+                        -- Title
+                        local btnData = configPool[poolIdx]
+                        if not btnData then
+                            btnData = CreateConfigBtn(poolIdx)
+                            table.insert(configPool, btnData)
                         end
-                    end
-                    local titleStr = mapCfg.title
-                    if mapTotalKilled > 0 then
-                        titleStr = titleStr .. " (" .. mapTotalKilled .. ")"
-                    end
-                    
-                    btnData.txt.text = "<color=#FFFF00>--- " .. titleStr .. " ---</color>"
-                    btnData.txt.alignment = TextAnchor.MiddleCenter
-                    btnData.img.color = Color(1, 1, 1, 0)
-                    btnData.btn.onClick:RemoveAllListeners()
-                    poolIdx = poolIdx + 1
-                    py = py - 30
-                    
-                    -- Bosses in columns
-                    local colBosses = { {}, {}, {} }
-                    for _, cfg in ipairs(mapCfg.bosses) do
-                        local c = cfg.col or 1
-                        if c > 3 then c = 3 end
-                        table.insert(colBosses[c], cfg)
-                    end
-                    local maxRows = math.max(#colBosses[1], #colBosses[2], #colBosses[3])
-                    for r = 1, maxRows do
-                        for c = 1, 3 do
-                            local cfg = colBosses[c][r]
-                            if cfg then
-                                local px = startX + (c - 1) * 220
-                                local bData = configPool[poolIdx]
-                                if not bData then
-                                    bData = CreateConfigBtn(poolIdx)
-                                    table.insert(configPool, bData)
-                                end
-                                bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
-                                bData.rt.anchoredPosition = Vector2(px, py)
-                                bData.rt.sizeDelta = Vector2(210, 30)
-                                bData.txt.alignment = TextAnchor.MiddleCenter
-                                
-                                -- Load State
-                                if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
-                                    _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
-                                end
-                                
-                                local function updateBossBtnColor()
-                                    local isTarget = _G.Mod_AutoFarmBoss_Target and _G.Mod_AutoFarmBoss_Target.cfg.id == cfg.id
-                                    
-                                    local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or 0
-                                    local btnLabel = cfg.name
-                                    if killedCount > 0 then btnLabel = btnLabel .. " (" .. killedCount .. ")" end
-                                    
-                                    if _G.Mod_AutoFarmBoss_Config[cfg.id] then
-                                        bData.img.color = Color(0.2, 0.5, 0.2, 1)
-                                        if isTarget then
-                                            bData.txt.text = "<color=#FF0000>Kill >> " .. btnLabel .. "</color>"
-                                        else
-                                            bData.txt.text = btnLabel
-                                        end
-                                        bData.txt.color = Color.white
-                                    else
-                                        bData.img.color = Color(0.3, 0.3, 0.3, 1)
-                                        bData.txt.text = btnLabel
-                                        bData.txt.color = Color(0.7, 0.7, 0.7, 1)
-                                    end
-                                end
-                                updateBossBtnColor()
-                                
-                                bData.btn.onClick:RemoveAllListeners()
-                                bData.btn.onClick:AddListener(function()
-                                    _G.Mod_AutoFarmBoss_Config[cfg.id] = not _G.Mod_AutoFarmBoss_Config[cfg.id]
-                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_" .. cfg.id, _G.Mod_AutoFarmBoss_Config[cfg.id] and 1 or 0)
-                                    CS.UnityEngine.PlayerPrefs.Save()
-                                    updateBossBtnColor()
-                                end)
-                                
-                                poolIdx = poolIdx + 1
+                        btnData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
+                        btnData.rt.anchoredPosition = Vector2(startX, py)
+                        btnData.rt.sizeDelta = Vector2(680, 25)
+                        
+                        local mapTotalKilled = 0
+                        if _G.Mod_FarmStats and _G.Mod_FarmStats.bosses and mapCfg.bosses then
+                            for _, cfg in ipairs(mapCfg.bosses) do
+                                mapTotalKilled = mapTotalKilled + (_G.Mod_FarmStats.bosses[cfg.id] or 0)
                             end
                         end
-                        py = py - 35
+                        local titleStr = mapCfg.title
+                        if mapTotalKilled > 0 then
+                            titleStr = titleStr .. " (" .. mapTotalKilled .. ")"
+                        end
+                        
+                        btnData.txt.text = "<color=#FFFF00>--- " .. titleStr .. " ---</color>"
+                        btnData.txt.alignment = TextAnchor.MiddleCenter
+                        btnData.img.color = Color(1, 1, 1, 0)
+                        btnData.btn.onClick:RemoveAllListeners()
+                        poolIdx = poolIdx + 1
+                        py = py - 30
+                        
+                        -- Bosses in columns
+                        local colBosses = { {}, {}, {} }
+                        for _, cfg in ipairs(mapCfg.bosses) do
+                            local c = cfg.col or 1
+                            if c > 3 then c = 3 end
+                            table.insert(colBosses[c], cfg)
+                        end
+                        local maxRows = math.max(#colBosses[1], #colBosses[2], #colBosses[3])
+                        for r = 1, maxRows do
+                            for c = 1, 3 do
+                                local cfg = colBosses[c][r]
+                                if cfg then
+                                    local px = startX + (c - 1) * 220
+                                    local bData = configPool[poolIdx]
+                                    if not bData then
+                                        bData = CreateConfigBtn(poolIdx)
+                                        table.insert(configPool, bData)
+                                    end
+                                    bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
+                                    bData.rt.anchoredPosition = Vector2(px, py)
+                                    bData.rt.sizeDelta = Vector2(210, 30)
+                                    bData.txt.alignment = TextAnchor.MiddleCenter
+                                    
+                                    -- Load State
+                                    if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
+                                        _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
+                                    end
+                                    
+                                    local function updateBossBtnColor()
+                                        local isTarget = _G.Mod_AutoFarmBoss_Target and _G.Mod_AutoFarmBoss_Target.cfg.id == cfg.id
+                                        
+                                        local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or 0
+                                        local btnLabel = cfg.name
+                                        if killedCount > 0 then btnLabel = btnLabel .. " (" .. killedCount .. ")" end
+                                        
+                                        if _G.Mod_AutoFarmBoss_Config[cfg.id] then
+                                            bData.img.color = Color(0.2, 0.5, 0.2, 1)
+                                            if isTarget then
+                                                bData.txt.text = "<color=#FF0000>Kill >> " .. btnLabel .. "</color>"
+                                            else
+                                                bData.txt.text = btnLabel
+                                            end
+                                            bData.txt.color = Color.white
+                                        else
+                                            bData.img.color = Color(0.3, 0.3, 0.3, 1)
+                                            bData.txt.text = btnLabel
+                                            bData.txt.color = Color(0.7, 0.7, 0.7, 1)
+                                        end
+                                    end
+                                    updateBossBtnColor()
+                                    
+                                    bData.btn.onClick:RemoveAllListeners()
+                                    bData.btn.onClick:AddListener(function()
+                                        _G.Mod_AutoFarmBoss_Config[cfg.id] = not _G.Mod_AutoFarmBoss_Config[cfg.id]
+                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_" .. cfg.id, _G.Mod_AutoFarmBoss_Config[cfg.id] and 1 or 0)
+                                        CS.UnityEngine.PlayerPrefs.Save()
+                                        updateBossBtnColor()
+                                    end)
+                                    
+                                    poolIdx = poolIdx + 1
+                                end
+                            end
+                            py = py - 35
+                        end
+                        py = py - 10
                     end
-                    py = py - 10
                 end
                 
                 if not _G.Mod_FarmStatsUI then
@@ -4311,32 +4460,12 @@ end
                 _G.Mod_FarmStatsUI.rt.anchoredPosition = Vector2(startX, py - 10)
                 
                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                local totalC7, totalC8 = 0, 0
+                local totalCount = 0
                 for id, count in pairs(_G.Mod_FarmStats.bosses) do
-                    local inC7 = false
-                    if _G.Mod_MapsConfig_c7 then
-                        for _, map in ipairs(_G.Mod_MapsConfig_c7) do
-                            if map.bosses then
-                                for _, b in ipairs(map.bosses) do if b.id == id then inC7 = true; break end end
-                            end
-                        end
-                    end
-                    if inC7 then totalC7 = totalC7 + count else totalC8 = totalC8 + count end
+                    totalCount = totalCount + count
                 end
-                _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       BOSS C7: %d       BOSS C8: %d", _G.Mod_FarmStats.hidden, totalC7, totalC8)
-
+                _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       TỔNG BOSS: %d", _G.Mod_FarmStats.hidden or 0, totalCount)
             end
-            
-            tierC7.btn.onClick:AddListener(function()
-                _G.ModAutoBossConfigTab = "C7"
-                pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModAutoBossConfigTab", "C7") end)
-                UpdateTierTabs()
-            end)
-            tierC8.btn.onClick:AddListener(function()
-                _G.ModAutoBossConfigTab = "C8"
-                pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModAutoBossConfigTab", "C8") end)
-                UpdateTierTabs()
-            end)
             
             _G.ModRefreshAutoBossConfigUI = function()
                 if _G.ModMainTab == "AUTO_BOSS" then
@@ -4474,16 +4603,24 @@ end
             lockTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then lockTxt.font = defaultFont end
             
-            local lockField = lockTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            lockField.textComponent = lockTxt
-            lockField.text = _G.Mod_LockTarget_Name
-            
-            lockField.onValueChanged:AddListener(function(val)
-                _G.Mod_LockTarget_Name = val
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetString("Mod_LockTarget_Name", val)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
+            pcall(function()
+                local InputFieldType = InputField or (CS.UnityEngine.UI and CS.UnityEngine.UI.InputField)
+                if InputFieldType then
+                    local lockField = lockTgtGo:AddComponent(typeof(InputFieldType))
+                    if lockField then
+                        lockField.textComponent = lockTxt
+                        lockField.text = _G.Mod_LockTarget_Name
+                        if lockField.onValueChanged then
+                            lockField.onValueChanged:AddListener(function(val)
+                                _G.Mod_LockTarget_Name = val
+                                pcall(function()
+                                    CS.UnityEngine.PlayerPrefs.SetString("Mod_LockTarget_Name", val)
+                                    CS.UnityEngine.PlayerPrefs.Save()
+                                end)
+                            end)
+                        end
+                    end
+                end
             end)
         end
         CreateKundunUI()
@@ -4492,6 +4629,7 @@ end
         local width = 220
         
         local tabCoBanGo = GameObject("TabCoBanBtn")
+        _G.tabCoBanGo = tabCoBanGo
         tabCoBanGo.transform:SetParent(panelGo.transform, false)
         local tabCoBanRt = tabCoBanGo:AddComponent(typeof(RectTransform))
         tabCoBanRt.anchorMin, tabCoBanRt.anchorMax, tabCoBanRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
@@ -4510,6 +4648,7 @@ end
         local tabCoBanBtn = tabCoBanGo:AddComponent(typeof(Button))
 
         local tabNangCaoGo = GameObject("TabNangCaoBtn")
+        _G.tabNangCaoGo = tabNangCaoGo
         tabNangCaoGo.transform:SetParent(panelGo.transform, false)
         local tabNangCaoRt = tabNangCaoGo:AddComponent(typeof(RectTransform))
         tabNangCaoRt.anchorMin, tabNangCaoRt.anchorMax, tabNangCaoRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
@@ -4528,6 +4667,7 @@ end
         local tabNangCaoBtn = tabNangCaoGo:AddComponent(typeof(Button))
 
         local tabAutoBossGo = GameObject("TabAutoBossBtn")
+        _G.tabAutoBossGo = tabAutoBossGo
         tabAutoBossGo.transform:SetParent(panelGo.transform, false)
         local tabAutoBossRt = tabAutoBossGo:AddComponent(typeof(RectTransform))
         tabAutoBossRt.anchorMin, tabAutoBossRt.anchorMax, tabAutoBossRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
@@ -4759,43 +4899,60 @@ end
 
         _G.ModCallbacks = _G.ModCallbacks or {}
         _G.ModCallbacks.OnToggleMenu = function()
-            pcall(function()
-                if _G.Mod_IsActive then
-                    if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
-                    if panelGo and not panelGo:Equals(nil) then
-                        isExpanded = not isExpanded
-                        panelGo:SetActive(isExpanded)
-                        if isExpanded and RefreshMainTabs then RefreshMainTabs() end
-                    end
-                else
-                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đang kiểm tra Kích hoạt bản quyền...") end
-                    if _G.Mod_CheckActiveConfigNow then
-                        _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, msg)
-                            if isActive then
-                                if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
-                                if panelGo and not panelGo:Equals(nil) then
-                                    isExpanded = true
-                                    panelGo:SetActive(true)
-                                    if RefreshMainTabs then RefreshMainTabs() end
-                                end
-                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg or "Đã kích hoạt bản quyền thành công!") end
-                            else
-                                if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
-                                if authPanelGo and not authPanelGo:Equals(nil) then
-                                    if showAuth and RefreshAuthPanelData then RefreshAuthPanelData() end
-                                end
-                            end
-                        end)
-                    else
-                        if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
-                        if authPanelGo and not authPanelGo:Equals(nil) then
-                            local showAuth = not authPanelGo.activeSelf
-                            authPanelGo:SetActive(showAuth)
-                            if showAuth and RefreshAuthPanelData then RefreshAuthPanelData() end
+            local ok, err = pcall(function()
+                local mainPanel = _G.ModMenuPanelGo or panelGo
+                local authPanel = _G.authPanelGo or authPanelGo
+
+                if _G.Mod_HasFetchedConfig then
+                    local isValid = false
+                    if _G.Mod_IsActive and _G.Mod_ActiveConfig then
+                        local valid, reason = Mod_ValidateConfig(_G.Mod_ActiveConfig)
+                        if valid then
+                            isValid = true
+                        else
+                            _G.Mod_IsActive = false
+                            _G.Mod_ActiveStatusMsg = reason
                         end
                     end
+
+                    if isValid then
+                        if authPanel and not authPanel:Equals(nil) then authPanel:SetActive(false) end
+                        if mainPanel and not mainPanel:Equals(nil) then
+                            isExpanded = not isExpanded
+                            mainPanel:SetActive(isExpanded)
+                            if isExpanded and _G.RefreshMainTabs then _G.RefreshMainTabs() end
+                        end
+                    else
+                        if mainPanel and not mainPanel:Equals(nil) then mainPanel:SetActive(false) end
+                        if authPanel and not authPanel:Equals(nil) then
+                            local showAuth = not authPanel.activeSelf
+                            authPanel:SetActive(showAuth)
+                            if showAuth and _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+                        end
+                    end
+                else
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đang kết nối lấy thông tin kích hoạt...") end
+                    _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, msg)
+                        if isActive == true and _G.Mod_IsActive == true then
+                            if authPanel and not authPanel:Equals(nil) then authPanel:SetActive(false) end
+                            if mainPanel and not mainPanel:Equals(nil) then
+                                isExpanded = true
+                                mainPanel:SetActive(true)
+                                if _G.RefreshMainTabs then _G.RefreshMainTabs() end
+                            end
+                        else
+                            if mainPanel and not mainPanel:Equals(nil) then mainPanel:SetActive(false) end
+                            if authPanel and not authPanel:Equals(nil) then
+                                authPanel:SetActive(true)
+                                if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+                            end
+                        end
+                    end)
                 end
             end)
+            if not ok then
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi Toggle Menu: " .. tostring(err)) end
+            end
         end
         if btnComp and not btnComp:Equals(nil) then
             btnComp.onClick:RemoveAllListeners()

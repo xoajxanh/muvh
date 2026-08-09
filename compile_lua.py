@@ -14,7 +14,7 @@ for root, _, files in os.walk(modified_dir):
             dest_path = os.path.join(compiled_dir, f) # Keep .lua extension so pack_lua finds it easily
             
             # 1. Compile
-            cmd = [luac_exe, "-s", "-o", dest_path, src_path]
+            cmd = [luac_exe, "-o", dest_path, src_path]
             subprocess.run(cmd, check=True)
             
             # Convert 64-bit size_t to 32-bit size_t
