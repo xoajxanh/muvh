@@ -104,6 +104,93 @@ local function CreateModUI()
             _G.Mod_FarmStats_Loaded = true
         end
         
+        _G.Mod_SaveAnStats = function()
+            if not _G.Mod_AnStats then return end
+            local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsDate", todayStr)
+            
+            local pairsList = {}
+            for name, count in pairs(_G.Mod_AnStats) do
+                table.insert(pairsList, tostring(name) .. ":" .. tostring(count))
+            end
+            local dataStr = table.concat(pairsList, ";")
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsData", dataStr)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
+        
+        _G.Mod_LoadAnStats = function()
+            local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+            local savedDate = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsDate", "")
+            
+            _G.Mod_AnStats = {}
+            _G.Mod_AnStatsDate = todayStr
+
+            if savedDate == todayStr then
+                local dataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsData", "")
+                if dataStr ~= "" then
+                    for p in string.gmatch(dataStr, "([^;]+)") do
+                        local kStr, vStr = string.match(p, "([^:]+):(%d+)")
+                        if kStr and vStr then
+                            _G.Mod_AnStats[kStr] = tonumber(vStr) or 0
+                        end
+                    end
+                end
+            end
+        end
+
+        if not _G.Mod_AnStats_Loaded then
+            _G.Mod_LoadAnStats()
+            _G.Mod_AnStats_Loaded = true
+        end
+
+        _G.Mod_SendAnStatsTelegram = function()
+            pcall(function()
+                if _G.Mod_AnStats_Enabled == false then return end
+                
+                local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+                local chatId = "-5126116516"
+                local messageId = 1231
+                
+                local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                if _G.Mod_AnStatsDate ~= todayStr then
+                    _G.Mod_AnStatsDate = todayStr
+                    _G.Mod_AnStats = {}
+                    if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                end
+
+                local nowStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd HH:mm:ss")
+                
+                local total = 0
+                for k, v in pairs(_G.Mod_AnStats or {}) do
+                    total = total + v
+                end
+                
+                local msgLines = {}
+                table.insert(msgLines, string.format("THỐNG KÊ MỞ BẢN ĐỒ ẨN: <b>%d</b>", total))
+                
+                for playerName, count in pairs(_G.Mod_AnStats or {}) do
+                    table.insert(msgLines, string.format("%s: %d", tostring(playerName), count))
+                end
+                
+                table.insert(msgLines, string.format("<i>Cập nhật lúc: %s</i>", nowStr))
+                
+                local fullMsg = table.concat(msgLines, "\n")
+                
+                local url = string.format("https://api.telegram.org/bot%s/editMessageText?chat_id=%s&message_id=%s&text=%s&parse_mode=HTML",
+                    botToken,
+                    chatId,
+                    tostring(messageId),
+                    CS.UnityEngine.WWW.EscapeURL(fullMsg)
+                )
+                
+                CS.UnityEngine.WWW(url)
+                
+                -- if _G.WriteLog then
+                --     _G.WriteLog("[Telegram AnStats]: " .. fullMsg)
+                -- end
+            end)
+        end
+        
         local GameObject = CS.UnityEngine.GameObject
         local RectTransform = CS.UnityEngine.RectTransform
         local Canvas = CS.UnityEngine.Canvas
@@ -140,7 +227,7 @@ local function CreateModUI()
         rt.anchorMin = Vector2(0, 0)
         rt.anchorMax = Vector2(0, 0)
         rt.pivot = Vector2(0, 0)
-        rt.anchoredPosition = Vector2(20, 200)
+        rt.anchoredPosition = Vector2(20, 280)
         rt.sizeDelta = Vector2(60, 60)
 
         local img = btnGo:AddComponent(typeof(Image))
@@ -165,7 +252,7 @@ local function CreateModUI()
         pkRt.anchorMin = Vector2(0, 0)
         pkRt.anchorMax = Vector2(0, 0)
         pkRt.pivot = Vector2(0, 0)
-        pkRt.anchoredPosition = Vector2(20, 290)
+        pkRt.anchoredPosition = Vector2(20, 370)
         pkRt.sizeDelta = Vector2(60, 60)
 
         local pkImg = pkBtnGo:AddComponent(typeof(Image))
@@ -209,7 +296,7 @@ local function CreateModUI()
         panelRt.anchorMin = Vector2(0, 0)
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
-        panelRt.anchoredPosition = Vector2(90, 70)
+        panelRt.anchoredPosition = Vector2(90, 50)
         panelRt.sizeDelta = Vector2(720, 580)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
@@ -1072,24 +1159,11 @@ local function CreateModUI()
             local quaiBoss = 0
             local hpBoss = 0
             
-            if _G.RoleManager then
-                local monsters = _G.RoleManager.GetRolesByType(1) or {}
+            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                local monsters = _G.RoleManager.GetRolesByType(2) or {}
                 for _, role in pairs(monsters) do
-                    if role.hp and role.hp > 0 then quaiThuong = quaiThuong + 1 end
-                end
-                
-                local bosses = _G.RoleManager.GetRolesByType(2) or {}
-                for _, role in pairs(bosses) do
-                    if role.hp and role.hp > 0 then 
-                        quaiBoss = quaiBoss + 1 
-                        hpBoss = role.hp
-                    end
-                end
-                
-                local elites = _G.RoleManager.GetRolesByType(3) or {}
-                for _, role in pairs(elites) do
-                    if role.hp and role.hp > 0 then 
-                        quaiBoss = quaiBoss + 1 
+                    if role and role.hp and role.hp > 0 then
+                        quaiBoss = quaiBoss + 1
                         hpBoss = role.hp
                     end
                 end
@@ -1604,6 +1678,7 @@ local function CreateModUI()
             end
             
             local foundBoss = false
+            local bossIsDead = false
             if _G.RoleManager and _G.RoleManager.GetRolesByType then
                 local monsterRoles = _G.RoleManager.GetRolesByType(2)
                 if monsterRoles then
@@ -1614,21 +1689,25 @@ local function CreateModUI()
                         local isTarget = (_G.RoleManager.me and _G.RoleManager.me.TargetAvatar and _G.RoleManager.me.TargetAvatar == role)
                         local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
                         
-                        if role.hp and role.hp > 0 and (idMatch or isTarget or nameMatch) then
-                            foundBoss = true
-                            local maxHp = role.maxHp or role.maxHP or role.hp or 1
-                            local hpPct = (role.hp / maxHp) * 100
-                            LogMsg(string.format("Đang đánh %s - HP: %.2f%%", d.name or target.cfg.name, hpPct))
+                        if idMatch or isTarget or nameMatch then
+                            if role.isDead or (role.hp and role.hp <= 0) then
+                                bossIsDead = true
+                            else
+                                foundBoss = true
+                                local maxHp = role.maxHp or role.maxHP or role.hp or 1
+                                local rawPct = (role.hp / maxHp) * 100
+                                local hpPct = math.max(0.01, rawPct)
+                                LogMsg(string.format("Đang đánh %s - HP: %.2f%%", d.name or target.cfg.name, hpPct))
+                            end
                             break
                         end
                     end
                 end
             end
             
-            if not foundBoss then
-                _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
-                if _G.Mod_AutoFarmBoss_TargetWait >= 2 then
-                    LogMsg("Boss chết hoặc biến mất! Chờ nhặt đồ...")
+            if bossIsDead or not foundBoss then
+                if bossIsDead or (_G.Mod_AutoFarmBoss_TargetWait or 0) >= 1 then
+                    LogMsg("Boss đã chết! Chờ nhặt đồ...")
                     
                     _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                     _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) + 1
@@ -1639,7 +1718,8 @@ local function CreateModUI()
                     _G.Mod_AutoFarmBoss_State = 6
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 else
-                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
+                    _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
+                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 end
             else
                 _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -1648,7 +1728,19 @@ local function CreateModUI()
             
         -- STATE 6: LOOT WAIT
         elseif _G.Mod_AutoFarmBoss_State == 6 then
-            LogMsg("Đang chờ 5s nhặt đồ rồi rút về Lorencia...")
+            LogMsg("Boss đã chết: Đi nhẹ 2-3 bước & chờ 5s nhặt đồ...")
+            
+            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+                local meX = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.x or (_G.RoleManager.me.data and _G.RoleManager.me.data.x) or 0
+                local meY = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.y or (_G.RoleManager.me.data and _G.RoleManager.me.data.y) or 0
+                if meX > 0 and meY > 0 then
+                    local dx = math.random(-2, 2)
+                    local dy = math.random(-2, 2)
+                    if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                    _G.RoleManager.me:MoveTo({x = meX + dx, y = meY + dy})
+                end
+            end
+
             _G.Mod_AutoFarmBoss_Target = nil
             _G.Mod_AutoFarmBoss_State = 1 -- Đổi về 1 để bắt buộc bay về Lorencia
             _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -1699,15 +1791,20 @@ end
                                         if d and d.name and string.find(string.lower(d.name), "kundun") then
                                             if role.hp and role.hp > 0 then
                                                 local maxHp = role.maxHp or role.maxHP or role.hp or 1
-                                                local hpPct = (role.hp / maxHp) * 100
-                                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(string.format("%s HP: %.2f%%", d.name, hpPct)) end
+                                                local rawPct = (role.hp / maxHp) * 100
+                                                local hpPct = math.max(0.01, rawPct)
+                                                local msg = string.format("%s HP: %.2f%%", d.name, hpPct)
+                                                if not _G.AutoPick_Enabled then
+                                                    msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
+                                                end
+                                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
                                                 break
                                             end
                                         end
                                     end
                                 end
                             end
-                            _G.Mod_LastKundunHPTime = currentSec + 3
+                            _G.Mod_LastKundunHPTime = currentSec + 1
                         end
                     end
                     
@@ -1943,17 +2040,84 @@ end
                             local distB = b.tempPathFindingDistance or 9999
                             return distA < distB
                         end
-                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15, _G.RoleTargetManager.GetCanAttackRole)
-                        if players and #players > 0 then
-                            local target = nil
-                            if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
-                                for _, p in ipairs(players) do
-                                    if p.name == _G.Mod_LockTarget_Name then
-                                        target = p
-                                        break
+                        
+                        local function isMatchLockTarget(p, lockInput)
+                            if not lockInput or lockInput == "" then return false end
+                            
+                            local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
+                            if cleanInput == "" then return false end
+
+                            local sId = string.match(cleanInput, "^S(%d+)%.$") or string.match(cleanInput, "^S(%d+)$")
+                            
+                            local targetNum = sId and tonumber(sId) or nil
+                            if targetNum then
+                                local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                                if not pSid and p.data then
+                                    pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
+                                end
+                                if pSid and tonumber(pSid) == targetNum then
+                                    return true
+                                end
+                            end
+
+                            local strList = {}
+                            if p.name then table.insert(strList, tostring(p.name)) end
+                            if p.GetName then
+                                pcall(function()
+                                    local n = p:GetName()
+                                    if n then table.insert(strList, tostring(n)) end
+                                end)
+                            end
+                            if p.data then
+                                if p.data.name then table.insert(strList, tostring(p.data.name)) end
+                                if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                                if p.data.serverId then table.insert(strList, "S" .. tostring(p.data.serverId)) end
+                            end
+                            if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
+                            if p.showName then table.insert(strList, tostring(p.showName)) end
+                            
+                            if sId then
+                                local pattern1 = "S" .. sId .. "%."
+                                local pattern2 = "S" .. sId .. "_"
+                                local pattern3 = "S" .. sId
+                                for _, s in ipairs(strList) do
+                                    if string.find(s, pattern1) or string.find(s, pattern2) or string.find(s, pattern3) then
+                                        return true
                                     end
                                 end
-                            elseif not _G.Mod_LockTarget_Enabled then
+                            else
+                                local lowerInput = string.lower(cleanInput)
+                                for _, s in ipairs(strList) do
+                                    if string.find(string.lower(s), lowerInput, 1, true) then
+                                        return true
+                                    end
+                                end
+                            end
+                            
+                            return false
+                        end
+
+                        -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
+                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                        if players and #players > 0 then
+                            local target = nil
+                            
+                            if _G.Mod_LockTarget_Enabled then
+                                -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
+                                if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                    local matchedPlayers = {}
+                                    for _, p in ipairs(players) do
+                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                            table.insert(matchedPlayers, p)
+                                        end
+                                    end
+                                    if #matchedPlayers > 0 then
+                                        table.sort(matchedPlayers, modSortRole)
+                                        target = matchedPlayers[1]
+                                    end
+                                end
+                            else
+                                -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
                                 table.sort(players, modSortRole)
                                 target = players[1]
                             end
@@ -3068,6 +3232,60 @@ end
                     UpdateTeleLabel()
                 end)
                 
+                -- Toggle TỔNG HỢP ẨN
+                local tGoAnStats = GameObject("Mod_AnStats_Enabled_Toggle")
+                tGoAnStats.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, tGoAnStats)
+                
+                local tRtAnStats = tGoAnStats:AddComponent(typeof(RectTransform))
+                tRtAnStats.anchorMin, tRtAnStats.anchorMax, tRtAnStats.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tRtAnStats.anchoredPosition = Vector2(rightColX2 + 140, currentY)
+                tRtAnStats.sizeDelta = Vector2(130, 30)
+
+                local bgAnStats = GameObject("Bg")
+                bgAnStats.transform:SetParent(tGoAnStats.transform, false)
+                local bgRtAnStats = bgAnStats:AddComponent(typeof(RectTransform))
+                bgRtAnStats.anchorMin, bgRtAnStats.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRtAnStats.sizeDelta = Vector2(0, 0)
+                local bgImgAnStats = bgAnStats:AddComponent(typeof(Image))
+
+                local txtGoAnStats = GameObject("Text")
+                txtGoAnStats.transform:SetParent(tGoAnStats.transform, false)
+                local txtRtAnStats = txtGoAnStats:AddComponent(typeof(RectTransform))
+                txtRtAnStats.anchorMin, txtRtAnStats.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRtAnStats.sizeDelta = Vector2(0, 0)
+                local txtAnStats = txtGoAnStats:AddComponent(typeof(Text))
+                txtAnStats.raycastTarget = false
+                txtAnStats.fontSize = 15
+                txtAnStats.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txtAnStats.font = defaultFont end
+
+                local btnAnStats = tGoAnStats:AddComponent(typeof(Button))
+                
+                if _G.Mod_AnStats_Enabled == nil then
+                    _G.Mod_AnStats_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) == 1
+                end
+
+                local function UpdateAnStatsLabel()
+                    if _G.Mod_AnStats_Enabled then
+                        bgImgAnStats.color = Color(0.2, 0.5, 0.2, 1)
+                        txtAnStats.text = "TỔNG HỢP ẨN"
+                        txtAnStats.color = Color.white
+                    else
+                        bgImgAnStats.color = Color(0.3, 0.3, 0.3, 1)
+                        txtAnStats.text = "TỔNG HỢP ẨN"
+                        txtAnStats.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateAnStatsLabel()
+
+                btnAnStats.onClick:AddListener(function()
+                    _G.Mod_AnStats_Enabled = not _G.Mod_AnStats_Enabled
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AnStats_Enabled", _G.Mod_AnStats_Enabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateAnStatsLabel()
+                end)
+                
                 currentY = currentY - 35
             end
 
@@ -3646,8 +3864,10 @@ end
                 currentY = currentY - 45
             end
             
-            CreateToggle("AUTO DÙNG THIÊN SỨ", "Mod_AutoUseAngel", rightColX2, currentY)
-            currentY = currentY - 45
+            if _G.Mod_IsAdmin then
+                CreateToggle("AUTO DÙNG THIÊN SỨ", "Mod_AutoUseAngel", rightColX2, currentY)
+                currentY = currentY - 45
+            end
             
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
             currentY = currentY - 45
@@ -3755,11 +3975,13 @@ end
             end)
             currentY = currentY - 45
 
-            CreateToggle("AUTO HỒI SINH KTĐ", "Mod_AutoRevive_KTD", rightColX2, currentY)
-            currentY = currentY - 45
-            
-            CreateToggle("AUTO NHẶT RƯƠNG KTĐ", "Mod_AutoPick_KTD", rightColX2, currentY)
-            currentY = currentY - 45
+            if _G.Mod_IsAdmin then
+                CreateToggle("AUTO HỒI SINH KTĐ", "Mod_AutoRevive_KTD", rightColX2, currentY)
+                currentY = currentY - 45
+                
+                CreateToggle("AUTO NHẶT RƯƠNG KTĐ", "Mod_AutoPick_KTD", rightColX2, currentY)
+                currentY = currentY - 45
+            end
             
         end 
 
@@ -4324,6 +4546,8 @@ end
         if _G.PickupManager then
             local original_AddDropSceneCellPos = _G.PickupManager.AddDropSceneCellPos
             _G.PickupManager.AddDropSceneCellPos = function(item)
+                local startTime = CS.UnityEngine.Time.realtimeSinceStartup
+                local interceptTime = os.date("%H:%M:%S")
                 original_AddDropSceneCellPos(item)
                 
                 if not (item and item.data) then return end
@@ -4408,60 +4632,72 @@ end
                     if isBone then shouldPick = true end
                     
                     if shouldPick then
-                        if _G.PickupManager and _G.PickupManager.IsCanPickUpDropItem then
-                            if not _G.PickupManager.IsCanPickUpDropItem(dropItemData) then
-                                shouldPick = false
-                            end
-                        end
-                    end
-                    
-                    if shouldPick then
                         local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
                         if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
                             
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
                             
-                            local hasDinoNearby = false
-                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                local players = _G.RoleManager.GetRolesByType(1)
-                                if players then
-                                    for _, p in pairs(players) do
-                                        if p.name and p.name == "Dino" then
-                                            hasDinoNearby = true
-                                            break
+                            local initialDelay = 0
+                            if not _G.Mod_IsAdmin and isBone then
+                                local hasCompetitorNearby = false
+                                if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                    local players = _G.RoleManager.GetRolesByType(1)
+                                    if players then
+                                        for _, p in pairs(players) do
+                                            if p.name then
+                                                local lowerName = string.lower(p.name)
+                                                if string.find(lowerName, "dino") or string.find(lowerName, "mun") then
+                                                    hasCompetitorNearby = true
+                                                    break
+                                                end
+                                            end
                                         end
                                     end
                                 end
-                            end
-                            
-                            local lootCount = _G.Mod_IsAdmin and 3 or 2
-                            local delayTime = _G.Mod_IsAdmin and 0.05 or 0.2
-                            local initialDelay = 0
-                            if hasDinoNearby and isBone then
-                                initialDelay = math.random(100, 300) / 1000
+                                if hasCompetitorNearby then
+                                    initialDelay = math.random(100, 900) / 1000
+                                end
                             end
                             
                             local function ExecutePickup()
-                                if _G.Timer and _G.Timer.StartLoop then
-                                    _G.Timer.StartLoop(delayTime, lootCount, function()
-                                        if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
+                                -- 1. Chạy tới vị trí vật phẩm ngay lập tức
+                                if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                                    pcall(function()
+                                        _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
                                     end)
-                                else
+                                end
+
+                                -- 2. Bắn gói tin nhặt LẬP TỨC 0ms
+                                if _G.PickupManager then
                                     _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                 end
                                 
-                                local itemId = dropItemData.item and dropItemData.item.itemId or "???"
-                                if _G.WriteLog then
-                                    _G.WriteLog("[AutoLoot] Nhặt (Tức thì): Item [ID: " .. tostring(itemId) .. "]")
-                                end
-                                if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                                    pcall(function()
-                                        if _G.WriteLog then
-                                            _G.WriteLog(string.format("[AutoLoot] (Tức thì) MoveTo ItemId=%s, X=%s, Y=%s", tostring(itemId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                                -- 3. Duy trì spam gói tin liên tục trong 3.2s (40 lần, mỗi 80ms) để không bị miss khi đang di chuyển từ xa tới
+                                if _G.Timer and _G.Timer.StartLoop then
+                                    local tickCount = 0
+                                    _G.Timer.StartLoop(0.08, 40, function()
+                                        tickCount = tickCount + 1
+                                        if _G.PickupManager then
+                                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                         end
-                                        _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
+                                        -- Khi nhân vật chạy tới sát vị trí (khoảng cách <= 2 ô), bắn bồi thêm gói tin kép
+                                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                            local meX = _G.RoleManager.me.serverCoord.x or 0
+                                            local meY = _G.RoleManager.me.serverCoord.y or 0
+                                            local dist = math.max(math.abs(meX - dropItemData.x), math.abs(meY - dropItemData.y))
+                                            if dist <= 2 and _G.PickupManager then
+                                                _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                                            end
+                                        end
                                     end)
+                                end
+                                
+                                local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                                local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
+                                local objId = dropItemData.id or "???"
+                                if _G.WriteLog then
+                                    _G.WriteLog(string.format("[AutoLoot] Nhặt (Nhận tin lúc %s | Xử lý sau %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s", tostring(interceptTime), costMs, tostring(itemTypeId), tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
                                 end
                             end
                             
@@ -4497,6 +4733,70 @@ end
                     return false
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
+            end
+        end
+
+        if _G.ChatData and not _G.Mod_HookedChatDataAddMessage then
+            _G.Mod_HookedChatDataAddMessage = true
+            local orig_AddMessage = _G.ChatData.AddMessage
+            _G.ChatData.AddMessage = function(channel, message)
+                pcall(function()
+                    if _G.Mod_AnStats_Enabled ~= false then
+                        local text = ""
+                        if message then
+                            if type(message.chatMsg) == "table" and message.chatMsg.message then
+                                text = tostring(message.chatMsg.message)
+                            elseif type(message.chatMsg) == "string" then
+                                text = tostring(message.chatMsg)
+                            elseif message.message then
+                                text = tostring(message.message)
+                            end
+                        end
+
+                        local isSystemChannel = (channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM))
+                        local isSystemText = string.find(text, "Hệ thống") or string.find(text, "%[Hệ thống%]")
+                        
+                        if isSystemChannel or isSystemText then
+                            if string.find(text, "triệu hồi") or string.find(text, "Bản đồ ẩn") or string.find(text, "Kỵ Sĩ") then
+                                local playerName = string.match(text, "%]%s*([%w_]+)%s+trong%s+Bản")
+                                if not playerName then
+                                    playerName = string.match(text, "([%w_]+)%s+trong%s+Bản đồ ẩn")
+                                end
+                                if not playerName then
+                                    playerName = string.match(text, "([%w_]+)%s+trong")
+                                end
+                                
+                                if playerName and playerName ~= "" then
+                                    if not _G.Mod_AnStats then
+                                        if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                                    end
+                                    
+                                    local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                                    if _G.Mod_AnStatsDate ~= todayStr then
+                                        _G.Mod_AnStatsDate = todayStr
+                                        _G.Mod_AnStats = {}
+                                    end
+                                    
+                                    _G.Mod_AnStats[playerName] = (_G.Mod_AnStats[playerName] or 0) + 1
+                                    
+                                    if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                                    
+                                    if _G.WriteLog then
+                                        _G.WriteLog(string.format("[AnStats] Detected summon: %s (Total: %d)", playerName, _G.Mod_AnStats[playerName]))
+                                    end
+                                    
+                                    if _G.Mod_SendAnStatsTelegram then
+                                        _G.Mod_SendAnStatsTelegram()
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+                
+                if orig_AddMessage then
+                    orig_AddMessage(channel, message)
+                end
             end
         end
 

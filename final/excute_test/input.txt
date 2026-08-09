@@ -1,43 +1,104 @@
-local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
-local chatId = "-5255708823"
+-- Script test Thống kê Bản đồ ẩn & Update Telegram Message ID 1231
+pcall(function()
+    local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+    local chatId = "-5126116516"
+    local messageId = 1231
 
-local count = 0
-local rCount = 0
-local limit = 400
-if _G.SceneData and _G.SceneData.GetAncientBossData then
-    local isSatisfy, info = _G.SceneData:GetAncientBossData(17, 20211008)
-    if info and info.refreshCount then
-        rCount = info.refreshCount
+    -- Load hoặc khởi tạo Data
+    local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+    _G.Mod_AnStatsDate = _G.Mod_AnStatsDate or todayStr
+    _G.Mod_AnStats = _G.Mod_AnStats or {}
+
+    -- Nếu qua ngày mới -> Reset bộ đếm
+    if _G.Mod_AnStatsDate ~= todayStr then
+        _G.Mod_AnStatsDate = todayStr
+        _G.Mod_AnStats = {}
     end
-    if isSatisfy == true then
-        count = limit
-    elseif isSatisfy == false and info and info.count then
-        count = info.count
+
+    -- Định nghĩa hàm gửi Telegram dùng chuẩn CS.UnityEngine.WWW (giống như nút Báo Telegram trong EmmyluaDebug.lua)
+    _G.SendTelegramAnStats = function()
+        pcall(function()
+            local nowStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd HH:mm:ss")
+            
+            -- Tính tổng Total
+            local total = 0
+            for k, v in pairs(_G.Mod_AnStats) do
+                total = total + v
+            end
+            
+            -- Tạo văn bản HTML
+            local msgLines = {}
+            table.insert(msgLines, string.format("Thống kê bản đồ ẩn: <b>%d</b>", total))
+            
+            for playerName, count in pairs(_G.Mod_AnStats) do
+                table.insert(msgLines, string.format("%s: %d", tostring(playerName), count))
+            end
+            
+            table.insert(msgLines, string.format("<i>Cập nhật lúc: %s</i>", nowStr))
+            
+            local fullMsg = table.concat(msgLines, "\n")
+            
+            local url = string.format("https://api.telegram.org/bot%s/editMessageText?chat_id=%s&message_id=%s&text=%s&parse_mode=HTML",
+                botToken,
+                chatId,
+                tostring(messageId),
+                CS.UnityEngine.WWW.EscapeURL(fullMsg)
+            )
+            
+            -- Bắn bằng CS.UnityEngine.WWW giống hệt như hàm báo Telegram có sẵn trong Mod
+            CS.UnityEngine.WWW(url)
+            
+            if _G.WriteLog then
+                _G.WriteLog("[Telegram Sent]: " .. fullMsg)
+            end
+        end)
     end
-end
 
-local c8_status = ""
-if count >= limit then
-    c8_status = string.format("Phù văn map c8: %d / %d (Hiện)", count, limit)
-else
-    c8_status = string.format("Phù văn map c8: %d / %d (%d)", count, limit, rCount)
-end
+    -- Hook ChatData.AddMessage (Lưu gốc 1 lần duy nhất để tránh lặp hook khi nạp lại script)
+    if _G.ChatData then
+        if not _G.Original_ChatData_AddMessage then
+            _G.Original_ChatData_AddMessage = _G.ChatData.AddMessage
+        end
 
-local msg = "[Test] " .. c8_status
+        _G.ChatData.AddMessage = function(channel, message)
+            pcall(function()
+                local text = ""
+                if message then
+                    if type(message.chatMsg) == "table" and message.chatMsg.message then
+                        text = tostring(message.chatMsg.message)
+                    elseif type(message.chatMsg) == "string" then
+                        text = tostring(message.chatMsg)
+                    elseif message.message then
+                        text = tostring(message.message)
+                    end
+                end
 
-local status, err = pcall(function()
-    local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(msg)
-    CS.UnityEngine.WWW(url)
+                local isSystemChannel = (channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM))
+                local isSystemText = string.find(text, "Hệ thống") or string.find(text, "%[Hệ thống%]")
+
+                if isSystemChannel or isSystemText then
+                    _G.Mod_AnStats["Dino"] = (_G.Mod_AnStats["Dino"] or 0) + 1
+                    
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg("[TEST AN]: Bat tin -> Dino: " .. tostring(_G.Mod_AnStats["Dino"]))
+                    end
+                    
+                    if _G.SendTelegramAnStats then
+                        _G.SendTelegramAnStats()
+                    end
+                end
+            end)
+
+            if _G.Original_ChatData_AddMessage then
+                _G.Original_ChatData_AddMessage(channel, message)
+            end
+        end
+    end
+
+    -- BẮN THỬ 1 LẦN NGAY LẬP TỨC ĐỂ KIỂM TRA KẾT NỐI VỚI TELEGRAM!
+    _G.SendTelegramAnStats()
+
+    if _G.FloatingWordUtility then
+        _G.FloatingWordUtility.QuickMsg("KICH HOAT HOOK AN & TEST BAN TELEGRAM IMMEDIATELY!")
+    end
 end)
-
-if not status then
-    pcall(function()
-        local url = "https://api.telegram.org/bot" .. botToken .. "/sendMessage?chat_id=" .. chatId .. "&text=" .. CS.UnityEngine.Networking.UnityWebRequest.EscapeURL(msg)
-        local req = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
-        req:SendWebRequest()
-    end)
-end
-
-if _G.FloatingWordUtility then
-    _G.FloatingWordUtility.QuickMsg("Đã gửi Test Telegram! " .. tostring(c8_status))
-end
