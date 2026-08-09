@@ -15,6 +15,7 @@ import {
   Send,
   User,
   PackageCheck,
+  ClipboardPaste,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -32,6 +33,8 @@ export default function TokenDetailPage() {
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
+  const [deviceSnMd5, setDeviceSnMd5] = useState('');
+  const [characterUid, setCharacterUid] = useState('');
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
@@ -107,6 +110,8 @@ export default function TokenDetailPage() {
         const tok = json.token;
         setToken(tok);
         if (tok) {
+          setDeviceSnMd5(tok.deviceSnMd5);
+          setCharacterUid(tok.characterUid);
           setSelectedPackageId(tok.packageId || null);
           setIsCustom(tok.isCustom);
           setDurationDays(tok.durationDays);
@@ -184,12 +189,33 @@ export default function TokenDetailPage() {
     setToast({ message: `Đã copy ${label} vào Clipboard!`, type: 'success' });
   };
 
+  const handlePasteClipboard = async (setter: (val: string) => void, fieldName: string) => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && text.trim() !== '') {
+        setter(text.trim());
+        setToast({ message: `Đã dán ${fieldName} từ Clipboard!`, type: 'success' });
+      } else {
+        setToast({ message: 'Clipboard trống!', type: 'error' });
+      }
+    } catch (err) {
+      setToast({ message: 'Không thể đọc Clipboard (Quyền trình duyệt)', type: 'error' });
+    }
+  };
+
   const handleUpdateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!deviceSnMd5.trim() || !characterUid.trim()) {
+      setToast({ message: 'Vui lòng nhập Mã MD5 thiết bị và UID Nhân vật!', type: 'error' });
+      return;
+    }
+
     setUpdating(true);
 
     try {
       const payload = {
+        deviceSnMd5: deviceSnMd5.trim(),
+        characterUid: characterUid.trim(),
         packageId: isCustom ? null : selectedPackageId,
         durationDays: Number(durationDays),
         fovMin: Number(fovMin),
@@ -269,7 +295,11 @@ export default function TokenDetailPage() {
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-white font-mono">{token.deviceSnMd5}</h1>
-                  {isExpired ? (
+                  {token.isDeleted ? (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
+                      ĐÃ XÓA (SALE)
+                    </span>
+                  ) : isExpired ? (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
                       ĐÃ HẾT HẠN
                     </span>
@@ -348,6 +378,51 @@ export default function TokenDetailPage() {
                       />
                       <span className="text-xs font-semibold text-cyan-400">Tùy Chỉnh (Custom)</span>
                     </label>
+                  </div>
+
+                  {/* Section 1: Edit MD5 & Character UID */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs p-4 bg-slate-900/70 border border-slate-800 rounded-xl">
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                        <span>Mã MD5 Thiết Bị <span className="text-rose-400 ml-1">*</span></span>
+                        <button
+                          type="button"
+                          onClick={() => handlePasteClipboard(setDeviceSnMd5, 'Mã MD5')}
+                          className="text-cyan-400 hover:text-cyan-300 font-normal text-[11px] flex items-center gap-1"
+                        >
+                          <ClipboardPaste className="w-3 h-3" /> Paste
+                        </button>
+                      </label>
+                      <input
+                        type="text"
+                        value={deviceSnMd5}
+                        onChange={(e) => setDeviceSnMd5(e.target.value)}
+                        placeholder="Mã MD5 thiết bị..."
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-cyan-300 font-mono font-bold text-xs"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
+                        <span>UID Nhân Vật <span className="text-rose-400 ml-1">*</span></span>
+                        <button
+                          type="button"
+                          onClick={() => handlePasteClipboard(setCharacterUid, 'UID Nhân vật')}
+                          className="text-cyan-400 hover:text-cyan-300 font-normal text-[11px] flex items-center gap-1"
+                        >
+                          <ClipboardPaste className="w-3 h-3" /> Paste
+                        </button>
+                      </label>
+                      <input
+                        type="text"
+                        value={characterUid}
+                        onChange={(e) => setCharacterUid(e.target.value)}
+                        placeholder="UID nhân vật..."
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold text-xs"
+                        required
+                      />
+                    </div>
                   </div>
 
                   {/* Change VIP Package Template Selector */}
@@ -571,6 +646,20 @@ export default function TokenDetailPage() {
                   </h3>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Mã MD5 Thiết Bị</span>
+                      <span className="font-mono font-bold text-cyan-300 truncate block">
+                        {token.deviceSnMd5}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">UID Nhân Vật</span>
+                      <span className="font-mono font-bold text-slate-100 truncate block">
+                        {token.characterUid}
+                      </span>
+                    </div>
+
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Gói VIP Đang Dùng</span>
                       <span className="font-bold text-indigo-300">
