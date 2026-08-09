@@ -592,6 +592,64 @@ local function CreateModUI()
             end
         end)
 
+        ---------------------------------------------------------
+        -- Floating Admin EXEC Button (Below VỤT button, Dev Mode Only)
+        ---------------------------------------------------------
+        local adminBtnGo = GameObject("FloatingAdminBtn")
+        _G.FloatingAdminBtnGo = adminBtnGo
+        adminBtnGo.transform:SetParent(modRoot.transform, false)
+        local adminRt = adminBtnGo:AddComponent(typeof(RectTransform))
+        adminRt.anchorMin = Vector2(0, 0)
+        adminRt.anchorMax = Vector2(0, 0)
+        adminRt.pivot = Vector2(0, 0)
+        adminRt.anchoredPosition = Vector2(20, 110)
+        adminRt.sizeDelta = Vector2(60, 60)
+
+        local adminImg = adminBtnGo:AddComponent(typeof(Image))
+        adminImg.color = Color(0.85, 0.45, 0.0, 1.0)
+
+        local adminTxtGo = GameObject("AdminText")
+        adminTxtGo.transform:SetParent(adminBtnGo.transform, false)
+        local adminTxtRt = adminTxtGo:AddComponent(typeof(RectTransform))
+        adminTxtRt.anchorMin = Vector2(0, 0)
+        adminTxtRt.anchorMax = Vector2(1, 1)
+        adminTxtRt.sizeDelta = Vector2(0, 0)
+        local adminTxt = adminTxtGo:AddComponent(typeof(Text))
+        adminTxt.text = "EXEC"
+        adminTxt.color = Color.white
+        adminTxt.fontSize = 16
+        adminTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        adminTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then adminTxt.font = defaultFont end
+
+        adminBtnGo:SetActive(_G.Mod_IsDev == true)
+
+        local adminBtnComp = adminBtnGo:AddComponent(typeof(Button))
+        adminBtnComp.onClick:AddListener(function()
+            pcall(function()
+                local path = CS.UnityEngine.Application.persistentDataPath .. "/input.luac"
+                if not CS.System.IO.File.Exists(path) then
+                    path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
+                end
+                if CS.System.IO.File.Exists(path) then
+                    local bytes = CS.System.IO.File.ReadAllBytes(path)
+                    local func, err = load(bytes)
+                    if func then
+                        local ok, res = pcall(func)
+                        if ok then
+                            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Thực thi input.luac thành công!") end
+                        else
+                            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi script: " .. tostring(res)) end
+                        end
+                    else
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " .. tostring(err)) end
+                    end
+                else
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy file input.luac!") end
+                end
+            end)
+        end)
+
         local panelGo = GameObject("ModMenuPanel")
         panelGo.transform:SetParent(modRoot.transform, false)
         local panelRt = panelGo:AddComponent(typeof(RectTransform))
@@ -908,16 +966,16 @@ local function CreateModUI()
                     end)
                 end
             end
-        end
+        _G.Mod_RefreshAuthPanelData = RefreshAuthPanelData
 
         rBtn.onClick:AddListener(function()
             if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
             if _G.Mod_IsActive then
-                authPanelGo:SetActive(false)
+                if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt bản quyền thành công!") end
                 if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
             else
-                RefreshAuthPanelData()
+                if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(_G.Mod_ActiveStatusMsg or "Chưa tìm thấy kích hoạt hợp lệ!") end
             end
         end)
@@ -929,6 +987,9 @@ local function CreateModUI()
                 end
                 if _G.FloatingPKBtnGo and not _G.FloatingPKBtnGo:Equals(nil) then
                     _G.FloatingPKBtnGo:SetActive(_G.Mod_IsActive == true)
+                end
+                if _G.FloatingAdminBtnGo and not _G.FloatingAdminBtnGo:Equals(nil) then
+                    _G.FloatingAdminBtnGo:SetActive(_G.Mod_IsDev == true)
                 end
                 if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
                     if _G.Mod_IsActive then
@@ -984,21 +1045,9 @@ local function CreateModUI()
 
         local btnComp = btnGo:AddComponent(typeof(Button))
         btnComp.onClick:AddListener(function()
-            pcall(function()
-                if _G.Mod_IsActive then
-                    if authPanelGo and authPanelGo.activeSelf then authPanelGo:SetActive(false) end
-                    isExpanded = not isExpanded
-                    panelGo:SetActive(isExpanded)
-                    if isExpanded then RefreshMainTabs() end
-                else
-                    if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
-                    if authPanelGo then
-                        local showAuth = not authPanelGo.activeSelf
-                        authPanelGo:SetActive(showAuth)
-                        if showAuth then RefreshAuthPanelData() end
-                    end
-                end
-            end)
+            if _G.ModCallbacks and _G.ModCallbacks.OnToggleMenu then
+                _G.ModCallbacks.OnToggleMenu()
+            end
         end)
 
         _G.Mod_UpdateUI_ActiveState()
@@ -4338,33 +4387,6 @@ end
                 end)
             end)
             
-            if _G.Mod_IsDev then
-                currentY = currentY - 45
-                local execBtnGo = GameObject("AdminExecBtn")
-                execBtnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, execBtnGo)
-                local execRt = execBtnGo:AddComponent(typeof(RectTransform))
-                execRt.anchorMin, execRt.anchorMax, execRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                execRt.anchoredPosition = Vector2(rightColX2, currentY)
-                execRt.sizeDelta = Vector2(280, 40)
-                local execImg = execBtnGo:AddComponent(typeof(Image))
-                execImg.color = Color(0.8, 0.2, 0.2, 1)
-                local execBtn = execBtnGo:AddComponent(typeof(Button))
-                local eTxtGo = GameObject("ExecTxt")
-                eTxtGo.transform:SetParent(execBtnGo.transform, false)
-                local eTxtRt = eTxtGo:AddComponent(typeof(RectTransform))
-                eTxtRt.anchorMin, eTxtRt.anchorMax = Vector2(0,0), Vector2(1,1)
-                eTxtRt.offsetMin, eTxtRt.offsetMax = Vector2(0,0), Vector2(0,0)
-                local eTxt = eTxtGo:AddComponent(typeof(Text))
-                eTxt.text = "Execute Script (input.luac)"
-                eTxt.color, eTxt.fontSize, eTxt.alignment = Color.white, 18, TextAnchor.MiddleCenter
-                if defaultFont then eTxt.font = defaultFont end
-                execBtn.onClick:AddListener(function()
-                    if _G.RunExecuteScript then
-                        _G.RunExecuteScript()
-                    end
-                end)
-            end
         end
         CreateKundunUI()
 

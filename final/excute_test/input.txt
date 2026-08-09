@@ -1,18 +1,27 @@
-print("=== TESTING AUTO FARM TICKER WITH STATE 3 & 4 ===")
+print("=== TESTING MOD ACTIVE & BUTTON CLICK ===")
+print("1. _G.Mod_IsActive = " .. tostring(_G.Mod_IsActive))
+print("2. _G.Mod_ActiveStatusMsg = " .. tostring(_G.Mod_ActiveStatusMsg))
+print("3. _G.authPanelGo = " .. tostring(_G.authPanelGo ~= nil))
+if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
+    print("   authPanelGo.activeSelf = " .. tostring(_G.authPanelGo.activeSelf))
+end
+print("4. _G.panelGo = " .. tostring(_G.panelGo ~= nil))
+if _G.panelGo and not _G.panelGo:Equals(nil) then
+    print("   panelGo.activeSelf = " .. tostring(_G.panelGo.activeSelf))
+end
 
-local targetMapId = 101096
-local bossId = 10179608
+if _G.ModCallbacks and _G.ModCallbacks.OnToggleMenu then
+    print("5. Triggering OnToggleMenu()...")
+    _G.ModCallbacks.OnToggleMenu()
+    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
+        print("   After OnToggleMenu -> authPanelGo.activeSelf = " .. tostring(_G.authPanelGo.activeSelf))
+    end
+else
+    print("5. ERROR: ModCallbacks.OnToggleMenu is NIL!")
+end
 
-_G.Mod_AutoFarmBoss_Target = {
-    cfg = { id = bossId, name = "Phẫn Nộ-Tektus" },
-    mapCfg = { mapId = targetMapId },
-    line = 1,
-    currentPos = { x = 151, y = 96 }
-}
+if _G.FloatingWordUtility then
+    _G.FloatingWordUtility.QuickMsg("EXECUTE FINISHED!")
+end
 
-_G.Mod_AutoFarmBoss_State = 3
-_G.Mod_AutoFarmBoss_WaitTime = 0
-_G.Mod_AutoFarmBoss_ReqIconSentMap = targetMapId
-
-print("Set Mod_AutoFarmBoss_State = 3 for target (151, 96). State machine ticker will now execute smoothly!")
-return "Auto farm ticker test initialized!"
+return "TEST DONE"

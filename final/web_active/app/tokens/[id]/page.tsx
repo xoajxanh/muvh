@@ -246,36 +246,38 @@ export default function TokenDetailPage() {
             </button>
           </div>
 
-          {/* Top Encrypted Token Copy Card */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
-            <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-              <Key className="w-4 h-4" /> Chuỗi Token Mã Hóa (Gửi cho Khách hoặc Mod tự kéo API)
-            </h3>
+          {/* Top Encrypted Token Copy Card (ADMIN Only) */}
+          {user?.role === 'ADMIN' && (
+            <div className="glass-card p-6 rounded-2xl space-y-4">
+              <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                <Key className="w-4 h-4" /> Chuỗi Token Mã Hóa (Gửi cho Khách hoặc Mod tự kéo API)
+              </h3>
 
-            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
-              <code className="text-xs font-mono text-cyan-300 break-all line-clamp-2">
-                {token.encryptedToken}
-              </code>
-              <button
-                onClick={() => handleCopyText(token.encryptedToken, 'Token mã hóa')}
-                className="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition"
-              >
-                <Copy className="w-3.5 h-3.5" /> Copy Token
-              </button>
-            </div>
+              <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+                <code className="text-xs font-mono text-cyan-300 break-all line-clamp-2">
+                  {token.encryptedToken}
+                </code>
+                <button
+                  onClick={() => handleCopyText(token.encryptedToken, 'Token mã hóa')}
+                  className="px-3 py-2 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Copy Token
+                </button>
+              </div>
 
-            <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
-              <code className="text-xs font-mono text-indigo-300 break-all line-clamp-1">
-                {apiUrl}
-              </code>
-              <button
-                onClick={() => handleCopyText(apiUrl, 'API Endpoint URL')}
-                className="px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Copy API URL
-              </button>
+              <div className="p-3 bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-between gap-3">
+                <code className="text-xs font-mono text-indigo-300 break-all line-clamp-1">
+                  {apiUrl}
+                </code>
+                <button
+                  onClick={() => handleCopyText(apiUrl, 'API Endpoint URL')}
+                  className="px-3 py-2 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Copy API URL
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Main Grid: Details / Edit Form & Audit Notes Timeline */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -389,14 +391,13 @@ export default function TokenDetailPage() {
                     </div>
 
                     <div className="sm:col-span-2">
-                      <label className="block font-semibold text-slate-300 mb-1">Ghi Chú Sửa (Token Note Audit Log)</label>
+                      <label className="block font-semibold text-slate-300 mb-1">Ghi Chú Sửa (Không bắt buộc)</label>
                       <input
                         type="text"
                         value={noteDetail}
                         onChange={(e) => setNoteDetail(e.target.value)}
-                        placeholder="Ví dụ: Gia hạn thêm 30 ngày cho khách chuyển khoản..."
+                        placeholder="Tùy chọn: Nhập lý do hoặc thông tin thay đổi..."
                         className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
-                        required
                       />
                     </div>
                   </div>
