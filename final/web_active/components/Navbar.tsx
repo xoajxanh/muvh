@@ -26,8 +26,10 @@ export default function Navbar({ user }: NavbarProps) {
   return (
     <header className="h-16 glass-panel border-b border-slate-800 px-6 flex items-center justify-between sticky top-0 z-40">
       <div className="flex items-center gap-3">
-        <h2 className="font-semibold text-slate-200 text-sm md:text-base">
-          Hệ Thống Quản Lý Bản Quyền Token
+        <img src="/logo.png" alt="VUT MOD TEAMS" className="w-9 h-9 object-contain md:hidden drop-shadow" />
+        <h2 className="font-semibold text-slate-200 text-sm md:text-base flex items-center gap-2">
+          <span>Hệ Thống Quản Lý Bản Quyền Token</span>
+          <span className="hidden lg:inline text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-bold">VUT MOD TEAMS</span>
         </h2>
       </div>
 

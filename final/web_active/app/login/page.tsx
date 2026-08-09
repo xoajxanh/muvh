@@ -50,10 +50,10 @@ export default function LoginPage() {
           <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl gradient-button flex items-center justify-center shadow-xl shadow-cyan-500/20 text-white font-black text-2xl">
-              <KeyRound className="w-8 h-8" />
+            <div className="w-24 h-24 mx-auto mb-4 rounded-2xl bg-slate-900 border border-amber-500/40 p-1 flex items-center justify-center shadow-2xl shadow-amber-500/20 overflow-hidden group hover:scale-105 transition-transform duration-300">
+              <img src="/logo.jpg" alt="VUT MOD TEAMS Logo" className="w-full h-full object-cover rounded-xl" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">MUVH ADMIN PANEL</h1>
+            <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-amber-200 to-yellow-500 tracking-wide uppercase">VUT MOD TEAMS</h1>
             <p className="text-xs text-slate-400 mt-1">Đăng nhập để quản lý kích hoạt Token cho khách hàng</p>
           </div>
 

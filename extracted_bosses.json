@@ -1,0 +1,2792 @@
+{
+  "c3": {
+    "101094": {
+      "mapId": 101094,
+      "mapName": "T\\225\\187\\169 Phong B\\195\\172nh Nguy\\195\\170n",
+      "bosses": [
+        {
+          "id": 10179407,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 400212
+        },
+        {
+          "id": 10179408,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 400218
+        },
+        {
+          "id": 10179409,
+          "name": "Cuồng Bạo - Hung Thần Kiêu Ngạo",
+          "transferId": 400224
+        }
+      ]
+    },
+    "101413": {
+      "mapId": 101413,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 9",
+      "bosses": [
+        {
+          "id": 10179407,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179408,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179409,
+          "name": "Cuồng Bạo - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101414": {
+      "mapId": 101414,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 10",
+      "bosses": [
+        {
+          "id": 10179407,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179408,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179409,
+          "name": "Cuồng Bạo - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101415": {
+      "mapId": 101415,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 11",
+      "bosses": [
+        {
+          "id": 10179407,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179408,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        },
+        {
+          "id": 10179409,
+          "name": "Cuồng Bạo - Hung Thần Kiêu Ngạo",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105203": {
+      "mapId": 105203,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 3",
+      "bosses": [
+        {
+          "id": 10520301,
+          "name": "Người Khổng Lồ Sét",
+          "transferId": 105203101
+        },
+        {
+          "id": 10520302,
+          "name": "Phẫn Nộ - Người Khổng Lồ Sét",
+          "transferId": 105203102
+        }
+      ]
+    },
+    "105303": {
+      "mapId": 105303,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10520301,
+          "name": "Người Khổng Lồ Sét",
+          "transferId": 105303101
+        },
+        {
+          "id": 10520302,
+          "name": "Phẫn Nộ - Người Khổng Lồ Sét",
+          "transferId": 105303102
+        }
+      ]
+    },
+    "105304": {
+      "mapId": 105304,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10520301,
+          "name": "Người Khổng Lồ Sét",
+          "transferId": 105303103
+        },
+        {
+          "id": 10520302,
+          "name": "Phẫn Nộ - Người Khổng Lồ Sét",
+          "transferId": 105303104
+        }
+      ]
+    },
+    "102601": {
+      "mapId": 102601,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 1",
+      "bosses": [
+        {
+          "id": 10260108,
+          "name": "Kundun",
+          "transferId": 1026011
+        }
+      ]
+    },
+    "102802": {
+      "mapId": 102802,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 6",
+      "bosses": [
+        {
+          "id": 10280208,
+          "name": "Kundun",
+          "transferId": 1028021
+        }
+      ]
+    },
+    "106402": {
+      "mapId": 106402,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 2",
+      "bosses": [
+        {
+          "id": 10640201,
+          "name": "Người Cây Totem",
+          "transferId": 10640201
+        },
+        {
+          "id": 10640202,
+          "name": "Ngang Ngược - Người Cây Totem",
+          "transferId": 10640202
+        },
+        {
+          "id": 10640203,
+          "name": "Tà Ác - Người Cây Totem",
+          "transferId": 10640203
+        }
+      ]
+    },
+    "106502": {
+      "mapId": 106502,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 2",
+      "bosses": [
+        {
+          "id": 10640201,
+          "name": "Người Cây Totem",
+          "transferId": 10650206
+        },
+        {
+          "id": 10640202,
+          "name": "Ngang Ngược - Người Cây Totem",
+          "transferId": 10650207
+        },
+        {
+          "id": 10640203,
+          "name": "Tà Ác - Người Cây Totem",
+          "transferId": 10650208
+        }
+      ]
+    },
+    "106503": {
+      "mapId": 106503,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10640201,
+          "name": "Người Cây Totem",
+          "transferId": 10650306
+        },
+        {
+          "id": 10640202,
+          "name": "Ngang Ngược - Người Cây Totem",
+          "transferId": 10650307
+        },
+        {
+          "id": 10640203,
+          "name": "Tà Ác - Người Cây Totem",
+          "transferId": 10650308
+        }
+      ]
+    },
+    "106504": {
+      "mapId": 106504,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10640201,
+          "name": "Người Cây Totem",
+          "transferId": 10650411
+        },
+        {
+          "id": 10640202,
+          "name": "Ngang Ngược - Người Cây Totem",
+          "transferId": 10650412
+        },
+        {
+          "id": 10640203,
+          "name": "Tà Ác - Người Cây Totem",
+          "transferId": 10650413
+        }
+      ]
+    },
+    "106705": {
+      "mapId": 106705,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 1",
+      "bosses": [
+        {
+          "id": 10670503,
+          "name": "Tà Ác-Nurmus",
+          "transferId": 106705105
+        }
+      ]
+    },
+    "106805": {
+      "mapId": 106805,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 1",
+      "bosses": [
+        {
+          "id": 10670503,
+          "name": "Tà Ác-Nurmus",
+          "transferId": 106805105
+        }
+      ]
+    },
+    "106801": {
+      "mapId": 106801,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 2",
+      "bosses": [
+        {
+          "id": 10670503,
+          "name": "Tà Ác-Nurmus",
+          "transferId": 106801110
+        }
+      ]
+    },
+    "106802": {
+      "mapId": 106802,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10670503,
+          "name": "Tà Ác-Nurmus",
+          "transferId": 106802115
+        }
+      ]
+    }
+  },
+  "c4": {
+    "101093": {
+      "mapId": 101093,
+      "mapName": "V\\195\\185ng \\196\\144\\225\\186\\165t M\\225\\187\\165c N\\195\\161t",
+      "bosses": [
+        {
+          "id": 10179307,
+          "name": "Kỵ Sĩ Địa Ngục",
+          "transferId": 400213
+        },
+        {
+          "id": 10179308,
+          "name": "Phẫn Nộ - Kỵ Sĩ Địa Ngục",
+          "transferId": 400219
+        },
+        {
+          "id": 10179309,
+          "name": "Cuồng Bạo - Kỵ Sĩ Địa Ngục",
+          "transferId": 400225
+        }
+      ]
+    },
+    "101414": {
+      "mapId": 101414,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 10",
+      "bosses": [
+        {
+          "id": 10179307,
+          "name": "Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179308,
+          "name": "Phẫn Nộ - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179309,
+          "name": "Cuồng Bạo - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101415": {
+      "mapId": 101415,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 11",
+      "bosses": [
+        {
+          "id": 10179307,
+          "name": "Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179308,
+          "name": "Phẫn Nộ - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179309,
+          "name": "Cuồng Bạo - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101416": {
+      "mapId": 101416,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 12",
+      "bosses": [
+        {
+          "id": 10179307,
+          "name": "Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179308,
+          "name": "Phẫn Nộ - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179309,
+          "name": "Cuồng Bạo - Kỵ Sĩ Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105204": {
+      "mapId": 105204,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 4",
+      "bosses": [
+        {
+          "id": 10520401,
+          "name": "Người Khổng Lồ U Linh",
+          "transferId": 105204101
+        },
+        {
+          "id": 10520402,
+          "name": "Người Khổng Lồ U Linh Phẫn Nộ",
+          "transferId": 105204102
+        }
+      ]
+    },
+    "105304": {
+      "mapId": 105304,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10520401,
+          "name": "Người Khổng Lồ U Linh",
+          "transferId": 105304101
+        },
+        {
+          "id": 10520402,
+          "name": "Người Khổng Lồ U Linh Phẫn Nộ",
+          "transferId": 105304102
+        }
+      ]
+    },
+    "105305": {
+      "mapId": 105305,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10520401,
+          "name": "Người Khổng Lồ U Linh",
+          "transferId": 105304103
+        },
+        {
+          "id": 10520402,
+          "name": "Người Khổng Lồ U Linh Phẫn Nộ",
+          "transferId": 105304104
+        }
+      ]
+    },
+    "102602": {
+      "mapId": 102602,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 2",
+      "bosses": [
+        {
+          "id": 10260208,
+          "name": "Kundun",
+          "transferId": 1026021
+        }
+      ]
+    },
+    "102803": {
+      "mapId": 102803,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 7",
+      "bosses": [
+        {
+          "id": 10280308,
+          "name": "Kundun",
+          "transferId": 1028031
+        }
+      ]
+    },
+    "106403": {
+      "mapId": 106403,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 3",
+      "bosses": [
+        {
+          "id": 10640301,
+          "name": "Ong Chúa Khát Máu",
+          "transferId": 10640301
+        },
+        {
+          "id": 10640302,
+          "name": "Ngang Ngược-Ong Chúa Khát Máu",
+          "transferId": 10640302
+        },
+        {
+          "id": 10640303,
+          "name": "Tà Ác-Ong Chúa Khát Máu",
+          "transferId": 10640303
+        }
+      ]
+    },
+    "106503": {
+      "mapId": 106503,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10640301,
+          "name": "Ong Chúa Khát Máu",
+          "transferId": 10650311
+        },
+        {
+          "id": 10640302,
+          "name": "Ngang Ngược-Ong Chúa Khát Máu",
+          "transferId": 10650312
+        },
+        {
+          "id": 10640303,
+          "name": "Tà Ác-Ong Chúa Khát Máu",
+          "transferId": 10650313
+        }
+      ]
+    },
+    "106504": {
+      "mapId": 106504,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10640301,
+          "name": "Ong Chúa Khát Máu",
+          "transferId": 10650401
+        },
+        {
+          "id": 10640302,
+          "name": "Ngang Ngược-Ong Chúa Khát Máu",
+          "transferId": 10650402
+        },
+        {
+          "id": 10640303,
+          "name": "Tà Ác-Ong Chúa Khát Máu",
+          "transferId": 10650403
+        }
+      ]
+    },
+    "106505": {
+      "mapId": 106505,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10640301,
+          "name": "Ong Chúa Khát Máu",
+          "transferId": 10650511
+        },
+        {
+          "id": 10640302,
+          "name": "Ngang Ngược-Ong Chúa Khát Máu",
+          "transferId": 10650512
+        },
+        {
+          "id": 10640303,
+          "name": "Tà Ác-Ong Chúa Khát Máu",
+          "transferId": 10650513
+        }
+      ]
+    },
+    "106701": {
+      "mapId": 106701,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 2",
+      "bosses": [
+        {
+          "id": 10670103,
+          "name": "Tà Ác-Ma Tinh Phoenix",
+          "transferId": 106701105
+        }
+      ]
+    },
+    "106801": {
+      "mapId": 106801,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 2",
+      "bosses": [
+        {
+          "id": 10670103,
+          "name": "Tà Ác-Ma Tinh Phoenix",
+          "transferId": 106801105
+        }
+      ]
+    },
+    "106802": {
+      "mapId": 106802,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10670103,
+          "name": "Tà Ác-Ma Tinh Phoenix",
+          "transferId": 106802110
+        }
+      ]
+    },
+    "106803": {
+      "mapId": 106803,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10670103,
+          "name": "Tà Ác-Ma Tinh Phoenix",
+          "transferId": 106803114
+        }
+      ]
+    }
+  },
+  "c5": {
+    "101095": {
+      "mapId": 101095,
+      "mapName": "V\\195\\185ng \\196\\144\\225\\186\\165t Ma H\\195\\179a",
+      "bosses": [
+        {
+          "id": 10179507,
+          "name": "Giác Ma Địa Ngục",
+          "transferId": 400214
+        },
+        {
+          "id": 10179508,
+          "name": "Phẫn Nộ - Giác Ma Địa Ngục",
+          "transferId": 400220
+        },
+        {
+          "id": 10179509,
+          "name": "Cuồng Bạo - Giác Ma Địa Ngục",
+          "transferId": 400226
+        }
+      ]
+    },
+    "101415": {
+      "mapId": 101415,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 11",
+      "bosses": [
+        {
+          "id": 10179507,
+          "name": "Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179508,
+          "name": "Phẫn Nộ - Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179509,
+          "name": "Cuồng Bạo - Giác Ma Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101416": {
+      "mapId": 101416,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 12",
+      "bosses": [
+        {
+          "id": 10179507,
+          "name": "Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179508,
+          "name": "Phẫn Nộ - Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179509,
+          "name": "Cuồng Bạo - Giác Ma Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101417": {
+      "mapId": 101417,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 13",
+      "bosses": [
+        {
+          "id": 10179507,
+          "name": "Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179508,
+          "name": "Phẫn Nộ - Giác Ma Địa Ngục",
+          "transferId": 400156
+        },
+        {
+          "id": 10179509,
+          "name": "Cuồng Bạo - Giác Ma Địa Ngục",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105205": {
+      "mapId": 105205,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 5",
+      "bosses": [
+        {
+          "id": 10520501,
+          "name": "Hươu Thủy Tinh",
+          "transferId": 105205101
+        },
+        {
+          "id": 10520502,
+          "name": "Hươu Thủy Tinh Phẫn Nộ",
+          "transferId": 105205102
+        }
+      ]
+    },
+    "105305": {
+      "mapId": 105305,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10520501,
+          "name": "Hươu Thủy Tinh",
+          "transferId": 105305101
+        },
+        {
+          "id": 10520502,
+          "name": "Hươu Thủy Tinh Phẫn Nộ",
+          "transferId": 105305102
+        }
+      ]
+    },
+    "105306": {
+      "mapId": 105306,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10520501,
+          "name": "Hươu Thủy Tinh",
+          "transferId": 105305103
+        },
+        {
+          "id": 10520502,
+          "name": "Hươu Thủy Tinh Phẫn Nộ",
+          "transferId": 105305104
+        }
+      ]
+    },
+    "102603": {
+      "mapId": 102603,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 3",
+      "bosses": [
+        {
+          "id": 10260308,
+          "name": "Kundun",
+          "transferId": 1026031
+        }
+      ]
+    },
+    "102804": {
+      "mapId": 102804,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 8",
+      "bosses": [
+        {
+          "id": 10280408,
+          "name": "Kundun",
+          "transferId": 1028041
+        }
+      ]
+    },
+    "106404": {
+      "mapId": 106404,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 4",
+      "bosses": [
+        {
+          "id": 10640401,
+          "name": "Quỷ Dung Nham",
+          "transferId": 10640401
+        },
+        {
+          "id": 10640402,
+          "name": "Ngang Ngược-Ma Dung Nham",
+          "transferId": 10640402
+        },
+        {
+          "id": 10640403,
+          "name": "Tà Ác-Ma Dung Nham",
+          "transferId": 10640403
+        }
+      ]
+    },
+    "106504": {
+      "mapId": 106504,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10640401,
+          "name": "Quỷ Dung Nham",
+          "transferId": 10650406
+        },
+        {
+          "id": 10640402,
+          "name": "Ngang Ngược-Ma Dung Nham",
+          "transferId": 10650407
+        },
+        {
+          "id": 10640403,
+          "name": "Tà Ác-Ma Dung Nham",
+          "transferId": 10650408
+        }
+      ]
+    },
+    "106505": {
+      "mapId": 106505,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10640401,
+          "name": "Quỷ Dung Nham",
+          "transferId": 10650501
+        },
+        {
+          "id": 10640402,
+          "name": "Ngang Ngược-Ma Dung Nham",
+          "transferId": 10650502
+        },
+        {
+          "id": 10640403,
+          "name": "Tà Ác-Ma Dung Nham",
+          "transferId": 10650503
+        }
+      ]
+    },
+    "106506": {
+      "mapId": 106506,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10640401,
+          "name": "Quỷ Dung Nham",
+          "transferId": 10650611
+        },
+        {
+          "id": 10640402,
+          "name": "Ngang Ngược-Ma Dung Nham",
+          "transferId": 10650612
+        },
+        {
+          "id": 10640403,
+          "name": "Tà Ác-Ma Dung Nham",
+          "transferId": 10650613
+        }
+      ]
+    },
+    "106702": {
+      "mapId": 106702,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 3",
+      "bosses": [
+        {
+          "id": 10670203,
+          "name": "Tà Ác-Nars",
+          "transferId": 106702105
+        }
+      ]
+    },
+    "106802": {
+      "mapId": 106802,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
+      "bosses": [
+        {
+          "id": 10670203,
+          "name": "Tà Ác-Nars",
+          "transferId": 106802105
+        }
+      ]
+    },
+    "106803": {
+      "mapId": 106803,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10670203,
+          "name": "Tà Ác-Nars",
+          "transferId": 106803109
+        }
+      ]
+    },
+    "106804": {
+      "mapId": 106804,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10670203,
+          "name": "Tà Ác-Nars",
+          "transferId": 106804112
+        }
+      ]
+    }
+  },
+  "c6": {
+    "101092": {
+      "mapId": 101092,
+      "mapName": "R\\225\\187\\171ng V\\196\\169nh Ca",
+      "bosses": [
+        {
+          "id": 10179207,
+          "name": "Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400215
+        },
+        {
+          "id": 10179208,
+          "name": "Phẫn Nộ - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400221
+        },
+        {
+          "id": 10179209,
+          "name": "Cuồng Bạo - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400227
+        }
+      ]
+    },
+    "101416": {
+      "mapId": 101416,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 12",
+      "bosses": [
+        {
+          "id": 10179207,
+          "name": "Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179208,
+          "name": "Phẫn Nộ - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179209,
+          "name": "Cuồng Bạo - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101417": {
+      "mapId": 101417,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 13",
+      "bosses": [
+        {
+          "id": 10179207,
+          "name": "Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179208,
+          "name": "Phẫn Nộ - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179209,
+          "name": "Cuồng Bạo - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101418": {
+      "mapId": 101418,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 14",
+      "bosses": [
+        {
+          "id": 10179207,
+          "name": "Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179208,
+          "name": "Phẫn Nộ - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        },
+        {
+          "id": 10179209,
+          "name": "Cuồng Bạo - Vệ Sĩ Khiên Kiếm Huyết Sắc",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105206": {
+      "mapId": 105206,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 6",
+      "bosses": [
+        {
+          "id": 10520601,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 105206101
+        },
+        {
+          "id": 10520602,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 105206102
+        }
+      ]
+    },
+    "105306": {
+      "mapId": 105306,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10520601,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 105306101
+        },
+        {
+          "id": 10520602,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 105306102
+        }
+      ]
+    },
+    "105307": {
+      "mapId": 105307,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10520601,
+          "name": "Hung Thần Kiêu Ngạo",
+          "transferId": 105306103
+        },
+        {
+          "id": 10520602,
+          "name": "Phẫn Nộ - Hung Thần Kiêu Ngạo",
+          "transferId": 105306104
+        }
+      ]
+    },
+    "102604": {
+      "mapId": 102604,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 4",
+      "bosses": [
+        {
+          "id": 10260408,
+          "name": "Kundun",
+          "transferId": 1026041
+        }
+      ]
+    },
+    "102805": {
+      "mapId": 102805,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 9",
+      "bosses": [
+        {
+          "id": 10280508,
+          "name": "Kundun",
+          "transferId": 1028051
+        }
+      ]
+    },
+    "106405": {
+      "mapId": 106405,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 5",
+      "bosses": [
+        {
+          "id": 10640501,
+          "name": "Quỷ Vương Luyện Ngục",
+          "transferId": 10640501
+        },
+        {
+          "id": 10640502,
+          "name": "Ngang Ngược-Ma Vương Luyện Ngục",
+          "transferId": 10640502
+        },
+        {
+          "id": 10640503,
+          "name": "Tà Ác-Ma Vương Luyện Ngục",
+          "transferId": 10640503
+        }
+      ]
+    },
+    "106505": {
+      "mapId": 106505,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10640501,
+          "name": "Quỷ Vương Luyện Ngục",
+          "transferId": 10650506
+        },
+        {
+          "id": 10640502,
+          "name": "Ngang Ngược-Ma Vương Luyện Ngục",
+          "transferId": 10650507
+        },
+        {
+          "id": 10640503,
+          "name": "Tà Ác-Ma Vương Luyện Ngục",
+          "transferId": 10650508
+        }
+      ]
+    },
+    "106506": {
+      "mapId": 106506,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10640501,
+          "name": "Quỷ Vương Luyện Ngục",
+          "transferId": 10650601
+        },
+        {
+          "id": 10640502,
+          "name": "Ngang Ngược-Ma Vương Luyện Ngục",
+          "transferId": 10650602
+        },
+        {
+          "id": 10640503,
+          "name": "Tà Ác-Ma Vương Luyện Ngục",
+          "transferId": 10650603
+        }
+      ]
+    },
+    "106507": {
+      "mapId": 106507,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10640501,
+          "name": "Quỷ Vương Luyện Ngục",
+          "transferId": 10650711
+        },
+        {
+          "id": 10640502,
+          "name": "Ngang Ngược-Ma Vương Luyện Ngục",
+          "transferId": 10650712
+        },
+        {
+          "id": 10640503,
+          "name": "Tà Ác-Ma Vương Luyện Ngục",
+          "transferId": 10650713
+        }
+      ]
+    },
+    "106703": {
+      "mapId": 106703,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 4",
+      "bosses": [
+        {
+          "id": 10670302,
+          "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
+          "transferId": 106703103
+        },
+        {
+          "id": 10670303,
+          "name": "Tà Ác-Quân Chủ Luyện Ngục",
+          "transferId": 106703104
+        }
+      ]
+    },
+    "106803": {
+      "mapId": 106803,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
+      "bosses": [
+        {
+          "id": 10670302,
+          "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
+          "transferId": 106803103
+        },
+        {
+          "id": 10670303,
+          "name": "Tà Ác-Quân Chủ Luyện Ngục",
+          "transferId": 106803104
+        }
+      ]
+    },
+    "106804": {
+      "mapId": 106804,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10670302,
+          "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
+          "transferId": 106804106
+        },
+        {
+          "id": 10670303,
+          "name": "Tà Ác-Quân Chủ Luyện Ngục",
+          "transferId": 106804107
+        }
+      ]
+    },
+    "106806": {
+      "mapId": 106806,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10670302,
+          "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
+          "transferId": 106806109
+        },
+        {
+          "id": 10670303,
+          "name": "Tà Ác-Quân Chủ Luyện Ngục",
+          "transferId": 106806110
+        }
+      ]
+    }
+  },
+  "c7": {
+    "101096": {
+      "mapId": 101096,
+      "mapName": "R\\225\\187\\171ng S\\198\\176\\198\\161ng M\\195\\185",
+      "bosses": [
+        {
+          "id": 10179607,
+          "name": "Tektus",
+          "transferId": 400216
+        },
+        {
+          "id": 10179608,
+          "name": "Phẫn Nộ - Tektus",
+          "transferId": 400222
+        },
+        {
+          "id": 10179609,
+          "name": "Cuồng Bạo - Tektus",
+          "transferId": 400228
+        }
+      ]
+    },
+    "101417": {
+      "mapId": 101417,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 13",
+      "bosses": [
+        {
+          "id": 10179607,
+          "name": "Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179608,
+          "name": "Phẫn Nộ - Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179609,
+          "name": "Cuồng Bạo - Tektus",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101418": {
+      "mapId": 101418,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 14",
+      "bosses": [
+        {
+          "id": 10179607,
+          "name": "Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179608,
+          "name": "Phẫn Nộ - Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179609,
+          "name": "Cuồng Bạo - Tektus",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101421": {
+      "mapId": 101421,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 15",
+      "bosses": [
+        {
+          "id": 10179607,
+          "name": "Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179608,
+          "name": "Phẫn Nộ - Tektus",
+          "transferId": 400156
+        },
+        {
+          "id": 10179609,
+          "name": "Cuồng Bạo - Tektus",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105207": {
+      "mapId": 105207,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 7",
+      "bosses": [
+        {
+          "id": 10520701,
+          "name": "Tektus",
+          "transferId": 105207101
+        },
+        {
+          "id": 10520702,
+          "name": "Phẫn Nộ-Tektus",
+          "transferId": 105207102
+        }
+      ]
+    },
+    "105307": {
+      "mapId": 105307,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10520701,
+          "name": "Tektus",
+          "transferId": 105307101
+        },
+        {
+          "id": 10520702,
+          "name": "Phẫn Nộ-Tektus",
+          "transferId": 105307102
+        }
+      ]
+    },
+    "105308": {
+      "mapId": 105308,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10520701,
+          "name": "Tektus",
+          "transferId": 105307103
+        },
+        {
+          "id": 10520702,
+          "name": "Phẫn Nộ-Tektus",
+          "transferId": 105307104
+        }
+      ]
+    },
+    "102806": {
+      "mapId": 102806,
+      "mapName": "Mi\\225\\186\\191u Th\\225\\186\\167n Kalima T\\225\\186\\167ng 10",
+      "bosses": [
+        {
+          "id": 10280608,
+          "name": "Kundun",
+          "transferId": 1028061
+        }
+      ]
+    },
+    "106406": {
+      "mapId": 106406,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 6",
+      "bosses": [
+        {
+          "id": 10640601,
+          "name": "Chiến Sĩ Rìu To",
+          "transferId": 10640601
+        },
+        {
+          "id": 10640602,
+          "name": "Ngang Ngược-Chiến Sĩ Rìu Lớn",
+          "transferId": 10640602
+        },
+        {
+          "id": 10640603,
+          "name": "Tà Ác-Chiến Sĩ Rìu Lớn",
+          "transferId": 10640603
+        }
+      ]
+    },
+    "106506": {
+      "mapId": 106506,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10640601,
+          "name": "Chiến Sĩ Rìu To",
+          "transferId": 10650606
+        },
+        {
+          "id": 10640602,
+          "name": "Ngang Ngược-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650607
+        },
+        {
+          "id": 10640603,
+          "name": "Tà Ác-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650608
+        }
+      ]
+    },
+    "106507": {
+      "mapId": 106507,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10640601,
+          "name": "Chiến Sĩ Rìu To",
+          "transferId": 10650701
+        },
+        {
+          "id": 10640602,
+          "name": "Ngang Ngược-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650702
+        },
+        {
+          "id": 10640603,
+          "name": "Tà Ác-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650703
+        }
+      ]
+    },
+    "106508": {
+      "mapId": 106508,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10640601,
+          "name": "Chiến Sĩ Rìu To",
+          "transferId": 10650811
+        },
+        {
+          "id": 10640602,
+          "name": "Ngang Ngược-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650812
+        },
+        {
+          "id": 10640603,
+          "name": "Tà Ác-Chiến Sĩ Rìu Lớn",
+          "transferId": 10650813
+        }
+      ]
+    },
+    "106704": {
+      "mapId": 106704,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 5",
+      "bosses": [
+        {
+          "id": 10670401,
+          "name": "Tướng Quân Luyện Ngục",
+          "transferId": 106704101
+        },
+        {
+          "id": 10670402,
+          "name": "Ngang Ngược-Tướng Quân Luyện Ngục",
+          "transferId": 106704102
+        },
+        {
+          "id": 10670403,
+          "name": "Tà Ác-Tướng Quân Luyện Ngục",
+          "transferId": 106704103
+        }
+      ]
+    },
+    "106804": {
+      "mapId": 106804,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 5",
+      "bosses": [
+        {
+          "id": 10670401,
+          "name": "Tướng Quân Luyện Ngục",
+          "transferId": 106804101
+        },
+        {
+          "id": 10670402,
+          "name": "Ngang Ngược-Tướng Quân Luyện Ngục",
+          "transferId": 106804102
+        },
+        {
+          "id": 10670403,
+          "name": "Tà Ác-Tướng Quân Luyện Ngục",
+          "transferId": 106804103
+        }
+      ]
+    },
+    "106806": {
+      "mapId": 106806,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10670401,
+          "name": "Tướng Quân Luyện Ngục",
+          "transferId": 106806104
+        },
+        {
+          "id": 10670402,
+          "name": "Ngang Ngược-Tướng Quân Luyện Ngục",
+          "transferId": 106806105
+        },
+        {
+          "id": 10670403,
+          "name": "Tà Ác-Tướng Quân Luyện Ngục",
+          "transferId": 106806106
+        }
+      ]
+    },
+    "106807": {
+      "mapId": 106807,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10670401,
+          "name": "Tướng Quân Luyện Ngục",
+          "transferId": 106807107
+        },
+        {
+          "id": 10670402,
+          "name": "Ngang Ngược-Tướng Quân Luyện Ngục",
+          "transferId": 106807108
+        },
+        {
+          "id": 10670403,
+          "name": "Tà Ác-Tướng Quân Luyện Ngục",
+          "transferId": 106807109
+        }
+      ]
+    }
+  },
+  "c8": {
+    "1074": {
+      "mapId": 1074,
+      "mapName": "Philea",
+      "bosses": [
+        {
+          "id": 107407,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 400229
+        },
+        {
+          "id": 107408,
+          "name": "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+          "transferId": 400230
+        },
+        {
+          "id": 107409,
+          "name": "Cuồng Bạo - Kỵ Sĩ Tử Vong",
+          "transferId": 400231
+        }
+      ]
+    },
+    "101418": {
+      "mapId": 101418,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 14",
+      "bosses": [
+        {
+          "id": 107407,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107408,
+          "name": "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107409,
+          "name": "Cuồng Bạo - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101421": {
+      "mapId": 101421,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 15",
+      "bosses": [
+        {
+          "id": 107407,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107408,
+          "name": "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107409,
+          "name": "Cuồng Bạo - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101422": {
+      "mapId": 101422,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 16",
+      "bosses": [
+        {
+          "id": 107407,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107408,
+          "name": "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        },
+        {
+          "id": 107409,
+          "name": "Cuồng Bạo - Kỵ Sĩ Tử Vong",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105208": {
+      "mapId": 105208,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 8",
+      "bosses": [
+        {
+          "id": 10520801,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 105208101
+        },
+        {
+          "id": 10520802,
+          "name": "Phẫn Nộ-Kỵ Sĩ Tử Vong",
+          "transferId": 105208102
+        }
+      ]
+    },
+    "105308": {
+      "mapId": 105308,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10520801,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 105308101
+        },
+        {
+          "id": 10520802,
+          "name": "Phẫn Nộ-Kỵ Sĩ Tử Vong",
+          "transferId": 105308102
+        }
+      ]
+    },
+    "105309": {
+      "mapId": 105309,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10520801,
+          "name": "Kỵ Sĩ Tử Vong",
+          "transferId": 105308103
+        },
+        {
+          "id": 10520802,
+          "name": "Phẫn Nộ-Kỵ Sĩ Tử Vong",
+          "transferId": 105308104
+        }
+      ]
+    },
+    "106407": {
+      "mapId": 106407,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 7",
+      "bosses": [
+        {
+          "id": 10640701,
+          "name": "Thủ Vệ Giáo Dài",
+          "transferId": 10640701
+        },
+        {
+          "id": 10640702,
+          "name": "Ngang Ngược-Thủ Vệ Giáo Dài",
+          "transferId": 10640702
+        },
+        {
+          "id": 10640703,
+          "name": "Tà Ác-Thủ Vệ Giáo Dài",
+          "transferId": 10640703
+        }
+      ]
+    },
+    "106507": {
+      "mapId": 106507,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10640701,
+          "name": "Thủ Vệ Giáo Dài",
+          "transferId": 10650706
+        },
+        {
+          "id": 10640702,
+          "name": "Ngang Ngược-Thủ Vệ Giáo Dài",
+          "transferId": 10650707
+        },
+        {
+          "id": 10640703,
+          "name": "Tà Ác-Thủ Vệ Giáo Dài",
+          "transferId": 10650708
+        }
+      ]
+    },
+    "106508": {
+      "mapId": 106508,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10640701,
+          "name": "Thủ Vệ Giáo Dài",
+          "transferId": 10650801
+        },
+        {
+          "id": 10640702,
+          "name": "Ngang Ngược-Thủ Vệ Giáo Dài",
+          "transferId": 10650802
+        },
+        {
+          "id": 10640703,
+          "name": "Tà Ác-Thủ Vệ Giáo Dài",
+          "transferId": 10650803
+        }
+      ]
+    },
+    "106509": {
+      "mapId": 106509,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10640701,
+          "name": "Thủ Vệ Giáo Dài",
+          "transferId": 10650911
+        },
+        {
+          "id": 10640702,
+          "name": "Ngang Ngược-Thủ Vệ Giáo Dài",
+          "transferId": 10650912
+        },
+        {
+          "id": 10640703,
+          "name": "Tà Ác-Thủ Vệ Giáo Dài",
+          "transferId": 10650913
+        }
+      ]
+    },
+    "106706": {
+      "mapId": 106706,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 6",
+      "bosses": [
+        {
+          "id": 10670601,
+          "name": "Ma Đao Phủ",
+          "transferId": 106706101
+        },
+        {
+          "id": 10670602,
+          "name": "Ngang Ngược-Ma Đao Phủ",
+          "transferId": 106706102
+        },
+        {
+          "id": 10670603,
+          "name": "Tà Ác-Ma Đao Phủ",
+          "transferId": 106706103
+        }
+      ]
+    },
+    "106806": {
+      "mapId": 106806,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 6",
+      "bosses": [
+        {
+          "id": 10670601,
+          "name": "Ma Đao Phủ",
+          "transferId": 106806101
+        },
+        {
+          "id": 10670602,
+          "name": "Ngang Ngược-Ma Đao Phủ",
+          "transferId": 106806102
+        },
+        {
+          "id": 10670603,
+          "name": "Tà Ác-Ma Đao Phủ",
+          "transferId": 106806103
+        }
+      ]
+    },
+    "106807": {
+      "mapId": 106807,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10670601,
+          "name": "Ma Đao Phủ",
+          "transferId": 106807104
+        },
+        {
+          "id": 10670602,
+          "name": "Ngang Ngược-Ma Đao Phủ",
+          "transferId": 106807105
+        },
+        {
+          "id": 10670603,
+          "name": "Tà Ác-Ma Đao Phủ",
+          "transferId": 106807106
+        }
+      ]
+    },
+    "106808": {
+      "mapId": 106808,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10670601,
+          "name": "Ma Đao Phủ",
+          "transferId": 106808107
+        },
+        {
+          "id": 10670602,
+          "name": "Ngang Ngược-Ma Đao Phủ",
+          "transferId": 106808108
+        },
+        {
+          "id": 10670603,
+          "name": "Tà Ác-Ma Đao Phủ",
+          "transferId": 106808109
+        }
+      ]
+    }
+  },
+  "c9": {
+    "1075": {
+      "mapId": 1075,
+      "mapName": "H\\225\\187\\147 Nixsis",
+      "bosses": [
+        {
+          "id": 107507,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 400232
+        },
+        {
+          "id": 107508,
+          "name": "Phẫn Nộ - Sứ Giả Ác Ma",
+          "transferId": 400233
+        },
+        {
+          "id": 107509,
+          "name": "Cuồng Bạo - Sứ Giả Ác Ma",
+          "transferId": 400234
+        }
+      ]
+    },
+    "101421": {
+      "mapId": 101421,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 15",
+      "bosses": [
+        {
+          "id": 107507,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107508,
+          "name": "Phẫn Nộ - Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107509,
+          "name": "Cuồng Bạo - Sứ Giả Ác Ma",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101422": {
+      "mapId": 101422,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 16",
+      "bosses": [
+        {
+          "id": 107507,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107508,
+          "name": "Phẫn Nộ - Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107509,
+          "name": "Cuồng Bạo - Sứ Giả Ác Ma",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101423": {
+      "mapId": 101423,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 17",
+      "bosses": [
+        {
+          "id": 107507,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107508,
+          "name": "Phẫn Nộ - Sứ Giả Ác Ma",
+          "transferId": 400156
+        },
+        {
+          "id": 107509,
+          "name": "Cuồng Bạo - Sứ Giả Ác Ma",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105209": {
+      "mapId": 105209,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 9",
+      "bosses": [
+        {
+          "id": 10520901,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 105209101
+        },
+        {
+          "id": 10520902,
+          "name": "Phẫn Nộ-Sứ Giả Ác Ma",
+          "transferId": 105209102
+        }
+      ]
+    },
+    "105309": {
+      "mapId": 105309,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10520901,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 105309101
+        },
+        {
+          "id": 10520902,
+          "name": "Phẫn Nộ-Sứ Giả Ác Ma",
+          "transferId": 105309102
+        }
+      ]
+    },
+    "105310": {
+      "mapId": 105310,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 10",
+      "bosses": [
+        {
+          "id": 10520901,
+          "name": "Sứ Giả Ác Ma",
+          "transferId": 105309103
+        },
+        {
+          "id": 10520902,
+          "name": "Phẫn Nộ-Sứ Giả Ác Ma",
+          "transferId": 105309104
+        }
+      ]
+    },
+    "106408": {
+      "mapId": 106408,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 8",
+      "bosses": [
+        {
+          "id": 10640801,
+          "name": "Thủ Vệ Loan Đao",
+          "transferId": 10640801
+        },
+        {
+          "id": 10640802,
+          "name": "Ngang Ngược-Thủ Vệ Đao Cong",
+          "transferId": 10640802
+        },
+        {
+          "id": 10640803,
+          "name": "Tà Ác-Thủ Vệ Đao Cong",
+          "transferId": 10640803
+        }
+      ]
+    },
+    "106508": {
+      "mapId": 106508,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10640801,
+          "name": "Thủ Vệ Loan Đao",
+          "transferId": 10650806
+        },
+        {
+          "id": 10640802,
+          "name": "Ngang Ngược-Thủ Vệ Đao Cong",
+          "transferId": 10650807
+        },
+        {
+          "id": 10640803,
+          "name": "Tà Ác-Thủ Vệ Đao Cong",
+          "transferId": 10650808
+        }
+      ]
+    },
+    "106509": {
+      "mapId": 106509,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10640801,
+          "name": "Thủ Vệ Loan Đao",
+          "transferId": 10650901
+        },
+        {
+          "id": 10640802,
+          "name": "Ngang Ngược-Thủ Vệ Đao Cong",
+          "transferId": 10650902
+        },
+        {
+          "id": 10640803,
+          "name": "Tà Ác-Thủ Vệ Đao Cong",
+          "transferId": 10650903
+        }
+      ]
+    },
+    "106707": {
+      "mapId": 106707,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 7",
+      "bosses": [
+        {
+          "id": 10670701,
+          "name": "Quỷ Biển",
+          "transferId": 106707101
+        },
+        {
+          "id": 10670702,
+          "name": "Ngang Ngược-Quỷ Biển",
+          "transferId": 106707102
+        },
+        {
+          "id": 10670703,
+          "name": "Tà Ác-Quỷ Biển",
+          "transferId": 106707103
+        }
+      ]
+    },
+    "106807": {
+      "mapId": 106807,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 7",
+      "bosses": [
+        {
+          "id": 10670701,
+          "name": "Quỷ Biển",
+          "transferId": 106807101
+        },
+        {
+          "id": 10670702,
+          "name": "Ngang Ngược-Quỷ Biển",
+          "transferId": 106807102
+        },
+        {
+          "id": 10670703,
+          "name": "Tà Ác-Quỷ Biển",
+          "transferId": 106807103
+        }
+      ]
+    },
+    "106808": {
+      "mapId": 106808,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10670701,
+          "name": "Quỷ Biển",
+          "transferId": 106808104
+        },
+        {
+          "id": 10670702,
+          "name": "Ngang Ngược-Quỷ Biển",
+          "transferId": 106808105
+        },
+        {
+          "id": 10670703,
+          "name": "Tà Ác-Quỷ Biển",
+          "transferId": 106808106
+        }
+      ]
+    },
+    "106809": {
+      "mapId": 106809,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10670701,
+          "name": "Quỷ Biển",
+          "transferId": 106809107
+        },
+        {
+          "id": 10670702,
+          "name": "Ngang Ngược-Quỷ Biển",
+          "transferId": 106809108
+        },
+        {
+          "id": 10670703,
+          "name": "Tà Ác-Quỷ Biển",
+          "transferId": 106809109
+        }
+      ]
+    }
+  },
+  "c10": {
+    "1076": {
+      "mapId": 1076,
+      "mapName": "H\\225\\187\\147 D\\225\\187\\139 H\\195\\179a",
+      "bosses": [
+        {
+          "id": 107607,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 400235
+        },
+        {
+          "id": 107608,
+          "name": "Phẫn Nộ - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400236
+        },
+        {
+          "id": 107609,
+          "name": "Cuồng Bạo - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400237
+        }
+      ]
+    },
+    "101422": {
+      "mapId": 101422,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 16",
+      "bosses": [
+        {
+          "id": 107607,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107608,
+          "name": "Phẫn Nộ - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107609,
+          "name": "Cuồng Bạo - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101423": {
+      "mapId": 101423,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 17",
+      "bosses": [
+        {
+          "id": 107607,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107608,
+          "name": "Phẫn Nộ - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107609,
+          "name": "Cuồng Bạo - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101424": {
+      "mapId": 101424,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 18",
+      "bosses": [
+        {
+          "id": 107607,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107608,
+          "name": "Phẫn Nộ - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        },
+        {
+          "id": 107609,
+          "name": "Cuồng Bạo - Chiến Sĩ Cuồng Nộ",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105210": {
+      "mapId": 105210,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 10",
+      "bosses": [
+        {
+          "id": 10521001,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 105210101
+        },
+        {
+          "id": 10521002,
+          "name": "Phẫn Nộ-Chiến Sĩ Thịnh Nộ",
+          "transferId": 105210102
+        }
+      ]
+    },
+    "105310": {
+      "mapId": 105310,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 10",
+      "bosses": [
+        {
+          "id": 10521001,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 105310101
+        },
+        {
+          "id": 10521002,
+          "name": "Phẫn Nộ-Chiến Sĩ Thịnh Nộ",
+          "transferId": 105310102
+        }
+      ]
+    },
+    "105311": {
+      "mapId": 105311,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 11",
+      "bosses": [
+        {
+          "id": 10521001,
+          "name": "Chiến Sĩ Cuồng Nộ",
+          "transferId": 105311101
+        },
+        {
+          "id": 10521002,
+          "name": "Phẫn Nộ-Chiến Sĩ Thịnh Nộ",
+          "transferId": 105311102
+        }
+      ]
+    },
+    "106409": {
+      "mapId": 106409,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 9",
+      "bosses": [
+        {
+          "id": 10640901,
+          "name": "Thủ Vệ Lam Tinh",
+          "transferId": 10640901
+        },
+        {
+          "id": 10640902,
+          "name": "Ngang Ngược-Thủ Vệ Lam Tinh",
+          "transferId": 10640902
+        },
+        {
+          "id": 10640903,
+          "name": "Tà Ác-Thủ Vệ Lam Tinh",
+          "transferId": 10640903
+        }
+      ]
+    },
+    "106509": {
+      "mapId": 106509,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10640901,
+          "name": "Thủ Vệ Lam Tinh",
+          "transferId": 10650906
+        },
+        {
+          "id": 10640902,
+          "name": "Ngang Ngược-Thủ Vệ Lam Tinh",
+          "transferId": 10650907
+        },
+        {
+          "id": 10640903,
+          "name": "Tà Ác-Thủ Vệ Lam Tinh",
+          "transferId": 10650908
+        }
+      ]
+    },
+    "106708": {
+      "mapId": 106708,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 8",
+      "bosses": [
+        {
+          "id": 10670801,
+          "name": "Mị Ma",
+          "transferId": 106708101
+        },
+        {
+          "id": 10670802,
+          "name": "Ngang Ngược-Succubus",
+          "transferId": 106708102
+        },
+        {
+          "id": 10670803,
+          "name": "Tà Ác-Succubus",
+          "transferId": 106708103
+        }
+      ]
+    },
+    "106808": {
+      "mapId": 106808,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 8",
+      "bosses": [
+        {
+          "id": 10670801,
+          "name": "Mị Ma",
+          "transferId": 106808101
+        },
+        {
+          "id": 10670802,
+          "name": "Ngang Ngược-Succubus",
+          "transferId": 106808102
+        },
+        {
+          "id": 10670803,
+          "name": "Tà Ác-Succubus",
+          "transferId": 106808103
+        }
+      ]
+    },
+    "106809": {
+      "mapId": 106809,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10670801,
+          "name": "Mị Ma",
+          "transferId": 106809104
+        },
+        {
+          "id": 10670802,
+          "name": "Ngang Ngược-Succubus",
+          "transferId": 106809105
+        },
+        {
+          "id": 10670803,
+          "name": "Tà Ác-Succubus",
+          "transferId": 106809106
+        }
+      ]
+    },
+    "106810": {
+      "mapId": 106810,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 10",
+      "bosses": [
+        {
+          "id": 10670801,
+          "name": "Mị Ma",
+          "transferId": 106810107
+        },
+        {
+          "id": 10670802,
+          "name": "Ngang Ngược-Succubus",
+          "transferId": 106810108
+        },
+        {
+          "id": 10670803,
+          "name": "Tà Ác-Succubus",
+          "transferId": 106810109
+        }
+      ]
+    }
+  },
+  "c11": {
+    "10123": {
+      "mapId": 10123,
+      "mapName": "\\196\\144\\225\\186\\167m L\\225\\186\\167y \\196\\144en",
+      "bosses": [
+        {
+          "id": 1012307,
+          "name": "Thủy Ma Dị Hóa Navos",
+          "transferId": 400238
+        },
+        {
+          "id": 1012308,
+          "name": "Phẫn Nộ - Thủy Ma Dị Hóa Navos",
+          "transferId": 400239
+        },
+        {
+          "id": 1012309,
+          "name": "Cuồng Bạo - Thủy Ma Dị Hóa Navos",
+          "transferId": 400240
+        }
+      ]
+    },
+    "101423": {
+      "mapId": 101423,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 17",
+      "bosses": [
+        {
+          "id": 1012307,
+          "name": "Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012308,
+          "name": "Phẫn Nộ - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012309,
+          "name": "Cuồng Bạo - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101424": {
+      "mapId": 101424,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 18",
+      "bosses": [
+        {
+          "id": 1012307,
+          "name": "Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012308,
+          "name": "Phẫn Nộ - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012309,
+          "name": "Cuồng Bạo - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101425": {
+      "mapId": 101425,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 19",
+      "bosses": [
+        {
+          "id": 1012307,
+          "name": "Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012308,
+          "name": "Phẫn Nộ - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        },
+        {
+          "id": 1012309,
+          "name": "Cuồng Bạo - Thủy Ma Dị Hóa Navos",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105211": {
+      "mapId": 105211,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 11",
+      "bosses": [
+        {
+          "id": 10521101,
+          "name": "Ma Thủy Dị Hóa Navos",
+          "transferId": 105211101
+        },
+        {
+          "id": 10521102,
+          "name": "Phẫn Nộ-Ma Thủy Dị Hóa Navos",
+          "transferId": 105211102
+        }
+      ]
+    },
+    "105311": {
+      "mapId": 105311,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 11",
+      "bosses": [
+        {
+          "id": 10521101,
+          "name": "Ma Thủy Dị Hóa Navos",
+          "transferId": 105311103
+        },
+        {
+          "id": 10521102,
+          "name": "Phẫn Nộ-Ma Thủy Dị Hóa Navos",
+          "transferId": 105311104
+        }
+      ]
+    },
+    "105312": {
+      "mapId": 105312,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 12",
+      "bosses": [
+        {
+          "id": 10521101,
+          "name": "Ma Thủy Dị Hóa Navos",
+          "transferId": 105312101
+        },
+        {
+          "id": 10521102,
+          "name": "Phẫn Nộ-Ma Thủy Dị Hóa Navos",
+          "transferId": 105312102
+        }
+      ]
+    },
+    "106410": {
+      "mapId": 106410,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 10",
+      "bosses": [
+        {
+          "id": 10641001,
+          "name": "Vua Biển Băng Tinh",
+          "transferId": 10641001
+        },
+        {
+          "id": 10641002,
+          "name": "Ngang Ngược-Vua Biển Băng Tinh",
+          "transferId": 10641002
+        },
+        {
+          "id": 10641003,
+          "name": "Tà Ác-Vua Biển Băng Tinh",
+          "transferId": 10641003
+        }
+      ]
+    },
+    "106709": {
+      "mapId": 106709,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 9",
+      "bosses": [
+        {
+          "id": 10670901,
+          "name": "Thợ Mỏ Ma Tinh",
+          "transferId": 106709101
+        },
+        {
+          "id": 10670902,
+          "name": "Ngang Ngược-Thợ Mỏ Ma Tinh",
+          "transferId": 106709102
+        },
+        {
+          "id": 10670903,
+          "name": "Tà Ác-Thợ Mỏ Ma Tinh",
+          "transferId": 106709103
+        }
+      ]
+    },
+    "106809": {
+      "mapId": 106809,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 9",
+      "bosses": [
+        {
+          "id": 10670901,
+          "name": "Thợ Mỏ Ma Tinh",
+          "transferId": 106809101
+        },
+        {
+          "id": 10670902,
+          "name": "Ngang Ngược-Thợ Mỏ Ma Tinh",
+          "transferId": 106809102
+        },
+        {
+          "id": 10670903,
+          "name": "Tà Ác-Thợ Mỏ Ma Tinh",
+          "transferId": 106809103
+        }
+      ]
+    },
+    "106810": {
+      "mapId": 106810,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 10",
+      "bosses": [
+        {
+          "id": 10670901,
+          "name": "Thợ Mỏ Ma Tinh",
+          "transferId": 106810104
+        },
+        {
+          "id": 10670902,
+          "name": "Ngang Ngược-Thợ Mỏ Ma Tinh",
+          "transferId": 106810105
+        },
+        {
+          "id": 10670903,
+          "name": "Tà Ác-Thợ Mỏ Ma Tinh",
+          "transferId": 106810106
+        }
+      ]
+    },
+    "106811": {
+      "mapId": 106811,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 11",
+      "bosses": [
+        {
+          "id": 10670901,
+          "name": "Thợ Mỏ Ma Tinh",
+          "transferId": 106811107
+        },
+        {
+          "id": 10670902,
+          "name": "Ngang Ngược-Thợ Mỏ Ma Tinh",
+          "transferId": 106811108
+        },
+        {
+          "id": 10670903,
+          "name": "Tà Ác-Thợ Mỏ Ma Tinh",
+          "transferId": 106811109
+        }
+      ]
+    }
+  },
+  "c12": {
+    "1012301": {
+      "mapId": 1012301,
+      "mapName": "\\196\\144\\225\\186\\167m L\\225\\186\\167y V\\225\\187\\177c S\\195\\162u",
+      "bosses": [
+        {
+          "id": 101230107,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 400241
+        },
+        {
+          "id": 101230108,
+          "name": "Phẫn Nộ - Thần Hắc Ám Hodel",
+          "transferId": 400242
+        },
+        {
+          "id": 101230109,
+          "name": "Cuồng Bạo - Thần Hắc Ám Hodel",
+          "transferId": 400243
+        }
+      ]
+    },
+    "101424": {
+      "mapId": 101424,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 18",
+      "bosses": [
+        {
+          "id": 101230107,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230108,
+          "name": "Phẫn Nộ - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230109,
+          "name": "Cuồng Bạo - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101425": {
+      "mapId": 101425,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 19",
+      "bosses": [
+        {
+          "id": 101230107,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230108,
+          "name": "Phẫn Nộ - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230109,
+          "name": "Cuồng Bạo - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        }
+      ]
+    },
+    "101426": {
+      "mapId": 101426,
+      "mapName": "H\\225\\187\\153i Vi\\195\\170n T\\225\\186\\167ng 20",
+      "bosses": [
+        {
+          "id": 101230107,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230108,
+          "name": "Phẫn Nộ - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        },
+        {
+          "id": 101230109,
+          "name": "Cuồng Bạo - Thần Hắc Ám Hodel",
+          "transferId": 400156
+        }
+      ]
+    },
+    "105212": {
+      "mapId": 105212,
+      "mapName": "Huy\\225\\187\\133n Thu\\225\\186\\173t B\\195\\173 C\\225\\186\\163nh 12",
+      "bosses": [
+        {
+          "id": 10521201,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 105212101
+        },
+        {
+          "id": 10521202,
+          "name": "Phẫn Nộ-Thần Hắc Ám Hodel",
+          "transferId": 105212102
+        }
+      ]
+    },
+    "105312": {
+      "mapId": 105312,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 12",
+      "bosses": [
+        {
+          "id": 10521201,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 105312103
+        },
+        {
+          "id": 10521202,
+          "name": "Phẫn Nộ-Thần Hắc Ám Hodel",
+          "transferId": 105312104
+        }
+      ]
+    },
+    "105313": {
+      "mapId": 105313,
+      "mapName": "B\\195\\173 C\\225\\186\\163nh H\\225\\187\\153i Vi\\195\\170n 13",
+      "bosses": [
+        {
+          "id": 10521201,
+          "name": "Thần Hắc Ám Hodel",
+          "transferId": 105313101
+        },
+        {
+          "id": 10521202,
+          "name": "Phẫn Nộ-Thần Hắc Ám Hodel",
+          "transferId": 105313102
+        }
+      ]
+    },
+    "106411": {
+      "mapId": 106411,
+      "mapName": "V\\195\\185ng Th\\195\\173 Luy\\225\\187\\135n 11",
+      "bosses": [
+        {
+          "id": 10641101,
+          "name": "Người Cá Shaman",
+          "transferId": 10641101
+        },
+        {
+          "id": 10641102,
+          "name": "Ngang Ngược-Người Cá Shaman",
+          "transferId": 10641102
+        },
+        {
+          "id": 10641103,
+          "name": "Tà Ác-Người Cá Shaman",
+          "transferId": 10641103
+        }
+      ]
+    },
+    "106710": {
+      "mapId": 106710,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 10",
+      "bosses": [
+        {
+          "id": 10671001,
+          "name": "Người Khai Thác Ma Tinh",
+          "transferId": 106710101
+        },
+        {
+          "id": 10671002,
+          "name": "Ngang Ngược-Người Khai Thác Ma Tinh",
+          "transferId": 106710102
+        },
+        {
+          "id": 10671003,
+          "name": "Tà Ác-Người Khai Thác Ma Tinh",
+          "transferId": 106710103
+        }
+      ]
+    },
+    "106810": {
+      "mapId": 106810,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 10",
+      "bosses": [
+        {
+          "id": 10671001,
+          "name": "Người Khai Thác Ma Tinh",
+          "transferId": 106810101
+        },
+        {
+          "id": 10671002,
+          "name": "Ngang Ngược-Người Khai Thác Ma Tinh",
+          "transferId": 106810102
+        },
+        {
+          "id": 10671003,
+          "name": "Tà Ác-Người Khai Thác Ma Tinh",
+          "transferId": 106810103
+        }
+      ]
+    },
+    "106811": {
+      "mapId": 106811,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 11",
+      "bosses": [
+        {
+          "id": 10671001,
+          "name": "Người Khai Thác Ma Tinh",
+          "transferId": 106811104
+        },
+        {
+          "id": 10671002,
+          "name": "Ngang Ngược-Người Khai Thác Ma Tinh",
+          "transferId": 106811105
+        },
+        {
+          "id": 10671003,
+          "name": "Tà Ác-Người Khai Thác Ma Tinh",
+          "transferId": 106811106
+        }
+      ]
+    },
+    "106812": {
+      "mapId": 106812,
+      "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 12",
+      "bosses": [
+        {
+          "id": 10671001,
+          "name": "Người Khai Thác Ma Tinh",
+          "transferId": 106812107
+        },
+        {
+          "id": 10671002,
+          "name": "Ngang Ngược-Người Khai Thác Ma Tinh",
+          "transferId": 106812108
+        },
+        {
+          "id": 10671003,
+          "name": "Tà Ác-Người Khai Thác Ma Tinh",
+          "transferId": 106812109
+        }
+      ]
+    }
+  }
+}

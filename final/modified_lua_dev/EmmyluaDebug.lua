@@ -1352,158 +1352,379 @@ local function CreateModUI()
         plusTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then plusTxt.font = defaultFont end
 
-                _G.Mod_MapsConfig_c3 = _G.Mod_MapsConfig_c3 or {}
-        _G.Mod_MapsConfig_c4 = _G.Mod_MapsConfig_c4 or {}
-        _G.Mod_MapsConfig_c5 = _G.Mod_MapsConfig_c5 or {}
-        _G.Mod_MapsConfig_c6 = _G.Mod_MapsConfig_c6 or {}
-        _G.Mod_MapsConfig_c9 = _G.Mod_MapsConfig_c9 or {}
-        _G.Mod_MapsConfig_c10 = _G.Mod_MapsConfig_c10 or {}
-        _G.Mod_MapsConfig_c11 = _G.Mod_MapsConfig_c11 or {}
-        _G.Mod_MapsConfig_c12 = _G.Mod_MapsConfig_c12 or {}
-
-        local function GetMapsConfigByTier(tierTag)
-            local key = "Mod_MapsConfig_" .. string.lower(tierTag or "c7")
-            return _G[key] or {}
-        end
-        _G.GetMapsConfigByTier = GetMapsConfigByTier
-
-        local function GetPlayerReincarnationLevel()
-            local detected = nil
-            pcall(function()
-                if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
-                    local attr = _G.QuickFind.LuaMainPlayerViewAttrData()
-                    if attr and attr.level and attr.level > 0 then
-                        if _G.ClientTable and _G.ClientTable.cfg_Character_levelManager then
-                            local r = _G.ClientTable.cfg_Character_levelManager:GetReincarnationLevel(attr.level)
-                            if r and r >= 3 and r <= 12 then
-                                detected = r
-                            end
-                        end
-                        if not detected then
-                            local r = math.floor(attr.level / 100)
-                            if r and r >= 3 and r <= 12 then
-                                detected = r
-                            end
-                        end
-                    end
-                end
-            end)
-            
-            if detected and detected >= 3 and detected <= 12 then
-                _G.Mod_Config_CurrentRebirth = detected
-                return detected
-            end
-
-            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth >= 3 and _G.Mod_Config_CurrentRebirth <= 12 then
-                return _G.Mod_Config_CurrentRebirth
-            end
-
-            return 7
-        end
-        _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
-
-        local function GetAvailableTiers()
-            local N = GetPlayerReincarnationLevel()
-            local tiers = {}
-            local prevTier = math.max(3, N - 1)
-            if prevTier < N then
-                table.insert(tiers, "C" .. tostring(prevTier))
-            end
-            table.insert(tiers, "C" .. tostring(N))
-            return tiers
-        end
-        _G.GetAvailableTiers = GetAvailableTiers
-
-        local function GetKundunTiers()
-            local N = GetPlayerReincarnationLevel()
-            local tiers = {}
-            local prevTier = N - 1
-            if prevTier >= 4 then
-                table.insert(tiers, "C" .. tostring(prevTier))
-            end
-            if N >= 4 then
-                table.insert(tiers, "C" .. tostring(N))
-            end
-            return tiers
-        end
-        _G.GetKundunTiers = GetKundunTiers
-
-        _G.Mod_MapsConfig_c7 = {
-            {
-                mapId = 101096,
-                title = "Hoang Dã C7",
-                bosses = {
-                    { id = 10179607, name = "Tektus", col = 1, transferId = 400216, total = 2 },
-                    { id = 10179608, name = "Phẫn Nộ", col = 2, transferId = 400222, total = 2 },
-                    { id = 10179609, name = "Cuồng Bạo", col = 3, transferId = 400228, total = 2 },
-                }
-            },
-            {
-                mapId = 105207,
-                title = "Trang Sức C7",
-                bosses = {
-                    { id = 10520701, name = "Tektus", col = 1, transferId = 105207101 },
-                    { id = 10520702, name = "Phẫn Nộ", col = 2, transferId = 105207102 },
-                }
-            },
-            {
-                mapId = 106406,
-                title = "Thí Luyện Cánh 6",
-                bosses = {
-                    { id = 10640601, name = "CS Rìu To", col = 1, transferId = 10640601 },
-                    { id = 10640602, name = "Ngang Ngược", col = 2, transferId = 10640602 },
-                    { id = 10640603, name = "Tà Ác", col = 3, transferId = 10640603 },
-                }
-            },
-            {
-                mapId = 106704,
-                title = "Luyện Ngục C7",
-                bosses = {
-                    { id = 10670401, name = "Tướng Quân LN", col = 1, transferId = 106704101 },
-                    { id = 10670402, name = "Ngang Ngược", col = 2, transferId = 106704102 },
-                    { id = 10670403, name = "Tà Ác", col = 3, transferId = 106704103 },
-                }
-            }
+                _G.Mod_MapsConfig_c3 = {
+    {
+        mapId = 101094,
+        title = "Hoang Dã C3",
+        bosses = {
+            { id = 10179407, name = "Hung Thần Kiêu Ngạo", col = 1, transferId = 400212, total = 2 },
+            { id = 10179408, name = "Phẫn Nộ - Hung Thần Kiêu Ngạo", col = 2, transferId = 400218, total = 2 },
+            { id = 10179409, name = "Cuồng Bạo - Hung Thần Kiêu Ngạo", col = 3, transferId = 400224, total = 2 },
         }
-        
-        _G.Mod_MapsConfig_c8 = {
-            {
-                mapId = 1074,
-                title = "Hoang Dã C8",
-                bosses = {
-                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, transferId = 400229, total = 2 },
-                    { id = 107408, name = "Phẫn Nộ", col = 2, transferId = 400230, total = 2 },
-                    { id = 107409, name = "Cuồng Bạo", col = 3, transferId = 400231, total = 2 },
-                }
-            },
-            {
-                mapId = 105208,
-                title = "Trang Sức C8",
-                bosses = {
-                    { id = 10520801, name = "K.Sĩ Tử Vong", col = 1, transferId = 105208101 },
-                    { id = 10520802, name = "Phẫn Nộ", col = 2, transferId = 105208102 },
-                }
-            },
-            {
-                mapId = 106407,
-                title = "Thí Luyện Cánh 7",
-                bosses = {
-                    { id = 10640701, name = "T.Vệ Giáo Dài", col = 1, transferId = 10640701 },
-                    { id = 10640702, name = "Ngang Ngược", col = 2, transferId = 10640702 },
-                    { id = 10640703, name = "Tà Ác", col = 3, transferId = 10640703 },
-                }
-            },
-            {
-                mapId = 106706,
-                title = "Luyện Ngục C8",
-                bosses = {
-                    { id = 10670601, name = "Ma Đạo Phủ", col = 1, transferId = 106706101 },
-                    { id = 10670602, name = "Ngang Ngược", col = 2, transferId = 106706102 },
-                    { id = 10670603, name = "Tà Ác", col = 3, transferId = 106706103 },
-                }
-            }
+    },
+    {
+        mapId = 105203,
+        title = "Trang Sức C3",
+        bosses = {
+            { id = 10520301, name = "Người Khổng Lồ Sét", col = 1, transferId = 105203101 },
+            { id = 10520302, name = "Phẫn Nộ - Người Khổng Lồ Sét", col = 2, transferId = 105203102 },
         }
-        
+    },
+    {
+        mapId = 106402,
+        title = "Thí Luyện Cánh 2",
+        bosses = {
+            { id = 10640201, name = "Người Cây Totem", col = 1, transferId = 10640201 },
+            { id = 10640202, name = "Ngang Ngược - Người Cây Totem", col = 2, transferId = 10640202 },
+            { id = 10640203, name = "Tà Ác - Người Cây Totem", col = 3, transferId = 10640203 },
+        }
+    },
+    {
+        mapId = 106705,
+        title = "Luyện Ngục C3",
+        bosses = {
+            { id = 10670503, name = "Tà Ác-Nurmus", col = 1, transferId = 106705105 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c4 = {
+    {
+        mapId = 101093,
+        title = "Hoang Dã C4",
+        bosses = {
+            { id = 10179307, name = "Kỵ Sĩ Địa Ngục", col = 1, transferId = 400213, total = 2 },
+            { id = 10179308, name = "Phẫn Nộ - Kỵ Sĩ Địa Ngục", col = 2, transferId = 400219, total = 2 },
+            { id = 10179309, name = "Cuồng Bạo - Kỵ Sĩ Địa Ngục", col = 3, transferId = 400225, total = 2 },
+        }
+    },
+    {
+        mapId = 105204,
+        title = "Trang Sức C4",
+        bosses = {
+            { id = 10520401, name = "Người Khổng Lồ U Linh", col = 1, transferId = 105204101 },
+            { id = 10520402, name = "Người Khổng Lồ U Linh Phẫn Nộ", col = 2, transferId = 105204102 },
+        }
+    },
+    {
+        mapId = 106403,
+        title = "Thí Luyện Cánh 3",
+        bosses = {
+            { id = 10640301, name = "Ong Chúa Khát Máu", col = 1, transferId = 10640301 },
+            { id = 10640302, name = "Ngang Ngược-Ong Chúa Khát Máu", col = 2, transferId = 10640302 },
+            { id = 10640303, name = "Tà Ác-Ong Chúa Khát Máu", col = 3, transferId = 10640303 },
+        }
+    },
+    {
+        mapId = 106701,
+        title = "Luyện Ngục C4",
+        bosses = {
+            { id = 10670103, name = "Tà Ác-Ma Tinh Phoenix", col = 1, transferId = 106701105 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c5 = {
+    {
+        mapId = 101095,
+        title = "Hoang Dã C5",
+        bosses = {
+            { id = 10179507, name = "Giác Ma Địa Ngục", col = 1, transferId = 400214, total = 2 },
+            { id = 10179508, name = "Phẫn Nộ - Giác Ma Địa Ngục", col = 2, transferId = 400220, total = 2 },
+            { id = 10179509, name = "Cuồng Bạo - Giác Ma Địa Ngục", col = 3, transferId = 400226, total = 2 },
+        }
+    },
+    {
+        mapId = 105205,
+        title = "Trang Sức C5",
+        bosses = {
+            { id = 10520501, name = "Hươu Thủy Tinh", col = 1, transferId = 105205101 },
+            { id = 10520502, name = "Hươu Thủy Tinh Phẫn Nộ", col = 2, transferId = 105205102 },
+        }
+    },
+    {
+        mapId = 106404,
+        title = "Thí Luyện Cánh 4",
+        bosses = {
+            { id = 10640401, name = "Quỷ Dung Nham", col = 1, transferId = 10640401 },
+            { id = 10640402, name = "Ngang Ngược-Ma Dung Nham", col = 2, transferId = 10640402 },
+            { id = 10640403, name = "Tà Ác-Ma Dung Nham", col = 3, transferId = 10640403 },
+        }
+    },
+    {
+        mapId = 106702,
+        title = "Luyện Ngục C5",
+        bosses = {
+            { id = 10670203, name = "Tà Ác-Nars", col = 1, transferId = 106702105 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c6 = {
+    {
+        mapId = 101092,
+        title = "Hoang Dã C6",
+        bosses = {
+            { id = 10179207, name = "Vệ Sĩ Khiên Kiếm Huyết Sắc", col = 1, transferId = 400215, total = 2 },
+            { id = 10179208, name = "Phẫn Nộ - Vệ Sĩ Khiên Kiếm Huyết Sắc", col = 2, transferId = 400221, total = 2 },
+            { id = 10179209, name = "Cuồng Bạo - Vệ Sĩ Khiên Kiếm Huyết Sắc", col = 3, transferId = 400227, total = 2 },
+        }
+    },
+    {
+        mapId = 105206,
+        title = "Trang Sức C6",
+        bosses = {
+            { id = 10520601, name = "Hung Thần Kiêu Ngạo", col = 1, transferId = 105206101 },
+            { id = 10520602, name = "Phẫn Nộ - Hung Thần Kiêu Ngạo", col = 2, transferId = 105206102 },
+        }
+    },
+    {
+        mapId = 106405,
+        title = "Thí Luyện Cánh 5",
+        bosses = {
+            { id = 10640501, name = "Quỷ Vương Luyện Ngục", col = 1, transferId = 10640501 },
+            { id = 10640502, name = "Ngang Ngược-Ma Vương Luyện Ngục", col = 2, transferId = 10640502 },
+            { id = 10640503, name = "Tà Ác-Ma Vương Luyện Ngục", col = 3, transferId = 10640503 },
+        }
+    },
+    {
+        mapId = 106703,
+        title = "Luyện Ngục C6",
+        bosses = {
+            { id = 10670302, name = "Ngang Ngược-Quân Chủ Luyện Ngục", col = 1, transferId = 106703103 },
+            { id = 10670303, name = "Tà Ác-Quân Chủ Luyện Ngục", col = 2, transferId = 106703104 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c7 = {
+    {
+        mapId = 101096,
+        title = "Hoang Dã C7",
+        bosses = {
+            { id = 10179607, name = "Tektus", col = 1, transferId = 400216, total = 2 },
+            { id = 10179608, name = "Phẫn Nộ - Tektus", col = 2, transferId = 400222, total = 2 },
+            { id = 10179609, name = "Cuồng Bạo - Tektus", col = 3, transferId = 400228, total = 2 },
+        }
+    },
+    {
+        mapId = 105207,
+        title = "Trang Sức C7",
+        bosses = {
+            { id = 10520701, name = "Tektus", col = 1, transferId = 105207101 },
+            { id = 10520702, name = "Phẫn Nộ-Tektus", col = 2, transferId = 105207102 },
+        }
+    },
+    {
+        mapId = 106406,
+        title = "Thí Luyện Cánh 6",
+        bosses = {
+            { id = 10640601, name = "Chiến Sĩ Rìu To", col = 1, transferId = 10640601 },
+            { id = 10640602, name = "Ngang Ngược-Chiến Sĩ Rìu Lớn", col = 2, transferId = 10640602 },
+            { id = 10640603, name = "Tà Ác-Chiến Sĩ Rìu Lớn", col = 3, transferId = 10640603 },
+        }
+    },
+    {
+        mapId = 106704,
+        title = "Luyện Ngục C7",
+        bosses = {
+            { id = 10670401, name = "Tướng Quân Luyện Ngục", col = 1, transferId = 106704101 },
+            { id = 10670402, name = "Ngang Ngược-Tướng Quân Luyện Ngục", col = 2, transferId = 106704102 },
+            { id = 10670403, name = "Tà Ác-Tướng Quân Luyện Ngục", col = 3, transferId = 106704103 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c8 = {
+    {
+        mapId = 1074,
+        title = "Hoang Dã C8",
+        bosses = {
+            { id = 107407, name = "Kỵ Sĩ Tử Vong", col = 1, transferId = 400229, total = 2 },
+            { id = 107408, name = "Phẫn Nộ - Kỵ Sĩ Tử Vong", col = 2, transferId = 400230, total = 2 },
+            { id = 107409, name = "Cuồng Bạo - Kỵ Sĩ Tử Vong", col = 3, transferId = 400231, total = 2 },
+        }
+    },
+    {
+        mapId = 105208,
+        title = "Trang Sức C8",
+        bosses = {
+            { id = 10520801, name = "Kỵ Sĩ Tử Vong", col = 1, transferId = 105208101 },
+            { id = 10520802, name = "Phẫn Nộ-Kỵ Sĩ Tử Vong", col = 2, transferId = 105208102 },
+        }
+    },
+    {
+        mapId = 106407,
+        title = "Thí Luyện Cánh 7",
+        bosses = {
+            { id = 10640701, name = "Thủ Vệ Giáo Dài", col = 1, transferId = 10640701 },
+            { id = 10640702, name = "Ngang Ngược-Thủ Vệ Giáo Dài", col = 2, transferId = 10640702 },
+            { id = 10640703, name = "Tà Ác-Thủ Vệ Giáo Dài", col = 3, transferId = 10640703 },
+        }
+    },
+    {
+        mapId = 106706,
+        title = "Luyện Ngục C8",
+        bosses = {
+            { id = 10670601, name = "Ma Đao Phủ", col = 1, transferId = 106706101 },
+            { id = 10670602, name = "Ngang Ngược-Ma Đao Phủ", col = 2, transferId = 106706102 },
+            { id = 10670603, name = "Tà Ác-Ma Đao Phủ", col = 3, transferId = 106706103 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c9 = {
+    {
+        mapId = 1075,
+        title = "Hoang Dã C9",
+        bosses = {
+            { id = 107507, name = "Sứ Giả Ác Ma", col = 1, transferId = 400232, total = 2 },
+            { id = 107508, name = "Phẫn Nộ - Sứ Giả Ác Ma", col = 2, transferId = 400233, total = 2 },
+            { id = 107509, name = "Cuồng Bạo - Sứ Giả Ác Ma", col = 3, transferId = 400234, total = 2 },
+        }
+    },
+    {
+        mapId = 105209,
+        title = "Trang Sức C9",
+        bosses = {
+            { id = 10520901, name = "Sứ Giả Ác Ma", col = 1, transferId = 105209101 },
+            { id = 10520902, name = "Phẫn Nộ-Sứ Giả Ác Ma", col = 2, transferId = 105209102 },
+        }
+    },
+    {
+        mapId = 106408,
+        title = "Thí Luyện Cánh 8",
+        bosses = {
+            { id = 10640801, name = "Thủ Vệ Loan Đao", col = 1, transferId = 10640801 },
+            { id = 10640802, name = "Ngang Ngược-Thủ Vệ Đao Cong", col = 2, transferId = 10640802 },
+            { id = 10640803, name = "Tà Ác-Thủ Vệ Đao Cong", col = 3, transferId = 10640803 },
+        }
+    },
+    {
+        mapId = 106707,
+        title = "Luyện Ngục C9",
+        bosses = {
+            { id = 10670701, name = "Quỷ Biển", col = 1, transferId = 106707101 },
+            { id = 10670702, name = "Ngang Ngược-Quỷ Biển", col = 2, transferId = 106707102 },
+            { id = 10670703, name = "Tà Ác-Quỷ Biển", col = 3, transferId = 106707103 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c10 = {
+    {
+        mapId = 1076,
+        title = "Hoang Dã C10",
+        bosses = {
+            { id = 107607, name = "Chiến Sĩ Cuồng Nộ", col = 1, transferId = 400235, total = 2 },
+            { id = 107608, name = "Phẫn Nộ - Chiến Sĩ Cuồng Nộ", col = 2, transferId = 400236, total = 2 },
+            { id = 107609, name = "Cuồng Bạo - Chiến Sĩ Cuồng Nộ", col = 3, transferId = 400237, total = 2 },
+        }
+    },
+    {
+        mapId = 105210,
+        title = "Trang Sức C10",
+        bosses = {
+            { id = 10521001, name = "Chiến Sĩ Cuồng Nộ", col = 1, transferId = 105210101 },
+            { id = 10521002, name = "Phẫn Nộ-Chiến Sĩ Thịnh Nộ", col = 2, transferId = 105210102 },
+        }
+    },
+    {
+        mapId = 106409,
+        title = "Thí Luyện Cánh 9",
+        bosses = {
+            { id = 10640901, name = "Thủ Vệ Lam Tinh", col = 1, transferId = 10640901 },
+            { id = 10640902, name = "Ngang Ngược-Thủ Vệ Lam Tinh", col = 2, transferId = 10640902 },
+            { id = 10640903, name = "Tà Ác-Thủ Vệ Lam Tinh", col = 3, transferId = 10640903 },
+        }
+    },
+    {
+        mapId = 106708,
+        title = "Luyện Ngục C10",
+        bosses = {
+            { id = 10670801, name = "Mị Ma", col = 1, transferId = 106708101 },
+            { id = 10670802, name = "Ngang Ngược-Succubus", col = 2, transferId = 106708102 },
+            { id = 10670803, name = "Tà Ác-Succubus", col = 3, transferId = 106708103 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c11 = {
+    {
+        mapId = 10123,
+        title = "Hoang Dã C11",
+        bosses = {
+            { id = 1012307, name = "Thủy Ma Dị Hóa Navos", col = 1, transferId = 400238, total = 2 },
+            { id = 1012308, name = "Phẫn Nộ - Thủy Ma Dị Hóa Navos", col = 2, transferId = 400239, total = 2 },
+            { id = 1012309, name = "Cuồng Bạo - Thủy Ma Dị Hóa Navos", col = 3, transferId = 400240, total = 2 },
+        }
+    },
+    {
+        mapId = 105211,
+        title = "Trang Sức C11",
+        bosses = {
+            { id = 10521101, name = "Ma Thủy Dị Hóa Navos", col = 1, transferId = 105211101 },
+            { id = 10521102, name = "Phẫn Nộ-Ma Thủy Dị Hóa Navos", col = 2, transferId = 105211102 },
+        }
+    },
+    {
+        mapId = 106410,
+        title = "Thí Luyện Cánh 10",
+        bosses = {
+            { id = 10641001, name = "Vua Biển Băng Tinh", col = 1, transferId = 10641001 },
+            { id = 10641002, name = "Ngang Ngược-Vua Biển Băng Tinh", col = 2, transferId = 10641002 },
+            { id = 10641003, name = "Tà Ác-Vua Biển Băng Tinh", col = 3, transferId = 10641003 },
+        }
+    },
+    {
+        mapId = 106709,
+        title = "Luyện Ngục C11",
+        bosses = {
+            { id = 10670901, name = "Thợ Mỏ Ma Tinh", col = 1, transferId = 106709101 },
+            { id = 10670902, name = "Ngang Ngược-Thợ Mỏ Ma Tinh", col = 2, transferId = 106709102 },
+            { id = 10670903, name = "Tà Ác-Thợ Mỏ Ma Tinh", col = 3, transferId = 106709103 },
+        }
+    },
+}
+
+_G.Mod_MapsConfig_c12 = {
+    {
+        mapId = 1012301,
+        title = "Hoang Dã C12",
+        bosses = {
+            { id = 101230107, name = "Thần Hắc Ám Hodel", col = 1, transferId = 400241, total = 2 },
+            { id = 101230108, name = "Phẫn Nộ - Thần Hắc Ám Hodel", col = 2, transferId = 400242, total = 2 },
+            { id = 101230109, name = "Cuồng Bạo - Thần Hắc Ám Hodel", col = 3, transferId = 400243, total = 2 },
+        }
+    },
+    {
+        mapId = 105212,
+        title = "Trang Sức C12",
+        bosses = {
+            { id = 10521201, name = "Thần Hắc Ám Hodel", col = 1, transferId = 105212101 },
+            { id = 10521202, name = "Phẫn Nộ-Thần Hắc Ám Hodel", col = 2, transferId = 105212102 },
+        }
+    },
+    {
+        mapId = 106411,
+        title = "Thí Luyện Cánh 11",
+        bosses = {
+            { id = 10641101, name = "Người Cá Shaman", col = 1, transferId = 10641101 },
+            { id = 10641102, name = "Ngang Ngược-Người Cá Shaman", col = 2, transferId = 10641102 },
+            { id = 10641103, name = "Tà Ác-Người Cá Shaman", col = 3, transferId = 10641103 },
+        }
+    },
+    {
+        mapId = 106710,
+        title = "Luyện Ngục C12",
+        bosses = {
+            { id = 10671001, name = "Người Khai Thác Ma Tinh", col = 1, transferId = 106710101 },
+            { id = 10671002, name = "Ngang Ngược-Người Khai Thác Ma Tinh", col = 2, transferId = 106710102 },
+            { id = 10671003, name = "Tà Ác-Người Khai Thác Ma Tinh", col = 3, transferId = 106710103 },
+        }
+    },
+}
+
         _G.ModBossTab = _G.ModBossTab or "C7"
 
         local mapBosses = {}
@@ -1626,6 +1847,13 @@ local function CreateModUI()
                 local sepIdx = 1
                 
                 local tierTags = GetAvailableTiers and GetAvailableTiers() or {"C7", "C8"}
+                local isTabValid = false
+                for _, tag in ipairs(tierTags) do
+                    if _G.ModBossTab == tag then isTabValid = true; break end
+                end
+                if not isTabValid and #tierTags > 0 then
+                    _G.ModBossTab = tierTags[#tierTags]
+                end
                 for tIdx, tag in ipairs(tierTags) do
                     local tBtn = GetLineButton(btnIdx, 40 + (tIdx - 1) * 110, currentPosY, 100)
                     tBtn.go:SetActive(_G.ModMainTab == "CO_BAN")

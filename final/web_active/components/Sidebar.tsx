@@ -27,12 +27,12 @@ export default function Sidebar({ userRole }: SidebarProps) {
   return (
     <aside className="w-64 glass-panel flex flex-col shrink-0 border-r border-slate-800 hidden md:flex min-h-screen">
       <div className="p-6 border-b border-slate-800/60 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl gradient-button flex items-center justify-center font-black text-xl text-white shadow-lg shadow-cyan-500/20">
-          MU
+        <div className="w-11 h-11 rounded-xl bg-slate-900 border border-amber-500/30 p-1 flex items-center justify-center shadow-lg shadow-amber-500/10 overflow-hidden shrink-0">
+          <img src="/logo.png" alt="VUT MOD TEAMS Logo" className="w-full h-full object-contain" />
         </div>
         <div>
-          <h1 className="font-extrabold text-lg text-white tracking-wide">MUVH ADMIN</h1>
-          <p className="text-xs text-cyan-400 font-medium">Bản Quyền Mod Client</p>
+          <h1 className="font-extrabold text-base text-white tracking-wide leading-snug">VUT MOD TEAMS</h1>
+          <p className="text-[11px] text-cyan-400 font-medium">Bản Quyền Mod Client</p>
         </div>
       </div>
 
