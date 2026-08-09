@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { KeyRound, User, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { KeyRound, User, Lock, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -73,7 +73,6 @@ export default function LoginPage() {
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin hoặc sale1"
                   className="w-full pl-11 pr-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition"
                   required
                 />
@@ -88,7 +87,6 @@ export default function LoginPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
                   className="w-full pl-11 pr-4 py-3 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 text-sm transition"
                   required
                 />
@@ -110,11 +108,6 @@ export default function LoginPage() {
               )}
             </button>
           </form>
-
-          <div className="mt-8 pt-6 border-t border-slate-800/80 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            Tài khoản mặc định: Admin (<code className="text-cyan-400 font-mono">admin/admin123</code>) | Sale (<code className="text-cyan-400 font-mono">sale1/sale123</code>)
-          </div>
         </div>
       </div>
     </div>

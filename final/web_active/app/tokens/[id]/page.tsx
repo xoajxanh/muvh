@@ -11,11 +11,10 @@ import {
   ExternalLink,
   ArrowLeft,
   History,
-  CheckCircle2,
-  Clock,
   Save,
   Send,
   User,
+  PackageCheck,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,12 +25,15 @@ export default function TokenDetailPage() {
 
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<any>(null);
+  const [packages, setPackages] = useState<any[]>([]);
   const [systemTelegrams, setSystemTelegrams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [isCustom, setIsCustom] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
   const [fovMin, setFovMin] = useState(20);
   const [fovMax, setFovMax] = useState(90);
@@ -41,6 +43,8 @@ export default function TokenDetailPage() {
   const [maxAttackSpeed, setMaxAttackSpeed] = useState(2.5);
   const [maxMonsterRange, setMaxMonsterRange] = useState(50);
   const [maxPickupCount, setMaxPickupCount] = useState(100);
+  const [pickupDelayMin, setPickupDelayMin] = useState(100);
+  const [pickupDelayMax, setPickupDelayMax] = useState(500);
   const [activeTabBasic, setActiveTabBasic] = useState(true);
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
@@ -63,11 +67,24 @@ export default function TokenDetailPage() {
         if (resData?.user) {
           setUser(resData.user);
           loadTokenDetail();
+          loadPackages();
           loadSystemTelegrams();
         }
       })
       .catch(() => router.push('/login'));
   }, [router, tokenId]);
+
+  const loadPackages = async () => {
+    try {
+      const res = await fetch('/api/packages');
+      if (res.ok) {
+        const json = await res.json();
+        setPackages(json.packages || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadSystemTelegrams = async () => {
     try {
@@ -90,6 +107,8 @@ export default function TokenDetailPage() {
         const tok = json.token;
         setToken(tok);
         if (tok) {
+          setSelectedPackageId(tok.packageId || null);
+          setIsCustom(tok.isCustom);
           setDurationDays(tok.durationDays);
           setFovMin(tok.fovMin);
           setFovMax(tok.fovMax);
@@ -99,6 +118,8 @@ export default function TokenDetailPage() {
           setMaxAttackSpeed(tok.maxAttackSpeed);
           setMaxMonsterRange(tok.maxMonsterRange);
           setMaxPickupCount(tok.maxPickupCount);
+          setPickupDelayMin(tok.pickupDelayMin ?? 100);
+          setPickupDelayMax(tok.pickupDelayMax ?? 500);
           setActiveTabBasic(tok.activeTabBasic);
           setActiveTabAdvanced(tok.activeTabAdvanced);
           setActiveTabAutofarm(tok.activeTabAutofarm);
@@ -125,6 +146,27 @@ export default function TokenDetailPage() {
     }
   };
 
+  const applyPackagePreset = (pkg: any) => {
+    setSelectedPackageId(pkg.id);
+    setDurationDays(pkg.durationDays);
+    setPrice(pkg.price);
+    setFovMin(pkg.fovMin ?? 20);
+    setFovMax(pkg.fovMax ?? 90);
+    setBossRefreshMin(pkg.bossRefreshMin ?? 1);
+    setBossRefreshMax(pkg.bossRefreshMax ?? 60);
+    setMaxMoveSpeed(pkg.maxMoveSpeed ?? 2.5);
+    setMaxAttackSpeed(pkg.maxAttackSpeed ?? 2.5);
+    setMaxMonsterRange(pkg.maxMonsterRange ?? 50);
+    setMaxPickupCount(pkg.maxPickupCount ?? 100);
+    setPickupDelayMin(pkg.pickupDelayMin ?? 100);
+    setPickupDelayMax(pkg.pickupDelayMax ?? 500);
+    setActiveTabBasic(pkg.activeTabBasic ?? true);
+    setActiveTabAdvanced(pkg.activeTabAdvanced ?? true);
+    setActiveTabAutofarm(pkg.activeTabAutofarm ?? true);
+    setIsCustom(false);
+    setToast({ message: `Đã chọn gói [${pkg.name}] thành công!`, type: 'success' });
+  };
+
   const handleTelegramToggle = (uname: string) => {
     if (selectedTelegrams.includes(uname)) {
       setSelectedTelegrams(selectedTelegrams.filter((u) => u !== uname));
@@ -148,6 +190,7 @@ export default function TokenDetailPage() {
 
     try {
       const payload = {
+        packageId: isCustom ? null : selectedPackageId,
         durationDays: Number(durationDays),
         fovMin: Number(fovMin),
         fovMax: Number(fovMax),
@@ -157,12 +200,15 @@ export default function TokenDetailPage() {
         maxAttackSpeed: Number(maxAttackSpeed),
         maxMonsterRange: Number(maxMonsterRange),
         maxPickupCount: Number(maxPickupCount),
+        pickupDelayMin: Number(pickupDelayMin),
+        pickupDelayMax: Number(pickupDelayMax),
         activeTabBasic,
         activeTabAdvanced,
         activeTabAutofarm,
         characterReincarnation: Number(characterReincarnation),
         adminTelegrams: selectedTelegrams,
         price: Number(price),
+        isCustom,
         noteDetail: noteDetail.trim() || 'Cập nhật thông số token',
       };
 
@@ -199,6 +245,7 @@ export default function TokenDetailPage() {
   const now = new Date();
   const isExpired = new Date(token.expireAt) < now;
   const apiUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/config?sn=${token.deviceSnMd5}&uid=${token.characterUid}`;
+  const packageName = token.vipPackage?.name || (token.isCustom ? 'Tùy Chỉnh (Custom)' : 'Gói Mặc Định');
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19]">
@@ -231,6 +278,9 @@ export default function TokenDetailPage() {
                       HOẠT ĐỘNG
                     </span>
                   )}
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                    {packageName}
+                  </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
                   UID Nhân vật: <span className="font-mono text-cyan-300 font-bold">{token.characterUid}</span> | Tạo bởi: {token.createdBy?.displayName}
@@ -284,10 +334,47 @@ export default function TokenDetailPage() {
             {/* Config Parameter Card */}
             <div className="lg:col-span-2 space-y-6">
               {isEditing ? (
-                <form onSubmit={handleUpdateSubmit} className="glass-card p-6 rounded-2xl space-y-4">
-                  <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-amber-400">
-                    Cập Nhật Thông Số Cấu Hình
-                  </h3>
+                <form onSubmit={handleUpdateSubmit} className="glass-card p-6 rounded-2xl space-y-5">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-amber-400">
+                      Cập Nhật Thông Số Cấu Hình Token
+                    </h3>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isCustom}
+                        onChange={(e) => setIsCustom(e.target.checked)}
+                        className="rounded bg-slate-900 border-slate-800 text-cyan-500 focus:ring-cyan-500"
+                      />
+                      <span className="text-xs font-semibold text-cyan-400">Tùy Chỉnh (Custom)</span>
+                    </label>
+                  </div>
+
+                  {/* Change VIP Package Template Selector */}
+                  <div className="space-y-2 p-4 bg-slate-900/80 border border-slate-800 rounded-xl">
+                    <label className="block text-xs font-bold text-indigo-300 flex items-center gap-2">
+                      <PackageCheck className="w-4 h-4" /> Chọn Lại Gói Cước VIP (Tự Động Pre-select Cấu Hình)
+                    </label>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {packages.map((pkg) => {
+                        const isSelected = !isCustom && selectedPackageId === pkg.id;
+                        return (
+                          <button
+                            key={pkg.id}
+                            type="button"
+                            onClick={() => applyPackagePreset(pkg)}
+                            className={`px-3 py-2 rounded-xl text-xs font-semibold border transition ${
+                              isSelected
+                                ? 'bg-indigo-600/30 text-white border-cyan-400 ring-1 ring-cyan-400'
+                                : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            {pkg.name} ({pkg.durationDays}d - {pkg.price.toLocaleString('vi-VN')}đ)
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div>
@@ -295,7 +382,10 @@ export default function TokenDetailPage() {
                       <input
                         type="number"
                         value={durationDays}
-                        onChange={(e) => setDurationDays(Number(e.target.value))}
+                        onChange={(e) => {
+                          setDurationDays(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
                         className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         required
                       />
@@ -306,7 +396,10 @@ export default function TokenDetailPage() {
                       <input
                         type="number"
                         value={price}
-                        onChange={(e) => setPrice(Number(e.target.value))}
+                        onChange={(e) => {
+                          setPrice(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
                         className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 font-semibold"
                         required
                       />
@@ -318,13 +411,19 @@ export default function TokenDetailPage() {
                         <input
                           type="number"
                           value={fovMin}
-                          onChange={(e) => setFovMin(Number(e.target.value))}
+                          onChange={(e) => {
+                            setFovMin(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                         <input
                           type="number"
                           value={fovMax}
-                          onChange={(e) => setFovMax(Number(e.target.value))}
+                          onChange={(e) => {
+                            setFovMax(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                       </div>
@@ -337,15 +436,69 @@ export default function TokenDetailPage() {
                           type="number"
                           step="0.1"
                           value={maxMoveSpeed}
-                          onChange={(e) => setMaxMoveSpeed(Number(e.target.value))}
+                          onChange={(e) => {
+                            setMaxMoveSpeed(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                         <input
                           type="number"
                           step="0.1"
                           value={maxAttackSpeed}
-                          onChange={(e) => setMaxAttackSpeed(Number(e.target.value))}
+                          onChange={(e) => {
+                            setMaxAttackSpeed(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Phạm Vi / Số Nhặt Max</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={maxMonsterRange}
+                          onChange={(e) => {
+                            setMaxMonsterRange(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                        />
+                        <input
+                          type="number"
+                          value={maxPickupCount}
+                          onChange={(e) => {
+                            setMaxPickupCount(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Delay Nhặt Min / Max (ms)</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={pickupDelayMin}
+                          onChange={(e) => {
+                            setPickupDelayMin(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
+                        />
+                        <input
+                          type="number"
+                          value={pickupDelayMax}
+                          onChange={(e) => {
+                            setPickupDelayMax(Number(e.target.value));
+                            setIsCustom(true);
+                          }}
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
                         />
                       </div>
                     </div>
@@ -355,7 +508,7 @@ export default function TokenDetailPage() {
                       <select
                         value={characterReincarnation}
                         onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
-                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 font-semibold"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
                           <option key={lvl} value={lvl}>
@@ -419,6 +572,13 @@ export default function TokenDetailPage() {
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Gói VIP Đang Dùng</span>
+                      <span className="font-bold text-indigo-300">
+                        {packageName}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Hạn Sử Dụng</span>
                       <span className="font-bold text-slate-200">
                         {new Date(token.expireAt).toLocaleDateString('vi-VN')} ({token.durationDays}d)
@@ -450,6 +610,13 @@ export default function TokenDetailPage() {
                       <span className="text-slate-400 block text-[10px]">FOV Min / Max</span>
                       <span className="font-bold text-slate-200">
                         {token.fovMin} - {token.fovMax}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Delay Nhặt Min / Max</span>
+                      <span className="font-bold text-amber-300">
+                        {token.pickupDelayMin ?? 100}ms - {token.pickupDelayMax ?? 500}ms
                       </span>
                     </div>
 

@@ -1,27 +1,44 @@
-print("=== TESTING MOD ACTIVE & BUTTON CLICK ===")
-print("1. _G.Mod_IsActive = " .. tostring(_G.Mod_IsActive))
-print("2. _G.Mod_ActiveStatusMsg = " .. tostring(_G.Mod_ActiveStatusMsg))
-print("3. _G.authPanelGo = " .. tostring(_G.authPanelGo ~= nil))
-if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
-    print("   authPanelGo.activeSelf = " .. tostring(_G.authPanelGo.activeSelf))
-end
-print("4. _G.panelGo = " .. tostring(_G.panelGo ~= nil))
-if _G.panelGo and not _G.panelGo:Equals(nil) then
-    print("   panelGo.activeSelf = " .. tostring(_G.panelGo.activeSelf))
+local package_name = "com.vnyh.gp" 
+local outputPath = "/storage/emulated/0/Android/data/" .. package_name .. "/files/output.txt"
+
+local logs = {}
+local function log(msg)
+    table.insert(logs, tostring(msg))
+    print(tostring(msg))
 end
 
-if _G.ModCallbacks and _G.ModCallbacks.OnToggleMenu then
-    print("5. Triggering OnToggleMenu()...")
-    _G.ModCallbacks.OnToggleMenu()
-    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
-        print("   After OnToggleMenu -> authPanelGo.activeSelf = " .. tostring(_G.authPanelGo.activeSelf))
-    end
-else
-    print("5. ERROR: ModCallbacks.OnToggleMenu is NIL!")
+log("=== DIAGNOSE CHARACTER UID & LOGIN DATA ===")
+if _G.LoginData then
+    log("LoginData.sdk_pid: " .. tostring(_G.LoginData.sdk_pid))
+    log("LoginData.roleId: " .. tostring(_G.LoginData.roleId))
+    log("LoginData.roleID: " .. tostring(_G.LoginData.roleID))
+    log("LoginData.account: " .. tostring(_G.LoginData.account))
+    log("LoginData.uid: " .. tostring(_G.LoginData.uid))
+    log("LoginData.pid: " .. tostring(_G.LoginData.pid))
+    log("LoginData.guid: " .. tostring(_G.LoginData.guid))
 end
 
-if _G.FloatingWordUtility then
-    _G.FloatingWordUtility.QuickMsg("EXECUTE FINISHED!")
+if _G.ViewData and _G.ViewData.meData then
+    log("ViewData.meData.id: " .. tostring(_G.ViewData.meData.id))
+    log("ViewData.meData.roleId: " .. tostring(_G.ViewData.meData.roleId))
+    log("ViewData.meData.roleID: " .. tostring(_G.ViewData.meData.roleID))
+    log("ViewData.meData.uid: " .. tostring(_G.ViewData.meData.uid))
+    log("ViewData.meData.guid: " .. tostring(_G.ViewData.meData.guid))
+    log("ViewData.meData.name: " .. tostring(_G.ViewData.meData.name))
 end
 
-return "TEST DONE"
+if _G.RoleManager and _G.RoleManager.me then
+    log("RoleManager.me.id: " .. tostring(_G.RoleManager.me.id))
+    log("RoleManager.me.roleId: " .. tostring(_G.RoleManager.me.roleId))
+    log("RoleManager.me.roleID: " .. tostring(_G.RoleManager.me.roleID))
+    log("RoleManager.me.guid: " .. tostring(_G.RoleManager.me.guid))
+end
+
+local fullOutput = table.concat(logs, "\n")
+local f = io.open(outputPath, "w")
+if f then
+    f:write(fullOutput)
+    f:close()
+end
+if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("ĐÃ XUẤT THÔNG TIN VÀO OUTPUT.TXT!") end
+return fullOutput

@@ -28,6 +28,8 @@ export default function PackagesPage() {
   const [maxAttackSpeed, setMaxAttackSpeed] = useState(2.5);
   const [maxMonsterRange, setMaxMonsterRange] = useState(50);
   const [maxPickupCount, setMaxPickupCount] = useState(100);
+  const [pickupDelayMin, setPickupDelayMin] = useState(100);
+  const [pickupDelayMax, setPickupDelayMax] = useState(500);
   const [activeTabBasic, setActiveTabBasic] = useState(true);
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
@@ -80,6 +82,8 @@ export default function PackagesPage() {
       setMaxAttackSpeed(pkg.maxAttackSpeed ?? 2.5);
       setMaxMonsterRange(pkg.maxMonsterRange ?? 50);
       setMaxPickupCount(pkg.maxPickupCount ?? 100);
+      setPickupDelayMin(pkg.pickupDelayMin ?? 100);
+      setPickupDelayMax(pkg.pickupDelayMax ?? 500);
       setActiveTabBasic(pkg.activeTabBasic ?? true);
       setActiveTabAdvanced(pkg.activeTabAdvanced ?? true);
       setActiveTabAutofarm(pkg.activeTabAutofarm ?? true);
@@ -96,6 +100,8 @@ export default function PackagesPage() {
       setMaxAttackSpeed(2.5);
       setMaxMonsterRange(50);
       setMaxPickupCount(100);
+      setPickupDelayMin(100);
+      setPickupDelayMax(500);
       setActiveTabBasic(true);
       setActiveTabAdvanced(true);
       setActiveTabAutofarm(true);
@@ -120,6 +126,8 @@ export default function PackagesPage() {
         maxAttackSpeed: Number(maxAttackSpeed),
         maxMonsterRange: Number(maxMonsterRange),
         maxPickupCount: Number(maxPickupCount),
+        pickupDelayMin: Number(pickupDelayMin),
+        pickupDelayMax: Number(pickupDelayMax),
         activeTabBasic,
         activeTabAdvanced,
         activeTabAutofarm,
@@ -191,7 +199,7 @@ export default function PackagesPage() {
                 <Package className="w-5 h-5 text-cyan-400" />
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Thiết lập đầy đủ thông số mod (FOV, tốc độ, phạm vi quái, tabs) để nhân viên chọn tạo token nhanh
+                Thiết lập đầy đủ thông số mod (FOV, tốc độ, nhặt đồ, delay nhặt, tabs) để nhân viên chọn tạo token nhanh
               </p>
             </div>
 
@@ -237,6 +245,10 @@ export default function PackagesPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Phạm Vi / Nhặt Max:</span>
                     <span className="font-semibold">{pkg.maxMonsterRange}m / {pkg.maxPickupCount} item</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Delay Nhặt Đồ:</span>
+                    <span className="font-semibold text-amber-300">{pkg.pickupDelayMin}ms - {pkg.pickupDelayMax}ms</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Tabs Active:</span>
@@ -409,6 +421,31 @@ export default function PackagesPage() {
                           value={maxPickupCount}
                           onChange={(e) => setMaxPickupCount(Number(e.target.value))}
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Row 4: Delay Nhặt Đồ (Min / Max ms) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 min-h-[20px] flex items-end">
+                        Delay Nhặt Đồ Min / Max (ms)
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          value={pickupDelayMin}
+                          onChange={(e) => setPickupDelayMin(Number(e.target.value))}
+                          placeholder="Min ms (VD: 100)"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
+                        />
+                        <input
+                          type="number"
+                          value={pickupDelayMax}
+                          onChange={(e) => setPickupDelayMax(Number(e.target.value))}
+                          placeholder="Max ms (VD: 500)"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
                         />
                       </div>
                     </div>

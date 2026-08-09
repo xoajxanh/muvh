@@ -32,11 +32,11 @@ local function Mod_CalculateMD5(str)
         local md5 = CS.System.Security.Cryptography.MD5.Create()
         local bytes = CS.System.Text.Encoding.UTF8:GetBytes(str)
         local hash = md5:ComputeHash(bytes)
-        local sb = CS.System.Text.StringBuilder()
+        local hexTbl = {}
         for i = 0, hash.Length - 1 do
-            sb:Append(hash[i]:ToString("x2"))
+            table.insert(hexTbl, string.format("%02x", hash[i]))
         end
-        return sb:ToString()
+        return table.concat(hexTbl)
     end)
     if ok and res then return res end
     return ""
@@ -93,9 +93,15 @@ end
 local function Mod_GetCharacterUID()
     local uid = ""
     pcall(function()
-        if _G.RoleManager and _G.RoleManager.me then
-            if _G.RoleManager.me.id then uid = tostring(_G.RoleManager.me.id) end
-            if uid == "" and _G.RoleManager.me.roleId then uid = tostring(_G.RoleManager.me.roleId) end
+        if _G.LoginData and _G.LoginData.sdk_pid and tostring(_G.LoginData.sdk_pid) ~= "" then
+            uid = tostring(_G.LoginData.sdk_pid)
+        end
+        if uid == "" and _G.LoginData and _G.LoginData.account and tostring(_G.LoginData.account) ~= "" then
+            uid = tostring(_G.LoginData.account)
+        end
+        if uid == "" and _G.RoleManager and _G.RoleManager.me then
+            if _G.RoleManager.me.roleId then uid = tostring(_G.RoleManager.me.roleId) end
+            if uid == "" and _G.RoleManager.me.id then uid = tostring(_G.RoleManager.me.id) end
         end
         if uid == "" and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id then
             uid = tostring(_G.ViewData.meData.id)
@@ -179,13 +185,21 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
         if _G.Timer and _G.Timer.StartLoop then
             _G.Timer.StartLoop(0.2, 50, function()
                 count = count + 1
-                if asyncOp.isDone or count >= 50 then
+                local isDone = false
+                pcall(function() isDone = req.isDone end)
+                if isDone or count >= 50 then
                     local payload = ""
                     local isSuccess = false
                     pcall(function()
-                        if req.result == CS.UnityEngine.Networking.UnityWebRequest.Result.Success then
+                        local isErr = false
+                        pcall(function()
+                            if req.isNetworkError or req.isHttpError then isErr = true end
+                        end)
+                        if not isErr and req.downloadHandler then
                             payload = req.downloadHandler.text
-                            isSuccess = true
+                            if payload and payload ~= "" then
+                                isSuccess = true
+                            end
                         end
                         req:Dispose()
                     end)
@@ -530,6 +544,30 @@ local function CreateModUI()
 
         local img = btnGo:AddComponent(typeof(Image))
         img.color = Color(0.215, 0.490, 0.133, 1.0)
+        local btnComp = btnGo:AddComponent(typeof(Button))
+        btnComp.onClick:AddListener(function()
+            pcall(function()
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("ĐÃ BẤM NÚT VỤT!") end
+                if _G.Mod_IsActive then
+                    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
+                    if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then
+                        local showMod = not _G.ModMenuPanelGo.activeSelf
+                        _G.ModMenuPanelGo:SetActive(showMod)
+                    end
+                else
+                    if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then _G.ModMenuPanelGo:SetActive(false) end
+                    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
+                        local showAuth = not _G.authPanelGo.activeSelf
+                        _G.authPanelGo:SetActive(showAuth)
+                        if showAuth and _G.Mod_RefreshAuthPanelData then
+                            _G.Mod_RefreshAuthPanelData()
+                        end
+                    else
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("LỖI: authPanelGo chưa khởi tạo!") end
+                    end
+                end
+            end)
+        end)
 
         local txtGo = GameObject("ModText")
         txtGo.transform:SetParent(btnGo.transform, false)
@@ -542,6 +580,7 @@ local function CreateModUI()
         txt.color = Color.white
         txt.fontSize = 20
         txt.alignment = TextAnchor.MiddleCenter
+        txt.raycastTarget = false
         if defaultFont then txt.font = defaultFont end
 
         local pkBtnGo = GameObject("FloatingPKBtn")
@@ -568,6 +607,7 @@ local function CreateModUI()
         pkTxt.color = Color.white
         pkTxt.fontSize = 18
         pkTxt.alignment = TextAnchor.MiddleCenter
+        pkTxt.raycastTarget = false
         if defaultFont then pkTxt.font = defaultFont end
 
         pkBtnGo:SetActive(_G.Mod_IsActive == true)
@@ -618,8 +658,8 @@ local function CreateModUI()
         adminTxt.text = "EXEC"
         adminTxt.color = Color.white
         adminTxt.fontSize = 16
-        adminTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         adminTxt.alignment = TextAnchor.MiddleCenter
+        adminTxt.raycastTarget = false
         if defaultFont then adminTxt.font = defaultFont end
 
         adminBtnGo:SetActive(_G.Mod_IsDev == true)
@@ -662,6 +702,7 @@ local function CreateModUI()
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0, 0, 0, 0.8)
         panelGo:SetActive(false)
+        _G.ModMenuPanelGo = panelGo
 
         ---------------------------------------------------------
         -- Standalone AuthPanel UI (Active Notice Screen)
@@ -697,7 +738,6 @@ local function CreateModUI()
         atTxt.text = "XÁC THỰC BẢN QUYỀN MOD"
         atTxt.font = defaultFont
         atTxt.fontSize = 24
-        atTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         atTxt.color = Color(1.0, 0.84, 0.0, 1.0)
         atTxt.alignment = TextAnchor.MiddleCenter
 
@@ -890,7 +930,6 @@ local function CreateModUI()
         rtTxt.text = "Kiểm Tra Khôi Phục Active"
         rtTxt.font = defaultFont
         rtTxt.fontSize = 17
-        rtTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         rtTxt.color = Color.white
         rtTxt.alignment = TextAnchor.MiddleCenter
         local rBtn = reloadGo:AddComponent(typeof(Button))
@@ -946,7 +985,6 @@ local function CreateModUI()
                     txtC.text = "Admin Telegram (@" .. tostring(adminUser) .. ")"
                     txtC.font = defaultFont
                     txtC.fontSize = 15
-                    txtC.fontStyle = CS.UnityEngine.FontStyle.Bold
                     txtC.color = Color.white
                     txtC.alignment = TextAnchor.MiddleCenter
                     
@@ -966,6 +1004,7 @@ local function CreateModUI()
                     end)
                 end
             end
+        end
         _G.Mod_RefreshAuthPanelData = RefreshAuthPanelData
 
         rBtn.onClick:AddListener(function()
@@ -1043,12 +1082,31 @@ local function CreateModUI()
             end
         end
 
-        local btnComp = btnGo:AddComponent(typeof(Button))
-        btnComp.onClick:AddListener(function()
-            if _G.ModCallbacks and _G.ModCallbacks.OnToggleMenu then
-                _G.ModCallbacks.OnToggleMenu()
-            end
-        end)
+        local function ToggleModOrAuthMenu()
+            pcall(function()
+                if _G.Mod_IsActive then
+                    if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
+                    isExpanded = not isExpanded
+                    if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(isExpanded) end
+                    if isExpanded then RefreshMainTabs() end
+                else
+                    if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
+                    if authPanelGo and not authPanelGo:Equals(nil) then
+                        local showAuth = not authPanelGo.activeSelf
+                        authPanelGo:SetActive(showAuth)
+                        if showAuth and _G.Mod_RefreshAuthPanelData then
+                            _G.Mod_RefreshAuthPanelData()
+                        end
+                    end
+                end
+            end)
+        end
+        _G.ModCallbacks = _G.ModCallbacks or {}
+        _G.ModCallbacks.OnToggleMenu = ToggleModOrAuthMenu
+        if btnComp and not btnComp:Equals(nil) then
+            btnComp.onClick:RemoveAllListeners()
+            btnComp.onClick:AddListener(ToggleModOrAuthMenu)
+        end
 
         _G.Mod_UpdateUI_ActiveState()
         
@@ -2588,7 +2646,7 @@ end
                     end)
                 end)
 
-                _G.Timer.StartLoop(1, -1, function()
+            _G.Timer.StartLoop(1, -1, function()
                     pcall(function()
                         if _G.SavedFOV then
                             local cam = CS.UnityEngine.Camera.main
@@ -4386,76 +4444,8 @@ end
                     CS.UnityEngine.PlayerPrefs.Save()
                 end)
             end)
-            
         end
         CreateKundunUI()
-
-        -- [ADMIN EXECUTE SCRIPT START]
-        local function RunExecuteScript()
-            local package_name = "com.vnyh.gp" 
-            local basePath = "/storage/emulated/0/Android/data/" .. package_name .. "/files/"
-            
-            local inputPath = basePath .. "input.luac"
-            local outputPath = basePath .. "output.txt"
-            
-            local function writeOutput(path, content)
-                local fileOut = io.open(path, "w")
-                if fileOut then
-                    fileOut:write(content)
-                    fileOut:close()
-                end
-            end
-
-            local fileIn = io.open(inputPath, "rb")
-            if not fileIn then
-                local errStr = "ERR: Khong tim thay " .. inputPath
-                writeOutput(outputPath, errStr)
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi: Không tìm thấy input.luac") end
-                return
-            end
-            
-            local bytecode = fileIn:read("*a")
-            fileIn:close()
-
-            local loadFunc = loadstring or load
-            local func, compileError = loadFunc(bytecode)
-            
-            if not func then
-                local errStr = "Bytecode Load Error:\n" .. tostring(compileError)
-                writeOutput(outputPath, errStr)
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi nạp Bytecode script!") end
-                return
-            end
-
-            local oldPrint = print
-            local outputLogs = ""
-            print = function(...)
-                if oldPrint then oldPrint(...) end
-                local args = {...}
-                for i, v in ipairs(args) do
-                    outputLogs = outputLogs .. tostring(v) .. "\t"
-                end
-                outputLogs = outputLogs .. "\n"
-            end
-
-            local success, runResult = pcall(func)
-            print = oldPrint 
-
-            local finalOutput = ""
-            if success then
-                finalOutput = "=== SUCCESS ===\n\n[LOGS]:\n" .. outputLogs
-                if runResult ~= nil then
-                    finalOutput = finalOutput .. "\n[RETURN]:\n" .. tostring(runResult)
-                end
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chạy Script xong! Đã xuất output.txt") end
-            else
-                finalOutput = "=== RUNTIME ERROR ===\n" .. tostring(runResult)
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi thực thi script! Đã xuất output.txt") end
-            end
-
-            writeOutput(outputPath, finalOutput)
-        end
-        _G.RunExecuteScript = RunExecuteScript
 
         -- Main Tab Buttons
         local width = 220

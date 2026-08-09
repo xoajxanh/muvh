@@ -12,8 +12,9 @@ import {
   PlusCircle,
   Clock,
   ChevronRight,
-  ShieldAlert,
   Sparkles,
+  BarChart2,
+  LineChart,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -77,6 +78,24 @@ export default function DashboardPage() {
 
   const monthlyChartData = data?.monthlyChartData || [];
   const maxRevenue = Math.max(...monthlyChartData.map((d: any) => d.revenue), 1000000);
+  const maxTokens = Math.max(...monthlyChartData.map((d: any) => d.tokens), 5);
+
+  // Calculate SVG Line Path & Points for Tokens count
+  const chartWidth = 1200;
+  const chartHeight = 200;
+  const points = monthlyChartData.map((item: any, i: number) => {
+    const x = (i + 0.5) * (chartWidth / 12);
+    const y = 175 - (item.tokens / maxTokens) * 135;
+    return { x, y, tokens: item.tokens, month: item.month };
+  });
+
+  const linePathD = points.reduce((acc: string, pt: any, idx: number) => {
+    return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+  }, '');
+
+  const areaPathD = points.length > 0
+    ? `${linePathD} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`
+    : '';
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19]">
@@ -184,31 +203,111 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Monthly Revenue Chart */}
-          <div className="glass-card p-6 rounded-2xl">
-            <div className="flex items-center justify-between mb-6">
+          {/* Monthly Revenue & Tokens Chart (Bar + Line Overlay) */}
+          <div className="glass-card p-6 rounded-2xl space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h3 className="font-bold text-slate-100 text-base">Thống Kê Doanh Thu & Token Theo Tháng ({new Date().getFullYear()})</h3>
-                <p className="text-xs text-slate-400">Doanh thu đạt được từ các gói cước VIP và custom</p>
+                <h3 className="font-bold text-slate-100 text-base">
+                  Thống Kê Doanh Thu & Số Lượng Token Theo Tháng ({new Date().getFullYear()})
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Cột thể hiện Doanh thu (VNĐ) | Đường Line thể hiện Số lượng Token phát hành
+                </p>
+              </div>
+
+              {/* Chart Legend */}
+              <div className="flex items-center gap-4 text-xs font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-sm bg-gradient-to-t from-indigo-500 to-cyan-400"></span>
+                  <span className="text-cyan-300">Doanh Thu (Cột)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3.5 h-1 bg-emerald-400 rounded-full"></span>
+                  <span className="text-emerald-400">Số Token (Line)</span>
+                </div>
               </div>
             </div>
 
-            <div className="h-64 flex items-end justify-between gap-2 pt-8 pb-2 px-4 border-b border-slate-800">
-              {monthlyChartData.map((item: any, idx: number) => {
-                const heightPct = Math.max(10, Math.round((item.revenue / maxRevenue) * 100));
-                return (
-                  <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                    <div className="text-[10px] text-cyan-400 font-semibold opacity-0 group-hover:opacity-100 transition duration-200 -translate-y-1">
-                      {item.revenue > 0 ? `${(item.revenue / 1000).toLocaleString()}k` : '0'}
+            {/* Combined Chart Area */}
+            <div className="relative h-72 pt-8 pb-4 border-b border-slate-800">
+              {/* SVG Overlay Line Chart */}
+              <svg
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                className="absolute inset-x-0 bottom-8 w-full h-[200px] pointer-events-none z-10"
+                preserveAspectRatio="none"
+              >
+                <defs>
+                  <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="50%" stopColor="#34d399" />
+                    <stop offset="100%" stopColor="#6ee7b7" />
+                  </linearGradient>
+                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+
+                {/* Shaded Area under Line */}
+                {areaPathD && <path d={areaPathD} fill="url(#areaGrad)" />}
+
+                {/* Glowing Line */}
+                {linePathD && (
+                  <path
+                    d={linePathD}
+                    fill="none"
+                    stroke="url(#lineGrad)"
+                    strokeWidth="3.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                  />
+                )}
+
+                {/* Data Point Circles */}
+                {points.map((pt: any, i: number) => (
+                  <g key={i}>
+                    <circle
+                      cx={pt.x}
+                      cy={pt.y}
+                      r="5"
+                      fill="#10b981"
+                      stroke="#0b0f19"
+                      strokeWidth="2"
+                      className="drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]"
+                    />
+                  </g>
+                ))}
+              </svg>
+
+              {/* Column Bars & Hover Tooltips */}
+              <div className="h-full flex items-end justify-between gap-2 px-2 relative z-0">
+                {monthlyChartData.map((item: any, idx: number) => {
+                  const heightPct = Math.max(8, Math.round((item.revenue / maxRevenue) * 100));
+                  return (
+                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative">
+                      {/* Hover Tooltip Popup */}
+                      <div className="absolute -top-12 z-30 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl shadow-xl text-[11px] whitespace-nowrap flex flex-col items-center gap-0.5">
+                        <span className="font-bold text-cyan-400">
+                          {item.revenue > 0 ? `${item.revenue.toLocaleString('vi-VN')} đ` : '0 đ'}
+                        </span>
+                        <span className="text-emerald-400 font-semibold">
+                          {item.tokens} Tokens
+                        </span>
+                      </div>
+
+                      {/* Bar Column */}
+                      <div
+                        style={{ height: `${heightPct}%` }}
+                        className="w-full max-w-[34px] bg-gradient-to-t from-indigo-700/80 via-sky-500/80 to-cyan-400/90 rounded-t-lg group-hover:brightness-125 transition-all shadow-md shadow-cyan-500/10"
+                      ></div>
+
+                      {/* Month Label */}
+                      <span className="text-[11px] font-medium text-slate-400 mt-2">{item.month}</span>
                     </div>
-                    <div
-                      style={{ height: `${heightPct}%` }}
-                      className="w-full max-w-[36px] bg-gradient-to-t from-indigo-600 via-sky-500 to-cyan-400 rounded-t-lg group-hover:brightness-125 transition-all shadow-md shadow-cyan-500/10"
-                    ></div>
-                    <span className="text-[11px] font-medium text-slate-400 mt-2">{item.month}</span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 

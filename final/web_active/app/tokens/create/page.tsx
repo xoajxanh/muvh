@@ -8,7 +8,6 @@ import Toast from '@/components/Toast';
 import {
   Key,
   ClipboardPaste,
-  Copy,
   Sparkles,
   ArrowLeft,
   Send,
@@ -43,11 +42,13 @@ export default function TokenCreatePage() {
   const [maxAttackSpeed, setMaxAttackSpeed] = useState(2.5);
   const [maxMonsterRange, setMaxMonsterRange] = useState(50);
   const [maxPickupCount, setMaxPickupCount] = useState(100);
+  const [pickupDelayMin, setPickupDelayMin] = useState(100);
+  const [pickupDelayMax, setPickupDelayMax] = useState(500);
   const [activeTabBasic, setActiveTabBasic] = useState(true);
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
 
-  // Token-specific parameter (Independent of VIP package)
+  // Token-specific parameter
   const [characterReincarnation, setCharacterReincarnation] = useState(8);
 
   // Selected Telegram Contacts (up to 2)
@@ -117,6 +118,8 @@ export default function TokenCreatePage() {
     setMaxAttackSpeed(pkg.maxAttackSpeed ?? 2.5);
     setMaxMonsterRange(pkg.maxMonsterRange ?? 50);
     setMaxPickupCount(pkg.maxPickupCount ?? 100);
+    setPickupDelayMin(pkg.pickupDelayMin ?? 100);
+    setPickupDelayMax(pkg.pickupDelayMax ?? 500);
     setActiveTabBasic(pkg.activeTabBasic ?? true);
     setActiveTabAdvanced(pkg.activeTabAdvanced ?? true);
     setActiveTabAutofarm(pkg.activeTabAutofarm ?? true);
@@ -171,6 +174,8 @@ export default function TokenCreatePage() {
         maxAttackSpeed: Number(maxAttackSpeed),
         maxMonsterRange: Number(maxMonsterRange),
         maxPickupCount: Number(maxPickupCount),
+        pickupDelayMin: Number(pickupDelayMin),
+        pickupDelayMax: Number(pickupDelayMax),
         activeTabBasic,
         activeTabAdvanced,
         activeTabAutofarm,
@@ -301,7 +306,7 @@ export default function TokenCreatePage() {
                     </div>
                   </div>
 
-                  {/* Character Reincarnation (Always chosen per token!) */}
+                  {/* Character Reincarnation */}
                   <div className="flex flex-col justify-end">
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
                       Chuyển Nhân Vật Hiện Tại
@@ -523,6 +528,33 @@ export default function TokenCreatePage() {
                           setIsCustom(true);
                         }}
                         className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pickup Delay Min & Max (ms) */}
+                  <div className="flex flex-col justify-end">
+                    <label className="block font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
+                      Delay Nhặt Đồ Min / Max (ms)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        value={pickupDelayMin}
+                        onChange={(e) => {
+                          setPickupDelayMin(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
+                        className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
+                      />
+                      <input
+                        type="number"
+                        value={pickupDelayMax}
+                        onChange={(e) => {
+                          setPickupDelayMax(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
+                        className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold"
                       />
                     </div>
                   </div>

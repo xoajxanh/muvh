@@ -13,6 +13,8 @@ export interface TokenConfigParams {
   maxAttackSpeed: number;
   maxMonsterRange: number;
   maxPickupCount: number;
+  pickupDelayMin: number;
+  pickupDelayMax: number;
   activeTabBasic: boolean;
   activeTabAdvanced: boolean;
   activeTabAutofarm: boolean;
@@ -34,6 +36,8 @@ export function generateEncryptedToken(params: TokenConfigParams): { jsonConfig:
     max_attack_speed: Number(params.maxAttackSpeed),
     max_monster_range: Number(params.maxMonsterRange),
     max_pickup_count: Number(params.maxPickupCount),
+    pickup_delay_min: Number(params.pickupDelayMin ?? 100),
+    pickup_delay_max: Number(params.pickupDelayMax ?? 500),
     active_tab_basic: Boolean(params.activeTabBasic),
     active_tab_advanced: Boolean(params.activeTabAdvanced),
     active_tab_autofarm: Boolean(params.activeTabAutofarm),

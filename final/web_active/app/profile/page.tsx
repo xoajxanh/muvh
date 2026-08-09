@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import Toast from '@/components/Toast';
-import { User, Lock, Save, KeyRound } from 'lucide-react';
+import { User, Save, KeyRound } from 'lucide-react';
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,6 +13,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -36,6 +37,18 @@ export default function ProfilePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (newPassword || confirmPassword) {
+      if (newPassword !== confirmPassword) {
+        setToast({ message: 'Mật khẩu mới và Nhập lại mật khẩu mới không trùng khớp!', type: 'error' });
+        return;
+      }
+      if (!oldPassword) {
+        setToast({ message: 'Vui lòng nhập Mật Khẩu Hiện Tại để xác nhận đổi mật khẩu', type: 'error' });
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
@@ -54,9 +67,10 @@ export default function ProfilePage() {
         throw new Error(json.error || 'Cập nhật thất bại');
       }
 
-      setToast({ message: 'Cập nhật thông tin thành công!', type: 'success' });
+      setToast({ message: 'Cập nhật thông tin tài khoản thành công!', type: 'success' });
       setOldPassword('');
       setNewPassword('');
+      setConfirmPassword('');
       setUser((prev: any) => ({ ...prev, displayName: json.user.displayName }));
     } catch (err: any) {
       setToast({ message: err.message || 'Lỗi hệ thống', type: 'error' });
@@ -133,7 +147,6 @@ export default function ProfilePage() {
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  placeholder="••••••••"
                   className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-100"
                 />
               </div>
@@ -144,7 +157,16 @@ export default function ProfilePage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Từ 6 ký tự trở lên"
+                  className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-300 mb-1">Nhập Lại Mật Khẩu Mới</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full p-2.5 bg-slate-900 border border-slate-800 rounded-xl text-slate-100"
                 />
               </div>

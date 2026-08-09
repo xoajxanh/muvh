@@ -27,6 +27,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         maxAttackSpeed: body.maxAttackSpeed !== undefined ? Number(body.maxAttackSpeed) : undefined,
         maxMonsterRange: body.maxMonsterRange !== undefined ? Number(body.maxMonsterRange) : undefined,
         maxPickupCount: body.maxPickupCount !== undefined ? Number(body.maxPickupCount) : undefined,
+        pickupDelayMin: body.pickupDelayMin !== undefined ? Number(body.pickupDelayMin) : undefined,
+        pickupDelayMax: body.pickupDelayMax !== undefined ? Number(body.pickupDelayMax) : undefined,
         activeTabBasic: body.activeTabBasic !== undefined ? Boolean(body.activeTabBasic) : undefined,
         activeTabAdvanced: body.activeTabAdvanced !== undefined ? Boolean(body.activeTabAdvanced) : undefined,
         activeTabAutofarm: body.activeTabAutofarm !== undefined ? Boolean(body.activeTabAutofarm) : undefined,

@@ -5,7 +5,6 @@ import { generateEncryptedToken } from '@/lib/keygen';
 
 export const dynamic = 'force-dynamic';
 
-
 export async function GET(req: NextRequest) {
   await ensureInitialSeed();
   const session = await getSessionUser(req);
@@ -77,6 +76,8 @@ export async function POST(req: NextRequest) {
       maxAttackSpeed,
       maxMonsterRange,
       maxPickupCount,
+      pickupDelayMin,
+      pickupDelayMax,
       activeTabBasic,
       activeTabAdvanced,
       activeTabAutofarm,
@@ -114,6 +115,8 @@ export async function POST(req: NextRequest) {
       maxAttackSpeed: Number(maxAttackSpeed ?? 2.5),
       maxMonsterRange: Number(maxMonsterRange ?? 50),
       maxPickupCount: Number(maxPickupCount ?? 100),
+      pickupDelayMin: Number(pickupDelayMin ?? 100),
+      pickupDelayMax: Number(pickupDelayMax ?? 500),
       activeTabBasic: Boolean(activeTabBasic ?? true),
       activeTabAdvanced: Boolean(activeTabAdvanced ?? true),
       activeTabAutofarm: Boolean(activeTabAutofarm ?? true),
@@ -138,6 +141,8 @@ export async function POST(req: NextRequest) {
         maxAttackSpeed: tokenParams.maxAttackSpeed,
         maxMonsterRange: tokenParams.maxMonsterRange,
         maxPickupCount: tokenParams.maxPickupCount,
+        pickupDelayMin: tokenParams.pickupDelayMin,
+        pickupDelayMax: tokenParams.pickupDelayMax,
         activeTabBasic: tokenParams.activeTabBasic,
         activeTabAdvanced: tokenParams.activeTabAdvanced,
         activeTabAutofarm: tokenParams.activeTabAutofarm,

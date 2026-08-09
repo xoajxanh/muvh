@@ -222,7 +222,11 @@ export default function TokensPage() {
                     {tokens.map((tok) => {
                       const apiUrl = `${window.location.origin}/api/v1/config?sn=${tok.deviceSnMd5}&uid=${tok.characterUid}`;
                       return (
-                        <tr key={tok.id} className="hover:bg-slate-800/30 transition">
+                        <tr
+                          key={tok.id}
+                          onClick={() => router.push(`/tokens/${tok.id}`)}
+                          className="hover:bg-slate-800/50 cursor-pointer transition"
+                        >
                           <td className="py-3.5 px-4">{getStatusBadge(tok.expireAt)}</td>
                           <td className="py-3.5 px-4 font-mono font-bold text-cyan-300">
                             {tok.deviceSnMd5}
@@ -231,7 +235,7 @@ export default function TokensPage() {
                             {tok.characterUid}
                           </td>
                           <td className="py-3.5 px-4">
-                            <span className="px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
+                            <span className="px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold text-xs">
                               {tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định')}
                             </span>
                           </td>
@@ -242,47 +246,59 @@ export default function TokensPage() {
                             {tok.price.toLocaleString('vi-VN')} đ
                           </td>
                           <td className="py-3.5 px-4 text-slate-400">{tok.createdBy?.displayName}</td>
-                          <td className="py-3.5 px-4 text-right space-x-1 whitespace-nowrap">
-                            <button
-                              onClick={() => handleCopyText(tok.encryptedToken, 'Token mã hóa')}
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition"
-                              title="Copy Token mã hóa"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => handleCopyText(apiUrl, 'API URL')}
-                              className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition"
-                              title="Copy Endpoint API cho Mod"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
-
-                            <Link
-                              href={`/tokens/${tok.id}`}
-                              className="px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg font-medium text-[11px] transition inline-block"
-                            >
-                              Chi tiết ({tok._count?.notes || 0})
-                            </Link>
-
-                            {user.role === 'ADMIN' ? (
+                          <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                            <div className="inline-flex items-center justify-end gap-1.5">
                               <button
-                                onClick={() => handleDeleteToken(tok.id, tok.deviceSnMd5)}
-                                className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg transition"
-                                title="Xóa Token"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyText(tok.encryptedToken, 'Token mã hóa');
+                                }}
+                                className="h-8 w-8 inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/60 transition"
+                                title="Copy Token mã hóa"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Copy className="w-3.5 h-3.5" />
                               </button>
-                            ) : (
+
                               <button
-                                disabled
-                                className="p-1.5 bg-slate-800/40 text-slate-600 rounded-lg cursor-not-allowed"
-                                title="Sale không được xóa token"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCopyText(apiUrl, 'API URL');
+                                }}
+                                className="h-8 w-8 inline-flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700/60 transition"
+                                title="Copy Endpoint API cho Mod"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <ExternalLink className="w-3.5 h-3.5" />
                               </button>
-                            )}
+
+                              <Link
+                                href={`/tokens/${tok.id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="h-8 px-3 inline-flex items-center justify-center bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 rounded-lg font-semibold text-[11px] transition"
+                              >
+                                Chi tiết ({tok._count?.notes || 0})
+                              </Link>
+
+                              {user.role === 'ADMIN' ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteToken(tok.id, tok.deviceSnMd5);
+                                  }}
+                                  className="h-8 w-8 inline-flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg transition"
+                                  title="Xóa Token"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button
+                                  disabled
+                                  className="h-8 w-8 inline-flex items-center justify-center bg-slate-800/40 text-slate-600 border border-slate-800 rounded-lg cursor-not-allowed"
+                                  title="Sale không được xóa token"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
