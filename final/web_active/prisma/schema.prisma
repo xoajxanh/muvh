@@ -67,6 +67,8 @@ model Token {
   adminTelegrams          String      @default("[\"@admin1\", \"@admin2\"]")
   price                   Float       @default(0)
   isCustom                Boolean     @default(false)
+  isDeleted               Boolean     @default(false)
+  deletedAt               DateTime?
   encryptedToken          String      @db.NVarChar(Max)
   createdById             String
   createdBy               User        @relation("UserTokens", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -80,10 +82,10 @@ model Token {
 model TokenNote {
   id          String   @id @default(uuid())
   tokenId     String
-  token       Token    @relation(fields: [tokenId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  token       Token    @relation(fields: [tokenId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   createdById String
   createdBy   User     @relation("UserTokenNotes", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  action      String   // CREATE, UPDATE
+  action      String   // CREATE, UPDATE, SOFT_DELETE, HARD_DELETE, RESTORE
   detail      String   @db.NVarChar(Max)
   createdAt   DateTime @default(now())
 }

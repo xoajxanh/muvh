@@ -45,6 +45,29 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     }
 
     const body = await req.json();
+
+    // Check if Admin is restoring a soft-deleted token
+    if (body.action === 'RESTORE' && session.role === 'ADMIN') {
+      const restoredToken = await prisma.token.update({
+        where: { id },
+        data: {
+          isDeleted: false,
+          deletedAt: null,
+        },
+      });
+
+      await prisma.tokenNote.create({
+        data: {
+          tokenId: id,
+          createdById: session.userId,
+          action: 'RESTORE',
+          detail: `Admin [${session.displayName}] đã khôi phục lại Token bị xóa logic.`,
+        },
+      });
+
+      return NextResponse.json({ success: true, message: 'Đã khôi phục Token thành công', token: restoredToken });
+    }
+
     const {
       deviceSnMd5,
       characterUid,
@@ -168,18 +191,55 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
   }
 
-  // Sale staff CANNOT delete tokens to prevent fraud!
-  if (session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Nhân viên Sale không có quyền xóa Token. Vui lòng liên hệ Admin!' }, { status: 403 });
-  }
-
   try {
     const { id } = params;
-    await prisma.token.delete({
-      where: { id },
-    });
+    const token = await prisma.token.findUnique({ where: { id } });
+    if (!token) {
+      return NextResponse.json({ error: 'Token không tồn tại' }, { status: 404 });
+    }
 
-    return NextResponse.json({ success: true, message: 'Đã xóa Token thành công' });
+    const { searchParams } = new URL(req.url);
+    const isHardDelete = searchParams.get('hard') === 'true';
+
+    // If SALE staff or soft-delete requested: Soft Delete (Xóa Logic)
+    if (session.role === 'SALE' || (!isHardDelete && token.isDeleted === false)) {
+      await prisma.token.update({
+        where: { id },
+        data: {
+          isDeleted: true,
+          deletedAt: new Date(),
+        },
+      });
+
+      // Log Soft Delete in TokenNote
+      await prisma.tokenNote.create({
+        data: {
+          tokenId: id,
+          createdById: session.userId,
+          action: 'SOFT_DELETE',
+          detail: `Nhân viên [${session.displayName}] (${session.role}) đã thực hiện xóa logic (Soft Delete) Token này. Token đã bị hủy kích hoạt trên Client Mod.`,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        isSoftDelete: true,
+        message: 'Đã hủy kích hoạt và xóa logic Token. Nhật ký đã được lưu cho Admin kiểm tra.',
+      });
+    }
+
+    // Only ADMIN can perform Hard Delete (Xóa Vĩnh Viễn khỏi DB)
+    if (session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Chỉ Admin mới có quyền xóa vĩnh viễn Token khỏi cơ sở dữ liệu!' }, { status: 403 });
+    }
+
+    // Admin Hard Delete - Atomically delete dependent notes and token
+    await prisma.$transaction([
+      prisma.tokenNote.deleteMany({ where: { tokenId: id } }),
+      prisma.token.delete({ where: { id } }),
+    ]);
+
+    return NextResponse.json({ success: true, isHardDelete: true, message: 'Admin đã xóa vĩnh viễn Token thành công' });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi khi xóa Token' }, { status: 500 });
   }

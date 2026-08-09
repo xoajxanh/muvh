@@ -34,12 +34,17 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  if (status === 'ACTIVE') {
-    whereClause.expireAt = { gte: now };
-  } else if (status === 'EXPIRING_SOON') {
-    whereClause.expireAt = { gte: now, lte: threeDaysLater };
-  } else if (status === 'EXPIRED') {
-    whereClause.expireAt = { lt: now };
+  if (status === 'DELETED') {
+    whereClause.isDeleted = true;
+  } else {
+    whereClause.isDeleted = false;
+    if (status === 'ACTIVE') {
+      whereClause.expireAt = { gte: now };
+    } else if (status === 'EXPIRING_SOON') {
+      whereClause.expireAt = { gte: now, lte: threeDaysLater };
+    } else if (status === 'EXPIRED') {
+      whereClause.expireAt = { lt: now };
+    }
   }
 
   const tokens = await prisma.token.findMany({

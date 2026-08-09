@@ -4,41 +4,45 @@ local outputPath = "/storage/emulated/0/Android/data/" .. package_name .. "/file
 local logs = {}
 local function log(msg)
     table.insert(logs, tostring(msg))
-    print(tostring(msg))
+    print("[EXEC_HTTP_TEST] " .. tostring(msg))
 end
 
-log("=== DIAGNOSE CHARACTER UID & LOGIN DATA ===")
-if _G.LoginData then
-    log("LoginData.sdk_pid: " .. tostring(_G.LoginData.sdk_pid))
-    log("LoginData.roleId: " .. tostring(_G.LoginData.roleId))
-    log("LoginData.roleID: " .. tostring(_G.LoginData.roleID))
-    log("LoginData.account: " .. tostring(_G.LoginData.account))
-    log("LoginData.uid: " .. tostring(_G.LoginData.uid))
-    log("LoginData.pid: " .. tostring(_G.LoginData.pid))
-    log("LoginData.guid: " .. tostring(_G.LoginData.guid))
-end
+log("==========================================")
+log("  TEST HTTP API FETCH & FULL DECRYPT      ")
+log("==========================================")
 
-if _G.ViewData and _G.ViewData.meData then
-    log("ViewData.meData.id: " .. tostring(_G.ViewData.meData.id))
-    log("ViewData.meData.roleId: " .. tostring(_G.ViewData.meData.roleId))
-    log("ViewData.meData.roleID: " .. tostring(_G.ViewData.meData.roleID))
-    log("ViewData.meData.uid: " .. tostring(_G.ViewData.meData.uid))
-    log("ViewData.meData.guid: " .. tostring(_G.ViewData.meData.guid))
-    log("ViewData.meData.name: " .. tostring(_G.ViewData.meData.name))
-end
+local httpUrl = "http://g3events.asia/api/v1/config?sn=7cf7e3df6fd19f8dbd5c54bb65803680&uid=176827261712166000"
+log("Testing URL: " .. httpUrl)
 
-if _G.RoleManager and _G.RoleManager.me then
-    log("RoleManager.me.id: " .. tostring(_G.RoleManager.me.id))
-    log("RoleManager.me.roleId: " .. tostring(_G.RoleManager.me.roleId))
-    log("RoleManager.me.roleID: " .. tostring(_G.RoleManager.me.roleID))
-    log("RoleManager.me.guid: " .. tostring(_G.RoleManager.me.guid))
-end
+pcall(function()
+    local req = CS.UnityEngine.Networking.UnityWebRequest.Get(httpUrl)
+    req.timeout = 10
+    local asyncOp = req:SendWebRequest()
+    
+    local count = 0
+    if _G.Timer and _G.Timer.StartLoop then
+        _G.Timer.StartLoop(0.2, 50, function()
+            count = count + 1
+            if asyncOp.isDone or count >= 50 then
+                pcall(function()
+                    log("isDone: " .. tostring(asyncOp.isDone) .. " (Loops: " .. tostring(count) .. ")")
+                    log("Response Code: " .. tostring(req.responseCode))
+                    log("isNetworkError: " .. tostring(req.isNetworkError))
+                    log("isHttpError: " .. tostring(req.isHttpError))
+                    log("Error Msg: " .. tostring(req.error))
+                    if req.downloadHandler then
+                        local jsonBody = req.downloadHandler.text
+                        log("API Response Body: " .. tostring(jsonBody))
+                    end
+                end)
+                
+                local fullOutput = table.concat(logs, "\n")
+                local f = io.open(outputPath, "w")
+                if f then f:write(fullOutput); f:close() end
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("TEST HTTP API HOÀN TẤT!") end
+            end
+        end)
+    end
+end)
 
-local fullOutput = table.concat(logs, "\n")
-local f = io.open(outputPath, "w")
-if f then
-    f:write(fullOutput)
-    f:close()
-end
-if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("ĐÃ XUẤT THÔNG TIN VÀO OUTPUT.TXT!") end
-return fullOutput
+return "Đang test API HTTP..."

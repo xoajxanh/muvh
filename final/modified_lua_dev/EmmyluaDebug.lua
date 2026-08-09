@@ -8,7 +8,7 @@ EmmyluaDebug = {}
 _G.Mod_IsActive = false
 _G.Mod_ActiveConfig = nil
 _G.Mod_RawConfigPayload = ""
-_G.Mod_ActiveStatusMsg = "Chưa kích hoạt bản quyền!"
+_G.Mod_ActiveStatusMsg = "Bản Mod chưa được kích hoạt!"
 
 _G.Mod_Config_FOV_Min = 30
 _G.Mod_Config_FOV_Max = 70
@@ -18,6 +18,8 @@ _G.Mod_Config_MaxMoveSpeed = 1.5
 _G.Mod_Config_MaxAttackSpeed = 2.0
 _G.Mod_Config_MaxMonsterRange = 20
 _G.Mod_Config_MaxPickupCount = 50
+_G.Mod_Config_PickupDelay_Min = 100
+_G.Mod_Config_PickupDelay_Max = 500
 _G.Mod_Config_ActiveBasicTab = true
 _G.Mod_Config_ActiveAdvancedTab = true
 _G.Mod_Config_ActiveAutoFarmTab = true
@@ -28,7 +30,14 @@ local SECRET_SALT = "MUVH_SECRET_SALT_XOAI"
 
 local function Mod_CalculateMD5(str)
     if not str or str == "" then return "" end
-    local ok, res = pcall(function()
+    local ok1, pcRes = pcall(function()
+        if CS.PCUtility and CS.PCUtility.Md5 then
+            return string.lower(tostring(CS.PCUtility.Md5(str)))
+        end
+    end)
+    if ok1 and pcRes and pcRes ~= "" and pcRes ~= "nil" then return pcRes end
+
+    local ok2, res = pcall(function()
         local md5 = CS.System.Security.Cryptography.MD5.Create()
         local bytes = CS.System.Text.Encoding.UTF8:GetBytes(str)
         local hash = md5:ComputeHash(bytes)
@@ -38,17 +47,34 @@ local function Mod_CalculateMD5(str)
         end
         return table.concat(hexTbl)
     end)
-    if ok and res then return res end
+    if ok2 and res then return res end
     return ""
 end
 
+local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 local function Mod_Base64Decode(b64Str)
     if not b64Str or b64Str == "" then return nil end
-    local ok, res = pcall(function()
+    local ok1, res1 = pcall(function()
         local bytes = CS.System.Convert.FromBase64String(b64Str)
         return CS.System.Text.Encoding.UTF8:GetString(bytes)
     end)
-    if ok and res then return res end
+    if ok1 and res1 and res1 ~= "" and res1 ~= "nil" then return res1 end
+
+    local ok2, res2 = pcall(function()
+        local data = string.gsub(b64Str, '[^'..b64chars..'=]', '')
+        return (data:gsub('.', function(x)
+            if (x == '=') then return '' end
+            local r,f='',(b64chars:find(x)-1)
+            for i=6,1,-1 do r=r..(f%2^i-f%2^(i-1)>0 and '1' or '0') end
+            return r;
+        end):gsub('%d%d%d?%d?%d?%d?%d?%d?', function(x)
+            if (#x ~= 8) then return '' end
+            local c=0
+            for i=1,8 do c=c+(x:sub(i,i)=='1' and 2^(8-i) or 0) end
+            return string.char(c)
+        end))
+    end)
+    if ok2 and res2 then return res2 end
     return nil
 end
 
@@ -123,7 +149,7 @@ local function Mod_DecryptPayload(payloadB64)
     return configObj, nil
 end
 
-local API_BASE_URL = "https://g3events.asia/api/v1/config"
+local API_BASE_URL = "http://g3events.asia/api/v1/config"
 
 local function Mod_ValidateConfig(config)
     if not config then return false, "Chưa có cấu hình kích hoạt!" end
@@ -132,28 +158,41 @@ local function Mod_ValidateConfig(config)
         return false, "Tài khoản / Cấu hình đã hết hạn sử dụng!"
     end
     local currentSerialMD5 = Mod_GetDeviceSerialMD5()
-    if config.serial_number and config.serial_number ~= "" then
-        local configSerialMD5 = Mod_CalculateMD5(config.serial_number)
-        if config.serial_number ~= currentSerialMD5 and configSerialMD5 ~= currentSerialMD5 then
+    local cfgSN = config.device_sn_hash or config.serial_number
+    if cfgSN and tostring(cfgSN) ~= "" then
+        local cfgSNStr = tostring(cfgSN)
+        local cfgSNMD5 = Mod_CalculateMD5(cfgSNStr)
+        if cfgSNStr ~= currentSerialMD5 and cfgSNMD5 ~= currentSerialMD5 then
             return false, "Mã thiết bị (Serial MD5) không trùng khớp!"
         end
     end
-    if config.uid and tostring(config.uid) ~= "" then
+    local cfgUID = config.character_uid or config.uid
+    if cfgUID and tostring(cfgUID) ~= "" then
         local currentUID = Mod_GetCharacterUID()
         if currentUID == "" then
             return false, "Vui lòng đăng nhập nhân vật trong game để xác thực UID!"
         end
-        if tostring(config.uid) ~= currentUID then
+        if tostring(cfgUID) ~= currentUID then
             return false, "Mã nhân vật (UID) không trùng khớp!"
         end
     end
     return true, "OK"
 end
 
+local function Mod_FormatExpireDate(ts)
+    if not ts then return "Không giới hạn" end
+    local num = tonumber(ts)
+    if not num or num <= 0 then return "Không giới hạn" end
+    local ok, res = pcall(function()
+        return os.date("%d/%m/%Y %H:%M", num)
+    end)
+    if ok and res then return res end
+    return tostring(ts)
+end
+
 local function Mod_ApplyConfig(config)
     _G.Mod_ActiveConfig = config
     _G.Mod_IsActive = true
-    _G.Mod_ActiveStatusMsg = "Đã kích hoạt bản quyền thành công"
     if config.fov_min then _G.Mod_Config_FOV_Min = tonumber(config.fov_min) end
     if config.fov_max then _G.Mod_Config_FOV_Max = tonumber(config.fov_max) end
     if config.boss_refresh_min then _G.Mod_Config_BossRefresh_Min = tonumber(config.boss_refresh_min) end
@@ -162,11 +201,20 @@ local function Mod_ApplyConfig(config)
     if config.max_attack_speed then _G.Mod_Config_MaxAttackSpeed = tonumber(config.max_attack_speed) end
     if config.max_monster_range then _G.Mod_Config_MaxMonsterRange = tonumber(config.max_monster_range) end
     if config.max_pickup_count then _G.Mod_Config_MaxPickupCount = tonumber(config.max_pickup_count) end
+    if config.pickup_delay_min then _G.Mod_Config_PickupDelay_Min = tonumber(config.pickup_delay_min) end
+    if config.pickup_delay_max then _G.Mod_Config_PickupDelay_Max = tonumber(config.pickup_delay_max) end
     if config.active_basic_tab ~= nil then _G.Mod_Config_ActiveBasicTab = config.active_basic_tab end
     if config.active_advanced_tab ~= nil then _G.Mod_Config_ActiveAdvancedTab = config.active_advanced_tab end
     if config.active_autofarm_tab ~= nil then _G.Mod_Config_ActiveAutoFarmTab = config.active_autofarm_tab end
-    if config.current_rebirth then _G.Mod_Config_CurrentRebirth = tonumber(config.current_rebirth) end
-    if config.admin_telegram_usernames then _G.Mod_Config_AdminTelegram = config.admin_telegram_usernames end
+    if config.character_reincarnation then _G.Mod_Config_CurrentRebirth = tonumber(config.character_reincarnation) end
+    if config.admin_telegrams then _G.Mod_Config_AdminTelegram = config.admin_telegrams end
+
+    local expireStr = Mod_FormatExpireDate(config.expire_time)
+    _G.Mod_ActiveStatusMsg = "Đã kích hoạt thành công! Hạn dùng: " .. expireStr .. " | FOV Max: " .. tostring(_G.Mod_Config_FOV_Max) .. " | Tốc đánh: " .. tostring(_G.Mod_Config_MaxAttackSpeed)
+
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] GIAI MA THANH CONG! Hạn dùng: " .. expireStr .. " | FOV: " .. tostring(_G.Mod_Config_FOV_Min) .. "-" .. tostring(_G.Mod_Config_FOV_Max) .. " | Delay: " .. tostring(_G.Mod_Config_PickupDelay_Min) .. "-" .. tostring(_G.Mod_Config_PickupDelay_Max) .. "ms")
+    end
 
     if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
 end
@@ -176,6 +224,10 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
     local uid = Mod_GetCharacterUID()
     local url = API_BASE_URL .. "?sn=" .. tostring(serialMD5) .. "&uid=" .. tostring(uid)
     
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [BUOC 1] Gui yeu cau den API: " .. tostring(url))
+    end
+
     pcall(function()
         local req = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
         req.timeout = 10
@@ -203,6 +255,9 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
                         end
                         req:Dispose()
                     end)
+                    if _G.WriteLog then
+                        _G.WriteLog("[ActiveCheck] [BUOC 2] Nhan phan hoi thanh cong = " .. tostring(isSuccess) .. ", Do dai Payload = " .. tostring(#payload))
+                    end
                     if callback then callback(isSuccess, payload) end
                 end
             end)
@@ -214,10 +269,13 @@ end
 
 local lastCheckTime = 0
 local isCheckingAPI = false
-local function Mod_UpdatePeriodicCheck()
+local function Mod_UpdatePeriodicCheck(onFinish)
     local now = os.time()
-    if now - lastCheckTime < 60 then return end
-    if isCheckingAPI then return end
+    if not onFinish and (now - lastCheckTime < 60) then return end
+    if isCheckingAPI then
+        if onFinish then onFinish(false, _G.Mod_IsActive, _G.Mod_ActiveStatusMsg) end
+        return
+    end
     lastCheckTime = now
     isCheckingAPI = true
 
@@ -226,34 +284,59 @@ local function Mod_UpdatePeriodicCheck()
         if not isSuccess or not remotePayload or remotePayload == "" then
             _G.Mod_IsActive = false
             _G.Mod_ActiveStatusMsg = "Lỗi kết nối mạng / Không thể kết nối Server API!"
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] LOI: KHONG THE KET NOI API SERVER!") end
             if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+            if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+            if onFinish then onFinish(false, false, _G.Mod_ActiveStatusMsg) end
             return
         end
 
-        if remotePayload ~= _G.Mod_RawConfigPayload then
-            _G.Mod_RawConfigPayload = remotePayload
-            local config, err = Mod_DecryptPayload(remotePayload)
-            if config then
-                local valid, reason = Mod_ValidateConfig(config)
-                if valid then
-                    Mod_ApplyConfig(config)
-                else
-                    _G.Mod_IsActive = false
-                    _G.Mod_ActiveStatusMsg = reason
-                end
+        _G.Mod_RawConfigPayload = remotePayload
+        local tokenStr = ""
+        local apiObj = Mod_ParseJSON(remotePayload)
+        if apiObj and apiObj.token then
+            tokenStr = apiObj.token
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 3] Extract Token Envelope tu JSON thanh cong!") end
+        elseif apiObj and apiObj.error then
+            _G.Mod_IsActive = false
+            _G.Mod_ActiveStatusMsg = tostring(apiObj.error)
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] LOI PHAN HOI TU SERVER: " .. tostring(apiObj.error)) end
+            if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+            if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+            if onFinish then onFinish(true, false, _G.Mod_ActiveStatusMsg) end
+            return
+        else
+            tokenStr = remotePayload
+        end
+
+        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4] Dang giai ma Base64 Envelope & Verifying MD5 Signature...") end
+        local config, err = Mod_DecryptPayload(tokenStr)
+        if config then
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 5] Giai ma Token chu ky MD5 TRUNG KHOP 100%!") end
+            local valid, reason = Mod_ValidateConfig(config)
+            if valid then
+                Mod_ApplyConfig(config)
             else
                 _G.Mod_IsActive = false
-                _G.Mod_ActiveStatusMsg = err or "Giải mã cấu hình từ Server thất bại"
+                _G.Mod_ActiveStatusMsg = reason
+                if _G.WriteLog then _G.WriteLog("[ActiveCheck] LOI VALIDATE CONFIG: " .. tostring(reason)) end
             end
-            if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+        else
+            _G.Mod_IsActive = false
+            _G.Mod_ActiveStatusMsg = err or "Giải mã cấu hình từ Server thất bại"
+            if _G.WriteLog then _G.WriteLog("[ActiveCheck] LOI GIAI MA ENVELOPE: " .. tostring(err)) end
         end
+        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+        if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+        if onFinish then onFinish(true, _G.Mod_IsActive, _G.Mod_ActiveStatusMsg) end
     end)
 end
 
-_G.Mod_CheckActiveConfigNow = function()
+_G.Mod_CheckActiveConfigNow = function(onFinish)
     lastCheckTime = 0
+    isCheckingAPI = false
     _G.Mod_RawConfigPayload = ""
-    Mod_UpdatePeriodicCheck()
+    Mod_UpdatePeriodicCheck(onFinish)
 end
 
 function EmmyluaDebug.InitEmmyluaDebug(obj)
@@ -539,35 +622,12 @@ local function CreateModUI()
         rt.anchorMin = Vector2(0, 0)
         rt.anchorMax = Vector2(0, 0)
         rt.pivot = Vector2(0, 0)
-        rt.anchoredPosition = Vector2(20, 200)
+        rt.anchoredPosition = Vector2(20, 280)
         rt.sizeDelta = Vector2(60, 60)
 
         local img = btnGo:AddComponent(typeof(Image))
         img.color = Color(0.215, 0.490, 0.133, 1.0)
         local btnComp = btnGo:AddComponent(typeof(Button))
-        btnComp.onClick:AddListener(function()
-            pcall(function()
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("ĐÃ BẤM NÚT VỤT!") end
-                if _G.Mod_IsActive then
-                    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
-                    if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then
-                        local showMod = not _G.ModMenuPanelGo.activeSelf
-                        _G.ModMenuPanelGo:SetActive(showMod)
-                    end
-                else
-                    if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then _G.ModMenuPanelGo:SetActive(false) end
-                    if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
-                        local showAuth = not _G.authPanelGo.activeSelf
-                        _G.authPanelGo:SetActive(showAuth)
-                        if showAuth and _G.Mod_RefreshAuthPanelData then
-                            _G.Mod_RefreshAuthPanelData()
-                        end
-                    else
-                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("LỖI: authPanelGo chưa khởi tạo!") end
-                    end
-                end
-            end)
-        end)
 
         local txtGo = GameObject("ModText")
         txtGo.transform:SetParent(btnGo.transform, false)
@@ -590,7 +650,7 @@ local function CreateModUI()
         pkRt.anchorMin = Vector2(0, 0)
         pkRt.anchorMax = Vector2(0, 0)
         pkRt.pivot = Vector2(0, 0)
-        pkRt.anchoredPosition = Vector2(20, 290)
+        pkRt.anchoredPosition = Vector2(20, 370)
         pkRt.sizeDelta = Vector2(60, 60)
 
         local pkImg = pkBtnGo:AddComponent(typeof(Image))
@@ -642,7 +702,7 @@ local function CreateModUI()
         adminRt.anchorMin = Vector2(0, 0)
         adminRt.anchorMax = Vector2(0, 0)
         adminRt.pivot = Vector2(0, 0)
-        adminRt.anchoredPosition = Vector2(20, 110)
+        adminRt.anchoredPosition = Vector2(20, 190)
         adminRt.sizeDelta = Vector2(60, 60)
 
         local adminImg = adminBtnGo:AddComponent(typeof(Image))
@@ -696,7 +756,7 @@ local function CreateModUI()
         panelRt.anchorMin = Vector2(0, 0)
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
-        panelRt.anchoredPosition = Vector2(90, 70)
+        panelRt.anchoredPosition = Vector2(90, 50)
         panelRt.sizeDelta = Vector2(720, 580)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
@@ -735,7 +795,7 @@ local function CreateModUI()
         atRt.anchoredPosition = Vector2(0, -15)
         atRt.sizeDelta = Vector2(0, 40)
         local atTxt = actTitleGo:AddComponent(typeof(Text))
-        atTxt.text = "XÁC THỰC BẢN QUYỀN MOD"
+        atTxt.text = "KÍCH HOẠT SỬ DỤNG"
         atTxt.font = defaultFont
         atTxt.fontSize = 24
         atTxt.color = Color(1.0, 0.84, 0.0, 1.0)
@@ -767,7 +827,7 @@ local function CreateModUI()
         slRt.anchoredPosition = Vector2(30, -105)
         slRt.sizeDelta = Vector2(590, 25)
         local slTxt = sLabelGo:AddComponent(typeof(Text))
-        slTxt.text = "1. Mã thiết bị (Serial Number MD5):"
+        slTxt.text = "1. Mã thiết bị:"
         slTxt.font = defaultFont
         slTxt.fontSize = 15
         slTxt.color = Color.cyan
@@ -813,7 +873,7 @@ local function CreateModUI()
         sctRt.anchorMax = Vector2(1, 1)
         sctRt.sizeDelta = Vector2(0, 0)
         local sctTxt = scTxtG:AddComponent(typeof(Text))
-        sctTxt.text = "Copy MD5"
+        sctTxt.text = "Copy Mã"
         sctTxt.font = defaultFont
         sctTxt.fontSize = 15
         sctTxt.color = Color.white
@@ -823,7 +883,7 @@ local function CreateModUI()
             local val = activeSerialTxt and activeSerialTxt.text or ""
             if val ~= "" then
                 pcall(function() CS.UnityEngine.GUIUtility.systemCopyBuffer = val end)
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Serial MD5!") end
+                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Mã thiết bị!") end
             end
         end)
 
@@ -837,7 +897,7 @@ local function CreateModUI()
         ulRt.anchoredPosition = Vector2(30, -185)
         ulRt.sizeDelta = Vector2(590, 25)
         local ulTxt = uLabelGo:AddComponent(typeof(Text))
-        ulTxt.text = "2. Mã nhân vật (Character UID):"
+        ulTxt.text = "2. Mã nhân vật:"
         ulTxt.font = defaultFont
         ulTxt.fontSize = 15
         ulTxt.color = Color.cyan
@@ -963,6 +1023,9 @@ local function CreateModUI()
                 local startX = -((#admins * btnWidth + (#admins - 1) * gap) / 2) + (btnWidth / 2)
                 
                 for idx, adminUser in ipairs(admins) do
+                    local rawUser = tostring(adminUser)
+                    local cleanUser = string.gsub(rawUser, "^@+", "")
+                    
                     local bGo = GameObject("TgBtn_" .. idx)
                     bGo.transform:SetParent(activeTgContainerGo.transform, false)
                     local bRt = bGo:AddComponent(typeof(RectTransform))
@@ -982,7 +1045,7 @@ local function CreateModUI()
                     tRt.anchorMax = Vector2(1, 1)
                     tRt.sizeDelta = Vector2(0, 0)
                     local txtC = txtG:AddComponent(typeof(Text))
-                    txtC.text = "Admin Telegram (@" .. tostring(adminUser) .. ")"
+                    txtC.text = (#admins > 1) and ("Admin Telegram " .. idx) or "Admin Telegram"
                     txtC.font = defaultFont
                     txtC.fontSize = 15
                     txtC.color = Color.white
@@ -994,12 +1057,12 @@ local function CreateModUI()
                         local hasSerial = (serialMD5 ~= "")
                         local hasUID = (uid ~= "" and uid ~= "Vui lòng đăng nhập nhân vật để lấy UID")
                         if hasSerial and hasUID then
-                            msg = "Hi Admin, nho active giup em:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
+                            msg = "Hi Admin, Active giúp mình với:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
                         else
                             msg = "Hi"
                         end
                         local urlMsg = CS.UnityEngine.WWW.EscapeURL(msg)
-                        local telegramUrl = "https://t.me/" .. tostring(adminUser) .. "?text=" .. urlMsg
+                        local telegramUrl = "https://t.me/" .. cleanUser .. "?text=" .. urlMsg
                         pcall(function() CS.UnityEngine.Application.OpenURL(telegramUrl) end)
                     end)
                 end
@@ -1008,14 +1071,18 @@ local function CreateModUI()
         _G.Mod_RefreshAuthPanelData = RefreshAuthPanelData
 
         rBtn.onClick:AddListener(function()
-            if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
-            if _G.Mod_IsActive then
-                if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt bản quyền thành công!") end
-                if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
-            else
-                if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(_G.Mod_ActiveStatusMsg or "Chưa tìm thấy kích hoạt hợp lệ!") end
+            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đang kiểm tra Kích hoạt từ Server...") end
+            if _G.Mod_CheckActiveConfigNow then
+                _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, statusMsg)
+                    if isActive then
+                        if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then _G.authPanelGo:SetActive(false) end
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt bản quyền thành công!") end
+                        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+                    else
+                        if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(statusMsg or "Chưa tìm thấy kích hoạt hợp lệ!") end
+                    end
+                end)
             end
         end)
 
@@ -1080,32 +1147,6 @@ local function CreateModUI()
             if _G.ModMainTab == "CO_BAN" then
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
             end
-        end
-
-        local function ToggleModOrAuthMenu()
-            pcall(function()
-                if _G.Mod_IsActive then
-                    if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
-                    isExpanded = not isExpanded
-                    if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(isExpanded) end
-                    if isExpanded then RefreshMainTabs() end
-                else
-                    if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
-                    if authPanelGo and not authPanelGo:Equals(nil) then
-                        local showAuth = not authPanelGo.activeSelf
-                        authPanelGo:SetActive(showAuth)
-                        if showAuth and _G.Mod_RefreshAuthPanelData then
-                            _G.Mod_RefreshAuthPanelData()
-                        end
-                    end
-                end
-            end)
-        end
-        _G.ModCallbacks = _G.ModCallbacks or {}
-        _G.ModCallbacks.OnToggleMenu = ToggleModOrAuthMenu
-        if btnComp and not btnComp:Equals(nil) then
-            btnComp.onClick:RemoveAllListeners()
-            btnComp.onClick:AddListener(ToggleModOrAuthMenu)
         end
 
         _G.Mod_UpdateUI_ActiveState()
@@ -4638,25 +4679,25 @@ end
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
                             
-                            local hasDinoNearby = false
-                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                local players = _G.RoleManager.GetRolesByType(1)
-                                if players then
-                                    for _, p in pairs(players) do
-                                        if p.name and p.name == "Dino" then
-                                            hasDinoNearby = true
-                                            break
-                                        end
-                                    end
-                                end
-                            end
+                            -- local hasDinoNearby = false
+                            -- if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            --     local players = _G.RoleManager.GetRolesByType(1)
+                            --     if players then
+                            --         for _, p in pairs(players) do
+                            --             if p.name and p.name == "Dino" then
+                            --                 hasDinoNearby = true
+                            --                 break
+                            --             end
+                            --         end
+                            --     end
+                            -- end
                             
                             local lootCount = _G.Mod_IsDev and 3 or 2
                             local delayTime = _G.Mod_IsDev and 0.05 or 0.2
-                            local initialDelay = 0
-                            if hasDinoNearby and isBone then
-                                initialDelay = math.random(1, 700) / 1000
-                            end
+                            local minPDelay = _G.Mod_Config_PickupDelay_Min or 100
+                            local maxPDelay = _G.Mod_Config_PickupDelay_Max or 500
+                            if minPDelay > maxPDelay then minPDelay, maxPDelay = maxPDelay, minPDelay end
+                            local initialDelay = math.random(minPDelay, maxPDelay) / 1000
                             
                             local function ExecutePickup()
                                 if _G.Timer and _G.Timer.StartLoop then
@@ -4714,6 +4755,51 @@ end
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
             end
+        end
+
+        _G.ModCallbacks = _G.ModCallbacks or {}
+        _G.ModCallbacks.OnToggleMenu = function()
+            pcall(function()
+                if _G.Mod_IsActive then
+                    if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
+                    if panelGo and not panelGo:Equals(nil) then
+                        isExpanded = not isExpanded
+                        panelGo:SetActive(isExpanded)
+                        if isExpanded and RefreshMainTabs then RefreshMainTabs() end
+                    end
+                else
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đang kiểm tra Kích hoạt bản quyền...") end
+                    if _G.Mod_CheckActiveConfigNow then
+                        _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, msg)
+                            if isActive then
+                                if authPanelGo and not authPanelGo:Equals(nil) then authPanelGo:SetActive(false) end
+                                if panelGo and not panelGo:Equals(nil) then
+                                    isExpanded = true
+                                    panelGo:SetActive(true)
+                                    if RefreshMainTabs then RefreshMainTabs() end
+                                end
+                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg or "Đã kích hoạt bản quyền thành công!") end
+                            else
+                                if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
+                                if authPanelGo and not authPanelGo:Equals(nil) then
+                                    if showAuth and RefreshAuthPanelData then RefreshAuthPanelData() end
+                                end
+                            end
+                        end)
+                    else
+                        if panelGo and not panelGo:Equals(nil) then panelGo:SetActive(false) end
+                        if authPanelGo and not authPanelGo:Equals(nil) then
+                            local showAuth = not authPanelGo.activeSelf
+                            authPanelGo:SetActive(showAuth)
+                            if showAuth and RefreshAuthPanelData then RefreshAuthPanelData() end
+                        end
+                    end
+                end
+            end)
+        end
+        if btnComp and not btnComp:Equals(nil) then
+            btnComp.onClick:RemoveAllListeners()
+            btnComp.onClick:AddListener(_G.ModCallbacks.OnToggleMenu)
         end
 
         -- WriteLog("Khởi tạo Mod Menu HOÀN TẤT!")

@@ -16,7 +16,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   Clock,
-  ShieldAlert,
+  RotateCcw,
+  Ban,
 } from 'lucide-react';
 
 export default function TokensPage() {
@@ -77,11 +78,19 @@ export default function TokensPage() {
     setToast({ message: `Đã copy ${label} vào Clipboard!`, type: 'success' });
   };
 
-  const handleDeleteToken = async (id: string, sn: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa Token của thiết bị [${sn}]?`)) return;
+  const handleDeleteToken = async (id: string, sn: string, isHardDelete = false) => {
+    const isSale = user.role === 'SALE';
+    const confirmMsg = isSale
+      ? `Bạn có chắc chắn muốn xóa Token của thiết bị [${sn}]?\n\nHành động này sẽ HỦY KÍCH HOẠT Token và ghi lại nhật ký cho Admin kiểm tra.`
+      : isHardDelete
+      ? `[CẢNH BÁO ADMIN] Bạn có chắc muốn XÓA VĨNH VIỄN Token của thiết bị [${sn}] khỏi cơ sở dữ liệu?`
+      : `Bạn có chắc chắn muốn xóa (Soft Delete) Token của thiết bị [${sn}]?`;
+
+    if (!confirm(confirmMsg)) return;
 
     try {
-      const res = await fetch(`/api/tokens/${id}`, { method: 'DELETE' });
+      const url = isHardDelete ? `/api/tokens/${id}?hard=true` : `/api/tokens/${id}`;
+      const res = await fetch(url, { method: 'DELETE' });
       const json = await res.json();
 
       if (!res.ok) {
@@ -89,7 +98,30 @@ export default function TokensPage() {
         return;
       }
 
-      setToast({ message: 'Xóa Token thành công!', type: 'success' });
+      setToast({ message: json.message || 'Xóa Token thành công!', type: 'success' });
+      fetchTokens(search, statusFilter);
+    } catch (e: any) {
+      setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
+    }
+  };
+
+  const handleRestoreToken = async (id: string, sn: string) => {
+    if (!confirm(`[ADMIN] Bạn có chắc muốn KHÔI PHỤC lại Token của thiết bị [${sn}]?`)) return;
+
+    try {
+      const res = await fetch(`/api/tokens/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'RESTORE' }),
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setToast({ message: json.error || 'Lỗi khi khôi phục Token', type: 'error' });
+        return;
+      }
+
+      setToast({ message: 'Đã khôi phục Token thành công!', type: 'success' });
       fetchTokens(search, statusFilter);
     } catch (e: any) {
       setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
@@ -107,8 +139,15 @@ export default function TokensPage() {
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
-  const getStatusBadge = (expireAtStr: string) => {
-    const exp = new Date(expireAtStr);
+  const getStatusBadge = (tok: any) => {
+    if (tok.isDeleted) {
+      return (
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40 flex items-center gap-1 w-max">
+          <Ban className="w-3 h-3 text-rose-400" /> ĐÃ XÓA (SALE)
+        </span>
+      );
+    }
+    const exp = new Date(tok.expireAt);
     if (exp < now) {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1 w-max">
@@ -129,6 +168,14 @@ export default function TokensPage() {
       </span>
     );
   };
+
+  const filterOptions = [
+    { label: 'TẤT CẢ', value: 'ALL' },
+    { label: 'ĐANG HOẠT ĐỘNG', value: 'ACTIVE' },
+    { label: 'SẮP HẾT HẠN (≤3D)', value: 'EXPIRING_SOON' },
+    { label: 'ĐÃ HẾT HẠN', value: 'EXPIRED' },
+    ...(user.role === 'ADMIN' ? [{ label: 'ĐÃ XÓA (BY SALE)', value: 'DELETED' }] : []),
+  ];
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19]">
@@ -175,12 +222,7 @@ export default function TokensPage() {
             </form>
 
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
-              {[
-                { label: 'TẤT CẢ', value: 'ALL' },
-                { label: 'DANG HOẠT ĐỘNG', value: 'ACTIVE' },
-                { label: 'SẮP HẾT HẠN (≤3D)', value: 'EXPIRING_SOON' },
-                { label: 'ĐÃ HẾT HẠN', value: 'EXPIRED' },
-              ].map((filter) => (
+              {filterOptions.map((filter) => (
                 <button
                   key={filter.value}
                   onClick={() => handleStatusChange(filter.value)}
@@ -227,7 +269,7 @@ export default function TokensPage() {
                           onClick={() => router.push(`/tokens/${tok.id}`)}
                           className="hover:bg-slate-800/50 cursor-pointer transition"
                         >
-                          <td className="py-3.5 px-4">{getStatusBadge(tok.expireAt)}</td>
+                          <td className="py-3.5 px-4">{getStatusBadge(tok)}</td>
                           <td className="py-3.5 px-4 font-mono font-bold text-cyan-300">
                             {tok.deviceSnMd5}
                           </td>
@@ -278,26 +320,35 @@ export default function TokensPage() {
                                 Chi tiết ({tok._count?.notes || 0})
                               </Link>
 
-                              {user.role === 'ADMIN' ? (
+                              {/* Restore Button for Admin when Token is Soft-Deleted */}
+                              {user.role === 'ADMIN' && tok.isDeleted && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    handleDeleteToken(tok.id, tok.deviceSnMd5);
+                                    handleRestoreToken(tok.id, tok.deviceSnMd5);
                                   }}
-                                  className="h-8 w-8 inline-flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg transition"
-                                  title="Xóa Token"
+                                  className="h-8 px-2.5 inline-flex items-center justify-center bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-lg font-semibold text-[11px] transition"
+                                  title="Khôi phục Token"
                                 >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              ) : (
-                                <button
-                                  disabled
-                                  className="h-8 w-8 inline-flex items-center justify-center bg-slate-800/40 text-slate-600 border border-slate-800 rounded-lg cursor-not-allowed"
-                                  title="Sale không được xóa token"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <RotateCcw className="w-3.5 h-3.5 mr-1" /> Khôi phục
                                 </button>
                               )}
+
+                              {/* Delete Button (Soft Delete for Sale / Hard Delete or Soft Delete for Admin) */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteToken(tok.id, tok.deviceSnMd5, user.role === 'ADMIN' && tok.isDeleted);
+                                }}
+                                className="h-8 w-8 inline-flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-lg transition"
+                                title={
+                                  user.role === 'ADMIN' && tok.isDeleted
+                                    ? 'Xóa vĩnh viễn khỏi Database'
+                                    : 'Xóa Token (Hủy kích hoạt)'
+                                }
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -315,11 +366,6 @@ export default function TokensPage() {
                 </table>
               </div>
             )}
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
-            Lưu ý bảo mật: Nhân viên Sale có quyền tạo và sửa Token nhưng <strong>không thể xóa Token</strong> để ngăn ngừa gian lận dữ liệu.
           </div>
         </main>
       </div>

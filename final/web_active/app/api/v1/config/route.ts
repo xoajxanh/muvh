@@ -3,7 +3,6 @@ import { prisma, ensureInitialSeed } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-
 export async function GET(req: NextRequest) {
   try {
     await ensureInitialSeed();
@@ -19,6 +18,7 @@ export async function GET(req: NextRequest) {
       where: {
         deviceSnMd5: sn.trim(),
         characterUid: uid.trim(),
+        isDeleted: false,
       },
       orderBy: { createdAt: 'desc' },
     });
