@@ -24,7 +24,7 @@ _G.Mod_Config_PickupDelay_Max = 500
 _G.Mod_Config_ActiveBasicTab = true
 _G.Mod_Config_ActiveAdvancedTab = true
 _G.Mod_Config_ActiveAutoFarmTab = true
-_G.Mod_Config_CurrentRebirth = 8
+_G.Mod_Config_CurrentRebirth = 0
 _G.Mod_Config_AdminTelegram = {"legend92vn"}
 
 local SECRET_SALT = "MUVH_SECRET_SALT_XOAI"
@@ -1368,29 +1368,37 @@ local function CreateModUI()
         _G.GetMapsConfigByTier = GetMapsConfigByTier
 
         local function GetPlayerReincarnationLevel()
-            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth > 0 then
-                return _G.Mod_Config_CurrentRebirth
-            end
+            local detected = nil
             pcall(function()
                 if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
                     local attr = _G.QuickFind.LuaMainPlayerViewAttrData()
-                    if attr and attr.level then
+                    if attr and attr.level and attr.level > 0 then
                         if _G.ClientTable and _G.ClientTable.cfg_Character_levelManager then
                             local r = _G.ClientTable.cfg_Character_levelManager:GetReincarnationLevel(attr.level)
-                            if r and r > 0 then
-                                _G.Mod_Config_CurrentRebirth = r
-                                return r
+                            if r and r >= 3 and r <= 12 then
+                                detected = r
                             end
                         end
-                        local r = math.floor(attr.level / 100)
-                        if r and r > 0 then
-                            _G.Mod_Config_CurrentRebirth = r
-                            return r
+                        if not detected then
+                            local r = math.floor(attr.level / 100)
+                            if r and r >= 3 and r <= 12 then
+                                detected = r
+                            end
                         end
                     end
                 end
             end)
-            return _G.Mod_Config_CurrentRebirth or 7
+            
+            if detected and detected >= 3 and detected <= 12 then
+                _G.Mod_Config_CurrentRebirth = detected
+                return detected
+            end
+
+            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth >= 3 and _G.Mod_Config_CurrentRebirth <= 12 then
+                return _G.Mod_Config_CurrentRebirth
+            end
+
+            return 7
         end
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
 
@@ -4219,21 +4227,39 @@ end
             local smeltStartX = 470
             local smeltY = -70
             
-            local function CreateSmeltToggle(label, varName, x, y, width)
-                local btnGo = GameObject("SmeltToggle_" .. varName)
+            local smeltRowsData = {
+                { label = "TÁCH NHẪN", prefix = "Ring", y = smeltY },
+                { label = "TÁCH DÂY", prefix = "Necklace", y = smeltY - 30 },
+                { label = "TÁCH KHUYÊN", prefix = "Earring", y = smeltY - 60 }
+            }
+            local smeltTogglePool = {}
+
+            for _, rData in ipairs(smeltRowsData) do
+                local lblGo = GameObject("SmeltLbl_" .. rData.prefix)
+                lblGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, lblGo)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, rData.y)
+                lblRt.sizeDelta = Vector2(100, 25)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = false
+                lblTxt.text = rData.label
+                lblTxt.color = Color.white
+                lblTxt.fontSize = 14
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+            end
+
+            local function CreateSmeltToggle(idx)
+                local btnGo = GameObject("SmeltToggle_" .. idx)
                 btnGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AutoBossUIList, btnGo)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(width, 25)
                 
-                local bg = GameObject("Bg")
-                bg.transform:SetParent(btnGo.transform, false)
-                local bgRt = bg:AddComponent(typeof(RectTransform))
-                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRt.sizeDelta = Vector2(0, 0)
-                local bgImg = bg:AddComponent(typeof(CS.UnityEngine.UI.Image))
+                local bgImg = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
+                bgImg.raycastTarget = true
                 
                 local txtGo = GameObject("Text")
                 txtGo.transform:SetParent(btnGo.transform, false)
@@ -4242,39 +4268,14 @@ end
                 txtRt.sizeDelta = Vector2(0, 0)
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
-                txt.text = label
                 txt.fontSize = 14
                 txt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
                 
-                if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
-                if _G.Mod_SmeltConfig[varName] == nil then
-                    pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
-                    if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
-                end
-                
-                local function UpdateVisual()
-                    if _G.Mod_SmeltConfig[varName] then
-                        bgImg.color = Color(0.2, 0.6, 0.2, 1)
-                        txt.color = Color.white
-                    else
-                        bgImg.color = Color(0.3, 0.3, 0.3, 1)
-                        txt.color = Color(0.8, 0.8, 0.8, 1)
-                    end
-                end
-                UpdateVisual()
-                
                 local btn = btnGo:AddComponent(typeof(Button))
-                btn.onClick:AddListener(function()
-                    _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName, _G.Mod_SmeltConfig[varName] and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateVisual()
-                end)
+                return { go = btnGo, rt = rt, bgImg = bgImg, txt = txt, btn = btn }
             end
-            
+
             local function GetSmeltTiers()
                 local x = GetPlayerReincarnationLevel and GetPlayerReincarnationLevel() or 7
                 local tiers = {}
@@ -4284,32 +4285,57 @@ end
                 return tiers
             end
 
-            local function CreateSmeltRow(rowLabel, typePrefix, y)
-                local lblGo = GameObject("SmeltLbl_" .. typePrefix)
-                lblGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, lblGo)
-                local lblRt = lblGo:AddComponent(typeof(RectTransform))
-                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(smeltStartX, y)
-                lblRt.sizeDelta = Vector2(100, 25)
-                local lblTxt = lblGo:AddComponent(typeof(Text))
-                lblTxt.raycastTarget = false
-                lblTxt.text = rowLabel
-                lblTxt.color = Color.white
-                lblTxt.fontSize = 14
-                lblTxt.alignment = TextAnchor.MiddleLeft
-                if defaultFont then lblTxt.font = defaultFont end
-                
+            local function UpdateSmeltToggles()
                 local smeltTiers = GetSmeltTiers()
-                for sIdx, tag in ipairs(smeltTiers) do
-                    local varName = typePrefix .. "_" .. tag
-                    CreateSmeltToggle(tag, varName, smeltStartX + 102 + (sIdx - 1) * 40, y, 36)
+                local poolIdx = 1
+                for _, rData in ipairs(smeltRowsData) do
+                    for sIdx, tag in ipairs(smeltTiers) do
+                        local varName = rData.prefix .. "_" .. tag
+                        local bData = smeltTogglePool[poolIdx]
+                        if not bData then
+                            bData = CreateSmeltToggle(poolIdx)
+                            table.insert(smeltTogglePool, bData)
+                        end
+                        bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
+                        bData.rt.anchoredPosition = Vector2(smeltStartX + 102 + (sIdx - 1) * 40, rData.y)
+                        bData.rt.sizeDelta = Vector2(36, 25)
+                        bData.txt.text = tag
+                        
+                        if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
+                        if _G.Mod_SmeltConfig[varName] == nil then
+                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
+                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
+                        end
+                        
+                        local function updateVisual()
+                            if _G.Mod_SmeltConfig[varName] then
+                                bData.bgImg.color = Color(0.2, 0.6, 0.2, 1)
+                                bData.txt.color = Color.white
+                            else
+                                bData.bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                                bData.txt.color = Color(0.8, 0.8, 0.8, 1)
+                            end
+                        end
+                        updateVisual()
+                        
+                        bData.btn.onClick:RemoveAllListeners()
+                        bData.btn.onClick:AddListener(function()
+                            _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
+                            pcall(function()
+                                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName, _G.Mod_SmeltConfig[varName] and 1 or 0)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                            end)
+                            updateVisual()
+                        end)
+                        poolIdx = poolIdx + 1
+                    end
+                end
+                for i = poolIdx, #smeltTogglePool do
+                    if smeltTogglePool[i] and smeltTogglePool[i].go then
+                        smeltTogglePool[i].go:SetActive(false)
+                    end
                 end
             end
-            
-            CreateSmeltRow("TÁCH NHẪN", "Ring", smeltY)
-            CreateSmeltRow("TÁCH DÂY", "Necklace", smeltY - 30)
-            CreateSmeltRow("TÁCH KHUYÊN", "Earring", smeltY - 60)
             
             local currentY = -170
             
@@ -4398,6 +4424,8 @@ end
             
             UpdateTierTabs = function()
                 if _G.ModMainTab ~= "AUTO_BOSS" then return end
+                
+                if UpdateSmeltToggles then UpdateSmeltToggles() end
                 
                 local currentTiers = GetAvailableTiers and GetAvailableTiers() or {"C6", "C7"}
                 local isTabValid = false
