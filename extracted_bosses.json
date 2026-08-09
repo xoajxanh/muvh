@@ -243,6 +243,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 1",
       "bosses": [
         {
+          "id": 10670501,
+          "name": "Nurmus",
+          "transferId": 106705101
+        },
+        {
+          "id": 10670502,
+          "name": "Ngang Ngược-Nurmus",
+          "transferId": 106705103
+        },
+        {
           "id": 10670503,
           "name": "Tà Ác-Nurmus",
           "transferId": 106705105
@@ -253,6 +263,16 @@
       "mapId": 106805,
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 1",
       "bosses": [
+        {
+          "id": 10670501,
+          "name": "Nurmus",
+          "transferId": 106805101
+        },
+        {
+          "id": 10670502,
+          "name": "Ngang Ngược-Nurmus",
+          "transferId": 106805103
+        },
         {
           "id": 10670503,
           "name": "Tà Ác-Nurmus",
@@ -265,6 +285,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 2",
       "bosses": [
         {
+          "id": 10670501,
+          "name": "Nurmus",
+          "transferId": 106801106
+        },
+        {
+          "id": 10670502,
+          "name": "Ngang Ngược-Nurmus",
+          "transferId": 106801108
+        },
+        {
           "id": 10670503,
           "name": "Tà Ác-Nurmus",
           "transferId": 106801110
@@ -276,9 +306,41 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
       "bosses": [
         {
+          "id": 10670501,
+          "name": "Nurmus",
+          "transferId": 106802111
+        },
+        {
+          "id": 10670502,
+          "name": "Ngang Ngược-Nurmus",
+          "transferId": 106802113
+        },
+        {
           "id": 10670503,
           "name": "Tà Ác-Nurmus",
           "transferId": 106802115
+        }
+      ]
+    },
+    "250002": {
+      "mapId": 250002,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201003,
+          "name": "Thánh Cốt Kundun Chuyển 3",
+          "transferId": 20201003
+        }
+      ]
+    },
+    "270002": {
+      "mapId": 270002,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211003,
+          "name": "Phù Văn Kundun Chuyển 3",
+          "transferId": 20211003
         }
       ]
     }
@@ -527,6 +589,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 2",
       "bosses": [
         {
+          "id": 10670101,
+          "name": "Ma Tinh Phoenix",
+          "transferId": 106701101
+        },
+        {
+          "id": 10670102,
+          "name": "Ngang Ngược-Ma Tinh Phoenix",
+          "transferId": 106701103
+        },
+        {
           "id": 10670103,
           "name": "Tà Ác-Ma Tinh Phoenix",
           "transferId": 106701105
@@ -537,6 +609,16 @@
       "mapId": 106801,
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 2",
       "bosses": [
+        {
+          "id": 10670101,
+          "name": "Ma Tinh Phoenix",
+          "transferId": 106801101
+        },
+        {
+          "id": 10670102,
+          "name": "Ngang Ngược-Ma Tinh Phoenix",
+          "transferId": 106801103
+        },
         {
           "id": 10670103,
           "name": "Tà Ác-Ma Tinh Phoenix",
@@ -549,6 +631,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
       "bosses": [
         {
+          "id": 10670101,
+          "name": "Ma Tinh Phoenix",
+          "transferId": 106802106
+        },
+        {
+          "id": 10670102,
+          "name": "Ngang Ngược-Ma Tinh Phoenix",
+          "transferId": 106802108
+        },
+        {
           "id": 10670103,
           "name": "Tà Ác-Ma Tinh Phoenix",
           "transferId": 106802110
@@ -560,9 +652,41 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
       "bosses": [
         {
+          "id": 10670101,
+          "name": "Ma Tinh Phoenix",
+          "transferId": 106803110
+        },
+        {
+          "id": 10670102,
+          "name": "Ngang Ngược-Ma Tinh Phoenix",
+          "transferId": 106803112
+        },
+        {
           "id": 10670103,
           "name": "Tà Ác-Ma Tinh Phoenix",
           "transferId": 106803114
+        }
+      ]
+    },
+    "250002": {
+      "mapId": 250002,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201004,
+          "name": "Thánh Cốt Kundun Chuyển 4",
+          "transferId": 20201004
+        }
+      ]
+    },
+    "270002": {
+      "mapId": 270002,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211004,
+          "name": "Phù Văn Kundun Chuyển 4",
+          "transferId": 20211004
         }
       ]
     }
@@ -811,6 +935,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 3",
       "bosses": [
         {
+          "id": 10670201,
+          "name": "Nars",
+          "transferId": 106702101
+        },
+        {
+          "id": 10670202,
+          "name": "Ngang Ngược-Nars",
+          "transferId": 106702103
+        },
+        {
           "id": 10670203,
           "name": "Tà Ác-Nars",
           "transferId": 106702105
@@ -821,6 +955,16 @@
       "mapId": 106802,
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 3",
       "bosses": [
+        {
+          "id": 10670201,
+          "name": "Nars",
+          "transferId": 106802101
+        },
+        {
+          "id": 10670202,
+          "name": "Ngang Ngược-Nars",
+          "transferId": 106802103
+        },
         {
           "id": 10670203,
           "name": "Tà Ác-Nars",
@@ -833,6 +977,16 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
       "bosses": [
         {
+          "id": 10670201,
+          "name": "Nars",
+          "transferId": 106803105
+        },
+        {
+          "id": 10670202,
+          "name": "Ngang Ngược-Nars",
+          "transferId": 106803107
+        },
+        {
           "id": 10670203,
           "name": "Tà Ác-Nars",
           "transferId": 106803109
@@ -844,9 +998,41 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 5",
       "bosses": [
         {
+          "id": 10670201,
+          "name": "Nars",
+          "transferId": 106804108
+        },
+        {
+          "id": 10670202,
+          "name": "Ngang Ngược-Nars",
+          "transferId": 106804110
+        },
+        {
           "id": 10670203,
           "name": "Tà Ác-Nars",
           "transferId": 106804112
+        }
+      ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201005,
+          "name": "Thánh Cốt Kundun Chuyển 5",
+          "transferId": 20201005
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211005,
+          "name": "Phù Văn Kundun Chuyển 5",
+          "transferId": 20211005
         }
       ]
     }
@@ -1095,6 +1281,11 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n 4",
       "bosses": [
         {
+          "id": 10670301,
+          "name": "Quân Chủ Luyện Ngục",
+          "transferId": 106703101
+        },
+        {
           "id": 10670302,
           "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
           "transferId": 106703103
@@ -1110,6 +1301,11 @@
       "mapId": 106803,
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 4",
       "bosses": [
+        {
+          "id": 10670301,
+          "name": "Quân Chủ Luyện Ngục",
+          "transferId": 106803101
+        },
         {
           "id": 10670302,
           "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
@@ -1127,6 +1323,11 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 5",
       "bosses": [
         {
+          "id": 10670301,
+          "name": "Quân Chủ Luyện Ngục",
+          "transferId": 106804104
+        },
+        {
           "id": 10670302,
           "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
           "transferId": 106804106
@@ -1143,6 +1344,11 @@
       "mapName": "Luy\\225\\187\\135n Ng\\225\\187\\165c Kh\\225\\187\\149 N\\225\\186\\161n H\\225\\187\\153i Vi\\195\\170n 6",
       "bosses": [
         {
+          "id": 10670301,
+          "name": "Quân Chủ Luyện Ngục",
+          "transferId": 106806107
+        },
+        {
           "id": 10670302,
           "name": "Ngang Ngược-Quân Chủ Luyện Ngục",
           "transferId": 106806109
@@ -1151,6 +1357,28 @@
           "id": 10670303,
           "name": "Tà Ác-Quân Chủ Luyện Ngục",
           "transferId": 106806110
+        }
+      ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201006,
+          "name": "Thánh Cốt Kundun Chuyển 6",
+          "transferId": 20201006
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211006,
+          "name": "Phù Văn Kundun Chuyển 6",
+          "transferId": 20211006
         }
       ]
     }
@@ -1466,6 +1694,28 @@
           "transferId": 106807109
         }
       ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201007,
+          "name": "Thánh Cốt Kundun Chuyển 7",
+          "transferId": 20201007
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211007,
+          "name": "Phù Văn Kundun Chuyển 7",
+          "transferId": 20211007
+        }
+      ]
     }
   },
   "c8": {
@@ -1768,6 +2018,28 @@
           "transferId": 106808109
         }
       ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201008,
+          "name": "Thánh Cốt Kundun Chuyển 8",
+          "transferId": 20201008
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211008,
+          "name": "Phù Văn Kundun Chuyển 8",
+          "transferId": 20211008
+        }
+      ]
     }
   },
   "c9": {
@@ -2049,6 +2321,39 @@
           "transferId": 106809109
         }
       ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201009,
+          "name": "Thánh Cốt Kundun Chuyển 9",
+          "transferId": 20201009
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211009,
+          "name": "Phù Văn Kundun Chuyển 9",
+          "transferId": 20211009
+        }
+      ]
+    },
+    "270003": {
+      "mapId": 270003,
+      "mapName": "V\\225\\186\\191t N\\225\\187\\169t Ma Uy\\195\\170n",
+      "bosses": [
+        {
+          "id": 20241009,
+          "name": "Dung Luyện Kundun Chuyển 9",
+          "transferId": 20241009
+        }
+      ]
     }
   },
   "c10": {
@@ -2309,6 +2614,39 @@
           "transferId": 106810109
         }
       ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201010,
+          "name": "Thánh Cốt Kundun Chuyển 10",
+          "transferId": 20201010
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211010,
+          "name": "Phù Văn Kundun Chuyển 10",
+          "transferId": 20211010
+        }
+      ]
+    },
+    "270003": {
+      "mapId": 270003,
+      "mapName": "V\\225\\186\\191t N\\225\\187\\169t Ma Uy\\195\\170n",
+      "bosses": [
+        {
+          "id": 20241010,
+          "name": "Dung Luyện Kundun Chuyển 10",
+          "transferId": 20241010
+        }
+      ]
     }
   },
   "c11": {
@@ -2548,6 +2886,39 @@
           "transferId": 106811109
         }
       ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201011,
+          "name": "Thánh Cốt Kundun Chuyển 11",
+          "transferId": 20201011
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211011,
+          "name": "Phù Văn Kundun Chuyển 11",
+          "transferId": 20211011
+        }
+      ]
+    },
+    "270003": {
+      "mapId": 270003,
+      "mapName": "V\\225\\186\\191t N\\225\\187\\169t Ma Uy\\195\\170n",
+      "bosses": [
+        {
+          "id": 20241011,
+          "name": "Dung Luyện Kundun Chuyển 11",
+          "transferId": 20241011
+        }
+      ]
     }
   },
   "c12": {
@@ -2785,6 +3156,39 @@
           "id": 10671003,
           "name": "Tà Ác-Người Khai Thác Ma Tinh",
           "transferId": 106812109
+        }
+      ]
+    },
+    "250001": {
+      "mapId": 250001,
+      "mapName": "Khu X\\198\\176\\198\\161ng C\\225\\187\\145t",
+      "bosses": [
+        {
+          "id": 20201012,
+          "name": "Thánh Cốt Kundun Chuyển 12",
+          "transferId": 20201012
+        }
+      ]
+    },
+    "270001": {
+      "mapId": 270001,
+      "mapName": "H\\195\\160nh Lang Ph\\195\\161p Tr\\225\\186\\173n",
+      "bosses": [
+        {
+          "id": 20211012,
+          "name": "Phù Văn Kundun Chuyển 12",
+          "transferId": 20211012
+        }
+      ]
+    },
+    "270003": {
+      "mapId": 270003,
+      "mapName": "V\\225\\186\\191t N\\225\\187\\169t Ma Uy\\195\\170n",
+      "bosses": [
+        {
+          "id": 20241012,
+          "name": "Dung Luyện Kundun Chuyển 12",
+          "transferId": 20241012
         }
       ]
     }

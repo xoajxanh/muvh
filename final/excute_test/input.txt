@@ -1,48 +1,40 @@
-local package_name = "com.vnyh.gp" 
-local outputPath = "/storage/emulated/0/Android/data/" .. package_name .. "/files/output.txt"
+-- ====================================================
+-- SCRIPT TEST DEV: RESET ALL SAVED CONFIGS & RE-FETCH FROM SERVER
+-- ====================================================
 
-local logs = {}
-local function log(msg)
-    table.insert(logs, tostring(msg))
-    print("[EXEC_HTTP_TEST] " .. tostring(msg))
+-- 1. Reset toàn bộ PlayerPrefs và các mảng bộ nhớ (Mod_AutoFarmBoss_Config, Mod_SmeltConfig...)
+if _G.Mod_ResetSavedModConfigs then
+    _G.Mod_ResetSavedModConfigs()
+else
+    pcall(function()
+        CS.UnityEngine.PlayerPrefs.DeleteAll()
+        CS.UnityEngine.PlayerPrefs.Save()
+    end)
+    _G.Mod_AutoFarmBoss_Config = {}
+    _G.Mod_SmeltConfig = {}
+    _G.Mod_AutoFarmBoss_Target = nil
 end
 
-log("==========================================")
-log("  TEST HTTP API FETCH & FULL DECRYPT      ")
-log("==========================================")
+-- 2. Đánh dấu reset trạng thái kéo config
+_G.Mod_HasFetchedConfig = false
+_G.Mod_ActiveConfig = nil
 
-local httpUrl = "http://g3events.asia/api/v1/config?sn=7cf7e3df6fd19f8dbd5c54bb65803680&uid=176827261712166000"
-log("Testing URL: " .. httpUrl)
-
-pcall(function()
-    local req = CS.UnityEngine.Networking.UnityWebRequest.Get(httpUrl)
-    req.timeout = 10
-    local asyncOp = req:SendWebRequest()
-    
-    local count = 0
-    if _G.Timer and _G.Timer.StartLoop then
-        _G.Timer.StartLoop(0.2, 50, function()
-            count = count + 1
-            if asyncOp.isDone or count >= 50 then
-                pcall(function()
-                    log("isDone: " .. tostring(asyncOp.isDone) .. " (Loops: " .. tostring(count) .. ")")
-                    log("Response Code: " .. tostring(req.responseCode))
-                    log("isNetworkError: " .. tostring(req.isNetworkError))
-                    log("isHttpError: " .. tostring(req.isHttpError))
-                    log("Error Msg: " .. tostring(req.error))
-                    if req.downloadHandler then
-                        local jsonBody = req.downloadHandler.text
-                        log("API Response Body: " .. tostring(jsonBody))
-                    end
-                end)
-                
-                local fullOutput = table.concat(logs, "\n")
-                local f = io.open(outputPath, "w")
-                if f then f:write(fullOutput); f:close() end
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("TEST HTTP API HOÀN TẤT!") end
-            end
-        end)
-    end
-end)
-
-return "Đang test API HTTP..."
+-- 3. Gọi lại API Server để kéo cấu hình mới tinh
+if _G.Mod_FetchRemoteConfig then
+    _G.Mod_FetchRemoteConfig(function(success, config)
+        if success then
+            print("[DEV TEST] Đã kéo và áp dụng Cấu hình mới từ Server thành công!")
+            
+            -- Làm mới lại tất cả giao diện
+            pcall(function()
+                if _G.UpdateBossWatchUIText then _G.UpdateBossWatchUIText() end
+                if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+                if _G.UpdateTierTabs then _G.UpdateTierTabs() end
+            end)
+        else
+            print("[DEV TEST] Lỗi khi kéo Cấu hình từ Server!")
+        end
+    end)
+else
+    print("[DEV TEST] Không tìm thấy hàm Mod_FetchRemoteConfig!")
+end
