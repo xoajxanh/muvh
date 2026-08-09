@@ -40,20 +40,12 @@ export async function POST(req: NextRequest) {
       activeTabBasic,
       activeTabAdvanced,
       activeTabAutofarm,
-      characterReincarnation,
-      adminTelegrams,
       price,
     } = body;
 
     if (!name || !durationDays) {
       return NextResponse.json({ error: 'Tên gói và số ngày hết hạn là bắt buộc' }, { status: 400 });
     }
-
-    const telegramsList = Array.isArray(adminTelegrams)
-      ? JSON.stringify(adminTelegrams)
-      : typeof adminTelegrams === 'string'
-      ? JSON.stringify(adminTelegrams.split(',').map((s) => s.trim()).filter(Boolean))
-      : '["@admin1", "@admin2"]';
 
     const newPkg = await prisma.vipPackage.create({
       data: {
@@ -70,8 +62,6 @@ export async function POST(req: NextRequest) {
         activeTabBasic: Boolean(activeTabBasic ?? true),
         activeTabAdvanced: Boolean(activeTabAdvanced ?? true),
         activeTabAutofarm: Boolean(activeTabAutofarm ?? true),
-        characterReincarnation: Number(characterReincarnation ?? 8),
-        adminTelegrams: telegramsList,
         price: Number(price ?? 0),
       },
     });

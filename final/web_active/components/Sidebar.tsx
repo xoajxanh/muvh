@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Package, Users, User, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send } from 'lucide-react';
 
 interface SidebarProps {
   userRole?: 'ADMIN' | 'SALE';
@@ -16,11 +16,13 @@ export default function Sidebar({ userRole }: SidebarProps) {
     { label: 'Dashboard', href: '/', icon: LayoutDashboard },
     { label: 'Quản Lý Token', href: '/tokens', icon: Key },
     { label: 'Gói Cước VIP', href: '/packages', icon: Package },
+    { label: 'Telegram CSKH', href: '/telegrams', icon: Send },
     ...(userRole === 'ADMIN'
       ? [{ label: 'Quản Lý Tài Khoản', href: '/users', icon: Users }]
       : []),
     { label: 'Cá Nhân', href: '/profile', icon: User },
   ];
+
 
   return (
     <aside className="w-64 glass-panel flex flex-col shrink-0 border-r border-slate-800 hidden md:flex min-h-screen">

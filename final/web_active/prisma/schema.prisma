@@ -20,25 +20,23 @@ model User {
 }
 
 model VipPackage {
-  id                      String   @id @default(uuid())
-  name                    String
-  durationDays            Int
-  fovMin                  Int      @default(20)
-  fovMax                  Int      @default(90)
-  bossRefreshMin          Int      @default(1)
-  bossRefreshMax          Int      @default(60)
-  maxMoveSpeed            Float    @default(2.5)
-  maxAttackSpeed          Float    @default(2.5)
-  maxMonsterRange         Int      @default(50)
-  maxPickupCount          Int      @default(100)
-  activeTabBasic          Boolean  @default(true)
-  activeTabAdvanced       Boolean  @default(true)
-  activeTabAutofarm       Boolean  @default(true)
-  characterReincarnation Int      @default(8)
-  adminTelegrams          String   @default("[\"@admin1\", \"@admin2\"]")
-  price                   Float    @default(0)
-  createdAt               DateTime @default(now())
-  tokens                  Token[]
+  id                 String   @id @default(uuid())
+  name               String
+  durationDays       Int
+  fovMin             Int      @default(20)
+  fovMax             Int      @default(90)
+  bossRefreshMin     Int      @default(1)
+  bossRefreshMax     Int      @default(60)
+  maxMoveSpeed       Float    @default(2.5)
+  maxAttackSpeed     Float    @default(2.5)
+  maxMonsterRange    Int      @default(50)
+  maxPickupCount     Int      @default(100)
+  activeTabBasic     Boolean  @default(true)
+  activeTabAdvanced  Boolean  @default(true)
+  activeTabAutofarm  Boolean  @default(true)
+  price              Float    @default(0)
+  createdAt          DateTime @default(now())
+  tokens             Token[]
 }
 
 model Token {
@@ -84,4 +82,12 @@ model TokenNote {
   action      String   // CREATE, UPDATE
   detail      String   @db.NVarChar(Max)
   createdAt   DateTime @default(now())
+}
+
+model TelegramContact {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
 }

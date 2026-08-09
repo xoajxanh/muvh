@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
 import Toast from '@/components/Toast';
-import { Package, Plus, Edit2, Trash2, X, Sliders, ShieldCheck } from 'lucide-react';
+import { Package, Plus, Edit2, Trash2, X, Sliders } from 'lucide-react';
 
 export default function PackagesPage() {
   const router = useRouter();
@@ -31,8 +31,6 @@ export default function PackagesPage() {
   const [activeTabBasic, setActiveTabBasic] = useState(true);
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
-  const [characterReincarnation, setCharacterReincarnation] = useState(8);
-  const [adminTelegrams, setAdminTelegrams] = useState('@admin1, @admin2');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -85,18 +83,6 @@ export default function PackagesPage() {
       setActiveTabBasic(pkg.activeTabBasic ?? true);
       setActiveTabAdvanced(pkg.activeTabAdvanced ?? true);
       setActiveTabAutofarm(pkg.activeTabAutofarm ?? true);
-      setCharacterReincarnation(pkg.characterReincarnation ?? 8);
-
-      let teleStr = '@admin1, @admin2';
-      if (pkg.adminTelegrams) {
-        try {
-          const parsed = JSON.parse(pkg.adminTelegrams);
-          teleStr = Array.isArray(parsed) ? parsed.join(', ') : pkg.adminTelegrams;
-        } catch {
-          teleStr = pkg.adminTelegrams;
-        }
-      }
-      setAdminTelegrams(teleStr);
     } else {
       setEditingPkgId(null);
       setName('');
@@ -113,8 +99,6 @@ export default function PackagesPage() {
       setActiveTabBasic(true);
       setActiveTabAdvanced(true);
       setActiveTabAutofarm(true);
-      setCharacterReincarnation(8);
-      setAdminTelegrams('@admin1, @admin2');
     }
     setShowModal(true);
   };
@@ -139,8 +123,6 @@ export default function PackagesPage() {
         activeTabBasic,
         activeTabAdvanced,
         activeTabAutofarm,
-        characterReincarnation: Number(characterReincarnation),
-        adminTelegrams: adminTelegrams.split(',').map((s) => s.trim()).filter(Boolean),
       };
 
       const url = editingPkgId ? `/api/packages/${editingPkgId}` : '/api/packages';
@@ -209,7 +191,7 @@ export default function PackagesPage() {
                 <Package className="w-5 h-5 text-cyan-400" />
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Thiết lập đầy đủ thông số mod (FOV, tốc độ, phạm vi quái, tabs, chuyển) để nhân viên chọn tạo token nhanh
+                Thiết lập đầy đủ thông số mod (FOV, tốc độ, phạm vi quái, tabs) để nhân viên chọn tạo token nhanh
               </p>
             </div>
 
@@ -240,10 +222,6 @@ export default function PackagesPage() {
                 </div>
 
                 <div className="space-y-2 text-xs text-slate-300 pt-3 border-t border-slate-800">
-                  <div className="flex justify-between">
-                    <span className="text-slate-400">Chuyển Nhân Vật:</span>
-                    <span className="font-semibold text-cyan-300">Chuyển {pkg.characterReincarnation ?? 8} (c{pkg.characterReincarnation ?? 8} & c{(pkg.characterReincarnation ?? 8) - 1})</span>
-                  </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">FOV Min - Max:</span>
                     <span className="font-semibold">{pkg.fovMin} - {pkg.fovMax}</span>
@@ -433,39 +411,6 @@ export default function PackagesPage() {
                           className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Row 4: Reincarnation & Admin Telegrams */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block font-semibold text-slate-300 mb-1 min-h-[20px] flex items-end">
-                        Mặc Định Chuyển Nhân Vật
-                      </label>
-                      <select
-                        value={characterReincarnation}
-                        onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
-                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
-                      >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
-                          <option key={lvl} value={lvl}>
-                            Chuyển {lvl} (Lấy Data C{lvl} & C{lvl - 1})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold text-slate-300 mb-1 min-h-[20px] flex items-end">
-                        Admin Telegram Contact
-                      </label>
-                      <input
-                        type="text"
-                        value={adminTelegrams}
-                        onChange={(e) => setAdminTelegrams(e.target.value)}
-                        placeholder="@admin1, @admin2"
-                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 font-mono"
-                      />
                     </div>
                   </div>
 

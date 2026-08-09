@@ -22,6 +22,7 @@ export default function TokenCreatePage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [packages, setPackages] = useState<any[]>([]);
+  const [systemTelegrams, setSystemTelegrams] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,8 +46,12 @@ export default function TokenCreatePage() {
   const [activeTabBasic, setActiveTabBasic] = useState(true);
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
+
+  // Token-specific parameter (Independent of VIP package)
   const [characterReincarnation, setCharacterReincarnation] = useState(8);
-  const [adminTelegrams, setAdminTelegrams] = useState('@admin1, @admin2');
+
+  // Selected Telegram Contacts (up to 2)
+  const [selectedTelegrams, setSelectedTelegrams] = useState<string[]>(['@xoajxanh', '@legend92vn']);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -61,6 +66,7 @@ export default function TokenCreatePage() {
         if (resData?.user) {
           setUser(resData.user);
           loadPackages();
+          loadSystemTelegrams();
         }
       })
       .catch(() => router.push('/login'));
@@ -74,6 +80,24 @@ export default function TokenCreatePage() {
         setPackages(json.packages || []);
         if (json.packages && json.packages.length > 0) {
           applyPackagePreset(json.packages[0]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadSystemTelegrams = async () => {
+    try {
+      const res = await fetch('/api/telegrams');
+      if (res.ok) {
+        const json = await res.json();
+        const list = json.telegrams || [];
+        setSystemTelegrams(list);
+        if (list.length >= 2) {
+          setSelectedTelegrams([list[0].username, list[1].username]);
+        } else if (list.length === 1) {
+          setSelectedTelegrams([list[0].username]);
         }
       }
     } catch (err) {
@@ -96,25 +120,18 @@ export default function TokenCreatePage() {
     setActiveTabBasic(pkg.activeTabBasic ?? true);
     setActiveTabAdvanced(pkg.activeTabAdvanced ?? true);
     setActiveTabAutofarm(pkg.activeTabAutofarm ?? true);
-    setCharacterReincarnation(pkg.characterReincarnation ?? 8);
-
-    let teleStr = '@admin1, @admin2';
-    if (pkg.adminTelegrams) {
-      try {
-        const parsed = JSON.parse(pkg.adminTelegrams);
-        teleStr = Array.isArray(parsed) ? parsed.join(', ') : pkg.adminTelegrams;
-      } catch {
-        teleStr = pkg.adminTelegrams;
-      }
-    }
-    setAdminTelegrams(teleStr);
     setIsCustom(false);
   };
 
-  const handlePackageSelectChange = (pkgId: string) => {
-    const pkg = packages.find((p) => p.id === pkgId);
-    if (pkg) {
-      applyPackagePreset(pkg);
+  const handleTelegramToggle = (uname: string) => {
+    if (selectedTelegrams.includes(uname)) {
+      setSelectedTelegrams(selectedTelegrams.filter((u) => u !== uname));
+    } else {
+      if (selectedTelegrams.length >= 2) {
+        setToast({ message: 'Chỉ được chọn tối đa 2 Telegram Admin Contact!', type: 'error' });
+        return;
+      }
+      setSelectedTelegrams([...selectedTelegrams, uname]);
     }
   };
 
@@ -158,7 +175,7 @@ export default function TokenCreatePage() {
         activeTabAdvanced,
         activeTabAutofarm,
         characterReincarnation: Number(characterReincarnation),
-        adminTelegrams: adminTelegrams.split(',').map((s) => s.trim()).filter(Boolean),
+        adminTelegrams: selectedTelegrams,
         price: Number(price),
         isCustom,
       };
@@ -228,10 +245,10 @@ export default function TokenCreatePage() {
               {/* Customer Info Card */}
               <div className="glass-card p-6 rounded-2xl space-y-4">
                 <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-                  <Key className="w-4 h-4" /> 1. Thông Tin Nhận Diện Khách Hàng
+                  <Key className="w-4 h-4" /> 1. Thông Tin Khách Hàng & Chuyển Nhân Vật
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Device MD5 */}
                   <div className="flex flex-col justify-end">
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
@@ -282,6 +299,24 @@ export default function TokenCreatePage() {
                         <span className="hidden sm:inline">Paste</span>
                       </button>
                     </div>
+                  </div>
+
+                  {/* Character Reincarnation (Always chosen per token!) */}
+                  <div className="flex flex-col justify-end">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
+                      Chuyển Nhân Vật Hiện Tại
+                    </label>
+                    <select
+                      value={characterReincarnation}
+                      onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
+                      className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-cyan-300 font-semibold"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                        <option key={lvl} value={lvl}>
+                          Chuyển {lvl} (Data C{lvl} & C{lvl - 1})
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </div>
@@ -491,43 +526,39 @@ export default function TokenCreatePage() {
                       />
                     </div>
                   </div>
+                </div>
 
-                  {/* Reincarnation Level */}
-                  <div className="flex flex-col justify-end">
-                    <label className="block font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
-                      Chuyển Hiện Tại Của Nhân Vật
-                    </label>
-                    <select
-                      value={characterReincarnation}
-                      onChange={(e) => {
-                        setCharacterReincarnation(Number(e.target.value));
-                        setIsCustom(true);
-                      }}
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          Chuyển {lvl} (Lấy Data C{lvl} & C{lvl - 1})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* System Telegram Contacts Selector (Up to 2) */}
+                <div className="pt-4 border-t border-slate-800 space-y-2">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Chọn Admin Telegram CSKH Hiển Thị Cho Khách (Tối Đa 2 Tài Khoản Trong Danh Sách):
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {systemTelegrams.map((contact) => {
+                      const isChecked = selectedTelegrams.includes(contact.username);
+                      return (
+                        <button
+                          key={contact.id}
+                          type="button"
+                          onClick={() => handleTelegramToggle(contact.username)}
+                          className={`px-3 py-2 rounded-xl text-xs font-semibold border flex items-center gap-2 transition ${
+                            isChecked
+                              ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 shadow-sm'
+                              : 'bg-slate-900/60 text-slate-400 border-slate-800 hover:border-slate-700'
+                          }`}
+                        >
+                          <Send className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{contact.name} ({contact.username})</span>
+                          {isChecked && <span className="text-cyan-400 font-bold">✓</span>}
+                        </button>
+                      );
+                    })}
 
-                  {/* Admin Telegram Users */}
-                  <div className="flex flex-col justify-end">
-                    <label className="block font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
-                      Telegram Admin Contact
-                    </label>
-                    <input
-                      type="text"
-                      value={adminTelegrams}
-                      onChange={(e) => {
-                        setAdminTelegrams(e.target.value);
-                        setIsCustom(true);
-                      }}
-                      placeholder="@admin1, @admin2"
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 font-mono"
-                    />
+                    {systemTelegrams.length === 0 && (
+                      <span className="text-xs text-slate-500 italic">
+                        Chưa có Telegram contact nào. <Link href="/telegrams" className="text-cyan-400 underline">Thêm tại đây</Link>
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -596,20 +627,20 @@ export default function TokenCreatePage() {
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
-                    <span className="text-slate-400">Chế độ Config:</span>
-                    <span className="font-semibold text-cyan-300">
-                      {isCustom ? 'Tùy Chỉnh (Custom)' : 'Theo Gói VIP'}
+                    <span className="text-slate-400">Chuyển Nhân Vật:</span>
+                    <span className="font-semibold text-cyan-300">Chuyển {characterReincarnation}</span>
+                  </div>
+
+                  <div className="flex justify-between py-1.5 border-b border-slate-800">
+                    <span className="text-slate-400">Telegram Admin:</span>
+                    <span className="font-mono text-slate-200 text-[11px] truncate max-w-[140px]">
+                      {selectedTelegrams.join(', ')}
                     </span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
                     <span className="text-slate-400">Thời hạn:</span>
                     <span className="text-slate-200 font-semibold">{durationDays} Ngày</span>
-                  </div>
-
-                  <div className="flex justify-between py-1.5 border-b border-slate-800">
-                    <span className="text-slate-400">Reincarnation:</span>
-                    <span className="text-slate-200 font-semibold">Chuyển {characterReincarnation} & {characterReincarnation - 1}</span>
                   </div>
 
                   <div className="flex justify-between py-2 text-sm font-bold">

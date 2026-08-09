@@ -13,7 +13,6 @@ import {
   History,
   CheckCircle2,
   Clock,
-  AlertTriangle,
   Save,
   Send,
   User,
@@ -27,6 +26,7 @@ export default function TokenDetailPage() {
 
   const [user, setUser] = useState<any>(null);
   const [token, setToken] = useState<any>(null);
+  const [systemTelegrams, setSystemTelegrams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -45,6 +45,7 @@ export default function TokenDetailPage() {
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
   const [characterReincarnation, setCharacterReincarnation] = useState(8);
+  const [selectedTelegrams, setSelectedTelegrams] = useState<string[]>([]);
   const [price, setPrice] = useState(0);
   const [noteDetail, setNoteDetail] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -62,10 +63,23 @@ export default function TokenDetailPage() {
         if (resData?.user) {
           setUser(resData.user);
           loadTokenDetail();
+          loadSystemTelegrams();
         }
       })
       .catch(() => router.push('/login'));
   }, [router, tokenId]);
+
+  const loadSystemTelegrams = async () => {
+    try {
+      const res = await fetch('/api/telegrams');
+      if (res.ok) {
+        const json = await res.json();
+        setSystemTelegrams(json.telegrams || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadTokenDetail = async () => {
     setLoading(true);
@@ -90,6 +104,16 @@ export default function TokenDetailPage() {
           setActiveTabAutofarm(tok.activeTabAutofarm);
           setCharacterReincarnation(tok.characterReincarnation);
           setPrice(tok.price);
+
+          let teleList: string[] = [];
+          if (tok.adminTelegrams) {
+            try {
+              teleList = JSON.parse(tok.adminTelegrams);
+            } catch {
+              teleList = ['@xoajxanh', '@legend92vn'];
+            }
+          }
+          setSelectedTelegrams(teleList);
         }
       } else {
         setToast({ message: 'Không tìm thấy Token', type: 'error' });
@@ -98,6 +122,18 @@ export default function TokenDetailPage() {
       console.error(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTelegramToggle = (uname: string) => {
+    if (selectedTelegrams.includes(uname)) {
+      setSelectedTelegrams(selectedTelegrams.filter((u) => u !== uname));
+    } else {
+      if (selectedTelegrams.length >= 2) {
+        setToast({ message: 'Chỉ được chọn tối đa 2 Telegram Admin Contact!', type: 'error' });
+        return;
+      }
+      setSelectedTelegrams([...selectedTelegrams, uname]);
     }
   };
 
@@ -125,6 +161,7 @@ export default function TokenDetailPage() {
         activeTabAdvanced,
         activeTabAutofarm,
         characterReincarnation: Number(characterReincarnation),
+        adminTelegrams: selectedTelegrams,
         price: Number(price),
         noteDetail: noteDetail.trim() || 'Cập nhật thông số token',
       };
@@ -257,7 +294,7 @@ export default function TokenDetailPage() {
                         type="number"
                         value={durationDays}
                         onChange={(e) => setDurationDays(Number(e.target.value))}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         required
                       />
                     </div>
@@ -268,7 +305,7 @@ export default function TokenDetailPage() {
                         type="number"
                         value={price}
                         onChange={(e) => setPrice(Number(e.target.value))}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-emerald-400 font-semibold"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-emerald-400 font-semibold"
                         required
                       />
                     </div>
@@ -280,13 +317,13 @@ export default function TokenDetailPage() {
                           type="number"
                           value={fovMin}
                           onChange={(e) => setFovMin(Number(e.target.value))}
-                          className="w-1/2 p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                         <input
                           type="number"
                           value={fovMax}
                           onChange={(e) => setFovMax(Number(e.target.value))}
-                          className="w-1/2 p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                       </div>
                     </div>
@@ -299,24 +336,24 @@ export default function TokenDetailPage() {
                           step="0.1"
                           value={maxMoveSpeed}
                           onChange={(e) => setMaxMoveSpeed(Number(e.target.value))}
-                          className="w-1/2 p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                         <input
                           type="number"
                           step="0.1"
                           value={maxAttackSpeed}
                           onChange={(e) => setMaxAttackSpeed(Number(e.target.value))}
-                          className="w-1/2 p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                          className="w-1/2 h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-300 mb-1">Reincarnation (Chuyển)</label>
+                      <label className="block font-semibold text-slate-300 mb-1">Chuyển Nhân Vật</label>
                       <select
                         value={characterReincarnation}
                         onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
                           <option key={lvl} value={lvl}>
@@ -327,13 +364,38 @@ export default function TokenDetailPage() {
                     </div>
 
                     <div className="sm:col-span-2">
+                      <label className="block font-semibold text-slate-300 mb-1">Chọn Admin Telegram Contact (Tối đa 2):</label>
+                      <div className="flex flex-wrap gap-2">
+                        {systemTelegrams.map((contact) => {
+                          const isChecked = selectedTelegrams.includes(contact.username);
+                          return (
+                            <button
+                              key={contact.id}
+                              type="button"
+                              onClick={() => handleTelegramToggle(contact.username)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-semibold border flex items-center gap-1.5 transition ${
+                                isChecked
+                                  ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60'
+                                  : 'bg-slate-900/60 text-slate-400 border-slate-800'
+                              }`}
+                            >
+                              <Send className="w-3 h-3 text-cyan-400" />
+                              <span>{contact.name} ({contact.username})</span>
+                              {isChecked && <span className="text-cyan-400 font-bold">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-2">
                       <label className="block font-semibold text-slate-300 mb-1">Ghi Chú Sửa (Token Note Audit Log)</label>
                       <input
                         type="text"
                         value={noteDetail}
                         onChange={(e) => setNoteDetail(e.target.value)}
                         placeholder="Ví dụ: Gia hạn thêm 30 ngày cho khách chuyển khoản..."
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200"
                         required
                       />
                     </div>
@@ -373,6 +435,13 @@ export default function TokenDetailPage() {
                       <span className="text-slate-400 block text-[10px]">Reincarnation</span>
                       <span className="font-bold text-cyan-300">
                         Chuyển {token.characterReincarnation} & {token.characterReincarnation - 1}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Telegram Admin Contact</span>
+                      <span className="font-mono font-bold text-slate-200 truncate block">
+                        {selectedTelegrams.join(', ')}
                       </span>
                     </div>
 

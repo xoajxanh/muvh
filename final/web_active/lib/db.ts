@@ -70,9 +70,18 @@ export async function ensureInitialSeed() {
           },
         });
       }
+      console.log('Seeding default Telegram CSKH contacts...');
+      await prisma.telegramContact.createMany({
+        data: [
+          { username: '@xoajxanh', name: 'Admin Xoài' },
+          { username: '@legend92vn', name: 'Admin Legend' },
+        ],
+      });
+
       console.log('Database initial seed complete!');
     }
   } catch (err) {
     console.error('Error during initial seed:', err);
   }
 }
+

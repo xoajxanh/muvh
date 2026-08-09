@@ -117,21 +117,7 @@ local function Mod_DecryptPayload(payloadB64)
     return configObj, nil
 end
 
-local function Mod_FetchRemotePayload()
-    local payload = ""
-    pcall(function()
-        local path = CS.UnityEngine.Application.persistentDataPath .. "/fake_config.json"
-        if CS.System.IO.File.Exists(path) then
-            payload = CS.System.IO.File.ReadAllText(path)
-        else
-            local devPath = "D:/MUVH/android/mu-decompiled/final/fake_config.json"
-            if CS.System.IO.File.Exists(devPath) then
-                payload = CS.System.IO.File.ReadAllText(devPath)
-            end
-        end
-    end)
-    return payload
-end
+local API_BASE_URL = "https://g3events.asia/api/v1/config"
 
 local function Mod_ValidateConfig(config)
     if not config then return false, "Chưa có cấu hình kích hoạt!" end
@@ -146,8 +132,11 @@ local function Mod_ValidateConfig(config)
             return false, "Mã thiết bị (Serial MD5) không trùng khớp!"
         end
     end
-    local currentUID = Mod_GetCharacterUID()
-    if currentUID ~= "" and config.uid and tostring(config.uid) ~= "" then
+    if config.uid and tostring(config.uid) ~= "" then
+        local currentUID = Mod_GetCharacterUID()
+        if currentUID == "" then
+            return false, "Vui lòng đăng nhập nhân vật trong game để xác thực UID!"
+        end
         if tostring(config.uid) ~= currentUID then
             return false, "Mã nhân vật (UID) không trùng khớp!"
         end
@@ -176,57 +165,75 @@ local function Mod_ApplyConfig(config)
     if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
 end
 
+local function Mod_FetchRemotePayloadFromAPI(callback)
+    local serialMD5 = Mod_GetDeviceSerialMD5()
+    local uid = Mod_GetCharacterUID()
+    local url = API_BASE_URL .. "?sn=" .. tostring(serialMD5) .. "&uid=" .. tostring(uid)
+    
+    pcall(function()
+        local req = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
+        req.timeout = 10
+        local asyncOp = req:SendWebRequest()
+        
+        local count = 0
+        if _G.Timer and _G.Timer.StartLoop then
+            _G.Timer.StartLoop(0.2, 50, function()
+                count = count + 1
+                if asyncOp.isDone or count >= 50 then
+                    local payload = ""
+                    local isSuccess = false
+                    pcall(function()
+                        if req.result == CS.UnityEngine.Networking.UnityWebRequest.Result.Success then
+                            payload = req.downloadHandler.text
+                            isSuccess = true
+                        end
+                        req:Dispose()
+                    end)
+                    if callback then callback(isSuccess, payload) end
+                end
+            end)
+        else
+            if callback then callback(false, "") end
+        end
+    end)
+end
+
 local lastCheckTime = 0
+local isCheckingAPI = false
 local function Mod_UpdatePeriodicCheck()
     local now = os.time()
     if now - lastCheckTime < 60 then return end
+    if isCheckingAPI then return end
     lastCheckTime = now
+    isCheckingAPI = true
 
-    local remotePayload = Mod_FetchRemotePayload()
-    if remotePayload == "" then
-        _G.Mod_IsActive = false
-        _G.Mod_ActiveStatusMsg = "Chưa có file cấu hình kích hoạt trên hệ thống!"
-        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
-        return
-    end
+    Mod_FetchRemotePayloadFromAPI(function(isSuccess, remotePayload)
+        isCheckingAPI = false
+        if not isSuccess or not remotePayload or remotePayload == "" then
+            _G.Mod_IsActive = false
+            _G.Mod_ActiveStatusMsg = "Lỗi kết nối mạng / Không thể kết nối Server API!"
+            if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+            return
+        end
 
-    if _G.Mod_RawConfigPayload == "" then
-        _G.Mod_RawConfigPayload = remotePayload
-        local config, err = Mod_DecryptPayload(remotePayload)
-        if config then
-            local valid, reason = Mod_ValidateConfig(config)
-            if valid then
-                Mod_ApplyConfig(config)
+        if remotePayload ~= _G.Mod_RawConfigPayload then
+            _G.Mod_RawConfigPayload = remotePayload
+            local config, err = Mod_DecryptPayload(remotePayload)
+            if config then
+                local valid, reason = Mod_ValidateConfig(config)
+                if valid then
+                    Mod_ApplyConfig(config)
+                else
+                    _G.Mod_IsActive = false
+                    _G.Mod_ActiveStatusMsg = reason
+                end
             else
                 _G.Mod_IsActive = false
-                _G.Mod_ActiveStatusMsg = reason
+                _G.Mod_ActiveStatusMsg = err or "Giải mã cấu hình từ Server thất bại"
             end
-        else
-            _G.Mod_IsActive = false
-            _G.Mod_ActiveStatusMsg = err or "Giải mã cấu hình thất bại"
+            if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
         end
-        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
-        return
-    end
-
-    if remotePayload ~= _G.Mod_RawConfigPayload then
-        _G.Mod_RawConfigPayload = remotePayload
-        local config, err = Mod_DecryptPayload(remotePayload)
-        if config then
-            local valid, reason = Mod_ValidateConfig(config)
-            if valid then
-                Mod_ApplyConfig(config)
-                _G.Mod_ActiveStatusMsg = "Có cấu hình mới được cập nhật, yêu cầu khởi động lại game!"
-            else
-                _G.Mod_IsActive = false
-                _G.Mod_ActiveStatusMsg = reason
-            end
-        else
-            _G.Mod_IsActive = false
-            _G.Mod_ActiveStatusMsg = err or "Cấu hình mới không hợp lệ"
-        end
-        if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
-    end
+    end)
 end
 
 _G.Mod_CheckActiveConfigNow = function()
@@ -2950,16 +2957,14 @@ end
                 end
             end
         end
-        if not _G.Mod_IsDev then CreateAuthUI() end
-
         _G.ModCallbacks.OnToggleMenu = function()
             pcall(function()
-                if _G.Mod_IsDev or _G.ModAuthValid then
+                if _G.Mod_IsActive then
                     if _G.authPanelGo and _G.authPanelGo.activeSelf then _G.authPanelGo:SetActive(false) end
                     isExpanded = not isExpanded
                     panelGo:SetActive(isExpanded)
                     if isExpanded then 
-                        UpdateFOVLabel()
+                        if UpdateFOVLabel then UpdateFOVLabel() end
                         RefreshMainTabs()
                         if _G.NetManager and _G.MapMessage then
                             _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
@@ -2970,7 +2975,9 @@ end
                 else
                     if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
                     if _G.authPanelGo then
-                        _G.authPanelGo:SetActive(not _G.authPanelGo.activeSelf)
+                        local showAuth = not _G.authPanelGo.activeSelf
+                        _G.authPanelGo:SetActive(showAuth)
+                        if showAuth and RefreshAuthPanelData then RefreshAuthPanelData() end
                     end
                 end
             end)

@@ -14,15 +14,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const { id } = params;
     const body = await req.json();
 
-    let telegramsList: string | undefined = undefined;
-    if (body.adminTelegrams !== undefined) {
-      telegramsList = Array.isArray(body.adminTelegrams)
-        ? JSON.stringify(body.adminTelegrams)
-        : typeof body.adminTelegrams === 'string'
-        ? JSON.stringify(body.adminTelegrams.split(',').map((s: string) => s.trim()).filter(Boolean))
-        : '["@admin1", "@admin2"]';
-    }
-
     const updatedPkg = await prisma.vipPackage.update({
       where: { id },
       data: {
@@ -39,8 +30,6 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         activeTabBasic: body.activeTabBasic !== undefined ? Boolean(body.activeTabBasic) : undefined,
         activeTabAdvanced: body.activeTabAdvanced !== undefined ? Boolean(body.activeTabAdvanced) : undefined,
         activeTabAutofarm: body.activeTabAutofarm !== undefined ? Boolean(body.activeTabAutofarm) : undefined,
-        characterReincarnation: body.characterReincarnation !== undefined ? Number(body.characterReincarnation) : undefined,
-        adminTelegrams: telegramsList,
         price: body.price !== undefined ? Number(body.price) : undefined,
       },
     });
