@@ -788,12 +788,12 @@ export default function TokenDetailPage() {
             </div>
 
             {/* Audit Notes History Timeline */}
-            <div className="glass-card p-6 rounded-2xl space-y-4">
-              <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+            <div className="glass-card p-6 rounded-2xl space-y-4 max-h-[550px] flex flex-col">
+              <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-indigo-400 flex items-center gap-2 shrink-0">
                 <History className="w-4 h-4" /> Lịch Sử Thay Đổi (Token Notes)
               </h3>
 
-              <div className="space-y-4">
+              <div className="space-y-3 overflow-y-auto pr-2 flex-1 max-h-[460px]">
                 {token.notes?.map((note: any) => (
                   <div key={note.id} className="p-3 bg-slate-900/70 border border-slate-800 rounded-xl text-xs space-y-1.5">
                     <div className="flex items-center justify-between text-[10px] text-slate-400">

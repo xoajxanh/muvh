@@ -18,6 +18,8 @@ import {
   Clock,
   RotateCcw,
   Ban,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 export default function TokensPage() {
@@ -28,6 +30,11 @@ export default function TokensPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20); // 20, 50, 100
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -41,20 +48,24 @@ export default function TokensPage() {
       .then((resData) => {
         if (resData?.user) {
           setUser(resData.user);
-          fetchTokens(search, statusFilter);
+          fetchTokens(search, statusFilter, 1, limit);
         }
       })
       .catch(() => router.push('/login'));
   }, [router]);
 
-  const fetchTokens = async (searchQuery: string, status: string) => {
+  const fetchTokens = async (searchQuery: string, status: string, currentPage = page, currentLimit = limit) => {
     setLoading(true);
     try {
-      const url = `/api/tokens?search=${encodeURIComponent(searchQuery)}&status=${status}`;
+      const url = `/api/tokens?search=${encodeURIComponent(searchQuery)}&status=${status}&page=${currentPage}&limit=${currentLimit}`;
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         setTokens(json.tokens || []);
+        if (json.pagination) {
+          setPagination(json.pagination);
+          setPage(json.pagination.page);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -65,12 +76,26 @@ export default function TokensPage() {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchTokens(search, statusFilter);
+    setPage(1);
+    fetchTokens(search, statusFilter, 1, limit);
   };
 
   const handleStatusChange = (newStatus: string) => {
     setStatusFilter(newStatus);
-    fetchTokens(search, newStatus);
+    setPage(1);
+    fetchTokens(search, newStatus, 1, limit);
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+    fetchTokens(search, statusFilter, 1, newLimit);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPage(newPage);
+    fetchTokens(search, statusFilter, newPage, limit);
   };
 
   const handleCopyText = (text: string, label: string) => {
@@ -99,7 +124,7 @@ export default function TokensPage() {
       }
 
       setToast({ message: json.message || 'Xóa Token thành công!', type: 'success' });
-      fetchTokens(search, statusFilter);
+      fetchTokens(search, statusFilter, page, limit);
     } catch (e: any) {
       setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
     }
@@ -122,7 +147,7 @@ export default function TokensPage() {
       }
 
       setToast({ message: 'Đã khôi phục Token thành công!', type: 'success' });
-      fetchTokens(search, statusFilter);
+      fetchTokens(search, statusFilter, page, limit);
     } catch (e: any) {
       setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
     }
@@ -176,6 +201,9 @@ export default function TokensPage() {
     { label: 'ĐÃ HẾT HẠN', value: 'EXPIRED' },
     ...(user.role === 'ADMIN' ? [{ label: 'ĐÃ XÓA (BY SALE)', value: 'DELETED' }] : []),
   ];
+
+  const startRecord = pagination.total === 0 ? 0 : (pagination.page - 1) * pagination.limit + 1;
+  const endRecord = Math.min(pagination.page * pagination.limit, pagination.total);
 
   return (
     <div className="flex min-h-screen bg-[#0b0f19]">
@@ -238,12 +266,12 @@ export default function TokensPage() {
             </div>
           </div>
 
-          {/* Tokens Table */}
-          <div className="glass-card p-6 rounded-2xl">
+          {/* Tokens Table Card */}
+          <div className="glass-card p-6 rounded-2xl space-y-4">
             {loading ? (
               <div className="py-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-                Đang tải danh sách Token...
+                Đang tải danh sách Token từ Server...
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -334,7 +362,7 @@ export default function TokensPage() {
                                 </button>
                               )}
 
-                              {/* Delete Button (Soft Delete for Sale / Hard Delete or Soft Delete for Admin) */}
+                              {/* Delete Button */}
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -366,6 +394,56 @@ export default function TokensPage() {
                 </table>
               </div>
             )}
+
+            {/* Server-side Pagination Bar */}
+            <div className="pt-4 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-3 text-slate-400">
+                <span>Hiển thị <strong className="text-slate-200">{startRecord}</strong> - <strong className="text-slate-200">{endRecord}</strong> trên tổng số <strong className="text-cyan-400">{pagination.total}</strong> Token</span>
+                
+                {/* Page Size Selector (20 - 50 - 100) */}
+                <div className="flex items-center gap-1.5 ml-2 border-l border-slate-800 pl-3">
+                  <span className="text-[11px]">Xem:</span>
+                  {[20, 50, 100].map((sz) => (
+                    <button
+                      key={sz}
+                      onClick={() => handleLimitChange(sz)}
+                      className={`px-2 py-0.5 rounded text-[11px] font-semibold transition ${
+                        limit === sz
+                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                          : 'bg-slate-900 text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {sz}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Controls */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  title="Trang trước"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <div className="px-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 text-xs font-semibold">
+                  Trang <span className="text-cyan-400">{page}</span> / {pagination.totalPages}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= pagination.totalPages}
+                  className="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                  title="Trang sau"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
           </div>
         </main>
       </div>

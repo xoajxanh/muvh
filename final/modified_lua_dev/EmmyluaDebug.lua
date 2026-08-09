@@ -1240,6 +1240,12 @@ local function CreateModUI()
             if _G.ModRefreshAutoBossConfigUI then
                 _G.ModRefreshAutoBossConfigUI()
             end
+            if _G.ModUpdateKundunUI then
+                _G.ModUpdateKundunUI()
+            end
+            if _G.UpdateBossWatchUIText then
+                _G.UpdateBossWatchUIText()
+            end
             if _G.ModMainTab == "CO_BAN" then
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
             end
@@ -1360,6 +1366,59 @@ local function CreateModUI()
             return _G[key] or {}
         end
         _G.GetMapsConfigByTier = GetMapsConfigByTier
+
+        local function GetPlayerReincarnationLevel()
+            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth > 0 then
+                return _G.Mod_Config_CurrentRebirth
+            end
+            pcall(function()
+                if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
+                    local attr = _G.QuickFind.LuaMainPlayerViewAttrData()
+                    if attr and attr.level then
+                        if _G.ClientTable and _G.ClientTable.cfg_Character_levelManager then
+                            local r = _G.ClientTable.cfg_Character_levelManager:GetReincarnationLevel(attr.level)
+                            if r and r > 0 then
+                                _G.Mod_Config_CurrentRebirth = r
+                                return r
+                            end
+                        end
+                        local r = math.floor(attr.level / 100)
+                        if r and r > 0 then
+                            _G.Mod_Config_CurrentRebirth = r
+                            return r
+                        end
+                    end
+                end
+            end)
+            return _G.Mod_Config_CurrentRebirth or 7
+        end
+        _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
+
+        local function GetAvailableTiers()
+            local N = GetPlayerReincarnationLevel()
+            local tiers = {}
+            local prevTier = math.max(3, N - 1)
+            if prevTier < N then
+                table.insert(tiers, "C" .. tostring(prevTier))
+            end
+            table.insert(tiers, "C" .. tostring(N))
+            return tiers
+        end
+        _G.GetAvailableTiers = GetAvailableTiers
+
+        local function GetKundunTiers()
+            local N = GetPlayerReincarnationLevel()
+            local tiers = {}
+            local prevTier = N - 1
+            if prevTier >= 4 then
+                table.insert(tiers, "C" .. tostring(prevTier))
+            end
+            if N >= 4 then
+                table.insert(tiers, "C" .. tostring(N))
+            end
+            return tiers
+        end
+        _G.GetKundunTiers = GetKundunTiers
 
         _G.Mod_MapsConfig_c7 = {
             {
@@ -1558,12 +1617,12 @@ local function CreateModUI()
                 local btnIdx = 1
                 local sepIdx = 1
                 
-                local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
+                local tierTags = GetAvailableTiers and GetAvailableTiers() or {"C7", "C8"}
                 for tIdx, tag in ipairs(tierTags) do
-                    local tBtn = GetLineButton(btnIdx, 40 + (tIdx - 1) * 65, currentPosY, 62)
+                    local tBtn = GetLineButton(btnIdx, 40 + (tIdx - 1) * 110, currentPosY, 100)
                     tBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
-                    tBtn.txt.text = "<color=" .. (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
-                    tBtn.txt.fontSize = 14
+                    tBtn.txt.text = "<color=" .. (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                    tBtn.txt.fontSize = 17
                     tBtn.btn.onClick:RemoveAllListeners()
                     local thisTag = tag
                     tBtn.btn.onClick:AddListener(function()
@@ -3844,15 +3903,16 @@ end
                 return { go = btnGo, txt = txt, btn = btn }
             end
             
+            local kundunTabY = currentY
             local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
             _G.NangCaoTabBtns = {}
             for tIdx, tag in ipairs(tierTags) do
-                local tabBtn = CreateTabBtn("[" .. tag .. "]", tag, rightColX2 + (tIdx - 1) * 65, currentY)
-                tabBtn.txt.fontSize = 14
+                local tabBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2 + (tIdx - 1) * 110, kundunTabY)
+                tabBtn.txt.fontSize = 17
                 _G.NangCaoTabBtns[tag] = tabBtn
             end
             
-            currentY = currentY - 25
+            currentY = kundunTabY - 30
 
             local rightColX3 = 20
             local sep3Go = GameObject("BossThapSeparator")
@@ -3863,14 +3923,14 @@ end
             sep3Rt.anchorMax = Vector2(0, 1)
             sep3Rt.pivot = Vector2(0, 1)
             sep3Rt.anchoredPosition = Vector2(rightColX, currentY)
-            sep3Rt.sizeDelta = Vector2(250, 20)
+            sep3Rt.sizeDelta = Vector2(340, 20)
             local sep3Txt = sep3Go:AddComponent(typeof(Text))
             sep3Txt.raycastTarget = false
             sep3Txt.color = Color(0.4, 0.4, 0.4, 1)
             sep3Txt.fontSize = 16
             sep3Txt.alignment = TextAnchor.MiddleLeft
             if defaultFont then sep3Txt.font = defaultFont end
-            sep3Txt.text = "-------------------------------------------"
+            sep3Txt.text = "--------------------------------------------------------"
 
             currentY = currentY - 20
             _G.KundunUILabelPool = {}
@@ -3898,17 +3958,31 @@ end
 
             _G.ModUpdateKundunUI = function()
                 pcall(function()
+                    if _G.ModMainTab ~= "NANG_CAO" then return end
+                    
                     local kundunTiers = GetKundunTiers and GetKundunTiers() or {"C7", "C8"}
                     if _G.NangCaoTabBtns then
-                        for tag, tBtn in pairs(_G.NangCaoTabBtns) do
-                            local showThis = false
-                            for _, kt in ipairs(kundunTiers) do
-                                if kt == tag then showThis = true; break end
-                            end
-                            if tBtn.go then tBtn.go:SetActive(_G.ModMainTab == "NANG_CAO" and showThis) end
-                            if showThis and tBtn.txt then
+                        local activeIdx = 0
+                        for _, tag in ipairs(kundunTiers) do
+                            local tBtn = _G.NangCaoTabBtns[tag]
+                            if tBtn then
+                                tBtn.go:SetActive(true)
                                 local isSel = (_G.ModBossTab == tag)
-                                tBtn.txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
+                                tBtn.txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                                tBtn.txt.fontSize = 17
+                                local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
+                                if rt then
+                                    rt.anchoredPosition = Vector2(rightColX2 + activeIdx * 110, kundunTabY)
+                                    rt.sizeDelta = Vector2(100, 30)
+                                end
+                                activeIdx = activeIdx + 1
+                            end
+                        end
+                        for _, tag in ipairs(tierTags) do
+                            local inKundun = false
+                            for _, kt in ipairs(kundunTiers) do if kt == tag then inKundun = true; break end end
+                            if not inKundun and _G.NangCaoTabBtns[tag] and _G.NangCaoTabBtns[tag].go then
+                                _G.NangCaoTabBtns[tag].go:SetActive(false)
                             end
                         end
                     end
@@ -3973,6 +4047,7 @@ end
         
         local function CreateAutoBossUI()
             local startX = 20
+            local UpdateTierTabs
             -- Column 1: AUTO FARM (X = 20, Y = -70)
             local masterToggleGo = GameObject("AutoFarmBossToggle")
             masterToggleGo.transform:SetParent(panelGo.transform, false)
@@ -4158,7 +4233,7 @@ end
                 local bgRt = bg:AddComponent(typeof(RectTransform))
                 bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
                 bgRt.sizeDelta = Vector2(0, 0)
-                local bgImg = bg:AddComponent(typeof(Image))
+                local bgImg = bg:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 
                 local txtGo = GameObject("Text")
                 txtGo.transform:SetParent(btnGo.transform, false)
@@ -4200,6 +4275,15 @@ end
                 end)
             end
             
+            local function GetSmeltTiers()
+                local x = GetPlayerReincarnationLevel and GetPlayerReincarnationLevel() or 7
+                local tiers = {}
+                if x - 2 >= 3 then table.insert(tiers, "C" .. tostring(x - 2)) end
+                if x - 1 >= 3 then table.insert(tiers, "C" .. tostring(x - 1)) end
+                table.insert(tiers, "C" .. tostring(x))
+                return tiers
+            end
+
             local function CreateSmeltRow(rowLabel, typePrefix, y)
                 local lblGo = GameObject("SmeltLbl_" .. typePrefix)
                 lblGo.transform:SetParent(panelGo.transform, false)
@@ -4216,9 +4300,11 @@ end
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
                 
-                CreateSmeltToggle("C6", typePrefix .. "_C6", smeltStartX + 102, y, 36)
-                CreateSmeltToggle("C7", typePrefix .. "_C7", smeltStartX + 142, y, 36)
-                CreateSmeltToggle("C8", typePrefix .. "_C8", smeltStartX + 182, y, 36)
+                local smeltTiers = GetSmeltTiers()
+                for sIdx, tag in ipairs(smeltTiers) do
+                    local varName = typePrefix .. "_" .. tag
+                    CreateSmeltToggle(tag, varName, smeltStartX + 102 + (sIdx - 1) * 40, y, 36)
+                end
             end
             
             CreateSmeltRow("TÁCH NHẪN", "Ring", smeltY)
@@ -4227,6 +4313,21 @@ end
             
             local currentY = -170
             
+            local sepAutoTopGo = GameObject("AutoBossTopSeparator")
+            sepAutoTopGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, sepAutoTopGo)
+            local sepAutoTopRt = sepAutoTopGo:AddComponent(typeof(RectTransform))
+            sepAutoTopRt.anchorMin, sepAutoTopRt.anchorMax, sepAutoTopRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sepAutoTopRt.anchoredPosition = Vector2(startX, -150)
+            sepAutoTopRt.sizeDelta = Vector2(700, 20)
+            local sepAutoTopTxt = sepAutoTopGo:AddComponent(typeof(Text))
+            sepAutoTopTxt.raycastTarget = false
+            sepAutoTopTxt.color = Color(0.4, 0.4, 0.4, 1)
+            sepAutoTopTxt.fontSize = 16
+            sepAutoTopTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sepAutoTopTxt.font = defaultFont end
+            sepAutoTopTxt.text = "--------------------------------------------------------------------------------------------------------------------------"
+
             -- Tier Tabs (C3-C12)
             local function CreateTierTab(label, tabName, xPos)
                 local btnGo = GameObject("AutoBossTier_" .. tabName)
@@ -4235,9 +4336,9 @@ end
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, currentY)
-                rt.sizeDelta = Vector2(60, 30)
+                rt.sizeDelta = Vector2(100, 30)
                 
-                local img = btnGo:AddComponent(typeof(Image))
+                local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 img.color = Color(1, 1, 1, 0)
                 
                 local txtGo = GameObject("Text")
@@ -4247,18 +4348,23 @@ end
                 txtRt.sizeDelta = Vector2(0, 0)
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
-                txt.fontSize = 14
+                txt.fontSize = 17
                 txt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
                 
                 local btn = btnGo:AddComponent(typeof(Button))
+                btn.onClick:AddListener(function()
+                    _G.ModAutoBossConfigTab = tabName
+                    pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModAutoBossConfigTab", tabName) end)
+                    if UpdateTierTabs then UpdateTierTabs() end
+                end)
                 return { go = btnGo, txt = txt, btn = btn }
             end
             
             local tierTags = {"C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12"}
             local tierTabBtns = {}
             for tIdx, tag in ipairs(tierTags) do
-                local tBtn = CreateTierTab("[" .. tag .. "]", tag, startX + (tIdx - 1) * 65)
+                local tBtn = CreateTierTab("[ BOSS " .. tag .. " ]", tag, startX + (tIdx - 1) * 110)
                 tierTabBtns[tag] = tBtn
             end
             
@@ -4274,7 +4380,7 @@ end
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 
-                local img = btnGo:AddComponent(typeof(Image))
+                local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 
                 local txtGo = GameObject("Text")
                 txtGo.transform:SetParent(btnGo.transform, false)
@@ -4290,11 +4396,38 @@ end
                 return { go = btnGo, rt = rt, img = img, txt = txt, btn = btn }
             end
             
-            local function UpdateTierTabs()
-                for _, tag in ipairs(tierTags) do
-                    if tierTabBtns[tag] and tierTabBtns[tag].txt then
+            UpdateTierTabs = function()
+                if _G.ModMainTab ~= "AUTO_BOSS" then return end
+                
+                local currentTiers = GetAvailableTiers and GetAvailableTiers() or {"C6", "C7"}
+                local isTabValid = false
+                for _, tag in ipairs(currentTiers) do
+                    if _G.ModAutoBossConfigTab == tag then isTabValid = true; break end
+                end
+                if not isTabValid and #currentTiers > 0 then
+                    _G.ModAutoBossConfigTab = currentTiers[#currentTiers]
+                end
+                local activeIdx = 0
+                for _, tag in ipairs(currentTiers) do
+                    local tBtn = tierTabBtns[tag]
+                    if tBtn then
+                        tBtn.go:SetActive(true)
                         local isSel = (_G.ModAutoBossConfigTab == tag)
-                        tierTabBtns[tag].txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[" .. tag .. "]</color>"
+                        tBtn.txt.text = "<color=" .. (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                        tBtn.txt.fontSize = 17
+                        local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
+                        if rt then
+                            rt.anchoredPosition = Vector2(startX + activeIdx * 110, -170)
+                            rt.sizeDelta = Vector2(100, 30)
+                        end
+                        activeIdx = activeIdx + 1
+                    end
+                end
+                for _, tag in ipairs(tierTags) do
+                    local inAvailable = false
+                    for _, ct in ipairs(currentTiers) do if ct == tag then inAvailable = true; break end end
+                    if not inAvailable and tierTabBtns[tag] and tierTabBtns[tag].go then
+                        tierTabBtns[tag].go:SetActive(false)
                     end
                 end
                 
@@ -4460,11 +4593,50 @@ end
                 _G.Mod_FarmStatsUI.rt.anchoredPosition = Vector2(startX, py - 10)
                 
                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                local totalCount = 0
-                for id, count in pairs(_G.Mod_FarmStats.bosses) do
-                    totalCount = totalCount + count
+                local currentTiers = GetAvailableTiers and GetAvailableTiers() or {"C7", "C8"}
+                local prevTag = currentTiers[1] or "C7"
+                local currTag = currentTiers[2] or prevTag
+
+                local prevCfg = GetMapsConfigByTier and GetMapsConfigByTier(prevTag) or {}
+                local currCfg = (currTag ~= prevTag and GetMapsConfigByTier) and GetMapsConfigByTier(currTag) or {}
+
+                local totalPrev, totalCurr = 0, 0
+                if _G.Mod_FarmStats.bosses then
+                    for id, count in pairs(_G.Mod_FarmStats.bosses) do
+                        local inPrev = false
+                        for _, map in ipairs(prevCfg) do
+                            if map.bosses then
+                                for _, b in ipairs(map.bosses) do
+                                    if b.id == id then inPrev = true; break end
+                                end
+                            end
+                            if inPrev then break end
+                        end
+                        if inPrev then
+                            totalPrev = totalPrev + count
+                        else
+                            local inCurr = false
+                            for _, map in ipairs(currCfg) do
+                                if map.bosses then
+                                    for _, b in ipairs(map.bosses) do
+                                        if b.id == id then inCurr = true; break end
+                                    end
+                                end
+                                if inCurr then break end
+                            end
+                            if inCurr then
+                                totalCurr = totalCurr + count
+                            end
+                        end
+                    end
                 end
-                _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       TỔNG BOSS: %d", _G.Mod_FarmStats.hidden or 0, totalCount)
+
+                local hiddenCount = _G.Mod_FarmStats.hidden or 0
+                if prevTag ~= currTag then
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       TỔNG BOSS %s: %d       TỔNG BOSS %s: %d", hiddenCount, prevTag, totalPrev, currTag, totalCurr)
+                else
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       TỔNG BOSS %s: %d", hiddenCount, prevTag, totalPrev)
+                end
             end
             
             _G.ModRefreshAutoBossConfigUI = function()

@@ -14,8 +14,13 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search') || '';
-  const status = searchParams.get('status') || 'ALL'; // ALL, ACTIVE, EXPIRING_SOON, EXPIRED
+  const status = searchParams.get('status') || 'ALL'; // ALL, ACTIVE, EXPIRING_SOON, EXPIRED, DELETED
   const createdBy = searchParams.get('createdBy') || '';
+  
+  // Pagination parameters
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limit = Math.max(1, parseInt(searchParams.get('limit') || '20', 10));
+  const skip = (page - 1) * limit;
 
   const whereClause: any = {};
 
@@ -47,17 +52,32 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const tokens = await prisma.token.findMany({
-    where: whereClause,
-    include: {
-      vipPackage: { select: { id: true, name: true } },
-      createdBy: { select: { id: true, username: true, displayName: true } },
-      _count: { select: { notes: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  const [total, tokens] = await Promise.all([
+    prisma.token.count({ where: whereClause }),
+    prisma.token.findMany({
+      where: whereClause,
+      include: {
+        vipPackage: { select: { id: true, name: true } },
+        createdBy: { select: { id: true, username: true, displayName: true } },
+        _count: { select: { notes: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+  ]);
 
-  return NextResponse.json({ tokens });
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return NextResponse.json({
+    tokens,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
