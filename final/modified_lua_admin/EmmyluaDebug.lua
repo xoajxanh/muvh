@@ -1942,7 +1942,7 @@ local function CreateModUI()
                                 local dy = meY - ty
                                 local dist = math.sqrt(dx*dx + dy*dy)
                                 
-                                if dist > 30 then
+                                if dist > 70 then
                                     _G.Mod_IsMovingToTrainPos = false
                                     _G.Mod_TrainArrivedAtPos = false
                                     local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
