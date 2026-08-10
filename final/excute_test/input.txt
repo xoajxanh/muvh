@@ -1,4 +1,14 @@
-local function LogAndShow(msg)
+local CS = _G.CS
+local GameObject = CS.UnityEngine.GameObject
+local RectTransform = CS.UnityEngine.RectTransform
+local Text = CS.UnityEngine.UI.Text
+local Image = CS.UnityEngine.UI.Image
+local Button = CS.UnityEngine.UI.Button
+local Color = CS.UnityEngine.Color
+local Vector2 = CS.UnityEngine.Vector2
+local TextAnchor = CS.UnityEngine.TextAnchor
+
+local function LogMsg(msg)
     print(msg)
     pcall(function()
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -7,127 +17,265 @@ local function LogAndShow(msg)
     end)
 end
 
-if _G.TestTrainTimer then
-    pcall(function() _G.Timer.Stop(_G.TestTrainTimer) end)
-    _G.TestTrainTimer = nil
+LogMsg("=== DỰNG GIAO DIỆN TÁCH ĐỒ TRÊN BẢNG MOD MENU ===")
+
+-- 1. Tìm Root Canvas "MySuperModCanvas"
+local modRoot = GameObject.Find("MySuperModCanvas")
+if not modRoot then
+    LogMsg("LỖI CRITICAL: Không tìm thấy Canvas 'MySuperModCanvas'! Mod chưa khởi tạo.")
+    return
 end
 
-_G.Test_IsMovingToTrainPos = false
+-- 2. Tìm child "ModMenuPanel"
+local panelTrans = modRoot.transform:Find("ModMenuPanel")
+if not panelTrans then
+    LogMsg("LỖI CRITICAL: Không tìm thấy 'ModMenuPanel' trong MySuperModCanvas!")
+    return
+end
 
-local targetCoord = "129#88"
-local parts = {}
-for p in string.gmatch(targetCoord, "[^#]+") do table.insert(parts, p) end
-local tx, ty = tonumber(parts[1]), tonumber(parts[2])
+local panelGo = panelTrans.gameObject
+_G.ModMenuPanel = panelGo
+LogMsg("Đã tìm thấy ModMenuPanel thành công! Đang tiến hành dựng giao diện...")
 
-LogAndShow(string.format("[TEST STRICT] Bắt đầu dẫn đường tới CHÍNH XÁC (%d,%d)...", tx, ty))
-
-local loopCount = 0
-if _G.Timer and _G.Timer.StartLoopForever then
-    _G.TestTrainTimer = _G.Timer.StartLoopForever(0.3, function()
-        loopCount = loopCount + 1
-        local pMe = _G.RoleManager and _G.RoleManager.me
-        local meX, meY = 0, 0
-        if pMe then
-            if pMe.cellPos then meX, meY = pMe.cellPos.x, pMe.cellPos.y
-            elseif pMe.serverCoord then meX, meY = pMe.serverCoord.x, pMe.serverCoord.y end
+-- Xóa UI cũ nếu đã từng vẽ
+if _G.TestSmeltUIList then
+    for _, go in ipairs(_G.TestSmeltUIList) do
+        if go and not go:Equals(nil) then
+            GameObject.Destroy(go)
         end
-        
-        local dx = meX - tx
-        local dy = meY - ty
-        local dist = math.sqrt(dx*dx + dy*dy)
-        
-        LogAndShow(string.format("[TEST #%d] Vị trí hiện tại: (%d,%d) -> Tọa độ bãi: (%d,%d) | Cự ly: %.1fm", loopCount, meX, meY, tx, ty, dist))
-        
-        -- CHƯA TỚI CHÍNH XÁC TỌA ĐỘ (Cự ly > 1.5m)
-        if dist > 1.5 then
-            -- TẮT HOÀN TOÀN AUTO FIGHT TRÊN ĐƯỜNG CHẠY (KHÔNG ĐÁNH QUÁI)
-            if pMe then
-                if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
-                    if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
-                end
-                if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
-                    if pMe.SetAutoFight then pMe:SetAutoFight("None") end
-                end
-            end
-            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                _G.QiJiHelperData.SetAutoFightData(false)
-            end
-            
-            -- Xử lý đá nhảy nếu quá xa (> 50m)
-            if dist > 50 then
-                _G.Test_IsMovingToTrainPos = false
-                local stoneBagId = nil
-                if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                        if itemData then
-                            local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
-                            local instanceId = itemData.id or (itemData.data and itemData.data.id)
-                            if itemId == 20000022 then
-                                stoneBagId = instanceId
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                if stoneBagId then
-                    LogAndShow(string.format("[TEST] Cự ly %.1fm > 50m -> Dùng Đá Nhảy!", dist))
-                    if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                        _G.networkRequest.ReqUseItem(1, stoneBagId)
-                    elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                        _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
-                    end
-                else
-                    LogAndShow(string.format("[TEST] Cự ly %.1fm > 50m (Không có đá) -> Dùng MoveToLinePos...", dist))
-                    local tab = _G.ModAutoBossConfigTab or "C7"
-                    local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
-                    local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
-                    local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or ((tab == "C8") and 400229 or 400216)
-                    if _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                        _G.PathFinderManager.MoveToLinePos(wildMapId, {x = tx, y = ty}, wildTransferId, 1, nil, nil, nil, nil, true)
-                    end
-                end
-            else
-                -- Cự ly <= 50m và > 1.5m: Kiểm tra xem nhân vật có đang di chuyển không
-                local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
-                
-                if not _G.Test_IsMovingToTrainPos or not isMoving then
-                    _G.Test_IsMovingToTrainPos = true
-                    LogAndShow(string.format("[TEST] Chạy bộ tới tọa độ (%d,%d)... (cự ly %.1fm)", tx, ty, dist))
-                    
-                    if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
-                        local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(targetCoord)) or (_G.Vector2 and _G.Vector2(tx, ty)) or {x = tx, y = ty}
-                        _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId, targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1, true)
-                    elseif pMe and pMe.MoveTo then
-                        pMe:MoveTo({x = tx, y = ty}, 0)
-                    end
-                else
-                    LogAndShow(string.format("[TEST] Đang duy trì chạy mượt tới (%d,%d)... (cự ly %.1fm)", tx, ty, dist))
-                end
-            end
+    end
+end
+_G.TestSmeltUIList = {}
+
+-- Đảm bảo _G.AutoBossUIList tồn tại
+_G.AutoBossUIList = _G.AutoBossUIList or {}
+
+-- Cấu hình mặc định
+_G.Mod_SmeltConfig = _G.Mod_SmeltConfig or {}
+_G.Mod_SmeltConfig.EquipTiers = _G.Mod_SmeltConfig.EquipTiers or {}
+_G.Mod_SmeltConfig.KeepGoodTiers = _G.Mod_SmeltConfig.KeepGoodTiers or {}
+
+-- Lấy Font mặc định
+local defaultFont = nil
+local existingText = panelGo:GetComponentInChildren(typeof(Text))
+if existingText then defaultFont = existingText.font end
+
+local smeltStartX = 475
+local btnW = 34
+local btnH = 22
+local fontSize = 12
+
+-- Helper thêm GameObject vào cả TestSmeltUIList và AutoBossUIList
+local function TrackUI(go)
+    table.insert(_G.TestSmeltUIList, go)
+    table.insert(_G.AutoBossUIList, go)
+end
+
+-- Helper tạo Button Toggle
+local function CreateToggleBtn(parentGo, label, keyName, x, y, isKeepGood)
+    local btnGo = GameObject("TestBtn_" .. keyName)
+    btnGo.transform:SetParent(parentGo.transform, false)
+    TrackUI(btnGo)
+    
+    local rt = btnGo:AddComponent(typeof(RectTransform))
+    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+    rt.anchoredPosition = Vector2(x, y)
+    rt.sizeDelta = Vector2(btnW, btnH)
+    
+    local bg = GameObject("Bg")
+    bg.transform:SetParent(btnGo.transform, false)
+    local bgRt = bg:AddComponent(typeof(RectTransform))
+    bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+    bgRt.sizeDelta = Vector2(0, 0)
+    local bgImg = bg:AddComponent(typeof(Image))
+    
+    local txtGo = GameObject("Text")
+    txtGo.transform:SetParent(btnGo.transform, false)
+    local txtRt = txtGo:AddComponent(typeof(RectTransform))
+    txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+    txtRt.sizeDelta = Vector2(0, 0)
+    local txt = txtGo:AddComponent(typeof(Text))
+    txt.raycastTarget = false
+    txt.text = label
+    txt.fontSize = fontSize
+    txt.alignment = TextAnchor.MiddleCenter
+    if defaultFont then txt.font = defaultFont end
+    
+    local function UpdateVisual()
+        local val = false
+        if isKeepGood then
+            val = _G.Mod_SmeltConfig.KeepGoodTiers[keyName] or false
         else
-            -- ĐÃ ĐẾN CHÍNH XÁC VỊ TRÍ TỌA ĐỘ (Cự ly <= 1.5m)
-            LogAndShow(string.format("[TEST] -> ĐÃ ĐẾN CHÍNH XÁC TỌA ĐỘ BÃI TRAIN (%d,%d) (Cự ly %.1fm)! Dừng di chuyển & Bật Auto Fight...", tx, ty, dist))
-            if pMe then
-                if pMe.StopMove then pMe:StopMove() end
-                if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
-            end
-            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                _G.QiJiHelperData.SetAutoFightData(true)
-            end
-            _G.Test_IsMovingToTrainPos = false
-            if _G.TestTrainTimer then
-                _G.Timer.Stop(_G.TestTrainTimer)
-                _G.TestTrainTimer = nil
-            end
+            val = _G.Mod_SmeltConfig.EquipTiers[keyName] or false
         end
         
-        if loopCount >= 40 then
-            LogAndShow("[TEST] Hết 40s -> Tự động dừng Timer test.")
-            if _G.TestTrainTimer then
-                _G.Timer.Stop(_G.TestTrainTimer)
-                _G.TestTrainTimer = nil
+        if val then
+            if isKeepGood then
+                bgImg.color = Color(0.8, 0.5, 0.1, 1) -- Cam/Vàng cho Giữ Dòng Ngon
+            else
+                bgImg.color = Color(0.2, 0.6, 0.2, 1) -- Xanh lục cho Tách Đồ
             end
+            txt.color = Color.white
+        else
+            bgImg.color = Color(0.25, 0.25, 0.25, 1) -- Xám tối khi Tắt
+            txt.color = Color(0.7, 0.7, 0.7, 1)
         end
+    end
+    UpdateVisual()
+    
+    local btn = btnGo:AddComponent(typeof(Button))
+    btn.onClick:AddListener(function()
+        if isKeepGood then
+            _G.Mod_SmeltConfig.KeepGoodTiers[keyName] = not (_G.Mod_SmeltConfig.KeepGoodTiers[keyName] or false)
+        else
+            _G.Mod_SmeltConfig.EquipTiers[keyName] = not (_G.Mod_SmeltConfig.EquipTiers[keyName] or false)
+        end
+        UpdateVisual()
     end)
 end
+
+-- 1. PHẦN 1: TÁCH ĐỒ TRÁC VIỆT (BỎ CHỮ "TÁCH", GIẢM KÍCH THƯỚC)
+local curY = -70
+local title1Go = GameObject("TestTitle1")
+title1Go.transform:SetParent(panelGo.transform, false)
+TrackUI(title1Go)
+local title1Rt = title1Go:AddComponent(typeof(RectTransform))
+title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+title1Rt.anchoredPosition = Vector2(smeltStartX, curY)
+title1Rt.sizeDelta = Vector2(230, 20)
+local title1Txt = title1Go:AddComponent(typeof(Text))
+title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
+title1Txt.color = Color(1, 0.8, 0, 1)
+title1Txt.fontSize = 14
+title1Txt.alignment = TextAnchor.MiddleLeft
+if defaultFont then title1Txt.font = defaultFont end
+
+curY = curY - 25
+local function CreateOldRow(lblText, prefix)
+    local lblGo = GameObject("TestLbl_" .. prefix)
+    lblGo.transform:SetParent(panelGo.transform, false)
+    TrackUI(lblGo)
+    local lblRt = lblGo:AddComponent(typeof(RectTransform))
+    lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+    lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+    lblRt.sizeDelta = Vector2(85, btnH)
+    local lblTxt = lblGo:AddComponent(typeof(Text))
+    lblTxt.text = lblText
+    lblTxt.color = Color.white
+    lblTxt.fontSize = 12
+    lblTxt.alignment = TextAnchor.MiddleLeft
+    if defaultFont then lblTxt.font = defaultFont end
+    
+    CreateToggleBtn(panelGo, "C6", prefix .. "_C6", smeltStartX + 88, curY, false)
+    CreateToggleBtn(panelGo, "C7", prefix .. "_C7", smeltStartX + 125, curY, false)
+    CreateToggleBtn(panelGo, "C8", prefix .. "_C8", smeltStartX + 162, curY, false)
+    curY = curY - 26
+end
+
+CreateOldRow("NHẪN", "Ring")
+CreateOldRow("DÂY CHUYỀN", "Necklace")
+CreateOldRow("KHUYÊN", "Earring")
+
+-- 2. VẠCH DASHED NGĂN CÁCH
+curY = curY - 5
+local dashGo = GameObject("TestDashLine")
+dashGo.transform:SetParent(panelGo.transform, false)
+TrackUI(dashGo)
+local dashRt = dashGo:AddComponent(typeof(RectTransform))
+dashRt.anchorMin, dashRt.anchorMax, dashRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+dashRt.anchoredPosition = Vector2(smeltStartX, curY)
+dashRt.sizeDelta = Vector2(230, 15)
+local dashTxt = dashGo:AddComponent(typeof(Text))
+dashTxt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+dashTxt.color = Color(0.6, 0.6, 0.6, 0.8)
+dashTxt.fontSize = 11
+dashTxt.alignment = TextAnchor.MiddleCenter
+if defaultFont then dashTxt.font = defaultFont end
+
+-- 3. PHẦN 2: TÁCH ĐỒ BỘ & GIỮ DÒNG NGON
+curY = curY - 20
+local title2Go = GameObject("TestTitle2")
+title2Go.transform:SetParent(panelGo.transform, false)
+TrackUI(title2Go)
+local title2Rt = title2Go:AddComponent(typeof(RectTransform))
+title2Rt.anchorMin, title2Rt.anchorMax, title2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+title2Rt.anchoredPosition = Vector2(smeltStartX, curY)
+title2Rt.sizeDelta = Vector2(230, 20)
+local title2Txt = title2Go:AddComponent(typeof(Text))
+title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
+title2Txt.color = Color(1, 0.8, 0, 1)
+title2Txt.fontSize = 13
+title2Txt.alignment = TextAnchor.MiddleLeft
+if defaultFont then title2Txt.font = defaultFont end
+
+curY = curY - 25
+
+-- Hàng chọn TÁCH ĐỒ BỘ (C6 - C9)
+local equipRows = {
+    {"MŨ", "Hat"},
+    {"ÁO", "Armor"},
+    {"QUẦN", "Pants"},
+    {"BAO TAY", "Gloves"},
+    {"BAO CHÂN", "Boots"},
+    {"VŨ KHÍ", "Weapon"},
+    {"DÂY CHUYỀN", "Necklace2"},
+    {"KHUYÊN TRÁI", "EarringL"},
+    {"KHUYÊN PHẢI", "EarringR"},
+    {"NHẪN TRÁI", "RingL"},
+    {"NHẪN PHẢI", "RingR"},
+}
+
+for _, r in ipairs(equipRows) do
+    local label = r[1]
+    local prefix = r[2]
+    
+    local lblGo = GameObject("TestLbl_" .. prefix)
+    lblGo.transform:SetParent(panelGo.transform, false)
+    TrackUI(lblGo)
+    local lblRt = lblGo:AddComponent(typeof(RectTransform))
+    lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+    lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+    lblRt.sizeDelta = Vector2(85, btnH)
+    local lblTxt = lblGo:AddComponent(typeof(Text))
+    lblTxt.text = label
+    lblTxt.color = Color.white
+    lblTxt.fontSize = 11
+    lblTxt.alignment = TextAnchor.MiddleLeft
+    if defaultFont then lblTxt.font = defaultFont end
+    
+    CreateToggleBtn(panelGo, "C6", prefix .. "_C6", smeltStartX + 88, curY, false)
+    CreateToggleBtn(panelGo, "C7", prefix .. "_C7", smeltStartX + 125, curY, false)
+    CreateToggleBtn(panelGo, "C8", prefix .. "_C8", smeltStartX + 162, curY, false)
+    CreateToggleBtn(panelGo, "C9", prefix .. "_C9", smeltStartX + 199, curY, false)
+    curY = curY - 24
+end
+
+-- Hàng chọn GIỮ DÒNG NGON (C6 - C9)
+curY = curY - 5
+local kgLblGo = GameObject("TestLbl_KeepGood")
+kgLblGo.transform:SetParent(panelGo.transform, false)
+TrackUI(kgLblGo)
+local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
+kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+kgLblRt.sizeDelta = Vector2(85, btnH)
+local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
+kgLblTxt.text = "GIỮ DÒNG NGON"
+kgLblTxt.color = Color(1, 0.6, 0.2, 1) -- Màu cam nổi bật
+kgLblTxt.fontSize = 10
+kgLblTxt.alignment = TextAnchor.MiddleLeft
+if defaultFont then kgLblTxt.font = defaultFont end
+
+CreateToggleBtn(panelGo, "C6", "C6", smeltStartX + 88, curY, true)
+CreateToggleBtn(panelGo, "C7", "C7", smeltStartX + 125, curY, true)
+CreateToggleBtn(panelGo, "C8", "C8", smeltStartX + 162, curY, true)
+CreateToggleBtn(panelGo, "C9", "C9", smeltStartX + 199, curY, true)
+
+-- Mở Bảng Mod menu và chuyển sang tab Auto Boss
+panelGo:SetActive(true)
+_G.ModMainTab = "AUTO_BOSS"
+if _G.ModRefreshAutoBossConfigUI then
+    pcall(function() _G.ModRefreshAutoBossConfigUI() end)
+end
+
+LogMsg("=== ĐÃ KHỞI TẠO VÀ HIỂN THỊ GIAO DIỆN TÁCH ĐỒ MỚI THÀNH CÔNG! ===")

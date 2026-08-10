@@ -1272,41 +1272,154 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                if not excDesList or #excDesList == 0 then
+                    return false
+                end
+                
+                -- Nhóm 1: Trang phục (Mũ 113, Áo 114, Quần 115, Găng 116, Giày 117)
+                if subType == 113 or subType == 114 or subType == 115 or subType == 116 or subType == 117 then
+                    for _, des in ipairs(excDesList) do
+                        local isMp = string.find(des, "MP tối đa")
+                        local isGold = string.find(des, "Vàng") or string.find(des, "vàng")
+                        if isMp or isGold then
+                            return false -- Dính 1 dòng rác MP/Vàng -> Không phải dòng ngon
+                        end
+                    end
+                    return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
+                end
+                
+                -- Nhóm 2: Vũ khí (106, 124, 181)
+                if subType == 106 or subType == 124 or subType == 181 then
+                    for _, des in ipairs(excDesList) do
+                        local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or string.find(des, "MP tăng")
+                        if isKill then
+                            return false -- Dính 1 dòng rác diệt quái -> Không phải dòng ngon
+                        end
+                    end
+                    return true -- Không dính dòng rác diệt quái -> Dòng ngon!
+                end
+                
+                -- Nhóm 3: Dây chuyền (36, 19), Nhẫn trái (35, 18), Nhẫn phải (38)
+                if subType == 36 or subType == 35 or subType == 38 or subType == 18 or subType == 19 then
+                    local hasGood = false
+                    for _, des in ipairs(excDesList) do
+                        if string.find(des, "Công Tốc") or string.find(des, "Tấn công") then
+                            hasGood = true
+                        else
+                            return false -- Dính dòng khác ngoài 2 dòng này -> Không đạt
+                        end
+                    end
+                    return hasGood
+                end
+                
+                -- Nhóm 4: Khuyên trái (34, 26), Khuyên phải (37)
+                if subType == 34 or subType == 37 or subType == 26 then
+                    local hasGood = false
+                    for _, des in ipairs(excDesList) do
+                        if string.find(des, "Phòng Ngự") or string.find(des, "Phản DMG") or string.find(des, "Phản") then
+                            hasGood = true
+                        else
+                            return false -- Dính dòng khác -> Không đạt
+                        end
+                    end
+                    return hasGood
+                end
+                
+                return false
+            end
+
             _G.Mod_ExecuteAutoSmelt = function()
                 local items = _G.BagInfoData and _G.BagInfoData.TotalItems
                 if not items then return end
                 
                 local recycleItems = {}
                 for k, item in pairs(items) do
-                    if item and item.tblItem then
-                        local subType = item.tblItem.subType or 0
-                        local quality = item.tblItem.quality or 0
-                        local isExcellent = false
+                    if item then
+                        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                        local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
+                        local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
+                        local subType = tblItem.subType or 0
+                        local quality = tblItem.quality or 0
+                        local needLevel = tblItem.needLevel or 0
+                        local tier = math.floor(needLevel / 400)
                         
-                        if item.serverInfo and item.serverInfo.excellentList and #item.serverInfo.excellentList > 0 then
-                            isExcellent = true
+                        if (not tblEquip or not tblEquip.suitId) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                            pcall(function()
+                                local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
+                                if eq then tblEquip = eq end
+                            end)
                         end
-                        if quality >= 5 then isExcellent = true end
+                        tblEquip = tblEquip or {}
+
+                        local prefix = nil
+                        if subType == 18 or subType == 35 then prefix = "RingL"
+                        elseif subType == 38 then prefix = "RingR"
+                        elseif subType == 19 or subType == 36 then prefix = "Necklace2"
+                        elseif subType == 26 or subType == 34 then prefix = "EarringL"
+                        elseif subType == 37 then prefix = "EarringR"
+                        elseif subType == 113 then prefix = "Hat"
+                        elseif subType == 114 then prefix = "Armor"
+                        elseif subType == 115 then prefix = "Pants"
+                        elseif subType == 116 then prefix = "Gloves"
+                        elseif subType == 117 then prefix = "Boots"
+                        elseif subType == 106 or subType == 124 or subType == 181 then prefix = "Weapon"
+                        end
                         
-                        if isExcellent then
-                            local shouldSmelt = false
-                            if subType == 18 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Ring_C8 then shouldSmelt = true end
-                            elseif subType == 19 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Necklace_C6 then shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Necklace_C7 then shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Necklace_C8 then shouldSmelt = true end
-                            elseif subType == 26 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Earring_C6 then shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Earring_C7 then shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
+                        local shouldSmelt = false
+
+                        -- 1. Cấu hình Tách cũ (Ring_C6..C8, Necklace_C6..C8, Earring_C6..C8)
+                        if subType == 18 and quality >= 5 then
+                            if tier == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
+                            elseif tier == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
+                            elseif tier == 8 and _G.Mod_SmeltConfig.Ring_C8 then shouldSmelt = true end
+                        elseif subType == 19 and quality >= 5 then
+                            if tier == 6 and _G.Mod_SmeltConfig.Necklace_C6 then shouldSmelt = true
+                            elseif tier == 7 and _G.Mod_SmeltConfig.Necklace_C7 then shouldSmelt = true
+                            elseif tier == 8 and _G.Mod_SmeltConfig.Necklace_C8 then shouldSmelt = true end
+                        elseif subType == 26 and quality >= 5 then
+                            if tier == 6 and _G.Mod_SmeltConfig.Earring_C6 then shouldSmelt = true
+                            elseif tier == 7 and _G.Mod_SmeltConfig.Earring_C7 then shouldSmelt = true
+                            elseif tier == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
+                        end
+
+                        -- 2. Cấu hình Tách mới theo SubType & Tier (C6..C9)
+                        if prefix and tier >= 6 and tier <= 9 then
+                            local varName = prefix .. "_C" .. tostring(tier)
+                            if _G.Mod_SmeltConfig[varName] then
+                                shouldSmelt = true
                             end
-                            
-                            if shouldSmelt then
-                                table.insert(recycleItems, item.id)
+                        end
+
+                        -- 3. Bộ lọc [Giữ dòng Ngon]
+                        if shouldSmelt and tier >= 6 and tier <= 9 then
+                            local keepGoodVar = "KeepGood_C" .. tostring(tier)
+                            if _G.Mod_SmeltConfig[keepGoodVar] then
+                                local excDesList = {}
+                                local sInfo = item.serverInfo or item.serverData or {}
+                                local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or sInfo.excellentAttrs
+                                
+                                if _G.RoleEquipUtility then
+                                    if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
+                                        pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc, tblEquip) end)
+                                    end
+                                    if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
+                                        pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo(sInfo) end)
+                                    end
+                                end
+                                if (#excDesList == 0) and item.GetEquipExcellenceDesList then
+                                    pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
+                                end
+                                
+                                local isGood = _G.Mod_IsGoodItem(item, subType, tier, excDesList)
+                                if isGood then
+                                    shouldSmelt = false -- GIỮ LẠI TRONG TÚI
+                                end
                             end
+                        end
+
+                        if shouldSmelt and item.id then
+                            table.insert(recycleItems, item.id)
                         end
                     end
                 end
@@ -1320,7 +1433,7 @@ local function CreateModUI()
                         if batchSize >= 4 or i == #recycleItems then
                             if _G.networkRequest and _G.networkRequest.ReqEquipDecompose then
                                 _G.networkRequest.ReqEquipDecompose(batch)
-                                LogMsg("Đã gửi yêu cầu tách " .. tostring(batchSize) .. " món trang sức Trác Việt!")
+                                LogMsg("Đã gửi yêu cầu tách " .. tostring(batchSize) .. " món trang bị!")
                             end
                             batch = {}
                             batchSize = 0
@@ -4138,32 +4251,34 @@ end
             end
 
             -- RIGHT 1/3 PANEL - AUTO SMELT / TÁCH ĐỒ UI
-            local smeltStartX = 480
-            local smeltY = -70
+            local smeltStartX = 475
+            local btnW = 34
+            local btnH = 22
+            local fontSize = 12
             
-            local smeltTitleGo = GameObject("SmeltTitle")
-            smeltTitleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, smeltTitleGo)
-            local smeltTitleRt = smeltTitleGo:AddComponent(typeof(RectTransform))
-            smeltTitleRt.anchorMin, smeltTitleRt.anchorMax, smeltTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            smeltTitleRt.anchoredPosition = Vector2(smeltStartX, smeltY)
-            smeltTitleRt.sizeDelta = Vector2(230, 25)
-            local smeltTitleTxt = smeltTitleGo:AddComponent(typeof(Text))
-            smeltTitleTxt.raycastTarget = false
-            smeltTitleTxt.text = "TÁCH ĐỒ TRÁC VIỆT"
-            smeltTitleTxt.color = Color(1, 0.8, 0, 1)
-            smeltTitleTxt.fontSize = 16
-            smeltTitleTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then smeltTitleTxt.font = defaultFont end
+            local title1Go = GameObject("SmeltTitle1")
+            title1Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, title1Go)
+            local title1Rt = title1Go:AddComponent(typeof(RectTransform))
+            title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, -70)
+            title1Rt.sizeDelta = Vector2(230, 20)
+            local title1Txt = title1Go:AddComponent(typeof(Text))
+            title1Txt.raycastTarget = false
+            title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
+            title1Txt.color = Color(1, 0.8, 0, 1)
+            title1Txt.fontSize = 14
+            title1Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then title1Txt.font = defaultFont end
             
-            local function CreateSmeltToggle(label, varName, x, y, width)
+            local function CreateSmeltToggle(label, varName, x, y, width, isKeepGood)
                 local btnGo = GameObject("SmeltToggle_" .. varName)
                 btnGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AutoBossUIList, btnGo)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(width, 25)
+                rt.sizeDelta = Vector2(width or btnW, btnH)
                 
                 local bg = GameObject("Bg")
                 bg.transform:SetParent(btnGo.transform, false)
@@ -4180,7 +4295,7 @@ end
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.text = label
-                txt.fontSize = 14
+                txt.fontSize = fontSize
                 txt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
                 
@@ -4192,11 +4307,15 @@ end
                 
                 local function UpdateVisual()
                     if _G.Mod_SmeltConfig[varName] then
-                        bgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        if isKeepGood then
+                            bgImg.color = Color(0.8, 0.5, 0.1, 1) -- Cam cho Giữ Dòng Ngon
+                        else
+                            bgImg.color = Color(0.2, 0.6, 0.2, 1) -- Xanh lục cho Tách Đồ
+                        end
                         txt.color = Color.white
                     else
-                        bgImg.color = Color(0.3, 0.3, 0.3, 1)
-                        txt.color = Color(0.8, 0.8, 0.8, 1)
+                        bgImg.color = Color(0.25, 0.25, 0.25, 1)
+                        txt.color = Color(0.7, 0.7, 0.7, 1)
                     end
                 end
                 UpdateVisual()
@@ -4212,30 +4331,130 @@ end
                 end)
             end
             
-            local function CreateSmeltRow(rowLabel, typePrefix, y)
-                local lblGo = GameObject("SmeltLbl_" .. typePrefix)
+            local curY = -95
+            local function CreateOldRow(lblText, prefix)
+                local lblGo = GameObject("SmeltLbl_" .. prefix)
                 lblGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AutoBossUIList, lblGo)
                 local lblRt = lblGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(smeltStartX, y)
-                lblRt.sizeDelta = Vector2(90, 25)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(85, btnH)
                 local lblTxt = lblGo:AddComponent(typeof(Text))
                 lblTxt.raycastTarget = false
-                lblTxt.text = rowLabel
+                lblTxt.text = lblText
                 lblTxt.color = Color.white
-                lblTxt.fontSize = 14
+                lblTxt.fontSize = 12
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
                 
-                CreateSmeltToggle("C6", typePrefix .. "_C6", smeltStartX + 95, y, 40)
-                CreateSmeltToggle("C7", typePrefix .. "_C7", smeltStartX + 140, y, 40)
-                CreateSmeltToggle("C8", typePrefix .. "_C8", smeltStartX + 185, y, 40)
+                CreateSmeltToggle("C6", prefix .. "_C6", smeltStartX + 88, curY, btnW, false)
+                CreateSmeltToggle("C7", prefix .. "_C7", smeltStartX + 125, curY, btnW, false)
+                CreateSmeltToggle("C8", prefix .. "_C8", smeltStartX + 162, curY, btnW, false)
+                curY = curY - 26
             end
             
-            CreateSmeltRow("TÁCH NHẪN", "Ring", -105)
-            CreateSmeltRow("TÁCH DÂY", "Necklace", -135)
-            CreateSmeltRow("TÁCH KHUYÊN", "Earring", -165)
+            CreateOldRow("NHẪN", "Ring")
+            CreateOldRow("DÂY CHUYỀN", "Necklace")
+            CreateOldRow("KHUYÊN", "Earring")
+
+            -- 2. VẠCH DASHED NGĂN CÁCH
+            curY = curY - 5
+            local dashGo = GameObject("SmeltDashLine")
+            dashGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, dashGo)
+            local dashRt = dashGo:AddComponent(typeof(RectTransform))
+            dashRt.anchorMin, dashRt.anchorMax, dashRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            dashRt.anchoredPosition = Vector2(smeltStartX, curY)
+            dashRt.sizeDelta = Vector2(230, 15)
+            local dashTxt = dashGo:AddComponent(typeof(Text))
+            dashTxt.raycastTarget = false
+            dashTxt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+            dashTxt.color = Color(0.6, 0.6, 0.6, 0.8)
+            dashTxt.fontSize = 11
+            dashTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then dashTxt.font = defaultFont end
+
+            -- 3. PHẦN 2: TÁCH ĐỒ BỘ & GIỮ DÒNG NGON
+            curY = curY - 20
+            local title2Go = GameObject("SmeltTitle2")
+            title2Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, title2Go)
+            local title2Rt = title2Go:AddComponent(typeof(RectTransform))
+            title2Rt.anchorMin, title2Rt.anchorMax, title2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            title2Rt.anchoredPosition = Vector2(smeltStartX, curY)
+            title2Rt.sizeDelta = Vector2(230, 20)
+            local title2Txt = title2Go:AddComponent(typeof(Text))
+            title2Txt.raycastTarget = false
+            title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
+            title2Txt.color = Color(1, 0.8, 0, 1)
+            title2Txt.fontSize = 13
+            title2Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then title2Txt.font = defaultFont end
+
+            curY = curY - 25
+
+            local equipRows = {
+                {"MŨ", "Hat"},
+                {"ÁO", "Armor"},
+                {"QUẦN", "Pants"},
+                {"BAO TAY", "Gloves"},
+                {"BAO CHÂN", "Boots"},
+                {"VŨ KHÍ", "Weapon"},
+                {"DÂY CHUYỀN", "Necklace2"},
+                {"KHUYÊN TRÁI", "EarringL"},
+                {"KHUYÊN PHẢI", "EarringR"},
+                {"NHẪN TRÁI", "RingL"},
+                {"NHẪN PHẢI", "RingR"},
+            }
+
+            for _, r in ipairs(equipRows) do
+                local label = r[1]
+                local prefix = r[2]
+                
+                local lblGo = GameObject("SmeltLbl_" .. prefix)
+                lblGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, lblGo)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(85, btnH)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = false
+                lblTxt.text = label
+                lblTxt.color = Color.white
+                lblTxt.fontSize = 11
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+                
+                CreateSmeltToggle("C6", prefix .. "_C6", smeltStartX + 88, curY, btnW, false)
+                CreateSmeltToggle("C7", prefix .. "_C7", smeltStartX + 125, curY, btnW, false)
+                CreateSmeltToggle("C8", prefix .. "_C8", smeltStartX + 162, curY, btnW, false)
+                CreateSmeltToggle("C9", prefix .. "_C9", smeltStartX + 199, curY, btnW, false)
+                curY = curY - 24
+            end
+
+            -- Hàng chọn GIỮ DÒNG NGON (C6 - C9)
+            curY = curY - 5
+            local kgLblGo = GameObject("SmeltLbl_KeepGood")
+            kgLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgLblGo)
+            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
+            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgLblRt.sizeDelta = Vector2(85, btnH)
+            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
+            kgLblTxt.raycastTarget = false
+            kgLblTxt.text = "GIỮ DÒNG NGON"
+            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgLblTxt.fontSize = 10
+            kgLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgLblTxt.font = defaultFont end
+
+            CreateSmeltToggle("C6", "KeepGood_C6", smeltStartX + 88, curY, btnW, true)
+            CreateSmeltToggle("C7", "KeepGood_C7", smeltStartX + 125, curY, btnW, true)
+            CreateSmeltToggle("C8", "KeepGood_C8", smeltStartX + 162, curY, btnW, true)
+            CreateSmeltToggle("C9", "KeepGood_C9", smeltStartX + 199, curY, btnW, true)
 
             -- SUBTABS [ BOSS C7 ] / [ BOSS C8 ]
             local currentY = -155

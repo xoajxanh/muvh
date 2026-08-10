@@ -1,4 +1,6 @@
 === SUCCESS ===
 
 [LOGS]:
-[TEST STRICT] Bắt đầu dẫn đường tới CHÍNH XÁC (129,88)...	
+=== DỰNG GIAO DIỆN TÁCH ĐỒ TRÊN BẢNG MOD MENU ===	
+Đã tìm thấy ModMenuPanel thành công! Đang tiến hành dựng giao diện...	
+=== ĐÃ KHỞI TẠO VÀ HIỂN THỊ GIAO DIỆN TÁCH ĐỒ MỚI THÀNH CÔNG! ===	
