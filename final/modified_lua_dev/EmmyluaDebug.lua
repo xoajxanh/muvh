@@ -1138,7 +1138,7 @@ local function CreateModUI()
                     local child = activeTgContainerGo.transform:GetChild(i)
                     CS.UnityEngine.Object.Destroy(child.gameObject)
                 end
-                local admins = _G.Mod_Config_AdminTelegram or {"admin1", "admin2"}
+                local admins = _G.Mod_Config_AdminTelegram or {"", ""}
                 local btnWidth = 280
                 local btnHeight = 40
                 local gap = 20
