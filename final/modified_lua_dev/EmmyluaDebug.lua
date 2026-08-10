@@ -5297,7 +5297,7 @@ end
         wmRt.sizeDelta = Vector2(200, 30)
         local wmTxt = watermarkGo:AddComponent(typeof(Text))
         wmTxt.raycastTarget = false
-        wmTxt.text = "<i>Modded by Xoài</i>"
+        wmTxt.text = "<i>Modded by VỤT Team</i>"
         wmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
         wmTxt.fontSize = 16
         wmTxt.alignment = TextAnchor.LowerRight
