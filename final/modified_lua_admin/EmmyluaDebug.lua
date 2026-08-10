@@ -166,13 +166,13 @@ local function CreateModUI()
                 end
                 
                 local msgLines = {}
-                table.insert(msgLines, string.format("THỐNG KÊ MỞ BẢN ĐỒ ẨN: <b>%d</b>", total))
+                table.insert(msgLines, string.format("\nTHỐNG KÊ MỞ BẢN ĐỒ ẨN: <b>%d</b>", total))
                 
                 for playerName, count in pairs(_G.Mod_AnStats or {}) do
                     table.insert(msgLines, string.format("%s: %d", tostring(playerName), count))
                 end
                 
-                table.insert(msgLines, string.format("<i>Cập nhật lúc: %s</i>", nowStr))
+                table.insert(msgLines, string.format("\n<i>Cập nhật lúc: %s</i>", nowStr))
                 
                 local fullMsg = table.concat(msgLines, "\n")
                 
@@ -1975,9 +1975,10 @@ end
                                     if currentSec - lastNotify >= 180 then
                                         _G.LastTeleNotifySec_Boss[bossKey] = currentSec
                                         
+                                        local statusTitle = (count >= cfg.limit) and "Đã Hiện!" or "Sắp Ra!"
                                         local rCount = (info and info.refreshCount) and info.refreshCount or 0
                                         local msgText = (count >= cfg.limit) and "Hiện" or tostring(rCount)
-                                        local msg = string.format("🔴 KUNDUN %s: %s Sắp Ra!\n- Số lượng: %d / %d (%s)", cfg.tab, cfg.name, count, cfg.limit, msgText)
+                                        local msg = string.format("\n🔴 KUNDUN %s: %s %s\n- Số lượng: %d / %d (%s)", cfg.tab, cfg.name, statusTitle, count, cfg.limit, msgText)
                                         
                                         local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
                                         local chatId = "-5255708823"
@@ -2142,22 +2143,22 @@ end
                         end
                     end
 
+                    if _G.IsAutoRefresh or _G.Mod_TelegramBossAlert then
+                        local currentSec = _G.Time.GetServerSecondTime()
+                        if currentSec - _G.LastRefreshSec >= _G.AutoRefreshInterval then
+                            _G.LastRefreshSec = currentSec
+                            if _G.NetManager and _G.MapMessage then
+                                _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
+                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, {type = 16})
+                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, {type = 17})
+                            end
+                        end
+                    end
+
                     if isExpanded then
                         UpdateBossWatchUIText()
                         if _G.ModUpdateCountText then _G.ModUpdateCountText() end
                         if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
-                        
-                        if _G.IsAutoRefresh then
-                            local currentSec = _G.Time.GetServerSecondTime()
-                            if currentSec - _G.LastRefreshSec >= _G.AutoRefreshInterval then
-                                _G.LastRefreshSec = currentSec
-                                if _G.NetManager and _G.MapMessage then
-                                    _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, {type = 16})
-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, {type = 17})
-                                end
-                            end
-                        end
                     end
                 end)
             end
@@ -3239,7 +3240,7 @@ end
                 
                 local tRtAnStats = tGoAnStats:AddComponent(typeof(RectTransform))
                 tRtAnStats.anchorMin, tRtAnStats.anchorMax, tRtAnStats.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                tRtAnStats.anchoredPosition = Vector2(rightColX2 + 140, currentY)
+                tRtAnStats.anchoredPosition = Vector2(rightColX2 + 160, currentY)
                 tRtAnStats.sizeDelta = Vector2(130, 30)
 
                 local bgAnStats = GameObject("Bg")
@@ -4754,16 +4755,17 @@ end
                         end
 
                         local isSystemChannel = (channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM))
-                        local isSystemText = string.find(text, "Hệ thống") or string.find(text, "%[Hệ thống%]")
+                        local isSystemText = string.find(text, "Hệ thống") or string.find(text, "%[Hệ thống%]") or string.find(text, "Bản đồ ẩn")
                         
                         if isSystemChannel or isSystemText then
-                            if string.find(text, "triệu hồi") or string.find(text, "Bản đồ ẩn") or string.find(text, "Kỵ Sĩ") then
-                                local playerName = string.match(text, "%]%s*([%w_]+)%s+trong%s+Bản")
-                                if not playerName then
-                                    playerName = string.match(text, "([%w_]+)%s+trong%s+Bản đồ ẩn")
+                            if string.find(text, "Kỵ Sĩ") and not string.find(text, "Đất Sét") then
+                                local cleanText = string.gsub(text, "<[^>]+>", "")
+                                local playerName = string.match(cleanText, "%]%s*(.-)%s+trong%s+Bản")
+                                if not playerName or playerName == "" then
+                                    playerName = string.match(cleanText, "([%w%._%-]+)%s+trong%s+Bản đồ ẩn")
                                 end
-                                if not playerName then
-                                    playerName = string.match(text, "([%w_]+)%s+trong")
+                                if not playerName or playerName == "" then
+                                    playerName = string.match(cleanText, "([%w%._%-]+)%s+trong")
                                 end
                                 
                                 if playerName and playerName ~= "" then
