@@ -6,8 +6,8 @@ export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getSessionUser(req);
-  if (!session || session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Admin mới có quyền cập nhật gói VIP' }, { status: 403 });
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SALE')) {
+    return NextResponse.json({ error: 'Bạn không có quyền cập nhật gói VIP' }, { status: 403 });
   }
 
   try {
@@ -44,8 +44,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getSessionUser(req);
-  if (!session || session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Admin mới có quyền xóa gói VIP' }, { status: 403 });
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SALE')) {
+    return NextResponse.json({ error: 'Bạn không có quyền xóa gói VIP' }, { status: 403 });
   }
 
   try {

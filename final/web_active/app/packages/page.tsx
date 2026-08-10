@@ -203,7 +203,7 @@ export default function PackagesPage() {
               </p>
             </div>
 
-            {user.role === 'ADMIN' && (
+            {(user.role === 'ADMIN' || user.role === 'SALE') && (
               <button
                 onClick={() => handleOpenModal()}
                 className="px-5 py-2.5 gradient-button text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 self-start sm:self-auto hover:scale-105 transition"
@@ -258,7 +258,7 @@ export default function PackagesPage() {
                   </div>
                 </div>
 
-                {user.role === 'ADMIN' && (
+                {(user.role === 'ADMIN' || user.role === 'SALE') && (
                   <div className="flex items-center justify-end gap-2 pt-2">
                     <button
                       onClick={() => handleOpenModal(pkg)}

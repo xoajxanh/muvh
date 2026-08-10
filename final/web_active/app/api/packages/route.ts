@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getSessionUser(req);
-  if (!session || session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Admin mới có quyền tạo gói VIP' }, { status: 403 });
+  if (!session || (session.role !== 'ADMIN' && session.role !== 'SALE')) {
+    return NextResponse.json({ error: 'Bạn không có quyền tạo gói VIP' }, { status: 403 });
   }
 
   try {
