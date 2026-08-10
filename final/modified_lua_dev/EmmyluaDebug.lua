@@ -1982,6 +1982,7 @@ local function CreateModUI()
                                 local dy = meY - ty
                                 local dist = math.sqrt(dx*dx + dy*dy)
                                 
+                                local isTeleportingWithStone = false
                                 if dist > 50 then
                                     local stoneBagId = nil
                                     if _G.BagInfoData and _G.BagInfoData.TotalItems then
@@ -1994,14 +1995,13 @@ local function CreateModUI()
                                     end
                                     
                                     if stoneBagId then
-                                        -- Rapid stone usage loop up to 5 times per tick until dist <= 50m
-                                        for k = 1, 5 do
-                                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                                _G.networkRequest.ReqUseItem(1, stoneBagId)
-                                            elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                                _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
-                                            end
+                                        -- Dùng 1 viên đá mỗi nhịp để chớp nháy dịch chuyển liên tục
+                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
                                         end
+                                        isTeleportingWithStone = true
                                     else
                                         if pMe and pMe.MoveTo then
                                             pMe:MoveTo({x = tx, y = ty}, 0, function()
@@ -2018,6 +2018,7 @@ local function CreateModUI()
                                         end)
                                     end
                                 end
+                                return isTeleportingWithStone
                             end
                         end
                     end
@@ -2047,9 +2048,11 @@ local function CreateModUI()
                     
                     if bestBoss.wait and bestBoss.wait > 180 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                         LogMsg("Chờ Boss > 180s! Tách đồ và quay lại Tọa độ Train...")
-                        Mod_PerformAutoTrainAndSmelt()
+                        local isTele = Mod_PerformAutoTrainAndSmelt()
+                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + (isTele and 1 or 5)
+                    else
+                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
                     end
-                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
                 end
             else
                 _G.Mod_AutoFarmBoss_Target = nil
@@ -2057,8 +2060,8 @@ local function CreateModUI()
                 
                 if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                     LogMsg("Không có Boss! Tách đồ và quay lại Tọa độ Train...")
-                    Mod_PerformAutoTrainAndSmelt()
-                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                    local isTele = Mod_PerformAutoTrainAndSmelt()
+                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + (isTele and 1 or 5)
                 elseif currentMapId == 1001 then
                     LogMsg("Không có Boss! Chờ ở Lorencia...")
                     _G.Mod_AutoFarmBoss_State = 2
@@ -4334,7 +4337,7 @@ end
                     for r = 1, maxRows do
                         for c = 1, 3 do
                             local cfg = colBosses[c][r]
-                            if cfg then
+                            if cfg and not cfg.isExitBtn then
                                 local px = startX + (c - 1) * 145
                                 local bData = configPool[poolIdx]
                                 if not bData then
