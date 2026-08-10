@@ -1,18 +1,278 @@
 pcall(function()
-    if _G.WriteLog then _G.WriteLog("=== RUNNING ANSTATS TEST SCRIPT ===") end
+    print("==================== FIXED ALL-DEAD BOSS DETECTION SCENARIO TEST ====================")
     
-    -- Giả lập tin nhắn hệ thống thông báo mở bản đồ ẩn
-    local testMsgText = "[Hệ thống] Dino trong Bản đồ ẩn đã triệu hồi Thể Biến Dị Hoàn Toàn - Kỵ Sĩ"
+    local trainX = 155
+    local trainY = 111
+    local c7MapId = 101095
     
-    if _G.ChatData and _G.ChatData.AddMessage then
-        _G.ChatData.AddMessage(8, { message = testMsgText })
-        if _G.WriteLog then _G.WriteLog("[AnStats Test] Called ChatData.AddMessage successfully!") end
-    else
-        -- Fallback trực tiếp nếu ChatData không sẵn sàng
-        _G.Mod_AnStats = _G.Mod_AnStats or {}
-        _G.Mod_AnStats["Dino"] = (_G.Mod_AnStats["Dino"] or 0) + 1
-        if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
-        if _G.Mod_SendAnStatsTelegram then _G.Mod_SendAnStatsTelegram() end
-        if _G.WriteLog then _G.WriteLog("[AnStats Test] Direct update Dino +1") end
+    if not _G.Coroutine or not _G.Coroutine.Start then
+        print("Error: Coroutine system not found!")
+        return
     end
+    
+    _G.Coroutine.Start(function()
+        local me = _G.RoleManager and _G.RoleManager.me
+        local meId = me and me.data and me.data.id
+        
+        -- 1. Find target ALIVE Boss on map ONLY
+        local aliveBosses = {}
+        if _G.Mod_GetAliveHHBossList then
+            aliveBosses = _G.Mod_GetAliveHHBossList()
+        end
+        
+        if #aliveBosses == 0 and _G.SceneData and _G.SceneData.SmallIconData then
+            for _, item in ipairs(_G.SceneData.SmallIconData) do
+                if item.list then
+                    for _, sub in ipairs(item.list) do
+                        -- CHỈ LẤY BOSS ĐANG SỐNG THỰC SỰ (sub.state == 1)
+                        if sub.state == 1 then
+                            local bName = "Unknown"
+                            local transferId = nil
+                            if _G.Mod_MapsConfig_c7 then
+                                for _, mapCfg in ipairs(_G.Mod_MapsConfig_c7) do
+                                    if mapCfg.bosses then
+                                        for _, cfg in ipairs(mapCfg.bosses) do
+                                            if (cfg.id == item.bossID or tonumber(cfg.id) == tonumber(item.bossID)) then
+                                                bName = cfg.name
+                                                transferId = cfg.transferId
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                            table.insert(aliveBosses, {
+                                cfg = { id = item.bossID, name = bName, transferId = transferId or c7MapId },
+                                mapCfg = { mapId = c7MapId },
+                                x = sub.x,
+                                y = sub.y,
+                                lid = sub.id
+                            })
+                        end
+                    end
+                end
+            end
+        end
+        
+        -- target SẼ LÀ NIL NẾU TẤT CẢ BOSS ĐỀU CHẾT!
+        local target = (#aliveBosses > 0) and aliveBosses[1] or nil
+        
+        if target then
+            local tId = target.cfg.transferId or c7MapId
+            print(string.format("[BƯỚC 1: DỊCH CHUYỂN] Phát hiện Boss SỐNG: %s (ID: %s) -> Bay qua TransferID: %s...",
+                tostring(target.cfg.name), tostring(target.cfg.id), tostring(tId)))
+            
+            if _G.FloatingWordUtility then
+                _G.FloatingWordUtility.QuickMsg(string.format("Đang bay tới Boss %s...", target.cfg.name))
+            end
+            
+            if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = tId, line = 1, changeLine = true })
+            end
+            
+            -- CHỜ 2 GIÂY NẠP MAP & LOAD DỮ LIỆU
+            _G.Coroutine.Wait(2.0)
+            
+            -- BƯỚC 2: NHÚC NHÍCH 1-2 BƯỚC (JIGGLE)
+            print("[BƯỚC 2: JIGGLE] Nhúc nhích 1-2 bước để kích hoạt render quái...")
+            local meCurrent = _G.RoleManager and _G.RoleManager.me
+            if meCurrent and meCurrent.MoveTo then
+                local meX = meCurrent.serverCoord and meCurrent.serverCoord.x or (meCurrent.data and meCurrent.data.x) or 0
+                local meY = meCurrent.serverCoord and meCurrent.serverCoord.y or (meCurrent.data and meCurrent.data.y) or 0
+                if meX > 0 and meY > 0 then
+                    local dx = math.random(-2, 2)
+                    local dy = math.random(-2, 2)
+                    if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                    meCurrent:MoveTo({x = meX + dx, y = meY + dy})
+                end
+            end
+            
+            _G.Coroutine.Wait(1.0)
+            
+            -- BƯỚC 3: QUÉT VÀ KIỂM TRA ĐỦ ĐIỀU KIỆN
+            print("[BƯỚC 3: SCAN] Quét danh sách quái xung quanh...")
+            local targetMonsterRole = nil
+            local isHighHp = false
+            
+            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                local monsterRoles = _G.RoleManager.GetRolesByType(2) or {}
+                for lid, role in pairs(monsterRoles) do
+                    if role and role.hp and role.hp > 0 then
+                        local d = role.data
+                        local mId = d and (d.configId or d.monsterId or d.templateId) or "none"
+                        local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
+                        local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
+                        
+                        if idMatch or nameMatch or true then
+                            targetMonsterRole = role
+                            local maxHp = role.maxHp or role.maxHP or role.hp
+                            local hpPct = (role.hp / maxHp) * 100
+                            print(string.format("-> Phát hiện Boss %s | HP: %.1f%%", tostring(role.name or target.cfg.name), hpPct))
+                            if hpPct >= 90 or (d and (d.ownerId == 0 or d.ownerId == nil)) then
+                                isHighHp = true
+                            end
+                            break
+                        end
+                    end
+                end
+            end
+            
+            if targetMonsterRole or isHighHp then
+                print("[BƯỚC 4: COMBAT & HP MONITOR] BẬT AUTO ĐÁNH! Quét HP mỗi 1s...")
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("BỤP BOSS! QUÉT MÁU MỖI 1S...")
+                end
+                if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                    _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+                
+                -- VÒNG LẶP QUÉT MÁU MỖI 1S CHO TỚI KHI BOSS CHẾT
+                local combatElapsed = 0
+                local maxCombatTime = 60
+                
+                while combatElapsed < maxCombatTime do
+                    _G.Coroutine.Wait(1.0)
+                    combatElapsed = combatElapsed + 1
+                    
+                    local currentHp = 0
+                    local isAlive = false
+                    
+                    if targetMonsterRole and not _G.IsNil(targetMonsterRole) and targetMonsterRole.hp then
+                        currentHp = targetMonsterRole.hp
+                        if currentHp > 0 then
+                            isAlive = true
+                        end
+                    else
+                        local roles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2) or {}
+                        for _, r in pairs(roles) do
+                            if r and r.hp and r.hp > 0 then
+                                isAlive = true
+                                currentHp = r.hp
+                                targetMonsterRole = r
+                                break
+                            end
+                        end
+                    end
+                    
+                    if isAlive then
+                        print(string.format("  [Combat Tick %ds] Boss HP: %s", combatElapsed, tostring(currentHp)))
+                    else
+                        print(string.format("  [Combat Finished at %ds] BOSS ĐÃ BỊ HẠ GỤC!", combatElapsed))
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg("BOSS ĐÃ HẠ GỤC! CHỜ 5S NHẶT ĐỒ...")
+                        end
+                        break
+                    end
+                end
+                
+                -- BƯỚC 5: CHỜ 5 GIÂY NHẶT ĐỒ RƠI
+                print("[BƯỚC 5: PICKUP] Chờ 5 giây nhặt đồ rơi...")
+                _G.Coroutine.Wait(5.0)
+            end
+        else
+            print(string.format("[KHÔNG CÓ BOSS SỐNG] Tất cả Boss trên Map đã CHẾT! Bỏ qua dịch chuyển Boss!"))
+            if _G.FloatingWordUtility then
+                _G.FloatingWordUtility.QuickMsg("TẤT CẢ BOSS ĐÃ CHẾT! RÚT VỀ TỌA ĐỘ TRAIN...")
+            end
+        end
+        
+        -- BƯỚC 6: DÙNG ÁN DỊCH CHUYỂN NGẪU NHIÊN (ITEM ID: 20000022) VỀ GẦN TỌA ĐỘ TRAIN (155, 111)
+        print(string.format("[BƯỚC 6: RANDOM TELEPORT TO TRAIN] Dùng Ấn Dịch Chuyển Ngẫu Nhiên (20000022) đến khi Distance < 20m..."))
+
+        local randomStoneMaxTries = 15
+        local tries = 0
+
+        while tries < randomStoneMaxTries do
+            local pMe = _G.RoleManager and _G.RoleManager.me
+            local meX, meY = 0, 0
+            if pMe then
+                if pMe.cellPos then meX, meY = pMe.cellPos.x, pMe.cellPos.y
+                elseif pMe.serverCoord then meX, meY = pMe.serverCoord.x, pMe.serverCoord.y end
+            end
+            
+            local dx = meX - trainX
+            local dy = meY - trainY
+            local dist = math.sqrt(dx*dx + dy*dy)
+            
+            print(string.format("  [Random Stone Check #%d] Current Pos: (%d, %d) | Train Pos: (%d, %d) | Distance: %.1fm",
+                tries, meX, meY, trainX, trainY, dist))
+                
+            if dist <= 20 and dist >= 0 then
+                print(string.format("[SUCCESS] Distance to train pos is %.1fm (< 20m)! Walking the rest...", dist))
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đã tới gần Tọa độ Train (Cách %.1fm < 20m)! Chạy bộ...", dist))
+                end
+                break
+            end
+            
+            local stoneBagId = nil
+            if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                    if itemData and itemData.itemId == 20000022 then
+                        stoneBagId = itemData.id
+                        break
+                    end
+                end
+            end
+            
+            if stoneBagId then
+                tries = tries + 1
+                print(string.format("  -> Dùng Ấn Dịch Chuyển Ngẫu Nhiên (BagID: %s)...", tostring(stoneBagId)))
+                if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                    _G.networkRequest.ReqUseItem(1, stoneBagId)
+                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                    _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                end
+                _G.Coroutine.Wait(0.6)
+            else
+                print("  [HẾT ĐỒ] Không tìm thấy Ấn Dịch Chuyển Ngẫu Nhiên (itemId 20000022) trong túi! Chạy bộ...")
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("Hết Ấn Dịch Chuyển! Chạy bộ về Tọa Độ Train...")
+                end
+                break
+            end
+        end
+
+        -- CHẠY BỘ ĐOẠN CÒN LẠI < 20M VỀ TỌA ĐỘ TRAIN (155, 111)
+        print(string.format("[WALK REST OF DISTANCE] Chạy bộ đoạn còn lại về (%d, %d)...", trainX, trainY))
+        local moved = false
+        local trainPos = {x = trainX, y = trainY}
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+            _G.RoleManager.me:MoveTo(trainPos, 0, function(status)
+                print("[FINISHED] Đã tới Tọa Độ Train (155, 111)! Bật Auto Farm!")
+                if me and me.SetAutoFight then
+                    me:SetAutoFight("ReleaseSkill")
+                end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+            end)
+            moved = true
+        end
+
+        if not moved then
+            local targetVector = CS.UnityEngine.Vector2(trainX, trainY)
+            local line = _G.SceneData and _G.SceneData.line or 1
+            local onArrive = function()
+                print("[FINISHED] Đã tới Tọa Độ Train (155, 111)!")
+                if me and me.SetAutoFight then
+                    me:SetAutoFight("ReleaseSkill")
+                end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+            end
+            
+            if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                _G.PathFinderManager.JumpMapToMoveToPos(c7MapId, targetVector, nil, line, nil, _G.Purpose and _G.Purpose.None or 0, onArrive, 3, true)
+            elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
+                _G.JumpMapToPos.MapMoveToPos(c7MapId, targetVector, nil, line, nil, _G.Purpose and _G.Purpose.None or 0, onArrive)
+            end
+        end
+        
+        print("\n==================== END TEST ====================")
+    end)
 end)

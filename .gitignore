@@ -22,3 +22,4 @@ yarn-error.log*
 .vscode/
 *.tmp
 final/web_active/next-env.d.ts
+final/web_active/tsconfig.tsbuildinfo

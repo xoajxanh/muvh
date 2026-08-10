@@ -1,3 +1,5 @@
 === SUCCESS ===
 
 [LOGS]:
+==================== FIXED ALL-DEAD BOSS DETECTION SCENARIO TEST ====================	
+[BƯỚC 1: DỊCH CHUYỂN] Phát hiện Boss SỐNG: Cuồng Bạo (ID: 10179609) -> Bay qua TransferID: 400228...	
