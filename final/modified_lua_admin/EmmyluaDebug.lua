@@ -4524,15 +4524,6 @@ end
             currentY = currentY - 45
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
             currentY = currentY - 45
-            if _G.Mod_IsAdmin then
-                CreateToggle("VÔ HẠN PB (HL, QTQ)", "Mod_InfiniteInstance", rightColX2, currentY)
-                currentY = currentY - 45
-            end
-            
-            if _G.Mod_IsAdmin then
-                CreateToggle("AUTO DÙNG THIÊN SỨ", "Mod_AutoUseAngel", rightColX2, currentY)
-                currentY = currentY - 45
-            end
             
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
             currentY = currentY - 45
@@ -4638,16 +4629,6 @@ end
                     CS.UnityEngine.PlayerPrefs.Save()
                 end)
             end)
-            currentY = currentY - 45
-
-            if _G.Mod_IsAdmin then
-                CreateToggle("AUTO HỒI SINH KTĐ", "Mod_AutoRevive_KTD", rightColX2, currentY)
-                currentY = currentY - 45
-                
-                CreateToggle("AUTO NHẶT RƯƠNG KTĐ", "Mod_AutoPick_KTD", rightColX2, currentY)
-                currentY = currentY - 45
-            end
-            
         end 
 
         CreateKundunUI()
