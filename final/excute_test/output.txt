@@ -1,7 +1,4 @@
 === SUCCESS ===
 
 [LOGS]:
-==================== ADVANCED TEST HOOK [NOTICE ANNOUNCE & CHAT] ====================	
--> Đã Hook thành công NoticeController.ResAnnounce!	
--> Đã Hook thành công ChatData.AddMessage!	
-==================== HOÀN TẤT SETUP HOOK ANNOUNCEMENT ====================	
+[TEST STRICT] Bắt đầu dẫn đường tới CHÍNH XÁC (129,88)...	

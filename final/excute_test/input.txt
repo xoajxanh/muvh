@@ -1,99 +1,133 @@
-pcall(function()
-    print("==================== ADVANCED TEST HOOK [NOTICE ANNOUNCE & CHAT] ====================")
-    
-    local function ProcessSystemAnnouncement(rawText, sourceTag)
-        pcall(function()
-            if not rawText or rawText == "" then return end
-            
-            -- 1. Thay thế đặc thù của game: <color=#ffffff00>a</color> -> space
-            local textWithoutColorA = string.gsub(rawText, "<color=#ffffff00>a</color>", " ")
-            
-            -- 2. Lọc sạch toàn bộ thẻ HTML còn lại
-            local cleanText = string.gsub(textWithoutColorA, "<[^>]+>", "")
-            
-            -- 3. Chuẩn hóa khoảng trắng kép/nhiều khoảng trắng thành 1 khoảng trắng
-            cleanText = string.gsub(cleanText, "%s+", " ")
-            cleanText = string.trim and string.trim(cleanText) or cleanText
-            
-            print(string.format("\n[%s RECEIVE]", tostring(sourceTag)))
-            print(string.format("  -> RAW:   %s", rawText))
-            print(string.format("  -> CLEAN: %s", cleanText))
-            
-            -- Hiển thị QuickMsg tin nhắn vừa nhận
-            if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("[%s] %s", sourceTag, cleanText))
-            end
-            
-            -- Lọc kiểm tra Boss Biến Dị
-            if string.find(cleanText, "Biến Dị") or string.find(cleanText, "BOSS") or string.find(cleanText, "triệu hồi") then
-                print("=== [PHÁT HIỆN BOSS BIẾN DỊ IN ANNOUNCEMENT] ===")
-                
-                -- Bóc tách Tên Nhân Vật
-                local pName = string.match(cleanText, "%]%s*([^%s]+)%s+trong")
-                if not pName or pName == "" then
-                    pName = string.match(cleanText, "([^%s]+)%s+trong%s+Bản")
-                end
-                
-                -- Bóc tách Thông Tin Boss
-                local bossInfo = string.match(cleanText, "triệu%s+hồi%s+thành%s+công%s+(.+)") or cleanText
-                
-                -- Kiểm tra Kỵ Sĩ (và không phải Đất Sét)
-                local isKySi = (string.find(cleanText, "Kỵ Sĩ") ~= nil) and (string.find(cleanText, "Đất Sét") == nil)
-                
-                local resultStr = string.format("PARSED -> Player: '%s' | Boss: '%s' | IsKySi: %s",
-                    tostring(pName or "Unknown"), tostring(bossInfo), tostring(isKySi))
-                print("  " .. resultStr)
-                
-                if _G.FloatingWordUtility then
-                    _G.FloatingWordUtility.QuickMsg(string.format("TỔNG HỢP ẨN: Tên=%s | Kỵ Sĩ=%s", tostring(pName), tostring(isKySi)))
-                end
-            end
-        end)
-    end
-    
-    -- HOOK 1: NoticeController.ResAnnounce (Engine thông báo hệ thống chính)
-    if _G.NoticeController and not _G.Mod_TestNoticeHooked then
-        _G.Mod_TestNoticeHooked = true
-        local orig_ResAnnounce = _G.NoticeController.ResAnnounce
-        _G.NoticeController.ResAnnounce = function(eventId, data)
-            pcall(function()
-                if data and data.parameter then
-                    local paramStr = table.concat(data.parameter, " | ")
-                    ProcessSystemAnnouncement("NoticeID:" .. tostring(data.id) .. " Param:" .. paramStr, "NOTICE_RAW")
-                end
-            end)
-            if orig_ResAnnounce then orig_ResAnnounce(eventId, data) end
+local function LogAndShow(msg)
+    print(msg)
+    pcall(function()
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(msg)
         end
-        print("-> Đã Hook thành công NoticeController.ResAnnounce!")
-    end
-    
-    -- HOOK 2: ChatData.AddMessage (Hộp thoại Chat)
-    if _G.ChatData and not _G.Mod_TestChatHooked then
-        _G.Mod_TestChatHooked = true
-        local orig_AddMessage = _G.ChatData.AddMessage
-        _G.ChatData.AddMessage = function(channel, message)
-            pcall(function()
-                local rawText = ""
-                if type(message) == "table" then
-                    if type(message.chatMsg) == "table" and message.chatMsg.message then
-                        rawText = tostring(message.chatMsg.message)
-                    elseif type(message.chatMsg) == "string" then
-                        rawText = tostring(message.chatMsg)
-                    elseif message.message then
-                        rawText = tostring(message.message)
-                    elseif message.content then
-                        rawText = tostring(message.content)
+    end)
+end
+
+if _G.TestTrainTimer then
+    pcall(function() _G.Timer.Stop(_G.TestTrainTimer) end)
+    _G.TestTrainTimer = nil
+end
+
+_G.Test_IsMovingToTrainPos = false
+
+local targetCoord = "129#88"
+local parts = {}
+for p in string.gmatch(targetCoord, "[^#]+") do table.insert(parts, p) end
+local tx, ty = tonumber(parts[1]), tonumber(parts[2])
+
+LogAndShow(string.format("[TEST STRICT] Bắt đầu dẫn đường tới CHÍNH XÁC (%d,%d)...", tx, ty))
+
+local loopCount = 0
+if _G.Timer and _G.Timer.StartLoopForever then
+    _G.TestTrainTimer = _G.Timer.StartLoopForever(0.3, function()
+        loopCount = loopCount + 1
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local meX, meY = 0, 0
+        if pMe then
+            if pMe.cellPos then meX, meY = pMe.cellPos.x, pMe.cellPos.y
+            elseif pMe.serverCoord then meX, meY = pMe.serverCoord.x, pMe.serverCoord.y end
+        end
+        
+        local dx = meX - tx
+        local dy = meY - ty
+        local dist = math.sqrt(dx*dx + dy*dy)
+        
+        LogAndShow(string.format("[TEST #%d] Vị trí hiện tại: (%d,%d) -> Tọa độ bãi: (%d,%d) | Cự ly: %.1fm", loopCount, meX, meY, tx, ty, dist))
+        
+        -- CHƯA TỚI CHÍNH XÁC TỌA ĐỘ (Cự ly > 1.5m)
+        if dist > 1.5 then
+            -- TẮT HOÀN TOÀN AUTO FIGHT TRÊN ĐƯỜNG CHẠY (KHÔNG ĐÁNH QUÁI)
+            if pMe then
+                if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
+                    if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
+                end
+                if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
+                    if pMe.SetAutoFight then pMe:SetAutoFight("None") end
+                end
+            end
+            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                _G.QiJiHelperData.SetAutoFightData(false)
+            end
+            
+            -- Xử lý đá nhảy nếu quá xa (> 50m)
+            if dist > 50 then
+                _G.Test_IsMovingToTrainPos = false
+                local stoneBagId = nil
+                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                        if itemData then
+                            local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                            local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                            if itemId == 20000022 then
+                                stoneBagId = instanceId
+                                break
+                            end
+                        end
+                    end
+                end
+                
+                if stoneBagId then
+                    LogAndShow(string.format("[TEST] Cự ly %.1fm > 50m -> Dùng Đá Nhảy!", dist))
+                    if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                        _G.networkRequest.ReqUseItem(1, stoneBagId)
+                    elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                        _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
                     end
                 else
-                    rawText = tostring(message or "")
+                    LogAndShow(string.format("[TEST] Cự ly %.1fm > 50m (Không có đá) -> Dùng MoveToLinePos...", dist))
+                    local tab = _G.ModAutoBossConfigTab or "C7"
+                    local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
+                    local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
+                    local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or ((tab == "C8") and 400229 or 400216)
+                    if _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+                        _G.PathFinderManager.MoveToLinePos(wildMapId, {x = tx, y = ty}, wildTransferId, 1, nil, nil, nil, nil, true)
+                    end
                 end
+            else
+                -- Cự ly <= 50m và > 1.5m: Kiểm tra xem nhân vật có đang di chuyển không
+                local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
                 
-                ProcessSystemAnnouncement(rawText, "CHAT_MSG")
-            end)
-            if orig_AddMessage then orig_AddMessage(channel, message) end
+                if not _G.Test_IsMovingToTrainPos or not isMoving then
+                    _G.Test_IsMovingToTrainPos = true
+                    LogAndShow(string.format("[TEST] Chạy bộ tới tọa độ (%d,%d)... (cự ly %.1fm)", tx, ty, dist))
+                    
+                    if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
+                        local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(targetCoord)) or (_G.Vector2 and _G.Vector2(tx, ty)) or {x = tx, y = ty}
+                        _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId, targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1, true)
+                    elseif pMe and pMe.MoveTo then
+                        pMe:MoveTo({x = tx, y = ty}, 0)
+                    end
+                else
+                    LogAndShow(string.format("[TEST] Đang duy trì chạy mượt tới (%d,%d)... (cự ly %.1fm)", tx, ty, dist))
+                end
+            end
+        else
+            -- ĐÃ ĐẾN CHÍNH XÁC VỊ TRÍ TỌA ĐỘ (Cự ly <= 1.5m)
+            LogAndShow(string.format("[TEST] -> ĐÃ ĐẾN CHÍNH XÁC TỌA ĐỘ BÃI TRAIN (%d,%d) (Cự ly %.1fm)! Dừng di chuyển & Bật Auto Fight...", tx, ty, dist))
+            if pMe then
+                if pMe.StopMove then pMe:StopMove() end
+                if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
+            end
+            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                _G.QiJiHelperData.SetAutoFightData(true)
+            end
+            _G.Test_IsMovingToTrainPos = false
+            if _G.TestTrainTimer then
+                _G.Timer.Stop(_G.TestTrainTimer)
+                _G.TestTrainTimer = nil
+            end
         end
-        print("-> Đã Hook thành công ChatData.AddMessage!")
-    end
-    
-    print("==================== HOÀN TẤT SETUP HOOK ANNOUNCEMENT ====================")
-end)
+        
+        if loopCount >= 40 then
+            LogAndShow("[TEST] Hết 40s -> Tự động dừng Timer test.")
+            if _G.TestTrainTimer then
+                _G.Timer.Stop(_G.TestTrainTimer)
+                _G.TestTrainTimer = nil
+            end
+        end
+    end)
+end

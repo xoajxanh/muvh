@@ -1338,127 +1338,86 @@ local function CreateModUI()
         end
         if _G.Mod_AutoHH_Enabled then
             pcall(function()
-                local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
-                if currentSec >= (_G.Mod_AutoHH_LastTick or 0) + 3 then
-                    _G.Mod_AutoHH_LastTick = currentSec
+                local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+                if nowRealtime < (_G.Mod_AutoHH_NextTickTime or 0) then
+                    return
+                end
+                
+                local me = _G.RoleManager and _G.RoleManager.me
+                local meId = me and me.data and me.data.id
+                local currentMapId = _G.SceneData and _G.SceneData.mapId
+                
+                local tab = _G.ModAutoBossConfigTab or "C7"
+                local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
+                local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
+                
+                -- 1. Scan for ALIVE HH Bosses on current map using Mod_GetAliveHHBossList()
+                local aliveHHBosses = {}
+                if _G.Mod_GetAliveHHBossList then
+                    aliveHHBosses = _G.Mod_GetAliveHHBossList()
+                end
+                
+                local targetBoss = (#aliveHHBosses > 0) and aliveHHBosses[1] or nil
+                
+                if targetBoss then
+                    _G.Mod_AutoHH_NextTickTime = nowRealtime + 2.0
+                    local tId = targetBoss.transferId or targetMapId
                     
-                    local me = _G.RoleManager and _G.RoleManager.me
-                    local meId = me and me.data and me.data.id
-                    local currentMapId = _G.SceneData and _G.SceneData.mapId
+                    local pX = me and (me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x)) or 0
+                    local pY = me and (me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y)) or 0
+                    local distToTargetBoss = math.sqrt((pX - targetBoss.x)*(pX - targetBoss.x) + (pY - targetBoss.y)*(pY - targetBoss.y))
                     
-                    local tab = _G.ModAutoBossConfigTab or "C7"
-                    local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
-                    local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
-                    
-                    -- 1. Scan for ALIVE HH Bosses on current map using Mod_GetAliveHHBossList()
-                    local aliveHHBosses = {}
-                    if _G.Mod_GetAliveHHBossList then
-                        aliveHHBosses = _G.Mod_GetAliveHHBossList()
+                    local nearTarget = false
+                    if distToTargetBoss <= 12 then
+                        if me and _G.RoleManager.GetRolesByType then
+                            local monsterRoles = _G.RoleManager.GetRolesByType(2) or {}
+                            for _, role in pairs(monsterRoles) do
+                                if role and role.hp and role.hp > 0 and role.maxHp and role.maxHp > 0 then
+                                    local hpRatio = role.hp / role.maxHp
+                                    local ownerId = role.ownerId or (role.data and role.data.ownerId) or 0
+                                    local isUnclaimed = (ownerId == 0 or tostring(ownerId) == tostring(meId))
+                                    local rCfg = role.data and (role.data.configId or role.data.monsterId)
+                                    
+                                    if (not rCfg or tostring(rCfg) == tostring(targetBoss.configId)) and hpRatio >= 0.9 and isUnclaimed then
+                                        nearTarget = true
+                                        break
+                                    end
+                                end
+                            end
+                        end
                     end
                     
-                    local targetBoss = (#aliveHHBosses > 0) and aliveHHBosses[1] or nil
-                    
-                    if targetBoss then
-                        local tId = targetBoss.transferId or targetMapId
-                        
-                        local pX = me and (me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x)) or 0
-                        local pY = me and (me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y)) or 0
-                        local distToTargetBoss = math.sqrt((pX - targetBoss.x)*(pX - targetBoss.x) + (pY - targetBoss.y)*(pY - targetBoss.y))
-                        
-                        local nearTarget = false
-                        if distToTargetBoss <= 12 then
-                            if me and _G.RoleManager.GetRolesByType then
-                                local monsterRoles = _G.RoleManager.GetRolesByType(2) or {}
-                                for _, role in pairs(monsterRoles) do
-                                    if role and role.hp and role.hp > 0 and role.maxHp and role.maxHp > 0 then
-                                        local hpRatio = role.hp / role.maxHp
-                                        local ownerId = role.ownerId or (role.data and role.data.ownerId) or 0
-                                        local isUnclaimed = (ownerId == 0 or tostring(ownerId) == tostring(meId))
-                                        local rCfg = role.data and (role.data.configId or role.data.monsterId)
-                                        
-                                        if (not rCfg or tostring(rCfg) == tostring(targetBoss.configId)) and hpRatio >= 0.9 and isUnclaimed then
-                                            nearTarget = true
-                                            break
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                        
-                        if nearTarget then
-                            if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
-                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
-                        else
-                            LogMsg("Phát hiện Boss Thánh Hoàn " .. tostring(targetBoss.name) .. "! Dịch chuyển qua transferId: " .. tostring(tId))
-                            if me and me.SetAutoFight then me:SetAutoFight("None") end
-                            if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = tId, line = 1, changeLine = true })
-                            end
-                            
-                            if me and me.MoveTo then
-                                local meX = me.serverCoord and me.serverCoord.x or (me.data and me.data.x) or 0
-                                local meY = me.serverCoord and me.serverCoord.y or (me.data and me.data.y) or 0
-                                if meX > 0 and meY > 0 then
-                                    local dx = math.random(-2, 2)
-                                    local dy = math.random(-2, 2)
-                                    if dx == 0 and dy == 0 then dx = 1; dy = 1 end
-                                    me:MoveTo({x = meX + dx, y = meY + dy})
-                                end
-                            end
-                        end
+                    if nearTarget then
+                        if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
                     else
-                        local coordStr = _G.Mod_TrainCoord or ""
-                        if coordStr and string.find(coordStr, "#") then
-                            local parts = string.split(coordStr, "#")
-                            local tx, ty = tonumber(parts[1]), tonumber(parts[2])
-                            if tx and ty then
-                                -- Check if currently on safe map / town -> Teleport to wild map first
-                                if currentMapId ~= targetMapId then
-                                    LogMsg("Không có Boss Thánh Hoàn -> Bay tới Map Train (" .. tostring(targetMapId) .. ")...")
-                                    if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                        _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = targetMapId, line = 1, changeLine = true })
-                                    end
-                                else
-                                    local pMe = _G.RoleManager and _G.RoleManager.me
-                                    local meX, meY = 0, 0
-                                    if pMe then
-                                        if pMe.cellPos then meX, meY = pMe.cellPos.x, pMe.cellPos.y
-                                        elseif pMe.serverCoord then meX, meY = pMe.serverCoord.x, pMe.serverCoord.y end
-                                    end
-                                    
-                                    local dx = meX - tx
-                                    local dy = meY - ty
-                                    local dist = math.sqrt(dx*dx + dy*dy)
-                                    
-                                    if dist > 50 then
-                                        local stoneBagId = nil
-                                        if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                                            for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                                                if itemData and itemData.itemId == 20000022 then
-                                                    stoneBagId = itemData.id
-                                                    break
-                                                end
-                                            end
-                                        end
-                                        
-                                        if stoneBagId then
-                                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                                _G.networkRequest.ReqUseItem(1, stoneBagId)
-                                            elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                                _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
-                                            end
-                                        else
-                                            if _G.Mod_PerformAutoTrainAndSmelt then
-                                                _G.Mod_PerformAutoTrainAndSmelt()
-                                            end
-                                        end
-                                    else
-                                        if _G.Mod_PerformAutoTrainAndSmelt then
-                                            _G.Mod_PerformAutoTrainAndSmelt()
-                                        end
-                                    end
-                                end
+                        LogMsg("Phát hiện Boss Thánh Hoàn " .. tostring(targetBoss.name) .. "! Dịch chuyển qua transferId: " .. tostring(tId))
+                        if me and me.SetAutoFight then me:SetAutoFight("None") end
+                        if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                            _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = tId, line = 1, changeLine = true })
+                        end
+                        
+                        if me and me.MoveTo then
+                            local meX = me.serverCoord and me.serverCoord.x or (me.data and me.data.x) or 0
+                            local meY = me.serverCoord and me.serverCoord.y or (me.data and me.data.y) or 0
+                            if meX > 0 and meY > 0 then
+                                local dx = math.random(-2, 2)
+                                local dy = math.random(-2, 2)
+                                if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                                me:MoveTo({x = meX + dx, y = meY + dy})
                             end
+                        end
+                    end
+                else
+                    -- Không có Boss HH -> Dùng quy trình quay về bãi train chuẩn tích hợp (Đá nhảy 0.4s, bay đúng transferId, cự ly <= 1.5m)
+                    if _G.Mod_PerformAutoTrainAndSmelt then
+                        local isStillReturning, isChangingMap = _G.Mod_PerformAutoTrainAndSmelt()
+                        if isChangingMap then
+                            _G.Mod_AutoHH_NextTickTime = nowRealtime + 3.0
+                        elseif isStillReturning then
+                            _G.Mod_AutoHH_NextTickTime = nowRealtime + 0.4
+                        else
+                            _G.Mod_AutoHH_NextTickTime = nowRealtime + 2.0
                         end
                     end
                 end
@@ -1469,6 +1428,23 @@ local function CreateModUI()
     
     local currentMapId = _G.SceneData and _G.SceneData.mapId
     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
+    
+    -- ƯU TIÊN 0: HỒI SINH MIỄN PHÍ
+    if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
+        if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
+            if _G.MeController and _G.RoleReliveType then
+                if _G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle() then
+                    _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
+                else
+                    _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+                end
+            end
+            if _G.UIManager.Hide then
+                _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+            end
+            return
+        end
+    end
     
     if currentMapId ~= 240001 then
         _G.Mod_MapAn_Recorded = false
@@ -1657,17 +1633,16 @@ local function CreateModUI()
     end
     
     -- LIÊN TỤC CHẶN NATIVE AUTO-PATHING Ở CÁC STATE KHÔNG PHẢI COMBAT (Tránh bị game tự lôi về map cũ)
-    if _G.RoleManager.me then
-        if _G.Mod_AutoFarmBoss_State ~= 0 and _G.Mod_AutoFarmBoss_State ~= 5 then
-            if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
-                if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
-            end
-            if _G.RoleManager.me.isAutoFight then
-                if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
-            end
-            if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
-        end
-    end
+    -- if _G.RoleManager.me then
+    --     if _G.Mod_AutoFarmBoss_State ~= 0 and _G.Mod_AutoFarmBoss_State ~= 5 then
+    --         if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
+    --             if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+    --         end
+    --         if _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
+    --             if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+    --         end
+    --     end
+    -- end
     
     if currentSec < (_G.Mod_AutoFarmBoss_WaitTime or 0) then 
         -- Đột phá WaitTime: Nếu đang đợi về Lorencia mà đã load xong Map 1001, cho đi tiếp luôn!
@@ -1909,67 +1884,52 @@ local function CreateModUI()
                 end
                 DebugConfig(_G.Mod_MapsConfig_c7)
                 DebugConfig(_G.Mod_MapsConfig_c8)
-                --LogMsg(string.format("Tổng theo dõi: %d Boss. (Không có data từ Server cho %d Boss)", countConfig, countNoData))
             end
             
             local function Mod_PerformSmeltItems()
                 pcall(function()
-                    if not _G.Mod_SmeltConfig then return end
-                    local decomposeIds = {}
-                    if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                        for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                            if itemData and itemData.id then
-                                local equipCfg = _G.ClientTable and _G.ClientTable.cfg_Equip_equipManager and _G.ClientTable.cfg_Equip_equipManager:TryGetValue(itemData.itemId)
-                                if equipCfg then
-                                    local subType = equipCfg.subType or equipCfg.equipType or 0
-                                    local tier = equipCfg.tier or equipCfg.stage or 0
-                                    
-                                    local isRing = (subType == 7 or subType == 8)
-                                    local isNecklace = (subType == 9)
-                                    local isEarring = (subType == 10 or subType == 11)
-                                    
-                                    local shouldDecompose = false
-                                    if isRing and _G.Mod_SmeltConfig["Ring_C" .. tier] then shouldDecompose = true end
-                                    if isNecklace and _G.Mod_SmeltConfig["Necklace_C" .. tier] then shouldDecompose = true end
-                                    if isEarring and _G.Mod_SmeltConfig["Earring_C" .. tier] then shouldDecompose = true end
-                                    
-                                    if shouldDecompose then
-                                        table.insert(decomposeIds, itemData.id)
-                                    end
-                                end
-                            end
-                        end
-                    end
-                    if #decomposeIds > 0 and _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqEquipDecompose then
-                        _G.NetManager.Send(_G.EquipMessage.ReqEquipDecompose, { equipId = decomposeIds })
-                        if _G.WriteLog then _G.WriteLog("[Smelt] Decomposed " .. #decomposeIds .. " items!") end
+                    if _G.Mod_ExecuteAutoSmelt then
+                        _G.Mod_ExecuteAutoSmelt()
                     end
                 end)
             end
             _G.Mod_PerformSmeltItems = Mod_PerformSmeltItems
 
             local function Mod_PerformAutoTrainAndSmelt()
+                local isStillReturning, isChangingMap = false, false
                 pcall(function()
                     Mod_PerformSmeltItems()
                     
                     local coordStr = _G.Mod_TrainCoord or ""
+                    
                     if coordStr and string.find(coordStr, "#") then
-                        local parts = string.split(coordStr, "#")
+                        local parts = {}
+                        for p in string.gmatch(coordStr, "[^#]+") do table.insert(parts, p) end
                         local tx, ty = tonumber(parts[1]), tonumber(parts[2])
+                        
                         if tx and ty then
                             local tab = _G.ModAutoBossConfigTab or "C7"
                             local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
                             local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
-                            local wildTransferId = wildMapId
-                            if mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId then
-                                wildTransferId = mapsConfig[1].bosses[1].transferId
-                            end
+                            local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or ((tab == "C8") and 400229 or 400216)
                             local curMap = _G.SceneData and _G.SceneData.mapId or 0
                             
                             if curMap ~= wildMapId then
-                                if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                _G.Mod_IsMovingToTrainPos = false
+                                _G.Mod_TrainArrivedAtPos = false
+                                --LogMsg(string.format("[TRAIN_ACTION] BẮT ĐẦU CHUYỂN MAP: curMap(%d) ~= wildMapId(%d), transferId=%d", curMap, wildMapId, wildTransferId))
+                                if ExitDungeon() then
+                                    --LogMsg("[TRAIN_ACTION] -> Gọi ExitDungeon() thành công")
+                                elseif wildTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                    --LogMsg(string.format("[TRAIN_ACTION] -> Gọi OnReqTransferTransmitMap(transferId=%d)", wildTransferId))
                                     _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = wildTransferId, line = 1, changeLine = true })
+                                elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+                                    --LogMsg(string.format("[TRAIN_ACTION] -> Gọi MoveToLinePos(wildMapId=%d, transferId=%d) để sang map", wildMapId, wildTransferId))
+                                    _G.PathFinderManager.MoveToLinePos(wildMapId, {x = tx, y = ty}, wildTransferId, 1, nil, nil, nil, nil, true)
+                                else
+                                    --LogMsg("[TRAIN_ACTION] -> LỖI: Không tìm thấy API chuyển map nào khả dụng!")
                                 end
+                                isStillReturning, isChangingMap = true, true
                             else
                                 local pMe = _G.RoleManager and _G.RoleManager.me
                                 local meX, meY = 0, 0
@@ -1982,48 +1942,96 @@ local function CreateModUI()
                                 local dy = meY - ty
                                 local dist = math.sqrt(dx*dx + dy*dy)
                                 
-                                local isTeleportingWithStone = false
-                                if dist > 50 then
-                                    local stoneBagId = nil
-                                    if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                                        for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                                            if itemData and itemData.itemId == 20000022 then
-                                                stoneBagId = itemData.id
-                                                break
+                                if dist > 30 then
+                                    _G.Mod_IsMovingToTrainPos = false
+                                    _G.Mod_TrainArrivedAtPos = false
+                                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                    if nowTime - (_G.Mod_LastStoneTime or 0) >= 0.4 then
+                                        _G.Mod_LastStoneTime = nowTime
+                                        local stoneBagId = nil
+                                        if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                            for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                                                if itemData then
+                                                    local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                                                    local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                                                    if itemId == 20000022 then
+                                                        stoneBagId = instanceId
+                                                        break
+                                                    end
+                                                end
                                             end
                                         end
-                                    end
-                                    
-                                    if stoneBagId then
-                                        -- Dùng 1 viên đá mỗi nhịp để chớp nháy dịch chuyển liên tục
-                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
-                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
-                                        end
-                                        isTeleportingWithStone = true
-                                    else
-                                        if pMe and pMe.MoveTo then
-                                            pMe:MoveTo({x = tx, y = ty}, 0, function()
-                                                if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
-                                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
-                                            end)
+                                        
+                                        if stoneBagId then
+                                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                                _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                            elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                                _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                            end
+                                        elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+                                            _G.PathFinderManager.MoveToLinePos(wildMapId, {x = tx, y = ty}, wildTransferId, 1, nil, nil, nil, nil, true)
                                         end
                                     end
+                                    isStillReturning, isChangingMap = true, false
                                 else
-                                    if pMe and pMe.MoveTo then
-                                        pMe:MoveTo({x = tx, y = ty}, 0, function()
-                                            if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
-                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
-                                        end)
+                                    local hasArrived = (dist <= 1.5)
+                                    
+                                    if not hasArrived then
+                                        if pMe then
+                                            if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
+                                                if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
+                                            end
+                                            if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
+                                                if pMe.SetAutoFight then pMe:SetAutoFight("None") end
+                                            end
+                                        end
+                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                            _G.QiJiHelperData.SetAutoFightData(false)
+                                        end
+                                        
+                                        local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
+                                        if not _G.Mod_IsMovingToTrainPos or not isMoving then
+                                            _G.Mod_IsMovingToTrainPos = true
+                                            
+                                            local moved = false
+                                            if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
+                                                local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or (_G.Vector2 and _G.Vector2(tx, ty)) or {x = tx, y = ty}
+                                                _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId, targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1, true)
+                                                moved = true
+                                            elseif pMe and pMe.MoveTo then
+                                                pMe:MoveTo({x = tx, y = ty}, 0)
+                                                moved = true
+                                            end
+                                            
+                                            if not moved then
+                                                _G.Mod_IsMovingToTrainPos = false
+                                            end
+                                        end
+                                        isStillReturning, isChangingMap = true, false
+                                    else
+                                        --LogMsg(string.format("[TRAIN_ACTION] -> ĐÃ TỚI CHÍNH XÁC VỊ TRÍ (%d,%d) (cự ly %.1fm)! Bật Auto Fight...", tx, ty, dist))
+                                        local me = _G.RoleManager and _G.RoleManager.me
+                                        if me then
+                                            if me.StopMove then me:StopMove() end
+                                            if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                        end
+                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+                                        _G.Mod_IsMovingToTrainPos = false
+                                        _G.Mod_TrainArrivedAtPos = false
+                                        isStillReturning, isChangingMap = false, false
                                     end
                                 end
-                                return isTeleportingWithStone
                             end
+                        else
+                            LogMsg(string.format("[TRAIN_ERROR] Không bóc tách được tx, ty từ Mod_TrainCoord: '%s'", tostring(coordStr)))
                         end
+                    else
+                        LogMsg(string.format("[TRAIN_ERROR] Mod_TrainCoord không chứa dấu '#': '%s'", tostring(coordStr)))
                     end
                 end)
+                return isStillReturning, isChangingMap
             end
+            _G.Mod_PerformAutoTrainAndSmelt = Mod_PerformAutoTrainAndSmelt
 
             if bestBoss then
                 _G.Mod_AutoFarmBoss_Target = bestBoss
@@ -2047,9 +2055,13 @@ local function CreateModUI()
                     if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     
                     if bestBoss.wait and bestBoss.wait > 180 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
-                        LogMsg("Chờ Boss > 180s! Tách đồ và quay lại Tọa độ Train...")
-                        local isTele = Mod_PerformAutoTrainAndSmelt()
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + (isTele and 1 or 5)
+                        local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
+                        if isChangingMap then
+                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                        else
+                            _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and currentSec or (currentSec + 5)
+                        end
+                        return
                     else
                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
                     end
@@ -2059,9 +2071,13 @@ local function CreateModUI()
                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                 
                 if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
-                    LogMsg("Không có Boss! Tách đồ và quay lại Tọa độ Train...")
-                    local isTele = Mod_PerformAutoTrainAndSmelt()
-                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + (isTele and 1 or 5)
+                    local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
+                    if isChangingMap then
+                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                    else
+                        _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and currentSec or (currentSec + 5)
+                    end
+                    return
                 elseif currentMapId == 1001 then
                     LogMsg("Không có Boss! Chờ ở Lorencia...")
                     _G.Mod_AutoFarmBoss_State = 2
