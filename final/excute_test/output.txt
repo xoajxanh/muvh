@@ -1,5 +1,7 @@
 === SUCCESS ===
 
 [LOGS]:
-==================== FIXED ALL-DEAD BOSS DETECTION SCENARIO TEST ====================	
-[BƯỚC 1: DỊCH CHUYỂN] Phát hiện Boss SỐNG: Cuồng Bạo (ID: 10179609) -> Bay qua TransferID: 400228...	
+==================== ADVANCED TEST HOOK [NOTICE ANNOUNCE & CHAT] ====================	
+-> Đã Hook thành công NoticeController.ResAnnounce!	
+-> Đã Hook thành công ChatData.AddMessage!	
+==================== HOÀN TẤT SETUP HOOK ANNOUNCEMENT ====================	

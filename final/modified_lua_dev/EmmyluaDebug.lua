@@ -362,6 +362,25 @@ local function CreateModUI()
                                 local posY = mon.position and mon.position.y or 0
                                 local lid = mon.lid or mon.id
                                 
+                                local transferId = nil
+                                local allMaps = { _G.Mod_MapsConfig_c7, _G.Mod_MapsConfig_c8 }
+                                for _, mapsConfig in ipairs(allMaps) do
+                                    if mapsConfig then
+                                        for _, mapCfg in ipairs(mapsConfig) do
+                                            if mapCfg.bosses then
+                                                for _, bCfgItem in ipairs(mapCfg.bosses) do
+                                                    if bCfgItem.id and (bCfgItem.id == cfgId or tonumber(bCfgItem.id) == tonumber(cfgId)) then
+                                                        transferId = bCfgItem.transferId
+                                                        break
+                                                    end
+                                                end
+                                            end
+                                            if transferId then break end
+                                        end
+                                    end
+                                    if transferId then break end
+                                end
+                                
                                 table.insert(hhBosses, {
                                     name = name,
                                     configId = cfgId,
@@ -371,7 +390,8 @@ local function CreateModUI()
                                     hhLevel = hhLevel,
                                     hhName = hhName,
                                     bossDefend = bossDefend,
-                                    myDefense = myDefense
+                                    myDefense = myDefense,
+                                    transferId = transferId
                                 })
                             end
                         end
@@ -1327,8 +1347,8 @@ local function CreateModUI()
                     local currentMapId = _G.SceneData and _G.SceneData.mapId
                     
                     local tab = _G.ModAutoBossConfigTab or "C7"
-                    local targetMapId = (tab == "C8") and 1074 or 101095
                     local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
+                    local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
                     
                     -- 1. Scan for ALIVE HH Bosses on current map using Mod_GetAliveHHBossList()
                     local aliveHHBosses = {}
@@ -1410,7 +1430,7 @@ local function CreateModUI()
                                     local dy = meY - ty
                                     local dist = math.sqrt(dx*dx + dy*dy)
                                     
-                                    if dist > 20 then
+                                    if dist > 50 then
                                         local stoneBagId = nil
                                         if _G.BagInfoData and _G.BagInfoData.TotalItems then
                                             for _, itemData in pairs(_G.BagInfoData.TotalItems) do
@@ -1554,10 +1574,25 @@ local function CreateModUI()
             
             if _G.RoleManager and _G.RoleManager.GetRolesByType then
                 local monsters = _G.RoleManager.GetRolesByType(2) or {}
+                local me = _G.RoleManager.me
+                local meId = me and me.data and me.data.id or 0
                 for _, role in pairs(monsters) do
                     if role and role.hp and role.hp > 0 then
-                        quaiBoss = quaiBoss + 1
-                        hpBoss = role.hp
+                        local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+                        local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or 0
+                        local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+                        
+                        local canAttack = true
+                        if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+                            canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+                        elseif isMySummon then
+                            canAttack = false
+                        end
+                        
+                        if canAttack and not isMySummon then
+                            quaiBoss = quaiBoss + 1
+                            hpBoss = role.hp
+                        end
                     end
                 end
             end
@@ -1922,8 +1957,13 @@ local function CreateModUI()
                         local parts = string.split(coordStr, "#")
                         local tx, ty = tonumber(parts[1]), tonumber(parts[2])
                         if tx and ty then
-                            local wildMapId = (_G.ModAutoBossConfigTab == "C8") and 1074 or 101095
-                            local wildTransferId = (_G.ModAutoBossConfigTab == "C8") and 400229 or 101095
+                            local tab = _G.ModAutoBossConfigTab or "C7"
+                            local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7
+                            local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or ((tab == "C8") and 1074 or 101096)
+                            local wildTransferId = wildMapId
+                            if mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId then
+                                wildTransferId = mapsConfig[1].bosses[1].transferId
+                            end
                             local curMap = _G.SceneData and _G.SceneData.mapId or 0
                             
                             if curMap ~= wildMapId then
@@ -1942,7 +1982,7 @@ local function CreateModUI()
                                 local dy = meY - ty
                                 local dist = math.sqrt(dx*dx + dy*dy)
                                 
-                                if dist > 20 then
+                                if dist > 50 then
                                     local stoneBagId = nil
                                     if _G.BagInfoData and _G.BagInfoData.TotalItems then
                                         for _, itemData in pairs(_G.BagInfoData.TotalItems) do
@@ -1954,10 +1994,13 @@ local function CreateModUI()
                                     end
                                     
                                     if stoneBagId then
-                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
-                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                        -- Rapid stone usage loop up to 5 times per tick until dist <= 50m
+                                        for k = 1, 5 do
+                                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                                _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                            elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                                _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                            end
                                         end
                                     else
                                         if pMe and pMe.MoveTo then
@@ -2211,7 +2254,15 @@ local function CreateModUI()
             
             if bossIsDead or not foundBoss then
                 if bossIsDead or (_G.Mod_AutoFarmBoss_TargetWait or 0) >= 1 then
-                    LogMsg("Boss đã chết! Chờ nhặt đồ...")
+                    LogMsg("Boss đã chết! Tắt AutoFight & Chờ nhặt đồ...")
+                    
+                    -- Tắt Auto Fight ngay khi Boss chết
+                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                        _G.RoleManager.me:SetAutoFight("None")
+                    end
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                        _G.QiJiHelperData.SetAutoFightData(false)
+                    end
                     
                     _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                     _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) + 1
@@ -2232,7 +2283,15 @@ local function CreateModUI()
             
         -- STATE 6: LOOT WAIT
         elseif _G.Mod_AutoFarmBoss_State == 6 then
-            LogMsg("Boss đã chết: Đi nhẹ 2-3 bước & chờ 5s nhặt đồ...")
+            LogMsg("Boss đã chết: Tắt Đánh, đi nhẹ 2-3 bước & chờ 5s nhặt đồ...")
+            
+            -- Đảm bảo Auto Fight đã tắt hoàn toàn
+            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                _G.RoleManager.me:SetAutoFight("None")
+            end
+            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                _G.QiJiHelperData.SetAutoFightData(false)
+            end
             
             if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
                 local meX = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.x or (_G.RoleManager.me.data and _G.RoleManager.me.data.x) or 0
@@ -2312,6 +2371,31 @@ end
                         end
                     end
                     
+                    if _G.AutoPick_Enabled and _G.Mod_ActiveSpamItems then
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
+                            if nowTime > itemInfo.expireTime then
+                                _G.Mod_ActiveSpamItems[itemId] = nil
+                            else
+                                if _G.PickupManager then
+                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                                    
+                                    -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
+                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                        local meX = _G.RoleManager.me.serverCoord.x or 0
+                                        local meY = _G.RoleManager.me.serverCoord.y or 0
+                                        if itemInfo.x and itemInfo.y then
+                                            local dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
+                                            if dist <= 2 then
+                                                _G.PickupManager.ReqPickUpMapItem(itemId)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+
                     if _G.Mod_AutoFarmBoss_Update then
                         _G.Mod_AutoFarmBoss_Update()
                     end
@@ -2324,95 +2408,30 @@ end
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end
             
-            if _G.Role_ResurgenceUI then
-                local original_ResurgenceOnShow = _G.Role_ResurgenceUI.OnShow
-                _G.Role_ResurgenceUI.OnShow = function(self)
-                    if original_ResurgenceOnShow then original_ResurgenceOnShow(self) end
-                    
-                    if _G.Mod_AutoRevive_KTD then
-                        local mapId = _G.SceneData and _G.SceneData.mapId or 0
-                        if mapId == 1077 then
-                            if _G.Timer and _G.Timer.Delay then
-                                _G.Timer.Delay(0.5, function()
-                                    if self.Button_1OnClick then
-                                        self:Button_1OnClick(nil)
-                                        if _G.WriteLog then _G.WriteLog("[Auto] Đã tự động Hồi Sinh Ngay (KTĐ)!") end
-                                    end
-                                end)
-                            else
-                                if self.Button_1OnClick then
-                                    self:Button_1OnClick(nil)
-                                end
-                            end
-                        end
-                    end
-                end
-            end
-            
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.2, -1, function()
                     pcall(function()
-                        if _G.Mod_AutoUseAngel and _G.Mod_AutoPK_Enabled then
-                            local me = _G.RoleManager and _G.RoleManager.me
-                            if me and me.hp and me.maxHp and me.maxHp > 0 then
-                                local hpPercent = me.hp / me.maxHp
-                                if hpPercent < 0.20 then
-                                    _G.Mod_LastAngelTime = _G.Mod_LastAngelTime or 0
-                                    local currentTime = os.time()
-                                    if currentTime - _G.Mod_LastAngelTime > 15 then
-                                        local angelSkillId = nil
-                                        if me.skills then
-                                            for _, skill in pairs(me.skills) do
-                                                local sid = skill.sid or skill.id or skill.skillId
-                                                if sid and tostring(sid):sub(1, 6) == "102003" then
-                                                    angelSkillId = tonumber(sid)
-                                                    if angelSkillId then
-                                                        local tblSkill = nil
-                                                        if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
-                                                            tblSkill = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(angelSkillId)
-                                                        end
-                                                        local tblaction = nil
-                                                        if tblSkill and _G.ConfigManager then
-                                                            tblaction = _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
-                                                        end
-                                                        
-                                                        if tblSkill and tblaction and _G.SkillMgr and _G.SkillMgr.SendSkillMessage then
-                                                            local coord = me.serverCoord or {x = 0, y = 0}
-                                                            _G.SkillMgr.SendSkillMessage(tblSkill, tblaction, me.id, coord)
-                                                            _G.Mod_LastAngelTime = currentTime
-                                                            if _G.WriteLog then
-                                                                _G.WriteLog("[AutoPK] Kích hoạt Thiên Sứ (ID: " .. tostring(angelSkillId) .. ") do máu < 20%")
-                                                            end
-                                                        end
-                                                    end
-                                                    break
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                            if _G.Mod_AutoAoE_BossAn then
-                                local mapId = _G.SceneData and _G.SceneData.mapId or 0
-                                if tonumber(mapId) == 240001 then
-                                    local me = _G.RoleManager and _G.RoleManager.me
-                                    local target = me and me.TargetAvatar
-                                    if target and not target.isDead and me.skills then
-                                        local allowedAoEPrefixes = {
-                                            ["140401"] = true, -- Ma Ky Sy: Set Danh
-                                        }
-                                        for _, skill in pairs(me.skills) do
-                                            local sid = skill.sid or skill.id or skill.skillId
-                                            if sid then
-                                                local prefix = tostring(sid):sub(1, 6)
-                                                if allowedAoEPrefixes[prefix] then
-                                                    local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
+                        if _G.Mod_AutoAoE_BossAn then
+                            local mapId = _G.SceneData and _G.SceneData.mapId or 0
+                            if tonumber(mapId) == 240001 then
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                local target = me and me.TargetAvatar
+                                if target and not target.isDead and me.skills then
+                                    local allowedAoEPrefixes = {
+                                        ["140401"] = true, -- Ma Ky Sy: Set Danh
+                                    }
+                                    for _, skill in pairs(me.skills) do
+                                        local sid = skill.sid or skill.id or skill.skillId
+                                        if sid then
+                                            local prefix = tostring(sid):sub(1, 6)
+                                            if allowedAoEPrefixes[prefix] then
+                                                local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
                                                 if tblSkill then
                                                     local cdMsg = me.cd and me.cd[tblSkill.groupId]
                                                     local endTime = cdMsg and cdMsg.endTime or 0
                                                     local publicCdMsg = me.cd and me.cd[1]
                                                     local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
-                            local finalEndTime = math.max(endTime, publicEndTime)
+                                                    local finalEndTime = math.max(endTime, publicEndTime)
                                                     
                                                     if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
                                                         local tblaction = _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
@@ -2424,7 +2443,6 @@ end
                                                     end
                                                 end
                                             end
-                                        end
                                         end
                                     end
                                 end
@@ -3768,7 +3786,7 @@ end
                 local btnAnStats = tGoAnStats:AddComponent(typeof(Button))
                 
                 if _G.Mod_AnStats_Enabled == nil then
-                    _G.Mod_AnStats_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) == 1
+                    _G.Mod_AnStats_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 0) == 1
                 end
 
                 local function UpdateAnStatsLabel()
@@ -3925,13 +3943,13 @@ end
                 table.insert(_G.AutoBossUIList, labelTrainGo)
                 local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(230, -48)
+                lblRt.anchoredPosition = Vector2(230, -50)
                 lblRt.sizeDelta = Vector2(220, 20)
                 local lblTxt = labelTrainGo:AddComponent(typeof(Text))
                 lblTxt.raycastTarget = false
                 lblTxt.text = "TỌA ĐỘ TRAIN (x#y):"
                 lblTxt.color = Color(1, 0.85, 0.4, 1)
-                lblTxt.fontSize = 14
+                lblTxt.fontSize = 11
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
 
@@ -5281,7 +5299,6 @@ end
                     if shouldPick then
                         local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
                         if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
-                            
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
                             
@@ -5320,25 +5337,14 @@ end
                                     _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                 end
                                 
-                                -- 3. Duy trì spam gói tin liên tục trong 3.2s (40 lần, mỗi 80ms) để không bị miss khi đang di chuyển từ xa tới
-                                if _G.Timer and _G.Timer.StartLoop then
-                                    local tickCount = 0
-                                    _G.Timer.StartLoop(0.08, 40, function()
-                                        tickCount = tickCount + 1
-                                        if _G.PickupManager then
-                                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                                        end
-                                        -- Khi nhân vật chạy tới sát vị trí (khoảng cách <= 2 ô), bắn bồi thêm gói tin kép
-                                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                            local meX = _G.RoleManager.me.serverCoord.x or 0
-                                            local meY = _G.RoleManager.me.serverCoord.y or 0
-                                            local dist = math.max(math.abs(meX - dropItemData.x), math.abs(meY - dropItemData.y))
-                                            if dist <= 2 and _G.PickupManager then
-                                                _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                                            end
-                                        end
-                                    end)
-                                end
+                                -- 3. Đưa vào Hàng Đợi Duy Trì Spam (Dùng chung 1 Vòng Lặp Mẹ, không tạo Timer mới)
+                                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                                _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                                    id = dropItemData.id,
+                                    x = dropItemData.x,
+                                    y = dropItemData.y,
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 3.0
+                                }
                                 
                                 local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
                                 local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
@@ -5383,58 +5389,125 @@ end
             end
         end
 
+        if _G.NoticeController and not _G.Mod_HookedNoticeAnnounce then
+            _G.Mod_HookedNoticeAnnounce = true
+            local orig_ResAnnounce = _G.NoticeController.ResAnnounce
+            _G.NoticeController.ResAnnounce = function(eventId, data)
+                pcall(function()
+                    if _G.Mod_AnStats_Enabled and data and data.parameter then
+                        local paramStr = table.concat(data.parameter, " ")
+                        local textWithoutColorA = string.gsub(paramStr, "<color=#ffffff00>a</color>", " ")
+                        local cleanText = string.gsub(textWithoutColorA, "<[^>]+>", "")
+                        cleanText = string.gsub(cleanText, "%s+", " ")
+                        
+                        if string.find(cleanText, "Kỵ Sĩ") and not string.find(cleanText, "Đất Sét") then
+                            local playerName = string.match(cleanText, "%]%s*([^%s]+)%s+trong")
+                            if not playerName or playerName == "" then
+                                playerName = string.match(cleanText, "([^%s]+)%s+trong%s+Bản")
+                            end
+                            if not playerName or playerName == "" then
+                                playerName = string.match(cleanText, "([^%s]+)%s+trong")
+                            end
+                            
+                            if playerName and playerName ~= "" then
+                                if not _G.Mod_AnStats then
+                                    if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                                end
+                                
+                                local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                                if _G.Mod_AnStatsDate ~= todayStr then
+                                    _G.Mod_AnStatsDate = todayStr
+                                    _G.Mod_AnStats = {}
+                                end
+                                
+                                _G.Mod_AnStats[playerName] = (_G.Mod_AnStats[playerName] or 0) + 1
+                                
+                                if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                                
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg(string.format("TỔNG HỢP ẨN: %s (+1) -> Tổng: %d", playerName, _G.Mod_AnStats[playerName]))
+                                end
+                                
+                                if _G.WriteLog then
+                                    _G.WriteLog(string.format("[AnStats] Detected Ky Si: %s (Total: %d)", playerName, _G.Mod_AnStats[playerName]))
+                                end
+                                
+                                if _G.Mod_SendAnStatsTelegram then
+                                    _G.Mod_SendAnStatsTelegram()
+                                end
+                            end
+                        end
+                    end
+                end)
+                if orig_ResAnnounce then orig_ResAnnounce(eventId, data) end
+            end
+        end
+
         if _G.ChatData and not _G.Mod_HookedChatDataAddMessage then
             _G.Mod_HookedChatDataAddMessage = true
             local orig_AddMessage = _G.ChatData.AddMessage
             _G.ChatData.AddMessage = function(channel, message)
                 pcall(function()
-                    if _G.Mod_AnStats_Enabled ~= false then
-                        local text = ""
+                    if _G.Mod_AnStats_Enabled then
+                        local rawText = ""
                         if message then
                             if type(message.chatMsg) == "table" and message.chatMsg.message then
-                                text = tostring(message.chatMsg.message)
+                                rawText = tostring(message.chatMsg.message)
                             elseif type(message.chatMsg) == "string" then
-                                text = tostring(message.chatMsg)
+                                rawText = tostring(message.chatMsg)
                             elseif message.message then
-                                text = tostring(message.message)
+                                rawText = tostring(message.message)
+                            elseif message.content then
+                                rawText = tostring(message.content)
                             end
                         end
 
-                        local isSystemChannel = (channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM))
-                        local isSystemText = string.find(text, "Hệ thống") or string.find(text, "%[Hệ thống%]") or string.find(text, "Bản đồ ẩn")
-                        
-                        if isSystemChannel or isSystemText then
-                            if string.find(text, "Kỵ Sĩ") and not string.find(text, "Đất Sét") then
-                                local cleanText = string.gsub(text, "<[^>]+>", "")
-                                local playerName = string.match(cleanText, "%]%s*(.-)%s+trong%s+Bản")
-                                if not playerName or playerName == "" then
-                                    playerName = string.match(cleanText, "([%w%._%-]+)%s+trong%s+Bản đồ ẩn")
-                                end
-                                if not playerName or playerName == "" then
-                                    playerName = string.match(cleanText, "([%w%._%-]+)%s+trong")
-                                end
-                                
-                                if playerName and playerName ~= "" then
-                                    if not _G.Mod_AnStats then
-                                        if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                        if rawText and rawText ~= "" then
+                            -- 1. Xử lý thẻ màu ẩn <color=#ffffff00>a</color> -> space
+                            local textWithoutColorA = string.gsub(rawText, "<color=#ffffff00>a</color>", " ")
+                            -- 2. Lọc sạch thẻ màu HTML
+                            local cleanText = string.gsub(textWithoutColorA, "<[^>]+>", "")
+                            -- 3. Chuẩn hóa khoảng trắng kép/nhiều khoảng trắng thành 1 khoảng trắng
+                            cleanText = string.gsub(cleanText, "%s+", " ")
+                            
+                            local isSystemText = string.find(cleanText, "Hệ thống") or string.find(cleanText, "%[Hệ thống%]") or string.find(cleanText, "Bản đồ ẩn")
+                            
+                            if isSystemText or channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM) then
+                                if string.find(cleanText, "Kỵ Sĩ") and not string.find(cleanText, "Đất Sét") then
+                                    local playerName = string.match(cleanText, "%]%s*([^%s]+)%s+trong")
+                                    if not playerName or playerName == "" then
+                                        playerName = string.match(cleanText, "([^%s]+)%s+trong%s+Bản đồ ẩn")
+                                    end
+                                    if not playerName or playerName == "" then
+                                        playerName = string.match(cleanText, "([^%s]+)%s+trong")
                                     end
                                     
-                                    local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
-                                    if _G.Mod_AnStatsDate ~= todayStr then
-                                        _G.Mod_AnStatsDate = todayStr
-                                        _G.Mod_AnStats = {}
-                                    end
-                                    
-                                    _G.Mod_AnStats[playerName] = (_G.Mod_AnStats[playerName] or 0) + 1
-                                    
-                                    if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
-                                    
-                                    if _G.WriteLog then
-                                        _G.WriteLog(string.format("[AnStats] Detected summon: %s (Total: %d)", playerName, _G.Mod_AnStats[playerName]))
-                                    end
-                                    
-                                    if _G.Mod_SendAnStatsTelegram then
-                                        _G.Mod_SendAnStatsTelegram()
+                                    if playerName and playerName ~= "" then
+                                        if not _G.Mod_AnStats then
+                                            if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                                        end
+                                        
+                                        local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                                        if _G.Mod_AnStatsDate ~= todayStr then
+                                            _G.Mod_AnStatsDate = todayStr
+                                            _G.Mod_AnStats = {}
+                                        end
+                                        
+                                        _G.Mod_AnStats[playerName] = (_G.Mod_AnStats[playerName] or 0) + 1
+                                        
+                                        if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                                        
+                                        if _G.FloatingWordUtility then
+                                            _G.FloatingWordUtility.QuickMsg(string.format("TỔNG HỢP ẨN: %s (+1) -> Tổng: %d", playerName, _G.Mod_AnStats[playerName]))
+                                        end
+                                        
+                                        if _G.WriteLog then
+                                            _G.WriteLog(string.format("[AnStats] Detected Ky Si: %s (Total: %d)", playerName, _G.Mod_AnStats[playerName]))
+                                        end
+                                        
+                                        if _G.Mod_SendAnStatsTelegram then
+                                            _G.Mod_SendAnStatsTelegram()
+                                        end
                                     end
                                 end
                             end
