@@ -110,6 +110,7 @@ export async function POST(req: NextRequest) {
       activeTabAdvanced,
       activeTabAutofarm,
       characterReincarnation,
+      characterReincarnationSecondary,
       adminTelegrams,
       price,
       isCustom,
@@ -130,6 +131,9 @@ export async function POST(req: NextRequest) {
       ? adminTelegrams.split(',').map((s) => s.trim()).filter((s) => s)
       : ['@admin1', '@admin2'];
 
+    const primaryReinc = Number(characterReincarnation ?? 8);
+    const secondaryReinc = Number(characterReincarnationSecondary ?? (primaryReinc > 1 ? primaryReinc - 1 : 1));
+
     const tokenParams = {
       deviceSnMd5: deviceSnMd5.trim(),
       characterUid: characterUid.trim(),
@@ -148,7 +152,8 @@ export async function POST(req: NextRequest) {
       activeTabBasic: Boolean(activeTabBasic ?? true),
       activeTabAdvanced: Boolean(activeTabAdvanced ?? true),
       activeTabAutofarm: Boolean(activeTabAutofarm ?? true),
-      characterReincarnation: Number(characterReincarnation ?? 8),
+      characterReincarnation: primaryReinc,
+      characterReincarnationSecondary: secondaryReinc,
       adminTelegrams: telegramsList,
     };
 
@@ -177,6 +182,7 @@ export async function POST(req: NextRequest) {
         activeTabAdvanced: tokenParams.activeTabAdvanced,
         activeTabAutofarm: tokenParams.activeTabAutofarm,
         characterReincarnation: tokenParams.characterReincarnation,
+        characterReincarnationSecondary: tokenParams.characterReincarnationSecondary,
         adminTelegrams: JSON.stringify(telegramsList),
         price: Number(price ?? 0),
         isCustom: Boolean(isCustom ?? false),

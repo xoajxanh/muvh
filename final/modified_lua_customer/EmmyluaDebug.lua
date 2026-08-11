@@ -1257,17 +1257,11 @@ local function CreateModUI()
                 elseif _G.Mod_Config_ActiveAdvancedTab ~= false then _G.ModMainTab = "NANG_CAO" end
             end
 
-            local kundunTiers = GetKundunTiers and GetKundunTiers() or {}
-            local hasKundun = (#kundunTiers > 0)
-            if not hasKundun and _G.ModMainTab == "NANG_CAO" then
-                _G.ModMainTab = "CO_BAN"
-            end
-
             if _G.tabCoBanGo and not _G.tabCoBanGo:Equals(nil) then
                 _G.tabCoBanGo:SetActive(_G.Mod_Config_ActiveBasicTab ~= false)
             end
             if _G.tabNangCaoGo and not _G.tabNangCaoGo:Equals(nil) then
-                _G.tabNangCaoGo:SetActive((_G.Mod_Config_ActiveAdvancedTab ~= false) and hasKundun)
+                _G.tabNangCaoGo:SetActive(_G.Mod_Config_ActiveAdvancedTab ~= false)
             end
             if _G.tabAutoBossGo and not _G.tabAutoBossGo:Equals(nil) then
                 _G.tabAutoBossGo:SetActive(_G.Mod_Config_ActiveAutoFarmTab ~= false)
@@ -2867,14 +2861,9 @@ _G.Mod_MapsConfig_c12 = {
                     _G.Mod_AutoFarmBoss_Target = bestBoss
                     if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                     
-                    local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline) or 1
-                    if currentMapId == bestBoss.mapCfg.mapId and currentLine == bestBoss.line then
-                        _G.Mod_AutoFarmBoss_State = 4
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                    else
-                        _G.Mod_AutoFarmBoss_State = 3
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                    end
+                    _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
+                    _G.Mod_AutoFarmBoss_State = 3
+                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 else
                     LogMsg(string.format("Chưa có Boss! Gần nhất: %s còn %ds", bestBoss.cfg.name, bestBoss.wait))
                     _G.Mod_AutoFarmBoss_Target = nil

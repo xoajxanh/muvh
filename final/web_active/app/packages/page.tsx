@@ -318,6 +318,8 @@ export default function PackagesPage() {
                       </label>
                       <input
                         type="number"
+                        step="any"
+                        min="0.001"
                         value={durationDays}
                         onChange={(e) => setDurationDays(Number(e.target.value))}
                         className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-100 font-semibold"

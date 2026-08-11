@@ -22,7 +22,7 @@ model User {
 model VipPackage {
   id                 String   @id @default(uuid())
   name               String
-  durationDays       Int
+  durationDays       Float
   fovMin             Int      @default(20)
   fovMax             Int      @default(90)
   bossRefreshMin     Int      @default(1)
@@ -48,7 +48,7 @@ model Token {
   characterUid            String
   packageId               String?
   vipPackage              VipPackage? @relation(fields: [packageId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  durationDays            Int
+  durationDays            Float
   expireAt                DateTime
   fovMin                  Int         @default(20)
   fovMax                  Int         @default(90)
@@ -63,7 +63,8 @@ model Token {
   activeTabBasic          Boolean     @default(true)
   activeTabAdvanced       Boolean     @default(true)
   activeTabAutofarm       Boolean     @default(true)
-  characterReincarnation Int         @default(8)
+  characterReincarnation          Int         @default(8)
+  characterReincarnationSecondary Int         @default(7)
   adminTelegrams          String      @default("[\"@admin1\", \"@admin2\"]")
   price                   Float       @default(0)
   isCustom                Boolean     @default(false)

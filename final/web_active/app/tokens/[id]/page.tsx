@@ -54,6 +54,7 @@ export default function TokenDetailPage() {
   const [activeTabAdvanced, setActiveTabAdvanced] = useState(true);
   const [activeTabAutofarm, setActiveTabAutofarm] = useState(true);
   const [characterReincarnation, setCharacterReincarnation] = useState(8);
+  const [characterReincarnationSecondary, setCharacterReincarnationSecondary] = useState(7);
   const [selectedTelegrams, setSelectedTelegrams] = useState<string[]>([]);
   const [price, setPrice] = useState(0);
   const [noteDetail, setNoteDetail] = useState('');
@@ -133,6 +134,7 @@ export default function TokenDetailPage() {
           setActiveTabAdvanced(tok.activeTabAdvanced);
           setActiveTabAutofarm(tok.activeTabAutofarm);
           setCharacterReincarnation(tok.characterReincarnation);
+          setCharacterReincarnationSecondary(tok.characterReincarnationSecondary ?? (tok.characterReincarnation > 1 ? tok.characterReincarnation - 1 : 1));
           setPrice(tok.price);
 
           let teleList: string[] = [];
@@ -238,6 +240,7 @@ export default function TokenDetailPage() {
         activeTabAdvanced,
         activeTabAutofarm,
         characterReincarnation: Number(characterReincarnation),
+        characterReincarnationSecondary: Number(characterReincarnationSecondary),
         adminTelegrams: selectedTelegrams,
         price: Number(price),
         isCustom,
@@ -494,6 +497,8 @@ export default function TokenDetailPage() {
                       <label className="block font-semibold text-slate-300 mb-1">Thời Hạn Sử Dụng (Ngày)</label>
                       <input
                         type="number"
+                        step="any"
+                        min="0.001"
                         value={durationDays}
                         onChange={(e) => {
                           setDurationDays(Number(e.target.value));
@@ -622,15 +627,38 @@ export default function TokenDetailPage() {
                     </div>
 
                     <div>
-                      <label className="block font-semibold text-slate-300 mb-1">Chuyển Nhân Vật</label>
+                      <label className="block font-semibold text-slate-300 mb-1">Chuyển Chính (Primary)</label>
                       <select
                         value={characterReincarnation}
-                        onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
-                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-slate-200 font-semibold"
+                        onChange={(e) => {
+                          const prim = Number(e.target.value);
+                          setCharacterReincarnation(prim);
+                          setCharacterReincarnationSecondary(prim > 1 ? prim - 1 : 1);
+                          setIsCustom(true);
+                        }}
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-cyan-300 font-semibold"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
                           <option key={lvl} value={lvl}>
-                            Chuyển {lvl} (Data C{lvl} & C{lvl - 1})
+                            Chuyển {lvl}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Chuyển Phụ (Secondary)</label>
+                      <select
+                        value={characterReincarnationSecondary}
+                        onChange={(e) => {
+                          setCharacterReincarnationSecondary(Number(e.target.value));
+                          setIsCustom(true);
+                        }}
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-cyan-400 font-semibold"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            Chuyển {lvl}
                           </option>
                         ))}
                       </select>
@@ -776,7 +804,7 @@ export default function TokenDetailPage() {
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Reincarnation</span>
                       <span className="font-bold text-cyan-300">
-                        Chuyển {token.characterReincarnation} & {token.characterReincarnation - 1}
+                        Chuyển {token.characterReincarnation} & {token.characterReincarnationSecondary ?? (token.characterReincarnation - 1)}
                       </span>
                     </div>
 

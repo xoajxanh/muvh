@@ -52,6 +52,7 @@ export default function TokenCreatePage() {
 
   // Token-specific parameter
   const [characterReincarnation, setCharacterReincarnation] = useState(8);
+  const [characterReincarnationSecondary, setCharacterReincarnationSecondary] = useState(7);
 
   // Selected Telegram Contacts (up to 2)
   const [selectedTelegrams, setSelectedTelegrams] = useState<string[]>(['@xoajxanh', '@legend92vn']);
@@ -414,6 +415,8 @@ export default function TokenCreatePage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
+                      min="0.001"
                       value={durationDays}
                       onChange={(e) => {
                         setDurationDays(Number(e.target.value));
@@ -701,7 +704,7 @@ export default function TokenCreatePage() {
 
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
                     <span className="text-slate-400">Chuyển Nhân Vật:</span>
-                    <span className="font-semibold text-cyan-300">Chuyển {characterReincarnation}</span>
+                    <span className="font-semibold text-cyan-300">Chuyển {characterReincarnation} & {characterReincarnationSecondary}</span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-800">

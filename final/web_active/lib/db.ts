@@ -17,7 +17,7 @@ export async function ensureInitialSeed() {
   if (seedExecuted) return;
   seedExecuted = true;
   try {
-    // Safely ensure missing columns exist on live DB without dropping any data
+    // Safely ensure missing columns exist and types are FLOAT on live DB without dropping any data
     try {
       await prisma.$executeRawUnsafe(`
         IF NOT EXISTS (
@@ -37,6 +37,18 @@ export async function ensureInitialSeed() {
         BEGIN
           ALTER TABLE [dbo].[Token] ADD [isTest] BIT NOT NULL DEFAULT 0;
         END;
+
+        IF NOT EXISTS (
+          SELECT * FROM sys.columns 
+          WHERE object_id = OBJECT_ID(N'[dbo].[Token]') 
+          AND name = 'characterReincarnationSecondary'
+        )
+        BEGIN
+          ALTER TABLE [dbo].[Token] ADD [characterReincarnationSecondary] INT NOT NULL DEFAULT 7;
+        END;
+
+        ALTER TABLE [dbo].[VipPackage] ALTER COLUMN [durationDays] FLOAT NOT NULL;
+        ALTER TABLE [dbo].[Token] ALTER COLUMN [durationDays] FLOAT NOT NULL;
       `);
     } catch (migErr) {
       console.error('Column check warning:', migErr);

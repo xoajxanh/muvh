@@ -19,6 +19,7 @@ export interface TokenConfigParams {
   activeTabAdvanced: boolean;
   activeTabAutofarm: boolean;
   characterReincarnation: number;
+  characterReincarnationSecondary?: number;
   adminTelegrams: string[];
 }
 
@@ -42,6 +43,8 @@ export function generateEncryptedToken(params: TokenConfigParams): { jsonConfig:
     active_tab_advanced: Boolean(params.activeTabAdvanced),
     active_tab_autofarm: Boolean(params.activeTabAutofarm),
     character_reincarnation: Number(params.characterReincarnation),
+    character_reincarnation_primary: Number(params.characterReincarnation),
+    character_reincarnation_secondary: Number(params.characterReincarnationSecondary ?? (params.characterReincarnation - 1)),
     admin_telegrams: Array.isArray(params.adminTelegrams) ? params.adminTelegrams : ["@admin1", "@admin2"],
   };
 

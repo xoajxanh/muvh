@@ -1257,17 +1257,11 @@ local function CreateModUI()
                 elseif _G.Mod_Config_ActiveAdvancedTab ~= false then _G.ModMainTab = "NANG_CAO" end
             end
 
-            local kundunTiers = GetKundunTiers and GetKundunTiers() or {}
-            local hasKundun = (#kundunTiers > 0)
-            if not hasKundun and _G.ModMainTab == "NANG_CAO" then
-                _G.ModMainTab = "CO_BAN"
-            end
-
             if _G.tabCoBanGo and not _G.tabCoBanGo:Equals(nil) then
                 _G.tabCoBanGo:SetActive(_G.Mod_Config_ActiveBasicTab ~= false)
             end
             if _G.tabNangCaoGo and not _G.tabNangCaoGo:Equals(nil) then
-                _G.tabNangCaoGo:SetActive((_G.Mod_Config_ActiveAdvancedTab ~= false) and hasKundun)
+                _G.tabNangCaoGo:SetActive(_G.Mod_Config_ActiveAdvancedTab ~= false)
             end
             if _G.tabAutoBossGo and not _G.tabAutoBossGo:Equals(nil) then
                 _G.tabAutoBossGo:SetActive(_G.Mod_Config_ActiveAutoFarmTab ~= false)
@@ -3033,6 +3027,53 @@ _G.Mod_MapsConfig_c12 = {
                         local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
                         local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
                         
+            -- Kiểm tra khoảng cách thực tế ô lưới hoặc sự kiện OnArrive của game
+            local px, py = nil, nil
+            if _G.RoleManager and _G.RoleManager.me then
+                local me = _G.RoleManager.me
+                if me.cellPos then
+                    px, py = me.cellPos.x, me.cellPos.y
+                elseif me.serverCoord then
+                    px, py = me.serverCoord.x, me.serverCoord.y
+                elseif me.GetPosition then
+                    local p = me:GetPosition()
+                    if p then px, py = math.floor(p.x), math.floor(p.z) end
+                elseif me.position then
+                    px, py = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
+                end
+            end
+            
+            local targetPos = target.currentPos
+            local dist = 9999
+            if px and py and targetPos and targetPos.x and targetPos.y then
+                local dx = px - targetPos.x
+                local dy = py - targetPos.y
+                dist = math.sqrt(dx * dx + dy * dy)
+            end
+            
+            local hasArrived = _G.Mod_AutoFarmBoss_ArrivedAtPos or (dist <= 1.5)
+            
+            if not hasArrived then
+                -- Nếu chưa áp sát đến bán kính 1.5m: Tiếp tục duy trì chạy bộ bằng chân!
+                _G.Mod_AutoFarmBoss_BossWait = 0
+                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                return
+            end
+
+            -- Đã áp sát đến đúng 1.5m -> Quét tìm Boss & Bật Auto Fight
+            local foundBoss = false
+            local isHighHp = false
+            
+            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                if monsterRoles then
+                    for lid, role in pairs(monsterRoles) do
+                        local d = role.data
+                        local mId = d and (d.configId or d.monsterId or d.templateId) or "none"
+                        
+                        local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
+                        local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
+                        
                         if role.hp and role.hp > 0 and (idMatch or nameMatch) then
                             foundBoss = true
                             local maxHp = role.maxHp or role.maxHP
@@ -3043,7 +3084,7 @@ _G.Mod_MapsConfig_c12 = {
                             
                             if maxHp > 0 then
                                 local hpPct = (role.hp / maxHp) * 100
-                                LogMsg(string.format("Tìm thấy Boss %s - HP: %.2f%%", tostring(target.cfg.name or ""), hpPct))
+                                LogMsg(string.format("Đã tới tận nơi (1.5m)! Tìm thấy Boss %s - HP: %.2f%%", tostring(target.cfg.name or ""), hpPct))
                                 
                                 if hpPct >= 90 or isMine or isUnowned then
                                     isHighHp = true
@@ -3072,49 +3113,17 @@ _G.Mod_MapsConfig_c12 = {
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 end
             else
-                -- Kiểm tra khoảng cách thực tế ô lưới hoặc sự kiện OnArrive của game
-                local px, py = nil, nil
-                if _G.RoleManager and _G.RoleManager.me then
-                    local me = _G.RoleManager.me
-                    if me.cellPos then
-                        px, py = me.cellPos.x, me.cellPos.y
-                    elseif me.serverCoord then
-                        px, py = me.serverCoord.x, me.serverCoord.y
-                    elseif me.GetPosition then
-                        local p = me:GetPosition()
-                        if p then px, py = math.floor(p.x), math.floor(p.z) end
-                    elseif me.position then
-                        px, py = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
-                    end
-                end
-                
-                local targetPos = target.currentPos
-                local dist = 9999
-                if px and py and targetPos and targetPos.x and targetPos.y then
-                    local dx = px - targetPos.x
-                    local dy = py - targetPos.y
-                    dist = math.sqrt(dx * dx + dy * dy)
-                end
-                
-                local hasArrived = _G.Mod_AutoFarmBoss_ArrivedAtPos or (dist <= 1.5)
-                
-                -- Nếu chưa thực sự tới nơi (khoảng cách > 5m và chưa nổ event OnArrive): ĐANG CHẠY BỘ BẰNG CHÂN!
-                if not hasArrived then
+                -- Đã thực sự đến nơi 1.5m nhưng không thấy Boss
+                _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
+                if _G.Mod_AutoFarmBoss_BossWait > 5 then
+                    LogMsg(string.format("Đã đến tận nơi tọa độ %s nhưng không thấy Boss. Trở về State 1...", target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
                     _G.Mod_AutoFarmBoss_BossWait = 0
+                    _G.Mod_AutoFarmBoss_Target = nil
+                    _G.Mod_AutoFarmBoss_State = 1
+                    _G.Mod_AutoFarmBoss_TargetWait = 0
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 else
-                    -- Đã thực sự đến nơi (OnArrive nổ hoặc khoảng cách <= 5m)
-                    _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
-                    if _G.Mod_AutoFarmBoss_BossWait > 5 then
-                        LogMsg(string.format("Đã đến tận nơi tọa độ %s nhưng không thấy Boss. Trở về State 1...", target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
-                        _G.Mod_AutoFarmBoss_BossWait = 0
-                        _G.Mod_AutoFarmBoss_Target = nil
-                        _G.Mod_AutoFarmBoss_State = 1
-                        _G.Mod_AutoFarmBoss_TargetWait = 0
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                    else
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                    end
+                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                 end
             end
             

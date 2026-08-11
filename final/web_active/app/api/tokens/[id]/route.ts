@@ -89,6 +89,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       activeTabAdvanced,
       activeTabAutofarm,
       characterReincarnation,
+      characterReincarnationSecondary,
       adminTelegrams,
       price,
       isCustom,
@@ -115,6 +116,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       }
     }
 
+    const updatedPrimary = characterReincarnation !== undefined ? Number(characterReincarnation) : existingToken.characterReincarnation;
+    const updatedSecondary = characterReincarnationSecondary !== undefined 
+      ? Number(characterReincarnationSecondary) 
+      : (existingToken.characterReincarnationSecondary ?? (updatedPrimary > 1 ? updatedPrimary - 1 : 1));
+
     const updatedParams = {
       deviceSnMd5: (deviceSnMd5 !== undefined ? deviceSnMd5 : existingToken.deviceSnMd5).trim(),
       characterUid: (characterUid !== undefined ? characterUid : existingToken.characterUid).trim(),
@@ -133,7 +139,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       activeTabBasic: activeTabBasic !== undefined ? Boolean(activeTabBasic) : existingToken.activeTabBasic,
       activeTabAdvanced: activeTabAdvanced !== undefined ? Boolean(activeTabAdvanced) : existingToken.activeTabAdvanced,
       activeTabAutofarm: activeTabAutofarm !== undefined ? Boolean(activeTabAutofarm) : existingToken.activeTabAutofarm,
-      characterReincarnation: characterReincarnation !== undefined ? Number(characterReincarnation) : existingToken.characterReincarnation,
+      characterReincarnation: updatedPrimary,
+      characterReincarnationSecondary: updatedSecondary,
       adminTelegrams: telegramsList,
     };
 
@@ -163,6 +170,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         activeTabAdvanced: updatedParams.activeTabAdvanced,
         activeTabAutofarm: updatedParams.activeTabAutofarm,
         characterReincarnation: updatedParams.characterReincarnation,
+        characterReincarnationSecondary: updatedParams.characterReincarnationSecondary,
         adminTelegrams: JSON.stringify(telegramsList),
         price: price !== undefined ? Number(price) : existingToken.price,
         isCustom: isCustom !== undefined ? Boolean(isCustom) : existingToken.isCustom,
