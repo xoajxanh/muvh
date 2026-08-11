@@ -2001,7 +2001,7 @@ _G.Mod_MapsConfig_c12 = {
                     title.txt.text = mapCfg.title
                     
                     titleIdx = titleIdx + 1
-                    currentPosY = currentPosY - 25
+                    currentPosY = currentPosY - 30
                     
                     local colBosses = { {}, {}, {} }
                     for _, cfg in ipairs(mapCfg.bosses) do
@@ -2046,96 +2046,107 @@ _G.Mod_MapsConfig_c12 = {
                                 else
                                     local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
                                     local statusStr = "<color=#AAAAAA>(--:--)</color>"
-                                local prefix = ""
-                                local validLineNum = 1
-                                
-                                if bossData then
-                                    local bestLine = nil
-                                    for _, lineNum in ipairs(bossData.lineNums) do
-                                        local totalAlive = bossData.aliveCount[lineNum] or 0
-                                        local deadList = bossData.deadTimes[lineNum] or {}
-                                        
-                                        if totalAlive > 0 or #deadList > 0 then
-                                            bestLine = lineNum
-                                            if totalAlive > 0 then
-                                                statusStr = "<color=#00FF00>[ xuất hiện ]</color>"
-                                            elseif #deadList > 0 then
-                                                local rt = deadList[1]
-                                                local remain = math.floor(rt - currentSec)
-                                                if remain <= 0 then
+                                    local validLineNum = 1
+                                    
+                                    if bossData then
+                                        local bestLine = nil
+                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                            local totalAlive = bossData.aliveCount[lineNum] or 0
+                                            local deadList = bossData.deadTimes[lineNum] or {}
+                                            
+                                            if totalAlive > 0 or #deadList > 0 then
+                                                bestLine = lineNum
+                                                if totalAlive > 0 then
                                                     statusStr = "<color=#00FF00>[ xuất hiện ]</color>"
-                                                else
-                                                    local m = math.floor((remain % 3600) / 60)
-                                                    local s = remain % 60
-                                                    statusStr = string.format("<color=#AAAAAA>(%02d:%02d)</color>", m, s)
+                                                elseif #deadList > 0 then
+                                                    local rt = deadList[1]
+                                                    local remain = math.floor(rt - currentSec)
+                                                    if remain <= 0 then
+                                                        statusStr = "<color=#00FF00>[ xuất hiện ]</color>"
+                                                    else
+                                                        local m = math.floor((remain % 3600) / 60)
+                                                        local s = remain % 60
+                                                        statusStr = string.format("<color=#AAAAAA>(%02d:%02d)</color>", m, s)
+                                                    end
                                                 end
+                                                break
                                             end
-                                            break
+                                        end
+                                        
+                                        if bestLine then
+                                            validLineNum = bestLine
                                         end
                                     end
                                     
-                                    if bestLine then
-                                        validLineNum = bestLine
-                                    end
-                                end
-                                
-                                uiBtn.txt.text = "<b>" .. cfg.name .. "</b>\n" .. statusStr
-                                uiBtn.txt.fontSize = 15
-                                
-                                uiBtn.btn.onClick:RemoveAllListeners()
-                                local targetMapId = mapCfg.mapId
-                                local targetTransferId = cfg.transferId
-                                local targetBossId = cfg.id
-                                local targetLine = validLineNum
-                                local targetBossName = cfg.name
-                                local staticPosX = cfg.posX
-                                local staticPosY = cfg.posY
+                                    uiBtn.txt.text = "<b>" .. cfg.name .. "</b>\n" .. statusStr
+                                    uiBtn.txt.fontSize = 15
+                                    
+                                    uiBtn.btn.onClick:RemoveAllListeners()
+                                    local targetMapId = mapCfg.mapId
+                                    local targetTransferId = cfg.transferId
+                                    local targetBossId = cfg.id
+                                    local targetLine = validLineNum
+                                    local targetBossName = cfg.name
+                                    local staticPosX = cfg.posX
+                                    local staticPosY = cfg.posY
 
-                                uiBtn.btn.onClick:AddListener(function()
-                                    pcall(function()
-                                        local currentMapId = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-                                        local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline) or 1
+                                    uiBtn.btn.onClick:AddListener(function()
+                                        pcall(function()
+                                            local currentMapId = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                            local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline) or 1
+                                            local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
 
-                                        if currentMapId ~= targetMapId or currentLine ~= targetLine then
-                                            if _G.FloatingWordUtility then
-                                                _G.FloatingWordUtility.QuickMsg("Dịch chuyển tới " .. targetBossName .. "...")
-                                            end
-                                            
-                                            local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)) or targetTransferId or targetMapId
-                                            if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                                _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = transId, line = targetLine, changeLine = true })
-                                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                                                local initialPos = (staticPosX and staticPosY and {x = staticPosX, y = staticPosY}) or {x = 100, y = 100}
-                                                _G.PathFinderManager.MoveToLinePos(targetMapId, initialPos, transId, targetLine, nil, nil, nil, nil, true)
-                                            end
-                                        else
-                                            -- Đã ở cùng Map & Line -> Tìm vị trí con Boss SỐNG gần nhất
-                                            local alivePos, aliveCount = nil, 0
-                                            if _G.GetAliveBossPosition then
-                                                alivePos, aliveCount = _G.GetAliveBossPosition(targetBossId, targetMapId)
-                                            end
-                                            
-                                            local targetPos = alivePos or (staticPosX and staticPosY and {x = staticPosX, y = staticPosY}) or (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId))
-                                            
-                                            if targetPos then
+                                            if currentMapId ~= targetMapId or currentLine ~= targetLine then
                                                 if _G.FloatingWordUtility then
-                                                    _G.FloatingWordUtility.QuickMsg("Di chuyển đến " .. targetBossName .. " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
+                                                    _G.FloatingWordUtility.QuickMsg("Dịch chuyển tới " .. targetBossName .. "...")
                                                 end
                                                 
-                                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
-                                                    _G.RoleManager.me:MoveTo({x = targetPos.x, y = targetPos.y}, 0)
-                                                elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
-                                                    local targetVector = Vector2(targetPos.x, targetPos.y)
-                                                    _G.PathFinderManager.JumpMapToMoveToPos(targetMapId, targetVector, nil, targetLine, nil, Purpose.None, nil, 3, true)
+                                                _G.Mod_PendingManualMove = {
+                                                    bossId = targetBossId,
+                                                    mapId = targetMapId,
+                                                    line = targetLine,
+                                                    bossName = targetBossName,
+                                                    posX = staticPosX,
+                                                    posY = staticPosY,
+                                                    expireTime = nowSec + 20
+                                                }
+                                                
+                                                local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)) or targetTransferId or targetMapId
+                                                if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                                    _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = transId, line = targetLine, changeLine = true })
+                                                elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+                                                    local initialPos = (staticPosX and staticPosY and {x = staticPosX, y = staticPosY}) or {x = 100, y = 100}
+                                                    _G.PathFinderManager.MoveToLinePos(targetMapId, initialPos, transId, targetLine, nil, nil, nil, nil, true)
                                                 end
                                             else
-                                                if _G.FloatingWordUtility then
-                                                    _G.FloatingWordUtility.QuickMsg("Chưa có tọa độ Boss " .. targetBossName)
+                                                -- Đã ở cùng Map & Line -> Tìm vị trí con Boss SỐNG gần nhất (nếu tất cả chết thì tìm vị trí mặc định gần nhất)
+                                                local alivePos, aliveCount = nil, 0
+                                                if _G.GetAliveBossPosition then
+                                                    alivePos, aliveCount = _G.GetAliveBossPosition(targetBossId, targetMapId)
+                                                end
+                                                
+                                                local targetPos = alivePos or (staticPosX and staticPosY and {x = staticPosX, y = staticPosY}) or (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId))
+                                                
+                                                if targetPos then
+                                                    if _G.FloatingWordUtility then
+                                                        local st = alivePos and "Boss SỐNG" or "vị trí Boss"
+                                                        _G.FloatingWordUtility.QuickMsg("Di chuyển đến " .. st .. " " .. targetBossName .. " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
+                                                    end
+                                                    
+                                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+                                                        _G.RoleManager.me:MoveTo({x = targetPos.x, y = targetPos.y}, 0)
+                                                    elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                                                        local targetVector = Vector2(targetPos.x, targetPos.y)
+                                                        _G.PathFinderManager.JumpMapToMoveToPos(targetMapId, targetVector, nil, targetLine, nil, Purpose.None, nil, 3, true)
+                                                    end
+                                                else
+                                                    if _G.FloatingWordUtility then
+                                                        _G.FloatingWordUtility.QuickMsg("Chưa có tọa độ Boss " .. targetBossName)
+                                                    end
                                                 end
                                             end
-                                        end
+                                        end)
                                     end)
-                                end)
                                 end
                                 
                                 rowIdx = rowIdx + 1
@@ -2145,7 +2156,7 @@ _G.Mod_MapsConfig_c12 = {
                     end
                     
                     if maxRows > 0 then
-                        currentPosY = currentPosY - (maxRows * 48) - 10
+                        currentPosY = currentPosY - (maxRows * 48) + 5
                     else
                         currentPosY = currentPosY - 10
                     end
@@ -2179,31 +2190,33 @@ _G.Mod_MapsConfig_c12 = {
                 for _, md in ipairs(_G.SceneData.MonsterMapData) do
                     if md.mapCount then
                         for _, v in ipairs(md.mapCount) do
-                            local mapId = v.mapId
-                            if not tempBosses[mapId] then tempBosses[mapId] = {} end
-                            
-                            local deadTimes = {}
-                            if v.bossState then
-                                for _, state in ipairs(v.bossState) do
-                                    if state.reliveTime and state.reliveTime > 0 then
-                                        table.insert(deadTimes, state.reliveTime)
-                                    end
-                                end
-                                -- Sort deadTimes ascending so it shows smaller time first
-                                table.sort(deadTimes)
-                            end
-                            
                             local lineNum = v.line or 1
-                            if not tempBosses[mapId][md.bossId] then
-                                tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {} }
+                            if lineNum == 1 then
+                                local mapId = v.mapId
+                                if not tempBosses[mapId] then tempBosses[mapId] = {} end
+                                
+                                local deadTimes = {}
+                                if v.bossState then
+                                    for _, state in ipairs(v.bossState) do
+                                        if state.reliveTime and state.reliveTime > 0 then
+                                            table.insert(deadTimes, state.reliveTime)
+                                        end
+                                    end
+                                    -- Sort deadTimes ascending so it shows smaller time first
+                                    table.sort(deadTimes)
+                                end
+                                
+                                if not tempBosses[mapId][md.bossId] then
+                                    tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {} }
+                                end
+                                local bData = tempBosses[mapId][md.bossId]
+                                if not bData.lines[lineNum] then
+                                    bData.lines[lineNum] = true
+                                    table.insert(bData.lineNums, lineNum)
+                                end
+                                bData.aliveCount[lineNum] = v.count or 0
+                                bData.deadTimes[lineNum] = deadTimes
                             end
-                            local bData = tempBosses[mapId][md.bossId]
-                            if not bData.lines[lineNum] then
-                                bData.lines[lineNum] = true
-                                table.insert(bData.lineNums, lineNum)
-                            end
-                            bData.aliveCount[lineNum] = v.count or 0
-                            bData.deadTimes[lineNum] = deadTimes
                         end
                     end
                 end
@@ -2970,6 +2983,66 @@ _G.Mod_MapsConfig_c12 = {
             target.currentPos = alivePos or (target.cfg.posX and target.cfg.posY and {x = target.cfg.posX, y = target.cfg.posY}) or _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId)
             local posLog = target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
             
+            -- Kiểm tra xem Map hiện tại có phải Map Hoang Dã trong config hay không
+            local isHoangDa = target.mapCfg and target.mapCfg.title and string.find(target.mapCfg.title, "Hoang Dã") ~= nil
+            
+            if isHoangDa and target.currentPos then
+                local px, py = nil, nil
+                if _G.RoleManager and _G.RoleManager.me then
+                    local me = _G.RoleManager.me
+                    if me.cellPos then px, py = me.cellPos.x, me.cellPos.y
+                    elseif me.serverCoord then px, py = me.serverCoord.x, me.serverCoord.y
+                    elseif me.GetPosition then
+                        local p = me:GetPosition()
+                        if p then px, py = math.floor(p.x), math.floor(p.z) end
+                    elseif me.position then
+                        px, py = math.floor(me.position.x), math.floor(me.position.y or me.position.z)
+                    end
+                end
+
+                if px and py then
+                    local dx = px - target.currentPos.x
+                    local dy = py - target.currentPos.y
+                    local dist = math.sqrt(dx * dx + dy * dy)
+
+                    if dist > 50 then
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if nowTime - (_G.Mod_LastBossStoneTime or 0) >= 0.4 then
+                            _G.Mod_LastBossStoneTime = nowTime
+                            local stoneBagId = nil
+                            if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                                    if itemData then
+                                        local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                                        local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                                        if itemId == 20000022 then
+                                            stoneBagId = instanceId
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+
+                            if stoneBagId then
+                                LogMsg(string.format("[HOANG DÃ] Cách Boss %s %.1fm (>50m). Sử dụng Ấn Dịch Chuyển (20000022)...", target.cfg.name or "", dist))
+                                if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                    _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                    _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                end
+                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                return
+                            else
+                                LogMsg(string.format("[HOANG DÃ] Khảo sát cự ly %.1fm (>50m) nhưng hết Ấn Dịch Chuyển trong túi. Chuyển sang chạy bộ!", dist))
+                            end
+                        else
+                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            return
+                        end
+                    end
+                end
+            end
+
             if alivePos then
                 LogMsg(string.format("Minimap báo Boss %s SỐNG tại %s! Đang chạy bộ tới mục tiêu...", target.cfg.name or "", posLog))
             else

@@ -33,7 +33,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Đăng nhập thất bại');
       }
 
-      router.push('/');
+      router.push('/dashboard');
       router.refresh();
     } catch (err: any) {
       setError(err.message || 'Có lỗi xảy ra khi kết nối server');

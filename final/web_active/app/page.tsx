@@ -1,386 +1,785 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
-import Navbar from '@/components/Navbar';
-import {
-  DollarSign,
-  Key,
-  AlertTriangle,
-  TrendingUp,
-  PlusCircle,
-  Clock,
-  ChevronRight,
-  Sparkles,
-  BarChart2,
-  LineChart,
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  Download,
+  LogIn,
+  Zap,
+  Eye,
+  Sliders,
+  Sparkles,
+  Flame,
+  CheckCircle2,
+  ShieldCheck,
+  RefreshCw,
+  Layers,
+  Send,
+  Crosshair,
+  LayoutDashboard,
+} from 'lucide-react';
 
-export default function DashboardPage() {
-  const router = useRouter();
+export default function HomePage() {
+  const [activeTab, setActiveTab] = useState<'basic' | 'advanced' | 'autoboss'>('basic');
   const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<any>(null);
+
+  // Simulated state for interactive demo
+  const [fov, setFov] = useState(70);
+  const [moveSpeed, setMoveSpeed] = useState(4.0);
+  const [attackSpeed, setAttackSpeed] = useState(4.0);
+  const [botRange, setBotRange] = useState(6);
+  const [autoPick, setAutoPick] = useState(true);
+  const [pickCount, setPickCount] = useState(7);
+  const [showKundunHp, setShowKundunHp] = useState(true);
+  const [autoPkGuild, setAutoPkGuild] = useState(false);
+  const [autoFarm, setAutoFarm] = useState(false);
+  const [autoSecretMap, setAutoSecretMap] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => {
-        if (!res.ok) {
-          router.push('/login');
-          return null;
-        }
-        return res.json();
-      })
-      .then((resData) => {
-        if (resData?.user) {
-          setUser(resData.user);
-          loadDashboardData();
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user) {
+          setUser(data.user);
         }
       })
-      .catch(() => router.push('/login'));
-  }, [router]);
-
-  const loadDashboardData = async () => {
-    try {
-      const res = await fetch('/api/dashboard');
-      if (res.ok) {
-        const json = await res.json();
-        setData(json);
-      }
-    } catch (e) {
-      console.error('Failed to load dashboard data:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 border-4 border-cyan-500/20 border-t-cyan-500 rounded-full animate-spin"></div>
-          <span className="text-sm font-medium text-slate-400">Đang tải Dashboard...</span>
-        </div>
-      </div>
-    );
-  }
-
-  const summary = data?.summary || {
-    totalRevenue: 0,
-    monthRevenue: 0,
-    totalTokens: 0,
-    monthTokens: 0,
-    expiringSoon: 0,
-    expired: 0,
-  };
-
-  const monthlyChartData = data?.monthlyChartData || [];
-  const maxRevenue = Math.max(...monthlyChartData.map((d: any) => d.revenue), 1000000);
-  const maxTokens = Math.max(...monthlyChartData.map((d: any) => d.tokens), 5);
-
-  // Calculate SVG Line Path & Points for Tokens count
-  const chartWidth = 1200;
-  const chartHeight = 200;
-  const points = monthlyChartData.map((item: any, i: number) => {
-    const x = (i + 0.5) * (chartWidth / 12);
-    const y = 175 - (item.tokens / maxTokens) * 135;
-    return { x, y, tokens: item.tokens, month: item.month };
-  });
-
-  const linePathD = points.reduce((acc: string, pt: any, idx: number) => {
-    return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
-  }, '');
-
-  const areaPathD = points.length > 0
-    ? `${linePathD} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`
-    : '';
+      .catch(() => {});
+  }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#0b0f19]">
-      <Sidebar userRole={user.role} />
-
-      <div className="flex-1 flex flex-col min-w-0">
-        <Navbar user={user} />
-
-        <main className="p-6 md:p-8 space-y-8 flex-1 overflow-y-auto">
-          {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                Tổng Quan Quản Trị
-                <Sparkles className="w-5 h-5 text-cyan-400" />
-              </h1>
-              <p className="text-xs text-slate-400 mt-1">
-                Theo dõi doanh thu, số lượng token kích hoạt và cảnh báo hết hạn
-              </p>
-            </div>
-
-            <Link
-              href="/tokens/create"
-              className="px-5 py-2.5 gradient-button text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 self-start sm:self-auto hover:scale-105 transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              TẠO TOKEN MỚI
-            </Link>
-          </div>
-
-          {/* KPI Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Card 1: Tổng Doanh Thu */}
-            <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                <DollarSign className="w-16 h-16 text-cyan-400" />
-              </div>
-              <div className="flex items-center gap-3 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                <DollarSign className="w-4 h-4" />
-                Tổng Doanh Thu
-              </div>
-              <div className="text-2xl font-black text-white">
-                {summary.totalRevenue.toLocaleString('vi-VN')} <span className="text-xs font-medium text-slate-400">VNĐ</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                Tháng này: <span className="text-slate-200 font-semibold">{summary.monthRevenue.toLocaleString('vi-VN')} VNĐ</span>
-              </div>
-            </div>
-
-            {/* Card 2: Tổng Token Đã Tạo */}
-            <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                <Key className="w-16 h-16 text-indigo-400" />
-              </div>
-              <div className="flex items-center gap-3 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                <Key className="w-4 h-4" />
-                Tổng Token Đã Tạo
-              </div>
-              <div className="text-2xl font-black text-white">
-                {summary.totalTokens} <span className="text-xs font-medium text-slate-400">Tokens</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2">
-                Tháng này: <span className="text-slate-200 font-semibold">{summary.monthTokens} tokens</span> mới
-              </div>
-            </div>
-
-            {/* Card 3: Cảnh Báo Sắp Hết Hạn (< 3 Ngày) */}
-            <div className="glass-card p-6 rounded-2xl relative overflow-hidden border-amber-500/30 bg-gradient-to-br from-slate-900/90 to-amber-950/20 group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                <AlertTriangle className="w-16 h-16 text-amber-400" />
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-amber-400 text-xs font-semibold uppercase tracking-wider">
-                  <AlertTriangle className="w-4 h-4" />
-                  Sắp Hết Hạn (≤ 3 Ngày)
-                </div>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse">
-                  CẢNH BÁO
-                </span>
-              </div>
-              <div className="text-2xl font-black text-amber-300">
-                {summary.expiringSoon} <span className="text-xs font-medium text-amber-400/70">Tokens</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2">
-                Cần chăm sóc & gia hạn ngay cho khách
-              </div>
-            </div>
-
-            {/* Card 4: Token Đã Hết Hạn */}
-            <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
-                <Clock className="w-16 h-16 text-rose-400" />
-              </div>
-              <div className="flex items-center gap-3 text-rose-400 text-xs font-semibold uppercase tracking-wider mb-2">
-                <Clock className="w-4 h-4" />
-                Token Đã Hết Hạn
-              </div>
-              <div className="text-2xl font-black text-white">
-                {summary.expired} <span className="text-xs font-medium text-slate-400">Tokens</span>
-              </div>
-              <div className="text-xs text-slate-400 mt-2">
-                Đã bị hệ thống tạm dừng active remote
-              </div>
-            </div>
-          </div>
-
-          {/* Monthly Revenue & Tokens Chart (Bar + Line Overlay) */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <h3 className="font-bold text-slate-100 text-base">
-                  Thống Kê Doanh Thu & Số Lượng Token Theo Tháng ({new Date().getFullYear()})
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Cột thể hiện Doanh thu (VNĐ) | Đường Line thể hiện Số lượng Token phát hành
-                </p>
-              </div>
-
-              {/* Chart Legend */}
-              <div className="flex items-center gap-4 text-xs font-semibold">
-                <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-sm bg-gradient-to-t from-indigo-500 to-cyan-400"></span>
-                  <span className="text-cyan-300">Doanh Thu (Cột)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-3.5 h-1 bg-emerald-400 rounded-full"></span>
-                  <span className="text-emerald-400">Số Token (Line)</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Combined Chart Area */}
-            <div className="relative h-72 pt-8 pb-4 border-b border-slate-800">
-              {/* SVG Overlay Line Chart */}
-              <svg
-                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                className="absolute inset-x-0 bottom-8 w-full h-[200px] pointer-events-none z-10"
-                preserveAspectRatio="none"
-              >
-                <defs>
-                  <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#10b981" />
-                    <stop offset="50%" stopColor="#34d399" />
-                    <stop offset="100%" stopColor="#6ee7b7" />
-                  </linearGradient>
-                  <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-
-                {/* Shaded Area under Line */}
-                {areaPathD && <path d={areaPathD} fill="url(#areaGrad)" />}
-
-                {/* Glowing Line */}
-                {linePathD && (
-                  <path
-                    d={linePathD}
-                    fill="none"
-                    stroke="url(#lineGrad)"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"
-                  />
-                )}
-
-                {/* Data Point Circles */}
-                {points.map((pt: any, i: number) => (
-                  <g key={i}>
-                    <circle
-                      cx={pt.x}
-                      cy={pt.y}
-                      r="5"
-                      fill="#10b981"
-                      stroke="#0b0f19"
-                      strokeWidth="2"
-                      className="drop-shadow-[0_0_6px_rgba(16,185,129,0.8)]"
-                    />
-                  </g>
-                ))}
-              </svg>
-
-              {/* Column Bars & Hover Tooltips */}
-              <div className="h-full flex items-end justify-between gap-2 px-2 relative z-0">
-                {monthlyChartData.map((item: any, idx: number) => {
-                  const heightPct = Math.max(8, Math.round((item.revenue / maxRevenue) * 100));
-                  return (
-                    <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end relative">
-                      {/* Hover Tooltip Popup */}
-                      <div className="absolute -top-12 z-30 opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-xl shadow-xl text-[11px] whitespace-nowrap flex flex-col items-center gap-0.5">
-                        <span className="font-bold text-cyan-400">
-                          {item.revenue > 0 ? `${item.revenue.toLocaleString('vi-VN')} đ` : '0 đ'}
-                        </span>
-                        <span className="text-emerald-400 font-semibold">
-                          {item.tokens} Tokens
-                        </span>
-                      </div>
-
-                      {/* Bar Column */}
-                      <div
-                        style={{ height: `${heightPct}%` }}
-                        className="w-full max-w-[34px] bg-gradient-to-t from-indigo-700/80 via-sky-500/80 to-cyan-400/90 rounded-t-lg group-hover:brightness-125 transition-all shadow-md shadow-cyan-500/10"
-                      ></div>
-
-                      {/* Month Label */}
-                      <span className="text-[11px] font-medium text-slate-400 mt-2">{item.month}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Recently Created Tokens */}
-          <div className="glass-card p-6 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-slate-100 text-base">Token Mới Kích Hoạt Gần Đây</h3>
-                <p className="text-xs text-slate-400">Danh sách 5 token vừa tạo gần nhất</p>
-              </div>
-              <Link
-                href="/tokens"
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1"
-              >
-                Xem tất cả <ChevronRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/60 uppercase text-slate-400 border-b border-slate-800 text-[11px]">
-                  <tr>
-                    <th className="py-3 px-4">Thiết Bị MD5</th>
-                    <th className="py-3 px-4">UID Nhân Vật</th>
-                    <th className="py-3 px-4">Gói VIP</th>
-                    <th className="py-3 px-4">Hạn Sử Dụng</th>
-                    <th className="py-3 px-4">Giá Tiền</th>
-                    <th className="py-3 px-4">Người Tạo</th>
-                    <th className="py-3 px-4 text-right">Thao Tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {data?.recentTokens?.map((tok: any) => (
-                    <tr key={tok.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-semibold text-cyan-300">
-                        {tok.deviceSnMd5.substring(0, 10)}...
-                      </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-200">{tok.characterUid}</td>
-                      <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
-                          {tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định')}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-300">
-                        {new Date(tok.expireAt).toLocaleDateString('vi-VN')}
-                      </td>
-                      <td className="py-3.5 px-4 font-semibold text-emerald-400">
-                        {tok.price.toLocaleString('vi-VN')} đ
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400">{tok.createdBy?.displayName}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/tokens/${tok.id}`}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium text-[11px] transition"
-                        >
-                          Chi tiết
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                  {(!data?.recentTokens || data.recentTokens.length === 0) && (
-                    <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 italic">
-                        Chưa có token nào được tạo
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </main>
+    <div className="min-h-screen bg-[#090d16] text-slate-100 font-sans selection:bg-emerald-500 selection:text-white pb-20">
+      {/* Background Decor */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-600/15 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 -right-40 w-96 h-96 bg-cyan-600/15 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-10 left-1/3 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
       </div>
+
+      {/* TOP HEADER NAVBAR */}
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-emerald-500/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group hover:opacity-90 transition cursor-pointer">
+            {/* Project Logo Image */}
+            <div className="relative w-11 h-11 rounded-xl overflow-hidden shadow-lg shadow-emerald-500/20 border border-emerald-400/40 bg-slate-900 group-hover:border-emerald-300/60 transition">
+              <img
+                src="/logo.png"
+                alt="MU Vĩnh Hằng Logo"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLElement).setAttribute('src', '/logo-full.jpg');
+                }}
+              />
+            </div>
+            <div>
+              <span className="font-extrabold text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-300 to-cyan-400 uppercase">
+                MU Vĩnh Hằng
+              </span>
+              <span className="block text-[10px] font-semibold tracking-widest text-emerald-400/80 uppercase">
+                Mod Tool VIP Client • VUT Team
+              </span>
+            </div>
+          </Link>
+
+          {/* Nav links */}
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
+            <a href="#features" className="hover:text-emerald-400 transition-colors">
+              Tính năng Mod
+            </a>
+            <a href="#demo" className="hover:text-emerald-400 transition-colors">
+              Giao diện Tool
+            </a>
+            <a href="#packages" className="hover:text-emerald-400 transition-colors">
+              Bảng giá VIP
+            </a>
+            <a href="#download" className="hover:text-emerald-400 transition-colors">
+              Tải APK
+            </a>
+          </nav>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3">
+            <a
+              href="https://t.me/vutmod"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm transition-all shadow-lg shadow-sky-600/30 border border-sky-400/40 active:scale-95"
+            >
+              <Send className="w-4 h-4" />
+              <span>Telegram @vutmod</span>
+            </a>
+
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-sm transition-all border border-emerald-400/40 shadow-lg shadow-emerald-600/20"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Trang Quản Trị</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-medium text-sm transition-all border border-slate-700 hover:border-emerald-500/40"
+              >
+                <LogIn className="w-4 h-4 text-emerald-400" />
+                <span>Đăng nhập Admin</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* HERO SECTION */}
+      <section className="relative z-10 pt-12 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center space-y-6 max-w-4xl mx-auto">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-semibold tracking-wide uppercase shadow-inner">
+            <Sparkles className="w-4 h-4 animate-pulse text-emerald-400" />
+            <span>Bản Mod MU Vĩnh Hằng Độc Quyền bởi VUT Team v1.0</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-tight">
+            Tối Ưu Trải Nghiệm <br className="hidden sm:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-300 to-cyan-400">
+              MU Vĩnh Hằng Đỉnh Cao
+            </span>
+          </h1>
+
+          <p className="text-slate-300 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+            Hỗ trợ tăng tốc đánh &amp; chạy x4.0, tự động săn Boss Ẩn, nhặt đồ siêu tốc, 
+            hiển thị thông số Kundun chi tiết và lọc tự động tách trang bị thông minh.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+            <a
+              href="/downloads/MU_vut_teams.apk"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-base shadow-xl shadow-emerald-500/30 border border-emerald-300/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <Download className="w-5 h-5 animate-bounce" />
+              <span>TẢI BẢN MOD APK NGAY</span>
+            </a>
+            <a
+              href="https://t.me/vutmod"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold text-base transition-all border border-sky-400/40 shadow-lg shadow-sky-500/20"
+            >
+              <Send className="w-5 h-5" />
+              <span>Liên Hệ Telegram @vutmod</span>
+            </a>
+          </div>
+
+          {/* Highlights */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-10 text-left">
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+              <div className="text-emerald-400 font-bold text-2xl">4.0x</div>
+              <div className="text-slate-400 text-xs">Tốc chạy &amp; Tốc đánh</div>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+              <div className="text-emerald-400 font-bold text-2xl">FOV 120</div>
+              <div className="text-slate-400 text-xs">Góc nhìn siêu rộng</div>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+              <div className="text-emerald-400 font-bold text-2xl">Auto Boss</div>
+              <div className="text-slate-400 text-xs">Tự vào Map Ẩn &amp; C3-C5</div>
+            </div>
+            <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+              <div className="text-emerald-400 font-bold text-2xl">Kundun HP</div>
+              <div className="text-slate-400 text-xs">Hiện chính xác máu Boss</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* INTERACTIVE DEMO TOOL SECTION */}
+      <section id="demo" className="relative z-10 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
+            Mô Phỏng Giao Diện Tool Mod In-Game
+          </h2>
+          <p className="text-slate-400 text-sm mt-2">
+            Click thử các tab và nút điều chỉnh bên dưới để xem thiết kế trực quan của Menu Mod
+          </p>
+        </div>
+
+        {/* MOCK GAME MENU FRAMEWORK */}
+        <div className="bg-[#121620] rounded-2xl border-2 border-emerald-500/40 shadow-2xl overflow-hidden max-w-3xl mx-auto backdrop-blur-md">
+          {/* Menu Header Tabs (Matched with real screenshots) */}
+          <div className="grid grid-cols-3 bg-[#0d1017] border-b border-slate-800">
+            <button
+              onClick={() => setActiveTab('basic')}
+              className={`py-3 px-4 text-center font-bold text-sm sm:text-base tracking-wider transition-all border-b-4 ${
+                activeTab === 'basic'
+                  ? 'bg-emerald-700 text-white border-emerald-400 shadow-inner'
+                  : 'text-slate-400 hover:text-slate-200 border-transparent bg-slate-900/50'
+              }`}
+            >
+              [ CƠ BẢN ]
+            </button>
+            <button
+              onClick={() => setActiveTab('advanced')}
+              className={`py-3 px-4 text-center font-bold text-sm sm:text-base tracking-wider transition-all border-b-4 ${
+                activeTab === 'advanced'
+                  ? 'bg-emerald-700 text-white border-emerald-400 shadow-inner'
+                  : 'text-slate-400 hover:text-slate-200 border-transparent bg-slate-900/50'
+              }`}
+            >
+              [ NÂNG CAO ]
+            </button>
+            <button
+              onClick={() => setActiveTab('autoboss')}
+              className={`py-3 px-4 text-center font-bold text-sm sm:text-base tracking-wider transition-all border-b-4 ${
+                activeTab === 'autoboss'
+                  ? 'bg-emerald-700 text-white border-emerald-400 shadow-inner'
+                  : 'text-slate-400 hover:text-slate-200 border-transparent bg-slate-900/50'
+              }`}
+            >
+              [ AUTO BOSS ]
+            </button>
+          </div>
+
+          {/* TAB 1: CƠ BẢN CONTENT */}
+          {activeTab === 'basic' && (
+            <div className="p-5 sm:p-6 space-y-5 text-sm bg-gradient-to-b from-[#121620] to-[#0c0f17]">
+              {/* Row 1: FOV & Refresh */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* FOV */}
+                <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  <div className="flex items-center gap-2 font-semibold text-slate-200">
+                    <Eye className="w-4 h-4 text-emerald-400" />
+                    <span>FOV: <strong className="text-emerald-400">{fov}</strong></span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setFov(Math.max(20, fov - 5))}
+                      className="w-8 h-8 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700"
+                    >
+                      -5
+                    </button>
+                    <button
+                      onClick={() => setFov(Math.min(120, fov + 5))}
+                      className="w-8 h-8 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700"
+                    >
+                      +5
+                    </button>
+                  </div>
+                </div>
+
+                {/* Auto Refresh Timer */}
+                <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  <div className="flex items-center gap-2 font-semibold text-slate-200">
+                    <RefreshCw className="w-4 h-4 text-emerald-400" />
+                    <span>Tự làm mới: <strong className="text-emerald-400">3s</strong></span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-bold text-xs">-</button>
+                    <button className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-bold text-xs">+</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Tốc Chạy, Tốc Đánh, Phạm Vi Bot */}
+              <div className="space-y-3">
+                {/* Tốc chạy */}
+                <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  <span className="font-semibold text-slate-200">
+                    Tốc Chạy: <strong className="text-emerald-400">{moveSpeed.toFixed(1)}x</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setMoveSpeed(Math.max(1, moveSpeed - 0.5))} className="px-2.5 py-1 bg-red-900/50 hover:bg-red-800 text-red-200 font-bold rounded border border-red-800/60">-5</button>
+                    <button onClick={() => setMoveSpeed(Math.max(1, moveSpeed - 0.1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                    <button onClick={() => setMoveSpeed(Math.min(5, moveSpeed + 0.1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                    <button onClick={() => setMoveSpeed(Math.min(5, moveSpeed + 0.5))} className="px-2.5 py-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 font-bold rounded border border-emerald-800/60">+5</button>
+                  </div>
+                </div>
+
+                {/* Tốc đánh */}
+                <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  <span className="font-semibold text-slate-200">
+                    Tốc Đánh: <strong className="text-emerald-400">{attackSpeed.toFixed(1)}x</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setAttackSpeed(Math.max(1, attackSpeed - 0.5))} className="px-2.5 py-1 bg-red-900/50 hover:bg-red-800 text-red-200 font-bold rounded border border-red-800/60">-5</button>
+                    <button onClick={() => setAttackSpeed(Math.max(1, attackSpeed - 0.1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                    <button onClick={() => setAttackSpeed(Math.min(5, attackSpeed + 0.1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                    <button onClick={() => setAttackSpeed(Math.min(5, attackSpeed + 0.5))} className="px-2.5 py-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 font-bold rounded border border-emerald-800/60">+5</button>
+                  </div>
+                </div>
+
+                {/* Phạm vi bot */}
+                <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                  <span className="font-semibold text-slate-200">
+                    Phạm Vi Bot: <strong className="text-emerald-400">{botRange}</strong>
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => setBotRange(Math.max(1, botRange - 1))} className="px-2.5 py-1 bg-red-900/50 hover:bg-red-800 text-red-200 font-bold rounded border border-red-800/60">-5</button>
+                    <button onClick={() => setBotRange(Math.max(1, botRange - 1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">-</button>
+                    <button onClick={() => setBotRange(Math.min(50, botRange + 1))} className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded border border-slate-700">+</button>
+                    <button onClick={() => setBotRange(Math.min(50, botRange + 5))} className="px-2.5 py-1 bg-emerald-900/50 hover:bg-emerald-800 text-emerald-200 font-bold rounded border border-emerald-800/60">+5</button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Boss Spawn Tracker Display */}
+              <div className="border-t border-slate-800 pt-4 space-y-2">
+                <div className="text-amber-400 font-bold text-xs tracking-wider uppercase flex items-center gap-2">
+                  <Flame className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <span>Danh Sách Boss Tự Động Theo Dõi (Live Tracker)</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-900/90 p-2.5 rounded border border-slate-800">
+                    <div className="text-amber-300 font-bold mb-1">Hoang Dã C5</div>
+                    <div className="flex justify-between text-slate-300">
+                      <span>Giác Ma Đ.Ngục:</span> <span className="text-emerald-400 font-bold">[ xuất hiện ]</span>
+                    </div>
+                    <div className="flex justify-between text-slate-300">
+                      <span>Phẫn Nộ / Cường Bạo:</span> <span className="text-emerald-400 font-bold">[ xuất hiện ]</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/90 p-2.5 rounded border border-slate-800">
+                    <div className="text-amber-300 font-bold mb-1">Trang Sức C5</div>
+                    <div className="flex justify-between text-slate-300">
+                      <span>Hươu Thủy Tinh:</span> <span className="text-cyan-400 font-mono font-bold">(01:37)</span>
+                    </div>
+                    <div className="flex justify-between text-slate-300">
+                      <span>Thoát Phó Bản:</span> <span className="text-red-400 font-bold">[ Rời phó bản ]</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: NÂNG CAO CONTENT */}
+          {activeTab === 'advanced' && (
+            <div className="p-5 sm:p-6 space-y-5 text-sm bg-gradient-to-b from-[#121620] to-[#0c0f17]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Column 1: NHẶT ĐỒ SIÊU TỐC */}
+                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="text-amber-400 font-bold text-xs uppercase tracking-wider">
+                    [ NHẶT ĐỒ SIÊU TỐC ]
+                  </div>
+
+                  <button
+                    onClick={() => setAutoPick(!autoPick)}
+                    className={`w-full py-2.5 px-3 rounded font-bold text-center transition-all ${
+                      autoPick
+                        ? 'bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-400'
+                        : 'bg-red-950 hover:bg-red-900 text-red-200 border border-red-800'
+                    }`}
+                  >
+                    TỰ ĐỘNG NHẶT: {autoPick ? 'ON' : 'OFF'}
+                  </button>
+
+                  <div className="flex items-center justify-between text-xs text-slate-300 pt-1">
+                    <span>SỐ LƯỢNG NHẶT: <strong className="text-emerald-400 text-sm">{pickCount}</strong></span>
+                    <div className="flex gap-1">
+                      <button onClick={() => setPickCount(Math.max(1, pickCount - 1))} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded font-bold text-white border border-slate-700">-</button>
+                      <button onClick={() => setPickCount(pickCount + 1)} className="px-3 py-1 bg-slate-800 hover:bg-slate-700 rounded font-bold text-white border border-slate-700">+</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column 2: CHỨC NĂNG HỖ TRỢ */}
+                <div className="bg-slate-900/80 p-4 rounded-xl border border-slate-800 space-y-3">
+                  <div className="text-amber-400 font-bold text-xs uppercase tracking-wider">
+                    [ CHỨC NĂNG HỖ TRỢ ]
+                  </div>
+
+                  <button
+                    onClick={() => setShowKundunHp(!showKundunHp)}
+                    className={`w-full py-2 rounded font-bold text-xs transition-all ${
+                      showKundunHp
+                        ? 'bg-emerald-700 text-white border border-emerald-400'
+                        : 'bg-slate-800 text-slate-400'
+                    }`}
+                  >
+                    HIỆN MÁU KUNDUN: {showKundunHp ? 'ON' : 'OFF'}
+                  </button>
+
+                  <button
+                    onClick={() => setAutoPkGuild(!autoPkGuild)}
+                    className={`w-full py-2 rounded font-bold text-xs transition-all ${
+                      autoPkGuild
+                        ? 'bg-emerald-700 text-white border border-emerald-400'
+                        : 'bg-red-900/60 text-red-200 border border-red-800'
+                    }`}
+                  >
+                    AUTO PK GUILD: {autoPkGuild ? 'ON' : 'OFF'}
+                  </button>
+
+                  <div className="flex items-center gap-2 bg-slate-950 p-2 rounded border border-slate-800 text-xs">
+                    <span className="text-slate-400">KHÓA MỤC TIÊU:</span>
+                    <span className="font-mono font-bold text-emerald-400">S399.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* INFO KUNDUN BOSS */}
+              <div className="bg-slate-900/90 p-4 rounded-xl border border-emerald-500/20">
+                <div className="text-emerald-400 font-bold text-xs uppercase mb-2 flex items-center justify-between">
+                  <span>[ INFO KUNDUN BOSS ]</span>
+                  <span className="text-amber-400 font-mono">[ BOSS C5 ]</span>
+                </div>
+                <div className="text-slate-300 text-xs font-mono bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center">
+                  <span>THÁNH CỐT KUNDUN:</span>
+                  <span className="text-emerald-400 font-bold">0 / 70 (0)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: AUTO BOSS CONTENT */}
+          {activeTab === 'autoboss' && (
+            <div className="p-5 sm:p-6 space-y-4 text-sm bg-gradient-to-b from-[#121620] to-[#0c0f17]">
+              {/* Row 1 Controls */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setAutoFarm(!autoFarm)}
+                  className={`py-2.5 px-3 rounded font-bold text-xs uppercase transition-all ${
+                    autoFarm
+                      ? 'bg-emerald-700 text-white border border-emerald-400'
+                      : 'bg-red-950 text-red-200 border border-red-800'
+                  }`}
+                >
+                  AUTO FARM: {autoFarm ? 'ON' : 'OFF'}
+                </button>
+
+                <button
+                  onClick={() => setAutoSecretMap(!autoSecretMap)}
+                  className="py-2.5 px-3 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700"
+                >
+                  TỰ VÀO MAP ẨN: {autoSecretMap ? 'BẬT' : 'TẮT'}
+                </button>
+
+                <button className="py-2.5 px-3 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700">
+                  VÀO ẨN KC: TẮT
+                </button>
+              </div>
+
+              {/* Row 2: Tách Đồ (C3, C4, C5) */}
+              <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
+                <div className="text-slate-300 font-bold mb-1">TỰ ĐỘNG PHÂN TÁCH TRANG BỊ:</div>
+
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                  <span className="text-slate-400">TÁCH NHẪN:</span>
+                  <div className="flex gap-1">
+                    {['C3', 'C4', 'C5'].map((lv) => (
+                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                  <span className="text-slate-400">TÁCH DÂY:</span>
+                  <div className="flex gap-1">
+                    {['C3', 'C4', 'C5'].map((lv) => (
+                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">TÁCH KHUYÊN:</span>
+                  <div className="flex gap-1">
+                    {['C3', 'C4', 'C5'].map((lv) => (
+                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Statistics Footer */}
+              <div className="flex flex-wrap items-center justify-between bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs gap-2">
+                <button className="px-3 py-1 bg-red-900/70 hover:bg-red-800 text-red-200 font-bold rounded uppercase">
+                  RESET THỐNG KÊ
+                </button>
+                <div className="flex items-center gap-3 text-amber-400 font-semibold font-mono">
+                  <span>BOSS ẨN: <strong className="text-white">0</strong></span>
+                  <span>TỔNG BOSS C3: <strong className="text-emerald-400">7</strong></span>
+                  <span>TỔNG BOSS C5: <strong className="text-white">0</strong></span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Mock Watermark */}
+          <div className="bg-[#090b10] px-4 py-2 text-right border-t border-slate-800">
+            <span className="text-[11px] italic font-semibold text-emerald-500/80">
+              Modded by VUT Team
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURE CARDS GRID */}
+      <section id="features" className="relative z-10 py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-black text-white tracking-tight">
+            Tính Năng Nổi Bật Bản Mod MU Vĩnh Hằng
+          </h2>
+          <p className="text-slate-400 text-sm mt-2 max-w-2xl mx-auto">
+            Bộ công cụ được tối ưu riêng biệt cho game MU Vĩnh Hằng, chạy mượt mà trên mọi giả lập &amp; điện thoại Android.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Feature 1 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Zap className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Tốc Độ Chạy &amp; Đánh x4.0
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Tùy chỉnh tốc độ di chuyển và tốc độ ra chiêu từ 1.0x tới 4.0x. Giúp đi phó bản nhanh gấp 4 lần và chiếm ưu thế tuyệt đối trong PK.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Eye className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Mở Rộng Góc Nhìn FOV
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Điều chỉnh FOV linh hoạt từ 20 đến 120. Mở rộng tầm nhìn giúp theo dõi Boss từ khoảng cách cực xa mà góc nhìn mặc định không thấy được.
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Layers className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Nhặt Đồ Siêu Tốc &amp; Tách Đồ C3-C5
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Hệ thống lọc vật phẩm thông minh, tự động nhặt ngọc &amp; trang bị quý. Tự động phân tách Nhẫn, Dây, Khuyên C3/C4/C5 tránh đầy rương.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Flame className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Auto Boss &amp; Đếm Máu Kundun
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Hiển thị chính xác thanh máu Boss Kundun và số lượng Thánh Cốt. Tự động di chuyển vào Map Ẩn và đếm chính xác thời gian Boss xuất hiện.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Crosshair className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Khóa Mục Tiêu &amp; Auto PK Guild
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Hỗ trợ tự động khóa mục tiêu kẻ địch trong bang hội đối địch, giúp xả skill chính xác 100% không lo chọn nhầm mục tiêu.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-emerald-500/50 transition-all group backdrop-blur-sm">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
+              Bảo Mật Key VIP Server
+            </h3>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              Hệ thống xác thực Token/Key theo thời hạn (ngày), tích hợp quản lý qua Web Admin chuyên nghiệp và an toàn tuyệt đối.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* PACKAGES PREVIEW SECTION */}
+      <section id="packages" className="relative z-10 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-black text-white">Bảng Gói VIP &amp; Đăng Ký Bản Quyền</h2>
+          <p className="text-slate-400 text-sm mt-2">Liên hệ hỗ trợ cài đặt &amp; mua key VIP qua Telegram chính thức</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Gói Thường */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between hover:border-slate-700 transition">
+            <div>
+              <div className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-2">BẢN CƠ BẢN</div>
+              <div className="text-2xl font-black text-white mb-4">Gói Thường</div>
+              <ul className="space-y-3 text-sm text-slate-300 mb-6">
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Chạy nhanh (Speed Hack)</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Zoom gần xa (Mở rộng FOV)</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Phát hiện mục tiêu xa</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Auto PK khóa tên mục tiêu</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Nhặt đồ Kundun tỷ lệ 80%</span>
+                </li>
+              </ul>
+            </div>
+            <a
+              href="https://t.me/vutmod"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-bold text-center text-sm border border-sky-400/40 shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 transition-all"
+            >
+              <Send className="w-4 h-4" />
+              <span>Liên hệ Telegram @vutmod</span>
+            </a>
+          </div>
+
+          {/* Gói VIP */}
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-emerald-950/70 via-slate-900 to-slate-900 border-2 border-emerald-500 relative flex flex-col justify-between shadow-xl shadow-emerald-500/10">
+            <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-md">
+              KHUYÊN DÙNG ★ VIP
+            </div>
+            <div>
+              <div className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-2">BẢN CAO CẤP FULL TÍNH NĂNG</div>
+              <div className="text-2xl font-black text-white mb-4">Gói VIP</div>
+              <ul className="space-y-3 text-sm text-slate-200 mb-6">
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="font-semibold text-amber-300">Bao gồm toàn bộ tính năng Gói Thường</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Auto săn Boss</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Bảng theo dõi tất cả Boss</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Tự vào Boss ẩn</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Tự tách nhẫn &amp; dây chuyền</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Điều chỉnh Mod hoàn toàn trên game</span>
+                </li>
+              </ul>
+            </div>
+            <a
+              href="https://t.me/vutmod"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-center text-sm border border-emerald-300/40 shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all"
+            >
+              <Send className="w-4 h-4" />
+              <span>Liên hệ Telegram @vutmod</span>
+            </a>
+          </div>
+
+          {/* Admin */}
+          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div className="text-amber-400 text-xs font-bold uppercase tracking-widest mb-2">DÀNH CHO ĐẠI LÝ</div>
+              <div className="text-2xl font-black text-white mb-4">Tài Khoản Quản Trị</div>
+              <ul className="space-y-3 text-sm text-slate-300 mb-6">
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Tự tạo Key Token cho khách hàng</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Quản lý thời hạn &amp; gia hạn Key</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+                  <span>Giao diện Dashboard trực quan</span>
+                </li>
+              </ul>
+            </div>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="w-full py-3 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-center text-sm border border-emerald-500/40 flex items-center justify-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Vào Dashboard Quản Trị</span>
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="w-full py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-center text-sm border border-slate-700 flex items-center justify-center gap-2"
+              >
+                <LogIn className="w-4 h-4 text-emerald-400" />
+                <span>Đăng Nhập Dashboard</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* DOWNLOAD CTA BANNER */}
+      <section id="download" className="relative z-10 pt-8 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+        <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-emerald-900/70 via-slate-900 to-green-950/80 border border-emerald-500/40 shadow-2xl text-center space-y-6">
+          <h2 className="text-3xl sm:text-4xl font-black text-white">
+            Trải Nghiệm Bản Mod MU Vĩnh Hằng Ngay
+          </h2>
+          <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
+            Tải về file APK cài đặt trực tiếp trên điện thoại Android hoặc giả lập PC (NoxPlayer, LDPlayer, Bluestacks).
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-4 pt-2">
+            <a
+              href="/downloads/MU_vut_teams.apk"
+              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base transition-all shadow-xl shadow-emerald-500/30"
+            >
+              <Download className="w-5 h-5" />
+              <span>TẢI FILE MU_vut_teams.apk</span>
+            </a>
+            <a
+              href="https://t.me/vutmod"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-base transition-all border border-sky-400/40 shadow-lg shadow-sky-500/20"
+            >
+              <Send className="w-5 h-5" />
+              <span>Hỗ trợ Telegram @vutmod</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="relative z-10 border-t border-slate-800/80 pt-8 text-center text-slate-500 text-xs">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <img src="/logo.png" alt="Logo" className="w-5 h-5 rounded object-cover" />
+          <span className="font-bold text-slate-400">MU Vĩnh Hằng • VUT Team Modded</span>
+        </div>
+        <p>© 2026 MU Vĩnh Hằng Mod. Tất cả quyền được bảo lưu.</p>
+        <p className="mt-1 text-slate-600">Hỗ trợ đầy đủ cho mọi thiết bị Android &amp; Giả lập PC.</p>
+      </footer>
     </div>
   );
 }

@@ -13,7 +13,7 @@ export default function Sidebar({ userRole }: SidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
-    { label: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Quản Lý Token', href: '/tokens', icon: Key },
     { label: 'Gói Cước VIP', href: '/packages', icon: Package },
     { label: 'Telegram CSKH', href: '/telegrams', icon: Send },
@@ -26,14 +26,16 @@ export default function Sidebar({ userRole }: SidebarProps) {
 
   return (
     <aside className="w-64 glass-panel flex flex-col shrink-0 border-r border-slate-800 hidden md:flex min-h-screen">
-      <div className="p-6 border-b border-slate-800/60 flex items-center gap-3">
-        <div className="w-11 h-11 rounded-xl bg-slate-900 border border-amber-500/30 p-1 flex items-center justify-center shadow-lg shadow-amber-500/10 overflow-hidden shrink-0">
-          <img src="/logo.png" alt="VUT MOD TEAMS Logo" className="w-full h-full object-contain" />
-        </div>
-        <div>
-          <h1 className="font-extrabold text-base text-white tracking-wide leading-snug">VUT MOD TEAMS</h1>
-          <p className="text-[11px] text-cyan-400 font-medium">Bản Quyền Mod Client</p>
-        </div>
+      <div className="p-6 border-b border-slate-800/60">
+        <Link href="/" className="flex items-center gap-3 group hover:opacity-90 transition">
+          <div className="w-11 h-11 rounded-xl bg-slate-900 border border-amber-500/30 p-1 flex items-center justify-center shadow-lg shadow-amber-500/10 overflow-hidden shrink-0 group-hover:border-amber-400/60 transition">
+            <img src="/logo.png" alt="VUT MOD TEAMS Logo" className="w-full h-full object-contain" />
+          </div>
+          <div>
+            <h1 className="font-extrabold text-base text-white tracking-wide leading-snug group-hover:text-amber-300 transition">VUT MOD TEAMS</h1>
+            <p className="text-[11px] text-cyan-400 font-medium">Bản Quyền Mod Client</p>
+          </div>
+        </Link>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

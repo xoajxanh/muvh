@@ -34,7 +34,7 @@ export default function UsersPage() {
       .then((resData) => {
         if (resData?.user) {
           if (resData.user.role !== 'ADMIN') {
-            router.push('/');
+            router.push('/dashboard');
             return;
           }
           setCurrentUser(resData.user);
