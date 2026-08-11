@@ -1289,8 +1289,8 @@ local function CreateModUI()
                     return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
                 end
                 
-                -- Nhóm 2: Vũ khí (106, 124, 181)
-                if subType == 106 or subType == 124 or subType == 181 then
+                -- Nhóm 2: Vũ khí Hồng Trang (101, 106, 109, 124, 181)
+                if subType == 101 or subType == 106 or subType == 109 or subType == 124 or subType == 181 then
                     for _, des in ipairs(excDesList) do
                         local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or string.find(des, "MP tăng")
                         if isKill then
@@ -1340,33 +1340,36 @@ local function CreateModUI()
                     if item then
                         local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
                         local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
+                        local itemType = tblItem.type or 0
                         local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
                         local subType = tblItem.subType or 0
                         local quality = tblItem.quality or 0
                         local needLevel = tblItem.needLevel or 0
                         local tier = math.floor(needLevel / 400)
                         
-                        if (not tblEquip or not tblEquip.suitId) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
-                            pcall(function()
-                                local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
-                                if eq then tblEquip = eq end
-                            end)
-                        end
-                        tblEquip = tblEquip or {}
+                        -- CHỈ XỬ LÝ KHI LÀ TRANG BỊ (itemType == 2) HOẶC CÓ CẤU HÌNH EQUIP
+                        if itemType == 2 or (tblEquip and tblEquip.id) then
+                            if (not tblEquip or not tblEquip.suitId) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                                pcall(function()
+                                    local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
+                                    if eq then tblEquip = eq end
+                                end)
+                            end
+                            tblEquip = tblEquip or {}
 
-                        local prefix = nil
-                        if subType == 35 then prefix = "RingL"
-                        elseif subType == 38 then prefix = "RingR"
-                        elseif subType == 36 then prefix = "Necklace2"
-                        elseif subType == 34 then prefix = "EarringL"
-                        elseif subType == 37 then prefix = "EarringR"
-                        elseif subType == 113 then prefix = "Hat"
-                        elseif subType == 114 then prefix = "Armor"
-                        elseif subType == 115 then prefix = "Pants"
-                        elseif subType == 116 then prefix = "Gloves"
-                        elseif subType == 117 then prefix = "Boots"
-                        elseif subType == 106 or subType == 124 or subType == 181 then prefix = "Weapon"
-                        end
+                            local prefix = nil
+                            if subType == 35 then prefix = "RingL"
+                            elseif subType == 38 then prefix = "RingR"
+                            elseif subType == 36 then prefix = "Necklace2"
+                            elseif subType == 34 then prefix = "EarringL"
+                            elseif subType == 37 then prefix = "EarringR"
+                            elseif subType == 113 then prefix = "Hat"
+                            elseif subType == 114 then prefix = "Armor"
+                            elseif subType == 115 then prefix = "Pants"
+                            elseif subType == 116 then prefix = "Gloves"
+                            elseif subType == 117 then prefix = "Boots"
+                            elseif subType == 101 or subType == 106 or subType == 109 or subType == 124 or subType == 181 then prefix = "Weapon"
+                            end
                         
                         local shouldSmelt = false
 
@@ -1427,8 +1430,9 @@ local function CreateModUI()
                         end
                     end
                 end
+            end
                 
-                if #recycleItems > 0 then
+            if #recycleItems > 0 then
                     local batch = {}
                     local batchSize = 0
                     for i, id in ipairs(recycleItems) do
@@ -4459,6 +4463,49 @@ end
             CreateSmeltToggle("C7", "KeepGood_C7", smeltStartX + 125, curY, btnW, true)
             CreateSmeltToggle("C8", "KeepGood_C8", smeltStartX + 162, curY, btnW, true)
             CreateSmeltToggle("C9", "KeepGood_C9", smeltStartX + 199, curY, btnW, true)
+
+            -- Nút TÁCH NGAY thủ công
+            curY = curY - 30
+            local manualSmeltBtnGo = GameObject("SmeltManualBtn")
+            manualSmeltBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, manualSmeltBtnGo)
+            local manualSmeltRt = manualSmeltBtnGo:AddComponent(typeof(RectTransform))
+            manualSmeltRt.anchorMin, manualSmeltRt.anchorMax, manualSmeltRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            manualSmeltRt.anchoredPosition = Vector2(smeltStartX, curY)
+            manualSmeltRt.sizeDelta = Vector2(233, 26)
+
+            local manualSmeltBg = GameObject("Bg")
+            manualSmeltBg.transform:SetParent(manualSmeltBtnGo.transform, false)
+            local manualSmeltBgRt = manualSmeltBg:AddComponent(typeof(RectTransform))
+            manualSmeltBgRt.anchorMin, manualSmeltBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            manualSmeltBgRt.sizeDelta = Vector2(0, 0)
+            local manualSmeltBgImg = manualSmeltBg:AddComponent(typeof(Image))
+            manualSmeltBgImg.color = Color(0.8, 0.2, 0.2, 1)
+
+            local manualSmeltTxtGo = GameObject("Text")
+            manualSmeltTxtGo.transform:SetParent(manualSmeltBtnGo.transform, false)
+            local manualSmeltTxtRt = manualSmeltTxtGo:AddComponent(typeof(RectTransform))
+            manualSmeltTxtRt.anchorMin, manualSmeltTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            manualSmeltTxtRt.sizeDelta = Vector2(0, 0)
+            local manualSmeltTxt = manualSmeltTxtGo:AddComponent(typeof(Text))
+            manualSmeltTxt.raycastTarget = false
+            manualSmeltTxt.text = "TÁCH NGAY (THỦ CÔNG)"
+            manualSmeltTxt.color = Color.white
+            manualSmeltTxt.fontSize = 12
+            manualSmeltTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then manualSmeltTxt.font = defaultFont end
+
+            local manualSmeltBtn = manualSmeltBtnGo:AddComponent(typeof(Button))
+            manualSmeltBtn.onClick:AddListener(function()
+                pcall(function()
+                    if _G.Mod_PerformSmeltItems then
+                        _G.Mod_PerformSmeltItems()
+                    elseif _G.Mod_ExecuteAutoSmelt then
+                        _G.Mod_ExecuteAutoSmelt()
+                    end
+                    LogMsg("Đã kích hoạt Tách Đồ thủ công!")
+                end)
+            end)
 
             -- SUBTABS [ BOSS C7 ] / [ BOSS C8 ]
             local currentY = -155
