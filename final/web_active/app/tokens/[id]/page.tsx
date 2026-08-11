@@ -35,6 +35,8 @@ export default function TokenDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [deviceSnMd5, setDeviceSnMd5] = useState('');
   const [characterUid, setCharacterUid] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [isTest, setIsTest] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
@@ -112,6 +114,8 @@ export default function TokenDetailPage() {
         if (tok) {
           setDeviceSnMd5(tok.deviceSnMd5);
           setCharacterUid(tok.characterUid);
+          setCustomerName(tok.customerName || '');
+          setIsTest(tok.isTest || false);
           setSelectedPackageId(tok.packageId || null);
           setIsCustom(tok.isCustom);
           setDurationDays(tok.durationDays);
@@ -216,6 +220,8 @@ export default function TokenDetailPage() {
       const payload = {
         deviceSnMd5: deviceSnMd5.trim(),
         characterUid: characterUid.trim(),
+        customerName: customerName.trim() || null,
+        isTest,
         packageId: isCustom ? null : selectedPackageId,
         durationDays: Number(durationDays),
         fovMin: Number(fovMin),
@@ -311,9 +317,14 @@ export default function TokenDetailPage() {
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                     {packageName}
                   </span>
+                  {token.isTest && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 tracking-wider">
+                      [TEST]
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  UID Nhân vật: <span className="font-mono text-cyan-300 font-bold">{token.characterUid}</span> | Tạo bởi: {token.createdBy?.displayName}
+                  Khách hàng: <span className="font-semibold text-amber-300">{token.customerName || 'Chưa nhập'}</span> | UID Nhân vật: <span className="font-mono text-cyan-300 font-bold">{token.characterUid}</span> | Tạo bởi: {token.createdBy?.displayName}
                 </p>
               </div>
             </div>
@@ -380,8 +391,19 @@ export default function TokenDetailPage() {
                     </label>
                   </div>
 
-                  {/* Section 1: Edit MD5 & Character UID */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs p-4 bg-slate-900/70 border border-slate-800 rounded-xl">
+                  {/* Section 1: Edit MD5 & Character UID & Customer Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs p-4 bg-slate-900/70 border border-slate-800 rounded-xl">
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1">Khách Hàng (Tên/Nhân vật)</label>
+                      <input
+                        type="text"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                        placeholder="Tên khách / tên nhân vật..."
+                        className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-amber-300 font-semibold text-xs"
+                      />
+                    </div>
+
                     <div>
                       <label className="block font-semibold text-slate-300 mb-1 flex items-center justify-between">
                         <span>Mã MD5 Thiết Bị <span className="text-rose-400 ml-1">*</span></span>
@@ -423,6 +445,22 @@ export default function TokenDetailPage() {
                         required
                       />
                     </div>
+                  </div>
+
+                  {/* Test Token Checkbox */}
+                  <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl">
+                    <label className="flex items-center gap-2 cursor-pointer w-max">
+                      <input
+                        type="checkbox"
+                        checked={isTest}
+                        onChange={(e) => setIsTest(e.target.checked)}
+                        className="rounded bg-slate-900 border-slate-800 text-purple-500 focus:ring-purple-500"
+                      />
+                      <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40">TEST</span>
+                        Đánh dấu Token Test [TEST] (Không tính vào thống kê Doanh thu & Token Dashboard)
+                      </span>
+                    </label>
                   </div>
 
                   {/* Change VIP Package Template Selector */}
@@ -693,6 +731,13 @@ export default function TokenDetailPage() {
                   </h3>
 
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Khách Hàng</span>
+                      <span className="font-semibold text-amber-300 truncate block">
+                        {token.customerName || <span className="text-slate-500 font-normal italic">Chưa nhập</span>}
+                      </span>
+                    </div>
+
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Mã MD5 Thiết Bị</span>
                       <span className="font-mono font-bold text-cyan-300 truncate block">

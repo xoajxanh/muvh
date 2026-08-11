@@ -16,6 +16,8 @@ export async function GET(req: NextRequest) {
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  const notTestWhere = { isTest: false, isDeleted: false };
+
   const [
     totalRevenueAgg,
     monthRevenueAgg,
@@ -25,17 +27,17 @@ export async function GET(req: NextRequest) {
     expiredCount,
     recentTokens,
   ] = await Promise.all([
-    prisma.token.aggregate({ _sum: { price: true } }),
+    prisma.token.aggregate({ where: notTestWhere, _sum: { price: true } }),
     prisma.token.aggregate({
-      where: { createdAt: { gte: startOfCurrentMonth } },
+      where: { ...notTestWhere, createdAt: { gte: startOfCurrentMonth } },
       _sum: { price: true },
     }),
-    prisma.token.count(),
-    prisma.token.count({ where: { createdAt: { gte: startOfCurrentMonth } } }),
+    prisma.token.count({ where: notTestWhere }),
+    prisma.token.count({ where: { ...notTestWhere, createdAt: { gte: startOfCurrentMonth } } }),
     prisma.token.count({
-      where: { expireAt: { gte: now, lte: threeDaysLater } },
+      where: { ...notTestWhere, expireAt: { gte: now, lte: threeDaysLater } },
     }),
-    prisma.token.count({ where: { expireAt: { lt: now } } }),
+    prisma.token.count({ where: { ...notTestWhere, expireAt: { lt: now } } }),
     prisma.token.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
@@ -56,11 +58,11 @@ export async function GET(req: NextRequest) {
 
     const [mRevenue, mCount] = await Promise.all([
       prisma.token.aggregate({
-        where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...notTestWhere, createdAt: { gte: startOfMonth, lte: endOfMonth } },
         _sum: { price: true },
       }),
       prisma.token.count({
-        where: { createdAt: { gte: startOfMonth, lte: endOfMonth } },
+        where: { ...notTestWhere, createdAt: { gte: startOfMonth, lte: endOfMonth } },
       }),
     ]);
 

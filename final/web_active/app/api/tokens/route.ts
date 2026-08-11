@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
       { deviceSnMd5: { contains: search.trim() } },
       { characterUid: { contains: search.trim() } },
       { tokenKey: { contains: search.trim() } },
+      { customerName: { contains: search.trim() } },
     ];
   }
 
@@ -91,6 +92,8 @@ export async function POST(req: NextRequest) {
     const {
       deviceSnMd5,
       characterUid,
+      customerName,
+      isTest,
       packageId,
       durationDays,
       fovMin,
@@ -155,6 +158,8 @@ export async function POST(req: NextRequest) {
       data: {
         deviceSnMd5: tokenParams.deviceSnMd5,
         characterUid: tokenParams.characterUid,
+        customerName: customerName ? String(customerName).trim() : null,
+        isTest: Boolean(isTest ?? false),
         packageId: packageId || null,
         durationDays: duration,
         expireAt,
@@ -181,7 +186,8 @@ export async function POST(req: NextRequest) {
     });
 
     // Create Audit Log Note
-    const initialNoteDetail = `Khởi tạo Token mới cho thiết bị [${tokenParams.deviceSnMd5}], UID nhân vật [${tokenParams.characterUid}], thời hạn ${duration} ngày, giá ${Number(price || 0).toLocaleString('vi-VN')} VNĐ.`;
+    const testTag = Boolean(isTest) ? ' [TEST]' : '';
+    const initialNoteDetail = `Khởi tạo Token${testTag} mới cho Khách hàng [${customerName ? customerName.trim() : 'Chưa nhập'}], thiết bị [${tokenParams.deviceSnMd5}], UID nhân vật [${tokenParams.characterUid}], thời hạn ${duration} ngày, giá ${Number(price || 0).toLocaleString('vi-VN')} VNĐ.`;
     await prisma.tokenNote.create({
       data: {
         tokenId: tokenRecord.id,

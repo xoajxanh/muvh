@@ -28,6 +28,8 @@ export default function TokenCreatePage() {
   // Form State
   const [deviceSnMd5, setDeviceSnMd5] = useState('');
   const [characterUid, setCharacterUid] = useState('');
+  const [customerName, setCustomerName] = useState('');
+  const [isTest, setIsTest] = useState(false);
   const [selectedPackageId, setSelectedPackageId] = useState('');
   const [durationDays, setDurationDays] = useState(30);
   const [price, setPrice] = useState(300000);
@@ -164,6 +166,8 @@ export default function TokenCreatePage() {
       const payload = {
         deviceSnMd5: deviceSnMd5.trim(),
         characterUid: characterUid.trim(),
+        customerName: customerName.trim() || null,
+        isTest,
         packageId: isCustom ? null : selectedPackageId,
         durationDays: Number(durationDays),
         fovMin: Number(fovMin),
@@ -253,7 +257,21 @@ export default function TokenCreatePage() {
                   <Key className="w-4 h-4" /> 1. Thông Tin Khách Hàng & Chuyển Nhân Vật
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Khách Hàng */}
+                  <div className="flex flex-col justify-end">
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
+                      Khách Hàng (Tên/Nhân vật)
+                    </label>
+                    <input
+                      type="text"
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      placeholder="Ví dụ: Anh Nam / CharacterX"
+                      className="w-full h-10 px-3 bg-slate-900/90 border border-slate-800 rounded-xl text-xs text-amber-300 font-semibold placeholder-slate-600 focus:outline-none focus:border-cyan-500 transition"
+                    />
+                  </div>
+
                   {/* Device MD5 */}
                   <div className="flex flex-col justify-end">
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
@@ -309,7 +327,7 @@ export default function TokenCreatePage() {
                   {/* Character Reincarnation */}
                   <div className="flex flex-col justify-end">
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
-                      Chuyển Nhân Vật Hiện Tại
+                      Chuyển Nhân Vật
                     </label>
                     <select
                       value={characterReincarnation}
@@ -323,6 +341,22 @@ export default function TokenCreatePage() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Test Token Checkbox */}
+                <div className="pt-3 border-t border-slate-800/80">
+                  <label className="flex items-center gap-2 cursor-pointer w-max">
+                    <input
+                      type="checkbox"
+                      checked={isTest}
+                      onChange={(e) => setIsTest(e.target.checked)}
+                      className="rounded bg-slate-900 border-slate-800 text-purple-500 focus:ring-purple-500"
+                    />
+                    <span className="text-xs font-bold text-purple-300 flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/40">TEST</span>
+                      Đánh dấu Token Test (Không tính vào thống kê Doanh thu & Token Dashboard)
+                    </span>
+                  </label>
                 </div>
               </div>
 
@@ -646,6 +680,13 @@ export default function TokenCreatePage() {
                 </h3>
 
                 <div className="space-y-3 text-xs">
+                  <div className="flex justify-between py-1.5 border-b border-slate-800">
+                    <span className="text-slate-400">Khách Hàng:</span>
+                    <span className="font-semibold text-amber-300 truncate max-w-[150px]">
+                      {customerName || 'Chưa nhập'}
+                    </span>
+                  </div>
+
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
                     <span className="text-slate-400">Thiết bị MD5:</span>
                     <span className="font-mono text-cyan-300 font-bold truncate max-w-[150px]">

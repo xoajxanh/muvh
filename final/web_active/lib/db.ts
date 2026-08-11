@@ -17,6 +17,31 @@ export async function ensureInitialSeed() {
   if (seedExecuted) return;
   seedExecuted = true;
   try {
+    // Safely ensure missing columns exist on live DB without dropping any data
+    try {
+      await prisma.$executeRawUnsafe(`
+        IF NOT EXISTS (
+          SELECT * FROM sys.columns 
+          WHERE object_id = OBJECT_ID(N'[dbo].[Token]') 
+          AND name = 'customerName'
+        )
+        BEGIN
+          ALTER TABLE [dbo].[Token] ADD [customerName] NVARCHAR(255) NULL;
+        END;
+
+        IF NOT EXISTS (
+          SELECT * FROM sys.columns 
+          WHERE object_id = OBJECT_ID(N'[dbo].[Token]') 
+          AND name = 'isTest'
+        )
+        BEGIN
+          ALTER TABLE [dbo].[Token] ADD [isTest] BIT NOT NULL DEFAULT 0;
+        END;
+      `);
+    } catch (migErr) {
+      console.error('Column check warning:', migErr);
+    }
+
     const userCount = await prisma.user.count();
     if (userCount === 0) {
       console.log('Seeding initial Super Admin user...');

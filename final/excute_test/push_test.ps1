@@ -44,7 +44,8 @@ if data[0:4] == b'\x1bLua':
 Write-Host "-> Da patch Header Lua 5.3 32-bit thanh cong!"
 
 # 4. Push to Android
-Write-Host "2. Dang day file input.luac vao thiet bi Android..."
+Write-Host "2. Xoa output.txt cu va day file input.luac vao thiet bi Android..."
+& $adbExe -s emulator-5554 shell "rm -f /storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
 & $adbExe -s emulator-5554 push $tempLuac $androidPath
 
 Write-Host ""

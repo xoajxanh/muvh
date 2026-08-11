@@ -1,40 +1,56 @@
--- ====================================================
--- SCRIPT TEST DEV: RESET ALL SAVED CONFIGS & RE-FETCH FROM SERVER
--- ====================================================
+-- ============================================================================
+-- SCRIPT TEST DỊCH CHUYỂN BẰNG CỔNG MAP CHÍNH (GetTransIdByGroupId)
+-- ============================================================================
+pcall(function()
+    local targetBossId = 10179408 -- Phẫn Nộ
+    local targetMapId = 101094    -- Hoang Dã C3
+    local targetLine = 1
+    local bossName = "Phẫn Nộ C3"
 
--- 1. Reset toàn bộ PlayerPrefs và các mảng bộ nhớ (Mod_AutoFarmBoss_Config, Mod_SmeltConfig...)
-if _G.Mod_ResetSavedModConfigs then
-    _G.Mod_ResetSavedModConfigs()
-else
-    pcall(function()
-        CS.UnityEngine.PlayerPrefs.DeleteAll()
-        CS.UnityEngine.PlayerPrefs.Save()
-    end)
-    _G.Mod_AutoFarmBoss_Config = {}
-    _G.Mod_SmeltConfig = {}
-    _G.Mod_AutoFarmBoss_Target = nil
-end
+    local currentMapId = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+    local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline) or 1
 
--- 2. Đánh dấu reset trạng thái kéo config
-_G.Mod_HasFetchedConfig = false
-_G.Mod_ActiveConfig = nil
+    local logs = {}
+    local function logMsg(str)
+        print("[TEST MAP TRANS] " .. str)
+        table.insert(logs, str)
+        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(str) end
+    end
 
--- 3. Gọi lại API Server để kéo cấu hình mới tinh
-if _G.Mod_FetchRemoteConfig then
-    _G.Mod_FetchRemoteConfig(function(success, config)
-        if success then
-            print("[DEV TEST] Đã kéo và áp dụng Cấu hình mới từ Server thành công!")
-            
-            -- Làm mới lại tất cả giao diện
-            pcall(function()
-                if _G.UpdateBossWatchUIText then _G.UpdateBossWatchUIText() end
-                if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
-                if _G.UpdateTierTabs then _G.UpdateTierTabs() end
-            end)
-        else
-            print("[DEV TEST] Lỗi khi kéo Cấu hình từ Server!")
+    logMsg(string.format("Test dịch chuyển cổng Map chính sang Map %d...", targetMapId))
+
+    -- Lấy Transfer ID cổng chính của Map
+    local mainMapTransId = _G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)
+    logMsg(string.format("Transfer ID Cổng chính Map %d là: %s", targetMapId, tostring(mainMapTransId)))
+
+    if currentMapId ~= targetMapId or currentLine ~= targetLine then
+        logMsg("Đang ở ngoài Map. Phát lệnh dịch chuyển cổng chính Map...")
+        
+        if mainMapTransId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+            _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = mainMapTransId, line = targetLine, changeLine = true })
+            logMsg("Đã gửi tin dịch chuyển cổng Map thành công!")
         end
-    end)
-else
-    print("[DEV TEST] Không tìm thấy hàm Mod_FetchRemoteConfig!")
-end
+    else
+        logMsg("Đã ở trong Map! Đang tìm con Boss sống gần nhất...")
+        local alivePos, aliveCount = nil, 0
+        if _G.GetAliveBossPosition then
+            alivePos, aliveCount = _G.GetAliveBossPosition(targetBossId, targetMapId)
+        end
+        local targetPos = alivePos or (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId)) or {x = 100, y = 100}
+        logMsg(string.format("Chạy bộ tới bãi Boss (%d, %d)...", targetPos.x, targetPos.y))
+        
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+            _G.RoleManager.me:MoveTo({x = targetPos.x, y = targetPos.y}, 0)
+        end
+    end
+
+    local outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+    if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
+        outputPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+    end
+    local f = io.open(outputPath, "w")
+    if f then
+        f:write(table.concat(logs, "\n"))
+        f:close()
+    end
+end)

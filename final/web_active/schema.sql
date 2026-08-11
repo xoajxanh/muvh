@@ -61,6 +61,8 @@ BEGIN
         [adminTelegrams] NVARCHAR(MAX) NOT NULL DEFAULT '["@admin1", "@admin2"]',
         [price] FLOAT NOT NULL DEFAULT 0,
         [isCustom] BIT NOT NULL DEFAULT 0,
+        [customerName] NVARCHAR(255) NULL,
+        [isTest] BIT NOT NULL DEFAULT 0,
         [encryptedToken] NVARCHAR(MAX) NOT NULL,
         [createdById] NVARCHAR(100) NOT NULL,
         [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),

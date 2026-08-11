@@ -165,32 +165,45 @@ export default function TokensPage() {
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
   const getStatusBadge = (tok: any) => {
+    let mainBadge;
     if (tok.isDeleted) {
-      return (
+      mainBadge = (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40 flex items-center gap-1 w-max">
           <Ban className="w-3 h-3 text-rose-400" /> ĐÃ XÓA (SALE)
         </span>
       );
+    } else {
+      const exp = new Date(tok.expireAt);
+      if (exp < now) {
+        mainBadge = (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1 w-max">
+            <Clock className="w-3 h-3" /> HẾT HẠN
+          </span>
+        );
+      } else if (exp <= threeDaysLater) {
+        mainBadge = (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 w-max animate-pulse">
+            <AlertTriangle className="w-3 h-3" /> SẮP HẾT HẠN
+          </span>
+        );
+      } else {
+        mainBadge = (
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 w-max">
+            <CheckCircle2 className="w-3 h-3" /> HOẠT ĐỘNG
+          </span>
+        );
+      }
     }
-    const exp = new Date(tok.expireAt);
-    if (exp < now) {
-      return (
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1 w-max">
-          <Clock className="w-3 h-3" /> HẾT HẠN
-        </span>
-      );
-    }
-    if (exp <= threeDaysLater) {
-      return (
-        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1 w-max animate-pulse">
-          <AlertTriangle className="w-3 h-3" /> SẮP HẾT HẠN
-        </span>
-      );
-    }
+
     return (
-      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1 w-max">
-        <CheckCircle2 className="w-3 h-3" /> HOẠT ĐỘNG
-      </span>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {mainBadge}
+        {tok.isTest && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 tracking-wider">
+            [TEST]
+          </span>
+        )}
+      </div>
     );
   };
 
@@ -244,7 +257,7 @@ export default function TokensPage() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Tìm theo Mã MD5, UID nhân vật hoặc Key..."
+                placeholder="Tìm theo Khách hàng, Mã MD5, UID nhân vật hoặc Key..."
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-xs transition"
               />
             </form>
@@ -279,6 +292,7 @@ export default function TokensPage() {
                   <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px]">
                     <tr>
                       <th className="py-3.5 px-4">Trạng Thái</th>
+                      <th className="py-3.5 px-4">Khách Hàng</th>
                       <th className="py-3.5 px-4">Mã Thiết Bị (MD5)</th>
                       <th className="py-3.5 px-4">UID Nhân Vật</th>
                       <th className="py-3.5 px-4">Gói VIP / Loại</th>
@@ -298,6 +312,9 @@ export default function TokensPage() {
                           className="hover:bg-slate-800/50 cursor-pointer transition"
                         >
                           <td className="py-3.5 px-4">{getStatusBadge(tok)}</td>
+                          <td className="py-3.5 px-4 font-semibold text-amber-300">
+                            {tok.customerName || <span className="text-slate-500 font-normal italic">Chưa nhập</span>}
+                          </td>
                           <td className="py-3.5 px-4 font-mono font-bold text-cyan-300">
                             {tok.deviceSnMd5}
                           </td>

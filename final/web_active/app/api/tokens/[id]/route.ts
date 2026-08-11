@@ -71,6 +71,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const {
       deviceSnMd5,
       characterUid,
+      customerName,
+      isTest,
       packageId,
       durationDays,
       fovMin,
@@ -142,6 +144,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       data: {
         deviceSnMd5: updatedParams.deviceSnMd5,
         characterUid: updatedParams.characterUid,
+        customerName: customerName !== undefined ? (customerName ? String(customerName).trim() : null) : existingToken.customerName,
+        isTest: isTest !== undefined ? Boolean(isTest) : existingToken.isTest,
         packageId: packageId !== undefined ? packageId : existingToken.packageId,
         durationDays: updatedParams.durationDays,
         expireAt,

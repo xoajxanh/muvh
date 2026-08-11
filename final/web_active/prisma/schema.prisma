@@ -67,6 +67,8 @@ model Token {
   adminTelegrams          String      @default("[\"@admin1\", \"@admin2\"]")
   price                   Float       @default(0)
   isCustom                Boolean     @default(false)
+  customerName            String?
+  isTest                  Boolean     @default(false)
   isDeleted               Boolean     @default(false)
   deletedAt               DateTime?
   encryptedToken          String      @db.NVarChar(Max)
