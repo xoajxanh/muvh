@@ -287,13 +287,21 @@ local function Mod_ApplyConfig(config)
     _G.Mod_SmeltConfig = {}
     _G.Mod_AutoFarmBoss_Target = nil
 
-    if config.character_reincarnation then
-        local reb = tonumber(config.character_reincarnation)
-        if reb and reb >= 3 and reb <= 12 then
-            _G.Mod_Config_CurrentRebirth = reb
-            _G.ModBossTab = "C" .. tostring(reb)
-            _G.ModAutoBossConfigTab = "C" .. tostring(reb)
-        end
+    local reincPrimary = tonumber(config.character_reincarnation_primary) 
+                        or tonumber(config.character_reincarnation) 
+                        or _G.Mod_Config_CurrentRebirth 
+                        or 8
+    local reincSecondary = tonumber(config.character_reincarnation_secondary) 
+                          or (reincPrimary > 1 and (reincPrimary - 1) or 1)
+
+    if reincPrimary and reincPrimary >= 3 and reincPrimary <= 12 then
+        _G.Mod_Config_Reincarnation_Primary = reincPrimary
+        _G.Mod_Config_CurrentRebirth = reincPrimary
+        _G.ModBossTab = "C" .. tostring(reincPrimary)
+        _G.ModAutoBossConfigTab = "C" .. tostring(reincPrimary)
+    end
+    if reincSecondary and reincSecondary >= 1 and reincSecondary <= 12 then
+        _G.Mod_Config_Reincarnation_Secondary = reincSecondary
     end
 
     if _G.RunSpeedMultiplier and _G.Mod_Config_MaxMoveSpeed then
@@ -1416,26 +1424,33 @@ local function CreateModUI()
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
 
         local function GetAvailableTiers()
-            local N = GetPlayerReincarnationLevel()
+            local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
+            local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
+            
             local tiers = {}
-            local prevTier = N - 1
-            if prevTier >= 3 then
-                table.insert(tiers, "C" .. tostring(prevTier))
+            if s >= 3 and s <= 12 then
+                table.insert(tiers, "C" .. tostring(s))
             end
-            table.insert(tiers, "C" .. tostring(N))
+            if p >= 3 and p <= 12 and p ~= s then
+                table.insert(tiers, "C" .. tostring(p))
+            end
+            if #tiers == 0 then
+                table.insert(tiers, "C" .. tostring(p))
+            end
             return tiers
         end
         _G.GetAvailableTiers = GetAvailableTiers
 
         local function GetKundunTiers()
-            local N = GetPlayerReincarnationLevel()
+            local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
+            local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
+            
             local tiers = {}
-            local prevTier = N - 1
-            if prevTier >= 4 then
-                table.insert(tiers, "C" .. tostring(prevTier))
+            if s >= 4 then
+                table.insert(tiers, "C" .. tostring(s))
             end
-            if N >= 4 then
-                table.insert(tiers, "C" .. tostring(N))
+            if p >= 4 and p ~= s then
+                table.insert(tiers, "C" .. tostring(p))
             end
             return tiers
         end
@@ -3014,19 +3029,6 @@ _G.Mod_MapsConfig_c12 = {
                 return
             end
             
-            local foundBoss = false
-            local isHighHp = false
-            
-            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                local monsterRoles = _G.RoleManager.GetRolesByType(2)
-                if monsterRoles then
-                    for lid, role in pairs(monsterRoles) do
-                        local d = role.data
-                        local mId = d and (d.configId or d.monsterId or d.templateId) or "none"
-                        
-                        local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
-                        local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
-                        
             -- Kiểm tra khoảng cách thực tế ô lưới hoặc sự kiện OnArrive của game
             local px, py = nil, nil
             if _G.RoleManager and _G.RoleManager.me then
