@@ -1371,18 +1371,19 @@ local function CreateModUI()
                         local shouldSmelt = false
 
                         -- 1. Cấu hình Tách Đồ Trác Việt (Ring_C6..C8, Necklace_C6..C8, Earring_C6..C8)
-                        if subType == 18 and quality >= 5 then
-                            if tier == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
-                            elseif tier == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
-                            elseif tier == 8 and _G.Mod_SmeltConfig.Ring_C8 then shouldSmelt = true end
-                        elseif subType == 19 and quality >= 5 then
-                            if tier == 6 and _G.Mod_SmeltConfig.Necklace_C6 then shouldSmelt = true
-                            elseif tier == 7 and _G.Mod_SmeltConfig.Necklace_C7 then shouldSmelt = true
-                            elseif tier == 8 and _G.Mod_SmeltConfig.Necklace_C8 then shouldSmelt = true end
-                        elseif subType == 26 and quality >= 5 then
-                            if tier == 6 and _G.Mod_SmeltConfig.Earring_C6 then shouldSmelt = true
-                            elseif tier == 7 and _G.Mod_SmeltConfig.Earring_C7 then shouldSmelt = true
-                            elseif tier == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
+                        -- quality chính là Chuyển (6, 7, 8)
+                        if subType == 18 then
+                            if quality == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
+                            elseif quality == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
+                            elseif quality == 8 and _G.Mod_SmeltConfig.Ring_C8 then shouldSmelt = true end
+                        elseif subType == 19 then
+                            if quality == 6 and _G.Mod_SmeltConfig.Necklace_C6 then shouldSmelt = true
+                            elseif quality == 7 and _G.Mod_SmeltConfig.Necklace_C7 then shouldSmelt = true
+                            elseif quality == 8 and _G.Mod_SmeltConfig.Necklace_C8 then shouldSmelt = true end
+                        elseif subType == 26 then
+                            if quality == 6 and _G.Mod_SmeltConfig.Earring_C6 then shouldSmelt = true
+                            elseif quality == 7 and _G.Mod_SmeltConfig.Earring_C7 then shouldSmelt = true
+                            elseif quality == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
                         end
 
                         -- 2. Cấu hình Tách Đồ Bộ theo SubType & Tier (C6..C9) (Không áp dụng cho Trang Sức Trác Việt 18, 19, 26)
@@ -2090,20 +2091,20 @@ local function CreateModUI()
                                     end
                                     isStillReturning, isChangingMap = true, false
                                 else
-                                    local hasArrived = (dist <= 7)
+                                    local hasArrived = (dist <= 1.5)
                                     
                                     if not hasArrived then
-                                        if pMe then
-                                            if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
-                                                if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
-                                            end
-                                            if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
-                                                if pMe.SetAutoFight then pMe:SetAutoFight("None") end
-                                            end
-                                        end
-                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                            _G.QiJiHelperData.SetAutoFightData(false)
-                                        end
+                                        -- if pMe then
+                                        --     if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
+                                        --         if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
+                                        --     end
+                                        --     if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
+                                        --         if pMe.SetAutoFight then pMe:SetAutoFight("None") end
+                                        --     end
+                                        -- end
+                                        -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                        --     _G.QiJiHelperData.SetAutoFightData(false)
+                                        -- end
                                         
                                         local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
                                         if not _G.Mod_IsMovingToTrainPos or not isMoving then
@@ -2320,8 +2321,8 @@ local function CreateModUI()
                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                     LogMsg("Đủ điều kiện, Bật Auto Fight")
                 else
-                    LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 1 phút")
-                    _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
+                    LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 6 phút")
+                    _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 360
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_State = 1
                     _G.Mod_AutoFarmBoss_TargetWait = 0
