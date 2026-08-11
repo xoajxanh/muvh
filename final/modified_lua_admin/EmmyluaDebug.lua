@@ -1300,21 +1300,23 @@ local function CreateModUI()
                     return true -- Không dính dòng rác diệt quái -> Dòng ngon!
                 end
                 
-                -- Nhóm 3: Dây chuyền (36, 19), Nhẫn trái (35, 18), Nhẫn phải (38)
-                if subType == 36 or subType == 35 or subType == 38 or subType == 18 or subType == 19 then
+                -- Nhóm 3: Dây chuyền (36), Nhẫn trái (35), Nhẫn phải (38)
+                if subType == 36 or subType == 35 or subType == 38 then
                     local hasGood = false
                     for _, des in ipairs(excDesList) do
-                        if string.find(des, "Công Tốc") or string.find(des, "Tấn công") then
+                        local isCap = string.find(des, "cấp/20") or string.find(des, "cấp")
+                        local isGoodLine = (string.find(des, "Công Tốc") or string.find(des, "Tấn công")) and not isCap
+                        if isGoodLine then
                             hasGood = true
                         else
-                            return false -- Dính dòng khác ngoài 2 dòng này -> Không đạt
+                            return false -- Dính dòng +cấp/20 hoặc dòng rác khác -> Không đạt (Đem đi tách)
                         end
                     end
                     return hasGood
                 end
                 
-                -- Nhóm 4: Khuyên trái (34, 26), Khuyên phải (37)
-                if subType == 34 or subType == 37 or subType == 26 then
+                -- Nhóm 4: Khuyên trái (34), Khuyên phải (37)
+                if subType == 34 or subType == 37 then
                     local hasGood = false
                     for _, des in ipairs(excDesList) do
                         if string.find(des, "Phòng Ngự") or string.find(des, "Phản DMG") or string.find(des, "Phản") then
@@ -1353,10 +1355,10 @@ local function CreateModUI()
                         tblEquip = tblEquip or {}
 
                         local prefix = nil
-                        if subType == 18 or subType == 35 then prefix = "RingL"
+                        if subType == 35 then prefix = "RingL"
                         elseif subType == 38 then prefix = "RingR"
-                        elseif subType == 19 or subType == 36 then prefix = "Necklace2"
-                        elseif subType == 26 or subType == 34 then prefix = "EarringL"
+                        elseif subType == 36 then prefix = "Necklace2"
+                        elseif subType == 34 then prefix = "EarringL"
                         elseif subType == 37 then prefix = "EarringR"
                         elseif subType == 113 then prefix = "Hat"
                         elseif subType == 114 then prefix = "Armor"
@@ -1368,7 +1370,7 @@ local function CreateModUI()
                         
                         local shouldSmelt = false
 
-                        -- 1. Cấu hình Tách cũ (Ring_C6..C8, Necklace_C6..C8, Earring_C6..C8)
+                        -- 1. Cấu hình Tách Đồ Trác Việt (Ring_C6..C8, Necklace_C6..C8, Earring_C6..C8)
                         if subType == 18 and quality >= 5 then
                             if tier == 6 and _G.Mod_SmeltConfig.Ring_C6 then shouldSmelt = true
                             elseif tier == 7 and _G.Mod_SmeltConfig.Ring_C7 then shouldSmelt = true
@@ -1383,7 +1385,7 @@ local function CreateModUI()
                             elseif tier == 8 and _G.Mod_SmeltConfig.Earring_C8 then shouldSmelt = true end
                         end
 
-                        -- 2. Cấu hình Tách mới theo SubType & Tier (C6..C9)
+                        -- 2. Cấu hình Tách Đồ Bộ theo SubType & Tier (C6..C9) (Không áp dụng cho Trang Sức Trác Việt 18, 19, 26)
                         if prefix and tier >= 6 and tier <= 9 then
                             local varName = prefix .. "_C" .. tostring(tier)
                             if _G.Mod_SmeltConfig[varName] then
@@ -1391,8 +1393,9 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 3. Bộ lọc [Giữ dòng Ngon]
-                        if shouldSmelt and tier >= 6 and tier <= 9 then
+                        -- 3. Bộ lọc [Giữ dòng Ngon] (Chỉ áp dụng cho Đồ Bộ, KHÔNG áp dụng cho Trang Sức Trác Việt 18, 19, 26)
+                        local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
+                        if shouldSmelt and not isJewelryTracViet and tier >= 6 and tier <= 9 then
                             local keepGoodVar = "KeepGood_C" .. tostring(tier)
                             if _G.Mod_SmeltConfig[keepGoodVar] then
                                 local excDesList = {}
@@ -1909,7 +1912,7 @@ local function CreateModUI()
                                             local deadList = bossData.deadTimes[lineNum] or {}
                                             if not isAlive and #deadList > 0 then
                                                 local rt = deadList[1]
-                                                if rt <= currentSec + 60 then
+                                                if rt <= currentSec + 30 then
                                                     bestLine = lineNum
                                                     respawnWait = rt - currentSec
                                                     break
@@ -2087,7 +2090,7 @@ local function CreateModUI()
                                     end
                                     isStillReturning, isChangingMap = true, false
                                 else
-                                    local hasArrived = (dist <= 1.5)
+                                    local hasArrived = (dist <= 7)
                                     
                                     if not hasArrived then
                                         if pMe then
@@ -2149,7 +2152,7 @@ local function CreateModUI()
             if bestBoss then
                 _G.Mod_AutoFarmBoss_Target = bestBoss
                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                if bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 30) then
+                if bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 3) then
                     LogMsg(string.format("Bắt đầu săn: %s (Map: %s)", bestBoss.cfg.name, GetMapName(bestBoss.mapCfg.mapId)))
                     _G.Mod_AutoFarmBoss_Target = bestBoss
                     if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
