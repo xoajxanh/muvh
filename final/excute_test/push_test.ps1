@@ -45,7 +45,7 @@ Write-Host "-> Da patch Header Lua 5.3 32-bit thanh cong!"
 
 # 4. Push to Android
 Write-Host "2. Dang day file input.luac vao thiet bi Android..."
-& $adbExe -s emulator-5554 push $tempLuac $androidPath
+& $adbExe -s emulator-5556 push $tempLuac $androidPath
 
 Write-Host ""
 Write-Host "HOAN TAT! Bay gio ban hay bam [ EXECUTE SCRIPT ] trong game." -ForegroundColor Green
@@ -54,7 +54,7 @@ Pause
 
 # 5. Pull output
 Write-Host "Dang lay output.txt ve..."
-& $adbExe -s emulator-5554 pull "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt" "$testDir\output.txt"
+& $adbExe -s emulator-5556 pull "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt" "$testDir\output.txt"
 
 Write-Host "XONG! Hay mo file output.txt de xem ket qua." -ForegroundColor Green
 Pause

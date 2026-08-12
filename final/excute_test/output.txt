@@ -1,277 +1,208 @@
 === SUCCESS ===
 
 [LOGS]:
-=== DỰNG CÂU LỆNH KIỂM TRA TRANG BỊ TÚI ĐỒ ===	
---- DANH SÁCH TOÀN BỘ TRANG BỊ TRONG TÚI ---	
-[1] Tim Hỏa Long | ID:54010201 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[2] Rương Vàng+3 | ID:35000002 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[3] Rương Vàng+7 | ID:35000004 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[4] Rương Vàng+7 | ID:35000004 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[5] Rương Vàng+7 | ID:35000004 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[6] Rương Vàng+7 | ID:35000004 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[7] Rương Vàng+7 | ID:35000004 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[8] Rương Vàng+4 | ID:35000006 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[9] Rương Vàng+6 | ID:35000007 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[10] Rương Vàng+8 | ID:35000008 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[11] Rương Vàng+8 | ID:35000008 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[12] Gói Bổ Sung Lực Chiến | ID:52206063 | type:5 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[13] Mảnh Tù Và | ID:6015003 | type:6 | subType:612 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[14] Mảnh Tù Và | ID:6015004 | type:6 | subType:612 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[15] Đá Cường Hóa Bộ | ID:6016011 | type:6 | subType:613 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[16] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 1 [Phòng Cụ] | ID:31002080 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[17] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 2 [Phòng Cụ] | ID:31002081 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[18] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 3 [Phòng Cụ] | ID:31002082 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[19] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 4 [Phòng Cụ] | ID:31002083 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[20] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 1 [Vũ Khí] | ID:31002089 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[21] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 2 [Vũ Khí] | ID:31002090 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[22] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 3 [Vũ Khí] | ID:31002091 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[23] Bản Vẽ Đại Thiên Sứ Chúc Phúc Bậc 4 [Vũ Khí] | ID:31002092 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[24] Thép Thiên Giới | ID:31102002 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[25] Mảnh Thiên Sứ Thánh Khiết | ID:31102008 | type:6 | subType:607 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[26] Kết Tinh Hỏa Huỳnh Thạch | ID:6003101 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[27] Kết Tinh Thủy Huỳnh Thạch | ID:6003111 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[28] Kết Tinh Băng Huỳnh Thạch | ID:6003121 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[29] Đá HP Phù Hiệu | ID:6004001 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[30] Đá Thủ Phù Hiệu | ID:6004011 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[31] Đá Công Phù Hiệu | ID:6004021 | type:6 | subType:609 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[32] Tinh Thạch Thiên Sứ Thủ Hộ | ID:6009001 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[33] Tinh Thạch Thiên Sứ Thủ Hộ | ID:6009002 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[34] Tinh Thạch Ác Ma Nhỏ | ID:6010001 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[35] Tinh Thạch Ác Ma Nhỏ | ID:6010002 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[36] Tinh Thạch Gấu Trúc | ID:6011001 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[37] Tinh Thạch Gấu Trúc | ID:6011002 | type:6 | subType:614 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[38] Phù Văn Đỏ Lv1 | ID:190100001 | type:28 | subType:2801 | eqSubType:2801 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[39] Phù Văn Đỏ Lv2 | ID:190100002 | type:28 | subType:2801 | eqSubType:2801 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[40] Phù Văn Đỏ Lv3 | ID:190100003 | type:28 | subType:2801 | eqSubType:2801 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[41] Phù Văn Đỏ Lv4 | ID:190100004 | type:28 | subType:2801 | eqSubType:2801 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[42] Phù Văn Lục Lv1 | ID:190300001 | type:28 | subType:2803 | eqSubType:2803 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[43] Phù Văn Lục Lv2 | ID:190300002 | type:28 | subType:2803 | eqSubType:2803 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[44] Phù Văn Lục Lv4 | ID:190300004 | type:28 | subType:2803 | eqSubType:2803 | route:Sphere_03 | pos: | C0 | Prefix:nil | Ex: Không có dòng TV	
-[45] Thuốc EXP Bậc Thầy | ID:3003001 | type:3 | subType:306 | eqSubType:0 | route:nil | pos:nil | C7 | Prefix:nil | Ex: Không có dòng TV	
-[46] Thuốc EXP Bậc Thầy | ID:3003001 | type:3 | subType:306 | eqSubType:0 | route:nil | pos:nil | C7 | Prefix:nil | Ex: Không có dòng TV	
-[47] Đá May Mắn Trang Sức Trưởng Thành Bậc 4 | ID:6002715 | type:6 | subType:608 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[48] Đá May Mắn Trang Sức Trưởng Thành Bậc 5 | ID:6002716 | type:6 | subType:608 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[49] Đá May Mắn Trang Sức Trưởng Thành Bậc 5 | ID:6002716 | type:6 | subType:608 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[50] Đá May Mắn Trang Sức Trưởng Thành Bậc 6 | ID:6002717 | type:6 | subType:608 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[51] Đá May Mắn Trang Sức Trưởng Thành Bậc 7 | ID:6002718 | type:6 | subType:608 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[52] Đá May Mắn Vũ Khí Bộ [Chuyển 5] | ID:260026050 | type:20 | subType:7 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[53] Đá May Mắn Vũ Khí Bộ [Chuyển 5] | ID:260026051 | type:20 | subType:7 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[54] Đá May Mắn Vũ Khí Bộ [Chuyển 6] | ID:260026061 | type:20 | subType:7 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[55] Đá May Mắn Vũ Khí Bộ [Chuyển 7] | ID:260026071 | type:20 | subType:7 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[56] Đá May Mắn Trang Phục Bộ [Chuyển 5] | ID:260027051 | type:20 | subType:8 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[57] Đá May Mắn Trang Phục Bộ [Chuyển 6] | ID:260027061 | type:20 | subType:8 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[58] Đá May Mắn Trang Phục Bộ [Chuyển 7] | ID:260027071 | type:20 | subType:8 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[59] Đá May Mắn Phòng Cụ Bộ [Chuyển 5] | ID:260028051 | type:20 | subType:9 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[60] Đá May Mắn Phòng Cụ Bộ [Chuyển 6] | ID:260028061 | type:20 | subType:9 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[61] Đá May Mắn Phòng Cụ Bộ [Chuyển 7] | ID:260028071 | type:20 | subType:9 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[62] Đá May Mắn Trang Sức Chuyển Sinh [Chuyển 4] | ID:260031041 | type:20 | subType:5 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[63] Đá May Mắn Trang Sức Chuyển Sinh [Chuyển 5] | ID:260031050 | type:20 | subType:5 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[64] Đá May Mắn Trang Sức Chuyển Sinh [Chuyển 6] | ID:260031061 | type:20 | subType:5 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[65] Đá May Mắn Trang Sức Chuyển Sinh [Chuyển 7] | ID:260031071 | type:20 | subType:5 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[66] Thẻ Buff EXP | ID:3000400 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[67] Thẻ Buff EXP | ID:3000400 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[68] Cờ Triệu Hồi Guild | ID:3000402 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[69] Lôi Minh-Hỏa Nhẫn | ID:2180165 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002001 | C5 | Prefix:nil | Ex: Tấn công +cấp/20.0, MP tăng khi diệt quái +10	
-[70] Lôi Minh-Hỏa Nhẫn | ID:2180165 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002001 | C5 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Tấn công +1.0%	
-[71] Lôi Minh-Hỏa Nhẫn | ID:2180165 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002001 | C5 | Prefix:nil | Ex: Công Tốc +2, Tấn công +cấp/20.0	
-[72] Lôi Minh-Hỏa Nhẫn | ID:2180165 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002001 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Công Tốc +2	
-[73] Lôi Minh-Băng Nhẫn | ID:2180185 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002003 | C5 | Prefix:nil | Ex: Tấn công +1.0%, Tỷ lệ Đòn Trác Việt +3.0%	
-[74] Lôi Minh-Băng Nhẫn | ID:2180185 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002003 | C5 | Prefix:nil | Ex: Tấn công +1.0%, HP tăng khi diệt quái +10	
-[75] Lôi Minh-Băng Nhẫn | ID:2180185 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002003 | C5 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Công Tốc +2	
-[76] Lôi Minh-Phong Nhẫn | ID:2180195 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002004 | C5 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%	
-[77] Lôi Minh-Phong Nhẫn | ID:2180195 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002004 | C5 | Prefix:nil | Ex: HP tăng khi diệt quái +10	
-[78] Lôi Minh-Thủy Nhẫn | ID:2180205 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002005 | C5 | Prefix:nil | Ex: Tấn công +cấp/20.0	
-[79] Lôi Minh-Địa Nhẫn | ID:2180215 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C5 | Prefix:nil | Ex: Tấn công +cấp/20.0, HP tăng khi diệt quái +10	
-[80] Lôi Minh-Địa Nhẫn | ID:2180215 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C5 | Prefix:nil | Ex: Công Tốc +2, HP tăng khi diệt quái +10	
-[81] Lôi Minh-Địa Nhẫn | ID:2180215 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C5 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%, MP tăng khi diệt quái +10	
-[82] Lôi Minh-Địa Nhẫn | ID:2180215 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C5 | Prefix:nil | Ex: Công Tốc +2, Tấn công +1.0%	
-[83] Lôi Minh-Địa Nhẫn | ID:2180215 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C5 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%	
-[84] Lôi Minh-Dây Chuyền Lửa | ID:2190106 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001001 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Tấn công +1.0%	
-[85] Lôi Minh-Dây Chuyền Sấm | ID:2190206 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001002 | C5 | Prefix:nil | Ex: Công Tốc +2	
-[86] Lôi Minh-Dây Chuyền Sấm | ID:2190206 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001002 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Công Tốc +2	
-[87] Lôi Minh-Dây Chuyền Sấm | ID:2190206 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001002 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Tấn công +cấp/20.0	
-[88] Lôi Minh-Dây Chuyền Sấm | ID:2190206 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001002 | C5 | Prefix:nil | Ex: Tấn công +1.0%	
-[89] Lôi Minh-Dây Chuyền Băng | ID:2190306 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C5 | Prefix:nil | Ex: Tấn công +cấp/20.0, MP tăng khi diệt quái +10	
-[90] Lôi Minh-Dây Chuyền Băng | ID:2190306 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Công Tốc +2	
-[91] Lôi Minh-Dây Chuyền Băng | ID:2190306 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Tấn công +cấp/20.0	
-[92] Lôi Minh-Dây Chuyền Gió | ID:2190406 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001004 | C5 | Prefix:nil | Ex: HP tăng khi diệt quái +10, MP tăng khi diệt quái +10	
-[93] Lôi Minh-Dây Chuyền Gió | ID:2190406 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001004 | C5 | Prefix:nil | Ex: MP tăng khi diệt quái +10, HP tăng khi diệt quái +10	
-[94] Lôi Minh-Dây Chuyền Nước | ID:2190506 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001005 | C5 | Prefix:nil | Ex: HP tăng khi diệt quái +10	
-[95] Lôi Minh-Dây Chuyền Nước | ID:2190506 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001005 | C5 | Prefix:nil | Ex: Tấn công +cấp/20.0, MP tăng khi diệt quái +10	
-[96] Lôi Minh-Khuyên Lửa | ID:2260106 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003001 | C5 | Prefix:nil | Ex: HP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[97] Lôi Minh-Khuyên Lửa | ID:2260206 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003002 | C5 | Prefix:nil | Ex: Sát thương giảm +2.0%, Phản DMG +4.0%	
-[98] Lôi Minh-Khuyên Lửa | ID:2260206 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003002 | C5 | Prefix:nil | Ex: Tỉ lệ Vàng tăng khi diệt quái +5.0%, Sát thương giảm +2.0%	
-[99] Lôi Minh-Khuyên Băng | ID:2260306 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C5 | Prefix:nil | Ex: Tỉ lệ Phòng Ngự thành công +5.0%, Phản DMG +4.0%	
-[100] Lôi Minh-Khuyên Băng | ID:2260306 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C5 | Prefix:nil | Ex: HP tối đa +3.0%	
-[101] Lôi Minh-Khuyên Băng | ID:2260306 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C5 | Prefix:nil | Ex: Tỉ lệ Vàng tăng khi diệt quái +5.0%, MP tối đa +3.0%	
-[102] Lôi Minh-Khuyên Gió | ID:2260406 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C5 | Prefix:nil | Ex: Tỉ lệ Vàng tăng khi diệt quái +5.0%, MP tối đa +3.0%	
-[103] Lôi Minh-Khuyên Gió | ID:2260406 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C5 | Prefix:nil | Ex: Tỉ lệ Phòng Ngự thành công +5.0%, HP tối đa +3.0%	
-[104] Lôi Minh-Khuyên Gió | ID:2260406 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C5 | Prefix:nil | Ex: MP tối đa +3.0%	
-[105] Lôi Minh-Khuyên Nước | ID:2260506 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003005 | C5 | Prefix:nil | Ex: MP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[106] Lôi Minh-Khuyên Đất | ID:2260606 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C5 | Prefix:nil | Ex: HP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[107] Lôi Minh-Khuyên Đất | ID:2260606 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C5 | Prefix:nil | Ex: MP tối đa +3.0%, Phản DMG +4.0%	
-[108] Lôi Minh-Khuyên Đất | ID:2260606 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C5 | Prefix:nil | Ex: Phản DMG +4.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[109] Lôi Minh-Khuyên Đất | ID:2260606 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C5 | Prefix:nil | Ex: MP tối đa +3.0%	
-[110] Hồng Yên-Nhẫn Sấm | ID:2180174 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002002 | C4 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%, MP tăng khi diệt quái +10	
-[111] Hồng Yên-Khuyên Đất | ID:2260605 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C4 | Prefix:nil | Ex: Tỉ lệ Phòng Ngự thành công +5.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[112] Đá Cường Hóa Bộ | ID:6016011 | type:6 | subType:613 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[113] Khuyên Freyr Hắc Ám (Trái) | ID:2340007 | type:2 | subType:34 | eqSubType:34 | route:Earrings | pos:3513 | C7 | Prefix:EarringL | Ex: Tỉ lệ Phòng Ngự thành công +4.0%	
-[114] Khuyên Freyr Hắc Ám (Trái) | ID:2340007 | type:2 | subType:34 | eqSubType:34 | route:Earrings | pos:3513 | C7 | Prefix:EarringL | Ex: Tỉ lệ Phòng Ngự thành công +4.0%	
-[115] Hàn Sương-Lôi Nhẫn | ID:2180173 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002002 | C3 | Prefix:nil | Ex: MP tăng khi diệt quái +10, Tấn công +cấp/20.0	
-[116] Hàn Sương-Lôi Nhẫn | ID:2180173 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002002 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Công Tốc +2	
-[117] Hàn Sương-Băng Nhẫn | ID:2180183 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002003 | C3 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%, Tấn công +cấp/20.0	
-[118] Hàn Sương-Phong Nhẫn | ID:2180193 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002004 | C3 | Prefix:nil | Ex: MP tăng khi diệt quái +10	
-[119] Hàn Sương-Thủy Nhẫn | ID:2180203 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002005 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, MP tăng khi diệt quái +10	
-[120] Hàn Sương-Địa Nhẫn | ID:2180213 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, MP tăng khi diệt quái +10	
-[121] Hàn Sương-Địa Nhẫn | ID:2180213 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, MP tăng khi diệt quái +10	
-[122] Hàn Sương-Dây Chuyền Băng | ID:2190304 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C3 | Prefix:nil | Ex: Tấn công +1.0%, Tấn công +cấp/20.0	
-[123] Hàn Sương-Dây Chuyền Băng | ID:2190304 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C3 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%	
-[124] Hàn Sương-Dây Chuyền Gió | ID:2190404 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001004 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Tấn công +cấp/20.0	
-[125] Hàn Sương-Dây Chuyền Gió | ID:2190404 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001004 | C3 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Tỷ lệ Đòn Trác Việt +3.0%	
-[126] Hàn Sương-Dây Chuyền Đất | ID:2190604 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001006 | C3 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%, Tấn công +1.0%	
-[127] Hàn Sương-Khuyên Đất | ID:2260604 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C3 | Prefix:nil | Ex: MP tối đa +3.0%, Sát thương giảm +2.0%	
-[128] Vực Sâu-Lôi Nhẫn | ID:2180172 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002002 | C2 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Tấn công +cấp/20.0	
-[129] Vực Sâu-Địa Nhẫn | ID:2180212 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C2 | Prefix:nil | Ex: Tấn công +cấp/20.0, MP tăng khi diệt quái +10	
-[130] Vực Sâu-Dây Chuyền Băng | ID:2190303 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001003 | C2 | Prefix:nil | Ex: HP tăng khi diệt quái +10, MP tăng khi diệt quái +10	
-[131] Vực Sâu-Dây Chuyền Đất | ID:2190603 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001006 | C2 | Prefix:nil | Ex: MP tăng khi diệt quái +10	
-[132] Vực Sâu-Khuyên Lửa | ID:2260203 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003002 | C2 | Prefix:nil | Ex: MP tối đa +3.0%, Phản DMG +4.0%	
-[133] Vực Sâu-Khuyên Lửa | ID:2260203 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003002 | C2 | Prefix:nil | Ex: Sát thương giảm +2.0%, MP tối đa +3.0%	
-[134] Vực Sâu-Khuyên Băng | ID:2260303 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C2 | Prefix:nil | Ex: HP tối đa +3.0%, Sát thương giảm +2.0%	
-[135] Vực Sâu-Khuyên Băng | ID:2260303 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C2 | Prefix:nil | Ex: MP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[136] Vực Sâu-Khuyên Gió | ID:2260403 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C2 | Prefix:nil | Ex: HP tối đa +3.0%, Sát thương giảm +2.0%	
-[137] Vực Sâu-Khuyên Nước | ID:2260503 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003005 | C2 | Prefix:nil | Ex: Tỉ lệ Vàng tăng khi diệt quái +5.0%, Tỉ lệ Phòng Ngự thành công +5.0%	
-[138] Vực Sâu-Khuyên Đất | ID:2260603 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C2 | Prefix:nil | Ex: MP tối đa +3.0%	
-[139] Man Hoang-Địa Nhẫn | ID:2180211 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C1 | Prefix:nil | Ex: Tấn công +1.0%	
-[140] Man Hoang-Địa Nhẫn | ID:2180211 | type:2 | subType:18 | eqSubType:18 | route:Ring | pos:1002006 | C1 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +3.0%, HP tăng khi diệt quái +10	
-[141] Man Hoang-Dây Chuyền Lửa | ID:2190102 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001001 | C1 | Prefix:nil | Ex: MP tăng khi diệt quái +10	
-[142] Man Hoang-Dây Chuyền Gió | ID:2190402 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001004 | C1 | Prefix:nil | Ex: Tấn công +cấp/20.0	
-[143] Man Hoang-Dây Chuyền Nước | ID:2190502 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001005 | C1 | Prefix:nil | Ex: HP tăng khi diệt quái +10	
-[144] Man Hoang-Dây Chuyền Đất | ID:2190602 | type:2 | subType:19 | eqSubType:19 | route:Necklace | pos:1001006 | C1 | Prefix:nil | Ex: HP tăng khi diệt quái +10, Tỷ lệ Đòn Trác Việt +3.0%	
-[145] Man Hoang-Khuyên Sấm | ID:2260202 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003002 | C1 | Prefix:nil | Ex: Phản DMG +4.0%	
-[146] Man Hoang-Khuyên Băng | ID:2260302 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003003 | C1 | Prefix:nil | Ex: Tỉ lệ Phòng Ngự thành công +5.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[147] Man Hoang-Khuyên Gió | ID:2260402 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C1 | Prefix:nil | Ex: MP tối đa +3.0%	
-[148] Man Hoang-Khuyên Gió | ID:2260402 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003004 | C1 | Prefix:nil | Ex: HP tối đa +3.0%, Phản DMG +4.0%	
-[149] Man Hoang-Khuyên Nước | ID:2260502 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003005 | C1 | Prefix:nil | Ex: MP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[150] Man Hoang-Khuyên Đất | ID:2260602 | type:2 | subType:26 | eqSubType:26 | route:Earrings | pos:1003006 | C1 | Prefix:nil | Ex: MP tối đa +3.0%, Tỉ lệ Vàng tăng khi diệt quái +5.0%	
-[151] Kim Phiếu | ID:1000250 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[152] Phiếu Tỷ Lệ Rơi Thánh Hoàn x6 | ID:1073006 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[153] Phiếu Tỷ Lệ Rơi Thánh Hoàn x10 | ID:1073012 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[154] Vé Thông Hành Quảng Trường Quỷ | ID:8000047 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[155] Tinh Hoa Thánh Quang Chuyển 4 | ID:9000401 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[156] Tinh Hoa Thánh Quang Chuyển 7 | ID:9000701 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[157] Mắt Ác Quỷ | ID:6000010 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[158] Mắt Ác Quỷ | ID:6000010 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[159] Mắt Ác Quỷ | ID:6000010 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[160] Chìa Khóa Ác Quỷ | ID:6000020 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[161] Chìa Khóa Ác Quỷ | ID:6000020 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[162] Chìa Khóa Ác Quỷ | ID:6000020 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[163] Thuốc Chữa Trị Đặc Trị | ID:3001030 | type:3 | subType:100 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[164] Thuốc Chữa Trị Đặc Trị | ID:3001030 | type:3 | subType:100 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[165] Thuốc Chữa Trị Đặc Trị | ID:3001030 | type:3 | subType:100 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[166] Thuốc Chữa Trị Đặc Trị | ID:3001030 | type:3 | subType:100 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[167] Thuốc Chữa Trị Đặc Trị | ID:3001030 | type:3 | subType:100 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[168] Thuốc MP Đặc Trị | ID:3002030 | type:3 | subType:101 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:Weapon | Ex: Không có dòng TV	
-[169] Tâm Liên Kích | ID:6002010 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[170] Hạt Giống SD | ID:6002020 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[171] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[172] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[173] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[174] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[175] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[176] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[177] Mảnh Kỹ Năng | ID:6010010 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[178] Mảnh Kỹ Năng | ID:6010011 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[179] Mảnh Kỹ Năng | ID:6010011 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[180] Mảnh Kỹ Năng | ID:6010011 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[181] Mảnh Thạch Anh Kỹ Năng Sáng Chói | ID:6010061 | type:6 | subType:606 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[182] Ấn Dịch Chuyển Ngẫu Nhiên | ID:20000022 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[183] Ấn Dịch Chuyển Ngẫu Nhiên | ID:20000022 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[184] Ấn Dịch Chuyển Ngẫu Nhiên | ID:20000022 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[185] Đá Sáng Tạo | ID:6000121 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[186] Thuốc Tăng EXP (30 phút) | ID:3000404 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[187] Đá Sáng Tạo | ID:6000120 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[188] Đá Sáng Tạo | ID:6000120 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[189] Kim Phiếu | ID:1000193 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[190] Đá Tái Sinh | ID:6000151 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C3 | Prefix:nil | Ex: Không có dòng TV	
-[191] Đá Tiến Hóa cao cấp | ID:6000160 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C3 | Prefix:nil | Ex: Không có dòng TV	
-[192] Huyền Thạch | ID:6000750 | type:6 | subType:3008 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[193] Huyền Thạch | ID:6000750 | type:6 | subType:3008 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[194] Bùa Về Thành | ID:20000021 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[195] Bùa Về Thành | ID:20000021 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[196] Bùa Về Thành | ID:20000021 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[197] Bùa Về Thành | ID:20000021 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[198] Bùa Về Thành | ID:20000021 | type:3 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[199] Đá Maya | ID:6000081 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[200] Đá Chúc Phúc | ID:6000091 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[201] Đá Chúc Phúc | ID:6000091 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[202] Đá Chúc Phúc | ID:6000091 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[203] Đá Chúc Phúc | ID:6000091 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[204] Đá Chúc Phúc | ID:6000091 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[205] Đá Linh Hồn | ID:6000100 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[206] Đá Linh Hồn | ID:6000101 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[207] Đá HP | ID:6000111 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[208] Bản Vẽ Quốc Vương Vỡ Nát | ID:6000171 | type:6 | subType:603 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[209] Cánh Locke Vỡ Nát | ID:6000181 | type:6 | subType:603 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[210] Đá Cường Hóa Cánh | ID:6000379 | type:6 | subType:602 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[211] Sách Huyết Linh | ID:6000030 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[212] Xương Huyết Linh | ID:6000040 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[213] Tổ Tiên Ngân Tâm-Chiến Khôi Kỵ Sĩ | ID:32111113 | type:2 | subType:113 | eqSubType:113 | route:helm | pos:3502 | C4 | Prefix:Hat | Ex: Phản DMG +5.0%, HP tối đa +4.0%	
-[214] Trái Tim Kẻ Chinh Phục | ID:42990001 | type:2 | subType:1901 | eqSubType:1901 | route:Necklace | pos:4532 | C0 | Prefix:nil | Ex: Không có dòng TV	
-[215] Manticore-Áo Choàng Ma Ảo | ID:32112016 | type:2 | subType:114 | eqSubType:114 | route:armor | pos:3506 | C5 | Prefix:Armor | Ex: HP tối đa +4.0%, MP tối đa +4.0%	
-[216] Thiên Sứ Bóng Tối-Túi Tên Du Hiệp | ID:32113604 | type:2 | subType:124 | eqSubType:124 | route:Bow | pos:3505 | C1 | Prefix:Weapon | Ex: Công Tốc +7	
-[217] Thánh Thiên Sứ-Găng Tay Ma Ảo | ID:32112307 | type:2 | subType:116 | eqSubType:116 | route:glove | pos:3508 | C2 | Prefix:Gloves | Ex: Tỉ lệ Vàng tăng khi diệt quái +10.0%, MP tối đa +4.0%	
-[218] Freyr Hắc Ám-Găng Tay Ma Ảo | ID:32112322 | type:2 | subType:116 | eqSubType:116 | route:glove | pos:3508 | C7 | Prefix:Gloves | Ex: Sát thương giảm +4.0%, HP tối đa +4.0%	
-[219] Trái Tim Kẻ Chinh Phục | ID:42990001 | type:2 | subType:1901 | eqSubType:1901 | route:Necklace | pos:4532 | C0 | Prefix:nil | Ex: Không có dòng TV	
-[220] Trái Tim Kẻ Chinh Phục | ID:42990001 | type:2 | subType:1901 | eqSubType:1901 | route:Necklace | pos:4532 | C0 | Prefix:nil | Ex: Không có dòng TV	
-[221] Tổ Tiên Ngân Tâm-Vương Miện Du Hiệp | ID:32113113 | type:2 | subType:113 | eqSubType:113 | route:helm | pos:3502 | C4 | Prefix:Hat | Ex: Phản DMG +5.0%	
-[222] Thánh Thiên Sứ-Ủng Dài Du Hiệp | ID:32113407 | type:2 | subType:117 | eqSubType:117 | route:boot | pos:3510 | C2 | Prefix:Boots | Ex: Sát thương giảm +4.0%, Phản DMG +5.0%	
-[223] Tổ Tiên Ngân Tâm-Bao Chân Ma Kỵ | ID:32114213 | type:2 | subType:115 | eqSubType:115 | route:pant | pos:3509 | C4 | Prefix:Pants | Ex: Tỉ lệ Phòng Ngự thành công +10.0%	
-[224] Freya-Kiếm Ma Kỵ | ID:32114519 | type:2 | subType:101 | eqSubType:101 | route:Sword | pos:3504#3505 | C6 | Prefix:Weapon | Ex: Tỷ lệ Đòn Trác Việt +10.0%, HP tăng khi diệt quái +20	
-[225] Freyr Hắc Ám-Bao Tay Triệu Hồi | ID:32116322 | type:2 | subType:116 | eqSubType:116 | route:glove | pos:3508 | C7 | Prefix:Gloves | Ex: HP tối đa +4.0%	
-[226] Freyr Hắc Ám-Bao Tay Triệu Hồi | ID:32116322 | type:2 | subType:116 | eqSubType:116 | route:glove | pos:3508 | C7 | Prefix:Gloves | Ex: Tỉ lệ Phòng Ngự thành công +10.0%, HP tối đa +4.0%	
-[227] Tinh Hoa Thánh Hồn | ID:40000001 | type:6 | subType:616 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[228] Tinh Phách Thánh Hồn | ID:40000002 | type:6 | subType:616 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[229] Lửa Thần Ưng Vỡ Nát | ID:6000321 | type:6 | subType:603 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[230] Cán Cân Sariel +5 | ID:42060005 | type:2 | subType:206 | eqSubType:206 | route:Ring | pos:2200006 | C0 | Prefix:nil | Ex: Không có dòng TV	
-[231] Kiếm Thánh Giophiel +5 | ID:42070005 | type:2 | subType:207 | eqSubType:207 | route:Ring | pos:2200007 | C0 | Prefix:nil | Ex: Không có dòng TV	
-[232] Thánh Cốt Túy Linh | ID:16001001 | type:25 | subType:2501 | eqSubType:2501 | route: | pos: | C4 | Prefix:nil | Ex: Không có dòng TV	
-[233] Mảnh Hỏa Huỳnh Thạch | ID:6000641 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[234] Mảnh Hỏa Huỳnh Thạch | ID:6000641 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[235] Mảnh Hỏa Huỳnh Thạch | ID:6000641 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[236] Mảnh Thủy Huỳnh Thạch | ID:6000651 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[237] Mảnh Thủy Huỳnh Thạch | ID:6000651 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[238] Mảnh Thủy Huỳnh Thạch | ID:6000651 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[239] Mảnh Băng Huỳnh Thạch | ID:6000661 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[240] Mảnh Băng Huỳnh Thạch | ID:6000661 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[241] Mảnh Băng Huỳnh Thạch | ID:6000661 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[242] Đá Tẩy Luyện Trang Sức Chuyển 3 | ID:6018030 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[243] Đá Tẩy Luyện Trang Sức Chuyển 6 | ID:6018060 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[244] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[245] Áo Choàng Trong Suốt | ID:8000057 | type:6 | subType:601 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[246] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[247] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[248] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[249] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[250] Mảnh Thời Không | ID:103910211 | type:6 | subType:0 | eqSubType:0 | route:nil | pos:nil | C0 | Prefix:nil | Ex: Không có dòng TV	
-[251] Trác Việt-Ám Hồn-Pháp Trượng Truyền Thuyết | ID:206590201 | type:2 | subType:6 | eqSubType:6 | route:Staff | pos:4 | C7 | Prefix:nil | Ex: MP tăng khi diệt quái +20, Tỷ lệ Đòn Trác Việt +10.0%, HP tăng khi diệt quái +20, Tấn công +2.0%	
-[252] Trác Việt-Ám Hồn-Mặt Nạ Atlantis | ID:213410403 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Tỉ lệ Phòng Ngự thành công +10.0%, MP tối đa +4.0%, HP tối đa +4.0%, Tỉ lệ Vàng tăng khi diệt quái +10.0%	
-[253] Trác Việt-Ám Hồn-Pháp Trượng Truyền Thuyết | ID:206590201 | type:2 | subType:6 | eqSubType:6 | route:Staff | pos:4 | C7 | Prefix:nil | Ex: Tỷ lệ Đòn Trác Việt +10.0%, HP tăng khi diệt quái +20, Công Tốc +7, Tấn công +cấp/20.0	
-[254] Trác Việt-Ám Hồn-Khải Atlantis | ID:214410401 | type:2 | subType:14 | eqSubType:14 | route:armor | pos:6 | C7 | Prefix:nil | Ex: Phản DMG +5.0%, MP tối đa +4.0%, Tỉ lệ Vàng tăng khi diệt quái +10.0%, HP tối đa +4.0%	
-[255] Ám Hồn-Nón Phép Truyền Thuyết | ID:213590200 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[256] Ám Hồn-Khải Nữ Thần | ID:214590300 | type:2 | subType:14 | eqSubType:14 | route:armor | pos:6 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[257] Ám Hồn-Khiên Phép Truyền Thuyết | ID:208590200 | type:2 | subType:81 | eqSubType:81 | route:Shield | pos:5 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[258] Ám Hồn-Bao Tay Viễn Cổ | ID:21602600 | type:2 | subType:16 | eqSubType:16 | route:glove | pos:8 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[259] Ám Hồn-Nón Phép Truyền Thuyết | ID:213590200 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[260] Ám Hồn-Khiên Hỏa Long | ID:208410400 | type:2 | subType:8 | eqSubType:8 | route:Shield | pos:5 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[261] Ám Hồn-Nón Phép Truyền Thuyết | ID:213590200 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[262] Ám Hồn-Nón Phép Truyền Thuyết | ID:213590200 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[263] Ám Hồn-Túi Tên Ngân Dực | ID:224590300 | type:2 | subType:24 | eqSubType:24 | route:Bow | pos:5 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[264] Ám Hồn-Bao Tay Nữ Thần | ID:216590300 | type:2 | subType:16 | eqSubType:16 | route:glove | pos:8 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[265] Ám Hồn-Bao Chân Nữ Thần | ID:215590300 | type:2 | subType:15 | eqSubType:15 | route:pant | pos:9 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[266] Ám Hồn-Nón Long Vương | ID:213590100 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[267] Ám Hồn-Sách Viễn Cổ | ID:24500810 | type:2 | subType:56 | eqSubType:56 | route:Book | pos:5 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[268] Ám Hồn-Bao Chân Atlantis | ID:215410402 | type:2 | subType:15 | eqSubType:15 | route:pant | pos:9 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[269] Ám Hồn-Mặt Nạ Atlantis | ID:213410400 | type:2 | subType:13 | eqSubType:13 | route:helm | pos:2 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[270] Ám Hồn-Pháp Trượng Truyền Thuyết | ID:206590200 | type:2 | subType:6 | eqSubType:6 | route:Staff | pos:4 | C7 | Prefix:nil | Ex: Không có dòng TV	
-[271] Ám Hồn-Ủng Da Nữ Thần | ID:217590300 | type:2 | subType:17 | eqSubType:17 | route:boot | pos:10 | C7 | Prefix:nil | Ex: Không có dòng TV	
-===> Đã quét xong 271 trang bị trong túi đồ <===	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 7 Ô | MoveTo(161,21) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(158,25) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 1 Ô | MoveTo(156,15) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(159,25) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 2 Ô | MoveTo(155,15) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(157,25) + ReqPickUpMapItem	
+[19:02:41] [TestSpam] ĐÃ KHÔI PHỤC SPAM 0.3S/3S! Quét được 6 món đồ đang nằm sẵn trên đất.	
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 2 Ô | MoveTo(160,19) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 1 Ô | MoveTo(161,20) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(159,19) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(159,23) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(159,20) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(161,19) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,21) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(159,21) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 0 Ô | MoveTo(161,21) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | MoveTo(159,22) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 1 Ô | MoveTo(160,20) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 3 Ô | MoveTo(159,24) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(158,22) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 2 Ô | MoveTo(158,23) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 3 Ô | MoveTo(158,18) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,21) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(160,18) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,18) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,19) + ReqPickUpMapItem
+[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 4 Ô | MoveTo(158,24) + ReqPickUpMapItem
+[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 5 Ô | MoveTo(159,25) + ReqPickUpMapItem
+[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 3 Ô | MoveTo(156,25) + ReqPickUpMapItem
+[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(158,22) + ReqPickUpMapItem
+[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(157,24) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 0 Ô | MoveTo(157,22) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,23) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(156,23) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(158,21) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 2 Ô | MoveTo(156,24) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(159,22) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 3 Ô | MoveTo(158,25) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 1 Ô | MoveTo(158,23) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,21) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 1 Ô | MoveTo(159,21) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,24) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,22) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Hắc Long Vương' cách 2 Ô | MoveTo(160,21) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 3 Ô | MoveTo(157,25) + ReqPickUpMapItem
+[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,23) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,24) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phép Hồi Sinh' cách 2 Ô | MoveTo(157,23) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 1 Ô | MoveTo(155,25) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(155,24) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 1 Ô | MoveTo(157,26) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(158,26) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 3 Ô | MoveTo(159,23) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,23) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 1 Ô | MoveTo(158,22) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 3 Ô | MoveTo(156,26) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 3 Ô | MoveTo(159,22) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 3 Ô | MoveTo(155,23) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(157,25) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 3 Ô | MoveTo(159,24) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 3 Ô | MoveTo(155,26) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 3 Ô | MoveTo(157,22) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 1 Ô | MoveTo(156,24) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(158,24) + ReqPickUpMapItem
+[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Giáp Da Ảo Nguyệt' cách 3 Ô | MoveTo(159,26) + ReqPickUpMapItem
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ảo Nguyệt' cách 0 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Hắc Long Vương' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Hắc Long Vương' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(157,15) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(158,15) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,13) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Bích Ảnh' cách 2 Ô | MoveTo(158,11) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(156,11) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phép Hồi Sinh' cách 2 Ô | MoveTo(160,12) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,15) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Hắc Long Vương' cách 2 Ô | MoveTo(160,11) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 2 Ô | MoveTo(156,14) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,11) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 2 Ô | MoveTo(156,15) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(157,12) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 2 Ô | MoveTo(156,13) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 2 Ô | MoveTo(156,12) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 0 Ô | MoveTo(158,13) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,14) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(159,12) + ReqPickUpMapItem
+[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,13) + ReqPickUpMapItem
+[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
+[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(162,14) + ReqPickUpMapItem
+[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 1 Ô | MoveTo(159,15) + ReqPickUpMapItem
+[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 1 Ô | MoveTo(161,14) + ReqPickUpMapItem
+[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(162,13) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 1 Ô | MoveTo(160,14) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(161,13) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 2 Ô | MoveTo(158,13) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(159,16) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | MoveTo(160,16) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 2 Ô | MoveTo(158,15) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ma Linh' cách 2 Ô | MoveTo(158,14) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(161,15) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,17) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(160,13) + ReqPickUpMapItem
+[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(161,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(161,15) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ma Linh' cách 2 Ô | MoveTo(162,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 1 Ô | MoveTo(160,14) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(161,17) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 0 Ô | MoveTo(160,15) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 2 Ô | MoveTo(159,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Hắc Long Vương' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(160,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(158,13) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,14) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 2 Ô | MoveTo(162,14) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,15) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 2 Ô | MoveTo(158,14) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 1 Ô | MoveTo(159,16) + ReqPickUpMapItem
+[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(160,17) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Giáp Da Ảo Nguyệt' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Ma Linh' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 1 Ô | MoveTo(160,16) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(161,15) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | MoveTo(161,19) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 2 Ô | MoveTo(159,19) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 2 Ô | MoveTo(159,15) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(160,19) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,18) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 2 Ô | MoveTo(159,16) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 0 Ô | MoveTo(161,17) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 1 Ô | MoveTo(160,18) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 3 Ô | MoveTo(159,14) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(158,18) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 4 Ô | MoveTo(158,20) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(158,14) + ReqPickUpMapItem
+[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,20) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,17) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Ma Linh' cách 2 Ô | MoveTo(158,18) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 2 Ô | MoveTo(160,20) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,16) + ReqPickUpMapItem
+[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(161,17) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(158,20) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(160,16) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 0 Ô | MoveTo(160,18) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,19) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 2 Ô | MoveTo(159,16) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | MoveTo(161,19) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(159,20) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,19) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 2 Ô | MoveTo(158,19) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(159,18) + ReqPickUpMapItem
+[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 1 Ô | MoveTo(159,19) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(159,18) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 0 Ô | MoveTo(160,18) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(160,19) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(161,17) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 1 Ô | MoveTo(159,17) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(161,19) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 3 Ô | MoveTo(157,17) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(157,21) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(159,15) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 4 Ô | MoveTo(159,21) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,21) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(157,19) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 4 Ô | MoveTo(158,15) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(157,15) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ma Linh' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 4 Ô | MoveTo(158,21) + ReqPickUpMapItem
+[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(157,20) + ReqPickUpMapItem

@@ -1289,8 +1289,8 @@ local function CreateModUI()
                     return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
                 end
                 
-                -- Nhóm 2: Vũ khí Hồng Trang (101, 106, 109, 124, 181)
-                if subType == 101 or subType == 106 or subType == 109 or subType == 124 or subType == 181 then
+                -- Nhóm 2: Vũ khí & Khiên Hồng Trang (101, 106, 108, 109, 124, 181)
+                if subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
                     for _, des in ipairs(excDesList) do
                         local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or string.find(des, "MP tăng")
                         if isKill then
@@ -1368,7 +1368,7 @@ local function CreateModUI()
                             elseif subType == 115 then prefix = "Pants"
                             elseif subType == 116 then prefix = "Gloves"
                             elseif subType == 117 then prefix = "Boots"
-                            elseif subType == 101 or subType == 106 or subType == 109 or subType == 124 or subType == 181 then prefix = "Weapon"
+                            elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then prefix = "Weapon"
                             end
                         
                         local shouldSmelt = false
@@ -1550,22 +1550,7 @@ local function CreateModUI()
     local currentMapId = _G.SceneData and _G.SceneData.mapId
     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
     
-    -- ƯU TIÊN 0: HỒI SINH MIỄN PHÍ
-    if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
-        if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
-            if _G.MeController and _G.RoleReliveType then
-                if _G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle() then
-                    _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
-                else
-                    _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
-                end
-            end
-            if _G.UIManager.Hide then
-                _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
-            end
-            return
-        end
-    end
+
     
     if currentMapId ~= 240001 then
         _G.Mod_MapAn_Recorded = false
@@ -2457,6 +2442,40 @@ end
 
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.1, -1, function()
+                    -- TỰ ĐỘNG HỒI SINH (Chỉ khi 1. Auto Farm | 2. Auto HH | 3. Map Khốn Thú Đấu)
+                    if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                        if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
+                            local mapId = 0
+                            if _G.SceneData and _G.SceneData.mapId then
+                                mapId = _G.SceneData.mapId
+                            elseif _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId then
+                                mapId = _G.RoleManager.me.mapId
+                            end
+
+                            local isKS = (mapId == 1077) or (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle())
+                            local isAutoFarm = _G.Mod_AutoFarmBoss_Enabled == true
+                            local isAutoHH = _G.Mod_AutoHH_Enabled == true
+
+                            if isAutoFarm or isAutoHH or isKS then
+                                local ui = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Role_ResurgenceUI")
+                                if ui and ui.Button_1OnClick then
+                                    pcall(function() ui:Button_1OnClick() end)
+                                else
+                                    if _G.MeController and _G.RoleReliveType then
+                                        if isKS then
+                                            _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
+                                        else
+                                            _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+                                        end
+                                    end
+                                    if _G.UIManager.Hide then
+                                        _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                    end
+                                end
+                            end
+                        end
+                    end
+
                     if _G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0 then
                         if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
                             if _G.QiJiHelperData.SettingData.KillMonsterScope ~= _G.Mod_CustomAttackRange then
@@ -2511,25 +2530,51 @@ end
                         end
                     end
                     
-                    if _G.AutoPick_Enabled and _G.Mod_ActiveSpamItems then
+                    if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        local validItems = {}
+                        
                         for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
                             if nowTime > itemInfo.expireTime then
                                 _G.Mod_ActiveSpamItems[itemId] = nil
-                            else
-                                if _G.PickupManager then
-                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                            elseif nowTime >= (itemInfo.startTime or 0) then
+                                table.insert(validItems, itemInfo)
+                            end
+                        end
+                        
+                        if #validItems > 0 then
+                            local meX, meY = 0, 0
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                meX = _G.RoleManager.me.serverCoord.x or 0
+                                meY = _G.RoleManager.me.serverCoord.y or 0
+                            end
+
+                            for _, itemInfo in ipairs(validItems) do
+                                itemInfo.dist = math.max(math.abs(meX - (itemInfo.x or 0)), math.abs(meY - (itemInfo.y or 0)))
+                            end
+
+                            table.sort(validItems, function(a, b)
+                                return a.dist < b.dist
+                            end)
+
+                            local nearestItem = validItems[1]
+
+                            for _, itemInfo in ipairs(validItems) do
+                                if (nowTime - (itemInfo.lastSpamTime or 0)) >= 0.3 then
+                                    itemInfo.lastSpamTime = nowTime
                                     
-                                    -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
-                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                        local meX = _G.RoleManager.me.serverCoord.x or 0
-                                        local meY = _G.RoleManager.me.serverCoord.y or 0
-                                        if itemInfo.x and itemInfo.y then
-                                            local dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
-                                            if dist <= 2 then
-                                                _G.PickupManager.ReqPickUpMapItem(itemId)
-                                            end
+                                    -- Chỉ di chuyển (MoveTo) đến 1 món GẦN NHẤT nếu dist > 1 (tránh xoay đầu)
+                                    if itemInfo == nearestItem and itemInfo.dist > 1 then
+                                        if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
+                                            pcall(function()
+                                                _G.RoleManager.me:MoveTo({x = itemInfo.x, y = itemInfo.y})
+                                            end)
                                         end
+                                    end
+
+                                    -- Bắn gói tin nhặt đơn lẻ 100%
+                                    if _G.PickupManager then
+                                        _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
                                     end
                                 end
                             end
@@ -2549,47 +2594,47 @@ end
             end
             
             if _G.Timer and _G.Timer.StartLoop then
-                _G.Timer.StartLoop(0.2, -1, function()
-                    pcall(function()
-                        if _G.Mod_AutoAoE_BossAn then
-                            local mapId = _G.SceneData and _G.SceneData.mapId or 0
-                            if tonumber(mapId) == 240001 then
-                                local me = _G.RoleManager and _G.RoleManager.me
-                                local target = me and me.TargetAvatar
-                                if target and not target.isDead and me.skills then
-                                    local allowedAoEPrefixes = {
-                                        ["140401"] = true, -- Ma Ky Sy: Set Danh
-                                    }
-                                    for _, skill in pairs(me.skills) do
-                                        local sid = skill.sid or skill.id or skill.skillId
-                                        if sid then
-                                            local prefix = tostring(sid):sub(1, 6)
-                                            if allowedAoEPrefixes[prefix] then
-                                                local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
-                                                if tblSkill then
-                                                    local cdMsg = me.cd and me.cd[tblSkill.groupId]
-                                                    local endTime = cdMsg and cdMsg.endTime or 0
-                                                    local publicCdMsg = me.cd and me.cd[1]
-                                                    local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
-                                                    local finalEndTime = math.max(endTime, publicEndTime)
+                -- _G.Timer.StartLoop(0.2, -1, function()
+                --     pcall(function()
+                --         if _G.Mod_AutoAoE_BossAn then
+                --             local mapId = _G.SceneData and _G.SceneData.mapId or 0
+                --             if tonumber(mapId) == 240001 then
+                --                 local me = _G.RoleManager and _G.RoleManager.me
+                --                 local target = me and me.TargetAvatar
+                --                 if target and not target.isDead and me.skills then
+                --                     local allowedAoEPrefixes = {
+                --                         ["140401"] = true, -- Ma Ky Sy: Set Danh
+                --                     }
+                --                     for _, skill in pairs(me.skills) do
+                --                         local sid = skill.sid or skill.id or skill.skillId
+                --                         if sid then
+                --                             local prefix = tostring(sid):sub(1, 6)
+                --                             if allowedAoEPrefixes[prefix] then
+                --                                 local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
+                --                                 if tblSkill then
+                --                                     local cdMsg = me.cd and me.cd[tblSkill.groupId]
+                --                                     local endTime = cdMsg and cdMsg.endTime or 0
+                --                                     local publicCdMsg = me.cd and me.cd[1]
+                --                                     local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
+                --                                     local finalEndTime = math.max(endTime, publicEndTime)
                                                     
-                                                    if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
-                                                        local tblaction = _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
-                                                        if tblaction and _G.SkillMgr and _G.SkillMgr.SendSkillMessage then
-                                                            local coord = target.serverCoord or me.serverCoord
-                                                            _G.SkillMgr.SendSkillMessage(tblSkill, tblaction, target.id, coord)
-                                                            break
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end)
+                --                                     if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
+                --                                         local tblaction = _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
+                --                                         if tblaction and _G.SkillMgr and _G.SkillMgr.SendSkillMessage then
+                --                                             local coord = target.serverCoord or me.serverCoord
+                --                                             _G.SkillMgr.SendSkillMessage(tblSkill, tblaction, target.id, coord)
+                --                                             break
+                --                                         end
+                --                                     end
+                --                                 end
+                --                             end
+                --                         end
+                --                     end
+                --                 end
+                --             end
+                --         end
+                --     end)
+                -- end)
 
                 _G.Timer.StartLoop(1, -1, function()
                     pcall(function()
@@ -4076,69 +4121,120 @@ end
                 UpdateMasterToggle()
             end)
             
-            -- TỌA ĐỘ TRAIN InputField (CHỈ CHO ADMIN)
-            if _G.Mod_IsAdmin then
-                local labelTrainGo = GameObject("TrainCoordLabel")
-                labelTrainGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, labelTrainGo)
-                local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
-                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(230, -50)
-                lblRt.sizeDelta = Vector2(220, 20)
-                local lblTxt = labelTrainGo:AddComponent(typeof(Text))
-                lblTxt.raycastTarget = false
-                lblTxt.text = "TỌA ĐỘ TRAIN (x#y):"
-                lblTxt.color = Color(1, 0.85, 0.4, 1)
-                lblTxt.fontSize = 11
-                lblTxt.alignment = TextAnchor.MiddleLeft
-                if defaultFont then lblTxt.font = defaultFont end
+                -- TỌA ĐỘ TRAIN InputField + Nút XY HIỆN TẠI (CHỈ CHO ADMIN)
+                if _G.Mod_IsAdmin then
+                    local labelTrainGo = GameObject("TrainCoordLabel")
+                    labelTrainGo.transform:SetParent(panelGo.transform, false)
+                    table.insert(_G.AutoBossUIList, labelTrainGo)
+                    local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
+                    lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    lblRt.anchoredPosition = Vector2(230, -50)
+                    lblRt.sizeDelta = Vector2(220, 20)
+                    local lblTxt = labelTrainGo:AddComponent(typeof(Text))
+                    lblTxt.raycastTarget = false
+                    lblTxt.text = "TỌA ĐỘ TRAIN (x#y):"
+                    lblTxt.color = Color(1, 0.85, 0.4, 1)
+                    lblTxt.fontSize = 11
+                    lblTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then lblTxt.font = defaultFont end
 
-                local trainTgtGo = GameObject("TrainCoordInput")
-                trainTgtGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, trainTgtGo)
-                local trainRt = trainTgtGo:AddComponent(typeof(RectTransform))
-                trainRt.anchorMin, trainRt.anchorMax, trainRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                trainRt.anchoredPosition = Vector2(230, -70)
-                trainRt.sizeDelta = Vector2(220, 32)
-                
-                local trainBg = GameObject("Bg")
-                trainBg.transform:SetParent(trainTgtGo.transform, false)
-                local trainBgRt = trainBg:AddComponent(typeof(RectTransform))
-                trainBgRt.anchorMin, trainBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                trainBgRt.sizeDelta = Vector2(0, 0)
-                local trainImg = trainBg:AddComponent(typeof(Image))
-                trainImg.color = Color(0.1, 0.1, 0.1, 1)
-                
-                local trainTxtGo = GameObject("Text")
-                trainTxtGo.transform:SetParent(trainTgtGo.transform, false)
-                local trainTxtRt = trainTxtGo:AddComponent(typeof(RectTransform))
-                trainTxtRt.anchorMin, trainTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                trainTxtRt.offsetMin, trainTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-                local trainTxt = trainTxtGo:AddComponent(typeof(Text))
-                
-                if _G.Mod_TrainCoord == nil then
-                    pcall(function() _G.Mod_TrainCoord = CS.UnityEngine.PlayerPrefs.GetString("Mod_TrainCoord", "") end)
-                    if _G.Mod_TrainCoord == nil then _G.Mod_TrainCoord = "" end
-                end
-                
-                trainTxt.text = (_G.Mod_TrainCoord ~= "" and _G.Mod_TrainCoord or "Ví dụ: 125#340")
-                trainTxt.color = (_G.Mod_TrainCoord ~= "" and Color.white or Color(0.6, 0.6, 0.6, 1))
-                trainTxt.fontSize = 14
-                trainTxt.alignment = TextAnchor.MiddleLeft
-                if defaultFont then trainTxt.font = defaultFont end
-                
-                local trainField = trainTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-                trainField.textComponent = trainTxt
-                trainField.text = _G.Mod_TrainCoord
-                
-                trainField.onValueChanged:AddListener(function(val)
-                    _G.Mod_TrainCoord = val
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", val)
-                        CS.UnityEngine.PlayerPrefs.Save()
+                    -- 1. InputField Tọa độ Train (Thu ngắn 1 nửa: width = 105px)
+                    local trainTgtGo = GameObject("TrainCoordInput")
+                    trainTgtGo.transform:SetParent(panelGo.transform, false)
+                    table.insert(_G.AutoBossUIList, trainTgtGo)
+                    local trainRt = trainTgtGo:AddComponent(typeof(RectTransform))
+                    trainRt.anchorMin, trainRt.anchorMax, trainRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    trainRt.anchoredPosition = Vector2(230, -70)
+                    trainRt.sizeDelta = Vector2(105, 32)
+                    
+                    local trainBg = GameObject("Bg")
+                    trainBg.transform:SetParent(trainTgtGo.transform, false)
+                    local trainBgRt = trainBg:AddComponent(typeof(RectTransform))
+                    trainBgRt.anchorMin, trainBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    trainBgRt.sizeDelta = Vector2(0, 0)
+                    local trainImg = trainBg:AddComponent(typeof(Image))
+                    trainImg.color = Color(0.1, 0.1, 0.1, 1)
+                    
+                    local trainTxtGo = GameObject("Text")
+                    trainTxtGo.transform:SetParent(trainTgtGo.transform, false)
+                    local trainTxtRt = trainTxtGo:AddComponent(typeof(RectTransform))
+                    trainTxtRt.anchorMin, trainTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    trainTxtRt.offsetMin, trainTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                    local trainTxt = trainTxtGo:AddComponent(typeof(Text))
+                    
+                    if _G.Mod_TrainCoord == nil then
+                        pcall(function() _G.Mod_TrainCoord = CS.UnityEngine.PlayerPrefs.GetString("Mod_TrainCoord", "") end)
+                        if _G.Mod_TrainCoord == nil then _G.Mod_TrainCoord = "" end
+                    end
+                    
+                    trainTxt.text = (_G.Mod_TrainCoord ~= "" and _G.Mod_TrainCoord or "125#340")
+                    trainTxt.color = (_G.Mod_TrainCoord ~= "" and Color.white or Color(0.6, 0.6, 0.6, 1))
+                    trainTxt.fontSize = 13
+                    trainTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then trainTxt.font = defaultFont end
+                    
+                    local trainField = trainTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                    trainField.textComponent = trainTxt
+                    trainField.text = _G.Mod_TrainCoord
+                    
+                    trainField.onValueChanged:AddListener(function(val)
+                        _G.Mod_TrainCoord = val
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", val)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
                     end)
-                end)
-            end
+
+                    -- 2. Nút XY HIỆN TẠI (Đặt bên cạnh, width = 110px)
+                    local getPosBtnGo = GameObject("GetCurPosBtn")
+                    getPosBtnGo.transform:SetParent(panelGo.transform, false)
+                    table.insert(_G.AutoBossUIList, getPosBtnGo)
+                    local getPosRt = getPosBtnGo:AddComponent(typeof(RectTransform))
+                    getPosRt.anchorMin, getPosRt.anchorMax, getPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    getPosRt.anchoredPosition = Vector2(340, -70)
+                    getPosRt.sizeDelta = Vector2(110, 32)
+
+                    local getPosBg = GameObject("Bg")
+                    getPosBg.transform:SetParent(getPosBtnGo.transform, false)
+                    local getPosBgRt = getPosBg:AddComponent(typeof(RectTransform))
+                    getPosBgRt.anchorMin, getPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    getPosBgRt.sizeDelta = Vector2(0, 0)
+                    local getPosBgImg = getPosBg:AddComponent(typeof(Image))
+                    getPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+                    local getPosTxtGo = GameObject("Text")
+                    getPosTxtGo.transform:SetParent(getPosBtnGo.transform, false)
+                    local getPosTxtRt = getPosTxtGo:AddComponent(typeof(RectTransform))
+                    getPosTxtRt.anchorMin, getPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    getPosTxtRt.sizeDelta = Vector2(0, 0)
+                    local getPosTxt = getPosTxtGo:AddComponent(typeof(Text))
+                    getPosTxt.raycastTarget = false
+                    getPosTxt.text = "XY HIỆN TẠI"
+                    getPosTxt.color = Color.white
+                    getPosTxt.fontSize = 13
+                    getPosTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then getPosTxt.font = defaultFont end
+
+                    local getPosBtn = getPosBtnGo:AddComponent(typeof(Button))
+                    getPosBtn.onClick:AddListener(function()
+                        pcall(function()
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                local curX = _G.RoleManager.me.serverCoord.x or 0
+                                local curY = _G.RoleManager.me.serverCoord.y or 0
+                                local coordStr = string.format("%d#%d", curX, curY)
+                                _G.Mod_TrainCoord = coordStr
+                                trainField.text = coordStr
+                                trainTxt.text = coordStr
+                                trainTxt.color = Color.white
+                                CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", coordStr)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Đã lưu tọa độ train: " .. coordStr)
+                                end
+                            end
+                        end)
+                    end)
+                end
 
             -- TỰ VÀO MAP ẨN Toggle
             local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
@@ -5479,6 +5575,65 @@ end
         _G.Mod_PickedItems = _G.Mod_PickedItems or {}
 
         if _G.PickupManager then
+            local original_RemoveDropSceneCellPos = _G.PickupManager.RemoveDropSceneCellPos
+            _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData)
+                if original_RemoveDropSceneCellPos then
+                    original_RemoveDropSceneCellPos(dropItemData)
+                end
+                if dropItemData and dropItemData.id and _G.Mod_ActiveSpamItems then
+                    _G.Mod_ActiveSpamItems[dropItemData.id] = nil
+                end
+            end
+
+            local function ExecutePickupCommon(dropItemData, startTime, interceptTime, logPrefix)
+                local currentDay = tonumber(os.date("%d")) or 1
+                local pickLimit = tonumber(_G.AutoPick_Limit) or 0
+                local isSecretTrickActive = false
+                
+                if currentDay > 8 then
+                    if pickLimit == currentDay then isSecretTrickActive = true end
+                else
+                    if pickLimit == (3 * currentDay) then isSecretTrickActive = true end
+                end
+
+                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                if (nowTime - (_G.Mod_LastItemBatchTime or 0)) > 2.0 then
+                    _G.Mod_PickupItemIndex = 0
+                end
+                _G.Mod_LastItemBatchTime = nowTime
+                _G.Mod_PickupItemIndex = (_G.Mod_PickupItemIndex or 0) + 1
+                local N = _G.Mod_PickupItemIndex
+
+                local delayMs = 0
+                if not isSecretTrickActive then
+                    local minDelay = N * 100
+                    local maxDelay = N * 100 + 800
+                    delayMs = math.random(minDelay, maxDelay)
+                end
+                local delaySec = delayMs / 1000.0
+                local scheduledTime = nowTime + delaySec
+                local expireTime = scheduledTime + 5.0
+
+                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                    id = dropItemData.id,
+                    x = dropItemData.x,
+                    y = dropItemData.y,
+                    startTime = scheduledTime,
+                    expireTime = expireTime,
+                    lastSpamTime = 0,
+                    isTrick = isSecretTrickActive
+                }
+                
+                local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
+                local objId = dropItemData.id or "???"
+                if _G.WriteLog then
+                    local modeStr = isSecretTrickActive and "TRICK 0ms" or string.format("DELAY %dms", delayMs)
+                    _G.WriteLog(string.format("[%s] Nhặt đơn [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s", logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId), tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                end
+            end
+
             local original_AddDropSceneCellPos = _G.PickupManager.AddDropSceneCellPos
             _G.PickupManager.AddDropSceneCellPos = function(item)
                 local startTime = CS.UnityEngine.Time.realtimeSinceStartup
@@ -5488,7 +5643,7 @@ end
                 if not (item and item.data) then return end
                 local dropItemData = item.data
 
-                if _G.Mod_AutoPick_KTD then
+                if _G.Mod_AutoPK_Enabled then
                     local mapId = 0
                     if _G.SceneData and _G.SceneData.mapId then
                         mapId = _G.SceneData.mapId
@@ -5497,26 +5652,7 @@ end
                     end
                     
                     if mapId == 1077 then
-                        if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.1, 3, function()
-                                if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
-                            end)
-                        else
-                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                        end
-                        
-                        if dropItemData.id then
-                            _G.Mod_PickedItems[dropItemData.id] = true
-                        end
-                        
-                        if _G.WriteLog then
-                            _G.WriteLog(string.format("[KTĐ] Phát hiện & Tự Nhặt! InstanceId=%s, ConfigId=%s, Type=%s", tostring(dropItemData.id), tostring(dropItemData.configId), tostring(dropItemData.type)))
-                        end
-                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                            pcall(function()
-                                _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
-                            end)
-                        end
+                        ExecutePickupCommon(dropItemData, startTime, interceptTime, "KTĐ")
                     end
                 end
 
@@ -5571,70 +5707,7 @@ end
                         if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
-                            
-                            local initialDelay = 0
-                            if not _G.Mod_IsAdmin and isBone then
-                                local hasCompetitorNearby = false
-                                if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                    local players = _G.RoleManager.GetRolesByType(1)
-                                    if players then
-                                        for _, p in pairs(players) do
-                                            if p.name then
-                                                local lowerName = string.lower(p.name)
-                                                if string.find(lowerName, "dino") or string.find(lowerName, "mun") then
-                                                    hasCompetitorNearby = true
-                                                    break
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                                if hasCompetitorNearby then
-                                    initialDelay = math.random(100, 900) / 1000
-                                end
-                            end
-                            
-                            local function ExecutePickup()
-                                -- 1. Chạy tới vị trí vật phẩm ngay lập tức
-                                if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                                    pcall(function()
-                                        _G.RoleManager.me:MoveTo({x = dropItemData.x, y = dropItemData.y})
-                                    end)
-                                end
-
-                                -- 2. Bắn gói tin nhặt LẬP TỨC 0ms
-                                if _G.PickupManager then
-                                    _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                                end
-                                
-                                -- 3. Đưa vào Hàng Đợi Duy Trì Spam (Dùng chung 1 Vòng Lặp Mẹ, không tạo Timer mới)
-                                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
-                                _G.Mod_ActiveSpamItems[dropItemData.id] = {
-                                    id = dropItemData.id,
-                                    x = dropItemData.x,
-                                    y = dropItemData.y,
-                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 3.0
-                                }
-                                
-                                local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
-                                local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
-                                local objId = dropItemData.id or "???"
-                                if _G.WriteLog then
-                                    _G.WriteLog(string.format("[AutoLoot] Nhặt (Nhận tin lúc %s | Xử lý sau %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s", tostring(interceptTime), costMs, tostring(itemTypeId), tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
-                                end
-                            end
-                            
-                            if initialDelay > 0 and _G.Timer and _G.Timer.StartLoop then
-                                local hasFired = false
-                                _G.Timer.StartLoop(initialDelay, 1, function()
-                                    if not hasFired then
-                                        hasFired = true
-                                        ExecutePickup()
-                                    end
-                                end)
-                            else
-                                ExecutePickup()
-                            end
+                            ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
                         end
                     end
                 end

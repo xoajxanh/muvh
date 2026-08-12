@@ -1,98 +1,74 @@
-local function LogMsg(msg)
-    print(msg)
-    pcall(function()
-        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg(msg)
+-- =================================================================
+-- SCRIPT TEST GẮP HỒI SINH TỰ ĐỘNG (Dùng cho nút Execute)
+-- File: input.txt
+-- =================================================================
+
+pcall(function()
+    local logMsg = ""
+    local function Log(msg)
+        logMsg = logMsg .. msg .. "\n"
+        print("[TestResurgence] " .. msg)
+        if _G.WriteLog then _G.WriteLog("[TestResurgence] " .. msg) end
+        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+    end
+
+    Log("=== BẮT ĐẦU TEST HỒI SINH TỰ ĐỘNG ===")
+
+    local isVisible = false
+    if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
+        isVisible = _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI)
+    end
+
+    Log("Trạng thái UI Role_ResurgenceUI IsVisible: " .. tostring(isVisible))
+
+    local uiObj = nil
+    if _G.UIManager and _G.UIManager.GetUiByName then
+        uiObj = _G.UIManager.GetUiByName("Role_ResurgenceUI")
+    end
+
+    Log("Đối tượng UI Role_ResurgenceUI: " .. (uiObj and "ĐÃ TÌM THẤY" or "NIL"))
+
+    if uiObj then
+        Log("Thử kích hoạt uiObj:Button_1OnClick()...")
+        local success, err = pcall(function()
+            uiObj:Button_1OnClick()
+        end)
+        if success then
+            Log("✅ ĐÃ GỌI Button_1OnClick THÀNH CÔNG!")
+        else
+            Log("❌ LỖI KHI GỌI Button_1OnClick: " .. tostring(err))
         end
-    end)
-end
-
-LogMsg("=== DỰNG CÂU LỆNH KIỂM TRA TRANG BỊ TÚI ĐỒ ===")
-
-local items = _G.BagInfoData and _G.BagInfoData.TotalItems
-if not items then
-    LogMsg("LỖI: Không tìm thấy _G.BagInfoData.TotalItems!")
-    return
-end
-
-LogMsg("--- DANH SÁCH TOÀN BỘ TRANG BỊ TRONG TÚI ---")
-local count = 0
-for k, item in pairs(items) do
-    if item then
-        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
-        local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
-        local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
-        local name = tblItem.name or tblItem.itemName or (tblEquip and tblEquip.name) or ("ID_" .. tostring(itemId))
-        
-        local itemType = tblItem.type or 0
-        local subType = tblItem.subType or 0
-        local quality = tblItem.quality or 0
-        local needLevel = tblItem.needLevel or 0
-        local tier = math.floor(needLevel / 400)
-        
-        local eqSubType = tblEquip and tblEquip.subType or 0
-        local eqRoute = tblEquip and tblEquip.route or "nil"
-        local eqPos = tblEquip and tblEquip.equipPosition or "nil"
-        
-        if (not tblEquip or not tblEquip.suitId) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
-            pcall(function()
-                local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
-                if eq then
-                    tblEquip = eq
-                    eqSubType = eq.subType or eqSubType
-                    eqRoute = eq.route or eqRoute
-                    eqPos = eq.equipPosition or eqPos
-                end
-            end)
+    else
+        Log("Bảng Hồi sinh chưa hiển thị hoặc không lấy được UI object. Thử ép gửi gói tin trực tiếp...")
+        local mapId = 0
+        if _G.SceneData and _G.SceneData.mapId then
+            mapId = _G.SceneData.mapId
+        elseif _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId then
+            mapId = _G.RoleManager.me.mapId
         end
+        Log("Map ID hiện tại: " .. tostring(mapId))
 
-        local prefix = nil
-        if subType == 35 then prefix = "RingL"
-        elseif subType == 38 then prefix = "RingR"
-        elseif subType == 36 then prefix = "Necklace2"
-        elseif subType == 34 then prefix = "EarringL"
-        elseif subType == 37 then prefix = "EarringR"
-        elseif subType == 113 then prefix = "Hat"
-        elseif subType == 114 then prefix = "Armor"
-        elseif subType == 115 then prefix = "Pants"
-        elseif subType == 116 then prefix = "Gloves"
-        elseif subType == 117 then prefix = "Boots"
-        elseif subType == 101 or subType == 106 or subType == 124 or subType == 181 then prefix = "Weapon"
-        end
-        
-        local varName = prefix and (prefix .. "_C" .. tostring(tier)) or "KHÔNG XÁC ĐỊNH (Prefix=nil)"
-        local configVal = prefix and _G.Mod_SmeltConfig and _G.Mod_SmeltConfig[varName]
-        
-        -- Lấy dòng trác việt
-        local excDesList = {}
-        local sInfo = item.serverInfo or item.serverData or {}
-        local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or sInfo.excellentAttrs
-        
-        if _G.RoleEquipUtility then
-            if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
-                pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc, tblEquip) end)
-            end
-            if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
-                pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo(sInfo) end)
+        if _G.MeController and _G.RoleReliveType then
+            if mapId == 1077 or (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle()) then
+                Log("⚡ Ép phát gói tin MeController.ReqReqRelive(RoleReliveType.KSBattle)...")
+                _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
+            else
+                Log("⚡ Ép phát gói tin MeController.ReqReqRelive(RoleReliveType.BornPoint)...")
+                _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
             end
         end
-        if (#excDesList == 0) and item.GetEquipExcellenceDesList then
-            pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
-        end
-        
-        local excStr = table.concat(excDesList, ", ")
-        if excStr == "" then excStr = "Không có dòng TV" end
-        
-        if subType > 0 or itemId > 0 then
-            count = count + 1
-            LogMsg(string.format("[%d] %s | ID:%d | type:%d | subType:%d | eqSubType:%s | route:%s | pos:%s | C%d | Prefix:%s | Ex: %s",
-                count, tostring(name), itemId, itemType, subType, tostring(eqSubType), tostring(eqRoute), tostring(eqPos), tier, tostring(prefix), excStr))
+
+        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
+            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
         end
     end
-end
 
-if count == 0 then
-    LogMsg("Túi đồ rỗng hoặc không phát hiện món trang bị nào!")
-else
-    LogMsg(string.format("===> Đã quét xong %d trang bị trong túi đồ <===", count))
-end
+    -- Ghi kết quả test ra output.txt
+    pcall(function()
+        local f = io.open("/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt", "w")
+        if f then
+            f:write(logMsg)
+            f:close()
+        end
+    end)
+end)
