@@ -2304,7 +2304,7 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
-                                if bestBoss.wait and bestBoss.wait > 180 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                                if bestBoss.wait and bestBoss.wait > 5 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                                     local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
                                     if isChangingMap then
                                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
@@ -2793,51 +2793,86 @@ local function CreateModUI()
                     end
 
                     if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
-                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        local validItems = {}
-
-                        for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
-                            if nowTime > itemInfo.expireTime then
-                                _G.Mod_ActiveSpamItems[itemId] = nil
-                            elseif nowTime >= (itemInfo.startTime or 0) then
-                                table.insert(validItems, itemInfo)
+                        if _G.AutoPick_Mode == nil then
+                            _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
+                            if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
+                                _G.AutoPick_Mode = 1
                             end
                         end
 
-                        if #validItems > 0 then
-                            local meX, meY = 0, 0
-                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                meX = _G.RoleManager.me.serverCoord.x or 0
-                                meY = _G.RoleManager.me.serverCoord.y or 0
-                            end
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
 
-                            for _, itemInfo in ipairs(validItems) do
-                                itemInfo.dist = math.max(math.abs(meX - (itemInfo.x or 0)),
-                                    math.abs(meY - (itemInfo.y or 0)))
-                            end
+                        if _G.AutoPick_Mode == 1 then
+                            -- PA NHẶT 1: Rollback spam siêu tốc mỗi frame
+                            for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
+                                if nowTime > itemInfo.expireTime then
+                                    _G.Mod_ActiveSpamItems[itemId] = nil
+                                else
+                                    if _G.PickupManager then
+                                        _G.PickupManager.ReqPickUpMapItem(itemId)
 
-                            table.sort(validItems, function(a, b)
-                                return a.dist < b.dist
-                            end)
-
-                            local nearestItem = validItems[1]
-
-                            for _, itemInfo in ipairs(validItems) do
-                                if (nowTime - (itemInfo.lastSpamTime or 0)) >= 0.3 then
-                                    itemInfo.lastSpamTime = nowTime
-
-                                    -- Chỉ di chuyển (MoveTo) đến 1 món GẦN NHẤT nếu dist > 1 (tránh xoay đầu)
-                                    if itemInfo == nearestItem and itemInfo.dist > 1 then
-                                        if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
-                                            pcall(function()
-                                                _G.RoleManager.me:MoveTo({ x = itemInfo.x, y = itemInfo.y })
-                                            end)
+                                        -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
+                                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                            local meX = _G.RoleManager.me.serverCoord.x or 0
+                                            local meY = _G.RoleManager.me.serverCoord.y or 0
+                                            if itemInfo.x and itemInfo.y then
+                                                local dist = math.max(math.abs(meX - itemInfo.x),
+                                                    math.abs(meY - itemInfo.y))
+                                                if dist <= 2 then
+                                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                                                end
+                                            end
                                         end
                                     end
+                                end
+                            end
+                        else
+                            -- PA NHẶT 2: Ưu tiên khoảng cách gần nhất + giãn cách spam 0.1s
+                            local validItems = {}
 
-                                    -- Bắn gói tin nhặt đơn lẻ 100%
-                                    if _G.PickupManager then
-                                        _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+                            for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
+                                if nowTime > itemInfo.expireTime then
+                                    _G.Mod_ActiveSpamItems[itemId] = nil
+                                elseif nowTime >= (itemInfo.startTime or 0) then
+                                    table.insert(validItems, itemInfo)
+                                end
+                            end
+
+                            if #validItems > 0 then
+                                local meX, meY = 0, 0
+                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                    meX = _G.RoleManager.me.serverCoord.x or 0
+                                    meY = _G.RoleManager.me.serverCoord.y or 0
+                                end
+
+                                for _, itemInfo in ipairs(validItems) do
+                                    itemInfo.dist = math.max(math.abs(meX - (itemInfo.x or 0)),
+                                        math.abs(meY - (itemInfo.y or 0)))
+                                end
+
+                                table.sort(validItems, function(a, b)
+                                    return a.dist < b.dist
+                                end)
+
+                                local nearestItem = validItems[1]
+
+                                for _, itemInfo in ipairs(validItems) do
+                                    if (nowTime - (itemInfo.lastSpamTime or 0)) >= 0.1 then
+                                        itemInfo.lastSpamTime = nowTime
+
+                                        -- Chỉ di chuyển (MoveTo) đến 1 món GẦN NHẤT nếu dist > 1 (tránh xoay đầu)
+                                        if itemInfo == nearestItem and itemInfo.dist > 1 then
+                                            if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
+                                                pcall(function()
+                                                    _G.RoleManager.me:MoveTo({ x = itemInfo.x, y = itemInfo.y })
+                                                end)
+                                            end
+                                        end
+
+                                        -- Bắn gói tin nhặt đơn lẻ 100%
+                                        if _G.PickupManager then
+                                            _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+                                        end
                                     end
                                 end
                             end
@@ -3930,7 +3965,106 @@ local function CreateModUI()
             currentY = currentY - 45
 
             CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY)
-            currentY = currentY - 45
+            currentY = currentY - 40
+
+            if _G.AutoPick_Mode == nil then
+                _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
+                if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
+                    _G.AutoPick_Mode = 1
+                end
+            end
+
+            local btnWidth = 110
+            local btnHeight = 30
+
+            local btnPa1Go = GameObject("AutoPick_PA1_Btn")
+            btnPa1Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, btnPa1Go)
+            local rtPa1 = btnPa1Go:AddComponent(typeof(RectTransform))
+            rtPa1.anchorMin, rtPa1.anchorMax, rtPa1.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            rtPa1.anchoredPosition = Vector2(rightColX, currentY)
+            rtPa1.sizeDelta = Vector2(btnWidth, btnHeight)
+
+            local bgPa1 = GameObject("Bg")
+            bgPa1.transform:SetParent(btnPa1Go.transform, false)
+            local bgRtPa1 = bgPa1:AddComponent(typeof(RectTransform))
+            bgRtPa1.anchorMin, bgRtPa1.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            bgRtPa1.sizeDelta = Vector2(0, 0)
+            local bgImgPa1 = bgPa1:AddComponent(typeof(Image))
+
+            local txtGoPa1 = GameObject("Text")
+            txtGoPa1.transform:SetParent(btnPa1Go.transform, false)
+            local txtRtPa1 = txtGoPa1:AddComponent(typeof(RectTransform))
+            txtRtPa1.anchorMin, txtRtPa1.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRtPa1.sizeDelta = Vector2(0, 0)
+            local txtPa1 = txtGoPa1:AddComponent(typeof(Text))
+            txtPa1.raycastTarget = false
+            txtPa1.fontSize = 15
+            txtPa1.alignment = TextAnchor.MiddleCenter
+            txtPa1.text = "PA NHẶT 1"
+            if defaultFont then txtPa1.font = defaultFont end
+
+            local btnPa1 = btnPa1Go:AddComponent(typeof(Button))
+
+            local btnPa2Go = GameObject("AutoPick_PA2_Btn")
+            btnPa2Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, btnPa2Go)
+            local rtPa2 = btnPa2Go:AddComponent(typeof(RectTransform))
+            rtPa2.anchorMin, rtPa2.anchorMax, rtPa2.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            rtPa2.anchoredPosition = Vector2(rightColX + btnWidth + 10, currentY)
+            rtPa2.sizeDelta = Vector2(btnWidth, btnHeight)
+
+            local bgPa2 = GameObject("Bg")
+            bgPa2.transform:SetParent(btnPa2Go.transform, false)
+            local bgRtPa2 = bgPa2:AddComponent(typeof(RectTransform))
+            bgRtPa2.anchorMin, bgRtPa2.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            bgRtPa2.sizeDelta = Vector2(0, 0)
+            local bgImgPa2 = bgPa2:AddComponent(typeof(Image))
+
+            local txtGoPa2 = GameObject("Text")
+            txtGoPa2.transform:SetParent(btnPa2Go.transform, false)
+            local txtRtPa2 = txtGoPa2:AddComponent(typeof(RectTransform))
+            txtRtPa2.anchorMin, txtRtPa2.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRtPa2.sizeDelta = Vector2(0, 0)
+            local txtPa2 = txtGoPa2:AddComponent(typeof(Text))
+            txtPa2.raycastTarget = false
+            txtPa2.fontSize = 15
+            txtPa2.alignment = TextAnchor.MiddleCenter
+            txtPa2.text = "PA NHẶT 2"
+            if defaultFont then txtPa2.font = defaultFont end
+
+            local btnPa2 = btnPa2Go:AddComponent(typeof(Button))
+
+            local function UpdatePAModeLabels()
+                if _G.AutoPick_Mode == 1 then
+                    bgImgPa1.color = Color(0.2, 0.5, 0.2, 1)
+                    txtPa1.color = Color.white
+                    bgImgPa2.color = Color(0.3, 0.3, 0.3, 1)
+                    txtPa2.color = Color(0.7, 0.7, 0.7, 1)
+                else
+                    bgImgPa1.color = Color(0.3, 0.3, 0.3, 1)
+                    txtPa1.color = Color(0.7, 0.7, 0.7, 1)
+                    bgImgPa2.color = Color(0.2, 0.5, 0.2, 1)
+                    txtPa2.color = Color.white
+                end
+            end
+            UpdatePAModeLabels()
+
+            btnPa1.onClick:AddListener(function()
+                _G.AutoPick_Mode = 1
+                CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Mode", 1)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdatePAModeLabels()
+            end)
+
+            btnPa2.onClick:AddListener(function()
+                _G.AutoPick_Mode = 2
+                CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Mode", 2)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdatePAModeLabels()
+            end)
+
+            currentY = currentY - 40
 
 
             local function CreateRuneLabel(text, y)
@@ -5717,7 +5851,7 @@ local function CreateModUI()
         tabCoBanGo.transform:SetParent(panelGo.transform, false)
         local tabCoBanRt = tabCoBanGo:AddComponent(typeof(RectTransform))
         tabCoBanRt.anchorMin, tabCoBanRt.anchorMax, tabCoBanRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-        tabCoBanRt.anchoredPosition = Vector2(10, -10)
+        tabCoBanRt.anchoredPosition = Vector2(20, -10)
         tabCoBanRt.sizeDelta = Vector2(width, 40)
         local tabCoBanImg = tabCoBanGo:AddComponent(typeof(Image))
 
@@ -5735,7 +5869,7 @@ local function CreateModUI()
         tabNangCaoGo.transform:SetParent(panelGo.transform, false)
         local tabNangCaoRt = tabNangCaoGo:AddComponent(typeof(RectTransform))
         tabNangCaoRt.anchorMin, tabNangCaoRt.anchorMax, tabNangCaoRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-        tabNangCaoRt.anchoredPosition = Vector2(10 + width + 10, -10)
+        tabNangCaoRt.anchoredPosition = Vector2(20 + width + 10, -10)
         tabNangCaoRt.sizeDelta = Vector2(width, 40)
         local tabNangCaoImg = tabNangCaoGo:AddComponent(typeof(Image))
 
@@ -5757,7 +5891,7 @@ local function CreateModUI()
             local tabAutoBossRt = tabAutoBossGo:AddComponent(typeof(RectTransform))
             tabAutoBossRt.anchorMin, tabAutoBossRt.anchorMax, tabAutoBossRt.pivot = Vector2(0, 1), Vector2(0, 1),
                 Vector2(0, 1)
-            tabAutoBossRt.anchoredPosition = Vector2(10 + (width + 10) * 2, -10)
+            tabAutoBossRt.anchoredPosition = Vector2(20 + (width + 10) * 2, -10)
             tabAutoBossRt.sizeDelta = Vector2(width, 40)
             tabAutoBossImg = tabAutoBossGo:AddComponent(typeof(Image))
 
@@ -5779,7 +5913,7 @@ local function CreateModUI()
             tabAdminGo.transform:SetParent(panelGo.transform, false)
             local tabAdminRt = tabAdminGo:AddComponent(typeof(RectTransform))
             tabAdminRt.anchorMin, tabAdminRt.anchorMax, tabAdminRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tabAdminRt.anchoredPosition = Vector2(10 + (width + 10) * 3, -10)
+            tabAdminRt.anchoredPosition = Vector2(20 + (width + 10) * 3, -10)
             tabAdminRt.sizeDelta = Vector2(width, 40)
             tabAdminImg = tabAdminGo:AddComponent(typeof(Image))
 
@@ -5928,29 +6062,87 @@ local function CreateModUI()
                 end
 
                 local delaySec = delayMs / 1000.0
-                local scheduledTime = nowTime + delaySec
-                local expireTime = scheduledTime + 5.0
 
-                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
-                _G.Mod_ActiveSpamItems[dropItemData.id] = {
-                    id = dropItemData.id,
-                    x = dropItemData.x,
-                    y = dropItemData.y,
-                    startTime = scheduledTime,
-                    expireTime = expireTime,
-                    lastSpamTime = 0,
-                    isTrick = isSecretTrickActive
-                }
+                if _G.AutoPick_Mode == nil then
+                    _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
+                    if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
+                        _G.AutoPick_Mode = 1
+                    end
+                end
 
-                local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
-                local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
-                local objId = dropItemData.id or "???"
-                if _G.WriteLog then
-                    local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE DELAY %dms", delayMs)
-                    _G.WriteLog(string.format(
-                        "[%s] Nhặt đơn [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s",
-                        logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
-                        tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                if _G.AutoPick_Mode == 1 then
+                    -- PA NHẶT 1 (Rollback instant + 0ms packet + spam loop)
+                    local function ExecutePickup()
+                        -- 1. Chạy tới vị trí vật phẩm ngay lập tức
+                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                            pcall(function()
+                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
+                            end)
+                        end
+
+                        -- 2. Bắn gói tin nhặt LẬP TỨC 0ms
+                        if _G.PickupManager then
+                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                        end
+
+                        -- 3. Đưa vào Hàng Đợi Duy Trì Spam (dùng chung Vòng Lặp Mẹ)
+                        _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                        _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                            id = dropItemData.id,
+                            x = dropItemData.x,
+                            y = dropItemData.y,
+                            expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                        }
+
+                        local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                        local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or
+                            "???"
+                        local objId = dropItemData.id or "???"
+                        if _G.WriteLog then
+                            _G.WriteLog(string.format(
+                                "[%s] Nhặt PA1 (Nhận tin lúc %s | Delay %d ms | Xử lý %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s",
+                                logPrefix, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
+                                tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                        end
+                    end
+
+                    if delaySec > 0 and _G.Timer and _G.Timer.StartLoop then
+                        local hasFired = false
+                        _G.Timer.StartLoop(delaySec, 1, function()
+                            if not hasFired then
+                                hasFired = true
+                                ExecutePickup()
+                            end
+                        end)
+                    else
+                        ExecutePickup()
+                    end
+                else
+                    -- PA NHẶT 2 (Phương án hiện tại với 0.1s delay throttle)
+                    local scheduledTime = nowTime + delaySec
+                    local expireTime = scheduledTime + 5.0
+
+                    _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                    _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                        id = dropItemData.id,
+                        x = dropItemData.x,
+                        y = dropItemData.y,
+                        startTime = scheduledTime,
+                        expireTime = expireTime,
+                        lastSpamTime = 0,
+                        isTrick = isSecretTrickActive
+                    }
+
+                    local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                    local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
+                    local objId = dropItemData.id or "???"
+                    if _G.WriteLog then
+                        local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE DELAY %dms", delayMs)
+                        _G.WriteLog(string.format(
+                            "[%s] Nhặt PA2 [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s",
+                            logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
+                            tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                    end
                 end
             end
             _G.ExecutePickupCommon = ExecutePickupCommon
