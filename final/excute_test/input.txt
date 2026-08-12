@@ -1,74 +1,125 @@
 -- =================================================================
--- SCRIPT TEST GẮP HỒI SINH TỰ ĐỘNG (Dùng cho nút Execute)
--- File: input.txt
+-- SCRIPT TEST BATCH LOOT LẶP LIÊN TỤC CHO ĐẾN KHỦNG HẾT ĐỒ + LOG CỰ LY XÓA ĐỒ
+-- File: input.txt (Dùng cho Admin Execute Test - Ghi kết quả vào output.txt)
 -- =================================================================
 
 pcall(function()
+    local outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
     local logMsg = ""
-    local function Log(msg)
-        logMsg = logMsg .. msg .. "\n"
-        print("[TestResurgence] " .. msg)
-        if _G.WriteLog then _G.WriteLog("[TestResurgence] " .. msg) end
-        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
-    end
 
-    Log("=== BẮT ĐẦU TEST HỒI SINH TỰ ĐỘNG ===")
+    local function LogTest(msg)
+        local timeStr = os.date("%H:%M:%S")
+        local formattedMsg = string.format("[%s] [BatchLootLoop] %s", timeStr, tostring(msg))
+        print(formattedMsg)
+        if _G.WriteLog then _G.WriteLog(formattedMsg) end
+        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(tostring(msg)) end
 
-    local isVisible = false
-    if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
-        isVisible = _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI)
-    end
-
-    Log("Trạng thái UI Role_ResurgenceUI IsVisible: " .. tostring(isVisible))
-
-    local uiObj = nil
-    if _G.UIManager and _G.UIManager.GetUiByName then
-        uiObj = _G.UIManager.GetUiByName("Role_ResurgenceUI")
-    end
-
-    Log("Đối tượng UI Role_ResurgenceUI: " .. (uiObj and "ĐÃ TÌM THẤY" or "NIL"))
-
-    if uiObj then
-        Log("Thử kích hoạt uiObj:Button_1OnClick()...")
-        local success, err = pcall(function()
-            uiObj:Button_1OnClick()
-        end)
-        if success then
-            Log("✅ ĐÃ GỌI Button_1OnClick THÀNH CÔNG!")
-        else
-            Log("❌ LỖI KHI GỌI Button_1OnClick: " .. tostring(err))
-        end
-    else
-        Log("Bảng Hồi sinh chưa hiển thị hoặc không lấy được UI object. Thử ép gửi gói tin trực tiếp...")
-        local mapId = 0
-        if _G.SceneData and _G.SceneData.mapId then
-            mapId = _G.SceneData.mapId
-        elseif _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId then
-            mapId = _G.RoleManager.me.mapId
-        end
-        Log("Map ID hiện tại: " .. tostring(mapId))
-
-        if _G.MeController and _G.RoleReliveType then
-            if mapId == 1077 or (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle()) then
-                Log("⚡ Ép phát gói tin MeController.ReqReqRelive(RoleReliveType.KSBattle)...")
-                _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
-            else
-                Log("⚡ Ép phát gói tin MeController.ReqReqRelive(RoleReliveType.BornPoint)...")
-                _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+        pcall(function()
+            local f = io.open(outputPath, "a")
+            if f then
+                f:write(formattedMsg .. "\n")
+                f:close()
             end
-        end
-
-        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
-            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
-        end
+        end)
     end
 
-    -- Ghi kết quả test ra output.txt
+    -- Reset file output.txt
     pcall(function()
-        local f = io.open("/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt", "w")
+        local f = io.open(outputPath, "w")
         if f then
-            f:write(logMsg)
+            f:write("=== BẮT ĐẦU TEST LẶP BATCH LOOT CHO ĐẾN HẾT ĐỒ + LOG CỰ LY XÓA ĐỒ ===\n")
+            f:write("Bắt đầu lúc: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
+            f:write("----------------------------------------------------------------------\n\n")
             f:close()
         end
     end)
+
+    LogTest("🚀 Đã kích hoạt Vòng Lặp Batch Loot Liên Tục & Hook Log Xóa Đồ...")
+
+    -- 1. Hook sự kiện RemoveDropSceneCellPos để đo cự ly thực tế khi đồ bị xóa khỏi mặt đất
+    if _G.PickupManager and not _G.Mod_HookedTestRemoveItem then
+        _G.Mod_HookedTestRemoveItem = true
+        local origRemove = _G.PickupManager.RemoveDropSceneCellPos
+        _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData)
+            if origRemove then origRemove(dropItemData) end
+            if dropItemData and dropItemData.id then
+                pcall(function()
+                    local meX, meY = 0, 0
+                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                        meX = _G.RoleManager.me.serverCoord.x or 0
+                        meY = _G.RoleManager.me.serverCoord.y or 0
+                    end
+                    local itemX = dropItemData.x or 0
+                    local itemY = dropItemData.y or 0
+                    local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
+                    local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.id
+
+                    LogTest(string.format("🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:%s (ID:%s) bị xóa khỏi đất tại Pos(%d,%d) | Me:(%d,%d) => CỰ LY NHẶT THỰC TẾ: %d Ô!",
+                        tostring(dropItemData.id), tostring(confId), itemX, itemY, meX, meY, dist))
+                end)
+            end
+        end
+    end
+
+    -- 2. Vòng lặp quét & nhặt liên tục cho đến khi HẾT SẠCH ĐỒ
+    if not _G.Mod_HookedTestBatchLoopContinuous then
+        _G.Mod_HookedTestBatchLoopContinuous = true
+        if _G.Timer and _G.Timer.StartLoop then
+            _G.Timer.StartLoop(0.05, -1, function()
+                pcall(function()
+                    local dropItems = nil
+                    if _G.DropItemManager and _G.DropItemManager.GetDropItemById then
+                        local _, val = debug.getupvalue(_G.DropItemManager.GetDropItemById, 1)
+                        if type(val) == "table" then dropItems = val end
+                    end
+
+                    if not dropItems then return end
+
+                    local meX, meY = 0, 0
+                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                        meX = _G.RoleManager.me.serverCoord.x or 0
+                        meY = _G.RoleManager.me.serverCoord.y or 0
+                    end
+
+                    local itemList = {}
+                    for id, itemObj in pairs(dropItems) do
+                        local dropItemData = itemObj and (itemObj.data or itemObj)
+                        if dropItemData and dropItemData.id then
+                            local ix = dropItemData.x or 0
+                            local iy = dropItemData.y or 0
+                            local dist = math.max(math.abs(meX - ix), math.abs(meY - iy))
+                            table.insert(itemList, {
+                                id = dropItemData.id,
+                                x = ix,
+                                y = iy,
+                                dist = dist,
+                                data = dropItemData
+                            })
+                        end
+                    end
+
+                    if #itemList > 0 then
+                        table.sort(itemList, function(a, b) return a.dist < b.dist end)
+                        local nearest = itemList[1]
+
+                        -- Di chuyển đến món gần nhất nếu cách > 1 ô
+                        if nearest and nearest.dist > 1 then
+                            if _G.RoleManager and _G.RoleManager.me then
+                                _G.RoleManager.me:MoveTo({x = nearest.x, y = nearest.y})
+                            end
+                        end
+
+                        -- Gửi gói tin nhặt cho tất cả các món trong danh sách
+                        for _, item in ipairs(itemList) do
+                            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                _G.PickupManager.ReqPickUpMapItem(item.id)
+                            end
+                        end
+                    end
+                end)
+            end)
+        end
+    end
+
+    LogTest("✅ ĐÃ KHỞI CHẠY VÒNG LẶP QUÉT & LOG CỰ LY XÓA ĐỒ THÀNH CÔNG!")
 end)

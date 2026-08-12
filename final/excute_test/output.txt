@@ -1,208 +1,43 @@
 === SUCCESS ===
 
 [LOGS]:
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 7 Ô | MoveTo(161,21) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(158,25) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 1 Ô | MoveTo(156,15) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(159,25) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 2 Ô | MoveTo(155,15) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] 🚶 [ĐỒ CÓ SẴN] [NHẶT THƯỜNG SPAM] Đồ: 'Không rõ' cách 10 Ô | MoveTo(157,25) + ReqPickUpMapItem	
-[19:02:41] [TestSpam] ĐÃ KHÔI PHỤC SPAM 0.3S/3S! Quét được 6 món đồ đang nằm sẵn trên đất.	
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 2 Ô | MoveTo(160,19) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 1 Ô | MoveTo(161,20) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(159,19) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(159,23) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(159,20) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(161,19) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,21) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(159,21) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 0 Ô | MoveTo(161,21) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | MoveTo(159,22) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 1 Ô | MoveTo(160,20) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 3 Ô | MoveTo(159,24) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(158,22) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 2 Ô | MoveTo(158,23) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 3 Ô | MoveTo(158,18) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,21) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(160,18) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,18) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,19) + ReqPickUpMapItem
-[19:02:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 4 Ô | MoveTo(158,24) + ReqPickUpMapItem
-[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 5 Ô | MoveTo(159,25) + ReqPickUpMapItem
-[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 3 Ô | MoveTo(156,25) + ReqPickUpMapItem
-[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(158,22) + ReqPickUpMapItem
-[19:02:52] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(157,24) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 0 Ô | MoveTo(157,22) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,23) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(156,23) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(158,21) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 2 Ô | MoveTo(156,24) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(159,22) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 3 Ô | MoveTo(158,25) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 1 Ô | MoveTo(158,23) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,21) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 1 Ô | MoveTo(159,21) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,24) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,22) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Hắc Long Vương' cách 2 Ô | MoveTo(160,21) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 3 Ô | MoveTo(157,25) + ReqPickUpMapItem
-[19:02:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,23) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,24) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phép Hồi Sinh' cách 2 Ô | MoveTo(157,23) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 1 Ô | MoveTo(155,25) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(155,24) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 1 Ô | MoveTo(157,26) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(158,26) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 3 Ô | MoveTo(159,23) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(156,23) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 1 Ô | MoveTo(158,22) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 3 Ô | MoveTo(156,26) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 3 Ô | MoveTo(159,22) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 3 Ô | MoveTo(155,23) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(157,25) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 3 Ô | MoveTo(159,24) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 3 Ô | MoveTo(155,26) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 3 Ô | MoveTo(157,22) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 1 Ô | MoveTo(156,24) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(158,24) + ReqPickUpMapItem
-[19:02:54] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Giáp Da Ảo Nguyệt' cách 3 Ô | MoveTo(159,26) + ReqPickUpMapItem
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ảo Nguyệt' cách 0 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Hắc Long Vương' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:17] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Hắc Long Vương' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:03:18] [TestSpam] ⚡ [ĐỒ MỚI RỚT] [HÚT MẢNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | ReqPickUpMapItems (KHÔNG MOVETO)
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(157,15) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(158,15) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,13) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Bích Ảnh' cách 2 Ô | MoveTo(158,11) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(156,11) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phép Hồi Sinh' cách 2 Ô | MoveTo(160,12) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,15) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Hắc Long Vương' cách 2 Ô | MoveTo(160,11) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 2 Ô | MoveTo(156,14) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,11) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Dài Bích Ảnh' cách 2 Ô | MoveTo(156,15) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(157,12) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 2 Ô | MoveTo(156,13) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 2 Ô | MoveTo(156,12) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 0 Ô | MoveTo(158,13) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,14) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(159,12) + ReqPickUpMapItem
-[19:07:03] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(157,13) + ReqPickUpMapItem
-[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
-[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(162,14) + ReqPickUpMapItem
-[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 1 Ô | MoveTo(159,15) + ReqPickUpMapItem
-[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nón Sắt Ảo Nguyệt' cách 1 Ô | MoveTo(161,14) + ReqPickUpMapItem
-[19:07:28] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(162,13) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 1 Ô | MoveTo(160,14) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(161,13) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 2 Ô | MoveTo(158,13) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(159,16) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | MoveTo(160,16) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 2 Ô | MoveTo(158,15) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ma Linh' cách 2 Ô | MoveTo(158,14) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(161,15) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,17) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(160,13) + ReqPickUpMapItem
-[19:07:29] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(159,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(161,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Nón Dung Nham Ma Linh' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(161,15) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ma Linh' cách 2 Ô | MoveTo(162,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Kiếm Phá Hoại' cách 1 Ô | MoveTo(160,14) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(161,17) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 0 Ô | MoveTo(160,15) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 2 Ô | MoveTo(159,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Hắc Long Vương' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(160,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(158,13) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,14) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Mặt Nạ Bôn Lôi' cách 2 Ô | MoveTo(162,14) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,14) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,15) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 2 Ô | MoveTo(158,14) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 1 Ô | MoveTo(159,16) + ReqPickUpMapItem
-[19:07:53] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(160,17) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(159,17) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Giáp Da Ảo Nguyệt' cách 1 Ô | MoveTo(161,16) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Ma Linh' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Chiến Khải Bôn Lôi' cách 1 Ô | MoveTo(160,16) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(161,15) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Gậy Ma Linh' cách 2 Ô | MoveTo(161,19) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Nỏ Lam Linh' cách 2 Ô | MoveTo(159,19) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Bôn Lôi' cách 2 Ô | MoveTo(159,15) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Trọng Khôi Hắc Long Vương' cách 2 Ô | MoveTo(160,19) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(159,18) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Pháp Trượng Hồi Sinh' cách 2 Ô | MoveTo(159,16) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 0 Ô | MoveTo(161,17) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Tay Ảo Nguyệt' cách 1 Ô | MoveTo(160,18) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 3 Ô | MoveTo(159,14) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 2 Ô | MoveTo(158,18) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 4 Ô | MoveTo(158,20) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(158,14) + ReqPickUpMapItem
-[19:08:42] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Túi Tên Nỏ Lam Linh' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,20) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 1 Ô | MoveTo(159,17) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Ma Linh' cách 2 Ô | MoveTo(158,18) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khải Bích Ảnh' cách 2 Ô | MoveTo(160,20) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,16) + ReqPickUpMapItem
-[19:08:50] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 1 Ô | MoveTo(161,17) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(158,20) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá HP Phù Hiệu' cách 2 Ô | MoveTo(160,16) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 0 Ô | MoveTo(160,18) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,19) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 2 Ô | MoveTo(159,16) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Ma Linh' cách 1 Ô | MoveTo(161,19) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(158,17) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(159,20) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(159,19) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ảo Nguyệt' cách 2 Ô | MoveTo(158,19) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(159,18) + ReqPickUpMapItem
-[19:08:51] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(158,16) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bôn Lôi' cách 1 Ô | MoveTo(159,19) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(161,18) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(160,17) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Bích Ảnh' cách 1 Ô | MoveTo(159,18) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 0 Ô | MoveTo(160,18) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 1 Ô | MoveTo(160,19) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 1 Ô | MoveTo(161,17) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Ủng Chiến Bôn Lôi' cách 1 Ô | MoveTo(159,17) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 1 Ô | MoveTo(161,19) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Khiên Phá Hoại' cách 3 Ô | MoveTo(157,17) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(157,21) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 4 Ô | MoveTo(159,15) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 4 Ô | MoveTo(159,21) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Thủ Phù Hiệu' cách 2 Ô | MoveTo(161,21) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Linh Hồn' cách 2 Ô | MoveTo(157,19) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Sách Ma Linh' cách 4 Ô | MoveTo(158,15) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 2 Ô | MoveTo(157,15) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Trác Việt-Dung Nham-Bao Chân Ma Linh' cách 2 Ô | MoveTo(160,15) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Vàng Khoá' cách 4 Ô | MoveTo(158,21) + ReqPickUpMapItem
-[19:08:59] [TestSpam] 🚶 [ĐỒ MỚI RỚT] [NHẶT THƯỜNG SPAM] Đồ: 'Đá Chúc Phúc' cách 2 Ô | MoveTo(157,20) + ReqPickUpMapItem
+[22:12:42] [BatchLootLoop] 🚀 Đã kích hoạt Vòng Lặp Batch Loot Liên Tục & Hook Log Xóa Đồ...	
+[22:12:42] [BatchLootLoop] ✅ ĐÃ KHỞI CHẠY VÒNG LẶP QUÉT & LOG CỰ LY XÓA ĐỒ THÀNH CÔNG!	
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066707 (ID:1000021) bị xóa khỏi đất tại Pos(237,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066696 (ID:6000091) bị xóa khỏi đất tại Pos(238,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066701 (ID:6004001) bị xóa khỏi đất tại Pos(236,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066698 (ID:6004001) bị xóa khỏi đất tại Pos(238,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066692 (ID:1000021) bị xóa khỏi đất tại Pos(237,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066691 (ID:1000021) bị xóa khỏi đất tại Pos(236,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066706 (ID:6000091) bị xóa khỏi đất tại Pos(238,177) | Me:(238,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066699 (ID:6004001) bị xóa khỏi đất tại Pos(238,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066700 (ID:6000091) bị xóa khỏi đất tại Pos(239,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066697 (ID:6000091) bị xóa khỏi đất tại Pos(237,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066689 (ID:6000160) bị xóa khỏi đất tại Pos(239,179) | Me:(239,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066694 (ID:1000021) bị xóa khỏi đất tại Pos(238,179) | Me:(239,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066704 (ID:6000379) bị xóa khỏi đất tại Pos(237,179) | Me:(238,179) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066690 (ID:6004011) bị xóa khỏi đất tại Pos(236,178) | Me:(236,178) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
+[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066703 (ID:6000379) bị xóa khỏi đất tại Pos(236,177) | Me:(236,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066695 (ID:1000021) bị xóa khỏi đất tại Pos(235,177) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066702 (ID:1000021) bị xóa khỏi đất tại Pos(235,178) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066705 (ID:6000091) bị xóa khỏi đất tại Pos(235,175) | Me:(235,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147561 (ID:6004011) bị xóa khỏi đất tại Pos(236,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147559 (ID:6004011) bị xóa khỏi đất tại Pos(234,174) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147564 (ID:6000171) bị xóa khỏi đất tại Pos(234,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147563 (ID:6004001) bị xóa khỏi đất tại Pos(234,175) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147566 (ID:6004011) bị xóa khỏi đất tại Pos(235,174) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147553 (ID:6004011) bị xóa khỏi đất tại Pos(235,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147552 (ID:6000160) bị xóa khỏi đất tại Pos(235,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147560 (ID:6000100) bị xóa khỏi đất tại Pos(234,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147557 (ID:6004001) bị xóa khỏi đất tại Pos(236,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147554 (ID:6004011) bị xóa khỏi đất tại Pos(237,177) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147549 (ID:6000160) bị xóa khỏi đất tại Pos(237,176) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147565 (ID:6000379) bị xóa khỏi đất tại Pos(237,175) | Me:(237,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147548 (ID:6000160) bị xóa khỏi đất tại Pos(235,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147562 (ID:6004011) bị xóa khỏi đất tại Pos(234,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147567 (ID:6000379) bị xóa khỏi đất tại Pos(236,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147555 (ID:6000379) bị xóa khỏi đất tại Pos(233,174) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147556 (ID:6000181) bị xóa khỏi đất tại Pos(233,175) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147558 (ID:6004011) bị xóa khỏi đất tại Pos(233,173) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147550 (ID:6004001) bị xóa khỏi đất tại Pos(233,176) | Me:(233,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147551 (ID:6000379) bị xóa khỏi đất tại Pos(233,177) | Me:(233,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
