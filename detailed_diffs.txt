@@ -1,0 +1,355 @@
+========================================
+DIFF FOR FILE: GlobalConfig.lua
+========================================
+--- v165/GlobalConfig.lua
++++ v171/GlobalConfig.lua
+@@ -13,8 +13,18 @@
+   return tonumber(this.GetGlobalConfig(globalId)) or 0
+ end
+ 
+-function GlobalConfig.GetGlobalConfig_NumberArray(globalId, sep)
+-  return string.stringToNumberArray(this.GetGlobalConfig(globalId), sep)
++function GlobalConfig.GetGlobalConfig_NumberArray(globalId)
++  local cfgTbl = this.GetGlobalConfig(globalId)
++  local result
++  if cfgTbl then
++    result = {}
++    local cfgStr = string.split(cfgTbl, "_")
++    for i = 1, #cfgStr do
++      local str = string.split(cfgStr[i], "#")
++      table.insert(result, str)
++    end
++  end
++  return result
+ end
+ 
+ function GlobalConfig.Init()
+@@ -55,8 +65,8 @@
+   GlobalConfig.RedemJump = this.GetGlobalConfig(1301009)
+   GlobalConfig.Redemlevel = this.GetGlobalConfig(3600001)
+   GlobalConfig.AutoRackopenServerDay = this.GetGlobalConfig_Number(2310020)
+-  GlobalConfig.HolySkeletonBossHelpCfg = this.GetGlobalConfig_NumberArray(9002001, "#")
+-  GlobalConfig.RuneBossHelpCfg = this.GetGlobalConfig_NumberArray(9002002, "#")
++  GlobalConfig.HolySkeletonBossHelpCfg = this.GetGlobalConfig_NumberArray(9002001)
++  GlobalConfig.RuneBossHelpCfg = this.GetGlobalConfig_NumberArray(9002002)
+ end
+ 
+ this.Init()
+
+
+========================================
+DIFF FOR FILE: TranScriptController.lua
+========================================
+--- v165/TranScriptController.lua
++++ v171/TranScriptController.lua
+@@ -234,9 +234,8 @@
+ end
+ 
+ function TranScriptController.OnChangeMap()
+-  local holySkeletonBossMapId = table.isNullOrEmpty(GlobalConfig.HolySkeletonBossHelpCfg) == false and GlobalConfig.HolySkeletonBossHelpCfg[1]
+   local runeBossMapId = table.isNullOrEmpty(GlobalConfig.RuneBossHelpCfg) == false and GlobalConfig.RuneBossHelpCfg[1]
+-  if holySkeletonBossMapId and SceneData.groupId == holySkeletonBossMapId or runeBossMapId and SceneData.groupId == runeBossMapId then
++  if runeBossMapId and SceneData.groupId == runeBossMapId then
+     TranScriptData.SetInTranscript(true)
+     TranScriptData.InTranscriptType = 100941
+     TranScriptData.InTranscriptData = {
+
+
+========================================
+DIFF FOR FILE: Instance_GoalUI.lua
+========================================
+--- v165/Instance_GoalUI.lua
++++ v171/Instance_GoalUI.lua
+@@ -90,6 +90,14 @@
+   self.lab_myDamageRein = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/reinBossInstance/sv_attacklist/myRankItem/lab_myDamage")
+   self.defbtnRein = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/reinBossInstance/sv_attacklist/myRankItem/defbtn")
+   self.descBtnRb = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/reinBossInstance/sv_attacklist/tips/descBtnRb")
++  self.boneBossInstance = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance")
++  self.rankBoneItem = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/Viewport/Content/rankItem")
++  self.lab_myRankBone = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/myRankItem/lab_myRank")
++  self.lab_myNameBone = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/myRankItem/lab_myName")
++  self.lab_myDamageBone = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/myRankItem/lab_myDamage")
++  self.defbtnBone = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/myRankItem/defbtn")
++  self.descBtnBone = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/boneBossInstance/sv_attacklist/tips/descBtnRb")
++  self.callBtn = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/callBtn")
+   self.kalimaTempleInstance = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/kalimaTempleInstance")
+   self.rankItemKalima = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/kalimaTempleInstance/sv_attacklist/Viewport/Content/rankItem")
+   self.lab_myRankKalima = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/kalimaTempleInstance/sv_attacklist/myRankItem/lab_myRank")
+@@ -125,6 +133,7 @@
+   self.EmoExpNum = nil
+   self.objTbl = {}
+   self.damageRankBossInfo = nil
++  self.isOpenCallView = false
+ end
+ 
+ function Instance_GoalUI:RootPanelState(state)
+@@ -188,6 +197,7 @@
+   TranScriptData.ClearData()
+   self.kalunteRuinsGoalUITemp:OnHide()
+   TranScriptData.ServerRoleCountDownTimeData = nil
++  self.isOpenCallView = false
+ end
+ 
+ function Instance_GoalUI:OnDestroy()
+@@ -258,6 +268,19 @@
+   self.defbtnRein:SetOnClick(self, self.BeatBackOnClick)
+   self.defbtnKalima:SetOnClick(self, self.BeatBackOnClick)
+   self.descBtnKalima:SetOnClick(self, self.descBtnOnClick)
++  self.defbtnBone:SetOnClick(self, self.BeatBackOnClick)
++  self.descBtnBone:SetOnClick(self, self.DescBtnRbOnClick)
++  self.callBtn:SetOnClick(self, self.callBtnOnClick)
++end
++
++function Instance_GoalUI:callBtnOnClick(control)
++  self.isOpenCallView = not self.isOpenCallView
++  if self.isOpenCallView then
++    self.YuanGuBOSSInstance:SetActive(true)
++    self.ancientBossGoalUITemp:Refresh(self.mapId)
++  else
++    self.YuanGuBOSSInstance:SetActive(false)
++  end
+ end
+ 
+ function Instance_GoalUI:DescBtnRbOnClick()
+@@ -288,6 +311,9 @@
+ end
+ 
+ function Instance_GoalUI:BeatBackOnClick()
++  if not self.attackRoleIdTab then
++    return
++  end
+   local count = table.count(self.attackRoleIdTab.attackRoleId)
+   if count == 0 then
+     return
+@@ -691,6 +717,7 @@
+   self.bossInfoItemTemp = UIContainer(self.bossInfoItem, self, OnBossInfoItemCreate, BossInfoItemRefresh)
+   self.rankItemTempRein = UIContainer(self.rankReinItem, self, OnRankItemReinCreate, rankItemReinRefresh)
+   self.rankItemTempKalima = UIContainer(self.rankItemKalima, self, OnRankItemReinCreate, rankItemReinRefresh)
++  self.rankItemTempBone = UIContainer(self.rankBoneItem, self, OnRankItemReinCreate, rankItemReinRefresh)
+   self.trailBossInfoItemTemp = UIContainer(self.trailbossInfoItem, self, OnBossInfoItemCreate, BossInfoItemRefresh)
+   self.rankItemTempTrail = UIContainer(self.rankTrailItem, self, OnRankItemReinCreate, rankItemReinRefresh)
+   self.kalunteRuinsGoalUITemp = luaTemplateManager.GetNewTemplate(self.KaLunTeInstance, LuaComponentTemplates.GoalUI_KalunteRuinsTemp)
+@@ -791,6 +818,8 @@
+     self.ancientBossGoalUITemp:Refresh(self.mapId)
+   elseif self.args.type == TranScriptType.YanGuBoss then
+     self:SetDamageRank()
++    self.descBtn:SetActive(false)
++    self.lab_fightTimeValue:SetText("")
+   elseif self.args.type == TranScriptType.KSBattle then
+     self:RefershkSBattleRankView()
+     local timeLeft = self.args.countDownTime / 1000
+@@ -905,14 +934,16 @@
+     self.personInstance:SetActive(self.args.type == TranScriptType.PersonBoss_Tower)
+     self.bloodCastleInstance:SetActive(self.args.type == TranScriptType.BloodCastle or self.args.type == TranScriptType.DemonPlaza or self.args.type == TranScriptType.RefineTower)
+     self.secretInstance:SetActive(self.args.type == TranScriptType.SecretBoss and self.args.instanceType ~= nil and self.args.instanceType ~= instanceType)
+-    self.reinBossInstance:SetActive(self.args.type == TranScriptType.SecretBoss and self.args.instanceType ~= nil and self.args.instanceType == instanceType or self.args.type == TranScriptType.RegenerateBoss or self.args.type == TranScriptType.LostMirageBoss or self.args.type == TranScriptType.YanGuBoss)
++    self.reinBossInstance:SetActive(self.args.type == TranScriptType.SecretBoss and self.args.instanceType ~= nil and self.args.instanceType == instanceType or self.args.type == TranScriptType.RegenerateBoss or self.args.type == TranScriptType.LostMirageBoss)
+     self.kalimaTempleInstance:SetActive(self.args.type == TranScriptType.Person_KaliMaTemple)
+     self.warAllianceBossInstance:SetActive(self.args.type == TranScriptType.WarAllianceBoss)
+     self.trailBossInstance:SetActive(self.args.type == TranScriptType.TrialsBoss)
+     self.KaLunTeInstance:SetActive(self.args.type == TranScriptType.KalunteRuins)
+     self.NightFightInstance:SetActive(self.args.type == TranScriptType.KSBattle)
+-    self.YuanGuBOSSInstance:SetActive(self.args.type == TranScriptType.AncientBoss)
++    self.YuanGuBOSSInstance:SetActive(self.isOpenCallView and self.args.type == TranScriptType.YanGuBoss or self.args.type == TranScriptType.AncientBoss)
+     self.zoomSecretRealmInstance:SetActive(self.args.type == TranScriptType.ZoomSecretRealm)
++    self.boneBossInstance:SetActive(self.args.type == TranScriptType.YanGuBoss)
++    self.callBtn:SetActive(self.args.type == TranScriptType.YanGuBoss)
+   end
+ end
+ 
+@@ -1585,7 +1616,7 @@
+ end
+ 
+ function Instance_GoalUI:OnRoleLeaveView(_, roleData)
+-  if self.args.type ~= TranScriptType.Person_KaliMaTemple and self.args.type ~= TranScriptType.TrialsBoss and self.args.type ~= TranScriptType.RegenerateBoss and self.args.type ~= TranScriptType.LostMirageBoss and self.args.type ~= TranScriptType.YanGuBoss then
++  if self.args.type ~= TranScriptType.Person_KaliMaTemple and self.args.type ~= TranScriptType.TrialsBoss and self.args.type ~= TranScriptType.RegenerateBoss and self.args.type ~= TranScriptType.LostMirageBoss then
+     return
+   end
+   if self.damageRankBossInfo and roleData and self.damageRankBossInfo.mid == roleData.id then
+@@ -1664,11 +1695,17 @@
+     lab_myName = self.lab_myNameTrail
+     lab_myDamage = self.lab_myDamageTrail
+   end
+-  if self.args.type == TranScriptType.RegenerateBoss or self.args.type == TranScriptType.YanGuBoss then
++  if self.args.type == TranScriptType.RegenerateBoss then
+     rankItemTemp = self.rankItemTempRein
+     lab_myRank = self.lab_myRankRein
+     lab_myName = self.lab_myNameRein
+     lab_myDamage = self.lab_myDamageRein
++  end
++  if self.args.type == TranScriptType.YanGuBoss then
++    rankItemTemp = self.rankItemTempBone
++    lab_myRank = self.lab_myRankBone
++    lab_myName = self.lab_myNameBone
++    lab_myDamage = self.lab_myDamageBone
+   end
+   if self.args.type == TranScriptType.LostMirageBoss then
+     rankItemTemp = self.rankItemTempRein
+
+
+========================================
+DIFF FOR FILE: GoalUI_AncientBossTemp.lua
+========================================
+--- v165/GoalUI_AncientBossTemp.lua
++++ v171/GoalUI_AncientBossTemp.lua
+@@ -39,22 +39,36 @@
+ end
+ 
+ function GoalUI_AncientBossTemp:Refresh(mapId)
+-  local cost, checkCfg = {}
+-  local holySkeletonBossMapId = table.isNullOrEmpty(GlobalConfig.HolySkeletonBossHelpCfg) == false and GlobalConfig.HolySkeletonBossHelpCfg[1]
+-  local runeBossMapId = table.isNullOrEmpty(GlobalConfig.RuneBossHelpCfg) == false and GlobalConfig.RuneBossHelpCfg[1]
+-  if holySkeletonBossMapId and mapId and holySkeletonBossMapId == mapId then
+-    checkCfg = GlobalConfig.HolySkeletonBossHelpCfg
+-  elseif runeBossMapId and mapId and runeBossMapId == mapId then
+-    checkCfg = GlobalConfig.RuneBossHelpCfg
++  local cost, checkCfg, holySkeletonBossMapId, runeBossMapId = {}
++  if not table.isNullOrEmpty(GlobalConfig.HolySkeletonBossHelpCfg) and GlobalConfig.HolySkeletonBossHelpCfg[1] then
++    for i, v in pairs(GlobalConfig.HolySkeletonBossHelpCfg[1]) do
++      if mapId == tonumber(v) then
++        holySkeletonBossMapId = tonumber(v)
++        break
++      end
++    end
++  end
++  if not table.isNullOrEmpty(GlobalConfig.RuneBossHelpCfg) and GlobalConfig.RuneBossHelpCfg[1] then
++    for i, v in pairs(GlobalConfig.RuneBossHelpCfg[1]) do
++      if mapId == tonumber(v) then
++        runeBossMapId = tonumber(v)
++        break
++      end
++    end
++  end
++  if holySkeletonBossMapId and mapId and holySkeletonBossMapId == mapId and not table.isNullOrEmpty(GlobalConfig.HolySkeletonBossHelpCfg[2]) then
++    checkCfg = GlobalConfig.HolySkeletonBossHelpCfg[2]
++  elseif runeBossMapId and mapId and runeBossMapId == mapId and not table.isNullOrEmpty(GlobalConfig.RuneBossHelpCfg[2]) then
++    checkCfg = GlobalConfig.RuneBossHelpCfg[2]
+   else
+     return
+   end
+   if table.count(checkCfg) > 0 then
+-    for i = 4, 20, 2 do
++    for i = 3, 20, 2 do
+       if checkCfg[i] then
+         table.insert(cost, {
+-          itemId = checkCfg[i],
+-          count = checkCfg[i + 1]
++          itemId = tonumber(checkCfg[i]),
++          count = tonumber(checkCfg[i + 1])
+         })
+       else
+         break
+
+
+========================================
+DIFF FOR FILE: Activity_CommercialHoliday_PetInvestPage.lua
+========================================
+--- v165/Activity_CommercialHoliday_PetInvestPage.lua
++++ v171/Activity_CommercialHoliday_PetInvestPage.lua
+@@ -68,7 +68,7 @@
+   end
+   self.btn_tips:SetOnClick(self, function()
+     UIManager.Show(UIID.ItemTipUI, {
+-      item = ItemUtility.GenerateItemData(2210149),
++      item = ItemUtility.GenerateItemData(2210139),
+       rightOperate = EItemOperateType.Show,
+       ctrl = self.btn_tips
+     })
+@@ -115,7 +115,7 @@
+       par:GetComponent(typeof(CS.UnityEngine.Renderer)).sortingOrder = 410
+     end
+   end)
+-  local path = string.format("Model/Pet/tubegirl.prefab", self.go_Model)
++  local path = string.format("Model/Pet/Lieyanhu.prefab", self.go_Model)
+   self.curShowModel.transform.localPosition = Vector3(0, -40, 0)
+   self.curShowModel.transform.eulerAngles = Vector3(0, 150, 0)
+   self.curShowModel.transform.localScale = Vector3(150, 150, 150)
+
+
+========================================
+DIFF FOR FILE: TransferCareerEnum.lua
+========================================
+--- v165/TransferCareerEnum.lua
++++ v171/TransferCareerEnum.lua
+@@ -14,5 +14,5 @@
+   [ERoleCareer.Magic] = "ZZ_Load_faShi.jpg",
+   [ERoleCareer.Archer] = "ZZ_Load_sheShou.jpg",
+   [ERoleCareer.SpellSword] = "ZZ_Load_qishi.jpg",
+-  [ERoleCareer.SummonMagician] = "ZZ_Load_shushi.jpg"
++  [ERoleCareer.SummonMagician] = "ZZ_Load_zhaoHuanShuShi.jpg"
+ }
+
+
+========================================
+DIFF FOR FILE: cfg_Global_global.lua
+========================================
+--- v165/cfg_Global_global.lua
++++ v171/cfg_Global_global.lua
+@@ -427,7 +427,7 @@
+   [2190001] = {id = 2190001, effect = "10000"},
+   [2190101] = {
+     id = 2190101,
+-    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100 "
++    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100&criticalDamageChance#100"
+   },
+   [2190102] = {
+     id = 2190102,
+@@ -439,19 +439,19 @@
+   },
+   [2190104] = {
+     id = 2190104,
+-    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100 "
++    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100&criticalDamageChance#100"
+   },
+   [2190105] = {
+     id = 2190105,
+-    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100 "
++    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100&criticalDamageChance#100"
+   },
+   [2190106] = {
+     id = 2190106,
+-    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100 "
++    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100&criticalDamageChance#100"
+   },
+   [2190107] = {
+     id = 2190107,
+-    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100 "
++    effect = "damageBonus#100&damageAbsorption#100&reductionMonsterAttackSpeed#100&defenseMonsterToPlayerPercentage#100&minimumPhysBaseDmg^maximumPhysBaseDmg#1&career_maximumHealth#1&defenseBase#1&excellentDamageChance#100&criticalDamageChance#100"
+   },
+   [2210101] = {id = 2210101, effect = "28800000"},
+   [2210102] = {id = 2210102, effect = "7200000"},
+@@ -1110,15 +1110,15 @@
+   },
+   [21100002] = {
+     id = 21100002,
+-    effect = "20000_101#60&10000_101#60&40000_101#60&50001_101#1&60001_101#1&70001_101#1&80001_101#1&90001_101#1&100001_101#1&100002_101#1&100003_101#1&100004_101#1&100005_101#1&100006_101#1&100007_101#1&100008_101#1&100009_101#1&100010_101#1&100011_101#1&100030_101#1"
++    effect = "20000_101#60&10000_101#60&40000_101#60&50001_101#1&60001_101#1&70001_101#1&80001_101#1&90001_101#1&100001_101#1&100002_101#1&100003_101#1&100004_101#1&100005_101#1&100006_101#1&100007_101#1&100008_101#1&100009_101#1&100010_101#1&100011_101#1&100030_101#1&100021_101#1"
+   },
+   [21100003] = {
+     id = 21100003,
+-    effect = "2210020#2&2210030#1&2210060#4&2210070#6&2210080#7&2210090#8&2210100#9&2210110#10&2210120#11&2210071#12&2210072#13&2210073#14&2210074#15&2210075#16&2210076#17&2210077#18&2210078#19&2210121#20&2210122#21&2210149#40"
++    effect = "2210020#2&2210030#1&2210060#4&2210070#6&2210080#7&2210090#8&2210100#9&2210110#10&2210120#11&2210071#12&2210072#13&2210073#14&2210074#15&2210075#16&2210076#17&2210077#18&2210078#19&2210121#20&2210122#21&2210149#40&2210139#31"
+   },
+   [21100004] = {
+     id = 21100004,
+-    effect = "2210040#2&2210050#1&2210061#4&2210070#6&2210080#7&2210090#8&2210100#9&2210110#10&2210120#11&2210071#12&2210072#13&2210073#14&2210074#15&2210075#16&2210076#17&2210077#18&2210078#19&2210121#20&2210122#21&2210149#40"
++    effect = "2210040#2&2210050#1&2210061#4&2210070#6&2210080#7&2210090#8&2210100#9&2210110#10&2210120#11&2210071#12&2210072#13&2210073#14&2210074#15&2210075#16&2210076#17&2210077#18&2210078#19&2210121#20&2210122#21&2210149#40&2210139#31"
+   },
+   [21100005] = {
+     id = 21100005,
+@@ -1556,11 +1556,11 @@
+   [63000005] = {id = 63000005, effect = "20"},
+   [9002001] = {
+     id = 9002001,
+-    effect = "250001#1601#60000#1000021#20000"
++    effect = "250001#250002_1601#60000#1000021#20000"
+   },
+   [9002002] = {
+     id = 9002002,
+-    effect = "270001#2401#60000#1000021#20000"
++    effect = "270001_2401#60000#1000021#20000"
+   },
+   [63000006] = {
+     id = 63000006,
+
+

@@ -1,3 +1,0 @@
-local SuitEquipItem_BingJian_YuanTianYueBai = {}
-setmetatable(SuitEquipItem_BingJian_YuanTianYueBai, LuaClass.SuitEquipItem_Base)
-return SuitEquipItem_BingJian_YuanTianYueBai

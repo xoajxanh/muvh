@@ -1,0 +1,263 @@
+=== V165 VS V171 COMPARISON REPORT ===
+Total files in v165: 2252
+Total files in v171: 2252
+Identical files: 2226
+Added files in v171: 0
+Removed files in v171: 0
+Modified files: 26
+
+--- ADDED FILES IN V171 ---
+
+--- REMOVED FILES IN V171 ---
+
+--- MODIFIED FILES IN V171 ---
+ M Activity_CommercialHoliday_PetInvestPage.lua
+ M GlobalConfig.lua
+ M GoalUI_AncientBossTemp.lua
+ M Instance_GoalUI.lua
+ M TranScriptController.lua
+ M TransferCareerEnum.lua
+ M cfg_Box_box.lua
+ M cfg_Career_transfer_return.lua
+ M cfg_Commerce_niudantask.lua
+ M cfg_Commerce_overview.lua
+ M cfg_Commerce_sevengift.lua
+ M cfg_Commerce_shoppingcart.lua
+ M cfg_Count_count.lua
+ M cfg_EquipCell_cell.lua
+ M cfg_Equip_Title.lua
+ M cfg_Equip_guard_level.lua
+ M cfg_Function_function.lua
+ M cfg_Gift_gift.lua
+ M cfg_Global_global.lua
+ M cfg_Item_buy.lua
+ M cfg_Item_item.lua
+ M cfg_Item_pet_pose.lua
+ M cfg_Item_tips.lua
+ M cfg_Recharge_recharge.lua
+ M cfg_Task_goal.lua
+ M cfg_item_equip.lua
+
+--- SECURITY & TRACKING & LOGGING KEYWORD MATCHES IN NEW/MODIFIED FILES ---
+File: Activity_CommercialHoliday_PetInvestPage.lua (Matches: 15)
+  Line 10 [mod]: self.go_Model = self:GetControl("go_Model")
+  Line 22 [mod]: self:ShowModel()
+  Line 100 [mod]: function Activity_CommercialHoliday_PetInvestPage:ShowModel()
+  Line 101 [mod]: if self.isShowModel then
+  Line 104 [mod]: self.go_Model.transform.localPosition = Vector3(-198, -143, -400)
+  Line 105 [mod]: self.curShowModel = CS.Framework.GameModel("EffectModel", self.go_Model.transform, function(go, name)
+  Line 106 [mod]: local renders = self.curShowModel.transform:GetComponentsInChildren(typeof(UnityEngineLua.Renderer))
+  Line 111 [mod]: local sys = self.curShowModel.transform:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
+  Line 118 [mod]: local path = string.format("Model/Pet/Lieyanhu.prefab", self.go_Model)
+  Line 119 [mod]: self.curShowModel.transform.localPosition = Vector3(0, -40, 0)
+  Line 120 [mod]: self.curShowModel.transform.eulerAngles = Vector3(0, 150, 0)
+  Line 121 [mod]: self.curShowModel.transform.localScale = Vector3(150, 150, 150)
+  Line 122 [mod]: self.curShowModel:LoadAsync(path)
+  Line 123 [mod]: self.curShowModel:SetLayer(UI_LAYER)
+  Line 124 [mod]: self.isShowModel = true
+
+File: Instance_GoalUI.lua (Matches: 2)
+  Line 1337 [mod]: local endTime = string.format(endTimeText, math.modf(surplusTime))
+  Line 1758 [detect]: local isArrive = PathFinderManager.pathFinding.IsDetectionRangePoint(pos, mePos, 5)
+
+File: TranScriptController.lua (Matches: 3)
+  Line 2 [mod]: require("GameModel/TranScriptData")
+  Line 51 [log]: this.eventContainer:Regist(Event.Role_OnLoginedMap, this.OnChangeMap)
+  Line 82 [mod]: EventManager.Dispatch(Event.SkillViewModelChange)
+
+File: cfg_Commerce_shoppingcart.lua (Matches: 41)
+  Line 13 [mod]: commodityRanking = 1
+  Line 26 [mod]: commodityRanking = 2
+  Line 39 [mod]: commodityRanking = 3
+  Line 52 [mod]: commodityRanking = 4
+  Line 65 [mod]: commodityRanking = 5
+  Line 78 [mod]: commodityRanking = 6
+  Line 91 [mod]: commodityRanking = 7
+  Line 104 [mod]: commodityRanking = 8
+  Line 117 [mod]: commodityRanking = 9
+  Line 130 [mod]: commodityRanking = 10
+  Line 143 [mod]: commodityRanking = 11
+  Line 156 [mod]: commodityRanking = 12
+  Line 169 [mod]: commodityRanking = 13
+  Line 182 [mod]: commodityRanking = 14
+  Line 195 [mod]: commodityRanking = 15
+  Line 208 [mod]: commodityRanking = 16
+  Line 221 [mod]: commodityRanking = 17
+  Line 234 [mod]: commodityRanking = 18
+  Line 247 [mod]: commodityRanking = 19
+  Line 260 [mod]: commodityRanking = 20
+  ... and 21 more matches.
+
+File: cfg_Equip_Title.lua (Matches: 5)
+  Line 161 [ban]: typeName = "xy_gaibang",
+  Line 191 [ban]: typeName = "xy_gaibang",
+  Line 287 [hash]: typeName = "xinghongshashen",
+  Line 461 [anti]: typeName = "wx_lantingxu",
+  Line 948 [hash]: typeName = "title_yn_shashen",
+
+File: cfg_Equip_guard_level.lua (Matches: 193)
+  Line 5 [mod]: strengthenModel = 2210040,
+  Line 22 [mod]: strengthenModel = 2210040,
+  Line 39 [mod]: strengthenModel = 2210040,
+  Line 56 [mod]: strengthenModel = 2210040,
+  Line 73 [mod]: strengthenModel = 2210040,
+  Line 90 [mod]: strengthenModel = 2210040,
+  Line 107 [mod]: strengthenModel = 2210040,
+  Line 124 [mod]: strengthenModel = 2210040,
+  Line 141 [mod]: strengthenModel = 2210040,
+  Line 158 [mod]: strengthenModel = 2210040,
+  Line 175 [mod]: strengthenModel = 2210040,
+  Line 192 [mod]: strengthenModel = 2210040,
+  Line 209 [mod]: strengthenModel = 2210040,
+  Line 226 [mod]: strengthenModel = 2210040,
+  Line 243 [mod]: strengthenModel = 2210040,
+  Line 260 [mod]: strengthenModel = 2210040,
+  Line 277 [mod]: strengthenModel = 2210040,
+  Line 294 [mod]: strengthenModel = 2210040,
+  Line 311 [mod]: strengthenModel = 2210040,
+  Line 328 [mod]: strengthenModel = 2210040,
+  ... and 173 more matches.
+
+File: cfg_Function_function.lua (Matches: 9)
+  Line 480 [ban]: route = "WarAlliance_menuUI#armbands_tab"
+  Line 682 [ban]: name = "\196\144\225\186\165u Gi\195\161-Bang",
+  Line 1630 [hook]: route = "Main_MainMenuUI#btn_onHook"
+  Line 1650 [hook]: route = "Instance_BossUI#btn_onHook"
+  Line 1765 [hook]: route = "OnHook_ProfitUI#tog_badge"
+  Line 2481 [log]: route = "Login_WelcomeUI"
+  Line 2491 [sdk]: route = "Main_MainMenuUI#btn_customer_sdk"
+  Line 2747 [log]: route = "Login_WelcomeServerUI"
+  Line 3320 [log]: route = "Login_LoginUI#btn_information"
+
+File: cfg_Global_global.lua (Matches: 3)
+  Line 43 [anti]: effect = "17#ioc_angel_1#ioc_angel_2#Angel&6#ioc_BlessAngel_1#ioc_BlessAngel_2#BlessAngel&20#ioc_fashion_1#ioc_fashion_2
+  Line 801 [hook]: effect = "is_autoOperationH#is_emulatorSync5m#is_autoOperationWidely#test_autoOperationWidely#is_autoOperationCustom#is_
+  Line 813 [hook]: effect = "is_hooked#is_autoOperationWidely#B\195\161o c\195\161o ch\225\186\183n"
+
+File: cfg_Item_buy.lua (Matches: 2247)
+  Line 14 [mod]: commodityRanking = 3
+  Line 28 [mod]: commodityRanking = 3
+  Line 42 [mod]: commodityRanking = 3
+  Line 56 [mod]: commodityRanking = 3
+  Line 70 [mod]: commodityRanking = 3
+  Line 84 [mod]: commodityRanking = 3
+  Line 98 [mod]: commodityRanking = 3
+  Line 112 [mod]: commodityRanking = 3
+  Line 126 [mod]: commodityRanking = 3
+  Line 140 [mod]: commodityRanking = 3
+  Line 153 [mod]: commodityRanking = 3
+  Line 167 [mod]: commodityRanking = 3
+  Line 181 [mod]: commodityRanking = 3
+  Line 195 [mod]: commodityRanking = 3
+  Line 209 [mod]: commodityRanking = 3
+  Line 223 [mod]: commodityRanking = 3
+  Line 237 [mod]: commodityRanking = 3
+  Line 251 [mod]: commodityRanking = 3
+  Line 265 [mod]: commodityRanking = 3
+  Line 279 [mod]: commodityRanking = 3
+  ... and 2227 more matches.
+
+File: cfg_Item_item.lua (Matches: 48875)
+  Line 6 [mod]: model = "Lab_GuoQing_Gong",
+  Line 39 [mod]: model = "Lab_GuoQing_Zhu",
+  Line 72 [mod]: model = "Lab_GuoQing_Jie",
+  Line 105 [mod]: model = "Lab_GuoQing_Ri",
+  Line 138 [mod]: model = "Lab_GuoQing_Kuai",
+  Line 171 [mod]: model = "Lab_GuoQing_Le",
+  Line 202 [mod]: model = "Xingxing",
+  Line 240 [mod]: model = "Xingxing",
+  Line 278 [mod]: model = "Xingxing",
+  Line 316 [mod]: model = "Xingxing",
+  Line 354 [mod]: model = "Xingxing",
+  Line 392 [mod]: model = "Xingxing",
+  Line 430 [mod]: model = "Xingxing",
+  Line 468 [mod]: model = "Xingxing",
+  Line 506 [mod]: model = "Xingxing",
+  Line 544 [mod]: model = "Xingxing",
+  Line 582 [mod]: model = "Xingxing",
+  Line 620 [mod]: model = "Xingxing",
+  Line 658 [mod]: model = "Xingxing",
+  Line 693 [mod]: model = "Honglizi",
+  ... and 48855 more matches.
+
+File: cfg_Item_pet_pose.lua (Matches: 34)
+  Line 5 [mod]: model = "SportyGirlpetEvol"
+  Line 10 [mod]: model = "refereeUp"
+  Line 15 [mod]: model = "bestcaptainUp"
+  Line 20 [mod]: model = "goalkeeperUp"
+  Line 25 [mod]: model = "bulldogUp"
+  Line 30 [mod]: model = "doto",
+  Line 36 [mod]: model = "king"
+  Line 41 [mod]: model = "lordsilvesterUp"
+  Line 46 [mod]: model = "YutuBaobao"
+  Line 51 [mod]: model = "Xingshi"
+  Line 56 [mod]: model = "Xueren"
+  Line 61 [mod]: model = "Businiao"
+  Line 66 [mod]: model = "DragonKnight"
+  Line 71 [mod]: model = "dragonpet_evol",
+  Line 77 [mod]: model = "Muda"
+  Line 82 [mod]: model = "Jimmy"
+  Line 87 [mod]: model = "Zennie"
+  Line 92 [mod]: model = "Khan"
+  Line 97 [mod]: model = "FairyPet",
+  Line 103 [mod]: model = "Kenturionpet"
+  ... and 14 more matches.
+
+File: cfg_Item_tips.lua (Matches: 22)
+  Line 5896 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 5916 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 5936 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 5956 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 5976 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 5996 [anti]: content = "M\225\187\159 c\195\179 th\225\187\131 nh\225\186\173n to\195\160n b\225\187\153 <color=#DF4BE8>trang b\225\1
+  Line 6260 [anti]: content = "M\225\187\159 ra c\195\179 th\225\187\131 ch\225\187\141n t\195\185y \195\189 V\197\169 Kh\195\173 Ma Ki\225\
+  Line 8431 [ban]: content = "D\195\185ng s\225\186\189 mang danh hi\225\187\135u \226\128\156C\195\161i Bang\226\128\157"
+  Line 55036 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55040 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55044 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55048 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55052 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55056 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55060 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55064 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55068 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55072 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55076 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  Line 55081 [ban]: content = "\196\144\225\187\153c Ch\195\186 s\225\186\189 kh\195\180ng g\195\162y tr\195\186ng \196\145\225\187\153c n\2
+  ... and 2 more matches.
+
+File: cfg_Task_goal.lua (Matches: 10)
+  Line 11939 [mod]: goalTips = "Ti\195\170u di\225\187\135t <color=#3CD937>Ma V\198\176\198\161ng B\195\179ng \196\144\195\170m Asmodeus</co
+  Line 11947 [mod]: goalTips = "Ti\195\170u di\225\187\135t <color=#3CD937>Ph\225\186\171n N\225\187\153-Ma V\198\176\198\161ng B\195\179ng 
+  Line 11955 [mod]: goalTips = "Ti\195\170u di\225\187\135t <color=#3CD937>Cu\225\187\147ng B\225\186\161o-Ma V\198\176\198\161ng B\195\179n
+  Line 23598 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>Atlantis</color>"
+  Line 23646 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>Man Hoang-Atlantis </color>"
+  Line 23694 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>V\225\187\177c S\195\162u-Atlantis </color>"
+  Line 23742 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>H\195\160n S\198\176\198\161ng-Atlantis </color>"
+  Line 23790 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>H\225\187\147ng Y\195\170n-Atlantis </color>"
+  Line 23838 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>L\195\180i Minh-Atlantis </color>"
+  Line 23886 [anti]: goalTips = "\196\144\225\186\191n <color=#3CD937>Nguy\225\187\135t \225\186\162nh-Atlantis </color>"
+
+File: cfg_item_equip.lua (Matches: 342)
+  Line 13526 [anti]: name = "Kh\225\186\163i Atlantis",
+  Line 13540 [anti]: name = "Tr\195\161c Vi\225\187\135t-Kh\225\186\163i Atlantis",
+  Line 16646 [anti]: name = "Bao Ch\195\162n Atlantis",
+  Line 16661 [anti]: name = "Tr\195\161c Vi\225\187\135t-Bao Ch\195\162n Atlantis",
+  Line 19866 [anti]: name = "Bao Tay Atlantis",
+  Line 19881 [anti]: name = "Tr\195\161c Vi\225\187\135t-Bao Tay Atlantis",
+  Line 23103 [anti]: name = "\225\187\166ng Atlantis",
+  Line 23118 [anti]: name = "Tr\195\161c Vi\225\187\135t-\225\187\166ng Atlantis",
+  Line 41841 [anti]: name = "Khuy\195\170n Manticore (Tr\195\161i)",
+  Line 42283 [anti]: name = "Nh\225\186\171n Manticore (Tr\195\161i)",
+  Line 42727 [anti]: name = "D\195\162y Chuy\225\187\129n Manticore",
+  Line 43221 [anti]: name = "Tai Manticore (Ph\225\186\163i)",
+  Line 43663 [anti]: name = "Nh\225\186\171n Manticore (Ph\225\186\163i)",
+  Line 43974 [ban]: route = "armband",
+  Line 43994 [ban]: route = "armband",
+  Line 44014 [ban]: route = "armband",
+  Line 44034 [ban]: route = "armband",
+  Line 44054 [ban]: route = "armband",
+  Line 44074 [ban]: route = "armband",
+  Line 44094 [ban]: route = "armband",
+  ... and 322 more matches.
+

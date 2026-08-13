@@ -1,0 +1,49 @@
+MonsterBossType = {
+  wildBoss = enum(1),
+  privateBoss = enum(2),
+  worldBoss = enum(3),
+  goldMonster = enum(4),
+  brilliantMonster = enum(6),
+  secretBoss = enum(7),
+  spanBoss = enum(8),
+  OnHookPoint = enum(9),
+  reinBoss = enum(10),
+  KaLiMaBoss = enum(11),
+  PersonKaLiMaBoss = enum(12),
+  AngelBoss = enum(13),
+  RegenerateBoss = enum(14),
+  HolySkeletonBoss = enum(16),
+  RunesNewBoss = enum(17),
+  EnchantSmeltBoss = enum(18)
+}
+MonsterType = {
+  littleMonster = enum(1000),
+  boss = enum(2000),
+  wildBoss = enum(2001),
+  goldBoss = enum(2002),
+  build = enum(3000),
+  KaLiMa = enum(2206)
+}
+KaLiMaMonsterType = {
+  boss = enum(2012),
+  elite = enum(2011),
+  Little = enum(1003)
+}
+BossTogType = {
+  none = enum(0),
+  wildBossTog = enum(2440002),
+  privateBossTog = enum(2440003),
+  goldMonsterTog = enum(2440005),
+  brilliantMonsterTog = enum(2440006),
+  secretBossTog = enum(2440007),
+  spanBossTog = enum(2440008),
+  OnHookPointTog = enum(2390003),
+  reinBossTog = enum(2440009),
+  KaLiMaTog = enum(2440010),
+  PersonKaLiMaTog = enum(2440011),
+  AngelBossTog = enum(2440012),
+  RegenerateBossTog = enum(2440013),
+  HolySkeletonBossTog = enum(2440014),
+  RunesNewBossTog = enum(2440015),
+  EnchantSmeltBossTog = enum(2440016)
+}

@@ -1,2 +1,0 @@
-CrystalNucleusFenJieData = class()
-CrystalNucleusFenJieData.FenJieList = {}
