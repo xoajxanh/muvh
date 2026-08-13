@@ -1,43 +1,8 @@
 === SUCCESS ===
 
 [LOGS]:
-[22:12:42] [BatchLootLoop] 🚀 Đã kích hoạt Vòng Lặp Batch Loot Liên Tục & Hook Log Xóa Đồ...	
-[22:12:42] [BatchLootLoop] ✅ ĐÃ KHỞI CHẠY VÒNG LẶP QUÉT & LOG CỰ LY XÓA ĐỒ THÀNH CÔNG!	
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066707 (ID:1000021) bị xóa khỏi đất tại Pos(237,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066696 (ID:6000091) bị xóa khỏi đất tại Pos(238,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066701 (ID:6004001) bị xóa khỏi đất tại Pos(236,175) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066698 (ID:6004001) bị xóa khỏi đất tại Pos(238,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066692 (ID:1000021) bị xóa khỏi đất tại Pos(237,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:42] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066691 (ID:1000021) bị xóa khỏi đất tại Pos(236,176) | Me:(237,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066706 (ID:6000091) bị xóa khỏi đất tại Pos(238,177) | Me:(238,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066699 (ID:6004001) bị xóa khỏi đất tại Pos(238,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066700 (ID:6000091) bị xóa khỏi đất tại Pos(239,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066697 (ID:6000091) bị xóa khỏi đất tại Pos(237,178) | Me:(238,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066689 (ID:6000160) bị xóa khỏi đất tại Pos(239,179) | Me:(239,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066694 (ID:1000021) bị xóa khỏi đất tại Pos(238,179) | Me:(239,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:43] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066704 (ID:6000379) bị xóa khỏi đất tại Pos(237,179) | Me:(238,179) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066690 (ID:6004011) bị xóa khỏi đất tại Pos(236,178) | Me:(236,178) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
-[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066703 (ID:6000379) bị xóa khỏi đất tại Pos(236,177) | Me:(236,178) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066695 (ID:1000021) bị xóa khỏi đất tại Pos(235,177) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066702 (ID:1000021) bị xóa khỏi đất tại Pos(235,178) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:12:44] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815066705 (ID:6000091) bị xóa khỏi đất tại Pos(235,175) | Me:(235,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147561 (ID:6004011) bị xóa khỏi đất tại Pos(236,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147559 (ID:6004011) bị xóa khỏi đất tại Pos(234,174) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147564 (ID:6000171) bị xóa khỏi đất tại Pos(234,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147563 (ID:6004001) bị xóa khỏi đất tại Pos(234,175) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147566 (ID:6004011) bị xóa khỏi đất tại Pos(235,174) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147553 (ID:6004011) bị xóa khỏi đất tại Pos(235,176) | Me:(235,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147552 (ID:6000160) bị xóa khỏi đất tại Pos(235,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147560 (ID:6000100) bị xóa khỏi đất tại Pos(234,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147557 (ID:6004001) bị xóa khỏi đất tại Pos(236,177) | Me:(235,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147554 (ID:6004011) bị xóa khỏi đất tại Pos(237,177) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147549 (ID:6000160) bị xóa khỏi đất tại Pos(237,176) | Me:(236,177) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:56] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147565 (ID:6000379) bị xóa khỏi đất tại Pos(237,175) | Me:(237,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147548 (ID:6000160) bị xóa khỏi đất tại Pos(235,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 0 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147562 (ID:6004011) bị xóa khỏi đất tại Pos(234,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147567 (ID:6000379) bị xóa khỏi đất tại Pos(236,173) | Me:(235,173) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147555 (ID:6000379) bị xóa khỏi đất tại Pos(233,174) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147556 (ID:6000181) bị xóa khỏi đất tại Pos(233,175) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147558 (ID:6004011) bị xóa khỏi đất tại Pos(233,173) | Me:(234,174) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147550 (ID:6004001) bị xóa khỏi đất tại Pos(233,176) | Me:(233,175) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
-[22:13:57] [BatchLootLoop] 🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:5944970071815147551 (ID:6000379) bị xóa khỏi đất tại Pos(233,177) | Me:(233,176) => CỰ LY NHẶT THỰC TẾ: 1 Ô!
+[TEST_MOVE] Tọa độ hiện tại: X=125, Y=96	
+[TEST_MOVE] Thử di chuyển tới mục tiêu: X=135, Y=106 ...	
+[TEST_MOVE] -> Đã gọi me:MoveTo thành công!	
+[TEST_MOVE] Map GroupID = 106704	
+[TEST_MOVE] -> Đã gọi JumpMapToMoveToPos thành công!	

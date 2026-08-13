@@ -1,125 +1,42 @@
--- =================================================================
--- SCRIPT TEST BATCH LOOT LẶP LIÊN TỤC CHO ĐẾN KHỦNG HẾT ĐỒ + LOG CỰ LY XÓA ĐỒ
--- File: input.txt (Dùng cho Admin Execute Test - Ghi kết quả vào output.txt)
--- =================================================================
+-- ========================================================
+-- SCRIPT TEST DI CHUYỂN TRONG MAP VÀ PHÓ BẢN
+-- ========================================================
+local me = _G.RoleManager and _G.RoleManager.me
+if not me then
+    print("[TEST_MOVE] Lỗi: Không tìm thấy nhân vật (RoleManager.me)")
+    return
+end
 
-pcall(function()
-    local outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-    local logMsg = ""
+local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
 
-    local function LogTest(msg)
-        local timeStr = os.date("%H:%M:%S")
-        local formattedMsg = string.format("[%s] [BatchLootLoop] %s", timeStr, tostring(msg))
-        print(formattedMsg)
-        if _G.WriteLog then _G.WriteLog(formattedMsg) end
-        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(tostring(msg)) end
+print(string.format("[TEST_MOVE] Tọa độ hiện tại: X=%d, Y=%d", curX, curY))
 
-        pcall(function()
-            local f = io.open(outputPath, "a")
-            if f then
-                f:write(formattedMsg .. "\n")
-                f:close()
-            end
-        end)
+-- Thay đổi tọa độ targetX, targetY theo ý bạn muốn test (mặc định lấy tọa độ hiện tại + 10 ô)
+local targetX = curX + 10
+local targetY = curY + 10
+local coordStr = string.format("%d#%d", targetX, targetY)
+
+print(string.format("[TEST_MOVE] Thử di chuyển tới mục tiêu: X=%d, Y=%d ...", targetX, targetY))
+
+-- PHƯƠNG ÁN 1: me:MoveTo (Trực tiếp của nhân vật)
+local status1, err1 = pcall(function()
+    if me.MoveTo then
+        me:MoveTo({ x = targetX, y = targetY }, 0)
+        print("[TEST_MOVE] -> Đã gọi me:MoveTo thành công!")
     end
-
-    -- Reset file output.txt
-    pcall(function()
-        local f = io.open(outputPath, "w")
-        if f then
-            f:write("=== BẮT ĐẦU TEST LẶP BATCH LOOT CHO ĐẾN HẾT ĐỒ + LOG CỰ LY XÓA ĐỒ ===\n")
-            f:write("Bắt đầu lúc: " .. os.date("%Y-%m-%d %H:%M:%S") .. "\n")
-            f:write("----------------------------------------------------------------------\n\n")
-            f:close()
-        end
-    end)
-
-    LogTest("🚀 Đã kích hoạt Vòng Lặp Batch Loot Liên Tục & Hook Log Xóa Đồ...")
-
-    -- 1. Hook sự kiện RemoveDropSceneCellPos để đo cự ly thực tế khi đồ bị xóa khỏi mặt đất
-    if _G.PickupManager and not _G.Mod_HookedTestRemoveItem then
-        _G.Mod_HookedTestRemoveItem = true
-        local origRemove = _G.PickupManager.RemoveDropSceneCellPos
-        _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData)
-            if origRemove then origRemove(dropItemData) end
-            if dropItemData and dropItemData.id then
-                pcall(function()
-                    local meX, meY = 0, 0
-                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                        meX = _G.RoleManager.me.serverCoord.x or 0
-                        meY = _G.RoleManager.me.serverCoord.y or 0
-                    end
-                    local itemX = dropItemData.x or 0
-                    local itemY = dropItemData.y or 0
-                    local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
-                    local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.id
-
-                    LogTest(string.format("🗑️ [SỰ KIỆN XÓA ĐỒ] ObjID:%s (ID:%s) bị xóa khỏi đất tại Pos(%d,%d) | Me:(%d,%d) => CỰ LY NHẶT THỰC TẾ: %d Ô!",
-                        tostring(dropItemData.id), tostring(confId), itemX, itemY, meX, meY, dist))
-                end)
-            end
-        end
-    end
-
-    -- 2. Vòng lặp quét & nhặt liên tục cho đến khi HẾT SẠCH ĐỒ
-    if not _G.Mod_HookedTestBatchLoopContinuous then
-        _G.Mod_HookedTestBatchLoopContinuous = true
-        if _G.Timer and _G.Timer.StartLoop then
-            _G.Timer.StartLoop(0.05, -1, function()
-                pcall(function()
-                    local dropItems = nil
-                    if _G.DropItemManager and _G.DropItemManager.GetDropItemById then
-                        local _, val = debug.getupvalue(_G.DropItemManager.GetDropItemById, 1)
-                        if type(val) == "table" then dropItems = val end
-                    end
-
-                    if not dropItems then return end
-
-                    local meX, meY = 0, 0
-                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                        meX = _G.RoleManager.me.serverCoord.x or 0
-                        meY = _G.RoleManager.me.serverCoord.y or 0
-                    end
-
-                    local itemList = {}
-                    for id, itemObj in pairs(dropItems) do
-                        local dropItemData = itemObj and (itemObj.data or itemObj)
-                        if dropItemData and dropItemData.id then
-                            local ix = dropItemData.x or 0
-                            local iy = dropItemData.y or 0
-                            local dist = math.max(math.abs(meX - ix), math.abs(meY - iy))
-                            table.insert(itemList, {
-                                id = dropItemData.id,
-                                x = ix,
-                                y = iy,
-                                dist = dist,
-                                data = dropItemData
-                            })
-                        end
-                    end
-
-                    if #itemList > 0 then
-                        table.sort(itemList, function(a, b) return a.dist < b.dist end)
-                        local nearest = itemList[1]
-
-                        -- Di chuyển đến món gần nhất nếu cách > 1 ô
-                        if nearest and nearest.dist > 1 then
-                            if _G.RoleManager and _G.RoleManager.me then
-                                _G.RoleManager.me:MoveTo({x = nearest.x, y = nearest.y})
-                            end
-                        end
-
-                        -- Gửi gói tin nhặt cho tất cả các món trong danh sách
-                        for _, item in ipairs(itemList) do
-                            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                                _G.PickupManager.ReqPickUpMapItem(item.id)
-                            end
-                        end
-                    end
-                end)
-            end)
-        end
-    end
-
-    LogTest("✅ ĐÃ KHỞI CHẠY VÒNG LẶP QUÉT & LOG CỰ LY XÓA ĐỒ THÀNH CÔNG!")
 end)
+if not status1 then print("[TEST_MOVE] Lỗi me:MoveTo: " .. tostring(err1)) end
+
+-- PHƯƠNG ÁN 2: JumpMapToMoveToPos (Dùng SceneData.groupId)
+local status2, err2 = pcall(function()
+    if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
+        local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+            (_G.Vector2 and _G.Vector2(targetX, targetY)) or { x = targetX, y = targetY }
+            
+        print("[TEST_MOVE] Map GroupID = " .. tostring(_G.SceneData.groupId))
+        _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId, targetPosData, nil, nil, nil, 0, nil, 1, true)
+        print("[TEST_MOVE] -> Đã gọi JumpMapToMoveToPos thành công!")
+    end
+end)
+if not status2 then print("[TEST_MOVE] Lỗi JumpMapToMoveToPos: " .. tostring(err2)) end

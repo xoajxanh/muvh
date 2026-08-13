@@ -3224,11 +3224,15 @@ local function CreateModUI()
                                                             math.abs(curY - targetY))
                                                         if dist > 5 then
                                                             pcall(function()
-                                                                if _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
-                                                                    _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId,
-                                                                        { x = targetX, y = targetY })
-                                                                elseif me.MoveTo then
-                                                                    me:MoveTo({ x = targetX, y = targetY })
+                                                                if me and me.MoveTo then
+                                                                    me:MoveTo({ x = targetX, y = targetY }, 0)
+                                                                elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
+                                                                    local coordStr = string.format("%d#%d", targetX, targetY)
+                                                                    local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+                                                                        (_G.Vector2 and _G.Vector2(targetX, targetY)) or { x = targetX, y = targetY }
+                                                                    _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
+                                                                        targetPosData, nil, nil, nil, _G.Purpose and _G.Purpose.None or 0, nil, 1,
+                                                                        true)
                                                                 end
                                                             end)
                                                         end
