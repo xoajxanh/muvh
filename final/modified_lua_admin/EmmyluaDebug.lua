@@ -94,16 +94,31 @@ local function CreateModUI()
             pcall(function() _G.Mod_ShowKundunHP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ShowKundunHP", 0) == 1 end)
         end
         if _G.Mod_AutoResurrect_Enabled == nil then
-            pcall(function() _G.Mod_AutoResurrect_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Enabled", 0) == 1 end)
+            pcall(function()
+                _G.Mod_AutoResurrect_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Enabled", 0) == 1
+            end)
         end
         if _G.Mod_PKScanDelay == nil then
-            pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.3) end)
+            pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
         end
         if _G.Mod_AutoReturnPos_Enabled == nil then
-            pcall(function() _G.Mod_AutoReturnPos_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoReturnPos_Enabled", 0) == 1 end)
+            pcall(function()
+                _G.Mod_AutoReturnPos_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoReturnPos_Enabled", 0) == 1
+            end)
         end
         if _G.Mod_AutoReturnPos_Coords == nil then
-            pcall(function() _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "") end)
+            pcall(function()
+                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString(
+                    "Mod_AutoReturnPos_Coords", "")
+            end)
+        end
+        if _G.Mod_AutoReturnPosDelay == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPosDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_AutoReturnPosDelay",
+                    1.0)
+            end)
         end
 
         _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
@@ -3062,150 +3077,170 @@ local function CreateModUI()
 
 
 
-            -- Auto PK & Lock Target Logic (Loop động theo _G.Mod_PKScanDelay)
-            if _G.Timer and _G.Timer.StartLoop then
-                _G.Timer.StartLoop(0.05, -1, function()
-                    pcall(function()
-                        if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
-                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                            local delay = _G.Mod_PKScanDelay or 0.3
-                            if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
-                                _G.Mod_LastPKScanTime = nowTime
-                                local function modSortRole(a, b)
-                                    local distA = a.tempPathFindingDistance or 9999
-                                    local distB = b.tempPathFindingDistance or 9999
-                                    return distA < distB
-                                end
-
-                                local function isMatchLockTarget(p, lockInput)
-                                    if not lockInput or lockInput == "" then return false end
-
-                                    local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
-                                    if cleanInput == "" then return false end
-
-                                    local sId = string.match(cleanInput, "^S(%d+)%.$") or string.match(cleanInput, "^S(%d+)$")
-
-                                    local targetNum = sId and tonumber(sId) or nil
-                                    if targetNum then
-                                        local pSid = p.serverId or p.sid or p.serverID or p.server_id
-                                        if not pSid and p.data then
-                                            pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
-                                        end
-                                        if pSid and tonumber(pSid) == targetNum then
-                                            return true
-                                        end
-                                    end
-
-                                    local strList = {}
-                                    if p.name then table.insert(strList, tostring(p.name)) end
-                                    if p.GetName then
-                                        pcall(function()
-                                            local n = p:GetName()
-                                            if n then table.insert(strList, tostring(n)) end
-                                        end)
-                                    end
-                                    if p.data then
-                                        if p.data.name then table.insert(strList, tostring(p.data.name)) end
-                                        if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
-                                        if p.data.serverId then table.insert(strList, "S" .. tostring(p.data.serverId)) end
-                                    end
-                                    if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
-                                    if p.showName then table.insert(strList, tostring(p.showName)) end
-
-                                    if sId then
-                                        local pattern1 = "S" .. sId .. "%."
-                                        local pattern2 = "S" .. sId .. "_"
-                                        local pattern3 = "S" .. sId
-                                        for _, s in ipairs(strList) do
-                                            if string.find(s, pattern1) or string.find(s, pattern2) or string.find(s, pattern3) then
-                                                return true
+                    -- Auto PK & Lock Target Logic (Loop động theo _G.Mod_PKScanDelay)
+                    if not _G.Mod_PKScanLoopStarted then
+                        _G.Mod_PKScanLoopStarted = true
+                        if _G.Timer and _G.Timer.StartLoop then
+                            _G.Timer.StartLoop(0.05, -1, function()
+                                pcall(function()
+                                    if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
+                                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                        local delay = _G.Mod_PKScanDelay or 0.8
+                                        if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
+                                            _G.Mod_LastPKScanTime = nowTime
+                                            local function modSortRole(a, b)
+                                                local distA = a.tempPathFindingDistance or 9999
+                                                local distB = b.tempPathFindingDistance or 9999
+                                                return distA < distB
                                             end
-                                        end
-                                    else
-                                        local lowerInput = string.lower(cleanInput)
-                                        for _, s in ipairs(strList) do
-                                            if string.find(string.lower(s), lowerInput, 1, true) then
-                                                return true
+
+                                            local function isMatchLockTarget(p, lockInput)
+                                                if not lockInput or lockInput == "" then return false end
+
+                                                local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
+                                                if cleanInput == "" then return false end
+
+                                                local sId = string.match(cleanInput, "^S(%d+)%.$") or
+                                                    string.match(cleanInput, "^S(%d+)$")
+
+                                                local targetNum = sId and tonumber(sId) or nil
+                                                if targetNum then
+                                                    local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                                                    if not pSid and p.data then
+                                                        pSid = p.data.serverId or p.data.sid or p.data.serverID or
+                                                            p.data.server_id
+                                                    end
+                                                    if pSid and tonumber(pSid) == targetNum then
+                                                        return true
+                                                    end
+                                                end
+
+                                                local strList = {}
+                                                if p.name then table.insert(strList, tostring(p.name)) end
+                                                if p.GetName then
+                                                    pcall(function()
+                                                        local n = p:GetName()
+                                                        if n then table.insert(strList, tostring(n)) end
+                                                    end)
+                                                end
+                                                if p.data then
+                                                    if p.data.name then table.insert(strList, tostring(p.data.name)) end
+                                                    if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                                                    if p.data.serverId then
+                                                        table.insert(strList,
+                                                            "S" .. tostring(p.data.serverId))
+                                                    end
+                                                end
+                                                if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
+                                                if p.showName then table.insert(strList, tostring(p.showName)) end
+
+                                                if sId then
+                                                    local pattern1 = "S" .. sId .. "%."
+                                                    local pattern2 = "S" .. sId .. "_"
+                                                    local pattern3 = "S" .. sId
+                                                    for _, s in ipairs(strList) do
+                                                        if string.find(s, pattern1) or string.find(s, pattern2) or string.find(s, pattern3) then
+                                                            return true
+                                                        end
+                                                    end
+                                                else
+                                                    local lowerInput = string.lower(cleanInput)
+                                                    for _, s in ipairs(strList) do
+                                                        if string.find(string.lower(s), lowerInput, 1, true) then
+                                                            return true
+                                                        end
+                                                    end
+                                                end
+
+                                                return false
                                             end
-                                        end
-                                    end
 
-                                    return false
-                                end
+                                            -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
+                                            local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15,
+                                                _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                            if players and #players > 0 then
+                                                local target = nil
 
-                                -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
-                                local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15,
-                                    _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                                if players and #players > 0 then
-                                    local target = nil
+                                                if _G.Mod_LockTarget_Enabled then
+                                                    -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
+                                                    if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                                        local matchedPlayers = {}
+                                                        for _, p in ipairs(players) do
+                                                            if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                                table.insert(matchedPlayers, p)
+                                                            end
+                                                        end
+                                                        if #matchedPlayers > 0 then
+                                                            table.sort(matchedPlayers, modSortRole)
+                                                            target = matchedPlayers[1]
+                                                        end
+                                                    end
+                                                else
+                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
+                                                    table.sort(players, modSortRole)
+                                                    target = players[1]
+                                                end
 
-                                    if _G.Mod_LockTarget_Enabled then
-                                        -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
-                                        if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
-                                            local matchedPlayers = {}
-                                            for _, p in ipairs(players) do
-                                                if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
-                                                    table.insert(matchedPlayers, p)
+                                                if target then
+                                                    if _G.RoleManager.me.SetTarget then
+                                                        _G.RoleManager.me:SetTarget(target)
+                                                    else
+                                                        _G.RoleManager.me.TargetAvatar = target
+                                                    end
+                                                    if _G.RoleManager.me.SetAutoFight then
+                                                        _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                                                    end
                                                 end
                                             end
-                                            if #matchedPlayers > 0 then
-                                                table.sort(matchedPlayers, modSortRole)
-                                                target = matchedPlayers[1]
+                                        end
+                                    end
+                                end)
+                            end)
+                        end
+                    end
+
+                    -- Auto Return Position Logic (Loop động theo _G.Mod_AutoReturnPosDelay)
+                    if not _G.Mod_ReturnPosLoopStarted then
+                        _G.Mod_ReturnPosLoopStarted = true
+                        if _G.Timer and _G.Timer.StartLoop then
+                            _G.Timer.StartLoop(0.05, -1, function()
+                                pcall(function()
+                                    if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
+                                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                        local delay = _G.Mod_AutoReturnPosDelay or 1.0
+                                        if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
+                                            _G.Mod_LastReturnPosTime = nowTime
+                                            local sx, sy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+)#(%d+)$")
+                                            if sx and sy then
+                                                local targetX, targetY = tonumber(sx), tonumber(sy)
+                                                local me = _G.RoleManager and _G.RoleManager.me
+                                                if me and not me.isDead then
+                                                    local curX = me.serverCoord and me.serverCoord.x or
+                                                        (me.cellPos and me.cellPos.x) or 0
+                                                    local curY = me.serverCoord and me.serverCoord.y or
+                                                        (me.cellPos and me.cellPos.y) or 0
+                                                    if curX > 0 and curY > 0 then
+                                                        local dist = math.max(math.abs(curX - targetX),
+                                                            math.abs(curY - targetY))
+                                                        if dist > 5 then
+                                                            pcall(function()
+                                                                if _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
+                                                                    _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId,
+                                                                        { x = targetX, y = targetY })
+                                                                elseif me.MoveTo then
+                                                                    me:MoveTo({ x = targetX, y = targetY })
+                                                                end
+                                                            end)
+                                                        end
+                                                    end
+                                                end
                                             end
                                         end
-                                    else
-                                        -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
-                                        table.sort(players, modSortRole)
-                                        target = players[1]
                                     end
-
-                                    if target then
-                                        if _G.RoleManager.me.SetTarget then
-                                            _G.RoleManager.me:SetTarget(target)
-                                        else
-                                            _G.RoleManager.me.TargetAvatar = target
-                                        end
-                                        if _G.RoleManager.me.SetAutoFight then
-                                            _G.RoleManager.me:SetAutoFight("ReleaseSkill")
-                                        end
-                                    end
-                                end
-                            end
+                                end)
+                            end)
                         end
-                    end)
-                end)
-            end
-
-            -- Auto Return Position Logic (Loop 1.0s)
-            if _G.Timer and _G.Timer.StartLoop then
-                _G.Timer.StartLoop(1.0, -1, function()
-                    pcall(function()
-                        if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
-                            local sx, sy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+)#(%d+)$")
-                            if sx and sy then
-                                local targetX, targetY = tonumber(sx), tonumber(sy)
-                                local me = _G.RoleManager and _G.RoleManager.me
-                                if me and not me.isDead then
-                                    local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                                    local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                                    if curX > 0 and curY > 0 then
-                                        local dist = math.max(math.abs(curX - targetX), math.abs(curY - targetY))
-                                        if dist > 5 then
-                                            pcall(function()
-                                                if _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
-                                                    _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY })
-                                                elseif me.MoveTo then
-                                                    me:MoveTo({ x = targetX, y = targetY })
-                                                end
-                                            end)
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end)
-                end)
-            end
+                    end
 
                     -- Auto PK Guild Logic
                     if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
@@ -3998,7 +4033,7 @@ local function CreateModUI()
         end
 
         local function CreateAutoLootUI()
-            local currentY = -60
+            local currentY = -65
             local rightColX = 20
 
             local titleGo = GameObject("AutoLootTitle")
@@ -4006,17 +4041,17 @@ local function CreateModUI()
             table.insert(_G.NangCaoUIList, titleGo)
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(rightColX + 35, currentY)
-            titleRt.sizeDelta = Vector2(300, 20)
+            titleRt.anchoredPosition = Vector2(rightColX + 10, currentY)
+            titleRt.sizeDelta = Vector2(300, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
             titleTxt.color = Color(1, 0.8, 0, 1)
-            titleTxt.fontSize = 18
+            titleTxt.fontSize = 17
             titleTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then titleTxt.font = defaultFont end
 
-            currentY = currentY - 45
+            currentY = currentY - 35
 
             CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY)
             currentY = currentY - 40
@@ -4245,7 +4280,7 @@ local function CreateModUI()
 
             -- Move options from Kundun UI
             local rightColX2 = 20
-            currentY = currentY - 25
+            currentY = currentY - 35
             local sep2Go = GameObject("BossThapSeparator")
             sep2Go.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, sep2Go)
@@ -4253,17 +4288,17 @@ local function CreateModUI()
             sep2Rt.anchorMin = Vector2(0, 1)
             sep2Rt.anchorMax = Vector2(0, 1)
             sep2Rt.pivot = Vector2(0, 1)
-            sep2Rt.anchoredPosition = Vector2(rightColX, currentY)
-            sep2Rt.sizeDelta = Vector2(250, 20)
+            sep2Rt.anchoredPosition = Vector2(20, currentY)
+            sep2Rt.sizeDelta = Vector2(320, 20)
             local sep2Txt = sep2Go:AddComponent(typeof(Text))
             sep2Txt.raycastTarget = false
             sep2Txt.color = Color(0.4, 0.4, 0.4, 1)
-            sep2Txt.fontSize = 16
+            sep2Txt.fontSize = 14
             sep2Txt.alignment = TextAnchor.MiddleLeft
             if defaultFont then sep2Txt.font = defaultFont end
-            sep2Txt.text = "------------------------------------------------------------------------------------------"
+            sep2Txt.text = "--------------------------------------------------------"
 
-            currentY = currentY - 25
+            currentY = currentY - 30
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, titleGo)
@@ -4271,8 +4306,8 @@ local function CreateModUI()
             titleRt.anchorMin = Vector2(0, 1)
             titleRt.anchorMax = Vector2(0, 1)
             titleRt.pivot = Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(rightColX2 + 35, currentY)
-            titleRt.sizeDelta = Vector2(270, 20)
+            titleRt.anchoredPosition = Vector2(10, currentY)
+            titleRt.sizeDelta = Vector2(270, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ INFO KUNDUN BOSS ]"
@@ -4282,7 +4317,7 @@ local function CreateModUI()
             if defaultFont then titleTxt.font = defaultFont end
 
 
-            currentY = currentY - 35
+            currentY = currentY - 25
 
             -- Tab C7 / C8
             local function CreateTabBtn(label, tabName, xPos, yPos)
@@ -5375,7 +5410,7 @@ local function CreateModUI()
         CreateAutoBossUI()
 
         local function CreateKundunUI()
-            local currentY = -60
+            local currentY = -65
             local rightColX2 = 380
 
             -- Vạch dọc phân cách
@@ -5397,16 +5432,16 @@ local function CreateModUI()
             titleRt.anchorMax = Vector2(0, 1)
             titleRt.pivot = Vector2(0, 1)
             titleRt.anchoredPosition = Vector2(rightColX2 + 10, currentY)
-            titleRt.sizeDelta = Vector2(250, 20)
+            titleRt.sizeDelta = Vector2(250, 25)
             local ChucNangTitleTxt = ChucNangTitle:AddComponent(typeof(Text))
             ChucNangTitleTxt.raycastTarget = false
             ChucNangTitleTxt.text = "[ CHỨC NĂNG HỖ TRỢ ]"
             ChucNangTitleTxt.color = Color(1, 0.8, 0, 1)
-            ChucNangTitleTxt.fontSize = 18
+            ChucNangTitleTxt.fontSize = 17
             ChucNangTitleTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then ChucNangTitleTxt.font = defaultFont end
 
-            currentY = currentY - 45
+            currentY = currentY - 35
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
             currentY = currentY - 45
 
@@ -5442,23 +5477,23 @@ local function CreateModUI()
                 txtGo.transform:SetParent(go.transform, false)
                 local txtRt = txtGo:AddComponent(typeof(RectTransform))
                 txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.offsetMin, txtRt.offsetMax = Vector2(10, 0), Vector2(-95, 0)
+                txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
-                txt.fontSize = 15
+                txt.fontSize = 13
                 txt.alignment = TextAnchor.MiddleLeft
                 txt.color = Color.white
                 if defaultFont then txt.font = defaultFont end
 
                 if _G.Mod_PKScanDelay == nil then
-                    pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.3) end)
+                    pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
                 end
                 if not _G.Mod_PKScanDelay or _G.Mod_PKScanDelay < 0.1 then
-                    _G.Mod_PKScanDelay = 0.3
+                    _G.Mod_PKScanDelay = 0.8
                 end
 
                 local function UpdateLabel()
-                    txt.text = string.format("DELAY QUÉT PK: %.1fs", _G.Mod_PKScanDelay or 0.3)
+                    txt.text = string.format("DELAY QUÉT PK: %.1fs", _G.Mod_PKScanDelay or 0.8)
                 end
                 UpdateLabel()
 
@@ -5667,7 +5702,8 @@ local function CreateModUI()
             getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, getReturnPosBtnGo)
             local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
-            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
+                Vector2(0, 1)
             getReturnPosRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
             getReturnPosRt.sizeDelta = Vector2(115, 30)
 
@@ -5713,6 +5749,108 @@ local function CreateModUI()
                     end
                 end)
             end)
+
+            currentY = currentY - 40
+
+            -- Cài đặt DELAY QUAY LẠI
+            local function CreateReturnPosDelayControl(xPos, yPos)
+                local go = GameObject("Mod_ReturnPosDelay_Control")
+                go.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, go)
+
+                local rt = go:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(xPos, yPos)
+                rt.sizeDelta = Vector2(260, 35)
+
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(go.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+                bgImg.color = Color(0.2, 0.2, 0.2, 1)
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(go.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 13
+                txt.alignment = TextAnchor.MiddleLeft
+                txt.color = Color.white
+                if defaultFont then txt.font = defaultFont end
+
+                if _G.Mod_AutoReturnPosDelay == nil then
+                    pcall(function()
+                        _G.Mod_AutoReturnPosDelay = CS.UnityEngine.PlayerPrefs.GetFloat(
+                            "Mod_AutoReturnPosDelay", 1.0)
+                    end)
+                end
+                if not _G.Mod_AutoReturnPosDelay or _G.Mod_AutoReturnPosDelay < 0.1 then
+                    _G.Mod_AutoReturnPosDelay = 1.0
+                end
+
+                local function UpdateLabel()
+                    txt.text = string.format("DELAY QUAY LẠI: %.1fs", _G.Mod_AutoReturnPosDelay or 1.0)
+                end
+                UpdateLabel()
+
+                local function createBtn(name, offsetX, width, btnText, btnColor)
+                    local btnGo = GameObject(name)
+                    btnGo.transform:SetParent(go.transform, false)
+                    table.insert(_G.NangCaoUIList, btnGo)
+                    local bRt = btnGo:AddComponent(typeof(RectTransform))
+                    bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+                    bRt.anchoredPosition = Vector2(offsetX, 0)
+                    bRt.sizeDelta = Vector2(width, 28)
+                    local bImg = btnGo:AddComponent(typeof(Image))
+                    bImg.color = btnColor
+
+                    local bTxtGo = GameObject("Text")
+                    bTxtGo.transform:SetParent(btnGo.transform, false)
+                    local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
+                    bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    bTxtRt.sizeDelta = Vector2(0, 0)
+                    local bTxt = bTxtGo:AddComponent(typeof(Text))
+                    bTxt.raycastTarget = false
+                    bTxt.text = btnText
+                    bTxt.color = Color.white
+                    bTxt.fontSize = 15
+                    bTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then bTxt.font = defaultFont end
+
+                    return btnGo:AddComponent(typeof(Button))
+                end
+
+                local mBtn = createBtn("MinusBtn", -45, 40, "-0.1", Color(0.5, 0.2, 0.2, 1))
+                local pBtn = createBtn("PlusBtn", -2, 40, "+0.1", Color(0.2, 0.5, 0.2, 1))
+
+                mBtn.onClick:AddListener(function()
+                    _G.Mod_AutoReturnPosDelay = math.max(0.1,
+                        math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) - 0.1) * 10 + 0.5) / 10)
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateLabel()
+                end)
+
+                pBtn.onClick:AddListener(function()
+                    _G.Mod_AutoReturnPosDelay = math.min(10.0,
+                        math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) + 0.1) * 10 + 0.5) / 10)
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateLabel()
+                end)
+            end
+
+            CreateReturnPosDelayControl(rightColX2, currentY)
+            currentY = currentY - 45
         end
 
         CreateKundunUI()
