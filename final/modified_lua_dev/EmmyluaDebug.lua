@@ -3125,7 +3125,10 @@ local function CreateModUI()
                                                 end
                                                 if p.data then
                                                     if p.data.name then table.insert(strList, tostring(p.data.name)) end
-                                                    if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                                                    if p.data.showName then
+                                                        table.insert(strList,
+                                                            tostring(p.data.showName))
+                                                    end
                                                     if p.data.serverId then
                                                         table.insert(strList,
                                                             "S" .. tostring(p.data.serverId))
@@ -3227,11 +3230,15 @@ local function CreateModUI()
                                                                 if me and me.MoveTo then
                                                                     me:MoveTo({ x = targetX, y = targetY }, 0)
                                                                 elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
-                                                                    local coordStr = string.format("%d#%d", targetX, targetY)
+                                                                    local coordStr = string.format("%d#%d", targetX,
+                                                                        targetY)
                                                                     local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
-                                                                        (_G.Vector2 and _G.Vector2(targetX, targetY)) or { x = targetX, y = targetY }
-                                                                    _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
-                                                                        targetPosData, nil, nil, nil, _G.Purpose and _G.Purpose.None or 0, nil, 1,
+                                                                        (_G.Vector2 and _G.Vector2(targetX, targetY)) or
+                                                                        { x = targetX, y = targetY }
+                                                                    _G.PathFinderManager.JumpMapToMoveToPos(
+                                                                        _G.SceneData.groupId,
+                                                                        targetPosData, nil, nil, nil,
+                                                                        _G.Purpose and _G.Purpose.None or 0, nil, 1,
                                                                         true)
                                                                 end
                                                             end)
@@ -4067,7 +4074,7 @@ local function CreateModUI()
                 end
             end
 
-            local btnWidth = 110
+            local btnWidth = 125
             local btnHeight = 30
 
             local btnPa1Go = GameObject("AutoPick_PA1_Btn")
@@ -4302,7 +4309,7 @@ local function CreateModUI()
             if defaultFont then sep2Txt.font = defaultFont end
             sep2Txt.text = "--------------------------------------------------------"
 
-            currentY = currentY - 30
+            currentY = currentY - 20
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, titleGo)
@@ -4310,7 +4317,7 @@ local function CreateModUI()
             titleRt.anchorMin = Vector2(0, 1)
             titleRt.anchorMax = Vector2(0, 1)
             titleRt.pivot = Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(10, currentY)
+            titleRt.anchoredPosition = Vector2(rightColX + 10, currentY)
             titleRt.sizeDelta = Vector2(270, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
