@@ -3,6 +3,9 @@
 # ==============================================================================
 $ErrorActionPreference = "Continue"
 
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 Set-Location "D:\MUVH\android\mu-decompiled"
 
 Clear-Host
@@ -45,6 +48,8 @@ $currentBranch = (git rev-parse --abbrev-ref HEAD).Trim()
 Write-Host "-> Nhanh hien tai: $currentBranch" -ForegroundColor Gray
 
 if ($currentBranch -ne $targetBranch) {
+    Write-Host "-> Lam sach working tree de chuyen nhanh..." -ForegroundColor Gray
+    git checkout -- .
     Write-Host "-> Dang chuyen sang nhanh '$targetBranch'..." -ForegroundColor Yellow
     git checkout $targetBranch
     if ($LASTEXITCODE -ne 0) {
@@ -121,7 +126,7 @@ if ($choice -eq 1) {
         $packedFile = "final\new_lua\lua.mu2"
         
         # B. Clone fresh from MU_base.apk to temp folder
-        Write-Host "3. Khôi phục từ base template MU_base.apk..."
+        Write-Host "3. Khoi phuc tu base template MU_base.apk..."
         Copy-Item -Path $baseApk -Destination $tempApkPath -Force
 
         # C. Update bundles.txt
@@ -202,7 +207,7 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
     $packedFile = "final\new_lua\lua.mu2"
     
     # B. Clone fresh from MU_base.apk to temp folder
-    Write-Host "3. Khôi phục từ base template MU_base.apk..."
+    Write-Host "3. Khoi phuc tu base template MU_base.apk..."
     Copy-Item -Path $baseApk -Destination $tempApkPath -Force
 
     # C. Update bundles.txt
@@ -250,14 +255,14 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
 
 # 5. Duyen dẹp thu muc temp build, giữ thư mục test_apk\v1 luôn sạch sẽ
 Write-Host ""
-Write-Host "Dọn dẹp file tạm..." -ForegroundColor Gray
+Write-Host "Don dep file tam..." -ForegroundColor Gray
 Remove-Item -Path $tempBuildDir -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host " SUCCESS! QUY TRINH BUILD & DEPLOY HOAN TAT CHO $buildMode" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Thư mục test_apk\v1 giữ sạch sẽ chỉ chứa duy nhất MU_base.apk." -ForegroundColor Yellow
+Write-Host "Thu muc test_apk\v1 giu sach se chi chua duy nhat MU_base.apk." -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host ""
 Pause
