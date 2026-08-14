@@ -23,3 +23,9 @@ yarn-error.log*
 *.tmp
 final/web_active/next-env.d.ts
 final/web_active/tsconfig.tsbuildinfo
+
+# Build outputs
+final/new_bundles/
+final/new_lua/
+final/compiled_lua/
+
