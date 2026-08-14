@@ -1,8 +1,4 @@
 === SUCCESS ===
 
 [LOGS]:
-[TEST_MOVE] Tọa độ hiện tại: X=125, Y=96	
-[TEST_MOVE] Thử di chuyển tới mục tiêu: X=135, Y=106 ...	
-[TEST_MOVE] -> Đã gọi me:MoveTo thành công!	
-[TEST_MOVE] Map GroupID = 106704	
-[TEST_MOVE] -> Đã gọi JumpMapToMoveToPos thành công!	
+[TEST REVIVE] ĐÃ NẠP SCRIPT TEST HỒI SINH TẠI CHỖ SIÊU TỐC!	

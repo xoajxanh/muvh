@@ -99,6 +99,18 @@ local function CreateModUI()
                     "Mod_AutoResurrect_Enabled", 0) == 1
             end)
         end
+        if _G.Mod_AutoResurrect_Free_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoResurrect_Free_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Enabled and 1 or 0) == 1
+            end)
+        end
+        if _G.Mod_AutoResurrect_Here_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoResurrect_Here_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Here_Enabled", 0) == 1
+            end)
+        end
         if _G.Mod_PKScanDelay == nil then
             pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
         end
@@ -2633,34 +2645,75 @@ local function CreateModUI()
 
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.1, -1, function()
-                    -- TỰ ĐỘNG HỒI SINH
-                    if _G.Mod_AutoResurrect_Enabled then
-                        if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
-                            if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
-                                local mapId = 0
-                                if _G.SceneData and _G.SceneData.mapId then
-                                    mapId = _G.SceneData.mapId
-                                elseif _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId then
-                                    mapId = _G.RoleManager.me.mapId
-                                end
-
-                                local isKS = (mapId == 1077) or
-                                    (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle())
-
-                                local ui = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Role_ResurgenceUI")
-                                if ui and ui.Button_1OnClick then
-                                    pcall(function() ui:Button_1OnClick() end)
-                                else
-                                    if _G.MeController and _G.RoleReliveType then
-                                        if isKS then
-                                            _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
-                                        else
-                                            _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+                    -- TỰ ĐỘNG HỒI SINH (HS FREE & HS KC - 0s Delay + Dập Popup 3s)
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me then
+                        if me.isDead or (me.hp and me.hp <= 0) then
+                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if not _G.Mod_LastResurrectTime or (nowTime - _G.Mod_LastResurrectTime) >= 1.0 then
+                                if _G.Mod_AutoResurrect_Here_Enabled then
+                                    -- 1. HỒI SINH TẠI CHỖ (30 KC / THẺ)
+                                    _G.Mod_LastResurrectTime = nowTime
+                                    pcall(function()
+                                        local reviveItemId = 17020002
+                                        local reviveGoodId = 30104
+                                        local bagCount = 0
+                                        if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                                            bagCount = _G.BagInfoData.GetItemTotalCountByItemId(reviveItemId) or 0
                                         end
-                                    end
-                                    if _G.UIManager.Hide then
-                                        _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
-                                    end
+
+                                        if bagCount > 0 then
+                                            if _G.MeController and _G.RoleReliveType then
+                                                _G.MeController.ReqReqRelive(_G.RoleReliveType.Here)
+                                            end
+                                        else
+                                            if _G.NetManager and _G.ItemBuyMessage then
+                                                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = reviveGoodId, buyCount = 1 })
+                                            end
+                                            if _G.MeController and _G.RoleReliveType then
+                                                _G.MeController.ReqReqRelive(_G.RoleReliveType.Here)
+                                            end
+                                        end
+
+                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                                            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                        end
+                                    end)
+                                elseif _G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Enabled then
+                                    -- 2. HỒI SINH MIỄN PHÍ (BORN POINT / KS BATTLE)
+                                    _G.Mod_LastResurrectTime = nowTime
+                                    pcall(function()
+                                        local mapId = 0
+                                        if _G.SceneData and _G.SceneData.mapId then
+                                            mapId = _G.SceneData.mapId
+                                        elseif me.mapId then
+                                            mapId = me.mapId
+                                        end
+
+                                        local isKS = (mapId == 1077) or
+                                            (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle())
+
+                                        if _G.MeController and _G.RoleReliveType then
+                                            if isKS then
+                                                _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
+                                            else
+                                                _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+                                            end
+                                        end
+
+                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                                            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                        end
+                                    end)
+                                end
+                            end
+                        end
+
+                        -- 3. BẢO VỆ: DẬP TẮT POPUP 3S ĐẾM LÙI KHI NHÂN VẬT ĐÃ SỐNG
+                        if not me.isDead and me.hp and me.hp > 0 then
+                            if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                                if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
+                                    _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
                                 end
                             end
                         end
@@ -3158,12 +3211,34 @@ local function CreateModUI()
                                                 return false
                                             end
 
+                                            local function isKundunNearby()
+                                                if not (_G.RoleManager and _G.RoleManager.GetRolesByType) then return false end
+                                                local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                                                if monsterRoles then
+                                                    for _, role in pairs(monsterRoles) do
+                                                        if role and not role.isDead and role.hp and role.hp > 0 then
+                                                            local d = role.data
+                                                            if d then
+                                                                local name = d.name or (d.GetName and d:GetName()) or ""
+                                                                local cfgId = d.configId or d.id or d.bossId or 0
+                                                                local strName = string.lower(tostring(name))
+                                                                if string.find(strName, "kundun") or
+                                                                    cfgId == 20201008 or cfgId == 20211008 or
+                                                                    cfgId == 20201007 or cfgId == 20211007 then
+                                                                    return true
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                                return false
+                                            end
+
                                             -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
                                             local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15,
                                                 _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                            local target = nil
                                             if players and #players > 0 then
-                                                local target = nil
-
                                                 if _G.Mod_LockTarget_Enabled then
                                                     -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
                                                     if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
@@ -3183,15 +3258,24 @@ local function CreateModUI()
                                                     table.sort(players, modSortRole)
                                                     target = players[1]
                                                 end
+                                            end
 
-                                                if target then
-                                                    if _G.RoleManager.me.SetTarget then
-                                                        _G.RoleManager.me:SetTarget(target)
-                                                    else
-                                                        _G.RoleManager.me.TargetAvatar = target
-                                                    end
-                                                    if _G.RoleManager.me.SetAutoFight then
-                                                        _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                                            if target then
+                                                if _G.RoleManager.me.SetTarget then
+                                                    _G.RoleManager.me:SetTarget(target)
+                                                else
+                                                    _G.RoleManager.me.TargetAvatar = target
+                                                end
+                                                if _G.RoleManager.me.SetAutoFight then
+                                                    _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                                                end
+                                            else
+                                                -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Boss Kundun gần đó (tránh giật khựng khi di chuyển)
+                                                if isKundunNearby() then
+                                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                        if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                                            _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                        end
                                                     end
                                                 end
                                             end
@@ -3225,7 +3309,7 @@ local function CreateModUI()
                                                     if curX > 0 and curY > 0 then
                                                         local dist = math.max(math.abs(curX - targetX),
                                                             math.abs(curY - targetY))
-                                                        if dist > 5 then
+                                                        if dist > 1.5 then
                                                             pcall(function()
                                                                 if me and me.MoveTo then
                                                                     me:MoveTo({ x = targetX, y = targetY }, 0)
@@ -3916,7 +4000,7 @@ local function CreateModUI()
 
 
 
-        local function CreateToggle(label, varName, xPos, yPos)
+        local function CreateToggle(label, varName, xPos, yPos, customWidth)
             local tGo = GameObject(varName .. "_Toggle")
             tGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, tGo)
@@ -3924,7 +4008,7 @@ local function CreateModUI()
             local tRt = tGo:AddComponent(typeof(RectTransform))
             tRt.anchorMin, tRt.anchorMax, tRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             tRt.anchoredPosition = Vector2(xPos, yPos)
-            tRt.sizeDelta = Vector2(260, 35)
+            tRt.sizeDelta = Vector2(customWidth or 260, 35)
 
             local bg = GameObject("Bg")
             bg.transform:SetParent(tGo.transform, false)
@@ -5462,7 +5546,8 @@ local function CreateModUI()
             CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
             currentY = currentY - 45
 
-            CreateToggle("TỰ HỒI SINH", "Mod_AutoResurrect_Enabled", rightColX2, currentY)
+            CreateToggle("HS FREE", "Mod_AutoResurrect_Free_Enabled", rightColX2, currentY, 125)
+            CreateToggle("HS KC", "Mod_AutoResurrect_Here_Enabled", rightColX2 + 135, currentY, 125)
             currentY = currentY - 45
 
             -- Cài đặt DELAY QUÉT PK
@@ -5663,106 +5748,6 @@ local function CreateModUI()
             CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", rightColX2, currentY)
             currentY = currentY - 40
 
-            -- InputField và Nút LẤY VỊ TRÍ cho TỰ QUAY LẠI X#Y
-            local retTgtGo = GameObject("AutoReturnPosInput")
-            retTgtGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, retTgtGo)
-            local retRt = retTgtGo:AddComponent(typeof(RectTransform))
-            retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            retRt.anchoredPosition = Vector2(rightColX2, currentY)
-            retRt.sizeDelta = Vector2(140, 30)
-
-            local retBg = GameObject("Bg")
-            retBg.transform:SetParent(retTgtGo.transform, false)
-            local retBgRt = retBg:AddComponent(typeof(RectTransform))
-            retBgRt.anchorMin, retBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retBgRt.sizeDelta = Vector2(0, 0)
-            local retImg = retBg:AddComponent(typeof(Image))
-            retImg.color = Color(0.1, 0.1, 0.1, 1)
-
-            local retTxtGo = GameObject("Text")
-            retTxtGo.transform:SetParent(retTgtGo.transform, false)
-            local retTxtRt = retTxtGo:AddComponent(typeof(RectTransform))
-            retTxtRt.anchorMin, retTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retTxtRt.offsetMin, retTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local retTxt = retTxtGo:AddComponent(typeof(Text))
-
-            if _G.Mod_AutoReturnPos_Coords == nil then
-                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
-            end
-
-            retTxt.text = _G.Mod_AutoReturnPos_Coords
-            retTxt.color, retTxt.fontSize = Color.white, 15
-            retTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then retTxt.font = defaultFont end
-
-            local retField = retTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            retField.textComponent = retTxt
-            retField.text = _G.Mod_AutoReturnPos_Coords
-
-            retField.onValueChanged:AddListener(function(val)
-                _G.Mod_AutoReturnPos_Coords = val
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
-            end)
-
-            -- Nút LẤY VỊ TRÍ bên cạnh (width = 115px)
-            local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
-            getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, getReturnPosBtnGo)
-            local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
-            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
-                Vector2(0, 1)
-            getReturnPosRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
-            getReturnPosRt.sizeDelta = Vector2(115, 30)
-
-            local getReturnPosBg = GameObject("Bg")
-            getReturnPosBg.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosBgRt = getReturnPosBg:AddComponent(typeof(RectTransform))
-            getReturnPosBgRt.anchorMin, getReturnPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosBgRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosBgImg = getReturnPosBg:AddComponent(typeof(Image))
-            getReturnPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
-
-            local getReturnPosTxtGo = GameObject("Text")
-            getReturnPosTxtGo.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosTxtRt = getReturnPosTxtGo:AddComponent(typeof(RectTransform))
-            getReturnPosTxtRt.anchorMin, getReturnPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosTxtRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosTxt = getReturnPosTxtGo:AddComponent(typeof(Text))
-            getReturnPosTxt.raycastTarget = false
-            getReturnPosTxt.text = "LẤY VỊ TRÍ"
-            getReturnPosTxt.color = Color.white
-            getReturnPosTxt.fontSize = 13
-            getReturnPosTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then getReturnPosTxt.font = defaultFont end
-
-            local getReturnPosBtn = getReturnPosBtnGo:AddComponent(typeof(Button))
-            getReturnPosBtn.onClick:AddListener(function()
-                pcall(function()
-                    if _G.RoleManager and _G.RoleManager.me then
-                        local me = _G.RoleManager.me
-                        local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                        local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                        if curX > 0 and curY > 0 then
-                            local coordStr = string.format("%d#%d", curX, curY)
-                            _G.Mod_AutoReturnPos_Coords = coordStr
-                            retField.text = coordStr
-                            retTxt.text = coordStr
-                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
-                            CS.UnityEngine.PlayerPrefs.Save()
-                            if _G.FloatingWordUtility then
-                                _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
-                            end
-                        end
-                    end
-                end)
-            end)
-
-            currentY = currentY - 40
-
             -- Cài đặt DELAY QUAY LẠI
             local function CreateReturnPosDelayControl(xPos, yPos)
                 local go = GameObject("Mod_ReturnPosDelay_Control")
@@ -5861,6 +5846,106 @@ local function CreateModUI()
             end
 
             CreateReturnPosDelayControl(rightColX2, currentY)
+            currentY = currentY - 45
+
+            -- Nút LẤY VỊ TRÍ (Đưa lên trước ô nhập tọa độ, width = 140px, ở bên trái)
+            local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
+            getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, getReturnPosBtnGo)
+            local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
+            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
+                Vector2(0, 1)
+            getReturnPosRt.anchoredPosition = Vector2(rightColX2, currentY)
+            getReturnPosRt.sizeDelta = Vector2(140, 30)
+
+            local getReturnPosBg = GameObject("Bg")
+            getReturnPosBg.transform:SetParent(getReturnPosBtnGo.transform, false)
+            local getReturnPosBgRt = getReturnPosBg:AddComponent(typeof(RectTransform))
+            getReturnPosBgRt.anchorMin, getReturnPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            getReturnPosBgRt.sizeDelta = Vector2(0, 0)
+            local getReturnPosBgImg = getReturnPosBg:AddComponent(typeof(Image))
+            getReturnPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+            local getReturnPosTxtGo = GameObject("Text")
+            getReturnPosTxtGo.transform:SetParent(getReturnPosBtnGo.transform, false)
+            local getReturnPosTxtRt = getReturnPosTxtGo:AddComponent(typeof(RectTransform))
+            getReturnPosTxtRt.anchorMin, getReturnPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            getReturnPosTxtRt.sizeDelta = Vector2(0, 0)
+            local getReturnPosTxt = getReturnPosTxtGo:AddComponent(typeof(Text))
+            getReturnPosTxt.raycastTarget = false
+            getReturnPosTxt.text = "LẤY VỊ TRÍ"
+            getReturnPosTxt.color = Color.white
+            getReturnPosTxt.fontSize = 15
+            getReturnPosTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then getReturnPosTxt.font = defaultFont end
+
+            -- InputField Tọa độ AutoReturnPosInput (width = 115px, ở bên phải)
+            local retTgtGo = GameObject("AutoReturnPosInput")
+            retTgtGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, retTgtGo)
+            local retRt = retTgtGo:AddComponent(typeof(RectTransform))
+            retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            retRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
+            retRt.sizeDelta = Vector2(115, 30)
+
+            local retBg = GameObject("Bg")
+            retBg.transform:SetParent(retTgtGo.transform, false)
+            local retBgRt = retBg:AddComponent(typeof(RectTransform))
+            retBgRt.anchorMin, retBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            retBgRt.sizeDelta = Vector2(0, 0)
+            local retImg = retBg:AddComponent(typeof(Image))
+            retImg.color = Color(0.1, 0.1, 0.1, 1)
+
+            local retTxtGo = GameObject("Text")
+            retTxtGo.transform:SetParent(retTgtGo.transform, false)
+            local retTxtRt = retTxtGo:AddComponent(typeof(RectTransform))
+            retTxtRt.anchorMin, retTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            retTxtRt.offsetMin, retTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local retTxt = retTxtGo:AddComponent(typeof(Text))
+
+            if _G.Mod_AutoReturnPos_Coords == nil then
+                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
+            end
+
+            retTxt.text = _G.Mod_AutoReturnPos_Coords
+            retTxt.color, retTxt.fontSize = Color.white, 15
+            retTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then retTxt.font = defaultFont end
+
+            local retField = retTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            retField.textComponent = retTxt
+            retField.text = _G.Mod_AutoReturnPos_Coords
+
+            retField.onValueChanged:AddListener(function(val)
+                _G.Mod_AutoReturnPos_Coords = val
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+            end)
+
+            local getReturnPosBtn = getReturnPosBtnGo:AddComponent(typeof(Button))
+            getReturnPosBtn.onClick:AddListener(function()
+                pcall(function()
+                    if _G.RoleManager and _G.RoleManager.me then
+                        local me = _G.RoleManager.me
+                        local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                        local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                        if curX > 0 and curY > 0 then
+                            local coordStr = string.format("%d#%d", curX, curY)
+                            _G.Mod_AutoReturnPos_Coords = coordStr
+                            retField.text = coordStr
+                            retTxt.text = coordStr
+                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
+                            end
+                        end
+                    end
+                end)
+            end)
+
             currentY = currentY - 45
         end
 
