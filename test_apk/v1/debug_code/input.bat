@@ -1,1 +1,0 @@
-adb -s emulator-5554 push input.txt /sdcard/Android/data/com.vnyh.gp/files/
