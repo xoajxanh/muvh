@@ -90,6 +90,7 @@ if ($choice -eq 1) {
     $customerLua = "d:\MUVH\android\mu-decompiled\final\modified_lua_customer\EmmyluaDebug.lua"
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     $content = [System.IO.File]::ReadAllText($customerLua, $utf8NoBom)
+    $content = $content.Replace("_G.Mod_IsDev = true", "_G.Mod_IsDev = false")
     $content = $content.Replace("_G.Mod_IsAdmin = true", "_G.Mod_IsAdmin = false")
     [System.IO.File]::WriteAllText($customerLua, $content, $utf8NoBom)
 
@@ -177,6 +178,7 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
     $customerLua = "d:\MUVH\android\mu-decompiled\final\modified_lua_customer\EmmyluaDebug.lua"
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
     $content = [System.IO.File]::ReadAllText($customerLua, $utf8NoBom)
+    $content = $content.Replace("_G.Mod_IsDev = true", "_G.Mod_IsDev = false")
     $content = $content.Replace("_G.Mod_IsAdmin = true", "_G.Mod_IsAdmin = false")
     [System.IO.File]::WriteAllText($customerLua, $content, $utf8NoBom)
 
