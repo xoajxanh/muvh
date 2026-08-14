@@ -2,6 +2,10 @@
 *.xapk
 *.aar
 *.jar
+test_apk/v1/app_icon.png
+test_apk/v1/release/
+test_apk/v1/debug_code/
+
 
 # Next.js & Node.js Dependencies & Builds
 **/node_modules/
