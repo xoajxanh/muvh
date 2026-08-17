@@ -15,12 +15,13 @@ Write-Host "==========================================================" -Foregro
 
 # 1. Hien thi Menu Chon Che Do Build
 Write-Host "CHON CHE DO BUILD:" -ForegroundColor Yellow
-Write-Host " [1] CLIENT   : Sync 'modified_lua_dev_client' -> Build MU_admin.apk & MU_client.apk (release_client) [MAC DINH]" -ForegroundColor Cyan
-Write-Host " [2] CUSTOMER : Sync 'modified_lua_dev_customer' -> Build MU_vut_teams.apk (release_customer)" -ForegroundColor Cyan
-Write-Host " [3] ALL      : Build CA HAI (CLIENT + CUSTOMER)" -ForegroundColor Cyan
+Write-Host " [1] CLIENT       : Sync 'modified_lua_dev_client' -> Build MU_admin.apk & MU_client.apk (release_client) [MAC DINH]" -ForegroundColor Cyan
+Write-Host " [2] CUSTOMER     : Sync 'modified_lua_dev_customer' -> Build MU_vut_teams.apk (release_customer)" -ForegroundColor Cyan
+Write-Host " [3] NOTIFICATION : Build 'modified_lua_dev_notification' -> Build MU_notification.apk (release_notification)" -ForegroundColor Cyan
+Write-Host " [4] ALL          : Build TAT CA (CLIENT + CUSTOMER + NOTIFICATION)" -ForegroundColor Cyan
 Write-Host "----------------------------------------------------------" -ForegroundColor Gray
 
-$modeInput = Read-Host "Nhap lua chon (1/2/3) [Nhan Enter = 1 (CLIENT)]"
+$modeInput = Read-Host "Nhap lua chon (1/2/3/4) [Nhan Enter = 1 (CLIENT)]"
 
 if ([string]::IsNullOrWhiteSpace($modeInput)) {
     $choice = 1
@@ -122,7 +123,7 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
 }
 
 # 3. Thuc hien quy trinh build theo che do
-if ($choice -eq 1 -or $choice -eq 3) {
+if ($choice -eq 1 -or $choice -eq 4) {
     # --------------------------------------------------------------------------
     # CLIENT MODE (Sync dev_client -> admin & client)
     # --------------------------------------------------------------------------
@@ -142,7 +143,7 @@ if ($choice -eq 1 -or $choice -eq 3) {
     Build-ApkTask -Ver "client" -OutputApkName "MU_client.apk" -TargetFolder "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_client"
 }
 
-if ($choice -eq 2 -or $choice -eq 3) {
+if ($choice -eq 2 -or $choice -eq 4) {
     # --------------------------------------------------------------------------
     # CUSTOMER MODE (Sync dev_customer -> customer)
     # --------------------------------------------------------------------------
@@ -159,6 +160,15 @@ if ($choice -eq 2 -or $choice -eq 3) {
     }
 
     Build-ApkTask -Ver "customer" -OutputApkName "MU_vut_teams.apk" -TargetFolder "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_customer"
+}
+
+if ($choice -eq 3 -or $choice -eq 4) {
+    # --------------------------------------------------------------------------
+    # NOTIFICATION MODE (Direct dev_notification)
+    # --------------------------------------------------------------------------
+    Write-Host ""
+    Write-Host "--- BUILD MOD DEV NOTIFICATION ---" -ForegroundColor Yellow
+    Build-ApkTask -Ver "dev_notification" -OutputApkName "MU_notification.apk" -TargetFolder "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_notification"
 }
 
 # 4. Don dep thu muc temp build

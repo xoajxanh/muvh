@@ -1,3 +1,6 @@
+---@diagnostic disable: undefined-global
+---@diagnostic disable: lowercase-global
+---@diagnostic disable: duplicate-set-field
 -- EmmyluaDebug.lua
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
@@ -764,14 +767,14 @@ local function CreateModUI()
                 }
             },
             {
-                mapId = 106704,
+                mapId = 106706,
                 title = "Luyện Ngục C7",
                 bosses = {
-                    { id = 10670401, name = "Tướng Quân LN", col = 1, transferId = 106704101 },
-                    { id = 10670402, name = "Ngang Ngược", col = 2, transferId = 106704102 },
-                    { id = 10670403, name = "Tà Ác", col = 3, transferId = 106704103 },
+                    { id = 10670601, name = "Ma Đạo Phủ", col = 1, transferId = 106706101 },
+                    { id = 10670602, name = "Ngang Ngược", col = 2, transferId = 106706102 },
+                    { id = 10670603, name = "Tà Ác", col = 3, transferId = 106706103 },
                 }
-            }
+            },
         }
 
         _G.Mod_MapsConfig_c8 = {
@@ -803,14 +806,14 @@ local function CreateModUI()
                 }
             },
             {
-                mapId = 106706,
+                mapId = 106707,
                 title = "Luyện Ngục C8",
                 bosses = {
-                    { id = 10670601, name = "Ma Đạo Phủ", col = 1, transferId = 106706101 },
-                    { id = 10670602, name = "Ngang Ngược", col = 2, transferId = 106706102 },
-                    { id = 10670603, name = "Tà Ác", col = 3, transferId = 106706103 },
+                    { id = 10670701, name = "Quỷ Biển", col = 1, transferId = 106707101 },
+                    { id = 10670702, name = "Ngang Ngược", col = 2, transferId = 106707102 },
+                    { id = 10670703, name = "Tà Ác", col = 3, transferId = 106707103 },
                 }
-            }
+            },
         }
 
         _G.ModBossTab = _G.ModBossTab or "C7"
@@ -3417,13 +3420,34 @@ local function CreateModUI()
         plusBtnComp.onClick:AddListener(_G.ModCallbacks.OnFOVPlus)
 
         -- Auth UI
+        local function Mod_GetCharacterUID()
+            local uid = ""
+            pcall(function()
+                if _G.LoginData and _G.LoginData.sdk_pid and tostring(_G.LoginData.sdk_pid) ~= "" then
+                    uid = tostring(_G.LoginData.sdk_pid)
+                end
+                if uid == "" and _G.LoginData and _G.LoginData.account and tostring(_G.LoginData.account) ~= "" then
+                    uid = tostring(_G.LoginData.account)
+                end
+                if uid == "" and _G.RoleManager and _G.RoleManager.me then
+                    if _G.RoleManager.me.roleId then uid = tostring(_G.RoleManager.me.roleId) end
+                    if uid == "" and _G.RoleManager.me.id then uid = tostring(_G.RoleManager.me.id) end
+                end
+                if uid == "" and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id then
+                    uid = tostring(_G.ViewData.meData.id)
+                end
+            end)
+            return uid
+        end
+        _G.Mod_GetCharacterUID = Mod_GetCharacterUID
+
         local function CreateAuthUI()
             local authPanelGo = GameObject("AuthPanel")
             authPanelGo.transform:SetParent(modRoot.transform, false)
             local authRt = authPanelGo:AddComponent(typeof(RectTransform))
             authRt.anchorMin, authRt.anchorMax, authRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
             authRt.anchoredPosition = Vector2(90, 70)
-            authRt.sizeDelta = Vector2(600, 350)
+            authRt.sizeDelta = Vector2(600, 420)
             local authImg = authPanelGo:AddComponent(typeof(Image))
             authImg.color = Color(0.1, 0.1, 0.1, 0.95)
             authPanelGo:SetActive(false)
@@ -3475,12 +3499,13 @@ local function CreateModUI()
             titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 24, TextAnchor.MiddleCenter
             if defaultFont then titleTxt.font = defaultFont end
 
+            -- Device Code
             local codeGo = GameObject("AuthCodeTxt")
             codeGo.transform:SetParent(authPanelGo.transform, false)
             local codeRt = codeGo:AddComponent(typeof(RectTransform))
             codeRt.anchorMin, codeRt.anchorMax, codeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             codeRt.anchoredPosition = Vector2(20, -70)
-            codeRt.sizeDelta = Vector2(450, 60)
+            codeRt.sizeDelta = Vector2(450, 40)
             local codeTxt = codeGo:AddComponent(typeof(Text))
             codeTxt.text = "Mã thiết bị (Copy gửi cho Admin):\n<color=yellow>" .. deviceCode .. "</color>"
             codeTxt.color, codeTxt.fontSize = Color.white, 16
@@ -3490,8 +3515,8 @@ local function CreateModUI()
             copyBtnGo.transform:SetParent(authPanelGo.transform, false)
             local copyRt = copyBtnGo:AddComponent(typeof(RectTransform))
             copyRt.anchorMin, copyRt.anchorMax, copyRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            copyRt.anchoredPosition = Vector2(-20, -75)
-            copyRt.sizeDelta = Vector2(120, 40)
+            copyRt.anchoredPosition = Vector2(-20, -70)
+            copyRt.sizeDelta = Vector2(120, 35)
             local copyImg = copyBtnGo:AddComponent(typeof(Image))
             copyImg.color = Color(0.2, 0.6, 1, 1)
             local copyBtn = copyBtnGo:AddComponent(typeof(Button))
@@ -3510,12 +3535,54 @@ local function CreateModUI()
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã copy mã thiết bị!") end
             end)
 
+            -- Character UID Display & Copy
+            local uidGo = GameObject("AuthUidTxt")
+            uidGo.transform:SetParent(authPanelGo.transform, false)
+            local uidRt = uidGo:AddComponent(typeof(RectTransform))
+            uidRt.anchorMin, uidRt.anchorMax, uidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            uidRt.anchoredPosition = Vector2(20, -120)
+            uidRt.sizeDelta = Vector2(450, 40)
+            local uidTxt = uidGo:AddComponent(typeof(Text))
+            local curUID = Mod_GetCharacterUID()
+            uidTxt.text = "Mã UID nhân vật:\n<color=yellow>" .. (curUID ~= "" and curUID or "Chưa đăng nhập nhân vật") .. "</color>"
+            uidTxt.color, uidTxt.fontSize = Color.white, 16
+            if defaultFont then uidTxt.font = defaultFont end
+
+            local copyUidBtnGo = GameObject("AuthCopyUidBtn")
+            copyUidBtnGo.transform:SetParent(authPanelGo.transform, false)
+            local copyUidRt = copyUidBtnGo:AddComponent(typeof(RectTransform))
+            copyUidRt.anchorMin, copyUidRt.anchorMax, copyUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
+            copyUidRt.anchoredPosition = Vector2(-20, -120)
+            copyUidRt.sizeDelta = Vector2(120, 35)
+            local copyUidImg = copyUidBtnGo:AddComponent(typeof(Image))
+            copyUidImg.color = Color(0.2, 0.6, 1, 1)
+            local copyUidBtn = copyUidBtnGo:AddComponent(typeof(Button))
+            local copyUidTxtGo = GameObject("CopyUidTxt")
+            copyUidTxtGo.transform:SetParent(copyUidBtnGo.transform, false)
+            local cuTxtRt = copyUidTxtGo:AddComponent(typeof(RectTransform))
+            cuTxtRt.anchorMin, cuTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            cuTxtRt.offsetMin, cuTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
+            local cuTxt = copyUidTxtGo:AddComponent(typeof(Text))
+            cuTxt.text = "Copy UID"
+            cuTxt.color, cuTxt.fontSize, cuTxt.alignment = Color.white, 18, TextAnchor.MiddleCenter
+            if defaultFont then cuTxt.font = defaultFont end
+
+            copyUidBtn.onClick:AddListener(function()
+                local u = Mod_GetCharacterUID()
+                if u ~= "" then
+                    CS.UnityEngine.GUIUtility.systemCopyBuffer = u
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã copy UID nhân vật!") end
+                else
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa đăng nhập nhân vật để lấy UID!") end
+                end
+            end)
+
             -- Auth Token Label
             local tokenLblGo = GameObject("AuthTokenLbl")
             tokenLblGo.transform:SetParent(authPanelGo.transform, false)
             local tokenLblRt = tokenLblGo:AddComponent(typeof(RectTransform))
             tokenLblRt.anchorMin, tokenLblRt.anchorMax, tokenLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tokenLblRt.anchoredPosition = Vector2(20, -150)
+            tokenLblRt.anchoredPosition = Vector2(20, -175)
             tokenLblRt.sizeDelta = Vector2(400, 20)
             local tokenLblTxt = tokenLblGo:AddComponent(typeof(Text))
             tokenLblTxt.text = "Nhập Token:"
@@ -3526,7 +3593,7 @@ local function CreateModUI()
             tokenGo.transform:SetParent(authPanelGo.transform, false)
             local tokenRt = tokenGo:AddComponent(typeof(RectTransform))
             tokenRt.anchorMin, tokenRt.anchorMax, tokenRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tokenRt.anchoredPosition = Vector2(20, -170)
+            tokenRt.anchoredPosition = Vector2(20, -195)
             tokenRt.sizeDelta = Vector2(550, 35)
             local tokenImg = tokenGo:AddComponent(typeof(Image))
             tokenImg.color = Color(1, 1, 1, 1)
@@ -3555,7 +3622,7 @@ local function CreateModUI()
             pasteBtnGo.transform:SetParent(authPanelGo.transform, false)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -170)
+            pasteRt.anchoredPosition = Vector2(-20, -195)
             pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
@@ -3619,29 +3686,52 @@ local function CreateModUI()
                 for part in string.gmatch(decoded, "[^|]+") do
                     table.insert(parts, part)
                 end
-                if #parts ~= 4 then
+
+                local pCode, pUID, pDuration, pTime, pSig
+                if #parts == 5 then
+                    pCode, pUID, pDuration, pTime, pSig = parts[1], parts[2], tonumber(parts[3]), tonumber(parts[4]), parts[5]
+                elseif #parts == 4 then
+                    pCode, pUID, pDuration, pTime, pSig = parts[1], "ALL", tonumber(parts[2]), tonumber(parts[3]), parts[4]
+                else
                     if not isSilent then errTxt.text = "Token không hợp lệ!" end
                     return false
                 end
-                local pCode, pDuration, pTime, pSig = parts[1], tonumber(parts[2]), tonumber(parts[3]), parts[4]
+
                 if pCode ~= deviceCode then
                     if not isSilent then errTxt.text = "Token không dành cho thiết bị này!" end
                     return false
                 end
-                local dataToHash = pCode ..
-                    "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+
+                local dataToHash
+                if #parts == 5 then
+                    dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+                else
+                    dataToHash = pCode .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+                end
+
                 local expectedSig = GetMD5(dataToHash)
                 if expectedSig ~= pSig then
                     if not isSilent then errTxt.text = "Token đã bị giả mạo!" end
                     return false
                 end
 
-                local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
-                    os.time()
+                local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
                 local expireTime = pTime + (pDuration * 86400)
                 if currentUnixTime > expireTime then
                     if not isSilent then errTxt.text = "Token đã hết hạn!" end
                     return false
+                end
+
+                if pUID and string.upper(tostring(pUID)) ~= "ALL" then
+                    local currentUID = Mod_GetCharacterUID()
+                    if currentUID == "" then
+                        if not isSilent then errTxt.text = "Vui lòng đăng nhập nhân vật để xác thực UID!" end
+                        return false
+                    end
+                    if tostring(currentUID) ~= tostring(pUID) then
+                        if not isSilent then errTxt.text = "Mã nhân vật (UID) không trùng khớp!" end
+                        return false
+                    end
                 end
 
                 CS.UnityEngine.PlayerPrefs.SetString("Mod_AuthToken", tokenStr)
@@ -3663,7 +3753,7 @@ local function CreateModUI()
 
             if savedToken ~= "" then
                 if not _G.CheckModAuth(savedToken, true) then
-                    errTxt.text = "Token đã lưu không hợp lệ hoặc hết hạn!"
+                    errTxt.text = "Token đã lưu không hợp lệ, sai UID hoặc hết hạn!"
                 end
             end
         end
@@ -3671,7 +3761,8 @@ local function CreateModUI()
 
         _G.ModCallbacks.OnToggleMenu = function()
             pcall(function()
-                if _G.Mod_IsAdmin or _G.ModAuthValid then
+                local tokenSaved = CS.UnityEngine.PlayerPrefs.GetString("Mod_AuthToken", "")
+                if _G.Mod_IsAdmin or (_G.CheckModAuth and _G.CheckModAuth(tokenSaved, true)) then
                     if _G.authPanelGo and _G.authPanelGo.activeSelf then _G.authPanelGo:SetActive(false) end
                     isExpanded = not isExpanded
                     panelGo:SetActive(isExpanded)
@@ -3687,6 +3778,16 @@ local function CreateModUI()
                 else
                     if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
                     if _G.authPanelGo then
+                        local curU = _G.Mod_GetCharacterUID and _G.Mod_GetCharacterUID() or ""
+                        pcall(function()
+                            local uidTxtGo = _G.authPanelGo.transform:Find("AuthUidTxt")
+                            if uidTxtGo then
+                                local t = uidTxtGo:GetComponent(typeof(CS.UnityEngine.UI.Text))
+                                if t then
+                                    t.text = "Mã UID nhân vật:\n<color=yellow>" .. (curU ~= "" and curU or "Chưa đăng nhập nhân vật") .. "</color>"
+                                end
+                            end
+                        end)
                         _G.authPanelGo:SetActive(not _G.authPanelGo.activeSelf)
                     end
                 end
@@ -5546,8 +5647,142 @@ local function CreateModUI()
             CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
             currentY = currentY - 45
 
-            CreateToggle("HS FREE", "Mod_AutoResurrect_Free_Enabled", rightColX2, currentY, 125)
-            CreateToggle("HS KC", "Mod_AutoResurrect_Here_Enabled", rightColX2 + 135, currentY, 125)
+            -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
+            local function CreateResurrectRadioGroup(xPos, yPos, btnW)
+                btnW = btnW or 125
+                local spacing = 10
+
+                if _G.Mod_AutoResurrect_Free_Enabled == nil then
+                    pcall(function()
+                        _G.Mod_AutoResurrect_Free_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Free_Enabled", 0) == 1)
+                    end)
+                    if _G.Mod_AutoResurrect_Free_Enabled == nil then _G.Mod_AutoResurrect_Free_Enabled = false end
+                end
+
+                if _G.Mod_AutoResurrect_Here_Enabled == nil then
+                    pcall(function()
+                        _G.Mod_AutoResurrect_Here_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Here_Enabled", 0) == 1)
+                    end)
+                    if _G.Mod_AutoResurrect_Here_Enabled == nil then _G.Mod_AutoResurrect_Here_Enabled = false end
+                end
+
+                if _G.Mod_AutoResurrect_Free_Enabled and _G.Mod_AutoResurrect_Here_Enabled then
+                    _G.Mod_AutoResurrect_Free_Enabled = false
+                end
+
+                -- 1. NÚT HS FREE
+                local hsFreeGo = GameObject("HS_FREE_RadioToggle")
+                hsFreeGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, hsFreeGo)
+                local freeRt = hsFreeGo:AddComponent(typeof(RectTransform))
+                freeRt.anchorMin, freeRt.anchorMax, freeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                freeRt.anchoredPosition = Vector2(xPos, yPos)
+                freeRt.sizeDelta = Vector2(btnW, 35)
+
+                local freeBg = GameObject("Bg")
+                freeBg.transform:SetParent(hsFreeGo.transform, false)
+                local freeBgRt = freeBg:AddComponent(typeof(RectTransform))
+                freeBgRt.anchorMin, freeBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                freeBgRt.sizeDelta = Vector2(0, 0)
+                local freeBgImg = freeBg:AddComponent(typeof(Image))
+
+                local freeTxtGo = GameObject("Text")
+                freeTxtGo.transform:SetParent(hsFreeGo.transform, false)
+                local freeTxtRt = freeTxtGo:AddComponent(typeof(RectTransform))
+                freeTxtRt.anchorMin, freeTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                freeTxtRt.sizeDelta = Vector2(0, 0)
+                local freeTxt = freeTxtGo:AddComponent(typeof(Text))
+                freeTxt.raycastTarget = false
+                freeTxt.text = "HS FREE"
+                freeTxt.fontSize = 15
+                freeTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then freeTxt.font = defaultFont end
+
+                local freeBtn = hsFreeGo:AddComponent(typeof(Button))
+
+                -- 2. NÚT HS KC
+                local hsKcGo = GameObject("HS_KC_RadioToggle")
+                hsKcGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, hsKcGo)
+                local kcRt = hsKcGo:AddComponent(typeof(RectTransform))
+                kcRt.anchorMin, kcRt.anchorMax, kcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                kcRt.anchoredPosition = Vector2(xPos + btnW + spacing, yPos)
+                kcRt.sizeDelta = Vector2(btnW, 35)
+
+                local kcBg = GameObject("Bg")
+                kcBg.transform:SetParent(hsKcGo.transform, false)
+                local kcBgRt = kcBg:AddComponent(typeof(RectTransform))
+                kcBgRt.anchorMin, kcBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                kcBgRt.sizeDelta = Vector2(0, 0)
+                local kcBgImg = kcBg:AddComponent(typeof(Image))
+
+                local kcTxtGo = GameObject("Text")
+                kcTxtGo.transform:SetParent(hsKcGo.transform, false)
+                local kcTxtRt = kcTxtGo:AddComponent(typeof(RectTransform))
+                kcTxtRt.anchorMin, kcTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                kcTxtRt.sizeDelta = Vector2(0, 0)
+                local kcTxt = kcTxtGo:AddComponent(typeof(Text))
+                kcTxt.raycastTarget = false
+                kcTxt.text = "HS KC"
+                kcTxt.fontSize = 15
+                kcTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then kcTxt.font = defaultFont end
+
+                local kcBtn = hsKcGo:AddComponent(typeof(Button))
+
+                local function UpdateResurrectVisuals()
+                    if _G.Mod_AutoResurrect_Free_Enabled then
+                        freeBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        freeTxt.color = Color.white
+                    else
+                        freeBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        freeTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    end
+
+                    if _G.Mod_AutoResurrect_Here_Enabled then
+                        kcBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        kcTxt.color = Color.white
+                    else
+                        kcBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        kcTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    end
+                end
+                UpdateResurrectVisuals()
+
+                freeBtn.onClick:AddListener(function()
+                    if not _G.Mod_AutoResurrect_Free_Enabled then
+                        _G.Mod_AutoResurrect_Free_Enabled = true
+                        _G.Mod_AutoResurrect_Here_Enabled = false
+                    else
+                        _G.Mod_AutoResurrect_Free_Enabled = false
+                    end
+
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateResurrectVisuals()
+                end)
+
+                kcBtn.onClick:AddListener(function()
+                    if not _G.Mod_AutoResurrect_Here_Enabled then
+                        _G.Mod_AutoResurrect_Here_Enabled = true
+                        _G.Mod_AutoResurrect_Free_Enabled = false
+                    else
+                        _G.Mod_AutoResurrect_Here_Enabled = false
+                    end
+
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateResurrectVisuals()
+                end)
+            end
+
+            CreateResurrectRadioGroup(rightColX2, currentY, 125)
             currentY = currentY - 45
 
             -- Cài đặt DELAY QUÉT PK
@@ -6092,6 +6327,7 @@ local function CreateModUI()
             if defaultFont then tokTxt.font = defaultFont end
 
             local adminDeviceCode = ""
+            local adminUID = "ALL"
             local adminDuration = 3
             local adminGenToken = ""
 
@@ -6101,10 +6337,10 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeLblGo)
             local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
             inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -200)
+            inCodeLblRt.anchoredPosition = Vector2(20, -195)
             inCodeLblRt.sizeDelta = Vector2(400, 20)
             local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
-            inCodeLblTxt.text = "Mã của khách:"
+            inCodeLblTxt.text = "Mã MD5 của khách:"
             inCodeLblTxt.color, inCodeLblTxt.fontSize = Color.white, 16
             if defaultFont then inCodeLblTxt.font = defaultFont end
 
@@ -6114,7 +6350,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeGo)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -225)
+            inCodeRt.anchoredPosition = Vector2(20, -215)
             inCodeRt.sizeDelta = Vector2(550, 35)
             local inCodeImg = inCodeGo:AddComponent(typeof(Image))
             inCodeImg.color = Color(1, 1, 1, 1)
@@ -6143,7 +6379,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteBtnGo)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -225)
+            pasteRt.anchoredPosition = Vector2(-20, -215)
             pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
@@ -6154,7 +6390,7 @@ local function CreateModUI()
             pTxtRt.anchorMin, pTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
             pTxtRt.offsetMin, pTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
             local pTxt = pTxtGo:AddComponent(typeof(Text))
-            pTxt.text = "Paste Code"
+            pTxt.text = "Paste MD5"
             pTxt.color, pTxt.fontSize, pTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
             if defaultFont then pTxt.font = defaultFont end
 
@@ -6163,13 +6399,81 @@ local function CreateModUI()
                 inputField.text = adminDeviceCode
             end)
 
+            -- Input UID Label
+            local inUidLblGo = GameObject("InUidLbl")
+            inUidLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, inUidLblGo)
+            local inUidLblRt = inUidLblGo:AddComponent(typeof(RectTransform))
+            inUidLblRt.anchorMin, inUidLblRt.anchorMax, inUidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            inUidLblRt.anchoredPosition = Vector2(20, -260)
+            inUidLblRt.sizeDelta = Vector2(400, 20)
+            local inUidLblTxt = inUidLblGo:AddComponent(typeof(Text))
+            inUidLblTxt.text = "UID của khách (hoặc ALL):"
+            inUidLblTxt.color, inUidLblTxt.fontSize = Color.white, 16
+            if defaultFont then inUidLblTxt.font = defaultFont end
+
+            -- Input UID Field
+            local inUidGo = GameObject("InUidInput")
+            inUidGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, inUidGo)
+            local inUidRt = inUidGo:AddComponent(typeof(RectTransform))
+            inUidRt.anchorMin, inUidRt.anchorMax, inUidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            inUidRt.anchoredPosition = Vector2(20, -280)
+            inUidRt.sizeDelta = Vector2(550, 35)
+            local inUidImg = inUidGo:AddComponent(typeof(Image))
+            inUidImg.color = Color(1, 1, 1, 1)
+
+            local uidTextGo = GameObject("Text")
+            uidTextGo.transform:SetParent(inUidGo.transform, false)
+            local uTxtRt = uidTextGo:AddComponent(typeof(RectTransform))
+            uTxtRt.anchorMin, uTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            uTxtRt.offsetMin, uTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local inUidTxt = uidTextGo:AddComponent(typeof(Text))
+            inUidTxt.text = adminUID
+            inUidTxt.color, inUidTxt.fontSize = Color.black, 16
+            inUidTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then inUidTxt.font = defaultFont end
+
+            local uidInputField = inUidGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            uidInputField.textComponent = inUidTxt
+            uidInputField.text = adminUID
+
+            uidInputField.onValueChanged:AddListener(function(val)
+                adminUID = val
+            end)
+
+            local pasteUidBtnGo = GameObject("AdminPasteUidBtn")
+            pasteUidBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, pasteUidBtnGo)
+            local pasteUidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
+            pasteUidRt.anchorMin, pasteUidRt.anchorMax, pasteUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
+            pasteUidRt.anchoredPosition = Vector2(-20, -280)
+            pasteUidRt.sizeDelta = Vector2(120, 35)
+            local pasteUidImg = pasteUidBtnGo:AddComponent(typeof(Image))
+            pasteUidImg.color = Color(0.8, 0.4, 0, 1)
+            local pasteUidBtn = pasteUidBtnGo:AddComponent(typeof(Button))
+            local pUidTxtGo = GameObject("PasteUidTxt")
+            pUidTxtGo.transform:SetParent(pasteUidBtnGo.transform, false)
+            local pUidTxtRt = pUidTxtGo:AddComponent(typeof(RectTransform))
+            pUidTxtRt.anchorMin, pUidTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            pUidTxtRt.offsetMin, pUidTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
+            local pUidTxt = pUidTxtGo:AddComponent(typeof(Text))
+            pUidTxt.text = "Paste UID"
+            pUidTxt.color, pUidTxt.fontSize, pUidTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            if defaultFont then pUidTxt.font = defaultFont end
+
+            pasteUidBtn.onClick:AddListener(function()
+                adminUID = CS.UnityEngine.GUIUtility.systemCopyBuffer or "ALL"
+                uidInputField.text = adminUID
+            end)
+
             -- Options
             local optsTitleGo = GameObject("OptsTitle")
             optsTitleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, optsTitleGo)
             local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
             optsRt.anchorMin, optsRt.anchorMax, optsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optsRt.anchoredPosition = Vector2(20, -280)
+            optsRt.anchoredPosition = Vector2(20, -325)
             optsRt.sizeDelta = Vector2(150, 30)
             local optsTxt = optsTitleGo:AddComponent(typeof(Text))
             optsTxt.text = "Chọn thời hạn:"
@@ -6181,7 +6485,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, optDurationText)
             local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
             optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optDTkRt.anchoredPosition = Vector2(170, -280)
+            optDTkRt.anchoredPosition = Vector2(170, -325)
             optDTkRt.sizeDelta = Vector2(400, 30)
             local optDTkTxt = optDurationText:AddComponent(typeof(Text))
             optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
@@ -6215,11 +6519,11 @@ local function CreateModUI()
                 end)
             end
 
-            CreateOptBtn(20, -310, "3 Ngày", 3)
-            CreateOptBtn(120, -310, "7 Ngày", 7)
-            CreateOptBtn(220, -310, "15 Ngày", 15)
-            CreateOptBtn(320, -310, "30 Ngày", 30)
-            CreateOptBtn(420, -310, "90 Ngày", 90)
+            CreateOptBtn(20, -355, "3 Ngày", 3)
+            CreateOptBtn(120, -355, "7 Ngày", 7)
+            CreateOptBtn(220, -355, "15 Ngày", 15)
+            CreateOptBtn(320, -355, "30 Ngày", 30)
+            CreateOptBtn(420, -355, "90 Ngày", 90)
 
             -- Generate Button
             local genBtnGo = GameObject("AdminGenBtn")
@@ -6227,7 +6531,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, genBtnGo)
             local genRt = genBtnGo:AddComponent(typeof(RectTransform))
             genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            genRt.anchoredPosition = Vector2(0, -370)
+            genRt.anchoredPosition = Vector2(0, -405)
             genRt.sizeDelta = Vector2(250, 45)
             local genImg = genBtnGo:AddComponent(typeof(Image))
             genImg.color = Color(0, 0.8, 0, 1)
@@ -6248,7 +6552,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, resGo)
             local resRt = resGo:AddComponent(typeof(RectTransform))
             resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            resRt.anchoredPosition = Vector2(20, -440)
+            resRt.anchoredPosition = Vector2(20, -465)
             resRt.sizeDelta = Vector2(550, 60)
             local resTextGo = GameObject("Text")
             resTextGo.transform:SetParent(resGo.transform, false)
@@ -6276,7 +6580,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, copyTokBtnGo)
             local ctRt = copyTokBtnGo:AddComponent(typeof(RectTransform))
             ctRt.anchorMin, ctRt.anchorMax, ctRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            ctRt.anchoredPosition = Vector2(-20, -440)
+            ctRt.anchoredPosition = Vector2(-20, -465)
             ctRt.sizeDelta = Vector2(120, 40)
             local ctImg = copyTokBtnGo:AddComponent(typeof(Image))
             ctImg.color = Color(0.2, 0.6, 1, 1)
@@ -6304,8 +6608,9 @@ local function CreateModUI()
                     return
                 end
 
+                local targetUID = (adminUID and adminUID ~= "") and adminUID or "ALL"
                 local pTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
-                local tokenData = adminDeviceCode .. "|" .. tostring(adminDuration) .. "|" .. tostring(pTime)
+                local tokenData = adminDeviceCode .. "|" .. targetUID .. "|" .. tostring(adminDuration) .. "|" .. tostring(pTime)
                 local dataToHash = tokenData .. "MUVH_SECRET_SALT_XOAI"
 
                 local status, md5Hash = pcall(function()
@@ -6988,4 +7293,384 @@ if not status then
     WriteLog("LỖI HOOK UIManager: " .. tostring(err))
 end
 
-return true
+        _G.Mod_MapsConfig_c3 = {
+            {
+                mapId = 101094,
+                title = "Hoang Dã C3",
+                bosses = {
+                    { id = 10179407, name = "H.Thần Kiêu Ngạo", col = 1, transferId = 400212 },
+                    { id = 10179408, name = "Phẫn Nộ", col = 2, transferId = 400218 },
+                    { id = 10179409, name = "Cuồng Bạo", col = 3, transferId = 400224 },
+                }
+            },
+            {
+                mapId = 105203,
+                title = "Trang Sức C3",
+                bosses = {
+                    { id = 10520301, name = "N.Khổng Lồ Sét", col = 1, transferId = 105203101 },
+                    { id = 10520302, name = "Phẫn Nộ", col = 2, transferId = 105203102 },
+                }
+            },
+            {
+                mapId = 106402,
+                title = "Thí Luyện Cánh 2",
+                bosses = {
+                    { id = 10640201, name = "N.Cây Totem", col = 1, transferId = 10640201 },
+                    { id = 10640202, name = "Ngang Ngược", col = 2, transferId = 10640202 },
+                    { id = 10640203, name = "Tà Ác", col = 3, transferId = 10640203 },
+                }
+            },
+            {
+                mapId = 106705,
+                title = "Luyện Ngục C3",
+                bosses = {
+                    { id = 10670501, name = "Nurmus", col = 1, transferId = 106705101 },
+                    { id = 10670502, name = "Ngang Ngược", col = 2, transferId = 106705103 },
+                    { id = 10670503, name = "Tà Ác", col = 3, transferId = 106705105 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c4 = {
+            {
+                mapId = 101093,
+                title = "Hoang Dã C4",
+                bosses = {
+                    { id = 10179307, name = "K.Sĩ Địa Ngục", col = 1, transferId = 400213 },
+                    { id = 10179308, name = "Phẫn Nộ", col = 2, transferId = 400219 },
+                    { id = 10179309, name = "Cuồng Bạo", col = 3, transferId = 400225 },
+                }
+            },
+            {
+                mapId = 105204,
+                title = "Trang Sức C4",
+                bosses = {
+                    { id = 10520401, name = "N.Khổng Lồ U Linh", col = 1, transferId = 105204101 },
+                    { id = 10520402, name = "Phẫn Nộ", col = 2, transferId = 105204102 },
+                }
+            },
+            {
+                mapId = 106403,
+                title = "Thí Luyện Cánh 3",
+                bosses = {
+                    { id = 10640301, name = "O.Chúa Khát Máu", col = 1, transferId = 10640301 },
+                    { id = 10640302, name = "Ngang Ngược", col = 2, transferId = 10640302 },
+                    { id = 10640303, name = "Tà Ác", col = 3, transferId = 10640303 },
+                }
+            },
+            {
+                mapId = 106701,
+                title = "Luyện Ngục C4",
+                bosses = {
+                    { id = 10670101, name = "Ma Tinh Phoenix", col = 1, transferId = 106701101 },
+                    { id = 10670102, name = "Ngang Ngược", col = 2, transferId = 106701103 },
+                    { id = 10670103, name = "Tà Ác", col = 3, transferId = 106701105 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c5 = {
+            {
+                mapId = 101095,
+                title = "Hoang Dã C5",
+                bosses = {
+                    { id = 10179507, name = "Giác Ma Đ.Ngục", col = 1, transferId = 400214 },
+                    { id = 10179508, name = "Phẫn Nộ", col = 2, transferId = 400220 },
+                    { id = 10179509, name = "Cuồng Bạo", col = 3, transferId = 400226 },
+                }
+            },
+            {
+                mapId = 105205,
+                title = "Trang Sức C5",
+                bosses = {
+                    { id = 10520501, name = "Hươu Thủy Tinh", col = 1, transferId = 105205101 },
+                    { id = 10520502, name = "Phẫn Nộ", col = 2, transferId = 105205102 },
+                }
+            },
+            {
+                mapId = 106404,
+                title = "Thí Luyện Cánh 4",
+                bosses = {
+                    { id = 10640401, name = "Quỷ Dung Nham", col = 1, transferId = 10640401 },
+                    { id = 10640402, name = "Ngang Ngược", col = 2, transferId = 10640402 },
+                    { id = 10640403, name = "Tà Ác", col = 3, transferId = 10640403 },
+                }
+            },
+            {
+                mapId = 106702,
+                title = "Luyện Ngục C5",
+                bosses = {
+                    { id = 10670201, name = "Nars", col = 1, transferId = 106702101 },
+                    { id = 10670202, name = "Ngang Ngược", col = 2, transferId = 106702103 },
+                    { id = 10670203, name = "Tà Ác", col = 3, transferId = 106702105 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c6 = {
+            {
+                mapId = 101092,
+                title = "Hoang Dã C6",
+                bosses = {
+                    { id = 10179207, name = "V.Sĩ Khiên Kiếm", col = 1, transferId = 400215 },
+                    { id = 10179208, name = "Phẫn Nộ", col = 2, transferId = 400221 },
+                    { id = 10179209, name = "Cuồng Bạo", col = 3, transferId = 400227 },
+                }
+            },
+            {
+                mapId = 105206,
+                title = "Trang Sức C6",
+                bosses = {
+                    { id = 10520601, name = "H.Thần Kiêu Ngạo", col = 1, transferId = 105206101 },
+                    { id = 10520602, name = "Phẫn Nộ", col = 2, transferId = 105206102 },
+                }
+            },
+            {
+                mapId = 106405,
+                title = "Thí Luyện Cánh 5",
+                bosses = {
+                    { id = 10640501, name = "Q.Vương L.Ngục", col = 1, transferId = 10640501 },
+                    { id = 10640502, name = "Ngang Ngược", col = 2, transferId = 10640502 },
+                    { id = 10640503, name = "Tà Ác", col = 3, transferId = 10640503 },
+                }
+            },
+            {
+                mapId = 106703,
+                title = "Luyện Ngục C6",
+                bosses = {
+                    { id = 10670301, name = "Q.Chủ L.Ngục", col = 1, transferId = 106703101 },
+                    { id = 10670302, name = "Ngang Ngược", col = 2, transferId = 106703103 },
+                    { id = 10670303, name = "Tà Ác", col = 3, transferId = 106703104 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c7 = {
+            {
+                mapId = 101096,
+                title = "Hoang Dã C7",
+                bosses = {
+                    { id = 10179607, name = "Tektus", col = 1, transferId = 400216 },
+                    { id = 10179608, name = "Phẫn Nộ", col = 2, transferId = 400222 },
+                    { id = 10179609, name = "Cuồng Bạo", col = 3, transferId = 400228 },
+                }
+            },
+            {
+                mapId = 105207,
+                title = "Trang Sức C7",
+                bosses = {
+                    { id = 10520701, name = "Tektus", col = 1, transferId = 105207101 },
+                    { id = 10520702, name = "Phẫn Nộ", col = 2, transferId = 105207102 },
+                }
+            },
+            {
+                mapId = 106406,
+                title = "Thí Luyện Cánh 6",
+                bosses = {
+                    { id = 10640601, name = "CS Rìu To", col = 1, transferId = 10640601 },
+                    { id = 10640602, name = "Ngang Ngược", col = 2, transferId = 10640602 },
+                    { id = 10640603, name = "Tà Ác", col = 3, transferId = 10640603 },
+                }
+            },
+            {
+                mapId = 106704,
+                title = "Luyện Ngục C7",
+                bosses = {
+                    { id = 10670401, name = "Tướng Quân LN", col = 1, transferId = 106704101 },
+                    { id = 10670402, name = "Ngang Ngược", col = 2, transferId = 106704102 },
+                    { id = 10670403, name = "Tà Ác", col = 3, transferId = 106704103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c8 = {
+            {
+                mapId = 1074,
+                title = "Hoang Dã C8",
+                bosses = {
+                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, transferId = 400229 },
+                    { id = 107408, name = "Phẫn Nộ", col = 2, transferId = 400230 },
+                    { id = 107409, name = "Cuồng Bạo", col = 3, transferId = 400231 },
+                }
+            },
+            {
+                mapId = 105208,
+                title = "Trang Sức C8",
+                bosses = {
+                    { id = 10520801, name = "K.Sĩ Tử Vong", col = 1, transferId = 105208101 },
+                    { id = 10520802, name = "Phẫn Nộ", col = 2, transferId = 105208102 },
+                }
+            },
+            {
+                mapId = 106407,
+                title = "Thí Luyện Cánh 7",
+                bosses = {
+                    { id = 10640701, name = "T.Vệ Giáo Dài", col = 1, transferId = 10640701 },
+                    { id = 10640702, name = "Ngang Ngược", col = 2, transferId = 10640702 },
+                    { id = 10640703, name = "Tà Ác", col = 3, transferId = 10640703 },
+                }
+            },
+            {
+                mapId = 106706,
+                title = "Luyện Ngục C8",
+                bosses = {
+                    { id = 10670601, name = "Ma Đạo Phủ", col = 1, transferId = 106706101 },
+                    { id = 10670602, name = "Ngang Ngược", col = 2, transferId = 106706102 },
+                    { id = 10670603, name = "Tà Ác", col = 3, transferId = 106706103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c9 = {
+            {
+                mapId = 1075,
+                title = "Hoang Dã C9",
+                bosses = {
+                    { id = 107507, name = "S.Giả Ác Ma", col = 1, transferId = 400232 },
+                    { id = 107508, name = "Phẫn Nộ", col = 2, transferId = 400233 },
+                    { id = 107509, name = "Cuồng Bạo", col = 3, transferId = 400234 },
+                }
+            },
+            {
+                mapId = 105209,
+                title = "Trang Sức C9",
+                bosses = {
+                    { id = 10520901, name = "S.Giả Ác Ma", col = 1, transferId = 105209101 },
+                    { id = 10520902, name = "Phẫn Nộ", col = 2, transferId = 105209102 },
+                }
+            },
+            {
+                mapId = 106408,
+                title = "Thí Luyện Cánh 8",
+                bosses = {
+                    { id = 10640801, name = "T.Vệ Loan Đao", col = 1, transferId = 10640801 },
+                    { id = 10640802, name = "Ngang Ngược", col = 2, transferId = 10640802 },
+                    { id = 10640803, name = "Tà Ác", col = 3, transferId = 10640803 },
+                }
+            },
+            {
+                mapId = 106707,
+                title = "Luyện Ngục C9",
+                bosses = {
+                    { id = 10670701, name = "Quỷ Biển", col = 1, transferId = 106707101 },
+                    { id = 10670702, name = "Ngang Ngược", col = 2, transferId = 106707102 },
+                    { id = 10670703, name = "Tà Ác", col = 3, transferId = 106707103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c10 = {
+            {
+                mapId = 1076,
+                title = "Hoang Dã C10",
+                bosses = {
+                    { id = 107607, name = "C.Sĩ Cuồng Nộ", col = 1, transferId = 400235 },
+                    { id = 107608, name = "Phẫn Nộ", col = 2, transferId = 400236 },
+                    { id = 107609, name = "Cuồng Bạo", col = 3, transferId = 400237 },
+                }
+            },
+            {
+                mapId = 105210,
+                title = "Trang Sức C10",
+                bosses = {
+                    { id = 10521001, name = "C.Sĩ Cuồng Nộ", col = 1, transferId = 105210101 },
+                    { id = 10521002, name = "Phẫn Nộ", col = 2, transferId = 105210102 },
+                }
+            },
+            {
+                mapId = 106409,
+                title = "Thí Luyện Cánh 9",
+                bosses = {
+                    { id = 10640901, name = "T.Vệ Lam Tinh", col = 1, transferId = 10640901 },
+                    { id = 10640902, name = "Ngang Ngược", col = 2, transferId = 10640902 },
+                    { id = 10640903, name = "Tà Ác", col = 3, transferId = 10640903 },
+                }
+            },
+            {
+                mapId = 106708,
+                title = "Luyện Ngục C10",
+                bosses = {
+                    { id = 10670801, name = "Mị Ma", col = 1, transferId = 106708101 },
+                    { id = 10670802, name = "Ngang Ngược", col = 2, transferId = 106708102 },
+                    { id = 10670803, name = "Tà Ác", col = 3, transferId = 106708103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c11 = {
+            {
+                mapId = 10123,
+                title = "Hoang Dã C11",
+                bosses = {
+                    { id = 1012307, name = "Thủy Ma Navos", col = 1, transferId = 400238 },
+                    { id = 1012308, name = "Phẫn Nộ", col = 2, transferId = 400239 },
+                    { id = 1012309, name = "Cuồng Bạo", col = 3, transferId = 400240 },
+                }
+            },
+            {
+                mapId = 105211,
+                title = "Trang Sức C11",
+                bosses = {
+                    { id = 10521101, name = "Ma Thủy Navos", col = 1, transferId = 105211101 },
+                    { id = 10521102, name = "Phẫn Nộ", col = 2, transferId = 105211102 },
+                }
+            },
+            {
+                mapId = 106410,
+                title = "Thí Luyện Cánh 10",
+                bosses = {
+                    { id = 10641001, name = "Vua Biển Băng Tinh", col = 1, transferId = 10641001 },
+                    { id = 10641002, name = "Ngang Ngược", col = 2, transferId = 10641002 },
+                    { id = 10641003, name = "Tà Ác", col = 3, transferId = 10641003 },
+                }
+            },
+            {
+                mapId = 106709,
+                title = "Luyện Ngục C11",
+                bosses = {
+                    { id = 10670901, name = "Thợ Mỏ Ma Tinh", col = 1, transferId = 106709101 },
+                    { id = 10670902, name = "Ngang Ngược", col = 2, transferId = 106709102 },
+                    { id = 10670903, name = "Tà Ác", col = 3, transferId = 106709103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c12 = {
+            {
+                mapId = 1012301,
+                title = "Hoang Dã C12",
+                bosses = {
+                    { id = 101230107, name = "Thần Hắc Ám", col = 1, transferId = 400241 },
+                    { id = 101230108, name = "Phẫn Nộ", col = 2, transferId = 400242 },
+                    { id = 101230109, name = "Cuồng Bạo", col = 3, transferId = 400243 },
+                }
+            },
+            {
+                mapId = 105212,
+                title = "Trang Sức C12",
+                bosses = {
+                    { id = 10521201, name = "Thần Hắc Ám", col = 1, transferId = 105212101 },
+                    { id = 10521202, name = "Phẫn Nộ", col = 2, transferId = 105212102 },
+                }
+            },
+            {
+                mapId = 106411,
+                title = "Thí Luyện Cánh 11",
+                bosses = {
+                    { id = 10641101, name = "N.Cá Shaman", col = 1, transferId = 10641101 },
+                    { id = 10641102, name = "Ngang Ngược", col = 2, transferId = 10641102 },
+                    { id = 10641103, name = "Tà Ác", col = 3, transferId = 10641103 },
+                }
+            },
+            {
+                mapId = 106710,
+                title = "Luyện Ngục C12",
+                bosses = {
+                    { id = 10671001, name = "N.Khai Thác", col = 1, transferId = 106710101 },
+                    { id = 10671002, name = "Ngang Ngược", col = 2, transferId = 106710102 },
+                    { id = 10671003, name = "Tà Ác", col = 3, transferId = 106710103 },
+                }
+            },
+        }
+
+        
