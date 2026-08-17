@@ -100,8 +100,8 @@ if ($choice -eq 1) {
     [System.IO.File]::WriteAllText($customerLua, $content, $utf8NoBom)
 
     $tasks = @(
-        @{ Ver = "admin";    OutputApkName = "MU_admin.apk";  TargetFolder = "/mnt/shared/Pictures/release/release_client" },
-        @{ Ver = "customer"; OutputApkName = "MU_client.apk"; TargetFolder = "/mnt/shared/Pictures/release/release_client" }
+        @{ Ver = "admin";    OutputApkName = "MU_admin.apk";  TargetFolder = "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_client" },
+        @{ Ver = "customer"; OutputApkName = "MU_client.apk"; TargetFolder = "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_client" }
     )
 
     foreach ($task in $tasks) {
@@ -159,17 +159,14 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
         Start-Process -FilePath "java" -ArgumentList $signArgs -Wait -NoNewWindow
         Write-Host "-> Da Ky chu ky thanh cong cho $outName!" -ForegroundColor Green
 
-        # F. Deploy to LDPlayer Share Folder via ADB (Chuyển hẳn file sang Android)
-        if (Test-Path $adbExe) {
-            $devices = & $adbExe devices | Select-String -Pattern "\tdevice$"
-            if ($devices) {
-                $targetDev = ($devices[0].Line -split "\t")[0]
-                Write-Host "6. Chuyen file $outName sang LDPlayer Shared Folder..." -ForegroundColor Cyan
-                & $adbExe -s $targetDev shell "mkdir -p '$targetFolder'"
-                & $adbExe -s $targetDev push $tempApkPath "$targetFolder/$outName" | Out-Null
-                Write-Host "-> Da chuyen thanh cong: $targetFolder/$outName" -ForegroundColor Green
-            }
+        # F. Deploy truc tiep sang thu muc release PC (Folder chia se voi LDPlayer)
+        Write-Host "6. Sao chep file $outName sang PC folder release..." -ForegroundColor Cyan
+        if (-not (Test-Path $targetFolder)) {
+            New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
         }
+        $destPath = Join-Path $targetFolder $outName
+        Copy-Item -Path $tempApkPath -Destination $destPath -Force
+        Write-Host "-> Da sao chep thanh cong sang PC: $destPath" -ForegroundColor Green
     }
 
 } else {
@@ -188,7 +185,7 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
     [System.IO.File]::WriteAllText($customerLua, $content, $utf8NoBom)
 
     $outName = "MU_vut_teams.apk"
-    $targetFolder = "/mnt/shared/Pictures/release/release_customer"
+    $targetFolder = "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_customer"
     $tempApkPath = "$tempBuildDir\$outName"
 
     Write-Host ""
@@ -240,17 +237,14 @@ with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', en
     Start-Process -FilePath "java" -ArgumentList $signArgs -Wait -NoNewWindow
     Write-Host "-> Da Ky chu ky thanh cong cho $outName!" -ForegroundColor Green
 
-    # F. Deploy to LDPlayer Share Folder via ADB
-    if (Test-Path $adbExe) {
-        $devices = & $adbExe devices | Select-String -Pattern "\tdevice$"
-        if ($devices) {
-            $targetDev = ($devices[0].Line -split "\t")[0]
-            Write-Host "6. Chuyen file $outName sang LDPlayer Shared Folder..." -ForegroundColor Cyan
-            & $adbExe -s $targetDev shell "mkdir -p '$targetFolder'"
-            & $adbExe -s $targetDev push $tempApkPath "$targetFolder/$outName" | Out-Null
-            Write-Host "-> Da chuyen thanh cong: $targetFolder/$outName" -ForegroundColor Green
-        }
+    # F. Deploy truc tiep sang thu muc release PC (Folder chia se voi LDPlayer)
+    Write-Host "6. Sao chep file $outName sang PC folder release..." -ForegroundColor Cyan
+    if (-not (Test-Path $targetFolder)) {
+        New-Item -ItemType Directory -Force -Path $targetFolder | Out-Null
     }
+    $destPath = Join-Path $targetFolder $outName
+    Copy-Item -Path $tempApkPath -Destination $destPath -Force
+    Write-Host "-> Da sao chep thanh cong sang PC: $destPath" -ForegroundColor Green
 }
 
 # 5. Duyen dẹp thu muc temp build, giữ thư mục test_apk\v1 luôn sạch sẽ
