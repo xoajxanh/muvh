@@ -1,9 +1,11 @@
 # MU Origin - Mod Project Description
 
 ## 1. Directory Structure Update
-- `modified_lua_dev`: Thu muc chua code Mod moi nhat de dev.
+- `modified_lua_dev_client`: Thu muc chua code Mod Client/Admin moi nhat de dev.
+- `modified_lua_dev_customer`: Thu muc chua code Mod Customer moi nhat de dev.
 - `modified_lua_admin`: Ban mod day du tinh nang danh cho Admin (Bao gom chuc nang Execute nong Script).
-- `modified_lua_customer`: Ban mod danh cho nguoi choi (Da loai bo chuc nang Execute nong).
+- `modified_lua_client`: Ban mod danh cho Client (Mod_IsAdmin = false).
+- `modified_lua_customer`: Ban mod danh cho Khach hang Commercial (Mod_IsDev = false, Mod_IsAdmin = false).
 
 ## 2. Cac Tinh Nang Da Mod (Chi tiet ky thuat)
 

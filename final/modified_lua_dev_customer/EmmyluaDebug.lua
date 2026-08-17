@@ -1,5 +1,6 @@
 ---@diagnostic disable: undefined-global
 ---@diagnostic disable: lowercase-global
+---@diagnostic disable: duplicate-set-field
 -- EmmyluaDebug.lua
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
@@ -141,8 +142,10 @@ local function Mod_GetCharacterUID()
 end
 
 local function Mod_DecryptPayload(payloadB64)
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4.1] Giai ma Base64 Envelope, Do dai = " ..
-        tostring(#payloadB64)) end
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [BUOC 4.1] Giai ma Base64 Envelope, Do dai = " ..
+            tostring(#payloadB64))
+    end
     if not payloadB64 or payloadB64 == "" then return nil, "Payload rỗng" end
     local decoded = Mod_Base64Decode(payloadB64)
     if not decoded then
@@ -154,16 +157,22 @@ local function Mod_DecryptPayload(payloadB64)
         if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI] Cau truc Envelope khong chua ky tu '|' va MD5 signature!") end
         return nil, "Cấu trúc Payload không hợp lệ"
     end
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 4.2] Tách JSON String len = " ..
-        tostring(#jsonStr) .. ", Signature = " .. tostring(signature)) end
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [BUOC 4.2] Tách JSON String len = " ..
+            tostring(#jsonStr) .. ", Signature = " .. tostring(signature))
+    end
     local expectedSig = Mod_CalculateMD5(jsonStr .. SECRET_SALT)
     if string.lower(expectedSig) ~= string.lower(signature) then
-        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI CHU KY] Expected MD5=" ..
-            tostring(expectedSig) .. " != Server Signature=" .. tostring(signature)) end
+        if _G.WriteLog then
+            _G.WriteLog("[ActiveCheck] [LOI CHU KY] Expected MD5=" ..
+                tostring(expectedSig) .. " != Server Signature=" .. tostring(signature))
+        end
         return nil, "Chữ ký MD5 không hợp lệ!"
     end
-    if _G.WriteLog then _G.WriteLog(
-        "[ActiveCheck] [BUOC 4.3] Chu ky MD5 Salt TRUNG KHOP 100%! Dang parse Config JSON...") end
+    if _G.WriteLog then
+        _G.WriteLog(
+            "[ActiveCheck] [BUOC 4.3] Chu ky MD5 Salt TRUNG KHOP 100%! Dang parse Config JSON...")
+    end
     local configObj = Mod_ParseJSON(jsonStr)
     if not configObj then return nil, "Không thể đọc dữ liệu JSON" end
     return configObj, nil
@@ -174,16 +183,20 @@ local API_BASE_URL = "http://g3events.asia/api/v1/config"
 local function Mod_ValidateConfig(config)
     if not config then return false, "Chưa có cấu hình kích hoạt!" end
     local currentTime = os.time()
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 1] Kiem tra expire_time: config=" ..
-        tostring(config.expire_time) .. ", os.time()=" .. tostring(currentTime)) end
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [VALIDATE 1] Kiem tra expire_time: config=" ..
+            tostring(config.expire_time) .. ", os.time()=" .. tostring(currentTime))
+    end
     if config.expire_time and currentTime > tonumber(config.expire_time) then
         if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI HET HAN] Tai khoan / Cau hinh da het han su dung!") end
         return false, "Tài khoản / Cấu hình đã hết hạn sử dụng!"
     end
     local currentSerialMD5 = Mod_GetDeviceSerialMD5()
     local cfgSN = config.device_sn_hash or config.serial_number
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 2] Kiem tra Device Serial: config=" ..
-        tostring(cfgSN) .. ", current=" .. tostring(currentSerialMD5)) end
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [VALIDATE 2] Kiem tra Device Serial: config=" ..
+            tostring(cfgSN) .. ", current=" .. tostring(currentSerialMD5))
+    end
     if cfgSN and tostring(cfgSN) ~= "" then
         local cfgSNStr = tostring(cfgSN)
         local cfgSNMD5 = Mod_CalculateMD5(cfgSNStr)
@@ -194,8 +207,10 @@ local function Mod_ValidateConfig(config)
     end
     local cfgUID = config.character_uid or config.uid
     local currentUID = Mod_GetCharacterUID()
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE 3] Kiem tra Character UID: config=" ..
-        tostring(cfgUID) .. ", current=" .. tostring(currentUID)) end
+    if _G.WriteLog then
+        _G.WriteLog("[ActiveCheck] [VALIDATE 3] Kiem tra Character UID: config=" ..
+            tostring(cfgUID) .. ", current=" .. tostring(currentUID))
+    end
     if cfgUID and tostring(cfgUID) ~= "" then
         if currentUID == "" then
             return false, "Vui lòng đăng nhập nhân vật trong game để xác thực UID!"
@@ -354,17 +369,18 @@ local function Mod_ApplyConfig(config)
 
     local expireStr = Mod_FormatExpireDate(config.expire_time)
     _G.Mod_ActiveStatusMsg = "Đã kích hoạt thành công! Hạn dùng: " ..
-    expireStr ..
-    " | FOV Max: " .. tostring(_G.Mod_Config_FOV_Max) .. " | Tốc đánh: " .. tostring(_G.Mod_Config_MaxAttackSpeed)
+        expireStr ..
+        " | FOV Max: " .. tostring(_G.Mod_Config_FOV_Max) .. " | Tốc đánh: " .. tostring(_G.Mod_Config_MaxAttackSpeed)
 
     if _G.WriteLog then
         _G.WriteLog("[ActiveCheck] GIAI MA THANH CONG! Hạn dùng: " ..
-        expireStr ..
-        " | FOV: " ..
-        tostring(_G.Mod_Config_FOV_Min) ..
-        "-" ..
-        tostring(_G.Mod_Config_FOV_Max) ..
-        " | Delay: " .. tostring(_G.Mod_Config_PickupDelay_Min) .. "-" .. tostring(_G.Mod_Config_PickupDelay_Max) .. "ms")
+            expireStr ..
+            " | FOV: " ..
+            tostring(_G.Mod_Config_FOV_Min) ..
+            "-" ..
+            tostring(_G.Mod_Config_FOV_Max) ..
+            " | Delay: " ..
+            tostring(_G.Mod_Config_PickupDelay_Min) .. "-" .. tostring(_G.Mod_Config_PickupDelay_Max) .. "ms")
     end
 
     if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
@@ -410,7 +426,7 @@ local function Mod_FetchRemotePayloadFromAPI(callback)
                     end)
                     if _G.WriteLog then
                         _G.WriteLog("[ActiveCheck] [BUOC 2] Response payload len = " ..
-                        tostring(#payload) .. ", text = " .. tostring(payload))
+                            tostring(#payload) .. ", text = " .. tostring(payload))
                     end
                     if callback then callback(isSuccess, payload) end
                 end
@@ -465,8 +481,10 @@ local function Mod_UpdatePeriodicCheck(onFinish)
             tokenStr = remotePayload
         end
 
-        if _G.WriteLog then _G.WriteLog(
-            "[ActiveCheck] [BUOC 4] Dang giai ma Base64 Envelope & Verifying MD5 Signature...") end
+        if _G.WriteLog then
+            _G.WriteLog(
+                "[ActiveCheck] [BUOC 4] Dang giai ma Base64 Envelope & Verifying MD5 Signature...")
+        end
         local config, err = Mod_DecryptPayload(tokenStr)
         if config then
             if _G.WriteLog then _G.WriteLog("[ActiveCheck] [BUOC 5] Giai ma Token chu ky MD5 TRUNG KHOP 100%!") end
@@ -704,10 +722,14 @@ end
 
 local function CreateModUI()
     local status, err = pcall(function()
-        if _G.Mod_AutoPK_Enabled == nil then _G.Mod_AutoPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
-            "Mod_AutoPK_Enabled", 0) == 1 end
-        if _G.Mod_AutoGuildPK_Enabled == nil then _G.Mod_AutoGuildPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
-            "Mod_AutoGuildPK_Enabled", 0) == 1 end
+        if _G.Mod_AutoPK_Enabled == nil then
+            _G.Mod_AutoPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoPK_Enabled", 0) == 1
+        end
+        if _G.Mod_AutoGuildPK_Enabled == nil then
+            _G.Mod_AutoGuildPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoGuildPK_Enabled", 0) == 1
+        end
         if _G.Mod_ShowKundunHP == nil then
             pcall(function() _G.Mod_ShowKundunHP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ShowKundunHP", 0) == 1 end)
         end
@@ -899,15 +921,21 @@ local function CreateModUI()
                         if func then
                             local ok, res = pcall(func)
                             if ok then
-                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(
-                                    "Thực thi input.luac thành công!") end
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg(
+                                        "Thực thi input.luac thành công!")
+                                end
                             else
-                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi script: " ..
-                                    tostring(res)) end
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Lỗi script: " ..
+                                        tostring(res))
+                                end
                             end
                         else
-                            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " ..
-                                tostring(err)) end
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " ..
+                                    tostring(err))
+                            end
                         end
                     else
                         if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy file input.luac!") end
@@ -1250,8 +1278,10 @@ local function CreateModUI()
                         if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
                     else
                         if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
-                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(statusMsg or
-                            "Chưa tìm thấy kích hoạt hợp lệ!") end
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg(statusMsg or
+                                "Chưa tìm thấy kích hoạt hợp lệ!")
+                        end
                     end
                 end)
             end
@@ -1282,13 +1312,17 @@ local function CreateModUI()
             if not _G.ModMainTab or _G.ModMainTab == "" then _G.ModMainTab = "CO_BAN" end
         end
         if _G.Mod_AutoReturnPos_Coords == nil then
-            pcall(function() _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString(
-                "Mod_AutoReturnPos_Coords", "") end)
+            pcall(function()
+                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString(
+                    "Mod_AutoReturnPos_Coords", "")
+            end)
             if not _G.Mod_AutoReturnPos_Coords then _G.Mod_AutoReturnPos_Coords = "" end
         end
         if _G.Mod_LockTarget_Enabled == nil then
-            pcall(function() _G.Mod_LockTarget_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) ==
-                1 end)
+            pcall(function()
+                _G.Mod_LockTarget_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) ==
+                    1
+            end)
         end
         if _G.Mod_LockTarget_Name == nil then
             pcall(function() _G.Mod_LockTarget_Name = CS.UnityEngine.PlayerPrefs.GetString("Mod_LockTarget_Name", "") end)
@@ -1335,16 +1369,22 @@ local function CreateModUI()
             end
 
             for _, go in ipairs(_G.CoBanUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN" and
-                    _G.Mod_Config_ActiveBasicTab ~= false) end
+                if go and not go:Equals(nil) then
+                    go:SetActive(_G.ModMainTab == "CO_BAN" and
+                        _G.Mod_Config_ActiveBasicTab ~= false)
+                end
             end
             for _, go in ipairs(_G.NangCaoUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "NANG_CAO" and
-                    _G.Mod_Config_ActiveAdvancedTab ~= false) end
+                if go and not go:Equals(nil) then
+                    go:SetActive(_G.ModMainTab == "NANG_CAO" and
+                        _G.Mod_Config_ActiveAdvancedTab ~= false)
+                end
             end
             for _, go in ipairs(_G.AutoBossUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "AUTO_BOSS" and
-                    _G.Mod_Config_ActiveAutoFarmTab ~= false) end
+                if go and not go:Equals(nil) then
+                    go:SetActive(_G.ModMainTab == "AUTO_BOSS" and
+                        _G.Mod_Config_ActiveAutoFarmTab ~= false)
+                end
             end
 
             if _G.ModRefreshAutoBossConfigUI then
@@ -1468,20 +1508,34 @@ local function CreateModUI()
             if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth >= 3 and _G.Mod_Config_CurrentRebirth <= 12 then
                 return _G.Mod_Config_CurrentRebirth
             end
+            local res = nil
             pcall(function()
+                if _G.RoleManager and _G.RoleManager.me then
+                    local me = _G.RoleManager.me
+                    local lvl = me.level or me.lv or 0
+                    if me.changeLife and me.changeLife >= 3 and me.changeLife <= 12 then
+                        res = me.changeLife
+                        return
+                    end
+                    if lvl > 0 then
+                        local r = math.floor(lvl / 100)
+                        if r >= 3 and r <= 12 then res = r; return end
+                    end
+                end
                 if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
                     local attr = _G.QuickFind.LuaMainPlayerViewAttrData()
                     if attr and attr.level and attr.level > 0 then
                         if _G.ClientTable and _G.ClientTable.cfg_Character_levelManager then
                             local r = _G.ClientTable.cfg_Character_levelManager:GetReincarnationLevel(attr.level)
-                            if r and r >= 3 and r <= 12 then return r end
+                            if r and r >= 3 and r <= 12 then res = r; return end
                         end
                         local r = math.floor(attr.level / 100)
-                        if r and r >= 3 and r <= 12 then return r end
+                        if r and r >= 3 and r <= 12 then res = r; return end
                     end
                 end
             end)
-            return 7
+            if res and res >= 3 and res <= 12 then return res end
+            return 8
         end
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
 
@@ -1523,9 +1577,9 @@ local function CreateModUI()
                 mapId = 101094,
                 title = "Hoang Dã C3",
                 bosses = {
-                    { id = 10179407, name = "H.Thần Kiêu Ngạo", col = 1, transferId = 400212, total = 2 },
-                    { id = 10179408, name = "Phẫn Nộ", col = 2, transferId = 400218, total = 2 },
-                    { id = 10179409, name = "Cuồng Bạo", col = 3, transferId = 400224, total = 1 },
+                    { id = 10179407, name = "H.Thần Kiêu Ngạo", col = 1, transferId = 400212 },
+                    { id = 10179408, name = "Phẫn Nộ", col = 2, transferId = 400218 },
+                    { id = 10179409, name = "Cuồng Bạo", col = 3, transferId = 400224 },
                 }
             },
             {
@@ -1561,9 +1615,9 @@ local function CreateModUI()
                 mapId = 101093,
                 title = "Hoang Dã C4",
                 bosses = {
-                    { id = 10179307, name = "K.Sĩ Địa Ngục", col = 1, transferId = 400213, total = 2 },
-                    { id = 10179308, name = "Phẫn Nộ", col = 2, transferId = 400219, total = 1 },
-                    { id = 10179309, name = "Cuồng Bạo", col = 3, transferId = 400225, total = 1 },
+                    { id = 10179307, name = "K.Sĩ Địa Ngục", col = 1, transferId = 400213 },
+                    { id = 10179308, name = "Phẫn Nộ", col = 2, transferId = 400219 },
+                    { id = 10179309, name = "Cuồng Bạo", col = 3, transferId = 400225 },
                 }
             },
             {
@@ -1599,9 +1653,9 @@ local function CreateModUI()
                 mapId = 101095,
                 title = "Hoang Dã C5",
                 bosses = {
-                    { id = 10179507, name = "Giác Ma Đ.Ngục", col = 1, transferId = 400214, total = 2 },
-                    { id = 10179508, name = "Phẫn Nộ", col = 2, transferId = 400220, total = 2 },
-                    { id = 10179509, name = "Cuồng Bạo", col = 3, transferId = 400226, total = 1 },
+                    { id = 10179507, name = "Giác Ma Đ.Ngục", col = 1, transferId = 400214 },
+                    { id = 10179508, name = "Phẫn Nộ", col = 2, transferId = 400220 },
+                    { id = 10179509, name = "Cuồng Bạo", col = 3, transferId = 400226 },
                 }
             },
             {
@@ -1637,9 +1691,9 @@ local function CreateModUI()
                 mapId = 101092,
                 title = "Hoang Dã C6",
                 bosses = {
-                    { id = 10179207, name = "V.Sĩ Khiên Kiếm", col = 1, transferId = 400215, total = 2 },
-                    { id = 10179208, name = "Phẫn Nộ", col = 2, transferId = 400221, total = 2 },
-                    { id = 10179209, name = "Cuồng Bạo", col = 3, transferId = 400227, total = 2 },
+                    { id = 10179207, name = "V.Sĩ Khiên Kiếm", col = 1, transferId = 400215 },
+                    { id = 10179208, name = "Phẫn Nộ", col = 2, transferId = 400221 },
+                    { id = 10179209, name = "Cuồng Bạo", col = 3, transferId = 400227 },
                 }
             },
             {
@@ -1675,9 +1729,9 @@ local function CreateModUI()
                 mapId = 101096,
                 title = "Hoang Dã C7",
                 bosses = {
-                    { id = 10179607, name = "Tektus", col = 1, transferId = 400216, total = 2 },
-                    { id = 10179608, name = "Phẫn Nộ", col = 2, transferId = 400222, total = 2 },
-                    { id = 10179609, name = "Cuồng Bạo", col = 3, transferId = 400228, total = 2 },
+                    { id = 10179607, name = "Tektus", col = 1, transferId = 400216 },
+                    { id = 10179608, name = "Phẫn Nộ", col = 2, transferId = 400222 },
+                    { id = 10179609, name = "Cuồng Bạo", col = 3, transferId = 400228 },
                 }
             },
             {
@@ -1713,9 +1767,9 @@ local function CreateModUI()
                 mapId = 1074,
                 title = "Hoang Dã C8",
                 bosses = {
-                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, transferId = 400229, total = 2 },
-                    { id = 107408, name = "Phẫn Nộ", col = 2, transferId = 400230, total = 2 },
-                    { id = 107409, name = "Cuồng Bạo", col = 3, transferId = 400231, total = 2 },
+                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, transferId = 400229 },
+                    { id = 107408, name = "Phẫn Nộ", col = 2, transferId = 400230 },
+                    { id = 107409, name = "Cuồng Bạo", col = 3, transferId = 400231 },
                 }
             },
             {
@@ -1751,9 +1805,9 @@ local function CreateModUI()
                 mapId = 1075,
                 title = "Hoang Dã C9",
                 bosses = {
-                    { id = 107507, name = "S.Giả Ác Ma", col = 1, transferId = 400232, total = 2 },
-                    { id = 107508, name = "Phẫn Nộ", col = 2, transferId = 400233, total = 2 },
-                    { id = 107509, name = "Cuồng Bạo", col = 3, transferId = 400234, total = 2 },
+                    { id = 107507, name = "S.Giả Ác Ma", col = 1, transferId = 400232 },
+                    { id = 107508, name = "Phẫn Nộ", col = 2, transferId = 400233 },
+                    { id = 107509, name = "Cuồng Bạo", col = 3, transferId = 400234 },
                 }
             },
             {
@@ -1789,9 +1843,9 @@ local function CreateModUI()
                 mapId = 1076,
                 title = "Hoang Dã C10",
                 bosses = {
-                    { id = 107607, name = "C.Sĩ Cuồng Nộ", col = 1, transferId = 400235, total = 2 },
-                    { id = 107608, name = "Phẫn Nộ", col = 2, transferId = 400236, total = 2 },
-                    { id = 107609, name = "Cuồng Bạo", col = 3, transferId = 400237, total = 2 },
+                    { id = 107607, name = "C.Sĩ Cuồng Nộ", col = 1, transferId = 400235 },
+                    { id = 107608, name = "Phẫn Nộ", col = 2, transferId = 400236 },
+                    { id = 107609, name = "Cuồng Bạo", col = 3, transferId = 400237 },
                 }
             },
             {
@@ -1827,9 +1881,9 @@ local function CreateModUI()
                 mapId = 10123,
                 title = "Hoang Dã C11",
                 bosses = {
-                    { id = 1012307, name = "Thủy Ma Navos", col = 1, transferId = 400238, total = 2 },
-                    { id = 1012308, name = "Phẫn Nộ", col = 2, transferId = 400239, total = 2 },
-                    { id = 1012309, name = "Cuồng Bạo", col = 3, transferId = 400240, total = 2 },
+                    { id = 1012307, name = "Thủy Ma Navos", col = 1, transferId = 400238 },
+                    { id = 1012308, name = "Phẫn Nộ", col = 2, transferId = 400239 },
+                    { id = 1012309, name = "Cuồng Bạo", col = 3, transferId = 400240 },
                 }
             },
             {
@@ -1865,9 +1919,9 @@ local function CreateModUI()
                 mapId = 1012301,
                 title = "Hoang Dã C12",
                 bosses = {
-                    { id = 101230107, name = "Thần Hắc Ám", col = 1, transferId = 400241, total = 2 },
-                    { id = 101230108, name = "Phẫn Nộ", col = 2, transferId = 400242, total = 2 },
-                    { id = 101230109, name = "Cuồng Bạo", col = 3, transferId = 400243, total = 2 },
+                    { id = 101230107, name = "Thần Hắc Ám", col = 1, transferId = 400241 },
+                    { id = 101230108, name = "Phẫn Nộ", col = 2, transferId = 400242 },
+                    { id = 101230109, name = "Cuồng Bạo", col = 3, transferId = 400243 },
                 }
             },
             {
@@ -2022,7 +2076,7 @@ local function CreateModUI()
             pcall(function()
                 if not isExpanded then return end
                 local currentSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or
-                os.time()
+                    os.time()
                 local currentPosY = -140
                 local titleIdx = 1
                 local rowIdx = 1
@@ -2044,7 +2098,7 @@ local function CreateModUI()
                     tBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
                     tBtn.txt.alignment = TextAnchor.MiddleCenter
                     tBtn.txt.text = "<color=" ..
-                    (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                        (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
                     tBtn.txt.fontSize = 16
                     tBtn.btn.onClick:RemoveAllListeners()
                     local thisTag = tag
@@ -2102,12 +2156,18 @@ local function CreateModUI()
                                     uiBtn.btn.onClick:AddListener(function()
                                         pcall(function()
                                             if _G.TranScriptController then
-                                                if _G.TranScriptController.ReqExitInstance then _G.TranScriptController
-                                                        .ReqExitInstance() end
-                                                if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController
-                                                        .ReqExitAllGods() end
-                                                if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController
-                                                        .ReqExitUnionMap() end
+                                                if _G.TranScriptController.ReqExitInstance then
+                                                    _G.TranScriptController
+                                                        .ReqExitInstance()
+                                                end
+                                                if _G.TranScriptController.ReqExitAllGods then
+                                                    _G.TranScriptController
+                                                        .ReqExitAllGods()
+                                                end
+                                                if _G.TranScriptController.ReqExitUnionMap then
+                                                    _G.TranScriptController
+                                                        .ReqExitUnionMap()
+                                                end
                                             end
                                             if _G.FloatingWordUtility then
                                                 _G.FloatingWordUtility.QuickMsg("Đã gửi lệnh Thoát Phó Bản!")
@@ -2165,16 +2225,16 @@ local function CreateModUI()
                                     uiBtn.btn.onClick:AddListener(function()
                                         pcall(function()
                                             local currentMapId = _G.SceneData and
-                                            (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                                (_G.SceneData.mapId or _G.SceneData.groupId) or 0
                                             local currentLine = _G.SceneData and
-                                            (_G.SceneData.line or _G.SceneData.cline) or 1
+                                                (_G.SceneData.line or _G.SceneData.cline) or 1
                                             local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or
-                                            os.time()
+                                                os.time()
 
                                             if currentMapId ~= targetMapId or currentLine ~= targetLine then
                                                 if _G.FloatingWordUtility then
                                                     _G.FloatingWordUtility.QuickMsg("Dịch chuyển tới " ..
-                                                    targetBossName .. "...")
+                                                        targetBossName .. "...")
                                                 end
 
                                                 _G.Mod_PendingManualMove = {
@@ -2188,13 +2248,13 @@ local function CreateModUI()
                                                 }
 
                                                 local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)) or
-                                                targetTransferId or targetMapId
+                                                    targetTransferId or targetMapId
                                                 if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                                     _G.SceneController.OnReqTransferTransmitMap(nil,
                                                         { mapId = transId, line = targetLine, changeLine = true })
                                                 elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
                                                     local initialPos = (staticPosX and staticPosY and { x = staticPosX, y = staticPosY }) or
-                                                    { x = 100, y = 100 }
+                                                        { x = 100, y = 100 }
                                                     _G.PathFinderManager.MoveToLinePos(targetMapId, initialPos, transId,
                                                         targetLine, nil, nil, nil, nil, true)
                                                 end
@@ -2207,17 +2267,17 @@ local function CreateModUI()
                                                 end
 
                                                 local targetPos = alivePos or
-                                                (staticPosX and staticPosY and { x = staticPosX, y = staticPosY }) or
-                                                (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId))
+                                                    (staticPosX and staticPosY and { x = staticPosX, y = staticPosY }) or
+                                                    (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId))
 
                                                 if targetPos then
                                                     if _G.FloatingWordUtility then
                                                         local st = alivePos and "Boss SỐNG" or "vị trí Boss"
                                                         _G.FloatingWordUtility.QuickMsg("Di chuyển đến " ..
-                                                        st ..
-                                                        " " ..
-                                                        targetBossName ..
-                                                        " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
+                                                            st ..
+                                                            " " ..
+                                                            targetBossName ..
+                                                            " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
                                                     end
 
                                                     if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
@@ -2230,7 +2290,7 @@ local function CreateModUI()
                                                 else
                                                     if _G.FloatingWordUtility then
                                                         _G.FloatingWordUtility.QuickMsg("Chưa có tọa độ Boss " ..
-                                                        targetBossName)
+                                                            targetBossName)
                                                     end
                                                 end
                                             end
@@ -2437,51 +2497,183 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+            _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                if not excDesList or #excDesList == 0 then
+                    return false
+                end
+
+                -- Nhóm 1: Trang phục (Mũ 113, Áo 114, Quần 115, Găng 116, Giày 117)
+                if subType == 113 or subType == 114 or subType == 115 or subType == 116 or subType == 117 then
+                    for _, des in ipairs(excDesList) do
+                        local isMp = string.find(des, "MP tối đa")
+                        local isGold = string.find(des, "Vàng") or string.find(des, "vàng")
+                        if isMp or isGold then
+                            return false -- Dính 1 dòng rác MP/Vàng -> Không phải dòng ngon
+                        end
+                    end
+                    return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
+                end
+
+                -- Nhóm 2: Vũ khí & Khiên Hồng Trang (101, 106, 108, 109, 124, 181)
+                if subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                    for _, des in ipairs(excDesList) do
+                        local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or
+                            string.find(des, "MP tăng")
+                        if isKill then
+                            return false -- Dính 1 dòng rác diệt quái -> Không phải dòng ngon
+                        end
+                    end
+                    return true -- Không dính dòng rác diệt quái -> Dòng ngon!
+                end
+
+                -- Nhóm 3: Dây chuyền (36), Nhẫn trái (35), Nhẫn phải (38)
+                if subType == 36 or subType == 35 or subType == 38 then
+                    local hasGood = false
+                    for _, des in ipairs(excDesList) do
+                        local isCap = string.find(des, "cấp/20") or string.find(des, "cấp")
+                        local isGoodLine = (string.find(des, "Công Tốc") or string.find(des, "Tấn công")) and not isCap
+                        if isGoodLine then
+                            hasGood = true
+                        else
+                            return false -- Dính dòng +cấp/20 hoặc dòng rác khác -> Không đạt (Đem đi tách)
+                        end
+                    end
+                    return hasGood
+                end
+
+                -- Nhóm 4: Khuyên trái (34), Khuyên phải (37)
+                if subType == 34 or subType == 37 then
+                    local hasGood = false
+                    for _, des in ipairs(excDesList) do
+                        if string.find(des, "Phòng Ngự") or string.find(des, "Phản DMG") or string.find(des, "Phản") then
+                            hasGood = true
+                        else
+                            return false -- Dính dòng khác -> Không đạt
+                        end
+                    end
+                    return hasGood
+                end
+
+                return false
+            end
+
             _G.Mod_ExecuteAutoSmelt = function()
                 local items = _G.BagInfoData and _G.BagInfoData.TotalItems
                 if not items then return end
 
                 local recycleItems = {}
                 for k, item in pairs(items) do
-                    if item and item.tblItem then
-                        local subType = item.tblItem.subType or 0
-                        local quality = item.tblItem.quality or 0
-                        local isExcellent = false
+                    if item then
+                        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                        local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
+                        local itemType = tblItem.type or 0
+                        local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
+                        local subType = tblItem.subType or 0
+                        local quality = tblItem.quality or 0
+                        local needLevel = tblItem.needLevel or 0
+                        local tier = math.floor(needLevel / 400)
 
-                        if item.serverInfo and item.serverInfo.excellentList and #item.serverInfo.excellentList > 0 then
-                            isExcellent = true
-                        end
-                        if quality >= 5 then isExcellent = true end
+                        -- CHỈ XỬ LÝ KHI LÀ TRANG BỊ (itemType == 2) HOẶC CÓ CẤU HÌNH EQUIP
+                        if itemType == 2 or (tblEquip and tblEquip.id) then
+                            if (not tblEquip or not tblEquip.suitId) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                                pcall(function()
+                                    local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
+                                    if eq then tblEquip = eq end
+                                end)
+                            end
+                            tblEquip = tblEquip or {}
 
-                        if isExcellent then
+                            local prefix = nil
+                            if subType == 35 then
+                                prefix = "RingL"
+                            elseif subType == 38 then
+                                prefix = "RingR"
+                            elseif subType == 36 then
+                                prefix = "Necklace2"
+                            elseif subType == 34 then
+                                prefix = "EarringL"
+                            elseif subType == 37 then
+                                prefix = "EarringR"
+                            elseif subType == 113 then
+                                prefix = "Hat"
+                            elseif subType == 114 then
+                                prefix = "Armor"
+                            elseif subType == 115 then
+                                prefix = "Pants"
+                            elseif subType == 116 then
+                                prefix = "Gloves"
+                            elseif subType == 117 then
+                                prefix = "Boots"
+                            elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                                prefix = "Weapon"
+                            end
+
                             local shouldSmelt = false
-                            if subType == 18 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Ring_C6 then
-                                    shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Ring_C7 then
-                                    shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Ring_C8 then
-                                    shouldSmelt = true
+
+                            -- 1. Cấu hình Tách Đồ Trác Việt (Ring_C..., Necklace_C..., Earring_C...)
+                            if _G.Mod_SmeltConfig then
+                                if subType == 18 then
+                                    local varName = "Ring_C" .. tostring(quality)
+                                    if _G.Mod_SmeltConfig[varName] then
+                                        shouldSmelt = true
+                                    end
+                                elseif subType == 19 then
+                                    local varName = "Necklace_C" .. tostring(quality)
+                                    if _G.Mod_SmeltConfig[varName] then
+                                        shouldSmelt = true
+                                    end
+                                elseif subType == 26 then
+                                    local varName = "Earring_C" .. tostring(quality)
+                                    if _G.Mod_SmeltConfig[varName] then
+                                        shouldSmelt = true
+                                    end
                                 end
-                            elseif subType == 19 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Necklace_C6 then
-                                    shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Necklace_C7 then
-                                    shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Necklace_C8 then
-                                    shouldSmelt = true
+
+                                -- 2. Cấu hình Tách Đồ Bộ theo SubType & Tier (Không áp dụng cho Trang Sức Trác Việt 18, 19, 26)
+                                if prefix and tier >= 3 and tier <= 12 then
+                                    local varName = prefix .. "_C" .. tostring(tier)
+                                    if _G.Mod_SmeltConfig[varName] then
+                                        shouldSmelt = true
+                                    end
                                 end
-                            elseif subType == 26 then
-                                if quality == 6 and _G.Mod_SmeltConfig.Earring_C6 then
-                                    shouldSmelt = true
-                                elseif quality == 7 and _G.Mod_SmeltConfig.Earring_C7 then
-                                    shouldSmelt = true
-                                elseif quality == 8 and _G.Mod_SmeltConfig.Earring_C8 then
-                                    shouldSmelt = true
+
+                                -- 3. Bộ lọc [Giữ dòng Ngon] (Chỉ áp dụng cho Đồ Bộ, KHÔNG áp dụng cho Trang Sức Trác Việt 18, 19, 26)
+                                local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
+                                if shouldSmelt and not isJewelryTracViet and tier >= 3 and tier <= 12 then
+                                    local keepGoodVar = "KeepGood_C" .. tostring(tier)
+                                    if _G.Mod_SmeltConfig[keepGoodVar] then
+                                        local excDesList = {}
+                                        local sInfo = item.serverInfo or item.serverData or {}
+                                        local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or
+                                            sInfo.excellentAttrs
+
+                                        if _G.RoleEquipUtility then
+                                            if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
+                                                pcall(function()
+                                                    excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc,
+                                                        tblEquip)
+                                                end)
+                                            end
+                                            if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
+                                                pcall(function()
+                                                    excDesList = _G.RoleEquipUtility
+                                                        .GetEquipExcellenceDesByServerInfo(sInfo)
+                                                end)
+                                            end
+                                        end
+                                        if (#excDesList == 0) and item.GetEquipExcellenceDesList then
+                                            pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
+                                        end
+
+                                        local isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, tier, excDesList)
+                                        if isGood then
+                                            shouldSmelt = false -- GIỮ LẠI TRONG TÚI
+                                        end
+                                    end
                                 end
                             end
 
-                            if shouldSmelt then
+                            if shouldSmelt and item.id then
                                 table.insert(recycleItems, item.id)
                             end
                         end
@@ -2497,7 +2689,7 @@ local function CreateModUI()
                         if batchSize >= 4 or i == #recycleItems then
                             if _G.networkRequest and _G.networkRequest.ReqEquipDecompose then
                                 _G.networkRequest.ReqEquipDecompose(batch)
-                                LogMsg("Đã gửi yêu cầu tách " .. tostring(batchSize) .. " món trang sức Trác Việt!")
+                                LogMsg("Đã gửi yêu cầu tách " .. tostring(batchSize) .. " món trang bị!")
                             end
                             batch = {}
                             batchSize = 0
@@ -2564,7 +2756,7 @@ local function CreateModUI()
                                 if _G.Mod_AutoFarmBoss_EnterHiddenMap then
                                     local costType = _G.Mod_AutoFarmBoss_EnterHiddenMap_Diamond and 2 or 1
                                     local modeStr = _G.Mod_AutoFarmBoss_EnterHiddenMap_Diamond and "Kim Cương" or
-                                    "Vàng/Thường"
+                                        "Vàng/Thường"
                                     LogMsg("[BOSS ẨN] Phát hiện Cổng Map Ẩn! Triệu hồi chế độ " .. modeStr .. "...")
                                     if _G.networkRequest and _G.networkRequest.ReqCallBoss then
                                         _G.networkRequest.ReqCallBoss(tipUi.DimensionalCracksData.id,
@@ -2751,8 +2943,12 @@ local function CreateModUI()
                                                 if mCfg.mapId == currentMapId and mCfg.bosses then
                                                     for _, cfg in ipairs(mCfg.bosses) do
                                                         if tostring(mId) == tostring(cfg.id) and _G.Mod_AutoFarmBoss_Config[cfg.id] then
-                                                            return { cfg = cfg, mapCfg = mCfg, line = _G.SceneData and
-                                                            (_G.SceneData.line or _G.SceneData.cline) or 1 }
+                                                            return {
+                                                                cfg = cfg,
+                                                                mapCfg = mCfg,
+                                                                line = _G.SceneData and
+                                                                    (_G.SceneData.line or _G.SceneData.cline) or 1
+                                                            }
                                                         end
                                                     end
                                                 end
@@ -2868,7 +3064,7 @@ local function CreateModUI()
                                             if currentSec > ignoreUntil then
                                                 local baseScore = tierScore + math.random(1, 100)
                                                 local bossData = mapBosses[mapCfg.mapId] and
-                                                mapBosses[mapCfg.mapId][cfg.id]
+                                                    mapBosses[mapCfg.mapId][cfg.id]
                                                 if bossData then
                                                     local bestLine = nil
                                                     local isAlive = false
@@ -2919,8 +3115,14 @@ local function CreateModUI()
 
                                                         if finalScore > bestScore then
                                                             bestScore = finalScore
-                                                            bestBoss = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive =
-                                                            isAlive, wait = respawnWait }
+                                                            bestBoss = {
+                                                                cfg = cfg,
+                                                                mapCfg = mapCfg,
+                                                                line = bestLine,
+                                                                isAlive =
+                                                                    isAlive,
+                                                                wait = respawnWait
+                                                            }
                                                         end
                                                     end
                                                 end
@@ -2946,7 +3148,7 @@ local function CreateModUI()
                                 local c = candidates[i]
                                 local st = c.isAlive and "SỐNG" or ("Chết (Còn " .. c.wait .. "s)")
                                 LogMsg(string.format("%d. %s (ID:%s, Map:%s) | Điểm: %d | %s", i, c.name, c.id, c
-                                .mapName, c.score, st))
+                                    .mapName, c.score, st))
                             end
                         else
                             LogMsg("--- Không có Boss phù hợp Farm ---")
@@ -2966,7 +3168,7 @@ local function CreateModUI()
                                                         cfg.name, GetMapName(mapCfg.mapId), ignoreUntil - currentSec))
                                                 else
                                                     local bossData = mapBosses[mapCfg.mapId] and
-                                                    mapBosses[mapCfg.mapId][cfg.id]
+                                                        mapBosses[mapCfg.mapId][cfg.id]
                                                     if not bossData then
                                                         countNoData = countNoData + 1
                                                     else
@@ -2976,7 +3178,7 @@ local function CreateModUI()
                                                             if totalAlive == 0 and #deadList > 0 then
                                                                 local rt = deadList[1]
                                                                 LogMsg(string.format(
-                                                                "- Từ chối: %s (Còn %ds nữa mới hồi sinh)", cfg.name,
+                                                                    "- Từ chối: %s (Còn %ds nữa mới hồi sinh)", cfg.name,
                                                                     rt - currentSec))
                                                             end
                                                         end
@@ -3019,12 +3221,12 @@ local function CreateModUI()
 
                                     if tx and ty then
                                         local tab = _G.ModAutoBossConfigTab or "C7"
-                                        local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G
-                                        .Mod_MapsConfig_c7
+                                        local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
+                                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
-                                        ((tab == "C8") and 1074 or 101096)
+                                            101096
                                         local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
-                                        ((tab == "C8") and 400229 or 400216)
+                                            400216
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
                                         if curMap ~= wildMapId then
@@ -3065,9 +3267,9 @@ local function CreateModUI()
                                                         for _, itemData in pairs(_G.BagInfoData.TotalItems) do
                                                             if itemData then
                                                                 local itemId = itemData.itemId or
-                                                                (itemData.data and itemData.data.itemId)
+                                                                    (itemData.data and itemData.data.itemId)
                                                                 local instanceId = itemData.id or
-                                                                (itemData.data and itemData.data.id)
+                                                                    (itemData.data and itemData.data.id)
                                                                 if itemId == 20000022 then
                                                                     stoneBagId = instanceId
                                                                     break
@@ -3099,7 +3301,7 @@ local function CreateModUI()
                                                         local moved = false
                                                         if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
                                                             local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
-                                                            (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
+                                                                (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
                                                             _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
                                                                 targetPosData, nil, nil, nil,
                                                                 (Purpose and Purpose.None) or 0, nil, 1, true)
@@ -3161,7 +3363,7 @@ local function CreateModUI()
                                         _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
                                     else
                                         _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and currentSec or
-                                        (currentSec + 5)
+                                            (currentSec + 5)
                                     end
                                 else
                                     _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
@@ -3220,13 +3422,13 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
 
                             local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
-                            target.cfg.transferId or target.mapCfg.mapId
+                                target.cfg.transferId or target.mapCfg.mapId
                             if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                 _G.SceneController.OnReqTransferTransmitMap(nil,
                                     { mapId = transId, line = target.line, changeLine = true })
                             elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
                                 local initialPos = (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
-                                { x = 100, y = 100 }
+                                    { x = 100, y = 100 }
                                 _G.PathFinderManager.MoveToLinePos(target.mapCfg.mapId, initialPos, transId, target.line,
                                     nil, nil, nil, nil, true)
                             end
@@ -3240,8 +3442,10 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_ReqIconSentMap = currentMapId
 
                             if _G.SceneData and _G.SceneData.SetMiniMapData then
-                                pcall(function() _G.SceneData.SetMiniMapData(_G.SceneData.mapId or target.mapCfg.mapId,
-                                        _G.SceneData.groupId or target.mapCfg.mapId) end)
+                                pcall(function()
+                                    _G.SceneData.SetMiniMapData(_G.SceneData.mapId or target.mapCfg.mapId,
+                                        _G.SceneData.groupId or target.mapCfg.mapId)
+                                end)
                             end
 
                             if _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqBossIcon then
@@ -3268,14 +3472,14 @@ local function CreateModUI()
                         end
 
                         target.currentPos = alivePos or
-                        (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
-                        _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId)
+                            (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
+                            _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId)
                         local posLog = target.currentPos and
-                        string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
+                            string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
 
                         -- Kiểm tra xem Map hiện tại có phải Map Hoang Dã trong config hay không
                         local isHoangDa = target.mapCfg and target.mapCfg.title and
-                        string.find(target.mapCfg.title, "Hoang Dã") ~= nil
+                            string.find(target.mapCfg.title, "Hoang Dã") ~= nil
 
                         if isHoangDa and target.currentPos then
                             local px, py = nil, nil
@@ -3307,9 +3511,9 @@ local function CreateModUI()
                                             for _, itemData in pairs(_G.BagInfoData.TotalItems) do
                                                 if itemData then
                                                     local itemId = itemData.itemId or
-                                                    (itemData.data and itemData.data.itemId)
+                                                        (itemData.data and itemData.data.itemId)
                                                     local instanceId = itemData.id or
-                                                    (itemData.data and itemData.data.id)
+                                                        (itemData.data and itemData.data.id)
                                                     if itemId == 20000022 then
                                                         stoneBagId = instanceId
                                                         break
@@ -3320,7 +3524,7 @@ local function CreateModUI()
 
                                         if stoneBagId then
                                             LogMsg(string.format(
-                                            "[HOANG DÃ] Cách Boss %s %.1fm (>50m). Sử dụng Ấn Dịch Chuyển (20000022)...",
+                                                "[HOANG DÃ] Cách Boss %s %.1fm (>50m). Sử dụng Ấn Dịch Chuyển (20000022)...",
                                                 target.cfg.name or "", dist))
                                             if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                                 _G.networkRequest.ReqUseItem(1, stoneBagId)
@@ -3331,7 +3535,7 @@ local function CreateModUI()
                                             return
                                         else
                                             LogMsg(string.format(
-                                            "[HOANG DÃ] Khảo sát cự ly %.1fm (>50m) nhưng hết Ấn Dịch Chuyển trong túi. Chuyển sang chạy bộ!",
+                                                "[HOANG DÃ] Khảo sát cự ly %.1fm (>50m) nhưng hết Ấn Dịch Chuyển trong túi. Chuyển sang chạy bộ!",
                                                 dist))
                                         end
                                     else
@@ -3366,7 +3570,7 @@ local function CreateModUI()
 
                         if not moved then
                             local targetVector = target.currentPos and Vector2(target.currentPos.x, target.currentPos.y) or
-                            nil
+                                nil
                             if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
                                 _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
                                     target.line, nil, Purpose.None, onArrive, 3, true)
@@ -3480,15 +3684,17 @@ local function CreateModUI()
 
                         if foundBoss then
                             if isHighHp then
-                                if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then _G.RoleManager.me
-                                        :SetAutoFight("AutoFight") end
+                                if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                    _G.RoleManager.me
+                                        :SetAutoFight("AutoFight")
+                                end
                                 _G.Mod_AutoFarmBoss_State = 5
                                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                                 LogMsg("Đủ điều kiện, Bật Auto Fight")
                             else
                                 LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 6 phút")
                                 _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec +
-                                360
+                                    360
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -3559,7 +3765,7 @@ local function CreateModUI()
 
                                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                                 _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) +
-                                1
+                                    1
                                 if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
@@ -3669,7 +3875,7 @@ local function CreateModUI()
                         pcall(function()
                             local pMove = _G.Mod_PendingManualMove
                             local currentSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or
-                            os.time()
+                                os.time()
                             if currentSec > pMove.expireTime then
                                 _G.Mod_PendingManualMove = nil
                             else
@@ -3688,13 +3894,14 @@ local function CreateModUI()
                                             alivePos, aliveCount = _G.GetAliveBossPosition(pMove.bossId, pMove.mapId)
                                         end
                                         local targetPos = alivePos or
-                                        (pMove.posX and pMove.posY and { x = pMove.posX, y = pMove.posY }) or
-                                        (_G.GetBossPosition and _G.GetBossPosition(pMove.bossId, pMove.mapId))
+                                            (pMove.posX and pMove.posY and { x = pMove.posX, y = pMove.posY }) or
+                                            (_G.GetBossPosition and _G.GetBossPosition(pMove.bossId, pMove.mapId))
                                         if targetPos and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
                                             _G.RoleManager.me:MoveTo({ x = targetPos.x, y = targetPos.y }, 0)
                                             if _G.FloatingWordUtility then
                                                 _G.FloatingWordUtility.QuickMsg("Đã tới Map! Tự động chạy tới " ..
-                                                pMove.bossName .. " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
+                                                    pMove.bossName ..
+                                                    " (" .. targetPos.x .. ", " .. targetPos.y .. ")...")
                                             end
                                             _G.Mod_PendingManualMove = nil
                                         end
@@ -3724,8 +3931,10 @@ local function CreateModUI()
                                             if role.hp and role.hp > 0 then
                                                 local maxHp = role.maxHp or role.maxHP or role.hp or 1
                                                 local hpPct = (role.hp / maxHp) * 100
-                                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(string
-                                                    .format("%s HP: %.2f%%", d.name, hpPct)) end
+                                                if _G.FloatingWordUtility then
+                                                    _G.FloatingWordUtility.QuickMsg(string
+                                                        .format("%s HP: %.2f%%", d.name, hpPct))
+                                                end
                                                 break
                                             end
                                         end
@@ -3975,7 +4184,7 @@ local function CreateModUI()
                                 local target = me and me.TargetAvatar
                                 if target and not target.isDead and me.skills then
                                     local allowedAoEPrefixes = {
-                                        ["140401"] = true,     -- Ma Ky Sy: Set Danh
+                                        ["140401"] = true, -- Ma Ky Sy: Set Danh
                                     }
                                     for _, skill in pairs(me.skills) do
                                         local sid = skill.sid or skill.id or skill.skillId
@@ -3983,7 +4192,7 @@ local function CreateModUI()
                                             local prefix = tostring(sid):sub(1, 6)
                                             if allowedAoEPrefixes[prefix] then
                                                 local tblSkill = _G.ClientTable and
-                                                _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
+                                                    _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
                                                 if tblSkill then
                                                     local cdMsg = me.cd and me.cd[tblSkill.groupId]
                                                     local endTime = cdMsg and cdMsg.endTime or 0
@@ -3993,8 +4202,9 @@ local function CreateModUI()
 
                                                     if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
                                                         local tblaction = _G.ConfigManager and
-                                                        _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId,
-                                                            "groupId")
+                                                            _G.ConfigManager.GetConfig("cfg_actionLogic",
+                                                                tblSkill.actionId,
+                                                                "groupId")
                                                         if tblaction and _G.SkillMgr and _G.SkillMgr.SendSkillMessage then
                                                             local coord = target.serverCoord or me.serverCoord
                                                             _G.SkillMgr.SendSkillMessage(tblSkill, tblaction, target.id,
@@ -4053,7 +4263,7 @@ local function CreateModUI()
                             end
 
                             local original_GetSpecifyMonster = _G.AutoFightFindTargetManager
-                            .GetSpecifyMonsterIntersectionNew
+                                .GetSpecifyMonsterIntersectionNew
                             if original_GetSpecifyMonster then
                                 _G.AutoFightFindTargetManager.GetSpecifyMonsterIntersectionNew = function(skillRange,
                                                                                                           specifyMonster,
@@ -4372,7 +4582,7 @@ local function CreateModUI()
                     return false
                 end
                 local dataToHash = pCode ..
-                "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+                    "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
                 local expectedSig = GetMD5(dataToHash)
                 if expectedSig ~= pSig then
                     if not isSilent then errTxt.text = "Token đã bị giả mạo!" end
@@ -4380,7 +4590,7 @@ local function CreateModUI()
                 end
 
                 local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
-                os.time()
+                    os.time()
                 local expireTime = pTime + (pDuration * 86400)
                 if currentUnixTime > expireTime then
                     if not isSilent then errTxt.text = "Token đã hết hạn!" end
@@ -4541,15 +4751,23 @@ local function CreateModUI()
         end)
 
         -- UI State Variables Initialization
-        if _G.RunSpeedMultiplier == nil then _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
-            "Mod_RunSpeedMultiplier", 1.0) end
-        if _G.AtkSpeedMultiplier == nil then _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
-            "Mod_AtkSpeedMultiplier", 1.0) end
-        if _G.Mod_CustomAttackRange == nil then _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
-            "Mod_CustomAttackRange", 0) end
+        if _G.RunSpeedMultiplier == nil then
+            _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
+                "Mod_RunSpeedMultiplier", 1.0)
+        end
+        if _G.AtkSpeedMultiplier == nil then
+            _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
+                "Mod_AtkSpeedMultiplier", 1.0)
+        end
+        if _G.Mod_CustomAttackRange == nil then
+            _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_CustomAttackRange", 0)
+        end
         if _G.Mod_AntiCC == nil then _G.Mod_AntiCC = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AntiCC", 0) == 1 end
-        if _G.AutoPick_FilterNormal == nil then _G.AutoPick_FilterNormal = CS.UnityEngine.PlayerPrefs.GetInt(
-            "Mod_AutoPick_FilterNormal", 0) == 1 end
+        if _G.AutoPick_FilterNormal == nil then
+            _G.AutoPick_FilterNormal = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoPick_FilterNormal", 0) == 1
+        end
         if _G.AutoPick_Limit == nil then _G.AutoPick_Limit = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Limit", 2) end
         if _G.AutoPick_Limit == 0 then _G.AutoPick_Limit = 2 end
         _G.AutoPick_Count = 0
@@ -5127,7 +5345,7 @@ local function CreateModUI()
                                 tBtn.go:SetActive(true)
                                 local isSel = (_G.ModBossTab == tag)
                                 tBtn.txt.text = "<color=" ..
-                                (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                                    (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
                                 tBtn.txt.fontSize = 17
                                 local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
                                 if rt then
@@ -5139,9 +5357,11 @@ local function CreateModUI()
                         end
                         for _, tag in ipairs(tierTags) do
                             local inKundun = false
-                            for _, kt in ipairs(kundunTiers) do if kt == tag then
+                            for _, kt in ipairs(kundunTiers) do
+                                if kt == tag then
                                     inKundun = true; break
-                                end end
+                                end
+                            end
                             if not inKundun and _G.NangCaoTabBtns[tag] and _G.NangCaoTabBtns[tag].go then
                                 _G.NangCaoTabBtns[tag].go:SetActive(false)
                             end
@@ -5188,10 +5408,10 @@ local function CreateModUI()
                                 local colorTag = isGreen and "<color=#00FF00>" or "<color=#FFFFFF>"
                                 if count >= cfg.limit then
                                     txt.text = cfg.name ..
-                                    string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
+                                        string.format(" %s%d / %d</color> (Hiện)", colorTag, count, cfg.limit)
                                 else
                                     txt.text = cfg.name ..
-                                    string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
+                                        string.format(" %s%d / %d</color> (%d)", colorTag, count, cfg.limit, rCount)
                                 end
                             else
                                 txt.gameObject:SetActive(false)
@@ -5213,7 +5433,12 @@ local function CreateModUI()
         local function CreateAutoBossUI()
             local startX = 20
             local UpdateTierTabs
-            -- Column 1: AUTO FARM (X = 20, Y = -70)
+
+            -- =========================================================================
+            -- CỘT TRÁI (2/3 WIDTH): TOP CONTROLS 2x2 & BOSS FARM CONFIG
+            -- =========================================================================
+
+            -- 1. ROW 1 - CỘT 1 (X = 20, Y = -70, Width = 210, Height = 35): AUTO FARM ON/OFF
             local masterToggleGo = GameObject("AutoFarmBossToggle")
             masterToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, masterToggleGo)
@@ -5264,13 +5489,71 @@ local function CreateModUI()
                 UpdateMasterToggle()
             end)
 
-            -- Nút XY HIỆN TẠI ở Cột 1 (dưới nút AUTO FARM: X = 20, Y = -115, width = 110px)
+            -- 2. ROW 1 - CỘT 2 (X = 245, Y = -70, Width = 210, Height = 35): TỰ VÀO MAP ẨN: BẬT/TẮT
+            local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
+            hiddenToggleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, hiddenToggleGo)
+            local htRt = hiddenToggleGo:AddComponent(typeof(RectTransform))
+            htRt.anchorMin, htRt.anchorMax, htRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            htRt.anchoredPosition = Vector2(245, -70)
+            htRt.sizeDelta = Vector2(210, 35)
+
+            local htBg = GameObject("Bg")
+            htBg.transform:SetParent(hiddenToggleGo.transform, false)
+            local htBgRt = htBg:AddComponent(typeof(RectTransform))
+            htBgRt.anchorMin, htBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            htBgRt.sizeDelta = Vector2(0, 0)
+            local htBgImg = htBg:AddComponent(typeof(Image))
+
+            local htTxtGo = GameObject("Text")
+            htTxtGo.transform:SetParent(hiddenToggleGo.transform, false)
+            local htTxtRt = htTxtGo:AddComponent(typeof(RectTransform))
+            htTxtRt.anchorMin, htTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            htTxtRt.sizeDelta = Vector2(0, 0)
+            local htTxt = htTxtGo:AddComponent(typeof(Text))
+            htTxt.raycastTarget = false
+            htTxt.fontSize = 15
+            htTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then htTxt.font = defaultFont end
+
+            local htBtn = hiddenToggleGo:AddComponent(typeof(Button))
+
+            local function UpdateHiddenToggle()
+                if _G.Mod_AutoFarmBoss_EnterHiddenMap then
+                    htBgImg.color = Color(0.2, 0.4, 0.6, 1)
+                    htTxt.text = "TỰ VÀO MAP ẨN: BẬT"
+                    htTxt.color = Color.white
+                else
+                    htBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    htTxt.text = "TỰ VÀO MAP ẨN: TẮT"
+                    htTxt.color = Color(0.8, 0.8, 0.8, 1)
+                end
+            end
+
+            if _G.Mod_AutoFarmBoss_EnterHiddenMap == nil then
+                pcall(function()
+                    _G.Mod_AutoFarmBoss_EnterHiddenMap = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoFarmBoss_EnterHiddenMap", 0) == 1)
+                end)
+                if _G.Mod_AutoFarmBoss_EnterHiddenMap == nil then _G.Mod_AutoFarmBoss_EnterHiddenMap = false end
+            end
+            UpdateHiddenToggle()
+
+            htBtn.onClick:AddListener(function()
+                _G.Mod_AutoFarmBoss_EnterHiddenMap = not _G.Mod_AutoFarmBoss_EnterHiddenMap
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoFarmBoss_EnterHiddenMap",
+                        _G.Mod_AutoFarmBoss_EnterHiddenMap and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateHiddenToggle()
+            end)
+
+            -- 3. ROW 2 - CỘT 1 (X = 20, Y = -115): Nút XY HIỆN TẠI (110px) + InputField [ X#Y ] (95px)
             local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
             getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, getReturnPosBtnGo)
             local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
-            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
-                Vector2(0, 1)
+            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             getReturnPosRt.anchoredPosition = Vector2(startX, -115)
             getReturnPosRt.sizeDelta = Vector2(110, 35)
 
@@ -5295,7 +5578,7 @@ local function CreateModUI()
             getReturnPosTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then getReturnPosTxt.font = defaultFont end
 
-            -- InputField ở bên cạnh nút XY HIỆN TẠI (X = 135, Y = -115, width = 95px)
+            -- InputField [ X#Y ] (X = 135, Y = -115, width = 95px)
             local retTgtGo = GameObject("AutoReturnPosInput")
             retTgtGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, retTgtGo)
@@ -5382,66 +5665,7 @@ local function CreateModUI()
                 end)
             end)
 
-            -- Column 2: TỰ VÀO MAP ẨN & VÀO ẨN KC (X = 245)
-            local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
-            hiddenToggleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, hiddenToggleGo)
-            local htRt = hiddenToggleGo:AddComponent(typeof(RectTransform))
-            htRt.anchorMin, htRt.anchorMax, htRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            htRt.anchoredPosition = Vector2(245, -70)
-            htRt.sizeDelta = Vector2(210, 35)
-
-            local htBg = GameObject("Bg")
-            htBg.transform:SetParent(hiddenToggleGo.transform, false)
-            local htBgRt = htBg:AddComponent(typeof(RectTransform))
-            htBgRt.anchorMin, htBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            htBgRt.sizeDelta = Vector2(0, 0)
-            local htBgImg = htBg:AddComponent(typeof(Image))
-
-            local htTxtGo = GameObject("Text")
-            htTxtGo.transform:SetParent(hiddenToggleGo.transform, false)
-            local htTxtRt = htTxtGo:AddComponent(typeof(RectTransform))
-            htTxtRt.anchorMin, htTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            htTxtRt.sizeDelta = Vector2(0, 0)
-            local htTxt = htTxtGo:AddComponent(typeof(Text))
-            htTxt.raycastTarget = false
-            htTxt.fontSize = 15
-            htTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then htTxt.font = defaultFont end
-
-            local htBtn = hiddenToggleGo:AddComponent(typeof(Button))
-
-            local function UpdateHiddenToggle()
-                if _G.Mod_AutoFarmBoss_EnterHiddenMap then
-                    htBgImg.color = Color(0.2, 0.4, 0.6, 1)
-                    htTxt.text = "TỰ VÀO MAP ẨN: BẬT"
-                    htTxt.color = Color.white
-                else
-                    htBgImg.color = Color(0.3, 0.3, 0.3, 1)
-                    htTxt.text = "TỰ VÀO MAP ẨN: TẮT"
-                    htTxt.color = Color(0.8, 0.8, 0.8, 1)
-                end
-            end
-
-            if _G.Mod_AutoFarmBoss_EnterHiddenMap == nil then
-                pcall(function()
-                    _G.Mod_AutoFarmBoss_EnterHiddenMap = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoFarmBoss_EnterHiddenMap", 0) == 1)
-                end)
-                if _G.Mod_AutoFarmBoss_EnterHiddenMap == nil then _G.Mod_AutoFarmBoss_EnterHiddenMap = false end
-            end
-            UpdateHiddenToggle()
-
-            htBtn.onClick:AddListener(function()
-                _G.Mod_AutoFarmBoss_EnterHiddenMap = not _G.Mod_AutoFarmBoss_EnterHiddenMap
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoFarmBoss_EnterHiddenMap",
-                        _G.Mod_AutoFarmBoss_EnterHiddenMap and 1 or 0)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
-                UpdateHiddenToggle()
-            end)
-
-            -- Column 2 Sub-toggle: VÀO ẨN KC (X = 245, Y = -115)
+            -- 4. ROW 2 - CỘT 2 (X = 245, Y = -115, Width = 210, Height = 35): VÀO ẨN KC: BẬT/TẮT
             local diamondToggleGo = GameObject("AutoHiddenDiamondToggle")
             diamondToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, diamondToggleGo)
@@ -5500,43 +5724,305 @@ local function CreateModUI()
                 UpdateDiamondToggle()
             end)
 
-            -- Column 3: AUTO SMELT (X = 470, Y = -70, -100, -130)
-            local smeltStartX = 470
-            local smeltY = -70
+            -- =========================================================================
+            -- VẠCH DỌC PHÂN CÁCH (BETWEEN 2/3 TRÁI & 1/3 PHẢI)
+            -- =========================================================================
+            local vLineGo = GameObject("AutoBossVerticalSeparator")
+            vLineGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, vLineGo)
+            local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
+            vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            vLineRt.anchoredPosition = Vector2(460, -45)
+            vLineRt.sizeDelta = Vector2(2, 535)
+            local vLineImg = vLineGo:AddComponent(typeof(Image))
+            vLineImg.color = Color(0.4, 0.4, 0.4, 1)
 
-            local smeltRowsData = {
-                { label = "TÁCH NHẪN", prefix = "Ring", y = smeltY },
-                { label = "TÁCH DÂY", prefix = "Necklace", y = smeltY - 30 },
-                { label = "TÁCH KHUYÊN", prefix = "Earring", y = smeltY - 60 }
-            }
+            -- =========================================================================
+            -- CỘT PHẢI (1/3 WIDTH): TÁCH ĐỒ DYNAMIC C REACTIVE THEO TOKEN CẤU HÌNH
+            -- =========================================================================
+            local smeltStartX = 475
+            local btnW, btnH = 34, 22
+
+            local title1Go = GameObject("SmeltTitle1")
+            title1Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, title1Go)
+            local title1Rt = title1Go:AddComponent(typeof(RectTransform))
+            title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, -65)
+            title1Rt.sizeDelta = Vector2(230, 20)
+            local title1Txt = title1Go:AddComponent(typeof(Text))
+            title1Txt.raycastTarget = false
+            title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
+            title1Txt.color = Color(1, 0.8, 0, 1)
+            title1Txt.fontSize = 13
+            title1Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then title1Txt.font = defaultFont end
+
             local smeltTogglePool = {}
 
-            for _, rData in ipairs(smeltRowsData) do
-                local lblGo = GameObject("SmeltLbl_" .. rData.prefix)
+            local function CreateSmeltToggle(prefix, colIdx, x, y, width, isKeepGood)
+                local btnGo = GameObject("SmeltToggle_" .. prefix .. "_" .. colIdx)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, btnGo)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(width or btnW, btnH)
+
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(btnGo.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 10
+                txt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+
+                local btn = btnGo:AddComponent(typeof(Button))
+
+                local itemObj = {
+                    go = btnGo,
+                    bgImg = bgImg,
+                    txt = txt,
+                    btn = btn,
+                    prefix = prefix,
+                    colIdx = colIdx,
+                    isKeepGood = isKeepGood,
+                    varName = nil
+                }
+                table.insert(smeltTogglePool, itemObj)
+                return itemObj
+            end
+
+            local curY = -95
+            local function CreateTracVietRow(lblText, prefix)
+                local lblGo = GameObject("SmeltLbl_" .. prefix)
                 lblGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AutoBossUIList, lblGo)
                 local lblRt = lblGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(smeltStartX, rData.y)
-                lblRt.sizeDelta = Vector2(100, 25)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(85, btnH)
                 local lblTxt = lblGo:AddComponent(typeof(Text))
                 lblTxt.raycastTarget = false
-                lblTxt.text = rData.label
+                lblTxt.text = lblText
                 lblTxt.color = Color.white
-                lblTxt.fontSize = 14
+                lblTxt.fontSize = 12
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
+
+                for colIdx = 1, 3 do
+                    CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
+                end
+                curY = curY - 26
             end
 
-            local function CreateSmeltToggle(idx)
-                local btnGo = GameObject("SmeltToggle_" .. idx)
+            CreateTracVietRow("NHẪN", "Ring")
+            CreateTracVietRow("DÂY CHUYỀN", "Necklace")
+            CreateTracVietRow("KHUYÊN", "Earring")
+
+            -- Dash Line
+            curY = curY - 5
+            local dashGo = GameObject("SmeltDashLine")
+            dashGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, dashGo)
+            local dashRt = dashGo:AddComponent(typeof(RectTransform))
+            dashRt.anchorMin, dashRt.anchorMax, dashRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            dashRt.anchoredPosition = Vector2(smeltStartX, curY)
+            dashRt.sizeDelta = Vector2(230, 15)
+            local dashTxt = dashGo:AddComponent(typeof(Text))
+            dashTxt.raycastTarget = false
+            dashTxt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+            dashTxt.color = Color(0.6, 0.6, 0.6, 0.8)
+            dashTxt.fontSize = 11
+            dashTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then dashTxt.font = defaultFont end
+
+            -- Title 2: ĐỒ BỘ & DÒNG NGON
+            curY = curY - 20
+            local title2Go = GameObject("SmeltTitle2")
+            title2Go.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, title2Go)
+            local title2Rt = title2Go:AddComponent(typeof(RectTransform))
+            title2Rt.anchorMin, title2Rt.anchorMax, title2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            title2Rt.anchoredPosition = Vector2(smeltStartX, curY)
+            title2Rt.sizeDelta = Vector2(230, 20)
+            local title2Txt = title2Go:AddComponent(typeof(Text))
+            title2Txt.raycastTarget = false
+            title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
+            title2Txt.color = Color(1, 0.8, 0, 1)
+            title2Txt.fontSize = 13
+            title2Txt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then title2Txt.font = defaultFont end
+
+            curY = curY - 25
+            local equipRows = {
+                { "MŨ", "Hat" },
+                { "ÁO", "Armor" },
+                { "QUẦN", "Pants" },
+                { "BAO TAY", "Gloves" },
+                { "BAO CHÂN", "Boots" },
+                { "VŨ KHÍ", "Weapon" },
+                { "DÂY CHUYỀN", "Necklace2" },
+                { "KHUYÊN TRÁI", "EarringL" },
+                { "KHUYÊN PHẢI", "EarringR" },
+                { "NHẪN TRÁI", "RingL" },
+                { "NHẪN PHẢI", "RingR" },
+            }
+
+            for _, r in ipairs(equipRows) do
+                local label = r[1]
+                local prefix = r[2]
+
+                local lblGo = GameObject("SmeltLbl_" .. prefix)
+                lblGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, lblGo)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(85, btnH)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = false
+                lblTxt.text = label
+                lblTxt.color = Color.white
+                lblTxt.fontSize = 11
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+
+                for colIdx = 1, 4 do
+                    CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
+                end
+                curY = curY - 24
+            end
+
+            -- GIỮ DÒNG NGON
+            curY = curY - 5
+            local kgLblGo = GameObject("SmeltLbl_KeepGood")
+            kgLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgLblGo)
+            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
+            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgLblRt.sizeDelta = Vector2(85, btnH)
+            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
+            kgLblTxt.raycastTarget = false
+            kgLblTxt.text = "GIỮ DÒNG NGON"
+            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgLblTxt.fontSize = 10
+            kgLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGood", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+
+            -- Nút TÁCH NGAY (THỦ CÔNG)
+            curY = curY - 30
+            local manualSmeltBtnGo = GameObject("SmeltManualBtn")
+            manualSmeltBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, manualSmeltBtnGo)
+            local manualSmeltRt = manualSmeltBtnGo:AddComponent(typeof(RectTransform))
+            manualSmeltRt.anchorMin, manualSmeltRt.anchorMax, manualSmeltRt.pivot = Vector2(0, 1), Vector2(0, 1),
+                Vector2(0, 1)
+            manualSmeltRt.anchoredPosition = Vector2(smeltStartX, curY)
+            manualSmeltRt.sizeDelta = Vector2(233, 26)
+
+            local manualSmeltBg = GameObject("Bg")
+            manualSmeltBg.transform:SetParent(manualSmeltBtnGo.transform, false)
+            local manualSmeltBgRt = manualSmeltBg:AddComponent(typeof(RectTransform))
+            manualSmeltBgRt.anchorMin, manualSmeltBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            manualSmeltBgRt.sizeDelta = Vector2(0, 0)
+            local manualSmeltBgImg = manualSmeltBg:AddComponent(typeof(Image))
+            manualSmeltBgImg.color = Color(0.8, 0.2, 0.2, 1)
+
+            local manualSmeltTxtGo = GameObject("Text")
+            manualSmeltTxtGo.transform:SetParent(manualSmeltBtnGo.transform, false)
+            local manualSmeltTxtRt = manualSmeltTxtGo:AddComponent(typeof(RectTransform))
+            manualSmeltTxtRt.anchorMin, manualSmeltTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            manualSmeltTxtRt.sizeDelta = Vector2(0, 0)
+            local manualSmeltTxt = manualSmeltTxtGo:AddComponent(typeof(Text))
+            manualSmeltTxt.raycastTarget = false
+            manualSmeltTxt.text = "TÁCH NGAY (THỦ CÔNG)"
+            manualSmeltTxt.color = Color.white
+            manualSmeltTxt.fontSize = 12
+            manualSmeltTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then manualSmeltTxt.font = defaultFont end
+
+            local manualSmeltBtn = manualSmeltBtnGo:AddComponent(typeof(Button))
+            manualSmeltBtn.onClick:AddListener(function()
+                pcall(function()
+                    if _G.Mod_PerformSmeltItems then
+                        _G.Mod_PerformSmeltItems()
+                    elseif _G.Mod_ExecuteAutoSmelt then
+                        _G.Mod_ExecuteAutoSmelt()
+                    end
+                    LogMsg("Đã kích hoạt Tách Đồ thủ công!")
+                end)
+            end)
+
+            -- =========================================================================
+            -- CỘT TRÁI (2/3 WIDTH): BOSS TIER TABS & BOSS BUTTONS GRID & FOOTER STATS
+            -- =========================================================================
+            local currentY = -155
+
+            local function CreateTierTab(label, tabName)
+                local btnGo = GameObject("AutoBossTier_" .. tabName)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, btnGo)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(startX, currentY)
+                rt.sizeDelta = Vector2(110, 30)
+
+                local img = btnGo:AddComponent(typeof(Image))
+                img.color = Color(1, 1, 1, 0) -- Vô hình nền (không bôi background), chỉ đổi màu chữ text color
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 17
+                txt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then txt.font = defaultFont end
+
+                local btn = btnGo:AddComponent(typeof(Button))
+                return { go = btnGo, img = img, txt = txt, btn = btn, tabName = tabName }
+            end
+
+            -- Tạo sẵn Pool cho tất cả Tier từ C3 tới C12
+            local allTiers = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
+            local tierTabBtns = {}
+            for _, tag in ipairs(allTiers) do
+                local tBtn = CreateTierTab("[ BOSS " .. tag .. " ]", tag)
+                tBtn.go:SetActive(false)
+                tierTabBtns[tag] = tBtn
+            end
+
+            currentY = currentY - 35
+            local gridStartY = currentY
+
+            local configPool = {}
+
+            local function CreateConfigBtn(idx)
+                local btnGo = GameObject("AutoBossConfig_" .. idx)
                 btnGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AutoBossUIList, btnGo)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
 
-                local bgImg = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
-                bgImg.raycastTarget = true
+                local img = btnGo:AddComponent(typeof(Image))
 
                 local txtGo = GameObject("Text")
                 txtGo.transform:SetParent(btnGo.transform, false)
@@ -5550,164 +6036,13 @@ local function CreateModUI()
                 if defaultFont then txt.font = defaultFont end
 
                 local btn = btnGo:AddComponent(typeof(Button))
-                return { go = btnGo, rt = rt, bgImg = bgImg, txt = txt, btn = btn }
-            end
-
-            local function GetSmeltTiers()
-                local x = GetPlayerReincarnationLevel and GetPlayerReincarnationLevel() or 7
-                local tiers = {}
-                if x - 2 >= 3 then table.insert(tiers, "C" .. tostring(x - 2)) end
-                if x - 1 >= 3 then table.insert(tiers, "C" .. tostring(x - 1)) end
-                table.insert(tiers, "C" .. tostring(x))
-                return tiers
-            end
-
-            local function UpdateSmeltToggles()
-                local smeltTiers = GetSmeltTiers()
-                local poolIdx = 1
-                for _, rData in ipairs(smeltRowsData) do
-                    for sIdx, tag in ipairs(smeltTiers) do
-                        local varName = rData.prefix .. "_" .. tag
-                        local bData = smeltTogglePool[poolIdx]
-                        if not bData then
-                            bData = CreateSmeltToggle(poolIdx)
-                            table.insert(smeltTogglePool, bData)
-                        end
-                        bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
-                        bData.rt.anchoredPosition = Vector2(smeltStartX + 102 + (sIdx - 1) * 40, rData.y)
-                        bData.rt.sizeDelta = Vector2(36, 25)
-                        bData.txt.text = tag
-
-                        if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
-                        if _G.Mod_SmeltConfig[varName] == nil then
-                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
-                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
-                        end
-
-                        local function updateVisual()
-                            if _G.Mod_SmeltConfig[varName] then
-                                bData.bgImg.color = Color(0.2, 0.6, 0.2, 1)
-                                bData.txt.color = Color.white
-                            else
-                                bData.bgImg.color = Color(0.3, 0.3, 0.3, 1)
-                                bData.txt.color = Color(0.8, 0.8, 0.8, 1)
-                            end
-                        end
-                        updateVisual()
-
-                        bData.btn.onClick:RemoveAllListeners()
-                        bData.btn.onClick:AddListener(function()
-                            _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
-                            pcall(function()
-                                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName,
-                                    _G.Mod_SmeltConfig[varName] and 1 or 0)
-                                CS.UnityEngine.PlayerPrefs.Save()
-                            end)
-                            updateVisual()
-                        end)
-                        poolIdx = poolIdx + 1
-                    end
-                end
-                for i = poolIdx, #smeltTogglePool do
-                    if smeltTogglePool[i] and smeltTogglePool[i].go then
-                        smeltTogglePool[i].go:SetActive(false)
-                    end
-                end
-            end
-
-            local currentY = -170
-
-            local sepAutoTopGo = GameObject("AutoBossTopSeparator")
-            sepAutoTopGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, sepAutoTopGo)
-            local sepAutoTopRt = sepAutoTopGo:AddComponent(typeof(RectTransform))
-            sepAutoTopRt.anchorMin, sepAutoTopRt.anchorMax, sepAutoTopRt.pivot = Vector2(0, 1), Vector2(0, 1),
-                Vector2(0, 1)
-            sepAutoTopRt.anchoredPosition = Vector2(startX, -150)
-            sepAutoTopRt.sizeDelta = Vector2(700, 20)
-            local sepAutoTopTxt = sepAutoTopGo:AddComponent(typeof(Text))
-            sepAutoTopTxt.raycastTarget = false
-            sepAutoTopTxt.color = Color(0.4, 0.4, 0.4, 1)
-            sepAutoTopTxt.fontSize = 16
-            sepAutoTopTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sepAutoTopTxt.font = defaultFont end
-            sepAutoTopTxt.text =
-            "--------------------------------------------------------------------------------------------------------------------------"
-
-            -- Tier Tabs (C3-C12)
-            local function CreateTierTab(label, tabName, xPos)
-                local btnGo = GameObject("AutoBossTier_" .. tabName)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
-                local rt = btnGo:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(xPos, currentY)
-                rt.sizeDelta = Vector2(100, 30)
-
-                local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
-                img.color = Color(1, 1, 1, 0)
-
-                local txtGo = GameObject("Text")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.sizeDelta = Vector2(0, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget = false
-                txt.fontSize = 17
-                txt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then txt.font = defaultFont end
-
-                local btn = btnGo:AddComponent(typeof(Button))
-                btn.onClick:AddListener(function()
-                    _G.ModAutoBossConfigTab = tabName
-                    pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModAutoBossConfigTab", tabName) end)
-                    if UpdateTierTabs then UpdateTierTabs() end
-                end)
-                return { go = btnGo, txt = txt, btn = btn }
-            end
-
-            local tierTags = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
-            local tierTabBtns = {}
-            for tIdx, tag in ipairs(tierTags) do
-                local tBtn = CreateTierTab("[ BOSS " .. tag .. " ]", tag, startX + (tIdx - 1) * 110)
-                tierTabBtns[tag] = tBtn
-            end
-
-            currentY = currentY - 40
-            local gridStartY = currentY
-
-            local configPool = {}
-
-            local function CreateConfigBtn(idx)
-                local btnGo = GameObject("AutoBossConfig_" .. idx)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
-                local rt = btnGo:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-
-                local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
-
-                local txtGo = GameObject("Text")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.sizeDelta = Vector2(0, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget = false
-                txt.fontSize = 17
-                if defaultFont then txt.font = defaultFont end
-
-                local btn = btnGo:AddComponent(typeof(Button))
                 return { go = btnGo, rt = rt, img = img, txt = txt, btn = btn }
             end
 
             UpdateTierTabs = function()
                 if _G.ModMainTab ~= "AUTO_BOSS" then return end
 
-                if UpdateSmeltToggles then UpdateSmeltToggles() end
-
-                local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C6", "C7" }
+                local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
                 local isTabValid = false
                 for _, tag in ipairs(currentTiers) do
                     if _G.ModAutoBossConfigTab == tag then
@@ -5717,46 +6052,122 @@ local function CreateModUI()
                 if not isTabValid and #currentTiers > 0 then
                     _G.ModAutoBossConfigTab = currentTiers[#currentTiers]
                 end
-                local activeIdx = 0
-                for _, tag in ipairs(currentTiers) do
+
+                -- REFRESH SMELT DYNAMIC C BUTTONS REACTIONARY TO TOKEN / ACTIVE TAB
+                local mainTag = _G.ModAutoBossConfigTab or currentTiers[#currentTiers] or "C4"
+                local x = _G.Mod_Config_Reincarnation_Primary
+                    or tonumber(string.match(mainTag, "%d+"))
+                    or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel())
+                    or 4
+
+                -- Trác Việt (3 nút): x-1, x, x+1
+                local tracVietTiers = {}
+                for _, offset in ipairs({ 1, 0, -1 }) do
+                    local tierNum = x - offset
+                    if tierNum >= 3 and tierNum <= 12 then
+                        table.insert(tracVietTiers, "C" .. tostring(tierNum))
+                    end
+                end
+                if #tracVietTiers == 0 then table.insert(tracVietTiers, "C" .. tostring(x)) end
+
+                -- Đồ Bộ & Giữ Dòng Ngon (4 nút): x-2, x-1, x, x+1
+                local doBoTiers = {}
+                for _, offset in ipairs({ 2, 1, 0, -1 }) do
+                    local tierNum = x - offset
+                    if tierNum >= 3 and tierNum <= 12 then
+                        table.insert(doBoTiers, "C" .. tostring(tierNum))
+                    end
+                end
+                if #doBoTiers == 0 then table.insert(doBoTiers, "C" .. tostring(x)) end
+
+                -- Refresh all Smelt Toggles in pool
+                for _, toggleItem in ipairs(smeltTogglePool) do
+                    local tiersList = (toggleItem.prefix == "Ring" or toggleItem.prefix == "Necklace" or toggleItem.prefix == "Earring") and tracVietTiers or doBoTiers
+                    local tag = tiersList[toggleItem.colIdx]
+                    if tag then
+                        toggleItem.go:SetActive(true)
+                        toggleItem.txt.text = tag
+                        local varName = toggleItem.prefix .. "_" .. tag
+                        toggleItem.varName = varName
+
+                        if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
+                        if _G.Mod_SmeltConfig[varName] == nil then
+                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
+                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
+                        end
+
+                        local function updateToggleVisual()
+                            if _G.Mod_SmeltConfig[varName] then
+                                if toggleItem.isKeepGood then
+                                    toggleItem.bgImg.color = Color(0.8, 0.5, 0.1, 1)
+                                else
+                                    toggleItem.bgImg.color = Color(0.2, 0.6, 0.2, 1)
+                                end
+                                toggleItem.txt.color = Color.white
+                            else
+                                toggleItem.bgImg.color = Color(0.25, 0.25, 0.25, 1)
+                                toggleItem.txt.color = Color(0.7, 0.7, 0.7, 1)
+                            end
+                        end
+                        updateToggleVisual()
+
+                        toggleItem.btn.onClick:RemoveAllListeners()
+                        toggleItem.btn.onClick:AddListener(function()
+                            _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
+                            pcall(function()
+                                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName, _G.Mod_SmeltConfig[varName] and 1 or 0)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                            end)
+                            updateToggleVisual()
+                        end)
+                    else
+                        toggleItem.go:SetActive(false)
+                    end
+                end
+
+                -- Ẩn tất cả Tab buttons trước
+                for _, tBtn in pairs(tierTabBtns) do
+                    tBtn.go:SetActive(false)
+                end
+
+                -- Định vị và vẽ đúng 2 Tab (Chuyển phụ & Chuyển chính) động theo GetAvailableTiers()
+                for tIdx, tag in ipairs(currentTiers) do
                     local tBtn = tierTabBtns[tag]
                     if tBtn then
                         tBtn.go:SetActive(true)
                         local isSel = (_G.ModAutoBossConfigTab == tag)
                         tBtn.txt.text = "<color=" ..
-                        (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
-                        tBtn.txt.fontSize = 17
+                            (isSel and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                        tBtn.img.color = Color(1, 1, 1, 0) -- Không tô màu nền, chỉ đổi màu chữ xanh/trắng
                         local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
                         if rt then
-                            rt.anchoredPosition = Vector2(startX + activeIdx * 110, -170)
-                            rt.sizeDelta = Vector2(100, 30)
+                            rt.anchoredPosition = Vector2(startX + (tIdx - 1) * 120, -155)
+                            rt.sizeDelta = Vector2(110, 30)
                         end
-                        activeIdx = activeIdx + 1
-                    end
-                end
-                for _, tag in ipairs(tierTags) do
-                    local inAvailable = false
-                    for _, ct in ipairs(currentTiers) do if ct == tag then
-                            inAvailable = true; break
-                        end end
-                    if not inAvailable and tierTabBtns[tag] and tierTabBtns[tag].go then
-                        tierTabBtns[tag].go:SetActive(false)
+
+                        local clickTag = tag
+                        tBtn.btn.onClick:RemoveAllListeners()
+                        tBtn.btn.onClick:AddListener(function()
+                            _G.ModAutoBossConfigTab = clickTag
+                            pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModAutoBossConfigTab", clickTag) end)
+                            UpdateTierTabs()
+                        end)
                     end
                 end
 
-                -- Hide all config toggles
+                -- Hide all config toggles in pool
                 for _, btnData in ipairs(configPool) do
                     btnData.go:SetActive(false)
                 end
 
-                -- Render the current tier's bosses
+                -- Render current tier bosses
                 local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(_G.ModAutoBossConfigTab) or {}
                 local py = gridStartY
                 local poolIdx = 1
 
                 if mapsConfig and #mapsConfig > 0 then
                     for _, mapCfg in ipairs(mapsConfig) do
-                        -- Title
+                        -- Section Title Header
                         local btnData = configPool[poolIdx]
                         if not btnData then
                             btnData = CreateConfigBtn(poolIdx)
@@ -5764,7 +6175,7 @@ local function CreateModUI()
                         end
                         btnData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
                         btnData.rt.anchoredPosition = Vector2(startX, py)
-                        btnData.rt.sizeDelta = Vector2(680, 25)
+                        btnData.rt.sizeDelta = Vector2(430, 24)
 
                         local mapTotalKilled = 0
                         if _G.Mod_FarmStats and _G.Mod_FarmStats.bosses and mapCfg.bosses then
@@ -5782,9 +6193,9 @@ local function CreateModUI()
                         btnData.img.color = Color(1, 1, 1, 0)
                         btnData.btn.onClick:RemoveAllListeners()
                         poolIdx = poolIdx + 1
-                        py = py - 30
+                        py = py - 28
 
-                        -- Bosses in columns
+                        -- Boss buttons in 3 columns (Width: 140px, Height: 38px)
                         local colBosses = { {}, {}, {} }
                         for _, cfg in ipairs(mapCfg.bosses) do
                             local c = cfg.col or 1
@@ -5795,8 +6206,8 @@ local function CreateModUI()
                         for r = 1, maxRows do
                             for c = 1, 3 do
                                 local cfg = colBosses[c][r]
-                                if cfg then
-                                    local px = startX + (c - 1) * 220
+                                if cfg and not cfg.isExitBtn then
+                                    local px = startX + (c - 1) * 145
                                     local bData = configPool[poolIdx]
                                     if not bData then
                                         bData = CreateConfigBtn(poolIdx)
@@ -5804,36 +6215,45 @@ local function CreateModUI()
                                     end
                                     bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
                                     bData.rt.anchoredPosition = Vector2(px, py)
-                                    bData.rt.sizeDelta = Vector2(210, 30)
+                                    bData.rt.sizeDelta = Vector2(140, 38)
                                     bData.txt.alignment = TextAnchor.MiddleCenter
 
-                                    -- Load State
                                     if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
                                         _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt(
-                                        "Mod_AutoBoss_" .. cfg.id, 0) == 1
+                                            "Mod_AutoBoss_" .. cfg.id, 0) == 1
                                     end
 
                                     local function updateBossBtnColor()
                                         local isTarget = _G.Mod_AutoFarmBoss_Target and
-                                        _G.Mod_AutoFarmBoss_Target.cfg.id == cfg.id
-
+                                            _G.Mod_AutoFarmBoss_Target.cfg.id == cfg.id
                                         local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or
-                                        0
-                                        local btnLabel = cfg.name
-                                        if killedCount > 0 then btnLabel = btnLabel .. " (" .. killedCount .. ")" end
+                                            0
 
-                                        if _G.Mod_AutoFarmBoss_Config[cfg.id] then
-                                            bData.img.color = Color(0.2, 0.5, 0.2, 1)
-                                            if isTarget then
-                                                bData.txt.text = "<color=#FF0000>=> " .. btnLabel .. "</color>"
+                                        local nameLabel = cfg.name
+                                        if isTarget then
+                                            nameLabel = "<color=#FF0000>=> " .. cfg.name .. "</color>"
+                                        end
+
+                                        if killedCount > 0 then
+                                            if _G.Mod_AutoFarmBoss_Config[cfg.id] then
+                                                bData.img.color = Color(0.2, 0.5, 0.2, 1)
+                                                bData.txt.text = nameLabel ..
+                                                    "\n<color=#FFFFFF>(" .. killedCount .. ")</color>"
                                             else
-                                                bData.txt.text = btnLabel
+                                                bData.img.color = Color(0.3, 0.3, 0.3, 1)
+                                                bData.txt.text = nameLabel ..
+                                                    "\n<color=#777777>(" .. killedCount .. ")</color>"
                                             end
-                                            bData.txt.color = Color.white
                                         else
-                                            bData.img.color = Color(0.3, 0.3, 0.3, 1)
-                                            bData.txt.text = btnLabel
-                                            bData.txt.color = Color(0.7, 0.7, 0.7, 1)
+                                            if _G.Mod_AutoFarmBoss_Config[cfg.id] then
+                                                bData.img.color = Color(0.2, 0.5, 0.2, 1)
+                                                bData.txt.text = nameLabel
+                                                bData.txt.color = Color.white
+                                            else
+                                                bData.img.color = Color(0.3, 0.3, 0.3, 1)
+                                                bData.txt.text = nameLabel
+                                                bData.txt.color = Color(0.7, 0.7, 0.7, 1)
+                                            end
                                         end
                                     end
                                     updateBossBtnColor()
@@ -5850,12 +6270,13 @@ local function CreateModUI()
                                     poolIdx = poolIdx + 1
                                 end
                             end
-                            py = py - 35
+                            py = py - 42
                         end
                         py = py - 10
                     end
                 end
 
+                -- Bottom Stats Bar
                 if not _G.Mod_FarmStatsUI then
                     local containerGo = GameObject("FarmStatsContainer")
                     containerGo.transform:SetParent(panelGo.transform, false)
@@ -5895,12 +6316,12 @@ local function CreateModUI()
                     statTxtGo.transform:SetParent(containerGo.transform, false)
                     local sTxtRt = statTxtGo:AddComponent(typeof(RectTransform))
                     sTxtRt.anchorMin, sTxtRt.anchorMax, sTxtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                    sTxtRt.anchoredPosition = Vector2(150, 0)
-                    sTxtRt.sizeDelta = Vector2(500, 30)
+                    sTxtRt.anchoredPosition = Vector2(140, 0)
+                    sTxtRt.sizeDelta = Vector2(300, 30)
                     local sTxt = statTxtGo:AddComponent(typeof(Text))
                     sTxt.raycastTarget = false
                     sTxt.color = Color(1, 0.8, 0, 1)
-                    sTxt.fontSize = 15
+                    sTxt.fontSize = 14
                     sTxt.alignment = TextAnchor.MiddleLeft
                     if defaultFont then sTxt.font = defaultFont end
                     _G.Mod_FarmStatsUI.sTxt = sTxt
@@ -5910,7 +6331,6 @@ local function CreateModUI()
                 _G.Mod_FarmStatsUI.rt.anchoredPosition = Vector2(startX, py - 10)
 
                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
                 local prevTag = currentTiers[1] or "C7"
                 local currTag = currentTiers[2] or prevTag
 
@@ -5954,12 +6374,10 @@ local function CreateModUI()
 
                 local hiddenCount = _G.Mod_FarmStats.hidden or 0
                 if prevTag ~= currTag then
-                    _G.Mod_FarmStatsUI.sTxt.text = string.format(
-                    "BOSS ẨN: %d       TỔNG BOSS %s: %d       TỔNG BOSS %s: %d", hiddenCount, prevTag, totalPrev, currTag,
-                        totalCurr)
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("ẨN: %d  |  %s: %d  |  %s: %d", hiddenCount, prevTag,
+                        totalPrev, currTag, totalCurr)
                 else
-                    _G.Mod_FarmStatsUI.sTxt.text = string.format("BOSS ẨN: %d       TỔNG BOSS %s: %d", hiddenCount,
-                        prevTag, totalPrev)
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("ẨN: %d  |  %s: %d", hiddenCount, prevTag, totalPrev)
                 end
             end
 
@@ -5970,8 +6388,6 @@ local function CreateModUI()
             end
             UpdateTierTabs()
         end
-        CreateAutoBossUI()
-
         local function CreateKundunUI()
             local currentY = -65
             local rightColX2 = 380
@@ -6012,8 +6428,142 @@ local function CreateModUI()
             CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
             currentY = currentY - 45
 
-            CreateSmallToggle("HS FREE", "Mod_AutoResurrect_Free_Enabled", rightColX2, currentY, 125)
-            CreateSmallToggle("HS KC", "Mod_AutoResurrect_Here_Enabled", rightColX2 + 135, currentY, 125)
+            -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
+            local function CreateResurrectRadioGroup(xPos, yPos, btnW)
+                btnW = btnW or 135
+                local spacing = 10
+
+                if _G.Mod_AutoResurrect_Free_Enabled == nil then
+                    pcall(function()
+                        _G.Mod_AutoResurrect_Free_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Free_Enabled", 0) == 1)
+                    end)
+                    if _G.Mod_AutoResurrect_Free_Enabled == nil then _G.Mod_AutoResurrect_Free_Enabled = false end
+                end
+
+                if _G.Mod_AutoResurrect_Here_Enabled == nil then
+                    pcall(function()
+                        _G.Mod_AutoResurrect_Here_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Here_Enabled", 0) == 1)
+                    end)
+                    if _G.Mod_AutoResurrect_Here_Enabled == nil then _G.Mod_AutoResurrect_Here_Enabled = false end
+                end
+
+                if _G.Mod_AutoResurrect_Free_Enabled and _G.Mod_AutoResurrect_Here_Enabled then
+                    _G.Mod_AutoResurrect_Free_Enabled = false
+                end
+
+                -- 1. NÚT HS FREE
+                local hsFreeGo = GameObject("HS_FREE_RadioToggle")
+                hsFreeGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, hsFreeGo)
+                local freeRt = hsFreeGo:AddComponent(typeof(RectTransform))
+                freeRt.anchorMin, freeRt.anchorMax, freeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                freeRt.anchoredPosition = Vector2(xPos, yPos)
+                freeRt.sizeDelta = Vector2(btnW, 35)
+
+                local freeBg = GameObject("Bg")
+                freeBg.transform:SetParent(hsFreeGo.transform, false)
+                local freeBgRt = freeBg:AddComponent(typeof(RectTransform))
+                freeBgRt.anchorMin, freeBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                freeBgRt.sizeDelta = Vector2(0, 0)
+                local freeBgImg = freeBg:AddComponent(typeof(Image))
+
+                local freeTxtGo = GameObject("Text")
+                freeTxtGo.transform:SetParent(hsFreeGo.transform, false)
+                local freeTxtRt = freeTxtGo:AddComponent(typeof(RectTransform))
+                freeTxtRt.anchorMin, freeTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                freeTxtRt.sizeDelta = Vector2(0, 0)
+                local freeTxt = freeTxtGo:AddComponent(typeof(Text))
+                freeTxt.raycastTarget = false
+                freeTxt.text = "HS FREE"
+                freeTxt.fontSize = 15
+                freeTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then freeTxt.font = defaultFont end
+
+                local freeBtn = hsFreeGo:AddComponent(typeof(Button))
+
+                -- 2. NÚT HS KC
+                local hsKcGo = GameObject("HS_KC_RadioToggle")
+                hsKcGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, hsKcGo)
+                local kcRt = hsKcGo:AddComponent(typeof(RectTransform))
+                kcRt.anchorMin, kcRt.anchorMax, kcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                kcRt.anchoredPosition = Vector2(xPos + btnW + spacing, yPos)
+                kcRt.sizeDelta = Vector2(btnW, 35)
+
+                local kcBg = GameObject("Bg")
+                kcBg.transform:SetParent(hsKcGo.transform, false)
+                local kcBgRt = kcBg:AddComponent(typeof(RectTransform))
+                kcBgRt.anchorMin, kcBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                kcBgRt.sizeDelta = Vector2(0, 0)
+                local kcBgImg = kcBg:AddComponent(typeof(Image))
+
+                local kcTxtGo = GameObject("Text")
+                kcTxtGo.transform:SetParent(hsKcGo.transform, false)
+                local kcTxtRt = kcTxtGo:AddComponent(typeof(RectTransform))
+                kcTxtRt.anchorMin, kcTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                kcTxtRt.sizeDelta = Vector2(0, 0)
+                local kcTxt = kcTxtGo:AddComponent(typeof(Text))
+                kcTxt.raycastTarget = false
+                kcTxt.text = "HS KC"
+                kcTxt.fontSize = 15
+                kcTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then kcTxt.font = defaultFont end
+
+                local kcBtn = hsKcGo:AddComponent(typeof(Button))
+
+                local function UpdateResurrectVisuals()
+                    if _G.Mod_AutoResurrect_Free_Enabled then
+                        freeBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        freeTxt.color = Color.white
+                    else
+                        freeBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        freeTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    end
+
+                    if _G.Mod_AutoResurrect_Here_Enabled then
+                        kcBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        kcTxt.color = Color.white
+                    else
+                        kcBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        kcTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    end
+                end
+                UpdateResurrectVisuals()
+
+                freeBtn.onClick:AddListener(function()
+                    if not _G.Mod_AutoResurrect_Free_Enabled then
+                        _G.Mod_AutoResurrect_Free_Enabled = true
+                        _G.Mod_AutoResurrect_Here_Enabled = false
+                    else
+                        _G.Mod_AutoResurrect_Free_Enabled = false
+                    end
+
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateResurrectVisuals()
+                end)
+
+                kcBtn.onClick:AddListener(function()
+                    if not _G.Mod_AutoResurrect_Here_Enabled then
+                        _G.Mod_AutoResurrect_Here_Enabled = true
+                        _G.Mod_AutoResurrect_Free_Enabled = false
+                    else
+                        _G.Mod_AutoResurrect_Here_Enabled = false
+                    end
+
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    UpdateResurrectVisuals()
+                end)
+            end
+
+            CreateResurrectRadioGroup(rightColX2, currentY, 135)
             currentY = currentY - 45
 
             -- Cài đặt DELAY QUÉT PK
@@ -6441,6 +6991,7 @@ local function CreateModUI()
 
             currentY = currentY - 45
         end
+        CreateAutoBossUI()
         CreateKundunUI()
 
         -- Main Tab Buttons
@@ -6481,7 +7032,7 @@ local function CreateModUI()
         tabNangCaoTxtRt.sizeDelta = Vector2(0, 0)
         local tabNangCaoTxt = tabNangCaoTxtGo:AddComponent(typeof(Text))
         tabNangCaoTxt.raycastTarget, tabNangCaoTxt.fontSize, tabNangCaoTxt.alignment = false, 20, TextAnchor
-        .MiddleCenter
+            .MiddleCenter
         if defaultFont then tabNangCaoTxt.font = defaultFont end
         local tabNangCaoBtn = tabNangCaoGo:AddComponent(typeof(Button))
 
@@ -6677,7 +7228,7 @@ local function CreateModUI()
                                     pcall(function()
                                         if _G.WriteLog then
                                             _G.WriteLog(string.format(
-                                            "[AutoLoot] (Tức thì) MoveTo ItemId=%s, X=%s, Y=%s", tostring(itemId),
+                                                "[AutoLoot] (Tức thì) MoveTo ItemId=%s, X=%s, Y=%s", tostring(itemId),
                                                 tostring(dropItemData.x), tostring(dropItemData.y)))
                                         end
                                         _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
@@ -6754,8 +7305,10 @@ local function CreateModUI()
                         end
                     end
                 else
-                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(
-                        "Đang kết nối lấy thông tin kích hoạt...") end
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg(
+                            "Đang kết nối lấy thông tin kích hoạt...")
+                    end
                     _G.Mod_CheckActiveConfigNow(function(isSuccess, isActive, msg)
                         if isActive == true and _G.Mod_IsActive == true then
                             if authPanel and not authPanel:Equals(nil) then authPanel:SetActive(false) end
@@ -6847,7 +7400,7 @@ local status, err = pcall(function()
                         end
                     end
                     local inst = _G.UIManager and _G.UIManager.GetUI and
-                    _G.UIManager.GetUI(_G.UIID.Instance_BloodCastleUI)
+                        _G.UIManager.GetUI(_G.UIID.Instance_BloodCastleUI)
                     if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
                         inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
                     end
@@ -6865,7 +7418,7 @@ local status, err = pcall(function()
                         end
                     end
                     local inst = _G.UIManager and _G.UIManager.GetUI and
-                    _G.UIManager.GetUI(_G.UIID.Instance_DemonPlazaUI)
+                        _G.UIManager.GetUI(_G.UIID.Instance_DemonPlazaUI)
                     if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
                         inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
                     end
