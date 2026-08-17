@@ -635,7 +635,7 @@ local function CreateModUI()
         execRt.anchorMin = Vector2(0, 0)
         execRt.anchorMax = Vector2(0, 0)
         execRt.pivot = Vector2(0, 0)
-        execRt.anchoredPosition = Vector2(20, 300)
+        execRt.anchoredPosition = Vector2(20, 190)
         execRt.sizeDelta = Vector2(60, 60)
 
         local execImg = execBtnGo:AddComponent(typeof(Image))
@@ -671,12 +671,21 @@ local function CreateModUI()
                     if func then
                         local ok, res = pcall(func)
                         if ok then
-                            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Thực thi input.luac thành công!") end
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg(
+                                    "Thực thi input.luac thành công!")
+                            end
                         else
-                            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi script: " .. tostring(res)) end
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Lỗi script: " ..
+                                    tostring(res))
+                            end
                         end
                     else
-                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " .. tostring(err)) end
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " ..
+                                tostring(err))
+                        end
                     end
                 else
                     if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy file input.luac!") end
@@ -821,6 +830,18 @@ local function CreateModUI()
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
 
         local function GetAvailableTiers()
+            if _G.Mod_Config_Reincarnation_Primary == nil then
+                pcall(function()
+                    local p = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
+                    if p >= 3 and p <= 12 then _G.Mod_Config_Reincarnation_Primary = p end
+                end)
+            end
+            if _G.Mod_Config_Reincarnation_Secondary == nil then
+                pcall(function()
+                    local s = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0)
+                    if s >= 3 and s <= 12 then _G.Mod_Config_Reincarnation_Secondary = s end
+                end)
+            end
             local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
             local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
 
@@ -839,6 +860,18 @@ local function CreateModUI()
         _G.GetAvailableTiers = GetAvailableTiers
 
         local function GetKundunTiers()
+            if _G.Mod_Config_Reincarnation_Primary == nil then
+                pcall(function()
+                    local p = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
+                    if p >= 3 and p <= 12 then _G.Mod_Config_Reincarnation_Primary = p end
+                end)
+            end
+            if _G.Mod_Config_Reincarnation_Secondary == nil then
+                pcall(function()
+                    local s = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0)
+                    if s >= 3 and s <= 12 then _G.Mod_Config_Reincarnation_Secondary = s end
+                end)
+            end
             local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
             local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
 
@@ -3120,7 +3153,8 @@ local function CreateModUI()
                                             end
                                         else
                                             if _G.NetManager and _G.ItemBuyMessage then
-                                                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = reviveGoodId, buyCount = 1 })
+                                                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy,
+                                                    { goodId = reviveGoodId, buyCount = 1 })
                                             end
                                             if _G.MeController and _G.RoleReliveType then
                                                 _G.MeController.ReqReqRelive(_G.RoleReliveType.Here)
@@ -4230,11 +4264,14 @@ local function CreateModUI()
 
                 local pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig
                 if #parts == 7 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], tonumber(parts[3]), tonumber(parts[4]), tonumber(parts[5]), tonumber(parts[6]), parts[7]
+                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], tonumber(parts[3]),
+                        tonumber(parts[4]), tonumber(parts[5]), tonumber(parts[6]), parts[7]
                 elseif #parts == 5 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], 8, 7, tonumber(parts[3]), tonumber(parts[4]), parts[5]
+                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], 8, 7,
+                        tonumber(parts[3]), tonumber(parts[4]), parts[5]
                 elseif #parts == 4 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], "ALL", 8, 7, tonumber(parts[2]), tonumber(parts[3]), parts[4]
+                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], "ALL", 8, 7, tonumber(parts[2]),
+                        tonumber(parts[3]), parts[4]
                 else
                     if not isSilent then errTxt.text = "Token không hợp lệ!" end
                     return false
@@ -4247,9 +4284,17 @@ local function CreateModUI()
 
                 local dataToHash
                 if #parts == 7 then
-                    dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pMainTier) .. "|" .. tostring(pSubTier) .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+                    dataToHash = pCode ..
+                        "|" ..
+                        pUID ..
+                        "|" ..
+                        tostring(pMainTier) ..
+                        "|" ..
+                        tostring(pSubTier) ..
+                        "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
                 elseif #parts == 5 then
-                    dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+                    dataToHash = pCode ..
+                        "|" .. pUID .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
                 else
                     dataToHash = pCode .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
                 end
@@ -4260,7 +4305,8 @@ local function CreateModUI()
                     return false
                 end
 
-                local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
+                    os.time()
                 local expireTime = pTime + (pDuration * 86400)
                 if currentUnixTime > expireTime then
                     if not isSilent then errTxt.text = "Token đã hết hạn!" end
@@ -5069,6 +5115,7 @@ local function CreateModUI()
             local titleGo = GameObject("KundunTitle")
             titleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, titleGo)
+            _G.KundunTitleGo = titleGo
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin = Vector2(0, 1)
             titleRt.anchorMax = Vector2(0, 1)
@@ -5086,7 +5133,7 @@ local function CreateModUI()
 
             currentY = currentY - 25
 
-            -- Tab C7 / C8
+            -- Tab C3 - C12
             local function CreateTabBtn(label, tabName, xPos, yPos)
                 local btnGo = GameObject("NangCaoTab_" .. tabName)
                 btnGo.transform:SetParent(panelGo.transform, false)
@@ -5120,9 +5167,13 @@ local function CreateModUI()
                 return { go = btnGo, txt = txt, btn = btn }
             end
 
-            local tabC7 = CreateTabBtn("[ BOSS C7 ]", "C7", rightColX2, currentY)
-            local tabC8 = CreateTabBtn("[ BOSS C8 ]", "C8", rightColX2 + 110, currentY)
-            _G.NangCaoTabBtns = { C7 = tabC7, C8 = tabC8 }
+            _G.NangCaoTabBtns = {}
+            for t = 3, 12 do
+                local tag = "C" .. t
+                local tBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2, currentY)
+                tBtn.go:SetActive(false)
+                _G.NangCaoTabBtns[tag] = tBtn
+            end
 
             currentY = currentY - 25
 
@@ -5168,98 +5219,61 @@ local function CreateModUI()
                 currentY = currentY - 30
             end
 
-            -- Toggle BÁO TELEGRAM & TỔNG HỢP ẨN (Ẩn mặc định theo yêu cầu)
             _G.Mod_TeleNotify_Enabled = false
             _G.Mod_AnStats_Enabled = false
 
-            if _G.Mod_IsAdmin then
-                local tGoTele = GameObject("Mod_TeleNotify_Enabled_Toggle")
-                tGoTele.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, tGoTele)
-
-                local tRtTele = tGoTele:AddComponent(typeof(RectTransform))
-                tRtTele.anchorMin, tRtTele.anchorMax, tRtTele.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                tRtTele.anchoredPosition = Vector2(rightColX2, currentY)
-                tRtTele.sizeDelta = Vector2(140, 30)
-
-                local bgTele = GameObject("Bg")
-                bgTele.transform:SetParent(tGoTele.transform, false)
-                local bgRtTele = bgTele:AddComponent(typeof(RectTransform))
-                bgRtTele.anchorMin, bgRtTele.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRtTele.sizeDelta = Vector2(0, 0)
-                local bgImgTele = bgTele:AddComponent(typeof(Image))
-
-                local txtGoTele = GameObject("Text")
-                txtGoTele.transform:SetParent(tGoTele.transform, false)
-                local txtRtTele = txtGoTele:AddComponent(typeof(RectTransform))
-                txtRtTele.anchorMin, txtRtTele.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRtTele.sizeDelta = Vector2(0, 0)
-                local txtTele = txtGoTele:AddComponent(typeof(Text))
-                txtTele.raycastTarget = false
-                txtTele.fontSize = 15
-                txtTele.alignment = TextAnchor.MiddleCenter
-                if defaultFont then txtTele.font = defaultFont end
-
-                local btnTele = tGoTele:AddComponent(typeof(Button))
-                tGoTele:SetActive(false) -- Ẩn UI Báo Telegram
-
-                -- Toggle TỔNG HỢP ẨN
-                local tGoAnStats = GameObject("Mod_AnStats_Enabled_Toggle")
-                tGoAnStats.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, tGoAnStats)
-
-                local tRtAnStats = tGoAnStats:AddComponent(typeof(RectTransform))
-                tRtAnStats.anchorMin, tRtAnStats.anchorMax, tRtAnStats.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                tRtAnStats.anchoredPosition = Vector2(rightColX2 + 160, currentY)
-                tRtAnStats.sizeDelta = Vector2(130, 30)
-
-                local bgAnStats = GameObject("Bg")
-                bgAnStats.transform:SetParent(tGoAnStats.transform, false)
-                local bgRtAnStats = bgAnStats:AddComponent(typeof(RectTransform))
-                bgRtAnStats.anchorMin, bgRtAnStats.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRtAnStats.sizeDelta = Vector2(0, 0)
-                local bgImgAnStats = bgAnStats:AddComponent(typeof(Image))
-
-                local txtGoAnStats = GameObject("Text")
-                txtGoAnStats.transform:SetParent(tGoAnStats.transform, false)
-                local txtRtAnStats = txtGoAnStats:AddComponent(typeof(RectTransform))
-                txtRtAnStats.anchorMin, txtRtAnStats.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRtAnStats.sizeDelta = Vector2(0, 0)
-                local txtAnStats = txtGoAnStats:AddComponent(typeof(Text))
-                txtAnStats.raycastTarget = false
-                txtAnStats.fontSize = 15
-                txtAnStats.alignment = TextAnchor.MiddleCenter
-                if defaultFont then txtAnStats.font = defaultFont end
-
-                local btnAnStats = tGoAnStats:AddComponent(typeof(Button))
-                tGoAnStats:SetActive(false) -- Ẩn UI Tổng hợp Ẩn
-
-                currentY = currentY - 35
-            end
-
             _G.ModUpdateKundunUI = function()
                 pcall(function()
+                    if _G.KundunTitleGo then
+                        _G.KundunTitleGo:SetActive(_G.ModMainTab == "NANG_CAO")
+                    end
+
                     if _G.NangCaoTabBtns then
-                        local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
-                        local kundunTiers = GetKundunTiers and GetKundunTiers() or { "C7", "C8" }
-                        local activeIdx = 0
-                        for _, tag in ipairs(tierTags) do
-                            local tBtn = _G.NangCaoTabBtns[tag]
+                        for _, tBtn in pairs(_G.NangCaoTabBtns) do
                             if tBtn and tBtn.go then
-                                local inKundun = false
-                                for _, kt in ipairs(kundunTiers) do
-                                    if kt == tag then inKundun = true; break end
-                                end
-                                tBtn.go:SetActive(inKundun and _G.ModMainTab == "NANG_CAO")
-                                if inKundun then
-                                    tBtn.txt.text = "<color=" ..
-                                        (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                                tBtn.go:SetActive(false)
+                            end
+                        end
+
+                        if _G.ModMainTab == "NANG_CAO" then
+                            local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
+                            local kundunTiers = GetKundunTiers and GetKundunTiers() or { "C7", "C8" }
+                            local activeIdx = 0
+                            for _, tag in ipairs(tierTags) do
+                                local tBtn = _G.NangCaoTabBtns[tag]
+                                if tBtn and tBtn.go then
+                                    local inKundun = false
+                                    for _, kt in ipairs(kundunTiers) do
+                                        if kt == tag then
+                                            inKundun = true; break
+                                        end
+                                    end
+                                    if inKundun then
+                                        activeIdx = activeIdx + 1
+                                        tBtn.go:SetActive(true)
+                                        local rt = tBtn.go:GetComponent(typeof(RectTransform))
+                                        if rt then
+                                            rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, currentY - 25)
+                                        end
+                                        tBtn.txt.text = "<color=" ..
+                                            (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") ..
+                                            ">[ BOSS " .. tag .. " ]</color>"
+                                    end
                                 end
                             end
                         end
                     end
 
-                    if not _G.KundunUILabelPool then return end
+                    if _G.KundunUILabelPool then
+                        for i = 1, 2 do
+                            local txt = _G.KundunUILabelPool[i]
+                            if txt then
+                                txt.gameObject:SetActive(false)
+                            end
+                        end
+                    end
+
+                    if _G.ModMainTab ~= "NANG_CAO" then return end
 
                     local tierNum = tonumber(string.match(_G.ModBossTab or "C8", "%d+")) or 8
                     local kundunConfigs = {}
@@ -5961,6 +5975,12 @@ local function CreateModUI()
             end
 
             local function UpdateTierTabs()
+                for _, tBtn in pairs(tierTabBtns) do
+                    if tBtn and tBtn.go then
+                        tBtn.go:SetActive(false)
+                    end
+                end
+
                 if _G.ModMainTab ~= "AUTO_BOSS" then return end
 
                 local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
@@ -5983,7 +6003,8 @@ local function CreateModUI()
                             rt.anchoredPosition = Vector2(startX + (idx - 1) * 120, gridStartY + 35)
                         end
                         tBtn.txt.text = "<color=" ..
-                            (_G.ModAutoBossConfigTab == tag and "#00FF00" or "#FFFFFF") .. ">[ BOSS " .. tag .. " ]</color>"
+                            (_G.ModAutoBossConfigTab == tag and "#00FF00" or "#FFFFFF") ..
+                            ">[ BOSS " .. tag .. " ]</color>"
                         tBtn.btn.onClick:RemoveAllListeners()
                         local thisTag = tag
                         tBtn.btn.onClick:AddListener(function()
@@ -6335,8 +6356,10 @@ local function CreateModUI()
                     end
 
                     pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
+                            _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
+                            _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
                         CS.UnityEngine.PlayerPrefs.Save()
                     end)
                     UpdateResurrectVisuals()
@@ -6351,8 +6374,10 @@ local function CreateModUI()
                     end
 
                     pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
+                            _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
+                            _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
                         CS.UnityEngine.PlayerPrefs.Save()
                     end)
                     UpdateResurrectVisuals()
@@ -6759,7 +6784,7 @@ local function CreateModUI()
             end)
         end
 
-        CreateNangCaoUI()
+        CreateKundunUI()
 
         local function CreateAdminUI()
             local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -6915,7 +6940,10 @@ local function CreateModUI()
                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                 if UpdateBossWatchUIText then UpdateBossWatchUIText() end
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
-                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(string.format("Đã áp dụng: Chính C%d, Phụ C%d!", pVal, sVal)) end
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg(string.format(
+                        "Đã áp dụng: Chính C%d, Phụ C%d!", pVal, sVal))
+                end
             end)
 
             -- Separator
@@ -7319,7 +7347,11 @@ local function CreateModUI()
                 if pSub < 3 or pSub > 12 then pSub = 7 end
 
                 local pTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
-                local tokenData = adminDeviceCode .. "|" .. targetUID .. "|" .. tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. tostring(adminDuration) .. "|" .. tostring(pTime)
+                local tokenData = adminDeviceCode ..
+                    "|" ..
+                    targetUID ..
+                    "|" ..
+                    tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. tostring(adminDuration) .. "|" .. tostring(pTime)
                 local dataToHash = tokenData .. "MUVH_SECRET_SALT_XOAI"
 
                 local status, md5Hash = pcall(function()
