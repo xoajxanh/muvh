@@ -5131,7 +5131,7 @@ local function CreateModUI()
             if defaultFont then titleTxt.font = defaultFont end
 
 
-            currentY = currentY - 25
+            local kundunTabY = currentY - 25
 
             -- Tab C3 - C12
             local function CreateTabBtn(label, tabName, xPos, yPos)
@@ -5170,12 +5170,12 @@ local function CreateModUI()
             _G.NangCaoTabBtns = {}
             for t = 3, 12 do
                 local tag = "C" .. t
-                local tBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2, currentY)
+                local tBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2, kundunTabY)
                 tBtn.go:SetActive(false)
                 _G.NangCaoTabBtns[tag] = tBtn
             end
 
-            currentY = currentY - 25
+            currentY = currentY - 60
 
             local rightColX3 = 20
             local sep3Go = GameObject("BossThapSeparator")
@@ -5195,7 +5195,7 @@ local function CreateModUI()
             if defaultFont then sep3Txt.font = defaultFont end
             sep3Txt.text = "-------------------------------------------"
 
-            currentY = currentY - 20
+            currentY = currentY - 25
             _G.KundunUILabelPool = {}
             for i = 1, 2 do
                 local rowGo = GameObject("KundunRow_" .. i)
@@ -5253,7 +5253,7 @@ local function CreateModUI()
                                         tBtn.go:SetActive(true)
                                         local rt = tBtn.go:GetComponent(typeof(RectTransform))
                                         if rt then
-                                            rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, currentY - 25)
+                                            rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, kundunTabY)
                                         end
                                         tBtn.txt.text = "<color=" ..
                                             (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") ..
@@ -7537,20 +7537,15 @@ local function CreateModUI()
         wmRt.anchorMin = Vector2(1, 0)
         wmRt.anchorMax = Vector2(1, 0)
         wmRt.pivot = Vector2(1, 0)
-        wmRt.anchoredPosition = Vector2(-20, 10)
-        wmRt.sizeDelta = Vector2(200, 30)
+        wmRt.anchoredPosition = Vector2(-15, 2)
+        wmRt.sizeDelta = Vector2(200, 20)
         local wmTxt = watermarkGo:AddComponent(typeof(Text))
-        wmTxt.raycastTarget = true
+        wmTxt.raycastTarget = false
         wmTxt.text = "<i>Modded by Xoài</i>"
         wmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
-        wmTxt.fontSize = 16
+        wmTxt.fontSize = 15
         wmTxt.alignment = TextAnchor.LowerRight
         if defaultFont then wmTxt.font = defaultFont end
-
-        local wmBtn = watermarkGo:AddComponent(typeof(Button))
-        wmBtn.onClick:AddListener(function()
-            if _G.Mod_ClearAllPlayerPrefs then _G.Mod_ClearAllPlayerPrefs() end
-        end)
 
         -- Auto-Loot DropItem Hook
         _G.LastPickupTime = _G.LastPickupTime or 0
