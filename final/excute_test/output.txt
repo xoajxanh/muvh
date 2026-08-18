@@ -1,4 +1,16 @@
-Test dịch chuyển cổng Map chính sang Map 101094...
-Transfer ID Cổng chính Map 101094 là: 10109401
-Đang ở ngoài Map. Phát lệnh dịch chuyển cổng chính Map...
-Đã gửi tin dịch chuyển cổng Map thành công!
+=== ĐANG CHẠY SCRIPT TEST GIẢI MÃ TOKEN ===
+Token Input: NjU3MmEzMjI3ZTIxZjBiMDQyNGE1ZDE2OWFkYTVmNTl8MTc2ODI3MjYxNzEyMTY2MDAwfDd8NnwzfDE3ODcwNzY4MzN8M2Y1MmYwNmU3MTg4YzIyODgxZTE0ZmJhYzU0MzRjMjk=
+Base64 C# Decode THAT BAI: 
+Base64 Pure Lua Decode THANH CONG: 6572a3227e21f0b0424a5d169ada5f59|176827261712166000|7|6|3|1787076833|3f52f06e7188c22881e14fbac5434c29
+Tong so phan (Parts): 7
+Part[1] = 6572a3227e21f0b0424a5d169ada5f59
+Part[2] = 176827261712166000
+Part[3] = 7
+Part[4] = 6
+Part[5] = 3
+Part[6] = 1787076833
+Part[7] = 3f52f06e7188c22881e14fbac5434c29
+Data to Hash: 6572a3227e21f0b0424a5d169ada5f59|176827261712166000|7|6|3|1787076833MUVH_SECRET_SALT_XOAI
+Expected Sig: 3f52f06e7188c22881e14fbac5434c29
+Token Sig   : 3f52f06e7188c22881e14fbac5434c29
+=> CHU KY MD5 TRUNG KHOP 100%! XAC THUC THANH CONG!

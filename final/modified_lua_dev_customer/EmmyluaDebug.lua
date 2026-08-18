@@ -3945,6 +3945,32 @@ local function CreateModUI()
                         end
                     end
 
+                    if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
+                            if nowTime > itemInfo.expireTime then
+                                _G.Mod_ActiveSpamItems[itemId] = nil
+                            else
+                                if _G.PickupManager then
+                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+
+                                    -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
+                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                        local meX = _G.RoleManager.me.serverCoord.x or 0
+                                        local meY = _G.RoleManager.me.serverCoord.y or 0
+                                        if itemInfo.x and itemInfo.y then
+                                            local dist = math.max(math.abs(meX - itemInfo.x),
+                                                math.abs(meY - itemInfo.y))
+                                            if dist <= 2 then
+                                                _G.PickupManager.ReqPickUpMapItem(itemId)
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+
                     if _G.Mod_AutoFarmBoss_Update then
                         _G.Mod_AutoFarmBoss_Update()
                     end
@@ -3963,7 +3989,7 @@ local function CreateModUI()
             if not _G.Mod_PKScanLoopStarted then
                 _G.Mod_PKScanLoopStarted = true
                 if _G.Timer and _G.Timer.StartLoop then
-                    _G.Timer.StartLoop(0.05, -1, function()
+                    _G.Timer.StartLoop(0.5, -1, function()
                         pcall(function()
                             if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
                                 local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
@@ -4040,22 +4066,18 @@ local function CreateModUI()
                                         return false
                                     end
 
-                                    local function isKundunNearby()
-                                        if not (_G.RoleManager and _G.RoleManager.GetRolesByType) then return false end
-                                        local monsterRoles = _G.RoleManager.GetRolesByType(2)
-                                        if monsterRoles then
-                                            for _, role in pairs(monsterRoles) do
-                                                if role and not role.isDead and role.hp and role.hp > 0 then
-                                                    local d = role.data
-                                                    if d then
-                                                        local name = d.name or (d.GetName and d:GetName()) or ""
-                                                        local cfgId = d.configId or d.id or d.bossId or 0
-                                                        local strName = string.lower(tostring(name))
-                                                        if string.find(strName, "kundun") or
-                                                            cfgId == 20201008 or cfgId == 20211008 or
-                                                            cfgId == 20201007 or cfgId == 20211007 then
-                                                            return true
-                                                        end
+                                    local function isMonsterNearby(range)
+                                        range = range or 15
+                                        if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
+                                            local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, range, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                            if monsters and #monsters > 0 then return true end
+                                        end
+                                        if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                            local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                                            if monsterRoles then
+                                                for _, role in pairs(monsterRoles) do
+                                                    if role and not role.isDead and role.hp and role.hp > 0 then
+                                                        return true
                                                     end
                                                 end
                                             end
@@ -4099,20 +4121,11 @@ local function CreateModUI()
                                             _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                         end
                                     else
-                                        -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Boss Kundun gần đó (tránh giật khựng khi di chuyển)
-                                        if isKundunNearby() then
+                                        -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
+                                        if isMonsterNearby(15) then
                                             if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                                                 if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                                     _G.RoleManager.me:SetAutoFight("AutoFight")
-                                                end
-                                            end
-                                        else
-                                            if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
-                                                if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                                                    _G.RoleManager.me:SetAutoFight("None")
-                                                end
-                                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                    _G.QiJiHelperData.SetAutoFightData(false)
                                                 end
                                             end
                                         end
@@ -4128,7 +4141,7 @@ local function CreateModUI()
             if not _G.Mod_ReturnPosLoopStarted then
                 _G.Mod_ReturnPosLoopStarted = true
                 if _G.Timer and _G.Timer.StartLoop then
-                    _G.Timer.StartLoop(0.05, -1, function()
+                    _G.Timer.StartLoop(0.5, -1, function()
                         pcall(function()
                             if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
                                 local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
@@ -4148,21 +4161,35 @@ local function CreateModUI()
                                                 local dist = math.max(math.abs(curX - targetX),
                                                     math.abs(curY - targetY))
                                                 if dist > 1.5 then
-                                                    pcall(function()
-                                                        if me and me.MoveTo then
-                                                            me:MoveTo({ x = targetX, y = targetY }, 0)
-                                                        elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
-                                                            local coordStr = string.format("%d#%d", targetX, targetY)
-                                                            local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
-                                                                (_G.Vector2 and _G.Vector2(targetX, targetY)) or
-                                                                { x = targetX, y = targetY }
-                                                            _G.PathFinderManager.JumpMapToMoveToPos(
-                                                                _G.SceneData.groupId,
-                                                                targetPosData, nil, nil, nil,
-                                                                _G.Purpose and _G.Purpose.None or 0, nil, 1,
-                                                                true)
+                                                    -- Đang bật Auto PK & đang bận đánh mục tiêu gần -> Tạm hoãn MoveTo
+                                                    local hasPkTarget = _G.Mod_AutoPK_Enabled and me.TargetAvatar and not me.TargetAvatar.isDead
+                                                    if not (hasPkTarget and dist <= 15) then
+                                                        pcall(function()
+                                                            if me and me.MoveTo then
+                                                                me:MoveTo({ x = targetX, y = targetY }, 0)
+                                                            elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
+                                                                local coordStr = string.format("%d#%d", targetX, targetY)
+                                                                local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+                                                                    (_G.Vector2 and _G.Vector2(targetX, targetY)) or
+                                                                    { x = targetX, y = targetY }
+                                                                _G.PathFinderManager.JumpMapToMoveToPos(
+                                                                    _G.SceneData.groupId,
+                                                                    targetPosData, nil, nil, nil,
+                                                                    _G.Purpose and _G.Purpose.None or 0, nil, 1,
+                                                                    true)
+                                                            end
+                                                        end)
+                                                    end
+                                                else
+                                                    -- Đã về tới vị trí tọa độ mục tiêu (dist <= 1.5):
+                                                    -- CHỈ bật AutoFight nếu Auto PK đang TẮT và có Quái/Kundun ở gần (~15 ô)
+                                                    if not _G.Mod_AutoPK_Enabled then
+                                                        if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                            if me and me.SetAutoFight then
+                                                                me:SetAutoFight("AutoFight")
+                                                            end
                                                         end
-                                                    end)
+                                                    end
                                                 end
                                             end
                                         end
@@ -4948,7 +4975,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(415, -140, "Phạm Vi Bot: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(415, -140, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
 
 
 
@@ -5470,11 +5497,11 @@ local function CreateModUI()
             local function UpdateMasterToggle()
                 if _G.Mod_AutoFarmBoss_Enabled then
                     mtBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    mtTxt.text = "AUTO FARM: ON"
+                    mtTxt.text = "AUTO BOSS: ON"
                     mtTxt.color = Color.white
                 else
                     mtBgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    mtTxt.text = "AUTO FARM: OFF"
+                    mtTxt.text = "AUTO BOSS: OFF"
                     mtTxt.color = Color(0.9, 0.9, 0.9, 1)
                 end
             end
@@ -5936,12 +5963,7 @@ local function CreateModUI()
             manualSmeltRt.anchoredPosition = Vector2(smeltStartX, curY)
             manualSmeltRt.sizeDelta = Vector2(233, 26)
 
-            local manualSmeltBg = GameObject("Bg")
-            manualSmeltBg.transform:SetParent(manualSmeltBtnGo.transform, false)
-            local manualSmeltBgRt = manualSmeltBg:AddComponent(typeof(RectTransform))
-            manualSmeltBgRt.anchorMin, manualSmeltBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            manualSmeltBgRt.sizeDelta = Vector2(0, 0)
-            local manualSmeltBgImg = manualSmeltBg:AddComponent(typeof(Image))
+            local manualSmeltBgImg = manualSmeltBtnGo:AddComponent(typeof(Image))
             manualSmeltBgImg.color = Color(0.8, 0.2, 0.2, 1)
 
             local manualSmeltTxtGo = GameObject("Text")
@@ -5958,12 +5980,16 @@ local function CreateModUI()
             if defaultFont then manualSmeltTxt.font = defaultFont end
 
             local manualSmeltBtn = manualSmeltBtnGo:AddComponent(typeof(Button))
+            manualSmeltBtn.targetGraphic = manualSmeltBgImg
             manualSmeltBtn.onClick:AddListener(function()
                 pcall(function()
                     if _G.Mod_PerformSmeltItems then
                         _G.Mod_PerformSmeltItems()
                     elseif _G.Mod_ExecuteAutoSmelt then
                         _G.Mod_ExecuteAutoSmelt()
+                    end
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg("Đã kích hoạt Tách Đồ thủ công!")
                     end
                     LogMsg("Đã kích hoạt Tách Đồ thủ công!")
                 end)
@@ -7130,6 +7156,18 @@ local function CreateModUI()
         _G.Mod_PickedItems = _G.Mod_PickedItems or {}
 
         if _G.PickupManager then
+            local original_RemoveDropSceneCellPos = _G.PickupManager.RemoveDropSceneCellPos
+            _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData)
+                if original_RemoveDropSceneCellPos then
+                    original_RemoveDropSceneCellPos(dropItemData)
+                end
+                if dropItemData and dropItemData.id then
+                    if _G.Mod_ActiveSpamItems then
+                        _G.Mod_ActiveSpamItems[dropItemData.id] = nil
+                    end
+                end
+            end
+
             local original_AddDropSceneCellPos = _G.PickupManager.AddDropSceneCellPos
             _G.PickupManager.AddDropSceneCellPos = function(item)
                 original_AddDropSceneCellPos(item)
@@ -7191,19 +7229,6 @@ local function CreateModUI()
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
 
-                            -- local hasDinoNearby = false
-                            -- if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                            --     local players = _G.RoleManager.GetRolesByType(1)
-                            --     if players then
-                            --         for _, p in pairs(players) do
-                            --             if p.name and p.name == "Dino" then
-                            --                 hasDinoNearby = true
-                            --                 break
-                            --             end
-                            --         end
-                            --     end
-                            -- end
-
                             local lootCount = _G.Mod_IsDev and 3 or 2
                             local delayTime = _G.Mod_IsDev and 0.05 or 0.2
                             local minPDelay = _G.Mod_Config_PickupDelay_Min or 100
@@ -7220,9 +7245,18 @@ local function CreateModUI()
                                     _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                 end
 
+                                -- Đưa vào hàng đợi duy trì spam bồi liên tục cho tới khi nhặt xong (tối đa 4 giây)
+                                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                                _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                                    id = dropItemData.id,
+                                    x = dropItemData.x,
+                                    y = dropItemData.y,
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                                }
+
                                 local itemId = dropItemData.item and dropItemData.item.itemId or "???"
                                 if _G.WriteLog then
-                                    _G.WriteLog("[AutoLoot] Nhặt (Tức thì): Item [ID: " .. tostring(itemId) .. "]")
+                                    _G.WriteLog("[AutoLoot] Nhặt (Tức thì & Spam bồi): Item [ID: " .. tostring(itemId) .. "]")
                                 end
                                 if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
                                     pcall(function()

@@ -1,56 +1,126 @@
 -- ============================================================================
--- SCRIPT TEST DỊCH CHUYỂN BẰNG CỔNG MAP CHÍNH (GetTransIdByGroupId)
+-- SCRIPT TEST GIẢI MÃ TOKEN CLIENT BẰNG INPUT.TXT (BẮT CHI TIẾT LỖI C# & PURE LUA)
 -- ============================================================================
+local logs = {}
+local function logMsg(str)
+    print("[TEST DECODE] " .. str)
+    table.insert(logs, str)
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(str)
+    end
+end
+
 pcall(function()
-    local targetBossId = 10179408 -- Phẫn Nộ
-    local targetMapId = 101094    -- Hoang Dã C3
-    local targetLine = 1
-    local bossName = "Phẫn Nộ C3"
+    logMsg("=== ĐANG CHẠY SCRIPT TEST GIẢI MÃ TOKEN ===")
 
-    local currentMapId = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-    local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline) or 1
+    local tokenStr = "NjU3MmEzMjI3ZTIxZjBiMDQyNGE1ZDE2OWFkYTVmNTl8MTc2ODI3MjYxNzEyMTY2MDAwfDd8NnwzfDE3ODcwNzY4MzN8M2Y1MmYwNmU3MTg4YzIyODgxZTE0ZmJhYzU0MzRjMjk="
+    tokenStr = string.gsub(tokenStr, "^%s*(.-)%s*$", "%1")
 
-    local logs = {}
-    local function logMsg(str)
-        print("[TEST MAP TRANS] " .. str)
-        table.insert(logs, str)
-        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(str) end
-    end
+    logMsg("Token Input: " .. tokenStr)
 
-    logMsg(string.format("Test dịch chuyển cổng Map chính sang Map %d...", targetMapId))
+    -- 1. Test C# Base64Decode
+    local statusC, resC = pcall(function()
+        local bytes = CS.System.Convert.FromBase64String(tokenStr)
+        return CS.System.Text.Encoding.UTF8:GetString(bytes)
+    end)
 
-    -- Lấy Transfer ID cổng chính của Map
-    local mainMapTransId = _G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)
-    logMsg(string.format("Transfer ID Cổng chính Map %d là: %s", targetMapId, tostring(mainMapTransId)))
-
-    if currentMapId ~= targetMapId or currentLine ~= targetLine then
-        logMsg("Đang ở ngoài Map. Phát lệnh dịch chuyển cổng chính Map...")
-        
-        if mainMapTransId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-            _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = mainMapTransId, line = targetLine, changeLine = true })
-            logMsg("Đã gửi tin dịch chuyển cổng Map thành công!")
-        end
+    if statusC and resC and resC ~= "" then
+        logMsg("Base64 C# Decode THANH CONG: " .. resC)
     else
-        logMsg("Đã ở trong Map! Đang tìm con Boss sống gần nhất...")
-        local alivePos, aliveCount = nil, 0
-        if _G.GetAliveBossPosition then
-            alivePos, aliveCount = _G.GetAliveBossPosition(targetBossId, targetMapId)
+        logMsg("Base64 C# Decode THAT BAI: " .. tostring(resC))
+    end
+
+    -- 2. Test Pure Lua Base64Decode (Không phụ thuộc C#)
+    local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+    local b64lut = {}
+    for i = 1, #b64chars do
+        b64lut[string.byte(b64chars, i)] = i - 1
+    end
+
+    local function PureLuaBase64Decode(data)
+        data = string.gsub(data, '[^' .. b64chars .. '=]', '')
+        local bitTable = {}
+        for i = 1, #data do
+            local char = string.sub(data, i, i)
+            if char == '=' then break end
+            local val = b64lut[string.byte(char)]
+            if val then
+                for j = 5, 0, -1 do
+                    table.insert(bitTable, (math.floor(val / (2 ^ j)) % 2 == 1 and '1' or '0'))
+                end
+            end
         end
-        local targetPos = alivePos or (_G.GetBossPosition and _G.GetBossPosition(targetBossId, targetMapId)) or {x = 100, y = 100}
-        logMsg(string.format("Chạy bộ tới bãi Boss (%d, %d)...", targetPos.x, targetPos.y))
-        
-        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
-            _G.RoleManager.me:MoveTo({x = targetPos.x, y = targetPos.y}, 0)
+        local result = {}
+        for i = 1, #bitTable - 7, 8 do
+            local chunk = table.concat(bitTable, '', i, i + 7)
+            local byteVal = 0
+            for j = 1, 8 do
+                if string.sub(chunk, j, j) == '1' then
+                    byteVal = byteVal + 2 ^ (8 - j)
+                end
+            end
+            table.insert(result, string.char(byteVal))
+        end
+        return table.concat(result)
+    end
+
+    local statusL, resL = pcall(function()
+        return PureLuaBase64Decode(tokenStr)
+    end)
+
+    local decodedStr = ""
+    if statusL and resL and resL ~= "" then
+        logMsg("Base64 Pure Lua Decode THANH CONG: " .. resL)
+        decodedStr = resL
+    else
+        logMsg("Base64 Pure Lua Decode THAT BAI: " .. tostring(resL))
+    end
+
+    if decodedStr == "" and (statusC and resC) then
+        decodedStr = resC
+    end
+
+    if decodedStr ~= "" then
+        -- 3. Split chuỗi
+        local parts = {}
+        for part in string.gmatch(decodedStr .. "|", "(.-)|") do
+            table.insert(parts, part)
+        end
+        if #parts > 0 and parts[#parts] == "" then
+            table.remove(parts, #parts)
+        end
+
+        logMsg("Tong so phan (Parts): " .. tostring(#parts))
+        for i, p in ipairs(parts) do
+            logMsg(string.format("Part[%d] = %s", i, p))
+        end
+
+        if #parts == 7 then
+            local pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig =
+                parts[1], parts[2], tonumber(parts[3]), tonumber(parts[4]), tonumber(parts[5]), tonumber(parts[6]), parts[7]
+
+            local dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pMainTier) .. "|" .. tostring(pSubTier) .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+            logMsg("Data to Hash: " .. dataToHash)
+
+            local expectedSig = string.lower(tostring(CS.PCUtility.Md5(dataToHash)))
+            logMsg("Expected Sig: " .. expectedSig)
+            logMsg("Token Sig   : " .. tostring(pSig))
+
+            if string.lower(expectedSig) == string.lower(pSig) then
+                logMsg("=> CHU KY MD5 TRUNG KHOP 100%! XAC THUC THANH CONG!")
+            else
+                logMsg("=> LOI: CHU KY MD5 KHONG TRUNG KHOP!")
+            end
         end
     end
 
-    local outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-    if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
-        outputPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-    end
-    local f = io.open(outputPath, "w")
-    if f then
-        f:write(table.concat(logs, "\n"))
-        f:close()
-    end
+    -- Ghi log ra file output.txt để xem chi tiết
+    pcall(function()
+        local path = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+        local file = io.open(path, "w")
+        if file then
+            file:write(table.concat(logs, "\n"))
+            file:close()
+        end
+    end)
 end)
