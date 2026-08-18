@@ -635,7 +635,7 @@ local function CreateModUI()
         execRt.anchorMin = Vector2(0, 0)
         execRt.anchorMax = Vector2(0, 0)
         execRt.pivot = Vector2(0, 0)
-        execRt.anchoredPosition = Vector2(20, 190)
+        execRt.anchoredPosition = Vector2(20, 460)
         execRt.sizeDelta = Vector2(60, 60)
 
         local execImg = execBtnGo:AddComponent(typeof(Image))
@@ -1760,18 +1760,20 @@ local function CreateModUI()
 
             _G.Mod_ApproachTowerBoss = function()
                 local success, result = pcall(function()
-                    if not _G.RoleManager or not _G.RoleManager.me then return false end
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if not me or me.isDead then return false end
 
-                    local targetX, targetY
+                    local targetX, targetY, targetRole
                     local monsterRoles = _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
                     if monsterRoles then
                         for lid, role in pairs(monsterRoles) do
-                            if role.hp and role.hp > 0 then
-                                local x = role.serverCoord and role.serverCoord.x or (role.data and role.data.x)
-                                local y = role.serverCoord and role.serverCoord.y or (role.data and role.data.y)
+                            if role and not role.isDead and role.hp and role.hp > 0 then
+                                local x = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                                local y = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
                                 if x and y then
                                     targetX = tonumber(x)
                                     targetY = tonumber(y)
+                                    targetRole = role
                                     break
                                 end
                             end
@@ -1780,21 +1782,40 @@ local function CreateModUI()
 
                     if not targetX or not targetY then return false end
 
-                    local myX = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.x or 0
-                    local myY = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.y or 0
+                    local myX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+                    local myY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
 
-                    if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
-                    if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                    if myX == 0 or myY == 0 then return false end
 
-                    _G.Mod_DebugMsg("Đã quét thấy Boss! Reset vị trí và Auto đập!")
+                    local dx = myX - targetX
+                    local dy = myY - targetY
+                    local dist = math.sqrt(dx * dx + dy * dy)
 
-                    _G.RoleManager.me:MoveTo({ x = myX, y = myY }, 0, function()
-                        if _G.RoleManager and _G.RoleManager.me then
-                            if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
-                            if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("AutoFight") end
-                        end
-                    end)
-                    return true
+                    if dist > 1.5 then
+                        -- Chưa tới vị trí Boss (cách > 1.5m): Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
+                        pcall(function()
+                            if me.MoveTo then
+                                me:MoveTo({ x = targetX, y = targetY }, 0)
+                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
+                                _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
+                            end
+                        end)
+                        return false -- Trả về false để tiếp tục di chuyển ở tick sau
+                    else
+                        -- Đã tới cách Boss tháp <= 1.5m: Dừng di chuyển & Bật Auto Fight đập Boss
+                        pcall(function()
+                            if me.StopMove then me:StopMove() end
+                            if targetRole and me.SetTarget then
+                                me:SetTarget(targetRole)
+                            end
+                            if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                _G.QiJiHelperData.SetAutoFightData(true)
+                            end
+                        end)
+                        LogMsg(string.format("[TOWER_BOSS] Đã tiếp cận Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
+                        return true -- Đã hoàn thành tiếp cận
+                    end
                 end)
                 if success then return result else return false end
             end
@@ -2055,8 +2076,10 @@ local function CreateModUI()
                             local meId = me and me.data and me.data.id
                             local currentMapId = _G.SceneData and _G.SceneData.mapId
 
-                            local tab = _G.ModAutoBossConfigTab or "C7"
-                            local mapsConfig = GetMapsConfigByTier(tab)
+                            local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7" }
+                            local tab = _G.ModAutoBossConfigTab or currentTiers[#currentTiers] or "C7"
+                            local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
+                            if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                             local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or 101096
 
                             -- 1. Scan for ALIVE HH Bosses on current map using Mod_GetAliveHHBossList()
@@ -2651,13 +2674,14 @@ local function CreateModUI()
                                     local tx, ty = tonumber(parts[1]), tonumber(parts[2])
 
                                     if tx and ty then
-                                        local tab = _G.ModAutoBossConfigTab or "C7"
-                                        local mapsConfig = (tab == "C8") and _G.Mod_MapsConfig_c8 or _G
-                                            .Mod_MapsConfig_c7
+                                        local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7" }
+                                        local tab = _G.ModAutoBossConfigTab or currentTiers[#currentTiers] or "C7"
+                                        local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
+                                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
-                                            ((tab == "C8") and 1074 or 101096)
+                                            101096
                                         local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
-                                            ((tab == "C8") and 400229 or 400216)
+                                            400216
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
                                         if curMap ~= wildMapId then
@@ -3119,6 +3143,25 @@ local function CreateModUI()
                 end
             end
 
+            local function isMonsterNearby(range)
+                range = range or 15
+                if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
+                    local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, range, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                    if monsters and #monsters > 0 then return true end
+                end
+                if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                    local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                    if monsterRoles then
+                        for _, role in pairs(monsterRoles) do
+                            if role and not role.isDead and role.hp and role.hp > 0 then
+                                return true
+                            end
+                        end
+                    end
+                end
+                return false
+            end
+
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.1, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
@@ -3142,6 +3185,8 @@ local function CreateModUI()
                                         if bagCount > 0 then
                                             if _G.MeController and _G.RoleReliveType then
                                                 _G.MeController.ReqReqRelive(_G.RoleReliveType.Here)
+                                                _G.Mod_PendingKcResurrectAutoFight = true
+                                                _G.Mod_PendingKcResurrectTime = nowTime
                                             end
                                         else
                                             if _G.NetManager and _G.ItemBuyMessage then
@@ -3150,6 +3195,8 @@ local function CreateModUI()
                                             end
                                             if _G.MeController and _G.RoleReliveType then
                                                 _G.MeController.ReqReqRelive(_G.RoleReliveType.Here)
+                                                _G.Mod_PendingKcResurrectAutoFight = true
+                                                _G.Mod_PendingKcResurrectTime = nowTime
                                             end
                                         end
 
@@ -3187,11 +3234,28 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 3. BẢO VỆ: DẬP TẮT POPUP 3S ĐẾM LÙI KHI NHÂN VẬT ĐÃ SỐNG
+                        -- 3. BẢO VỆ: DẬP TẮT POPUP 3S ĐẾM LÙI KHI NHÂN VẬT ĐÃ SỐNG & BẬT AUTO FIGHT SAU HS KC
                         if not me.isDead and me.hp and me.hp > 0 then
                             if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
                                 if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
                                     _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                end
+                            end
+
+                            if _G.Mod_PendingKcResurrectAutoFight then
+                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                if (nowTime - (_G.Mod_PendingKcResurrectTime or 0)) >= 0.5 then
+                                    _G.Mod_PendingKcResurrectAutoFight = false
+                                    if not _G.Mod_AutoPK_Enabled then
+                                        if isMonsterNearby(15) then
+                                            pcall(function()
+                                                if me and me.SetAutoFight then me:SetAutoFight("AutoFight") end
+                                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                    _G.QiJiHelperData.SetAutoFightData(true)
+                                                end
+                                            end)
+                                        end
+                                    end
                                 end
                             end
                         end
@@ -6363,8 +6427,54 @@ local function CreateModUI()
                 _G.Mod_FarmStatsUI.rt.anchoredPosition = Vector2(startX, py - 10)
 
                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
-                local statsStr = "ẨN: " .. tostring(_G.Mod_FarmStats.hidden or 0)
-                _G.Mod_FarmStatsUI.sTxt.text = statsStr
+                local prevTag = currentTiers[1] or "C7"
+                local currTag = currentTiers[2] or prevTag
+
+                local prevCfg = GetMapsConfigByTier and GetMapsConfigByTier(prevTag) or {}
+                local currCfg = (currTag ~= prevTag and GetMapsConfigByTier) and GetMapsConfigByTier(currTag) or {}
+
+                local totalPrev, totalCurr = 0, 0
+                if _G.Mod_FarmStats.bosses then
+                    for id, count in pairs(_G.Mod_FarmStats.bosses) do
+                        local inPrev = false
+                        for _, map in ipairs(prevCfg) do
+                            if map.bosses then
+                                for _, b in ipairs(map.bosses) do
+                                    if b.id == id then
+                                        inPrev = true; break
+                                    end
+                                end
+                            end
+                            if inPrev then break end
+                        end
+                        if inPrev then
+                            totalPrev = totalPrev + count
+                        else
+                            local inCurr = false
+                            for _, map in ipairs(currCfg) do
+                                if map.bosses then
+                                    for _, b in ipairs(map.bosses) do
+                                        if b.id == id then
+                                            inCurr = true; break
+                                        end
+                                    end
+                                end
+                                if inCurr then break end
+                            end
+                            if inCurr then
+                                totalCurr = totalCurr + count
+                            end
+                        end
+                    end
+                end
+
+                local hiddenCount = _G.Mod_FarmStats.hidden or 0
+                if prevTag ~= currTag then
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("ẨN: %d  |  %s: %d  |  %s: %d", hiddenCount, prevTag,
+                        totalPrev, currTag, totalCurr)
+                else
+                    _G.Mod_FarmStatsUI.sTxt.text = string.format("ẨN: %d  |  %s: %d", hiddenCount, prevTag, totalPrev)
+                end
             end
 
             _G.ModRefreshAutoBossConfigUI = function()
