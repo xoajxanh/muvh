@@ -1,16 +1,1700 @@
-=== ĐANG CHẠY SCRIPT TEST GIẢI MÃ TOKEN ===
-Token Input: NjU3MmEzMjI3ZTIxZjBiMDQyNGE1ZDE2OWFkYTVmNTl8MTc2ODI3MjYxNzEyMTY2MDAwfDd8NnwzfDE3ODcwNzY4MzN8M2Y1MmYwNmU3MTg4YzIyODgxZTE0ZmJhYzU0MzRjMjk=
-Base64 C# Decode THAT BAI: 
-Base64 Pure Lua Decode THANH CONG: 6572a3227e21f0b0424a5d169ada5f59|176827261712166000|7|6|3|1787076833|3f52f06e7188c22881e14fbac5434c29
-Tong so phan (Parts): 7
-Part[1] = 6572a3227e21f0b0424a5d169ada5f59
-Part[2] = 176827261712166000
-Part[3] = 7
-Part[4] = 6
-Part[5] = 3
-Part[6] = 1787076833
-Part[7] = 3f52f06e7188c22881e14fbac5434c29
-Data to Hash: 6572a3227e21f0b0424a5d169ada5f59|176827261712166000|7|6|3|1787076833MUVH_SECRET_SALT_XOAI
-Expected Sig: 3f52f06e7188c22881e14fbac5434c29
-Token Sig   : 3f52f06e7188c22881e14fbac5434c29
-=> CHU KY MD5 TRUNG KHOP 100%! XAC THUC THANH CONG!
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143446
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143446 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143446 tại Pos (138, 119)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143455
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143455 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143455 tại Pos (140, 122)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143460
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143460 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143460 tại Pos (138, 118)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143444
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143444 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143444 tại Pos (139, 122)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143451
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143451 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143451 tại Pos (140, 119)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143448
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143448 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143448 tại Pos (141, 120)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143454
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143454 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143454 tại Pos (138, 122)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143449
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143449 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143449 tại Pos (140, 120)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143453
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143453 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143453 tại Pos (142, 118)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143461
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143461 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143461 tại Pos (141, 122)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143450
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143450 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143450 tại Pos (141, 119)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143459
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143459 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143459 tại Pos (141, 118)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143462
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143462 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143462 tại Pos (139, 121)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143452
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143452 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143452 tại Pos (142, 119)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143443
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143443 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143443 tại Pos (142, 120)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143457
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143457 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143457 tại Pos (140, 121)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143458
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143458 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143458 tại Pos (139, 119)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143447
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143447 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143447 tại Pos (140, 118)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143445
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143445 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143445 tại Pos (142, 121)
+[03:50:11] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455143456
+[03:50:11] Ghi nhận món đồ rớt ID: 5944970072455143456 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:11] [BatchLoot] Đã bắt món đồ ID: 5944970072455143456 tại Pos (142, 122)
+[03:50:11] Món đồ ID: 5944970072455143446 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143446 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143455 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143455 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143460 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143460 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143444 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143444 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143451 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143451 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143448 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143448 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143454 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143454 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143449 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143449 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143453 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143453 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143461 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143461 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143450 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143450 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143459 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143459 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143462 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143462 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143452 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143452 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143443 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143443 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143457 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143457 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143458 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143458 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143447 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143447 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143445 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143445 đã nhặt thành công!
+[03:50:11] Món đồ ID: 5944970072455143456 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:11] [BatchLoot] Món đồ ID: 5944970072455143456 đã nhặt thành công!
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145500
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145500 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145500 tại Pos (143, 122)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145488
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145488 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145488 tại Pos (143, 123)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145489
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145489 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145489 tại Pos (144, 122)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145482
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145482 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145482 tại Pos (140, 121)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145498
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145498 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145498 tại Pos (142, 124)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145493
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145493 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145493 tại Pos (143, 121)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145499
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145499 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145499 tại Pos (144, 124)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145484
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145484 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145484 tại Pos (141, 121)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145492
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145492 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145492 tại Pos (141, 124)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145497
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145497 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145497 tại Pos (142, 120)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145481
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145481 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145481 tại Pos (142, 122)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145487
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145487 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145487 tại Pos (140, 123)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145494
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145494 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145494 tại Pos (140, 122)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145490
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145490 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145490 tại Pos (143, 120)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145483
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145483 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145483 tại Pos (141, 122)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145485
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145485 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145485 tại Pos (144, 123)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145496
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145496 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145496 tại Pos (142, 123)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145495
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145495 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145495 tại Pos (141, 123)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145486
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145486 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145486 tại Pos (141, 120)
+[03:50:13] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455145491
+[03:50:13] Ghi nhận món đồ rớt ID: 5944970072455145491 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:13] [BatchLoot] Đã bắt món đồ ID: 5944970072455145491 tại Pos (144, 121)
+[03:50:13] Món đồ ID: 5944970072455145500 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145500 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145488 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145488 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145489 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145489 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145482 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145482 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145498 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145498 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145493 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145493 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145499 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145499 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145484 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145484 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145492 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145492 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145497 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145497 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145481 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145481 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145487 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145487 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145494 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145494 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145490 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145490 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145483 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145483 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145485 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145485 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145496 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145496 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145495 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145495 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145486 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145486 đã nhặt thành công!
+[03:50:13] Món đồ ID: 5944970072455145491 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:13] [BatchLoot] Món đồ ID: 5944970072455145491 đã nhặt thành công!
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147523
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147523 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147523 tại Pos (145, 123)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147524
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147524 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147524 tại Pos (145, 120)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147533
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147533 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147533 tại Pos (144, 123)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147525
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147525 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147525 tại Pos (145, 119)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147532
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147532 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147532 tại Pos (145, 122)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147538
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147538 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147538 tại Pos (142, 119)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147540
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147540 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147540 tại Pos (142, 121)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147522
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147522 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147522 tại Pos (141, 123)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147528
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147528 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147528 tại Pos (141, 122)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147527
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147527 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147527 tại Pos (143, 121)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147535
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147535 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147535 tại Pos (144, 121)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147526
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147526 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147526 tại Pos (143, 120)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147539
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147539 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147539 tại Pos (142, 122)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147534
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147534 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147534 tại Pos (144, 120)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147521
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147521 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147521 tại Pos (142, 123)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147531
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147531 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147531 tại Pos (143, 123)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147529
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147529 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147529 tại Pos (144, 122)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147537
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147537 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147537 tại Pos (141, 120)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147530
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147530 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147530 tại Pos (144, 119)
+[03:50:15] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455147536
+[03:50:15] Ghi nhận món đồ rớt ID: 5944970072455147536 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:15] [BatchLoot] Đã bắt món đồ ID: 5944970072455147536 tại Pos (143, 122)
+[03:50:15] Món đồ ID: 5944970072455147523 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147523 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147524 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147524 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147533 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147533 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147525 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147525 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147532 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147532 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147538 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147538 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147540 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147540 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147522 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147522 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147528 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147528 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147527 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147527 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147535 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147535 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147526 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147526 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147539 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147539 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147534 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147534 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147521 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147521 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147531 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147531 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147529 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147529 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147537 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147537 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147530 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147530 đã nhặt thành công!
+[03:50:15] Món đồ ID: 5944970072455147536 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:15] [BatchLoot] Món đồ ID: 5944970072455147536 đã nhặt thành công!
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148607
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148607 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148607 tại Pos (144, 120)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148621
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148621 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148621 tại Pos (144, 122)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148608
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148608 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148608 tại Pos (141, 123)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148606
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148606 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148606 tại Pos (142, 123)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148612
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148612 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148612 tại Pos (145, 121)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148622
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148622 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148622 tại Pos (143, 120)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148605
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148605 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148605 tại Pos (143, 122)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148624
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148624 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148624 tại Pos (145, 120)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148611
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148611 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148611 tại Pos (141, 120)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148613
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148613 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148613 tại Pos (141, 122)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148615
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148615 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148615 tại Pos (143, 124)
+[03:50:16] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148610
+[03:50:16] Ghi nhận món đồ rớt ID: 5944970072455148610 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:16] [BatchLoot] Đã bắt món đồ ID: 5944970072455148610 tại Pos (141, 121)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148617
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148617 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148617 tại Pos (142, 120)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148619
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148619 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148619 tại Pos (145, 123)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148620
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148620 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148620 tại Pos (144, 121)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148609
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148609 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148609 tại Pos (142, 124)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148616
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148616 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148616 tại Pos (142, 121)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148614
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148614 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148614 tại Pos (145, 122)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148618
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148618 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148618 tại Pos (143, 121)
+[03:50:17] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455148623
+[03:50:17] Ghi nhận món đồ rớt ID: 5944970072455148623 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:17] [BatchLoot] Đã bắt món đồ ID: 5944970072455148623 tại Pos (142, 122)
+[03:50:17] Món đồ ID: 5944970072455148607 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148607 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148621 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148621 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148608 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148608 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148606 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148606 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148612 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148612 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148622 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148622 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148605 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148605 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148624 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148624 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148611 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148611 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148613 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148613 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148615 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148615 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148610 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148610 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148617 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148617 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148619 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148619 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148620 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148620 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148609 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148609 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148616 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148616 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148614 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148614 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148618 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148618 đã nhặt thành công!
+[03:50:17] Món đồ ID: 5944970072455148623 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:17] [BatchLoot] Món đồ ID: 5944970072455148623 đã nhặt thành công!
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150653
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150653 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150653 tại Pos (141, 120)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150654
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150654 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150654 tại Pos (145, 120)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150640
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150640 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150640 tại Pos (143, 121)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150641
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150641 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150641 tại Pos (142, 123)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150639
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150639 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150639 tại Pos (145, 123)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150645
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150645 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150645 tại Pos (141, 123)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150637
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150637 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150637 tại Pos (143, 123)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150636
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150636 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150636 tại Pos (142, 121)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150648
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150648 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150648 tại Pos (144, 120)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150649
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150649 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150649 tại Pos (145, 121)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150646
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150646 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150646 tại Pos (145, 119)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150647
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150647 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150647 tại Pos (142, 122)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150635
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150635 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150635 tại Pos (143, 122)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150650
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150650 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150650 tại Pos (141, 121)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150652
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150652 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150652 tại Pos (145, 122)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150642
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150642 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150642 tại Pos (142, 119)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150643
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150643 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150643 tại Pos (144, 122)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150644
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150644 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150644 tại Pos (143, 119)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150651
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150651 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150651 tại Pos (141, 119)
+[03:50:18] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455150638
+[03:50:18] Ghi nhận món đồ rớt ID: 5944970072455150638 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:18] [BatchLoot] Đã bắt món đồ ID: 5944970072455150638 tại Pos (143, 120)
+[03:50:18] Món đồ ID: 5944970072455150653 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:18] [BatchLoot] Món đồ ID: 5944970072455150653 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150654 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150654 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150640 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150640 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150641 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150641 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150639 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150639 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150645 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150645 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150637 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150637 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150636 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150636 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150648 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150648 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150649 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150649 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150646 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150646 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150647 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150647 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150635 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150635 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150650 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150650 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150652 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150652 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150642 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150642 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150643 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150643 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150644 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150644 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150651 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150651 đã nhặt thành công!
+[03:50:19] Món đồ ID: 5944970072455150638 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:19] [BatchLoot] Món đồ ID: 5944970072455150638 đã nhặt thành công!
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152699
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152699 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152699 tại Pos (141, 120)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152712
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152712 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152712 tại Pos (144, 120)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152696
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152696 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152696 tại Pos (145, 120)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152711
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152711 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152711 tại Pos (145, 119)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152698
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152698 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152698 tại Pos (141, 118)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152694
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152694 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152694 tại Pos (143, 122)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152709
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152709 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152709 tại Pos (145, 122)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152705
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152705 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152705 tại Pos (144, 118)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152703
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152703 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152703 tại Pos (145, 118)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152697
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152697 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152697 tại Pos (144, 121)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152704
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152704 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152704 tại Pos (141, 121)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152710
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152710 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152710 tại Pos (143, 120)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152707
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152707 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152707 tại Pos (142, 118)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152706
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152706 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152706 tại Pos (144, 122)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152700
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152700 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152700 tại Pos (143, 119)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152708
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152708 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152708 tại Pos (144, 119)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152695
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152695 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152695 tại Pos (142, 121)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152701
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152701 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152701 tại Pos (142, 122)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152702
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152702 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152702 tại Pos (141, 122)
+[03:50:20] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455152713
+[03:50:20] Ghi nhận món đồ rớt ID: 5944970072455152713 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:20] [BatchLoot] Đã bắt món đồ ID: 5944970072455152713 tại Pos (143, 118)
+[03:50:20] Món đồ ID: 5944970072455152699 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:20] [BatchLoot] Món đồ ID: 5944970072455152699 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152712 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152712 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152696 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152696 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152711 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152711 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152698 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152698 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152694 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152694 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152709 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152709 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152705 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152705 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152703 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152703 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152697 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152697 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152704 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152704 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152710 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152710 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152707 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152707 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152706 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152706 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152700 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152700 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152708 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152708 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152695 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152695 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152701 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152701 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152702 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152702 đã nhặt thành công!
+[03:50:21] Món đồ ID: 5944970072455152713 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:21] [BatchLoot] Món đồ ID: 5944970072455152713 đã nhặt thành công!
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154749
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154749 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154749 tại Pos (144, 117)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154735
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154735 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154735 tại Pos (143, 121)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154750
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154750 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154750 tại Pos (141, 121)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154741
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154741 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154741 tại Pos (145, 117)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154747
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154747 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154747 tại Pos (141, 120)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154737
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154737 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154737 tại Pos (145, 119)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154748
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154748 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154748 tại Pos (144, 118)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154752
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154752 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154752 tại Pos (142, 120)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154754
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154754 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154754 tại Pos (145, 121)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154742
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154742 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154742 tại Pos (142, 119)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154745
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154745 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154745 tại Pos (145, 120)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154743
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154743 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154743 tại Pos (143, 119)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154739
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154739 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154739 tại Pos (145, 118)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154736
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154736 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154736 tại Pos (142, 118)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154746
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154746 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154746 tại Pos (142, 117)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154751
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154751 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154751 tại Pos (142, 121)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154738
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154738 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154738 tại Pos (144, 121)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154740
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154740 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154740 tại Pos (143, 118)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154753
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154753 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154753 tại Pos (144, 119)
+[03:50:22] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455154744
+[03:50:22] Ghi nhận món đồ rớt ID: 5944970072455154744 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:22] [BatchLoot] Đã bắt món đồ ID: 5944970072455154744 tại Pos (144, 120)
+[03:50:22] Món đồ ID: 5944970072455154749 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:22] [BatchLoot] Món đồ ID: 5944970072455154749 đã nhặt thành công!
+[03:50:22] Món đồ ID: 5944970072455154735 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:22] [BatchLoot] Món đồ ID: 5944970072455154735 đã nhặt thành công!
+[03:50:22] Món đồ ID: 5944970072455154750 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:22] [BatchLoot] Món đồ ID: 5944970072455154750 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154741 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154741 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154747 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154747 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154737 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154737 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154748 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154748 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154752 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154752 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154754 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154754 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154742 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154742 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154745 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154745 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154743 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154743 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154739 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154739 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154736 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154736 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154746 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154746 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154751 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154751 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154738 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154738 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154740 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154740 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154753 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154753 đã nhặt thành công!
+[03:50:23] Món đồ ID: 5944970072455154744 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:23] [BatchLoot] Món đồ ID: 5944970072455154744 đã nhặt thành công!
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156794
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156794 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156794 tại Pos (145, 120)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156801
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156801 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156801 tại Pos (144, 121)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156784
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156784 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156784 tại Pos (145, 121)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156787
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156787 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156787 tại Pos (146, 122)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156792
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156792 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156792 tại Pos (143, 119)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156800
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156800 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156800 tại Pos (144, 119)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156786
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156786 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156786 tại Pos (144, 120)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156788
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156788 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156788 tại Pos (144, 122)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156798
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156798 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156798 tại Pos (142, 119)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156785
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156785 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156785 tại Pos (146, 119)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156791
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156791 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156791 tại Pos (145, 119)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156793
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156793 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156793 tại Pos (142, 121)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156790
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156790 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156790 tại Pos (143, 118)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156797
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156797 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156797 tại Pos (145, 118)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156799
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156799 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156799 tại Pos (144, 118)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156796
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156796 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156796 tại Pos (142, 120)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156782
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156782 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156782 tại Pos (146, 120)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156783
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156783 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156783 tại Pos (143, 121)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156789
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156789 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156789 tại Pos (146, 121)
+[03:50:24] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455156795
+[03:50:24] Ghi nhận món đồ rớt ID: 5944970072455156795 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:24] [BatchLoot] Đã bắt món đồ ID: 5944970072455156795 tại Pos (143, 120)
+[03:50:24] Món đồ ID: 5944970072455156794 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:24] [BatchLoot] Món đồ ID: 5944970072455156794 đã nhặt thành công!
+[03:50:24] Món đồ ID: 5944970072455156801 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:24] [BatchLoot] Món đồ ID: 5944970072455156801 đã nhặt thành công!
+[03:50:24] Món đồ ID: 5944970072455156784 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:24] [BatchLoot] Món đồ ID: 5944970072455156784 đã nhặt thành công!
+[03:50:24] Món đồ ID: 5944970072455156787 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:24] [BatchLoot] Món đồ ID: 5944970072455156787 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156792 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156792 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156800 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156800 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156786 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156786 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156788 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156788 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156798 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156798 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156785 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156785 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156791 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156791 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156793 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156793 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156790 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156790 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156797 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156797 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156799 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156799 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156796 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156796 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156782 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156782 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156783 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156783 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156789 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156789 đã nhặt thành công!
+[03:50:25] Món đồ ID: 5944970072455156795 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:25] [BatchLoot] Món đồ ID: 5944970072455156795 đã nhặt thành công!
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158813
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158813 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158813 tại Pos (142, 121)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158818
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158818 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158818 tại Pos (144, 120)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158807
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158807 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158807 tại Pos (144, 118)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158809
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158809 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158809 tại Pos (143, 120)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158806
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158806 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158806 tại Pos (145, 122)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158816
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158816 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158816 tại Pos (143, 121)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158819
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158819 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158819 tại Pos (141, 120)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158821
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158821 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158821 tại Pos (141, 118)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158814
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158814 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158814 tại Pos (142, 120)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158817
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158817 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158817 tại Pos (143, 118)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158815
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158815 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158815 tại Pos (145, 119)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158811
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158811 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158811 tại Pos (142, 122)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158823
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158823 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158823 tại Pos (141, 121)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158810
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158810 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158810 tại Pos (143, 119)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158820
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158820 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158820 tại Pos (145, 121)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158805
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158805 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158805 tại Pos (141, 122)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158808
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158808 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158808 tại Pos (145, 120)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158804
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158804 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158804 tại Pos (145, 118)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158812
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158812 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158812 tại Pos (142, 119)
+[03:50:26] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455158822
+[03:50:26] Ghi nhận món đồ rớt ID: 5944970072455158822 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:26] [BatchLoot] Đã bắt món đồ ID: 5944970072455158822 tại Pos (144, 121)
+[03:50:26] Món đồ ID: 5944970072455158813 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:26] [BatchLoot] Món đồ ID: 5944970072455158813 đã nhặt thành công!
+[03:50:26] Món đồ ID: 5944970072455158818 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:26] [BatchLoot] Món đồ ID: 5944970072455158818 đã nhặt thành công!
+[03:50:26] Món đồ ID: 5944970072455158807 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:26] [BatchLoot] Món đồ ID: 5944970072455158807 đã nhặt thành công!
+[03:50:26] Món đồ ID: 5944970072455158809 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:26] [BatchLoot] Món đồ ID: 5944970072455158809 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158806 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158806 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158816 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158816 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158819 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158819 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158821 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158821 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158814 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158814 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158817 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158817 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158815 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158815 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158811 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158811 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158823 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158823 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158810 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158810 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158820 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158820 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158805 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158805 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158808 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158808 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158804 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158804 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158812 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158812 đã nhặt thành công!
+[03:50:27] Món đồ ID: 5944970072455158822 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:27] [BatchLoot] Món đồ ID: 5944970072455158822 đã nhặt thành công!
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160850
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160850 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160850 tại Pos (143, 123)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160852
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160852 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160852 tại Pos (146, 119)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160862
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160862 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160862 tại Pos (144, 120)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160848
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160848 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160848 tại Pos (144, 123)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160861
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160861 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160861 tại Pos (146, 121)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160857
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160857 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160857 tại Pos (142, 120)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160847
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160847 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160847 tại Pos (143, 119)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160856
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160856 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160856 tại Pos (143, 120)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160845
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160845 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160845 tại Pos (146, 123)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160854
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160854 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160854 tại Pos (142, 119)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160855
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160855 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160855 tại Pos (145, 121)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160863
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160863 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160863 tại Pos (145, 122)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160858
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160858 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160858 tại Pos (145, 123)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160864
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160864 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160864 tại Pos (145, 119)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160860
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160860 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160860 tại Pos (142, 121)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160846
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160846 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160846 tại Pos (144, 119)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160859
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160859 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160859 tại Pos (143, 121)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160853
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160853 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160853 tại Pos (142, 123)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160849
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160849 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160849 tại Pos (142, 122)
+[03:50:28] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455160851
+[03:50:28] Ghi nhận món đồ rớt ID: 5944970072455160851 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:28] [BatchLoot] Đã bắt món đồ ID: 5944970072455160851 tại Pos (145, 120)
+[03:50:28] Món đồ ID: 5944970072455160850 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:28] [BatchLoot] Món đồ ID: 5944970072455160850 đã nhặt thành công!
+[03:50:28] Món đồ ID: 5944970072455160852 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:28] [BatchLoot] Món đồ ID: 5944970072455160852 đã nhặt thành công!
+[03:50:28] Món đồ ID: 5944970072455160862 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:28] [BatchLoot] Món đồ ID: 5944970072455160862 đã nhặt thành công!
+[03:50:28] Món đồ ID: 5944970072455160848 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:28] [BatchLoot] Món đồ ID: 5944970072455160848 đã nhặt thành công!
+[03:50:28] Món đồ ID: 5944970072455160861 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:28] [BatchLoot] Món đồ ID: 5944970072455160861 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160857 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160857 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160847 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160847 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160856 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160856 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160845 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160845 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160854 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160854 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160855 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160855 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160863 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160863 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160858 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160858 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160864 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160864 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160860 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160860 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160846 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160846 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160859 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160859 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160853 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160853 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160849 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160849 đã nhặt thành công!
+[03:50:29] Món đồ ID: 5944970072455160851 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:29] [BatchLoot] Món đồ ID: 5944970072455160851 đã nhặt thành công!
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162897
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162897 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162897 tại Pos (146, 122)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162903
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162903 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162903 tại Pos (147, 119)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162904
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162904 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162904 tại Pos (143, 120)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162907
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162907 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162907 tại Pos (147, 122)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162912
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162912 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162912 tại Pos (143, 122)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162898
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162898 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162898 tại Pos (145, 119)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162894
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162894 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162894 tại Pos (144, 120)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162910
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162910 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162910 tại Pos (146, 121)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162905
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162905 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162905 tại Pos (143, 119)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162902
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162902 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162902 tại Pos (145, 122)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162900
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162900 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162900 tại Pos (147, 118)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162899
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162899 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162899 tại Pos (146, 119)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162913
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162913 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162913 tại Pos (144, 119)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162901
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162901 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162901 tại Pos (144, 122)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162911
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162911 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162911 tại Pos (143, 118)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162906
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162906 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162906 tại Pos (146, 120)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162895
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162895 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162895 tại Pos (144, 118)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162908
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162908 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162908 tại Pos (146, 118)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162909
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162909 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162909 tại Pos (147, 120)
+[03:50:30] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455162896
+[03:50:30] Ghi nhận món đồ rớt ID: 5944970072455162896 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:30] [BatchLoot] Đã bắt món đồ ID: 5944970072455162896 tại Pos (143, 121)
+[03:50:30] Món đồ ID: 5944970072455162897 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:30] [BatchLoot] Món đồ ID: 5944970072455162897 đã nhặt thành công!
+[03:50:30] Món đồ ID: 5944970072455162903 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:30] [BatchLoot] Món đồ ID: 5944970072455162903 đã nhặt thành công!
+[03:50:30] Món đồ ID: 5944970072455162904 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:30] [BatchLoot] Món đồ ID: 5944970072455162904 đã nhặt thành công!
+[03:50:30] Món đồ ID: 5944970072455162907 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:30] [BatchLoot] Món đồ ID: 5944970072455162907 đã nhặt thành công!
+[03:50:30] Món đồ ID: 5944970072455162912 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:30] [BatchLoot] Món đồ ID: 5944970072455162912 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162898 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162898 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162894 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162894 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162910 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162910 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162905 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162905 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162902 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162902 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162900 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162900 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162899 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162899 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162913 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162913 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162901 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162901 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162911 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162911 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162906 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162906 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162895 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162895 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162908 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162908 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162909 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162909 đã nhặt thành công!
+[03:50:31] Món đồ ID: 5944970072455162896 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:31] [BatchLoot] Món đồ ID: 5944970072455162896 đã nhặt thành công!
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164938
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164938 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164938 tại Pos (144, 120)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164935
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164935 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164935 tại Pos (142, 122)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164931
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164931 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164931 tại Pos (145, 123)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164941
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164941 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164941 tại Pos (144, 123)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164943
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164943 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164943 tại Pos (145, 120)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164946
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164946 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164946 tại Pos (145, 119)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164939
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164939 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164939 tại Pos (141, 119)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164942
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164942 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164942 tại Pos (143, 121)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164937
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164937 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164937 tại Pos (141, 122)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164934
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164934 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164934 tại Pos (141, 123)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164936
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164936 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164936 tại Pos (143, 123)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164940
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164940 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164940 tại Pos (142, 119)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164944
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164944 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164944 tại Pos (144, 121)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164933
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164933 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164933 tại Pos (143, 122)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164945
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164945 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164945 tại Pos (142, 120)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164947
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164947 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164947 tại Pos (143, 119)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164948
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164948 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164948 tại Pos (142, 121)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164930
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164930 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164930 tại Pos (143, 120)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164949
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164949 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164949 tại Pos (141, 121)
+[03:50:32] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455164932
+[03:50:32] Ghi nhận món đồ rớt ID: 5944970072455164932 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:32] [BatchLoot] Đã bắt món đồ ID: 5944970072455164932 tại Pos (145, 122)
+[03:50:32] Món đồ ID: 5944970072455164938 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:32] [BatchLoot] Món đồ ID: 5944970072455164938 đã nhặt thành công!
+[03:50:32] Món đồ ID: 5944970072455164935 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:32] [BatchLoot] Món đồ ID: 5944970072455164935 đã nhặt thành công!
+[03:50:32] Món đồ ID: 5944970072455164931 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:32] [BatchLoot] Món đồ ID: 5944970072455164931 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164941 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164941 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164943 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164943 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164946 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164946 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164939 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164939 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164942 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164942 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164937 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164937 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164934 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164934 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164936 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164936 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164940 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164940 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164944 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164944 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164933 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164933 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164945 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164945 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164947 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164947 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164948 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164948 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164930 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164930 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164949 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164949 đã nhặt thành công!
+[03:50:33] Món đồ ID: 5944970072455164932 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:33] [BatchLoot] Món đồ ID: 5944970072455164932 đã nhặt thành công!
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166990
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166990 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166990 tại Pos (142, 122)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166994
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166994 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166994 tại Pos (145, 122)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166989
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166989 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166989 tại Pos (144, 120)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166982
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166982 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166982 tại Pos (143, 120)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166986
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166986 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166986 tại Pos (142, 119)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166992
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166992 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166992 tại Pos (144, 118)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166984
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166984 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166984 tại Pos (141, 122)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166981
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166981 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166981 tại Pos (144, 119)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166979
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166979 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166979 tại Pos (141, 119)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166993
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166993 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166993 tại Pos (143, 121)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166995
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166995 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166995 tại Pos (143, 119)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166980
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166980 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166980 tại Pos (143, 118)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166988
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166988 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166988 tại Pos (141, 121)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166985
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166985 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166985 tại Pos (144, 122)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166978
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166978 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166978 tại Pos (142, 121)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166987
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166987 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166987 tại Pos (145, 119)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166983
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166983 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166983 tại Pos (145, 120)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166991
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166991 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166991 tại Pos (144, 121)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166977
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166977 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166977 tại Pos (141, 118)
+[03:50:34] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455166996
+[03:50:34] Ghi nhận món đồ rớt ID: 5944970072455166996 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:34] [BatchLoot] Đã bắt món đồ ID: 5944970072455166996 tại Pos (145, 118)
+[03:50:34] Món đồ ID: 5944970072455166990 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166990 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166994 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166994 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166989 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166989 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166982 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166982 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166986 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166986 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166992 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166992 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166984 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166984 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166981 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166981 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166979 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166979 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166993 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166993 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166995 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166995 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166980 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166980 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166988 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166988 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166985 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166985 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166978 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166978 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166987 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166987 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166983 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166983 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166991 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166991 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166977 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166977 đã nhặt thành công!
+[03:50:34] Món đồ ID: 5944970072455166996 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:34] [BatchLoot] Món đồ ID: 5944970072455166996 đã nhặt thành công!
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168040
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168040 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168040 tại Pos (145, 119)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168046
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168046 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168046 tại Pos (145, 121)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168056
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168056 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168056 tại Pos (143, 121)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168045
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168045 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168045 tại Pos (145, 117)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168050
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168050 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168050 tại Pos (142, 121)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168051
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168051 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168051 tại Pos (146, 120)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168041
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168041 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168041 tại Pos (143, 119)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168043
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168043 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168043 tại Pos (146, 118)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168057
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168057 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168057 tại Pos (146, 119)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168053
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168053 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168053 tại Pos (144, 119)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168042
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168042 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168042 tại Pos (142, 119)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168055
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168055 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168055 tại Pos (143, 118)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168047
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168047 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168047 tại Pos (142, 117)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168044
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168044 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168044 tại Pos (142, 118)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168039
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168039 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168039 tại Pos (142, 120)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168049
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168049 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168049 tại Pos (144, 120)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168058
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168058 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168058 tại Pos (145, 120)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168052
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168052 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168052 tại Pos (143, 117)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168048
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168048 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168048 tại Pos (143, 120)
+[03:50:35] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455168054
+[03:50:35] Ghi nhận món đồ rớt ID: 5944970072455168054 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:35] [BatchLoot] Đã bắt món đồ ID: 5944970072455168054 tại Pos (144, 118)
+[03:50:35] Món đồ ID: 5944970072455168040 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:35] [BatchLoot] Món đồ ID: 5944970072455168040 đã nhặt thành công!
+[03:50:35] Món đồ ID: 5944970072455168046 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:35] [BatchLoot] Món đồ ID: 5944970072455168046 đã nhặt thành công!
+[03:50:35] Món đồ ID: 5944970072455168056 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:35] [BatchLoot] Món đồ ID: 5944970072455168056 đã nhặt thành công!
+[03:50:35] Món đồ ID: 5944970072455168045 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:35] [BatchLoot] Món đồ ID: 5944970072455168045 đã nhặt thành công!
+[03:50:35] Món đồ ID: 5944970072455168050 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:35] [BatchLoot] Món đồ ID: 5944970072455168050 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168051 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168051 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168041 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168041 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168043 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168043 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168057 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168057 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168053 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168053 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168042 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168042 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168055 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168055 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168047 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168047 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168044 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168044 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168039 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168039 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168049 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168049 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168058 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168058 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168052 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168052 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168048 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168048 đã nhặt thành công!
+[03:50:36] Món đồ ID: 5944970072455168054 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:36] [BatchLoot] Món đồ ID: 5944970072455168054 đã nhặt thành công!
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170088
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170088 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170088 tại Pos (142, 120)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170094
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170094 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170094 tại Pos (142, 118)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170104
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170104 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170104 tại Pos (145, 119)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170093
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170093 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170093 tại Pos (142, 117)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170099
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170099 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170099 tại Pos (144, 116)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170102
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170102 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170102 tại Pos (143, 118)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170103
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170103 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170103 tại Pos (144, 120)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170091
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170091 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170091 tại Pos (144, 118)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170105
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170105 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170105 tại Pos (146, 119)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170097
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170097 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170097 tại Pos (145, 116)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170087
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170087 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170087 tại Pos (142, 119)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170092
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170092 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170092 tại Pos (143, 119)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170095
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170095 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170095 tại Pos (143, 120)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170098
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170098 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170098 tại Pos (145, 120)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170100
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170100 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170100 tại Pos (143, 116)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170101
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170101 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170101 tại Pos (146, 120)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170086
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170086 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170086 tại Pos (145, 117)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170089
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170089 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170089 tại Pos (146, 118)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170096
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170096 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170096 tại Pos (142, 116)
+[03:50:37] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455170090
+[03:50:37] Ghi nhận món đồ rớt ID: 5944970072455170090 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:37] [BatchLoot] Đã bắt món đồ ID: 5944970072455170090 tại Pos (144, 119)
+[03:50:37] Món đồ ID: 5944970072455170088 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:37] [BatchLoot] Món đồ ID: 5944970072455170088 đã nhặt thành công!
+[03:50:37] Món đồ ID: 5944970072455170094 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:37] [BatchLoot] Món đồ ID: 5944970072455170094 đã nhặt thành công!
+[03:50:37] Món đồ ID: 5944970072455170104 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:37] [BatchLoot] Món đồ ID: 5944970072455170104 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170093 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170093 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170099 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170099 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170102 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170102 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170103 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170103 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170091 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170091 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170105 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170105 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170097 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170097 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170087 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170087 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170092 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170092 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170095 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170095 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170098 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170098 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170100 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170100 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170101 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170101 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170086 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170086 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170089 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170089 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170096 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170096 đã nhặt thành công!
+[03:50:38] Món đồ ID: 5944970072455170090 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:38] [BatchLoot] Món đồ ID: 5944970072455170090 đã nhặt thành công!
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172152
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172152 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172152 tại Pos (143, 121)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172165
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172165 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172165 tại Pos (142, 117)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172168
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172168 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172168 tại Pos (145, 118)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172151
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172151 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172151 tại Pos (142, 121)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172153
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172153 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172153 tại Pos (146, 119)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172157
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172157 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172157 tại Pos (144, 118)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172155
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172155 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172155 tại Pos (143, 120)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172160
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172160 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172160 tại Pos (145, 119)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172166
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172166 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172166 tại Pos (143, 118)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172170
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172170 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172170 tại Pos (145, 120)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172164
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172164 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172164 tại Pos (146, 118)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172167
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172167 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172167 tại Pos (142, 118)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172169
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172169 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172169 tại Pos (146, 120)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172161
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172161 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172161 tại Pos (144, 117)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172162
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172162 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172162 tại Pos (144, 119)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172158
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172158 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172158 tại Pos (142, 119)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172156
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172156 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172156 tại Pos (145, 117)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172163
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172163 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172163 tại Pos (145, 121)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172154
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172154 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172154 tại Pos (142, 120)
+[03:50:39] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455172159
+[03:50:39] Ghi nhận món đồ rớt ID: 5944970072455172159 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:39] [BatchLoot] Đã bắt món đồ ID: 5944970072455172159 tại Pos (144, 121)
+[03:50:39] Món đồ ID: 5944970072455172152 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:39] [BatchLoot] Món đồ ID: 5944970072455172152 đã nhặt thành công!
+[03:50:39] Món đồ ID: 5944970072455172165 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:39] [BatchLoot] Món đồ ID: 5944970072455172165 đã nhặt thành công!
+[03:50:39] Món đồ ID: 5944970072455172168 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:39] [BatchLoot] Món đồ ID: 5944970072455172168 đã nhặt thành công!
+[03:50:39] Món đồ ID: 5944970072455172151 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:39] [BatchLoot] Món đồ ID: 5944970072455172151 đã nhặt thành công!
+[03:50:39] Món đồ ID: 5944970072455172153 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:39] [BatchLoot] Món đồ ID: 5944970072455172153 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172157 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172157 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172155 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172155 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172160 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172160 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172166 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172166 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172170 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172170 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172164 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172164 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172167 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172167 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172169 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172169 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172161 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172161 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172162 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172162 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172158 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172158 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172156 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172156 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172163 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172163 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172154 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172154 đã nhặt thành công!
+[03:50:40] Món đồ ID: 5944970072455172159 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:40] [BatchLoot] Món đồ ID: 5944970072455172159 đã nhặt thành công!
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174178
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174178 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174178 tại Pos (142, 123)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174179
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174179 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174179 tại Pos (142, 120)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174184
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174184 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174184 tại Pos (145, 122)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174191
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174191 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174191 tại Pos (143, 122)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174187
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174187 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174187 tại Pos (142, 121)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174190
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174190 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174190 tại Pos (142, 122)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174193
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174193 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174193 tại Pos (146, 123)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174183
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174183 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174183 tại Pos (144, 119)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174182
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174182 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174182 tại Pos (144, 121)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174180
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174180 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174180 tại Pos (143, 121)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174194
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174194 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174194 tại Pos (145, 121)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174192
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174192 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174192 tại Pos (143, 120)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174188
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174188 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174188 tại Pos (144, 122)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174196
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174196 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174196 tại Pos (145, 120)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174189
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174189 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174189 tại Pos (146, 120)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174177
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174177 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174177 tại Pos (146, 122)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174186
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174186 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174186 tại Pos (144, 123)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174195
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174195 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174195 tại Pos (146, 121)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174185
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174185 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174185 tại Pos (145, 123)
+[03:50:41] AddDropSceneCellPos bắt được vật phẩm rớt mới ID: 5944970072455174181
+[03:50:41] Ghi nhận món đồ rớt ID: 5944970072455174181 -> Thêm vào hàng chờ nhặt 3.0s
+[03:50:41] [BatchLoot] Đã bắt món đồ ID: 5944970072455174181 tại Pos (142, 119)
+[03:50:41] Món đồ ID: 5944970072455174178 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174178 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174179 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174179 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174184 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174184 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174191 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174191 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174187 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174187 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174190 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174190 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174193 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174193 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174183 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174183 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174182 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174182 đã nhặt thành công!
+[03:50:41] Món đồ ID: 5944970072455174180 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:41] [BatchLoot] Món đồ ID: 5944970072455174180 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174194 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174194 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174192 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174192 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174188 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174188 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174196 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174196 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174189 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174189 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174177 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174177 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174186 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174186 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174195 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174195 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174185 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174185 đã nhặt thành công!
+[03:50:42] Món đồ ID: 5944970072455174181 đã được nhặt/biến mất -> Xóa khỏi hàng chờ!
+[03:50:42] [BatchLoot] Món đồ ID: 5944970072455174181 đã nhặt thành công!

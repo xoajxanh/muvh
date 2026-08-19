@@ -4952,6 +4952,33 @@ local function CreateModUI()
                 local extra = ""
                 if varName == "AutoPick_Enabled" then
                     extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
+                elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                    local totalOddCount = 0
+                    pcall(function()
+                        local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                        if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                            pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+                        end
+                        if items then
+                            for k, item in pairs(items) do
+                                if item then
+                                    local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                                    local name = tblItem.name or item.name or ""
+                                    local itemCount = item.count or (item.data and item.data.count) or 1
+                                    local itemType = tblItem.type or 0
+                                    if itemType == 5 and string.find(name, "Rương Vàng") then
+                                        local tierNum = tonumber(string.match(name, "%+(%d+)"))
+                                        if tierNum and (tierNum % 2 ~= 0) then
+                                            totalOddCount = totalOddCount + itemCount
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                    if totalOddCount > 0 then
+                        extra = " (" .. tostring(totalOddCount) .. ")"
+                    end
                 end
                 if _G[varName] then
                     bgImg.color = Color(0.1, 0.6, 0.2, 1)
@@ -4969,6 +4996,10 @@ local function CreateModUI()
                 _G.ModUpdateCountText = function()
                     pcall(UpdateLabel)
                 end
+            elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                _G.ModUpdateGoldenChestLabel = function()
+                    pcall(UpdateLabel)
+                end
             end
 
             btn.onClick:AddListener(function()
@@ -4979,6 +5010,12 @@ local function CreateModUI()
                     _G.Mod_IgnoredDropItems = {}
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
+                end
+
+                if varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                    if _G[varName] and _G.Mod_ExecuteGoldenChestAutoProcess then
+                        pcall(_G.Mod_ExecuteGoldenChestAutoProcess)
+                    end
                 end
 
                 local prefKey = string.sub(varName, 1, 4) == "Mod_" and varName or ("Mod_" .. varName)
@@ -7162,6 +7199,9 @@ local function CreateModUI()
                     end
                 end)
             end)
+
+            currentY = currentY - 45
+            CreateToggle("MỞ RƯƠNG VÀNG LẺ", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
         end
 
         CreateKundunUI()
@@ -8195,6 +8235,23 @@ local function CreateModUI()
                 if not (item and item.data) then return end
                 local dropItemData = item.data
 
+                -- HÚT ĐỒ BATCH LOOT TỨC THÌ NGAY KHI RỚI KHỎI RƯƠNG VÀNG
+                if _G.Mod_AutoOpenGoldenChest_Enabled then
+                    pcall(function()
+                        local objId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
+                        if objId then
+                            _G.Mod_GoldenChestBatchIds = _G.Mod_GoldenChestBatchIds or {}
+                            table.insert(_G.Mod_GoldenChestBatchIds, objId)
+
+                            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                                _G.PickupManager.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                                _G.networkRequest.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                            end
+                        end
+                    end)
+                end
+
                 if _G.Mod_AutoPK_Enabled then
                     local mapId = 0
                     if _G.SceneData and _G.SceneData.mapId then
@@ -8290,7 +8347,7 @@ local function CreateModUI()
                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
                     return original_CanAutoPickUpDropItem(self, itemInfo)
                 end
-                if _G.AutoPick_Enabled then
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
                     return false
                 end
                 return original_CanAutoPickUpDropItem(self, itemInfo)
@@ -8301,10 +8358,25 @@ local function CreateModUI()
                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
                     return original_CanPickUpDropItem(self, itemInfo)
                 end
-                if _G.AutoPick_Enabled then
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
                     return false
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
+            end
+        end
+
+        if _G.PickupItemNode and not _G.Mod_HookedPickupNode then
+            _G.Mod_HookedPickupNode = true
+            local orig_Visit = _G.PickupItemNode.Visit
+            _G.PickupItemNode.Visit = function(self)
+                if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
+                    if orig_Visit then return orig_Visit(self) end
+                end
+                if _G.Mod_AutoOpenGoldenChest_Enabled then
+                    self.status = (_G.BehaviorStatusEnum and _G.BehaviorStatusEnum.FAILED) or 3
+                    return
+                end
+                if orig_Visit then return orig_Visit(self) end
             end
         end
 
@@ -8489,55 +8561,8 @@ local status, err = pcall(function()
 
         local original_Show = _G.UIManager.Show
         _G.UIManager.Show = function(name, args, animation)
-            -- CHẶN UPDATE TRƯỚC KHI GỌI HÀM SHOW GỐC
-            if name == "Main_MainMenuUI" then
-                pcall(function()
-                    -- Lời nhắc: Các hàm chặn tải dữ liệu đã được gỡ bỏ để game load được nhân vật
-                end)
-            end
-
             local ret = nil
             if original_Show then ret = original_Show(name, args, animation) end
-
-            pcall(function()
-                if name == "Instance_BloodCastleUI" then
-                    if _G.Instance_BloodCastleUI and not _G.Mod_HookedBloodCastle then
-                        _G.Mod_HookedBloodCastle = true
-                        local original_btn_enterOnClick = _G.Instance_BloodCastleUI.btn_enterOnClick
-                        _G.Instance_BloodCastleUI.btn_enterOnClick = function(self, control)
-                            if _G.Mod_BypassInstanceEnter then
-                                _G.Mod_BypassInstanceEnter(self, control, original_btn_enterOnClick,
-                                    _G.UIID.Instance_BloodCastleUI)
-                            else
-                                if original_btn_enterOnClick then original_btn_enterOnClick(self, control) end
-                            end
-                        end
-                    end
-                    local inst = _G.UIManager and _G.UIManager.GetUI and
-                        _G.UIManager.GetUI(_G.UIID.Instance_BloodCastleUI)
-                    if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
-                        inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
-                    end
-                elseif name == "Instance_DemonPlazaUI" then
-                    if _G.Instance_DemonPlazaUI and not _G.Mod_HookedDemonPlaza then
-                        _G.Mod_HookedDemonPlaza = true
-                        local original_btn_enterOnClick_DP = _G.Instance_DemonPlazaUI.btn_enterOnClick
-                        _G.Instance_DemonPlazaUI.btn_enterOnClick = function(self, control)
-                            if _G.Mod_BypassInstanceEnter then
-                                _G.Mod_BypassInstanceEnter(self, control, original_btn_enterOnClick_DP,
-                                    _G.UIID.Instance_DemonPlazaUI)
-                            else
-                                if original_btn_enterOnClick_DP then original_btn_enterOnClick_DP(self, control) end
-                            end
-                        end
-                    end
-                    local inst = _G.UIManager and _G.UIManager.GetUI and
-                        _G.UIManager.GetUI(_G.UIID.Instance_DemonPlazaUI)
-                    if inst and inst.btn_enter and inst.btn_enter.SetOnClick then
-                        inst.btn_enter:SetOnClick(inst, inst.btn_enterOnClick)
-                    end
-                end
-            end)
 
             if name == "Main_MainMenuUI" then
                 if not _G.MyModCreated then
@@ -8551,8 +8576,224 @@ local status, err = pcall(function()
     else
         WriteLog("LỖI: UIManager chưa được tải! ")
     end
-    -- [[ ĐÃ XÓA BỎ VÒNG LẶP AUTO FARM ẨN Ở ĐÂY ĐỂ TRÁNH CONFLICT ]]
 end)
 if not status then
     WriteLog("LỖI HOOK UIManager: " .. tostring(err))
+end
+
+
+-- ============================================================================
+-- CHỨC NĂNG TỰ ĐỘNG MỞ RƯƠNG VÀNG SỐ LẺ, HÚT ĐỒ BATCH LOOT & THU HỒI ĐỒ RÁC
+-- Máy Trạng Thái (State Machine Loop 0.1s): 
+-- OPEN ➔ WAIT_DROP (chờ 1.0s hút đồ vào túi) ➔ RECYCLE (thu hồi) ➔ WAIT_SYNC (chờ 0.6s sync ô trống) ➔ OPEN
+-- ============================================================================
+_G.Mod_GoldenChestState = "OPEN"
+_G.Mod_GoldenChestWaitTime = 0
+_G.Mod_GoldenChestBatchIds = {}
+
+-- 1. Hàm phát gói mạng hút sạch vật phẩm
+local function PerformVacuumItems()
+    pcall(function()
+        if _G.Mod_GoldenChestBatchIds and #_G.Mod_GoldenChestBatchIds > 0 then
+            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                _G.PickupManager.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                _G.networkRequest.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+            end
+        end
+    end)
+end
+
+-- 2. Hàm lọc & Thu hồi đồ rác Trác Việt
+local function PerformBagRecycle()
+    pcall(function()
+        PerformVacuumItems()
+
+        local updatedItems = _G.BagInfoData and _G.BagInfoData.TotalItems
+        if not updatedItems and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+            pcall(function() updatedItems = _G.BagInfoData:GetTotalItems() end)
+        end
+        if updatedItems then
+            local recycleMap = {}
+            local recycleCount = 0
+            for k, item in pairs(updatedItems) do
+                if item then
+                    local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                    local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
+                    local itemType = tblItem.type or 0
+                    local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
+                    local subType = tblItem.subType or 0
+                    local itemCount = item.count or (item.data and item.data.count) or 1
+
+                    if itemType == 2 or (tblEquip and tblEquip.id) then
+                        if (not tblEquip or not tblEquip.id) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                            pcall(function()
+                                local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
+                                if eq then tblEquip = eq end
+                            end)
+                        end
+                        tblEquip = tblEquip or {}
+
+                        local excDesList = {}
+                        local sInfo = item.serverInfo or item.serverData or {}
+                        local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or sInfo.excellentAttrs
+
+                        if _G.RoleEquipUtility then
+                            if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
+                                pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc, tblEquip) end)
+                            end
+                            if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
+                                pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo(sInfo) end)
+                            end
+                        end
+                        if (#excDesList == 0) and item.GetEquipExcellenceDesList then
+                            pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
+                        end
+
+                        local name = tblItem.name or item.name or ""
+                        local isExcellenceItem = (string.find(name, "Trác Việt") ~= nil) or (#excDesList > 0)
+
+                        local isArmor = (subType >= 13 and subType <= 17)
+                        local isWeapon = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
+                        local isSmeltOrJewelry = (subType >= 100) or (subType == 18 or subType == 19 or subType == 20 or subType == 21 or subType == 22 or subType == 26 or (subType >= 34 and subType <= 38))
+
+                        local isGood = false
+                        if isSmeltOrJewelry or not isExcellenceItem then
+                            isGood = true
+                        elseif isArmor then
+                            local hasHP, hasReflect = false, false
+                            for _, str in ipairs(excDesList) do
+                                if str then
+                                    if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
+                                    if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
+                                end
+                            end
+                            if hasHP and hasReflect then isGood = true end
+                        elseif isWeapon then
+                            local hasSpeed, hasAtk = false, false
+                            for _, str in ipairs(excDesList) do
+                                if str then
+                                    if string.find(str, "Công Tốc +7", 1, true) ~= nil then hasSpeed = true end
+                                    if string.find(str, "Tấn công +2.0%", 1, true) ~= nil then hasAtk = true end
+                                end
+                            end
+                            if hasSpeed and hasAtk then isGood = true end
+                        else
+                            isGood = true
+                        end
+
+                        local GUID = item.id or (item.data and item.data.id)
+                        if not isGood and GUID then
+                            recycleMap[GUID] = itemCount
+                            recycleCount = recycleCount + 1
+                        end
+                    end
+                end
+            end
+
+            if recycleCount > 0 then
+                if _G.networkRequest and _G.networkRequest.ReqItemRecycle then
+                    local RecycleWayType = _G.RecycleWayType and _G.RecycleWayType.Bag or 1
+                    pcall(function() _G.networkRequest.ReqItemRecycle(recycleMap, RecycleWayType) end)
+                end
+            end
+        end
+    end)
+end
+
+_G.Mod_ExecuteGoldenChestAutoProcess = function()
+    _G.Mod_GoldenChestState = "OPEN"
+    _G.Mod_GoldenChestWaitTime = 0
+    _G.Mod_GoldenChestBatchIds = {}
+end
+
+if not _G.Mod_GoldenChestLoopStarted then
+    _G.Mod_GoldenChestLoopStarted = true
+    if _G.Timer and _G.Timer.StartLoop then
+        _G.Timer.StartLoop(0.1, -1, function()
+            if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+            if not _G.Mod_AutoOpenGoldenChest_Enabled then
+                _G.Mod_GoldenChestState = "OPEN"
+                return
+            end
+
+            pcall(function()
+                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+
+                if _G.Mod_GoldenChestState == "OPEN" then
+                    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                    if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                        pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+                    end
+                    if not items then return end
+
+                    local targetChestId = nil
+                    local targetChestStackCount = 0
+                    local totalOddCount = 0
+
+                    for k, item in pairs(items) do
+                        if item then
+                            local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                            local name = tblItem.name or item.name or ""
+                            local itemCount = item.count or (item.data and item.data.count) or 1
+                            local itemType = tblItem.type or 0
+
+                            if itemType == 5 and string.find(name, "Rương Vàng") then
+                                local tierNum = tonumber(string.match(name, "%+(%d+)"))
+                                if tierNum and (tierNum % 2 ~= 0) then
+                                    if not targetChestId then
+                                        targetChestId = item.id or (item.data and item.data.id)
+                                        targetChestStackCount = itemCount
+                                    end
+                                    totalOddCount = totalOddCount + itemCount
+                                end
+                            end
+                        end
+                    end
+
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+
+                    if not targetChestId or totalOddCount == 0 or targetChestStackCount == 0 then
+                        _G.Mod_AutoOpenGoldenChest_Enabled = false
+                        if CS.UnityEngine.PlayerPrefs then
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoOpenGoldenChest_Enabled", 0)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end
+                        if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                        _G.Mod_GoldenChestState = "OPEN"
+                        return
+                    end
+
+                    _G.Mod_GoldenChestBatchIds = {}
+
+                    -- Mở tối đa 20 rương
+                    local openCount = math.min(20, targetChestStackCount)
+                    if openCount > 0 and _G.networkRequest and _G.networkRequest.ReqUseItem then
+                        _G.networkRequest.ReqUseItem(openCount, targetChestId)
+                    end
+
+                    -- Chờ 1.0s cho đồ rớt & hút sạch vào túi
+                    _G.Mod_GoldenChestWaitTime = nowTime + 1.0
+                    _G.Mod_GoldenChestState = "WAIT_DROP"
+
+                elseif _G.Mod_GoldenChestState == "WAIT_DROP" then
+                    PerformVacuumItems()
+                    if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                        _G.Mod_GoldenChestState = "RECYCLE"
+                    end
+
+                elseif _G.Mod_GoldenChestState == "RECYCLE" then
+                    PerformBagRecycle()
+                    _G.Mod_GoldenChestWaitTime = nowTime + 0.6
+                    _G.Mod_GoldenChestState = "WAIT_SYNC"
+
+                elseif _G.Mod_GoldenChestState == "WAIT_SYNC" then
+                    if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                        if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                        _G.Mod_GoldenChestState = "OPEN"
+                    end
+                end
+            end)
+        end)
+    end
 end
