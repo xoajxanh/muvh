@@ -3821,6 +3821,15 @@ local function CreateModUI()
                                                 if _G.RoleManager.me.SetAutoFight then
                                                     _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                                 end
+                                            else
+                                                -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
+                                                if isMonsterNearby(15) then
+                                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                        if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                                            _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                        end
+                                                    end
+                                                end
                                             end
                                         end
                                     end
@@ -3854,8 +3863,6 @@ local function CreateModUI()
                                                         local dist = math.max(math.abs(curX - targetX),
                                                             math.abs(curY - targetY))
                                                         if dist > 1.5 then
-                                                            -- Đang trong quá trình di chuyển về vị trí target -> cắm cờ
-                                                            _G.Mod_IsReturningToPos = true
                                                             local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
                                                             if not hasPkTarget then
                                                                 pcall(function()
@@ -3876,11 +3883,10 @@ local function CreateModUI()
                                                                 end)
                                                             end
                                                         else
-                                                            -- Đã về tới vị trí bãi farm (dist <= 1.5):
-                                                            -- CHỈ bật AutoFight 1 lần nếu trước đó đang trong trạng thái di chuyển về bãi (_G.Mod_IsReturningToPos == true)
-                                                            if _G.Mod_IsReturningToPos then
-                                                                _G.Mod_IsReturningToPos = false
-                                                                if not _G.Mod_AutoPK_Enabled then
+                                                            -- Đã về tới vị trí tọa độ mục tiêu (dist <= 1.5):
+                                                            -- CHỈ bật AutoFight nếu Auto PK đang TẮT và có Quái/Kundun ở gần (~15 ô)
+                                                            if not _G.Mod_AutoPK_Enabled then
+                                                                if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                                                                     if me and me.SetAutoFight then
                                                                         me:SetAutoFight("AutoFight")
                                                                     end
