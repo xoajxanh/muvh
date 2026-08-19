@@ -1285,9 +1285,19 @@ local function CreateModUI()
         }
 
         local function GetMapsConfigByTier(tierTag)
-            if not tierTag then return _G.Mod_MapsConfig_c7 or {} end
+            if not tierTag or tierTag == "" then
+                local p = _G.Mod_Config_Reincarnation_Primary
+                if not p then
+                    pcall(function()
+                        local prefP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
+                        if prefP >= 3 and prefP <= 12 then p = prefP end
+                    end)
+                end
+                p = p or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
+                tierTag = "C" .. tostring(p)
+            end
             local tagLower = string.lower(tierTag)
-            return _G["Mod_MapsConfig_" .. tagLower] or {}
+            return _G["Mod_MapsConfig_" .. tagLower] or _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7 or {}
         end
         _G.GetMapsConfigByTier = GetMapsConfigByTier
 
@@ -1336,7 +1346,7 @@ local function CreateModUI()
                 local txt = titleGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color(1, 0.8, 0, 1)
-                txt.fontSize = 18
+                txt.fontSize = 16
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
                 titleUIPool[index] = { go = titleGo, txt = txt, rt = rt }
@@ -1577,7 +1587,7 @@ local function CreateModUI()
                                     end)
                                 else
                                     uiBtn.txt.text = cfg.name .. ": " .. prefix .. statusStr
-                                    uiBtn.txt.fontSize = 16
+                                    uiBtn.txt.fontSize = 17
 
                                     uiBtn.btn.onClick:RemoveAllListeners()
                                     uiBtn.btn.onClick:AddListener(function()
@@ -2084,11 +2094,12 @@ local function CreateModUI()
                             local meId = me and me.data and me.data.id
                             local currentMapId = _G.SceneData and _G.SceneData.mapId
 
-                            local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7" }
-                            local tab = _G.ModAutoBossConfigTab or currentTiers[#currentTiers] or "C7"
+                            local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
+                            local primaryTag = "C" .. tostring(primaryTier)
+                            local tab = _G.ModAutoBossConfigTab or primaryTag
                             local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
-                            if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
-                            local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or 101096
+                            if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
+                            local targetMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
 
                             -- 1. Scan for ALIVE HH Bosses on current map using Mod_GetAliveHHBossList()
                             local aliveHHBosses = {}
@@ -2682,12 +2693,12 @@ local function CreateModUI()
                                     local tx, ty = tonumber(parts[1]), tonumber(parts[2])
 
                                     if tx and ty then
-                                        local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C7" }
-                                        local tab = _G.ModAutoBossConfigTab or currentTiers[#currentTiers] or "C7"
+                                        local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
+                                        local primaryTag = "C" .. tostring(primaryTier)
+                                        local tab = _G.ModAutoBossConfigTab or primaryTag
                                         local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
-                                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
-                                        local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
-                                            101096
+                                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
+                                        local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
                                         local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
                                             400216
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
@@ -3352,7 +3363,8 @@ local function CreateModUI()
                                                     if confId then
                                                         local cachedPref = _G.Mod_ItemConfigCache[confId]
                                                         if cachedPref == nil then
-                                                            local rLevel = confId % 10
+                                                            local rLevel = confId % 100
+                                                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
                                                             local rColor = 0
                                                             local cfg = nil
                                                             if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
@@ -3817,15 +3829,6 @@ local function CreateModUI()
                                                 if _G.RoleManager.me.SetAutoFight then
                                                     _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                                 end
-                                            else
-                                                -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
-                                                if isMonsterNearby(15) then
-                                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
-                                                        if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                                                            _G.RoleManager.me:SetAutoFight("AutoFight")
-                                                        end
-                                                    end
-                                                end
                                             end
                                         end
                                     end
@@ -3859,32 +3862,9 @@ local function CreateModUI()
                                                         local dist = math.max(math.abs(curX - targetX),
                                                             math.abs(curY - targetY))
                                                         if dist > 1.5 then
-                                                            -- Kiểm tra kẻ địch / quái vật xung quanh: chỉ quay lại X#y khi xung quanh KHÔNG CÓ ĐỊCH
+                                                            -- Đang trong quá trình di chuyển về vị trí target -> cắm cờ
+                                                            _G.Mod_IsReturningToPos = true
                                                             local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
-                                                            local hasMonsterNearby = false
-                                                            local scanRange = _G.Mod_CustomAttackRange or 15
-                                                            if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
-                                                                local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, scanRange, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                                                                if monsters and #monsters > 0 then hasMonsterNearby = true end
-                                                            end
-                                                            -- if not hasMonsterNearby and _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                                            --     local monsterRoles = _G.RoleManager.GetRolesByType(2)
-                                                            --     if monsterRoles then
-                                                            --         for _, role in pairs(monsterRoles) do
-                                                            --             if role and not role.isDead and role.hp and role.hp > 0 then
-                                                            --                 local rx = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
-                                                            --                 local ry = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
-                                                            --                 if rx and ry then
-                                                            --                     local mDist = math.max(math.abs(curX - tonumber(rx)), math.abs(curY - tonumber(ry)))
-                                                            --                     if mDist <= scanRange then
-                                                            --                         hasMonsterNearby = true
-                                                            --                         break
-                                                            --                     end
-                                                            --                 end
-                                                            --             end
-                                                            --         end
-                                                            --     end
-                                                            -- end
                                                             if not hasPkTarget then
                                                                 pcall(function()
                                                                     if me and me.MoveTo then
@@ -3904,10 +3884,11 @@ local function CreateModUI()
                                                                 end)
                                                             end
                                                         else
-                                                            -- Đã về tới vị trí tọa độ mục tiêu (dist <= 1.5):
-                                                            -- CHỈ bật AutoFight nếu Auto PK đang TẮT và có Quái/Kundun ở gần (~15 ô)
-                                                            if not _G.Mod_AutoPK_Enabled then
-                                                                if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                            -- Đã về tới vị trí bãi farm (dist <= 1.5):
+                                                            -- CHỈ bật AutoFight 1 lần nếu trước đó đang trong trạng thái di chuyển về bãi (_G.Mod_IsReturningToPos == true)
+                                                            if _G.Mod_IsReturningToPos then
+                                                                _G.Mod_IsReturningToPos = false
+                                                                if not _G.Mod_AutoPK_Enabled then
                                                                     if me and me.SetAutoFight then
                                                                         me:SetAutoFight("AutoFight")
                                                                     end
@@ -4760,7 +4741,7 @@ local function CreateModUI()
             _G.AutoJumpBoss_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoJumpBoss_Enabled", 1) == 1
         end
-        local runeLevels = { "L5L", "L5", "L6", "L7", "L7M" }
+        local runeLevels = { "L5L", "L5", "L6", "L7", "L8", "L9", "L10", "L10M" }
         local runeColors = { "Luc", "Lam", "Do" }
         for _, lv in ipairs(runeLevels) do
             for _, clr in ipairs(runeColors) do
@@ -4975,13 +4956,13 @@ local function CreateModUI()
                     extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
                 end
                 if _G[varName] then
-                    bgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    txt.text = label .. ": ON" .. extra
+                    bgImg.color = Color(0.1, 0.6, 0.2, 1)
+                    txt.text = label .. extra
                     txt.color = Color.white
                 else
-                    bgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    txt.text = label .. ": OFF" .. extra
-                    txt.color = Color.white
+                    bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    txt.text = label .. extra
+                    txt.color = Color(0.8, 0.8, 0.8, 1)
                 end
             end
             UpdateLabel()
@@ -5046,7 +5027,15 @@ local function CreateModUI()
 
             local function UpdateLabel()
                 if _G[varName] then
-                    bgImg.color = Color(0.2, 0.5, 0.2, 1)
+                    if label == "Lục" then
+                        bgImg.color = Color(0.1, 0.6, 0.2, 1)
+                    elseif label == "Lam" then
+                        bgImg.color = Color(0.1, 0.4, 0.8, 1)
+                    elseif label == "Đỏ" then
+                        bgImg.color = Color(0.8, 0.2, 0.2, 1)
+                    else
+                        bgImg.color = Color(0.1, 0.6, 0.2, 1)
+                    end
                     txt.text = label
                     txt.color = Color.white
                 else
@@ -5076,19 +5065,22 @@ local function CreateModUI()
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             titleRt.anchoredPosition = Vector2(rightColX + 10, currentY)
-            titleRt.sizeDelta = Vector2(300, 25)
+            titleRt.sizeDelta = Vector2(375, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
             titleTxt.color = Color(1, 0.8, 0, 1)
             titleTxt.fontSize = 17
-            titleTxt.alignment = TextAnchor.MiddleLeft
+            titleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then titleTxt.font = defaultFont end
 
             currentY = currentY - 35
 
-            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY)
-            currentY = currentY - 40
+            local rightColX = 20
+            local currentY = -95
+
+            -- Hàng 1 (50-50 Split): Nút TỰ ĐỘNG NHẶT (Trái) & 2 nút PA NHẶT (Phải)
+            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY, 160)
 
             if _G.AutoPick_Mode == nil then
                 _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
@@ -5097,16 +5089,13 @@ local function CreateModUI()
                 end
             end
 
-            local btnWidth = 125
-            local btnHeight = 30
-
             local btnPa1Go = GameObject("AutoPick_PA1_Btn")
             btnPa1Go.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, btnPa1Go)
             local rtPa1 = btnPa1Go:AddComponent(typeof(RectTransform))
             rtPa1.anchorMin, rtPa1.anchorMax, rtPa1.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            rtPa1.anchoredPosition = Vector2(rightColX, currentY)
-            rtPa1.sizeDelta = Vector2(btnWidth, btnHeight)
+            rtPa1.anchoredPosition = Vector2(rightColX + 210, currentY)
+            rtPa1.sizeDelta = Vector2(80, 35)
 
             local bgPa1 = GameObject("Bg")
             bgPa1.transform:SetParent(btnPa1Go.transform, false)
@@ -5122,7 +5111,7 @@ local function CreateModUI()
             txtRtPa1.sizeDelta = Vector2(0, 0)
             local txtPa1 = txtGoPa1:AddComponent(typeof(Text))
             txtPa1.raycastTarget = false
-            txtPa1.fontSize = 15
+            txtPa1.fontSize = 14
             txtPa1.alignment = TextAnchor.MiddleCenter
             txtPa1.text = "PA NHẶT 1"
             if defaultFont then txtPa1.font = defaultFont end
@@ -5134,8 +5123,8 @@ local function CreateModUI()
             table.insert(_G.NangCaoUIList, btnPa2Go)
             local rtPa2 = btnPa2Go:AddComponent(typeof(RectTransform))
             rtPa2.anchorMin, rtPa2.anchorMax, rtPa2.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            rtPa2.anchoredPosition = Vector2(rightColX + btnWidth + 10, currentY)
-            rtPa2.sizeDelta = Vector2(btnWidth, btnHeight)
+            rtPa2.anchoredPosition = Vector2(rightColX + 295, currentY)
+            rtPa2.sizeDelta = Vector2(80, 35)
 
             local bgPa2 = GameObject("Bg")
             bgPa2.transform:SetParent(btnPa2Go.transform, false)
@@ -5151,7 +5140,7 @@ local function CreateModUI()
             txtRtPa2.sizeDelta = Vector2(0, 0)
             local txtPa2 = txtGoPa2:AddComponent(typeof(Text))
             txtPa2.raycastTarget = false
-            txtPa2.fontSize = 15
+            txtPa2.fontSize = 14
             txtPa2.alignment = TextAnchor.MiddleCenter
             txtPa2.text = "PA NHẶT 2"
             if defaultFont then txtPa2.font = defaultFont end
@@ -5160,14 +5149,14 @@ local function CreateModUI()
 
             local function UpdatePAModeLabels()
                 if _G.AutoPick_Mode == 1 then
-                    bgImgPa1.color = Color(0.2, 0.5, 0.2, 1)
+                    bgImgPa1.color = Color(0.1, 0.6, 0.2, 1)
                     txtPa1.color = Color.white
                     bgImgPa2.color = Color(0.3, 0.3, 0.3, 1)
                     txtPa2.color = Color(0.7, 0.7, 0.7, 1)
                 else
                     bgImgPa1.color = Color(0.3, 0.3, 0.3, 1)
                     txtPa1.color = Color(0.7, 0.7, 0.7, 1)
-                    bgImgPa2.color = Color(0.2, 0.5, 0.2, 1)
+                    bgImgPa2.color = Color(0.1, 0.6, 0.2, 1)
                     txtPa2.color = Color.white
                 end
             end
@@ -5187,43 +5176,68 @@ local function CreateModUI()
                 UpdatePAModeLabels()
             end)
 
-            currentY = currentY - 40
+            currentY = currentY - 45
 
+            -- BẢNG PHÙ VĂN (2 CỘT x 4 HÀNG)
+            local titleGo = GameObject("RuneTitle")
+            titleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, titleGo)
+            local titleRt = titleGo:AddComponent(typeof(RectTransform))
+            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleRt.anchoredPosition = Vector2(rightColX, currentY)
+            titleRt.sizeDelta = Vector2(375, 25)
+            local titleTxt = titleGo:AddComponent(typeof(Text))
+            titleTxt.raycastTarget = false
+            titleTxt.text = "[ LỰA CHỌN NHẶT PHÙ VĂN ]"
+            titleTxt.color = Color(1, 0.8, 0, 1)
+            titleTxt.fontSize = 16
+            titleTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then titleTxt.font = defaultFont end
 
-            local function CreateRuneLabel(text, y)
+            currentY = currentY - 30
+
+            local function CreateRuneLabel(text, x, y)
                 local lbl = GameObject("RuneLbl_" .. text)
                 lbl.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.NangCaoUIList, lbl)
                 local rt = lbl:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(rightColX, y)
-                rt.sizeDelta = Vector2(70, 20)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(50, 30)
                 local txt = lbl:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.text = text
                 txt.color = Color(1, 1, 0.5, 1)
-                txt.fontSize = 16
+                txt.fontSize = 14
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
             end
 
-            local runeRows = {
-                { label = "PV < 5", key = "L5L" },
-                { label = "PV 5",   key = "L5" },
-                { label = "PV 6",   key = "L6" },
-                { label = "PV 7",   key = "L7" },
-                { label = "PV > 7", key = "L7M" }
+            local runeGrid = {
+                { left = { label = "< LV5", key = "L5L" }, right = { label = "LV8", key = "L8" } },
+                { left = { label = "LV5",   key = "L5" },  right = { label = "LV9", key = "L9" } },
+                { left = { label = "LV6",   key = "L6" },  right = { label = "LV10", key = "L10" } },
+                { left = { label = "LV7",   key = "L7" },  right = { label = "> LV10", key = "L10M" } },
             }
-            for _, row in ipairs(runeRows) do
-                CreateRuneLabel(row.label, currentY)
-                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.key .. "_Luc", rightColX + 65, currentY + 5, 50)
-                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.key .. "_Lam", rightColX + 120, currentY + 5, 50)
-                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.key .. "_Do", rightColX + 175, currentY + 5, 50)
+
+            for _, row in ipairs(runeGrid) do
+                -- Cột 1 (Bên trái: X = 20)
+                CreateRuneLabel(row.left.label, rightColX, currentY)
+                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.left.key .. "_Luc", rightColX + 52, currentY, 38)
+                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.left.key .. "_Lam", rightColX + 92, currentY, 38)
+                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.left.key .. "_Do", rightColX + 132, currentY, 38)
+
+                -- Cột 2 (Bên phải: X = 225, dàn đều Space Between)
+                local rightX = rightColX + 205
+                CreateRuneLabel(row.right.label, rightX, currentY)
+                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.right.key .. "_Luc", rightX + 52, currentY, 38)
+                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.right.key .. "_Lam", rightX + 92, currentY, 38)
+                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.right.key .. "_Do", rightX + 132, currentY, 38)
+
                 currentY = currentY - 35
             end
-            currentY = currentY + 35
 
-            currentY = currentY - 35
+            currentY = currentY - 10
 
             -- Limit Control
             local lValGo = GameObject("LimitValText")
@@ -5250,7 +5264,7 @@ local function CreateModUI()
             lmRt.anchorMin = Vector2(0, 1)
             lmRt.anchorMax = Vector2(0, 1)
             lmRt.pivot = Vector2(0, 1)
-            lmRt.anchoredPosition = Vector2(rightColX + 190, currentY)
+            lmRt.anchoredPosition = Vector2(rightColX + 245, currentY)
             lmRt.sizeDelta = Vector2(40, 30)
             local lmImg = lMinusGo:AddComponent(typeof(Image))
             lmImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -5275,7 +5289,7 @@ local function CreateModUI()
             lpRt.anchorMin = Vector2(0, 1)
             lpRt.anchorMax = Vector2(0, 1)
             lpRt.pivot = Vector2(0, 1)
-            lpRt.anchoredPosition = Vector2(rightColX + 240, currentY)
+            lpRt.anchoredPosition = Vector2(rightColX + 295, currentY)
             lpRt.sizeDelta = Vector2(40, 30)
             local lpImg = lPlusGo:AddComponent(typeof(Image))
             lpImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -5323,14 +5337,14 @@ local function CreateModUI()
             sep2Rt.anchorMax = Vector2(0, 1)
             sep2Rt.pivot = Vector2(0, 1)
             sep2Rt.anchoredPosition = Vector2(20, currentY)
-            sep2Rt.sizeDelta = Vector2(320, 20)
+            sep2Rt.sizeDelta = Vector2(380, 20)
             local sep2Txt = sep2Go:AddComponent(typeof(Text))
             sep2Txt.raycastTarget = false
             sep2Txt.color = Color(0.4, 0.4, 0.4, 1)
             sep2Txt.fontSize = 14
             sep2Txt.alignment = TextAnchor.MiddleLeft
             if defaultFont then sep2Txt.font = defaultFont end
-            sep2Txt.text = "--------------------------------------------------------"
+            sep2Txt.text = "--------------------------------------------------------------------------------"
 
             currentY = currentY - 20
             local titleGo = GameObject("KundunTitle")
@@ -5342,13 +5356,13 @@ local function CreateModUI()
             titleRt.anchorMax = Vector2(0, 1)
             titleRt.pivot = Vector2(0, 1)
             titleRt.anchoredPosition = Vector2(rightColX + 10, currentY)
-            titleRt.sizeDelta = Vector2(270, 25)
+            titleRt.sizeDelta = Vector2(375, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ INFO KUNDUN BOSS ]"
             titleTxt.color = Color(1, 0.8, 0, 1)
             titleTxt.fontSize = 18
-            titleTxt.alignment = TextAnchor.MiddleLeft
+            titleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then titleTxt.font = defaultFont end
 
 
@@ -5878,7 +5892,7 @@ local function CreateModUI()
             title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
             title1Txt.color = Color(1, 0.8, 0, 1)
             title1Txt.fontSize = 14
-            title1Txt.alignment = TextAnchor.MiddleLeft
+            title1Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then title1Txt.font = defaultFont end
 
             local function CreateSmeltToggle(label, varName, x, y, width, isKeepGood)
@@ -6045,7 +6059,7 @@ local function CreateModUI()
             title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
             title2Txt.color = Color(1, 0.8, 0, 1)
             title2Txt.fontSize = 13
-            title2Txt.alignment = TextAnchor.MiddleLeft
+            title2Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then title2Txt.font = defaultFont end
 
             curY = curY - 25
@@ -6370,7 +6384,7 @@ local function CreateModUI()
                         end
 
                         btnData.txt.text = "<color=#FFFF00>--- " .. titleStr .. " ---</color>"
-                        btnData.txt.alignment = TextAnchor.MiddleCenter
+                        btnData.txt.alignment = TextAnchor.MiddleLeft
                         btnData.img.color = Color(1, 1, 1, 0)
                         btnData.btn.onClick:RemoveAllListeners()
                         poolIdx = poolIdx + 1
@@ -6600,7 +6614,7 @@ local function CreateModUI()
             ChucNangTitleTxt.text = "[ CHỨC NĂNG HỖ TRỢ ]"
             ChucNangTitleTxt.color = Color(1, 0.8, 0, 1)
             ChucNangTitleTxt.fontSize = 17
-            ChucNangTitleTxt.alignment = TextAnchor.MiddleLeft
+            ChucNangTitleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then ChucNangTitleTxt.font = defaultFont end
 
             currentY = currentY - 35
@@ -6949,9 +6963,9 @@ local function CreateModUI()
                 end)
             end)
 
-            currentY = currentY - 45
-            CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", rightColX2, currentY)
             currentY = currentY - 40
+            CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", rightColX2, currentY)
+            currentY = currentY - 45
 
             -- Cài đặt DELAY QUAY LẠI
             local function CreateReturnPosDelayControl(xPos, yPos)
@@ -7217,7 +7231,7 @@ local function CreateModUI()
             local etRt = execToggleGo:AddComponent(typeof(RectTransform))
             etRt.anchorMin, etRt.anchorMax, etRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             etRt.anchoredPosition = Vector2(20, -95)
-            etRt.sizeDelta = Vector2(200, 32)
+            etRt.sizeDelta = Vector2(170, 32)
             local etBg = GameObject("Bg")
             etBg.transform:SetParent(execToggleGo.transform, false)
             local etBgRt = etBg:AddComponent(typeof(RectTransform))
@@ -7260,24 +7274,24 @@ local function CreateModUI()
                 end
             end)
 
-            -- ADMIN TIER CONTROLS (Chuyển chính & Chuyển phụ cho Admin test)
+            -- ADMIN TIER CONTROLS (Chuyển chính & Chuyển phụ cho Admin test) - Đặt ngang hàng với nút Exec (Y = -95, X = 200)
             local adminTierGo = GameObject("AdminTierRow")
             adminTierGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, adminTierGo)
             local atRt = adminTierGo:AddComponent(typeof(RectTransform))
             atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            atRt.anchoredPosition = Vector2(20, -135)
-            atRt.sizeDelta = Vector2(550, 30)
+            atRt.anchoredPosition = Vector2(200, -95)
+            atRt.sizeDelta = Vector2(390, 32)
 
             local atLblGo = GameObject("Lbl")
             atLblGo.transform:SetParent(adminTierGo.transform, false)
             local atLblRt = atLblGo:AddComponent(typeof(RectTransform))
             atLblRt.anchorMin, atLblRt.anchorMax, atLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             atLblRt.anchoredPosition = Vector2(0, 0)
-            atLblRt.sizeDelta = Vector2(170, 30)
+            atLblRt.sizeDelta = Vector2(135, 30)
             local atLblTxt = atLblGo:AddComponent(typeof(Text))
-            atLblTxt.text = "Cấu hình Chuyển Admin:"
-            atLblTxt.color, atLblTxt.fontSize = Color.yellow, 16
+            atLblTxt.text = "Cấu hình Chuyển:"
+            atLblTxt.color, atLblTxt.fontSize = Color.yellow, 15
             atLblTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then atLblTxt.font = defaultFont end
 
@@ -7286,7 +7300,7 @@ local function CreateModUI()
             priLblGo.transform:SetParent(adminTierGo.transform, false)
             local priLblRt = priLblGo:AddComponent(typeof(RectTransform))
             priLblRt.anchorMin, priLblRt.anchorMax, priLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            priLblRt.anchoredPosition = Vector2(175, 0)
+            priLblRt.anchoredPosition = Vector2(140, 0)
             priLblRt.sizeDelta = Vector2(45, 30)
             local priLblTxt = priLblGo:AddComponent(typeof(Text))
             priLblTxt.text = "Chính:"
@@ -7299,8 +7313,8 @@ local function CreateModUI()
             priInGo.transform:SetParent(adminTierGo.transform, false)
             local priInRt = priInGo:AddComponent(typeof(RectTransform))
             priInRt.anchorMin, priInRt.anchorMax, priInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            priInRt.anchoredPosition = Vector2(220, 0)
-            priInRt.sizeDelta = Vector2(45, 30)
+            priInRt.anchoredPosition = Vector2(185, 0)
+            priInRt.sizeDelta = Vector2(40, 30)
             local priInImg = priInGo:AddComponent(typeof(Image))
             priInImg.color = Color(1, 1, 1, 1)
             local priTxtGo = GameObject("Text")
@@ -7322,7 +7336,7 @@ local function CreateModUI()
             secLblGo.transform:SetParent(adminTierGo.transform, false)
             local secLblRt = secLblGo:AddComponent(typeof(RectTransform))
             secLblRt.anchorMin, secLblRt.anchorMax, secLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            secLblRt.anchoredPosition = Vector2(275, 0)
+            secLblRt.anchoredPosition = Vector2(230, 0)
             secLblRt.sizeDelta = Vector2(35, 30)
             local secLblTxt = secLblGo:AddComponent(typeof(Text))
             secLblTxt.text = "Phụ:"
@@ -7335,8 +7349,8 @@ local function CreateModUI()
             secInGo.transform:SetParent(adminTierGo.transform, false)
             local secInRt = secInGo:AddComponent(typeof(RectTransform))
             secInRt.anchorMin, secInRt.anchorMax, secInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            secInRt.anchoredPosition = Vector2(310, 0)
-            secInRt.sizeDelta = Vector2(45, 30)
+            secInRt.anchoredPosition = Vector2(265, 0)
+            secInRt.sizeDelta = Vector2(40, 30)
             local secInImg = secInGo:AddComponent(typeof(Image))
             secInImg.color = Color(1, 1, 1, 1)
             local secTxtGo = GameObject("Text")
@@ -7358,8 +7372,8 @@ local function CreateModUI()
             applyBtnGo.transform:SetParent(adminTierGo.transform, false)
             local applyRt = applyBtnGo:AddComponent(typeof(RectTransform))
             applyRt.anchorMin, applyRt.anchorMax, applyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            applyRt.anchoredPosition = Vector2(365, 0)
-            applyRt.sizeDelta = Vector2(85, 30)
+            applyRt.anchoredPosition = Vector2(310, 0)
+            applyRt.sizeDelta = Vector2(75, 30)
             local applyImg = applyBtnGo:AddComponent(typeof(Image))
             applyImg.color = Color(0.2, 0.6, 0.2, 1)
             local applyBtn = applyBtnGo:AddComponent(typeof(Button))
@@ -7370,7 +7384,7 @@ local function CreateModUI()
             aTxtRt.sizeDelta = Vector2(0, 0)
             local aTxt = aTxtGo:AddComponent(typeof(Text))
             aTxt.text = "Áp dụng"
-            aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
+            aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
             if defaultFont then aTxt.font = defaultFont end
 
             applyBtn.onClick:AddListener(function()
@@ -7398,11 +7412,15 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, sepGo)
             local sepRt = sepGo:AddComponent(typeof(RectTransform))
             sepRt.anchorMin, sepRt.anchorMax, sepRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            sepRt.anchoredPosition = Vector2(0, -175)
-            sepRt.sizeDelta = Vector2(500, 20)
+            sepRt.anchoredPosition = Vector2(0, -135)
+            sepRt.sizeDelta = Vector2(1000, 20)
             local sepTxt = sepGo:AddComponent(typeof(Text))
-            sepTxt.text = "--------------------------------------------------------"
-            sepTxt.color, sepTxt.fontSize, sepTxt.alignment = Color.gray, 18, TextAnchor.MiddleCenter
+            sepTxt.raycastTarget = false
+            sepTxt.text = "------------------------------------------------------------------------------------------------------------"
+            sepTxt.color = Color(0.7, 0.7, 0.7, 1)
+            sepTxt.fontSize = 18
+            sepTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then sepTxt.font = defaultFont end
 
             -- Token Generator Title
             local tokTitleGo = GameObject("TokTitle")
@@ -7410,7 +7428,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, tokTitleGo)
             local tokRt = tokTitleGo:AddComponent(typeof(RectTransform))
             tokRt.anchorMin, tokRt.anchorMax, tokRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            tokRt.anchoredPosition = Vector2(0, -195)
+            tokRt.anchoredPosition = Vector2(0, -160)
             tokRt.sizeDelta = Vector2(500, 30)
             local tokTxt = tokTitleGo:AddComponent(typeof(Text))
             tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN"
@@ -7430,7 +7448,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeLblGo)
             local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
             inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -225)
+            inCodeLblRt.anchoredPosition = Vector2(20, -190)
             inCodeLblRt.sizeDelta = Vector2(400, 20)
             local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
             inCodeLblTxt.text = "Mã MD5 của khách:"
@@ -7443,7 +7461,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeGo)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -245)
+            inCodeRt.anchoredPosition = Vector2(20, -210)
             inCodeRt.sizeDelta = Vector2(550, 35)
             local inCodeImg = inCodeGo:AddComponent(typeof(Image))
             inCodeImg.color = Color(1, 1, 1, 1)
@@ -7472,7 +7490,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteBtnGo)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -245)
+            pasteRt.anchoredPosition = Vector2(-20, -210)
             pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
@@ -7500,7 +7518,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inUidLblGo)
             local inUidLblRt = inUidLblGo:AddComponent(typeof(RectTransform))
             inUidLblRt.anchorMin, inUidLblRt.anchorMax, inUidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidLblRt.anchoredPosition = Vector2(20, -285)
+            inUidLblRt.anchoredPosition = Vector2(20, -250)
             inUidLblRt.sizeDelta = Vector2(400, 20)
             local inUidLblTxt = inUidLblGo:AddComponent(typeof(Text))
             inUidLblTxt.text = "UID của khách (hoặc ALL):"
@@ -7513,7 +7531,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inUidGo)
             local inUidRt = inUidGo:AddComponent(typeof(RectTransform))
             inUidRt.anchorMin, inUidRt.anchorMax, inUidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidRt.anchoredPosition = Vector2(20, -305)
+            inUidRt.anchoredPosition = Vector2(20, -270)
             inUidRt.sizeDelta = Vector2(550, 35)
             local inUidImg = inUidGo:AddComponent(typeof(Image))
             inUidImg.color = Color(1, 1, 1, 1)
@@ -7542,7 +7560,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteUidBtnGo)
             local pasteUidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
             pasteUidRt.anchorMin, pasteUidRt.anchorMax, pasteUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteUidRt.anchoredPosition = Vector2(-20, -305)
+            pasteUidRt.anchoredPosition = Vector2(-20, -270)
             pasteUidRt.sizeDelta = Vector2(120, 35)
             local pasteUidImg = pasteUidBtnGo:AddComponent(typeof(Image))
             pasteUidImg.color = Color(0.8, 0.4, 0, 1)
@@ -7570,7 +7588,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, tokTierRowGo)
             local ttrRt = tokTierRowGo:AddComponent(typeof(RectTransform))
             ttrRt.anchorMin, ttrRt.anchorMax, ttrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ttrRt.anchoredPosition = Vector2(20, -305)
+            ttrRt.anchoredPosition = Vector2(20, -310)
             ttrRt.sizeDelta = Vector2(550, 30)
 
             -- Chuyển chính (3-12)
@@ -7715,7 +7733,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, genBtnGo)
             local genRt = genBtnGo:AddComponent(typeof(RectTransform))
             genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            genRt.anchoredPosition = Vector2(0, -420)
+            genRt.anchoredPosition = Vector2(0, -415)
             genRt.sizeDelta = Vector2(250, 40)
             local genImg = genBtnGo:AddComponent(typeof(Image))
             genImg.color = Color(0, 0.8, 0, 1)
@@ -7738,7 +7756,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, resGo)
             local resRt = resGo:AddComponent(typeof(RectTransform))
             resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            resRt.anchoredPosition = Vector2(20, -470)
+            resRt.anchoredPosition = Vector2(20, -465)
             resRt.sizeDelta = Vector2(550, 55)
             local resTextGo = GameObject("Text")
             resTextGo.transform:SetParent(resGo.transform, false)
@@ -8200,7 +8218,8 @@ local function CreateModUI()
                     local shouldPick = false
                     if isRune then
                         local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId
-                        local rLevel = confId % 10
+                        local rLevel = confId % 100
+                        if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
                         local rColor = 0
 
                         local cfg = nil
@@ -8233,8 +8252,14 @@ local function CreateModUI()
                             lvKey = "L6"
                         elseif rLevel == 7 then
                             lvKey = "L7"
-                        elseif rLevel > 7 then
-                            lvKey = "L7M"
+                        elseif rLevel == 8 then
+                            lvKey = "L8"
+                        elseif rLevel == 9 then
+                            lvKey = "L9"
+                        elseif rLevel == 10 then
+                            lvKey = "L10"
+                        elseif rLevel > 10 then
+                            lvKey = "L10M"
                         end
 
                         local clrKey = "Luc"
