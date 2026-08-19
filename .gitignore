@@ -33,6 +33,7 @@ final/new_bundles/
 final/new_lua/
 final/compiled_lua/
 final/modified_lua_admin/
+final/modified_lua_client/
 final/modified_lua_customer/
 final/temp_lua/
 final/temp_build/

@@ -560,7 +560,7 @@ local function CreateModUI()
         rt.anchorMin = Vector2(0, 0)
         rt.anchorMax = Vector2(0, 0)
         rt.pivot = Vector2(0, 0)
-        rt.anchoredPosition = Vector2(20, 280)
+        rt.anchoredPosition = Vector2(20, 370)
         rt.sizeDelta = Vector2(60, 60)
 
         local img = btnGo:AddComponent(typeof(Image))
@@ -585,7 +585,7 @@ local function CreateModUI()
         pkRt.anchorMin = Vector2(0, 0)
         pkRt.anchorMax = Vector2(0, 0)
         pkRt.pivot = Vector2(0, 0)
-        pkRt.anchoredPosition = Vector2(20, 370)
+        pkRt.anchoredPosition = Vector2(20, 460)
         pkRt.sizeDelta = Vector2(60, 60)
 
         local pkImg = pkBtnGo:AddComponent(typeof(Image))
@@ -629,13 +629,21 @@ local function CreateModUI()
         end)
 
         -- Floating Execute Script Button (Only visible for Admin)
+        if _G.Mod_ExecBtn_Visible == nil then
+            pcall(function()
+                _G.Mod_ExecBtn_Visible = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ExecBtn_Visible", 1) == 1
+            end)
+            if _G.Mod_ExecBtn_Visible == nil then _G.Mod_ExecBtn_Visible = true end
+        end
+
         local execBtnGo = GameObject("FloatingExecBtn")
+        _G.Mod_FloatingExecBtnGo = execBtnGo
         execBtnGo.transform:SetParent(modRoot.transform, false)
         local execRt = execBtnGo:AddComponent(typeof(RectTransform))
         execRt.anchorMin = Vector2(0, 0)
         execRt.anchorMax = Vector2(0, 0)
         execRt.pivot = Vector2(0, 0)
-        execRt.anchoredPosition = Vector2(20, 460)
+        execRt.anchoredPosition = Vector2(20, 280)
         execRt.sizeDelta = Vector2(60, 60)
 
         local execImg = execBtnGo:AddComponent(typeof(Image))
@@ -654,7 +662,7 @@ local function CreateModUI()
         execTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then execTxt.font = defaultFont end
 
-        execBtnGo:SetActive(_G.Mod_IsAdmin == true)
+        execBtnGo:SetActive(_G.Mod_IsAdmin == true and _G.Mod_ExecBtn_Visible == true)
 
         local execBtnComp = execBtnGo:AddComponent(typeof(Button))
         execBtnComp.onClick:AddListener(function()
@@ -1843,7 +1851,7 @@ local function CreateModUI()
             local function LogMsg(msg)
                 local noWriteLog = true
                 if noWriteLog then
-                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+                    --if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
                 else
                     local t = os.date("%H:%M:%S")
                     _G.Mod_DebugMsg("[" .. t .. "] " .. msg)
@@ -3677,7 +3685,7 @@ local function CreateModUI()
                     if not _G.Mod_PKScanLoopStarted then
                         _G.Mod_PKScanLoopStarted = true
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.5, -1, function()
+                            _G.Timer.StartLoop(0.1, -1, function()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
@@ -3830,7 +3838,7 @@ local function CreateModUI()
                     if not _G.Mod_ReturnPosLoopStarted then
                         _G.Mod_ReturnPosLoopStarted = true
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.5, -1, function()
+                            _G.Timer.StartLoop(0.1, -1, function()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
@@ -3851,9 +3859,33 @@ local function CreateModUI()
                                                         local dist = math.max(math.abs(curX - targetX),
                                                             math.abs(curY - targetY))
                                                         if dist > 1.5 then
-                                                            -- Đang bật Auto PK & đang bận đánh mục tiêu gần -> Tạm hoãn MoveTo
-                                                            local hasPkTarget = _G.Mod_AutoPK_Enabled and me.TargetAvatar and not me.TargetAvatar.isDead
-                                                            if not (hasPkTarget and dist <= 15) then
+                                                            -- Kiểm tra kẻ địch / quái vật xung quanh: chỉ quay lại X#y khi xung quanh KHÔNG CÓ ĐỊCH
+                                                            local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
+                                                            local hasMonsterNearby = false
+                                                            local scanRange = _G.Mod_CustomAttackRange or 15
+                                                            if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
+                                                                local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, scanRange, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                                                if monsters and #monsters > 0 then hasMonsterNearby = true end
+                                                            end
+                                                            -- if not hasMonsterNearby and _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                                            --     local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                                                            --     if monsterRoles then
+                                                            --         for _, role in pairs(monsterRoles) do
+                                                            --             if role and not role.isDead and role.hp and role.hp > 0 then
+                                                            --                 local rx = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                                                            --                 local ry = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
+                                                            --                 if rx and ry then
+                                                            --                     local mDist = math.max(math.abs(curX - tonumber(rx)), math.abs(curY - tonumber(ry)))
+                                                            --                     if mDist <= scanRange then
+                                                            --                         hasMonsterNearby = true
+                                                            --                         break
+                                                            --                     end
+                                                            --                 end
+                                                            --             end
+                                                            --         end
+                                                            --     end
+                                                            -- end
+                                                            if not hasPkTarget then
                                                                 pcall(function()
                                                                     if me and me.MoveTo then
                                                                         me:MoveTo({ x = targetX, y = targetY }, 0)
@@ -4016,13 +4048,58 @@ local function CreateModUI()
 
         _G.Mod_ClearAuthToken = function()
             pcall(function()
-                CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_AuthToken")
+                local modKeys = {
+                    "Mod_AuthToken", "Mod_AutoPK_Enabled", "Mod_ExecBtn_Visible",
+                    "Mod_AutoApproachTowerBoss", "Mod_InfiniteInstance", "Mod_AutoUseAngel",
+                    "Mod_AutoGuildPK_Enabled", "Mod_AutoPick_KTD", "Mod_AutoRevive_KTD",
+                    "Mod_ShowKundunHP", "Mod_AutoResurrect_Enabled", "Mod_AutoResurrect_Free_Enabled",
+                    "Mod_AutoResurrect_Here_Enabled", "Mod_PKScanDelay", "Mod_AutoReturnPos_Enabled",
+                    "Mod_AutoReturnPos_Coords", "Mod_AutoReturnPosDelay", "Mod_FarmStatsData",
+                    "Mod_AnStatsDate", "Mod_AnStatsData", "ModMainTab", "Mod_PrimaryTier",
+                    "Mod_SecondaryTier", "Mod_FOV", "Mod_AutoRefresh", "Mod_RefreshInterval",
+                    "AutoPick_Mode", "AutoPick_Enabled", "Mod_AutoPick_Limit", "Mod_CustomAttackRange",
+                    "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap", "Mod_AutoHH_Enabled",
+                    "ModAutoBossConfigTab", "Mod_LockTarget_Enabled", "Mod_LockTarget_Name"
+                }
+                for _, key in ipairs(modKeys) do
+                    CS.UnityEngine.PlayerPrefs.DeleteKey(key)
+                end
+
+                for bossId = 1, 500 do
+                    CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_AutoBoss_" .. bossId)
+                end
+
+                local smeltVars = {"Quality_White", "Quality_Green", "Quality_Blue", "Quality_Purple", "Quality_Orange", "Quality_Red", "Grade_Below6", "Grade_7", "Grade_8", "Grade_9Plus"}
+                for _, sv in ipairs(smeltVars) do
+                    CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_Smelt_" .. sv)
+                end
+
                 CS.UnityEngine.PlayerPrefs.Save()
+
                 _G.ModAuthValid = false
                 _lastAuthCheckTime = 0
                 _cachedAuthResult = false
+                _G.Mod_AutoPK_Enabled = false
+                _G.Mod_AutoApproachTowerBoss = false
+                _G.Mod_InfiniteInstance = false
+                _G.Mod_AutoUseAngel = false
+                _G.Mod_AutoGuildPK_Enabled = false
+                _G.Mod_AutoPick_KTD = false
+                _G.Mod_AutoRevive_KTD = false
+                _G.Mod_ShowKundunHP = false
+                _G.Mod_AutoResurrect_Enabled = false
+                _G.Mod_AutoResurrect_Free_Enabled = false
+                _G.Mod_AutoResurrect_Here_Enabled = false
+                _G.Mod_AutoReturnPos_Enabled = false
+                _G.Mod_AutoReturnPos_Coords = ""
+                _G.AutoPick_Enabled = false
+                _G.Mod_LockTarget_Enabled = false
+                _G.Mod_LockTarget_Name = ""
+
+                if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+
                 if _G.FloatingWordUtility then
-                    _G.FloatingWordUtility.QuickMsg("Đã xóa Token trong PlayerPrefs!")
+                    _G.FloatingWordUtility.QuickMsg("Đã xóa toàn bộ cài đặt bản Mod!")
                 end
                 if panelGo and panelGo.activeSelf then
                     panelGo:SetActive(false)
@@ -4037,7 +4114,7 @@ local function CreateModUI()
                     local errTxtGo = _G.authPanelGo.transform:Find("AuthErrText")
                     if errTxtGo then
                         local errTxt = errTxtGo:GetComponent(typeof(CS.UnityEngine.UI.Text))
-                        if errTxt then errTxt.text = "Đã xóa Token, vui lòng nhập Token mới." end
+                        if errTxt then errTxt.text = "Đã xóa cài đặt & Token, vui lòng nhập Token mới." end
                     end
                     _G.authPanelGo:SetActive(true)
                 end
@@ -4857,7 +4934,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
         end
-        CreateRangeControl(415, -140, "Phạm Vi Bot: ", "Mod_CustomAttackRange", 1)
+        CreateRangeControl(415, -140, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
 
 
 
@@ -5426,7 +5503,7 @@ local function CreateModUI()
                             { name = "THÁNH CỐT:", bossType = 16, bossId = 20201000 + tierNum, limit = 70 })
                     end
                     if tierNum >= 6 then
-                        local limit17 = (tierNum >= 8) and 400 or 300
+                        local limit17 = (tierNum >= 9) and 500 or (tierNum == 8 and 400 or (tierNum == 7 and 300 or 200))
                         table.insert(kundunConfigs,
                             { name = "PHÙ VĂN:", bossType = 17, bossId = 20211000 + tierNum, limit = limit17 })
                     end
@@ -5526,11 +5603,11 @@ local function CreateModUI()
             local function UpdateMasterToggle()
                 if _G.Mod_AutoFarmBoss_Enabled then
                     mtBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    mtTxt.text = "AUTO FARM: ON"
+                    mtTxt.text = "AUTO BOSS: ON"
                     mtTxt.color = Color.white
                 else
                     mtBgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    mtTxt.text = "AUTO FARM: OFF"
+                    mtTxt.text = "AUTO BOSS: OFF"
                     mtTxt.color = Color(0.9, 0.9, 0.9, 1)
                 end
             end
@@ -5542,6 +5619,14 @@ local function CreateModUI()
 
             mtBtn.onClick:AddListener(function()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
+                if _G.Mod_AutoFarmBoss_Enabled then
+                    _G.AutoPick_Enabled = false
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    if _G.ModUpdateCountText then
+                        pcall(_G.ModUpdateCountText)
+                    end
+                end
                 UpdateMasterToggle()
             end)
 
@@ -6488,7 +6573,7 @@ local function CreateModUI()
 
         local function CreateKundunUI()
             local currentY = -65
-            local rightColX2 = 380
+            local rightColX2 = 440
 
             -- Vạch dọc phân cách
             local vLineGo = GameObject("VerticalSeparator")
@@ -6496,7 +6581,7 @@ local function CreateModUI()
             table.insert(_G.NangCaoUIList, vLineGo)
             local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
             vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            vLineRt.anchoredPosition = Vector2(360, -45)
+            vLineRt.anchoredPosition = Vector2(420, -45)
             vLineRt.sizeDelta = Vector2(2, 535)
             local vLineImg = vLineGo:AddComponent(typeof(Image))
             vLineImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -7125,13 +7210,63 @@ local function CreateModUI()
             titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 22, TextAnchor.MiddleCenter
             if defaultFont then titleTxt.font = defaultFont end
 
+            -- TOGGLE HIỆN NÚT EXEC
+            local execToggleGo = GameObject("ExecBtn_Toggle")
+            execToggleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, execToggleGo)
+            local etRt = execToggleGo:AddComponent(typeof(RectTransform))
+            etRt.anchorMin, etRt.anchorMax, etRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            etRt.anchoredPosition = Vector2(20, -95)
+            etRt.sizeDelta = Vector2(200, 32)
+            local etBg = GameObject("Bg")
+            etBg.transform:SetParent(execToggleGo.transform, false)
+            local etBgRt = etBg:AddComponent(typeof(RectTransform))
+            etBgRt.anchorMin, etBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            etBgRt.sizeDelta = Vector2(0, 0)
+            local etBgImg = etBg:AddComponent(typeof(Image))
+
+            local etTxtGo = GameObject("Text")
+            etTxtGo.transform:SetParent(execToggleGo.transform, false)
+            local etTxtRt = etTxtGo:AddComponent(typeof(RectTransform))
+            etTxtRt.anchorMin, etTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            etTxtRt.sizeDelta = Vector2(0, 0)
+            local etTxt = etTxtGo:AddComponent(typeof(Text))
+            etTxt.raycastTarget = false
+            etTxt.fontSize = 15
+            etTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then etTxt.font = defaultFont end
+
+            local etBtn = execToggleGo:AddComponent(typeof(Button))
+            local function UpdateExecToggleLabel()
+                if _G.Mod_ExecBtn_Visible then
+                    etBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                    etTxt.text = "HIỆN NÚT EXEC: ON"
+                    etTxt.color = Color.white
+                else
+                    etBgImg.color = Color(0.5, 0.2, 0.2, 1)
+                    etTxt.text = "HIỆN NÚT EXEC: OFF"
+                    etTxt.color = Color.white
+                end
+            end
+            UpdateExecToggleLabel()
+
+            etBtn.onClick:AddListener(function()
+                _G.Mod_ExecBtn_Visible = not _G.Mod_ExecBtn_Visible
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_ExecBtn_Visible", _G.Mod_ExecBtn_Visible and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateExecToggleLabel()
+                if _G.Mod_FloatingExecBtnGo then
+                    _G.Mod_FloatingExecBtnGo:SetActive(_G.Mod_IsAdmin == true and _G.Mod_ExecBtn_Visible == true)
+                end
+            end)
+
             -- ADMIN TIER CONTROLS (Chuyển chính & Chuyển phụ cho Admin test)
             local adminTierGo = GameObject("AdminTierRow")
             adminTierGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, adminTierGo)
             local atRt = adminTierGo:AddComponent(typeof(RectTransform))
             atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            atRt.anchoredPosition = Vector2(20, -95)
+            atRt.anchoredPosition = Vector2(20, -135)
             atRt.sizeDelta = Vector2(550, 30)
 
             local atLblGo = GameObject("Lbl")
@@ -7263,7 +7398,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, sepGo)
             local sepRt = sepGo:AddComponent(typeof(RectTransform))
             sepRt.anchorMin, sepRt.anchorMax, sepRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            sepRt.anchoredPosition = Vector2(0, -135)
+            sepRt.anchoredPosition = Vector2(0, -175)
             sepRt.sizeDelta = Vector2(500, 20)
             local sepTxt = sepGo:AddComponent(typeof(Text))
             sepTxt.text = "--------------------------------------------------------"
@@ -7275,7 +7410,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, tokTitleGo)
             local tokRt = tokTitleGo:AddComponent(typeof(RectTransform))
             tokRt.anchorMin, tokRt.anchorMax, tokRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            tokRt.anchoredPosition = Vector2(0, -155)
+            tokRt.anchoredPosition = Vector2(0, -195)
             tokRt.sizeDelta = Vector2(500, 30)
             local tokTxt = tokTitleGo:AddComponent(typeof(Text))
             tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN"
@@ -7295,7 +7430,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeLblGo)
             local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
             inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -180)
+            inCodeLblRt.anchoredPosition = Vector2(20, -225)
             inCodeLblRt.sizeDelta = Vector2(400, 20)
             local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
             inCodeLblTxt.text = "Mã MD5 của khách:"
@@ -7308,7 +7443,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inCodeGo)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -200)
+            inCodeRt.anchoredPosition = Vector2(20, -245)
             inCodeRt.sizeDelta = Vector2(550, 35)
             local inCodeImg = inCodeGo:AddComponent(typeof(Image))
             inCodeImg.color = Color(1, 1, 1, 1)
@@ -7337,7 +7472,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteBtnGo)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -200)
+            pasteRt.anchoredPosition = Vector2(-20, -245)
             pasteRt.sizeDelta = Vector2(120, 35)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
@@ -7365,7 +7500,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inUidLblGo)
             local inUidLblRt = inUidLblGo:AddComponent(typeof(RectTransform))
             inUidLblRt.anchorMin, inUidLblRt.anchorMax, inUidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidLblRt.anchoredPosition = Vector2(20, -240)
+            inUidLblRt.anchoredPosition = Vector2(20, -285)
             inUidLblRt.sizeDelta = Vector2(400, 20)
             local inUidLblTxt = inUidLblGo:AddComponent(typeof(Text))
             inUidLblTxt.text = "UID của khách (hoặc ALL):"
@@ -7378,7 +7513,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inUidGo)
             local inUidRt = inUidGo:AddComponent(typeof(RectTransform))
             inUidRt.anchorMin, inUidRt.anchorMax, inUidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidRt.anchoredPosition = Vector2(20, -260)
+            inUidRt.anchoredPosition = Vector2(20, -305)
             inUidRt.sizeDelta = Vector2(550, 35)
             local inUidImg = inUidGo:AddComponent(typeof(Image))
             inUidImg.color = Color(1, 1, 1, 1)
@@ -7407,7 +7542,7 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteUidBtnGo)
             local pasteUidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
             pasteUidRt.anchorMin, pasteUidRt.anchorMax, pasteUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteUidRt.anchoredPosition = Vector2(-20, -260)
+            pasteUidRt.anchoredPosition = Vector2(-20, -305)
             pasteUidRt.sizeDelta = Vector2(120, 35)
             local pasteUidImg = pasteUidBtnGo:AddComponent(typeof(Image))
             pasteUidImg.color = Color(0.8, 0.4, 0, 1)

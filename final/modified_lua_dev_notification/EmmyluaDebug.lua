@@ -888,7 +888,7 @@ local function CreateModUI()
                         if CS.UnityEngine.PlayerPrefs.GetInt(pvKey, 0) == 1 then
                             scannedCount = scannedCount + 1
                             local bossId = 20211000 + tier
-                            local limit17 = (tier >= 8) and 400 or 300
+                            local limit17 = (tier >= 9) and 500 or (tier == 8 and 400 or (tier == 7 and 300 or 200))
                             local count = 0
                             local rCount = 0
                             local isSatisfy, info = _G.SceneData:GetAncientBossData(17, bossId)
@@ -1065,7 +1065,7 @@ if not _G.ModUIHooked then
                         local pvKey = "Mod_Notify_PhuVan_C" .. tier
                         if CS.UnityEngine.PlayerPrefs.GetInt(pvKey, 0) == 1 then
                             local bossId = 20211000 + tier
-                            local limit = (tier >= 8) and 400 or 300
+                            local limit = (tier >= 9) and 500 or (tier == 8 and 400 or (tier == 7 and 300 or 200))
                             local threshold = 15
                             local count = 0
                             local rCount = 0

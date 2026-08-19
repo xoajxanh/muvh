@@ -5404,7 +5404,7 @@ local function CreateModUI()
                             { name = "THÁNH CỐT:", bossType = 16, bossId = 20201000 + tierNum, limit = 70 })
                     end
                     if tierNum >= 6 then
-                        local limit17 = (tierNum >= 8) and 400 or 300
+                        local limit17 = (tierNum >= 9) and 500 or (tierNum == 8 and 400 or (tierNum == 7 and 300 or 200))
                         table.insert(kundunConfigs,
                             { name = "PHÙ VĂN:", bossType = 17, bossId = 20211000 + tierNum, limit = limit17 })
                     end
