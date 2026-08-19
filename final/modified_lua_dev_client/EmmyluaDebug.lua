@@ -2528,16 +2528,22 @@ local function CreateModUI()
 
                         local candidates = {}
 
-                        local function CheckConfig(mapsConfig, tierScore)
+                        local function CheckConfig(mapsConfig, tierIndex)
                             if not mapsConfig then return end
-                            for _, mapCfg in ipairs(mapsConfig) do
+                            for mIdx, mapCfg in ipairs(mapsConfig) do
+                                -- Map type priority: Hoang Dã (mIdx=1) > Trang Sức (mIdx=2) > Tháp/Cánh (mIdx=3) > Luyện Ngục (mIdx=4)
+                                local mapPriority = (10 - math.min(mIdx, 9)) * 10000
+
                                 if mapCfg.bosses then
-                                    for _, cfg in ipairs(mapCfg.bosses) do
+                                    for bIdx, cfg in ipairs(mapCfg.bosses) do
                                         if _G.Mod_AutoFarmBoss_Config[cfg.id] then
                                             local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
                                             local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
                                             if currentSec > ignoreUntil then
-                                                local baseScore = tierScore + math.random(1, 100)
+                                                -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
+                                                local colVal = cfg.col or 1
+                                                local colPriority = math.min(colVal, 3) * 100
+
                                                 local bossData = mapBosses[mapCfg.mapId] and
                                                     mapBosses[mapCfg.mapId][cfg.id]
                                                 if bossData then
@@ -2559,19 +2565,18 @@ local function CreateModUI()
                                                             local rt = deadList[1]
                                                             if rt <= currentSec + 30 then
                                                                 bestLine = lineNum
-                                                                respawnWait = rt - currentSec
+                                                                respawnWait = math.max(0, rt - currentSec)
                                                                 break
                                                             end
                                                         end
                                                     end
 
                                                     if bestLine then
-                                                        local finalScore = baseScore
-                                                        if isAlive then
-                                                            finalScore = finalScore + 10000
-                                                        else
-                                                            finalScore = finalScore + (60 - respawnWait) * 30
-                                                        end
+                                                        local aliveScore = isAlive and 1000000 or 0
+                                                        local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
+                                                        local tierScore = tierIndex * 100000
+
+                                                        local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
 
                                                         if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
                                                             finalScore = finalScore + 5000
@@ -2583,22 +2588,10 @@ local function CreateModUI()
                                                             score = finalScore,
                                                             isAlive = isAlive,
                                                             wait = respawnWait,
-                                                            mapName = GetMapName(mapCfg.mapId),
+                                                            mapName = mapCfg.title or GetMapName(mapCfg.mapId),
                                                             mapId = mapCfg.mapId,
                                                             obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
                                                         })
-
-                                                        if finalScore > bestScore then
-                                                            bestScore = finalScore
-                                                            bestBoss = {
-                                                                cfg = cfg,
-                                                                mapCfg = mapCfg,
-                                                                line = bestLine,
-                                                                isAlive =
-                                                                    isAlive,
-                                                                wait = respawnWait
-                                                            }
-                                                        end
                                                     end
                                                 end
                                             end
@@ -2609,15 +2602,14 @@ local function CreateModUI()
                         end
 
                         if GetAvailableTiers then
-                            local scoreOffset = 1000
-                            for _, tTag in ipairs(GetAvailableTiers()) do
-                                CheckConfig(GetMapsConfigByTier(tTag), scoreOffset)
-                                scoreOffset = scoreOffset + 1000
+                            for tIdx, tTag in ipairs(GetAvailableTiers()) do
+                                CheckConfig(GetMapsConfigByTier(tTag), tIdx)
                             end
                         end
 
                         if #candidates > 0 then
                             table.sort(candidates, function(a, b) return a.score > b.score end)
+                            bestBoss = candidates[1].obj
                             LogMsg("--- TOP 3 BOSSES SCORE ---")
                             for i = 1, math.min(3, #candidates) do
                                 local c = candidates[i]
