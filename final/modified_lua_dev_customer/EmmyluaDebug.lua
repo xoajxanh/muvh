@@ -5427,7 +5427,7 @@ local function CreateModUI()
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(110, 30)
+                rt.sizeDelta = Vector2(95, 30)
 
                 local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 img.color = CS.UnityEngine.Color(1, 1, 1, 0)
@@ -5457,7 +5457,7 @@ local function CreateModUI()
             local tierTags = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
             _G.NangCaoTabBtns = {}
             for tIdx, tag in ipairs(tierTags) do
-                local tabBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2 + (tIdx - 1) * 110, kundunTabY)
+                local tabBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2 + (tIdx - 1) * 95, kundunTabY)
                 tabBtn.txt.fontSize = 17
                 _G.NangCaoTabBtns[tag] = tabBtn
             end
@@ -5532,8 +5532,8 @@ local function CreateModUI()
                                 tBtn.txt.fontSize = 17
                                 local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
                                 if rt then
-                                    rt.anchoredPosition = Vector2(rightColX2 + activeIdx * 110, kundunTabY)
-                                    rt.sizeDelta = Vector2(100, 30)
+                                    rt.anchoredPosition = Vector2(rightColX2 + activeIdx * 95, kundunTabY)
+                                    rt.sizeDelta = Vector2(95, 30)
                                 end
                                 activeIdx = activeIdx + 1
                             end

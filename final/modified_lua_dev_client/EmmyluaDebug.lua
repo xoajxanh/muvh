@@ -5580,7 +5580,7 @@ local function CreateModUI()
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(110, 30)
+                rt.sizeDelta = Vector2(95, 30)
 
                 local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 img.color = CS.UnityEngine.Color(1, 1, 1, 0)
@@ -5684,7 +5684,7 @@ local function CreateModUI()
                                     tBtn.go:SetActive(true)
                                     local rt = tBtn.go:GetComponent(typeof(RectTransform))
                                     if rt then
-                                        rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, kundunTabY)
+                                        rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 95, kundunTabY)
                                     end
                                     tBtn.txt.text = "<color=" ..
                                         (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") ..
