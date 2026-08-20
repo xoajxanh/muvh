@@ -884,11 +884,19 @@ local function CreateModUI()
             local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
 
             local tiers = {}
-            if s >= 4 then
-                table.insert(tiers, "C" .. tostring(s))
-            end
-            if p >= 4 and p ~= s then
-                table.insert(tiers, "C" .. tostring(p))
+            if _G.Mod_IsAdmin then
+                for i = p - 3, p do
+                    if i >= 3 then
+                        table.insert(tiers, "C" .. tostring(i))
+                    end
+                end
+            else
+                if s >= 4 then
+                    table.insert(tiers, "C" .. tostring(s))
+                end
+                if p >= 4 and p ~= s then
+                    table.insert(tiers, "C" .. tostring(p))
+                end
             end
             return tiers
         end
@@ -1419,15 +1427,16 @@ local function CreateModUI()
             pcall(function()
                 if not isExpanded then return end
                 local currentSec = _G.Time.GetServerSecondTime()
-                local currentPosY = -140
+                local currentPosY = -220
                 local titleIdx = 1
                 local rowIdx = 1
                 local btnIdx = 1
                 local sepIdx = 1
 
+                local validTags = (_G.ModMainTab == "NANG_CAO") and (GetKundunTiers and GetKundunTiers() or {}) or (GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" })
                 local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
                 local isTabValid = false
-                for _, tag in ipairs(tierTags) do
+                for _, tag in ipairs(validTags) do
                     if _G.ModBossTab == tag then
                         isTabValid = true; break
                     end
@@ -1450,21 +1459,21 @@ local function CreateModUI()
                     end)
                     btnIdx = btnIdx + 1
                 end
-                currentPosY = currentPosY - 25
+                currentPosY = currentPosY - 20
 
                 local mapsConfig = GetMapsConfigByTier(_G.ModBossTab)
                 for i, mapCfg in ipairs(mapsConfig) do
                     local sep = GetDashedLine(sepIdx, currentPosY)
                     sep.go:SetActive(_G.ModMainTab == "CO_BAN")
                     sepIdx = sepIdx + 1
-                    currentPosY = currentPosY - 25
+                    currentPosY = currentPosY - 20
 
                     local title = GetTitleLabel(titleIdx, currentPosY)
                     title.go:SetActive(_G.ModMainTab == "CO_BAN")
                     title.txt.text = mapCfg.title
 
                     titleIdx = titleIdx + 1
-                    currentPosY = currentPosY - 25
+                    currentPosY = currentPosY - 20
 
                     local colBosses = { {}, {}, {} }
                     for _, cfg in ipairs(mapCfg.bosses) do
@@ -1480,9 +1489,11 @@ local function CreateModUI()
                             local cfg = colBosses[c][r]
                             if cfg then
                                 local startX = 40 + (c - 1) * 220
-                                local yPos = currentPosY - (r - 1) * 35
+                                local yPos = currentPosY - (r - 1) * 28
 
-                                local uiBtn = GetLineButton(btnIdx, startX, yPos, 215)
+                                local bw = cfg.isExitBtn and 155 or 215
+                                local bx = startX
+                                local uiBtn = GetLineButton(btnIdx, bx, yPos, bw)
                                 uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
 
                                 local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
@@ -1625,9 +1636,9 @@ local function CreateModUI()
                     end
 
                     if maxRows > 0 then
-                        currentPosY = currentPosY - (maxRows * 35) - 10
+                        currentPosY = currentPosY - (maxRows * 28) - 5
                     else
-                        currentPosY = currentPosY - 10
+                        currentPosY = currentPosY - 5
                     end
                 end
 
@@ -1876,6 +1887,27 @@ local function CreateModUI()
                 return tostring(mapId)
             end
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
+                if subType >= 34 and subType <= 38 then
+                    local sInfo = item.serverInfo or item.serverData or {}
+                    local specialEffectIds = sInfo.specialEffectIds
+                    if specialEffectIds then
+                        local hasSpecial = false
+                        pcall(function()
+                            if type(specialEffectIds) == "table" then
+                                hasSpecial = (_G.next(specialEffectIds) ~= nil)
+                            elseif type(specialEffectIds) == "userdata" then
+                                local count = specialEffectIds.Count or specialEffectIds.Length
+                                if count and count > 0 then hasSpecial = true end
+                            end
+                        end)
+                        if hasSpecial then
+                            return true -- Có Đặc Thù -> Dòng ngon -> Giữ
+                        end
+                    end
+                end
+
+                -- 2. Nếu không có Đặc thù (hoặc không phải trang sức bộ), xét tiếp dòng Trác Việt
                 if not excDesList or #excDesList == 0 then
                     return false
                 end
@@ -2536,6 +2568,9 @@ local function CreateModUI()
 
                                 if mapCfg.bosses then
                                     for bIdx, cfg in ipairs(mapCfg.bosses) do
+                                        if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
+                                            _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
+                                        end
                                         if _G.Mod_AutoFarmBoss_Config[cfg.id] then
                                             local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
                                             local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
@@ -3316,6 +3351,31 @@ local function CreateModUI()
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+                                                
+                                                local isSecretTrickActive = false
+                                                if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                                                    local scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
+                                                    local pickLimit = tonumber(_G.AutoPick_Limit) or 2
+                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1)
+                                                end
+                                                if isSecretTrickActive and rawPct <= 0.7 then
+                                                    if _G.Mod_AutoPK_Enabled then
+                                                        _G.Mod_AutoPK_Enabled = false
+                                                        if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
+                                                        pcall(function()
+                                                            if _G.RoleManager and _G.RoleManager.me then
+                                                                if _G.RoleManager.me.SetTarget then
+                                                                    _G.RoleManager.me:SetTarget(role)
+                                                                end
+                                                                _G.RoleManager.me.TargetAvatar = role
+                                                            end
+                                                        end)
+                                                        if _G.Main_AutoFightUI and _G.Main_AutoFightUI.StartAutoFight then
+                                                            _G.Main_AutoFightUI.StartAutoFight()
+                                                        end
+                                                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - CHUYỂN SANG AUTO FIGHT NHẶT ĐỒ!") end
+                                                    end
+                                                end
                                                 break
                                             end
                                         end
@@ -3689,7 +3749,7 @@ local function CreateModUI()
                     if not _G.Mod_PKScanLoopStarted then
                         _G.Mod_PKScanLoopStarted = true
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.1, -1, function()
+                            _G.Timer.StartLoop(0.05, -1, function()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
@@ -3697,6 +3757,13 @@ local function CreateModUI()
                                         local delay = _G.Mod_PKScanDelay or 0.8
                                         if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
                                             _G.Mod_LastPKScanTime = nowTime
+                                            
+                                            local me = _G.RoleManager.me
+                                            local currentTarget = me.TargetAvatar
+                                            if currentTarget and not currentTarget.isDead and currentTarget.hp > 0 and currentTarget.RoleType == 1 and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
+                                                return
+                                            end
+
                                             local function modSortRole(a, b)
                                                 local distA = a.tempPathFindingDistance or 9999
                                                 local distB = b.tempPathFindingDistance or 9999
@@ -4622,7 +4689,7 @@ local function CreateModUI()
         rmRt.anchoredPosition = Vector2(40, -100)
         rmRt.sizeDelta = Vector2(40, 30)
         local rmImg = refreshMinusBtnGo:AddComponent(typeof(Image))
-        rmImg.color = Color(0.2, 0.2, 0.2, 1)
+        rmImg.color = Color(0.4, 0.4, 0.4, 1)
         table.insert(_G.CoBanUIList, refreshMinusBtnGo)
         local rmTxt = GameObject("Text"):AddComponent(typeof(Text))
         rmTxt.raycastTarget = false
@@ -4642,7 +4709,7 @@ local function CreateModUI()
         rpRt.anchoredPosition = Vector2(240, -100)
         rpRt.sizeDelta = Vector2(40, 30)
         local rpImg = refreshPlusBtnGo:AddComponent(typeof(Image))
-        rpImg.color = Color(0.2, 0.2, 0.2, 1)
+        rpImg.color = Color(0.4, 0.4, 0.4, 1)
         table.insert(_G.CoBanUIList, refreshPlusBtnGo)
         local rpTxt = GameObject("Text"):AddComponent(typeof(Text))
         rpTxt.raycastTarget = false
@@ -4715,6 +4782,36 @@ local function CreateModUI()
             end)
         end)
 
+        if _G.Mod_ApplyAttackRangeMultiplier == nil then
+            _G.Mod_ApplyAttackRangeMultiplier = function(mult)
+                pcall(function()
+                    local skillDic = nil
+                    if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
+                        skillDic = _G.ClientTable.cfg_Skill_skillManager:GetDic()
+                    end
+                    if not skillDic then
+                        skillDic = package.loaded["Config/table/clientTable/cfg_Skill_skill"]
+                    end
+                    if skillDic then
+                        for _, skillData in pairs(skillDic) do
+                            if skillData.releaseDistance and type(skillData.releaseDistance) == "number" then
+                                if not skillData._originalReleaseDistance then
+                                    skillData._originalReleaseDistance = skillData.releaseDistance
+                                end
+                                skillData.releaseDistance = skillData._originalReleaseDistance * mult
+                            end
+                        end
+                    end
+                    if CS and CS.UnityEngine and CS.UnityEngine.Camera and CS.UnityEngine.Camera.main then
+                        if mult > 1.2 then
+                            CS.UnityEngine.Camera.main.farClipPlane = 1000
+                            if CS.UnityEngine.RenderSettings then CS.UnityEngine.RenderSettings.fog = false end
+                        end
+                    end
+                end)
+            end
+        end
+
         -- UI State Variables Initialization
         if _G.RunSpeedMultiplier == nil then
             _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
@@ -4723,6 +4820,10 @@ local function CreateModUI()
         if _G.AtkSpeedMultiplier == nil then
             _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
                 "Mod_AtkSpeedMultiplier", 1.0)
+        end
+        if _G.Mod_CustomAttackRangeMultiplier == nil then
+            _G.Mod_CustomAttackRangeMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
+                "Mod_CustomAttackRangeMultiplier", 1.0)
         end
         if _G.Mod_CustomAttackRange == nil then
             _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
@@ -4837,6 +4938,72 @@ local function CreateModUI()
         CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
         CreateSpeedControl(415, -100, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
 
+        local function CreateRangeMultiplierControl(startX, yPos, prefix, valueVarName, step)
+            local centerX = startX + 90
+            local valGo = GameObject(valueVarName .. "_Val")
+            valGo.transform:SetParent(panelGo.transform, false)
+            local vRt = valGo:AddComponent(typeof(RectTransform))
+            vRt.anchorMin, vRt.anchorMax, vRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            vRt.anchoredPosition = Vector2(centerX - 80, yPos)
+            vRt.sizeDelta = Vector2(160, 30)
+            local vTxt = valGo:AddComponent(typeof(Text))
+            table.insert(_G.CoBanUIList, valGo)
+            vTxt.raycastTarget = false
+            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+            vTxt.alignment = TextAnchor.MiddleCenter
+            vTxt.color = Color(0.8, 1, 0.8, 1)
+            vTxt.fontSize = 18
+            if defaultFont then vTxt.font = defaultFont end
+
+            local function createBtn(nameSuffix, offsetX, w, h, text, color)
+                local btnGo = GameObject(valueVarName .. nameSuffix)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(centerX + offsetX, yPos)
+                rt.sizeDelta = Vector2(w, h)
+                local img = btnGo:AddComponent(typeof(Image))
+                img.color = color
+                local txtGo = GameObject(valueVarName .. nameSuffix .. "Txt")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax, txtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18, TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+                table.insert(_G.CoBanUIList, btnGo)
+                return btnGo:AddComponent(typeof(Button))
+            end
+
+            local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
+            local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
+
+            local function UpdateLabel()
+                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+                if valueVarName == "Mod_CustomAttackRangeMultiplier" and _G.Mod_ApplyAttackRangeMultiplier then
+                    _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
+                end
+            end
+
+            mBtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
+                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+            pBtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
+                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+        end
+
+        CreateRangeMultiplierControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
+        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_ApplyAttackRangeMultiplier then
+            _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+        end
+
         local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
             local valGo = GameObject(valueVarName .. "_Val")
@@ -4892,7 +5059,8 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(100, _G[valueVarName] + step)
+                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
+                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + step)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -4906,7 +5074,8 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(100, _G[valueVarName] + (step * 5))
+                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
+                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + (step * 5))
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -5299,7 +5468,7 @@ local function CreateModUI()
             lmRt.anchorMin = Vector2(0, 1)
             lmRt.anchorMax = Vector2(0, 1)
             lmRt.pivot = Vector2(0, 1)
-            lmRt.anchoredPosition = Vector2(rightColX + 245, currentY)
+            lmRt.anchoredPosition = Vector2(rightColX + 205, currentY)
             lmRt.sizeDelta = Vector2(40, 30)
             local lmImg = lMinusGo:AddComponent(typeof(Image))
             lmImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -5324,7 +5493,7 @@ local function CreateModUI()
             lpRt.anchorMin = Vector2(0, 1)
             lpRt.anchorMax = Vector2(0, 1)
             lpRt.pivot = Vector2(0, 1)
-            lpRt.anchoredPosition = Vector2(rightColX + 295, currentY)
+            lpRt.anchoredPosition = Vector2(rightColX + 255, currentY)
             lpRt.sizeDelta = Vector2(40, 30)
             local lpImg = lPlusGo:AddComponent(typeof(Image))
             lpImg.color = Color(0.4, 0.4, 0.4, 1)
@@ -5424,7 +5593,7 @@ local function CreateModUI()
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color.white
-                txt.fontSize = 17
+                txt.fontSize = 16
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
 
@@ -5506,29 +5675,20 @@ local function CreateModUI()
                         end
 
                         if _G.ModMainTab == "NANG_CAO" then
-                            local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
                             local kundunTiers = GetKundunTiers and GetKundunTiers() or { "C7", "C8" }
                             local activeIdx = 0
-                            for _, tag in ipairs(tierTags) do
+                            for _, tag in ipairs(kundunTiers) do
                                 local tBtn = _G.NangCaoTabBtns[tag]
                                 if tBtn and tBtn.go then
-                                    local inKundun = false
-                                    for _, kt in ipairs(kundunTiers) do
-                                        if kt == tag then
-                                            inKundun = true; break
-                                        end
+                                    activeIdx = activeIdx + 1
+                                    tBtn.go:SetActive(true)
+                                    local rt = tBtn.go:GetComponent(typeof(RectTransform))
+                                    if rt then
+                                        rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, kundunTabY)
                                     end
-                                    if inKundun then
-                                        activeIdx = activeIdx + 1
-                                        tBtn.go:SetActive(true)
-                                        local rt = tBtn.go:GetComponent(typeof(RectTransform))
-                                        if rt then
-                                            rt.anchoredPosition = Vector2(rightColX2 + (activeIdx - 1) * 110, kundunTabY)
-                                        end
-                                        tBtn.txt.text = "<color=" ..
-                                            (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") ..
-                                            ">[ BOSS " .. tag .. " ]</color>"
-                                    end
+                                    tBtn.txt.text = "<color=" ..
+                                        (_G.ModBossTab == tag and "#00FF00" or "#FFFFFF") ..
+                                        ">[ BOSS " .. tag .. " ]</color>"
                                 end
                             end
                         end
@@ -7200,7 +7360,7 @@ local function CreateModUI()
                 end)
             end)
 
-            currentY = currentY - 45
+            currentY = currentY - 40
             CreateToggle("MỞ RƯƠNG VÀNG LẺ", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
         end
 
@@ -8116,7 +8276,7 @@ local function CreateModUI()
                     scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                 end
                 local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                local isSecretTrickActive = (scopeVal == 11 and pickLimit == 11) or (scopeVal == 7 and pickLimit == 7)
+                local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1)
 
                 local eType = dropItemData.type
                 local isRune = (eType == 19 or eType == 28)
