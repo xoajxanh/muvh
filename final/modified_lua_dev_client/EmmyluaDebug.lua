@@ -1739,7 +1739,52 @@ local function CreateModUI()
         if not _G.BossHooked then
             _G.BossHooked = true
 
-            -- Tốc Chạy Hook
+            -- Mở khóa 120 FPS & Tần số quét cao (Khử giật Camera / Khung cảnh)
+            pcall(function()
+                local app = CS.UnityEngine.Application
+                local qs = CS.UnityEngine.QualitySettings
+                local t = CS.UnityEngine.Time
+                app.targetFrameRate = 120
+                qs.vSyncCount = 0
+                t.fixedDeltaTime = 1.0 / 120.0
+                t.maximumDeltaTime = 0.1
+            end)
+
+            if _G.GameSettingsController and not _G.Mod_Hooked_SetFrameRate then
+                _G.Mod_Hooked_SetFrameRate = true
+                local old_SetFrameRate = _G.GameSettingsController.SetFrameRate
+                _G.GameSettingsController.SetFrameRate = function(fps)
+                    if fps and fps < 120 then fps = 120 end
+                    return old_SetFrameRate(fps)
+                end
+            end
+
+            -- Khóa tốc độ Animation (Cánh & Body) về chuẩn 1.0x khi tăng tốc chạy
+            if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
+                _G.Mod_Hooked_AnimatorCtrl = true
+                local old_SetAnimatorSpeed = _G.AnimatorCtrl.SetAnimatorSpeed
+                _G.AnimatorCtrl.SetAnimatorSpeed = function(self, speed)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
+                        speed = 1.0
+                    end
+                    return old_SetAnimatorSpeed(self, speed)
+                end
+            end
+
+            if _G.RoleEquip and not _G.Mod_Hooked_RoleEquipWing then
+                _G.Mod_Hooked_RoleEquipWing = true
+                local old_SetWingAni = _G.RoleEquip.SetWingAni
+                _G.RoleEquip.SetWingAni = function(self, RoleMoveType, isCurIsSafeZone)
+                    old_SetWingAni(self, RoleMoveType, isCurIsSafeZone)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
+                        if self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
+                            self.wingAnimator.animator.speed = 1.0
+                        end
+                    end
+                end
+            end
+
+            -- Tốc Chạy Hook (Chạy nhanh nhưng Animation giữ nguyên 1.0x)
             local original_SetMoveSpeed = _G.Role.SetMoveSpeed
             if original_SetMoveSpeed and not _G.ModSpeedRunHooked then
                 _G.ModSpeedRunHooked = true
@@ -1748,6 +1793,21 @@ local function CreateModUI()
                         moveSpeed = moveSpeed * _G.RunSpeedMultiplier
                     end
                     original_SetMoveSpeed(self, moveSpeed)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
+                        pcall(function()
+                            if self.model and self.model.modelObject then
+                                local anims = self.model.modelObject:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                                if anims then
+                                    for i = 0, anims.Length - 1 do
+                                        local a = anims[i]
+                                        if a and not IsNil(a) and a.speed ~= 1.0 then
+                                            a.speed = 1.0
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
                 end
             end
 
@@ -5027,13 +5087,15 @@ local function CreateModUI()
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
-                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
-                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
