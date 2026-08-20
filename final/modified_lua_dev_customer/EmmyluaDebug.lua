@@ -590,6 +590,19 @@ if _G.EventManager and _G.EventManager.Regist and _G.Event and _G.Event.Map_Boss
     end)
 end
 
+if _G.PathFinderManager and not _G.Mod_Hooked_JumpMapToMoveToPos then
+    _G.Mod_Hooked_JumpMapToMoveToPos = true
+    local old_JumpMapToMoveToPos = _G.PathFinderManager.JumpMapToMoveToPos
+    _G.PathFinderManager.JumpMapToMoveToPos = function(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+        pcall(function()
+            if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                _G.PathFinderManager.ResetData()
+            end
+        end)
+        return old_JumpMapToMoveToPos(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+    end
+end
+
 _G.GetAllBossPositions = function(bossId, mapId)
     if not bossId then return {} end
     local positions = {}
@@ -855,18 +868,21 @@ local function CreateModUI()
 
         pkBtnGo:SetActive(_G.Mod_IsActive == true)
 
+        _G.ModUpdateFloatingPKBtn = function()
+            if pkTxt and pkImg then
+                pkTxt.text = _G.Mod_AutoPK_Enabled and "PK ON" or "PK OFF"
+                pkImg.color = _G.Mod_AutoPK_Enabled and Color(0.215, 0.490, 0.133, 1.0) or Color(0.6, 0.2, 0.2, 1)
+            end
+        end
+
         local pkBtnComp = pkBtnGo:AddComponent(typeof(Button))
         pkBtnComp.onClick:AddListener(function()
             if not _G.Mod_IsActive then return end
             _G.Mod_AutoPK_Enabled = not _G.Mod_AutoPK_Enabled
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
             CS.UnityEngine.PlayerPrefs.Save()
-            if _G.Mod_AutoPK_Enabled then
-                pkTxt.text = "PK ON"
-                pkImg.color = Color(0.215, 0.490, 0.133, 1.0)
-            else
-                pkTxt.text = "PK OFF"
-                pkImg.color = Color(0.6, 0.2, 0.2, 1)
+            if _G.ModUpdateFloatingPKBtn then _G.ModUpdateFloatingPKBtn() end
+            if not _G.Mod_AutoPK_Enabled then
                 pcall(function()
                     if _G.RoleManager and _G.RoleManager.me then
                         _G.RoleManager.me:SetAutoFight("None")
@@ -2733,6 +2749,14 @@ local function CreateModUI()
                     if _G.Mod_AutoFarmBoss_State ~= 0 then
                         _G.Mod_AutoFarmBoss_State = 0
                         _G.Mod_AutoFarmBoss_Target = nil
+                        pcall(function()
+                            if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                                _G.PathFinderManager.ResetData()
+                            end
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.StopMove then
+                                _G.RoleManager.me:StopMove()
+                            end
+                        end)
                         LogMsg("Đã TẮT Auto Farm.")
                     end
                     return
@@ -3976,6 +4000,11 @@ local function CreateModUI()
                                                 if isSecretTrickActive and rawPct <= 0.7 then
                                                     if _G.Mod_AutoPK_Enabled then
                                                         _G.Mod_AutoPK_Enabled = false
+                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
+                                                        CS.UnityEngine.PlayerPrefs.Save()
+                                                        if _G.ModUpdateFloatingPKBtn then
+                                                            pcall(_G.ModUpdateFloatingPKBtn)
+                                                        end
                                                         if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
                                                         pcall(function()
                                                             if _G.RoleManager and _G.RoleManager.me then
@@ -5669,6 +5698,18 @@ local function CreateModUI()
 
             mtBtn.onClick:AddListener(function()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
+                if not _G.Mod_AutoFarmBoss_Enabled then
+                    _G.Mod_AutoFarmBoss_State = 0
+                    _G.Mod_AutoFarmBoss_Target = nil
+                    pcall(function()
+                        if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                            _G.PathFinderManager.ResetData()
+                        end
+                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.StopMove then
+                            _G.RoleManager.me:StopMove()
+                        end
+                    end)
+                end
                 UpdateMasterToggle()
             end)
 

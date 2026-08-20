@@ -135,6 +135,11 @@ local function CreateModUI()
                     1.0)
             end)
         end
+        if _G.Mod_AutoReturnPos_MapId == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPos_MapId = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoReturnPos_MapId", 0)
+            end)
+        end
 
         _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
             if not _G.Mod_FarmStats then return end
@@ -230,6 +235,19 @@ local function CreateModUI()
                     end)
                 end
             end)
+        end
+
+        if _G.PathFinderManager and not _G.Mod_Hooked_JumpMapToMoveToPos then
+            _G.Mod_Hooked_JumpMapToMoveToPos = true
+            local old_JumpMapToMoveToPos = _G.PathFinderManager.JumpMapToMoveToPos
+            _G.PathFinderManager.JumpMapToMoveToPos = function(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+                pcall(function()
+                    if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                        _G.PathFinderManager.ResetData()
+                    end
+                end)
+                return old_JumpMapToMoveToPos(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+            end
         end
 
         _G.GetAllBossPositions = function(bossId, mapId)
@@ -604,6 +622,13 @@ local function CreateModUI()
         pkTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then pkTxt.font = defaultFont end
 
+        _G.ModUpdateFloatingPKBtn = function()
+            if pkTxt and pkImg then
+                pkTxt.text = _G.Mod_AutoPK_Enabled and "PK ON" or "PK OFF"
+                pkImg.color = _G.Mod_AutoPK_Enabled and Color(0.215, 0.490, 0.133, 1.0) or Color(0.6, 0.2, 0.2, 1)
+            end
+        end
+
         local pkBtnComp = pkBtnGo:AddComponent(typeof(Button))
         pkBtnComp.onClick:AddListener(function()
             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
@@ -614,12 +639,8 @@ local function CreateModUI()
             _G.Mod_AutoPK_Enabled = not _G.Mod_AutoPK_Enabled
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
             CS.UnityEngine.PlayerPrefs.Save()
-            if _G.Mod_AutoPK_Enabled then
-                pkTxt.text = "PK ON"
-                pkImg.color = Color(0.215, 0.490, 0.133, 1.0)
-            else
-                pkTxt.text = "PK OFF"
-                pkImg.color = Color(0.6, 0.2, 0.2, 1)
+            if _G.ModUpdateFloatingPKBtn then _G.ModUpdateFloatingPKBtn() end
+            if not _G.Mod_AutoPK_Enabled then
                 pcall(function()
                     if _G.RoleManager and _G.RoleManager.me then
                         _G.RoleManager.me:SetAutoFight("None")
@@ -2113,6 +2134,14 @@ local function CreateModUI()
                     if _G.Mod_AutoFarmBoss_State ~= 0 then
                         _G.Mod_AutoFarmBoss_State = 0
                         _G.Mod_AutoFarmBoss_Target = nil
+                        pcall(function()
+                            if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                                _G.PathFinderManager.ResetData()
+                            end
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.StopMove then
+                                _G.RoleManager.me:StopMove()
+                            end
+                        end)
                         LogMsg("Đã TẮT Auto Farm.")
                     end
                     if _G.Mod_AutoHH_Enabled then
@@ -3361,6 +3390,11 @@ local function CreateModUI()
                                                 if isSecretTrickActive and rawPct <= 0.7 then
                                                     if _G.Mod_AutoPK_Enabled then
                                                         _G.Mod_AutoPK_Enabled = false
+                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
+                                                        CS.UnityEngine.PlayerPrefs.Save()
+                                                        if _G.ModUpdateFloatingPKBtn then
+                                                            pcall(_G.ModUpdateFloatingPKBtn)
+                                                        end
                                                         if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
                                                         pcall(function()
                                                             if _G.RoleManager and _G.RoleManager.me then
@@ -3913,6 +3947,12 @@ local function CreateModUI()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
+                                        if _G.FlyMove and _G.FlyMove.useFly then return end
+                                        if _G.PathFinderManager and _G.PathFinderManager.pathFinding and _G.PathFinderManager.pathFinding.isFind then return end
+                                        local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                        if _G.Mod_AutoReturnPos_MapId and _G.Mod_AutoReturnPos_MapId > 0 and curMap ~= _G.Mod_AutoReturnPos_MapId then
+                                            return
+                                        end
                                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                         local delay = _G.Mod_AutoReturnPosDelay or 1.0
                                         if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
@@ -5835,6 +5875,18 @@ local function CreateModUI()
                     if _G.ModUpdateCountText then
                         pcall(_G.ModUpdateCountText)
                     end
+                else
+                    _G.Mod_AutoFarmBoss_State = 0
+                    _G.Mod_AutoFarmBoss_Target = nil
+                    _G.Mod_AutoFarmBoss_WaitTime = 0
+                    pcall(function()
+                        if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                            _G.PathFinderManager.ResetData()
+                        end
+                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.StopMove then
+                            _G.RoleManager.me:StopMove()
+                        end
+                    end)
                 end
                 UpdateMasterToggle()
             end)
@@ -7351,6 +7403,11 @@ local function CreateModUI()
                             retField.text = coordStr
                             retTxt.text = coordStr
                             CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
+                            local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)
+                            if curMap then
+                                _G.Mod_AutoReturnPos_MapId = curMap
+                                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_MapId", curMap)
+                            end
                             CS.UnityEngine.PlayerPrefs.Save()
                             if _G.FloatingWordUtility then
                                 _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
