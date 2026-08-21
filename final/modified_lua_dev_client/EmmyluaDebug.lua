@@ -1519,7 +1519,7 @@ local function CreateModUI()
                             local cfg = colBosses[c][r]
                             if cfg then
                                 local startX = 40 + (c - 1) * 220
-                                local yPos = currentPosY - (r - 1) * 28
+                                local yPos = currentPosY - (r - 1) * 20
 
                                 local bw = cfg.isExitBtn and 155 or 215
                                 local bx = startX
@@ -1597,9 +1597,9 @@ local function CreateModUI()
 
                                 if cfg.isExitBtn then
                                     uiBtn.img.color = CS.UnityEngine.Color(0.8, 0.15, 0.15, 0.95)
-                                    uiBtn.txt.text = "<color=#FFFFFF><b>THOÁT PB</b></color>"
+                                    uiBtn.txt.text = "<color=#FFFFFF>THOÁT PB</color>"
                                     uiBtn.txt.alignment = TextAnchor.MiddleCenter
-                                    uiBtn.txt.fontSize = 15
+                                    uiBtn.txt.fontSize = 16
                                     uiBtn.btn.onClick:RemoveAllListeners()
                                     uiBtn.btn.onClick:AddListener(function()
                                         pcall(function()
@@ -1745,6 +1745,73 @@ local function CreateModUI()
             end)
         end
 
+        local function ApplyAttackRangeMultiplier(mult)
+            mult = mult or _G.Mod_CustomAttackRangeMultiplier or 1.0
+            pcall(function()
+                local skillDic = nil
+                if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
+                    skillDic = _G.ClientTable.cfg_Skill_skillManager:GetDic()
+                end
+                if not skillDic then
+                    skillDic = package.loaded["Config/table/clientTable/cfg_Skill_skill"]
+                end
+                if skillDic then
+                    for _, skillData in pairs(skillDic) do
+                        if skillData.releaseDistance and type(skillData.releaseDistance) == "number" then
+                            if not skillData._originalReleaseDistance then
+                                skillData._originalReleaseDistance = skillData.releaseDistance
+                            end
+                            skillData.releaseDistance = skillData._originalReleaseDistance * mult
+                        end
+                    end
+                end
+                if CS and CS.UnityEngine and CS.UnityEngine.Camera and CS.UnityEngine.Camera.main then
+                    if mult > 1.2 then
+                        CS.UnityEngine.Camera.main.farClipPlane = 1000
+                        if CS.UnityEngine.RenderSettings then CS.UnityEngine.RenderSettings.fog = false end
+                    end
+                end
+            end)
+        end
+        _G.Mod_ApplyAttackRangeMultiplier = ApplyAttackRangeMultiplier
+
+        if _G.RunSpeedMultiplier == nil then
+            pcall(function()
+                _G.RunSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_RunSpeedMultiplier", 1.0)
+            end)
+        end
+        if _G.AtkSpeedMultiplier == nil then
+            pcall(function()
+                _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_AtkSpeedMultiplier", 1.0)
+            end)
+        end
+        if _G.Mod_CustomAttackRangeMultiplier == nil then
+            pcall(function()
+                _G.Mod_CustomAttackRangeMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
+            end)
+        end
+        if _G.Mod_CustomAttackRange == nil then
+            pcall(function()
+                _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt("Mod_CustomAttackRange", 0)
+            end)
+        end
+
+        ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+
+        if _G.EventManager and _G.Event and not _G.Mod_Hooked_RangeEvents then
+            _G.Mod_Hooked_RangeEvents = true
+            if _G.Event.Role_OnMeCreated then
+                _G.EventManager.Regist(_G.Event.Role_OnMeCreated, function()
+                    ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+                end)
+            end
+            if _G.Event.Load_PreLoadEnd then
+                _G.EventManager.Regist(_G.Event.Load_PreLoadEnd, function()
+                    ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+                end)
+            end
+        end
+
         local function ApplySmoothRunSettings(enable)
             pcall(function()
                 local app = CS.UnityEngine.Application
@@ -1760,6 +1827,13 @@ local function CreateModUI()
                     qs.vSyncCount = 0
                     t.fixedDeltaTime = 0.02
                     t.maximumDeltaTime = 0.3333333
+                end
+                if _G.GameSettingsController and _G.GameSettingsController.SetFrameRate then
+                    pcall(function()
+                        _G.GameSettingsController.SetFrameRate(enable and 120 or 60)
+                    end)
+                elseif _G.GameSettingsData then
+                    _G.GameSettingsData.frameRate = enable and 120 or 60
                 end
             end)
         end
@@ -1779,8 +1853,15 @@ local function CreateModUI()
                 _G.Mod_Hooked_SetFrameRate = true
                 local old_SetFrameRate = _G.GameSettingsController.SetFrameRate
                 _G.GameSettingsController.SetFrameRate = function(fps)
-                    if _G.Mod_SmoothRun_Enabled and fps and fps < 120 then fps = 120 end
-                    return old_SetFrameRate(fps)
+                    if _G.Mod_SmoothRun_Enabled then fps = 120 end
+                    local res = old_SetFrameRate(fps)
+                    if _G.Mod_SmoothRun_Enabled then
+                        pcall(function()
+                            CS.UnityEngine.Application.targetFrameRate = 120
+                            CS.UnityEngine.Time.fixedDeltaTime = 1.0 / 120.0
+                        end)
+                    end
+                    return res
                 end
             end
 
@@ -5241,12 +5322,8 @@ local function CreateModUI()
             tRt.anchoredPosition = Vector2(xPos, yPos)
             tRt.sizeDelta = Vector2(customWidth or 260, 35)
 
-            local bg = GameObject("Bg")
-            bg.transform:SetParent(tGo.transform, false)
-            local bgRt = bg:AddComponent(typeof(RectTransform))
-            bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            bgRt.sizeDelta = Vector2(0, 0)
-            local bgImg = bg:AddComponent(typeof(Image))
+            local bgImg = tGo:AddComponent(typeof(Image))
+            bgImg.raycastTarget = true
 
             local txtGo = GameObject("Text")
             txtGo.transform:SetParent(tGo.transform, false)
@@ -5293,6 +5370,7 @@ local function CreateModUI()
                         extra = " (" .. tostring(totalOddCount) .. ")"
                     end
                 end
+
                 if _G[varName] then
                     bgImg.color = Color(0.1, 0.6, 0.2, 1)
                     txt.text = label .. extra
@@ -5313,12 +5391,21 @@ local function CreateModUI()
                 _G.ModUpdateGoldenChestLabel = function()
                     pcall(UpdateLabel)
                 end
+            elseif varName == "Mod_SmoothRun_Enabled" then
+                _G.ModUpdateSmoothRunLabel = function()
+                    pcall(UpdateLabel)
+                end
             end
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
-                if varName == "Mod_SmoothRun_Enabled" and _G.Mod_ApplySmoothRun then
-                    _G.Mod_ApplySmoothRun(_G[varName])
+                if varName == "Mod_SmoothRun_Enabled" then
+                    if _G.Mod_ApplySmoothRun then
+                        _G.Mod_ApplySmoothRun(_G[varName])
+                    end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg(_G[varName] and "Đã BẬT Chạy Mượt (120 FPS / Mượt Camera)" or "Đã TẮT Chạy Mượt (60 FPS / Tiết Kiệm Pin)")
+                    end
                 end
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
@@ -5357,7 +5444,7 @@ local function CreateModUI()
             local vTxt = valGo:AddComponent(typeof(Text))
             table.insert(_G.CoBanUIList, valGo)
             vTxt.raycastTarget = false
-            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName] or 1.0)
             vTxt.alignment = TextAnchor.MiddleCenter
             vTxt.color = Color(0.8, 1, 0.8, 1)
             vTxt.fontSize = 18
@@ -5380,28 +5467,30 @@ local function CreateModUI()
                 txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18, TextAnchor.MiddleCenter
                 if defaultFont then txt.font = defaultFont end
                 table.insert(_G.CoBanUIList, btnGo)
-                return btnGo:AddComponent(typeof(Button))
+                local btn = btnGo:AddComponent(typeof(Button))
+                btn.targetGraphic = img
+                return btn
             end
 
             local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
             local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
 
             local function UpdateLabel()
-                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName] or 1.0)
                 if valueVarName == "Mod_CustomAttackRangeMultiplier" and _G.Mod_ApplyAttackRangeMultiplier then
                     _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
                 end
             end
 
             mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
+                _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
+                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -5490,7 +5579,7 @@ local function CreateModUI()
 
         -- Cột Phải Tab Cơ Bản
         CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateToggle("CHẠY MƯỢT MÀ", "Mod_SmoothRun_Enabled", 415, -100, 260, _G.CoBanUIList)
+        CreateToggle("CHẠY MƯỢT", "Mod_SmoothRun_Enabled", 340, -100, 330, _G.CoBanUIList)
         CreateSpeedControl(415, -140, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
         CreateRangeControl(415, -180, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
 
@@ -5510,12 +5599,8 @@ local function CreateModUI()
             tRt.anchoredPosition = Vector2(xPos, yPos)
             tRt.sizeDelta = Vector2(width, 30)
 
-            local bg = GameObject("Bg")
-            bg.transform:SetParent(tGo.transform, false)
-            local bgRt = bg:AddComponent(typeof(RectTransform))
-            bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            bgRt.sizeDelta = Vector2(0, 0)
-            local bgImg = bg:AddComponent(typeof(Image))
+            local bgImg = tGo:AddComponent(typeof(Image))
+            bgImg.raycastTarget = true
 
             local txtGo = GameObject("Text")
             txtGo.transform:SetParent(tGo.transform, false)
@@ -5529,6 +5614,7 @@ local function CreateModUI()
             if defaultFont then txt.font = defaultFont end
 
             local btn = tGo:AddComponent(typeof(Button))
+            btn.targetGraphic = bgImg
 
             local function UpdateLabel()
                 if _G[varName] then
