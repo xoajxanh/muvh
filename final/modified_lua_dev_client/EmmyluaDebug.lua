@@ -3599,19 +3599,30 @@ local function CreateModUI()
                                                             pcall(_G.ModUpdateFloatingPKBtn)
                                                         end
                                                         if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
-                                                        pcall(function()
-                                                            if _G.RoleManager and _G.RoleManager.me then
-                                                                if _G.RoleManager.me.SetTarget then
-                                                                    _G.RoleManager.me:SetTarget(role)
-                                                                end
-                                                                _G.RoleManager.me.TargetAvatar = role
-                                                            end
-                                                        end)
-                                                        if _G.Main_AutoFightUI and _G.Main_AutoFightUI.StartAutoFight then
-                                                            _G.Main_AutoFightUI.StartAutoFight()
+                                                        if _G.FloatingWordUtility then
+                                                            _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, CHUYỂN SANG AUTO FIGHT!")
                                                         end
-                                                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - CHUYỂN SANG AUTO FIGHT NHẶT ĐỒ!") end
                                                     end
+                                                    pcall(function()
+                                                        if _G.RoleManager and _G.RoleManager.me then
+                                                            if _G.RoleManager.me.SetTarget then
+                                                                _G.RoleManager.me:SetTarget(role)
+                                                            end
+                                                            _G.RoleManager.me.TargetAvatar = role
+                                                            if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                                                _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                            end
+                                                        end
+                                                        if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
+                                                            _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+                                                        end
+                                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                            _G.QiJiHelperData.SetAutoFightData(true)
+                                                        end
+                                                        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
+                                                            _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
+                                                        end
+                                                    end)
                                                 end
                                                 break
                                             end
