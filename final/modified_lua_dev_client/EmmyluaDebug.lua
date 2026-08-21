@@ -578,7 +578,7 @@ local function CreateModUI()
         rt.anchorMin = Vector2(0, 0)
         rt.anchorMax = Vector2(0, 0)
         rt.pivot = Vector2(0, 0)
-        rt.anchoredPosition = Vector2(20, 370)
+        rt.anchoredPosition = Vector2(1, 60)
         rt.sizeDelta = Vector2(60, 60)
 
         local img = btnGo:AddComponent(typeof(Image))
@@ -603,7 +603,7 @@ local function CreateModUI()
         pkRt.anchorMin = Vector2(0, 0)
         pkRt.anchorMax = Vector2(0, 0)
         pkRt.pivot = Vector2(0, 0)
-        pkRt.anchoredPosition = Vector2(20, 460)
+        pkRt.anchoredPosition = Vector2(1, 150)
         pkRt.sizeDelta = Vector2(60, 60)
 
         local pkImg = pkBtnGo:AddComponent(typeof(Image))
@@ -640,7 +640,16 @@ local function CreateModUI()
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
             CS.UnityEngine.PlayerPrefs.Save()
             if _G.ModUpdateFloatingPKBtn then _G.ModUpdateFloatingPKBtn() end
-            if not _G.Mod_AutoPK_Enabled then
+            if _G.Mod_AutoPK_Enabled then
+                pcall(function()
+                    if _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
+                        local curMode = _G.RoleManager.me.PKMode
+                        if curMode == 0 or curMode == nil then
+                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                        end
+                    end
+                end)
+            else
                 pcall(function()
                     if _G.RoleManager and _G.RoleManager.me then
                         _G.RoleManager.me:SetAutoFight("None")
@@ -664,7 +673,7 @@ local function CreateModUI()
         execRt.anchorMin = Vector2(0, 0)
         execRt.anchorMax = Vector2(0, 0)
         execRt.pivot = Vector2(0, 0)
-        execRt.anchoredPosition = Vector2(20, 280)
+        execRt.anchoredPosition = Vector2(1, 240)
         execRt.sizeDelta = Vector2(60, 60)
 
         local execImg = execBtnGo:AddComponent(typeof(Image))
@@ -728,7 +737,7 @@ local function CreateModUI()
         panelRt.anchorMin = Vector2(0, 0)
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
-        panelRt.anchoredPosition = Vector2(90, 50)
+        panelRt.anchoredPosition = Vector2(71, 60)
         panelRt.sizeDelta = Vector2(720, 580)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
@@ -1736,25 +1745,41 @@ local function CreateModUI()
             end)
         end
 
-        if not _G.BossHooked then
-            _G.BossHooked = true
-
-            -- Mở khóa 120 FPS & Tần số quét cao (Khử giật Camera / Khung cảnh)
+        local function ApplySmoothRunSettings(enable)
             pcall(function()
                 local app = CS.UnityEngine.Application
                 local qs = CS.UnityEngine.QualitySettings
                 local t = CS.UnityEngine.Time
-                app.targetFrameRate = 120
-                qs.vSyncCount = 0
-                t.fixedDeltaTime = 1.0 / 120.0
-                t.maximumDeltaTime = 0.1
+                if enable then
+                    app.targetFrameRate = 120
+                    qs.vSyncCount = 0
+                    t.fixedDeltaTime = 1.0 / 120.0
+                    t.maximumDeltaTime = 0.1
+                else
+                    app.targetFrameRate = 60
+                    qs.vSyncCount = 0
+                    t.fixedDeltaTime = 0.02
+                    t.maximumDeltaTime = 0.3333333
+                end
             end)
+        end
+        _G.Mod_ApplySmoothRun = ApplySmoothRunSettings
+
+        if _G.Mod_SmoothRun_Enabled == nil then
+            pcall(function()
+                _G.Mod_SmoothRun_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SmoothRun_Enabled", 0) == 1
+            end)
+        end
+        ApplySmoothRunSettings(_G.Mod_SmoothRun_Enabled)
+
+        if not _G.BossHooked then
+            _G.BossHooked = true
 
             if _G.GameSettingsController and not _G.Mod_Hooked_SetFrameRate then
                 _G.Mod_Hooked_SetFrameRate = true
                 local old_SetFrameRate = _G.GameSettingsController.SetFrameRate
                 _G.GameSettingsController.SetFrameRate = function(fps)
-                    if fps and fps < 120 then fps = 120 end
+                    if _G.Mod_SmoothRun_Enabled and fps and fps < 120 then fps = 120 end
                     return old_SetFrameRate(fps)
                 end
             end
@@ -3839,6 +3864,201 @@ local function CreateModUI()
 
 
 
+                    local function isMatchLockTarget(p, lockInput)
+                        if not lockInput or lockInput == "" then return false end
+                        if not p then return false end
+
+                        local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
+                        if cleanInput == "" then return false end
+
+                        local sId = string.match(cleanInput, "^S(%d+)%.$") or
+                            string.match(cleanInput, "^S(%d+)$") or
+                            string.match(cleanInput, "^s(%d+)%.$") or
+                            string.match(cleanInput, "^s(%d+)$")
+
+                        local targetNum = sId and tonumber(sId) or nil
+                        if targetNum then
+                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                            if not pSid and p.data then
+                                pSid = p.data.serverId or p.data.sid or p.data.serverID or
+                                    p.data.server_id
+                            end
+                            if pSid and tonumber(pSid) == targetNum then
+                                return true
+                            end
+                        end
+
+                        local strList = {}
+                        if p.name then table.insert(strList, tostring(p.name)) end
+                        if p.GetName then
+                            pcall(function()
+                                local n = p:GetName()
+                                if n then table.insert(strList, tostring(n)) end
+                            end)
+                        end
+                        if p.data then
+                            if p.data.name then table.insert(strList, tostring(p.data.name)) end
+                            if p.data.showName then
+                                table.insert(strList,
+                                    tostring(p.data.showName))
+                            end
+                            if p.data.serverId then
+                                table.insert(strList,
+                                    "S" .. tostring(p.data.serverId))
+                            end
+                        end
+                        if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
+                        if p.showName then table.insert(strList, tostring(p.showName)) end
+
+                        if sId then
+                            local pattern1 = "S" .. sId .. "%."
+                            local pattern2 = "S" .. sId .. "_"
+                            local pattern3 = "S" .. sId
+                            for _, s in ipairs(strList) do
+                                if string.find(s, pattern1) or string.find(s, pattern2) or string.find(s, pattern3) then
+                                    return true
+                                end
+                            end
+                        else
+                            local lowerInput = string.lower(cleanInput)
+                            for _, s in ipairs(strList) do
+                                if string.find(string.lower(s), lowerInput, 1, true) then
+                                    return true
+                                end
+                            end
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
+
+                    -- Hủy Target khi nhân vật Chết
+                    if _G.EventManager and _G.Event and _G.Event.Me_Dead and not _G.Mod_Hooked_MeDead then
+                        _G.Mod_Hooked_MeDead = true
+                        _G.EventManager.Regist(_G.Event.Me_Dead, function()
+                            pcall(function()
+                                if _G.RoleManager and _G.RoleManager.me then
+                                    if _G.RoleManager.me.SetTarget then
+                                        _G.RoleManager.me:SetTarget(nil)
+                                    else
+                                        _G.RoleManager.me.TargetAvatar = nil
+                                    end
+                                end
+                            end)
+                        end)
+                    end
+
+                    -- Hook RoleTargetManager cho Khóa Mục Tiêu (Lựa chọn A - Khóa Tuyệt Đối)
+                    if _G.RoleTargetManager and not _G.Mod_Hooked_RoleTargetManager then
+                        _G.Mod_Hooked_RoleTargetManager = true
+                        local orig_GetPlayerTarget = _G.RoleTargetManager.GetPlayerTarget
+                        _G.RoleTargetManager.GetPlayerTarget = function(isChangeTarget, distance, confirmCallback)
+                            if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                distance = distance or (_G.GameInitData and _G.GameInitData.selectTargetDistance or 15)
+                                confirmCallback = confirmCallback or _G.RoleTargetManager.GetCanAttackRole
+                                local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, distance, confirmCallback)
+                                if players and #players > 0 then
+                                    local matched = {}
+                                    for _, p in ipairs(players) do
+                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                            table.insert(matched, p)
+                                        end
+                                    end
+                                    if #matched > 0 then
+                                        local function modSortRole(a, b)
+                                            local distA = a.tempPathFindingDistance or 9999
+                                            local distB = b.tempPathFindingDistance or 9999
+                                            return distA < distB
+                                        end
+                                        table.sort(matched, modSortRole)
+                                        return matched[1]
+                                    end
+                                end
+                                return nil
+                            end
+                            return orig_GetPlayerTarget(isChangeTarget, distance, confirmCallback)
+                        end
+
+                        local orig_GetNearestPlayerTarget = _G.RoleTargetManager.GetNearestPlayerTarget
+                        _G.RoleTargetManager.GetNearestPlayerTarget = function(isChangeTarget, range)
+                            if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                range = range or (_G.GameInitData and _G.GameInitData.selectTargetDistance or 15)
+                                local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, range, _G.RoleTargetManager.GetCanAttackRole)
+                                if players and #players > 0 then
+                                    local matched = {}
+                                    for _, p in ipairs(players) do
+                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                            table.insert(matched, p)
+                                        end
+                                    end
+                                    if #matched > 0 then
+                                        local function modSortRole(a, b)
+                                            local distA = a.tempPathFindingDistance or 9999
+                                            local distB = b.tempPathFindingDistance or 9999
+                                            return distA < distB
+                                        end
+                                        table.sort(matched, modSortRole)
+                                        return matched[1]
+                                    end
+                                end
+                                return nil
+                            end
+                            return orig_GetNearestPlayerTarget(isChangeTarget, range)
+                        end
+                    end
+
+                    -- Hook nút Attack (BtnCommon) và nút Skill chiêu thức theo Khóa Mục Tiêu
+                    if _G.Main_MainSkillUI and not _G.Mod_Hooked_MainSkillUI_LockTarget then
+                        _G.Mod_Hooked_MainSkillUI_LockTarget = true
+                        local orig_CommonBtnClick = _G.Main_MainSkillUI.CommonBtnClick
+                        _G.Main_MainSkillUI.CommonBtnClick = function(self, control)
+                            if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me then
+                                    local curTarget = me.TargetAvatar
+                                    local isMatch = curTarget and not curTarget.isDead and (curTarget.hp and curTarget.hp > 0) and isMatchLockTarget(curTarget, _G.Mod_LockTarget_Name)
+                                    if not isMatch then
+                                        local target = _G.RoleTargetManager.GetPlayerTarget(false, 15)
+                                        if target then
+                                            if me.SetTarget then me:SetTarget(target) else me.TargetAvatar = target end
+                                        else
+                                            if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy mục tiêu đã khóa!")
+                                            end
+                                            return
+                                        end
+                                    end
+                                end
+                            end
+                            return orig_CommonBtnClick(self, control)
+                        end
+
+                        local orig_Button_OnSkillClick = _G.Main_MainSkillUI.Button_OnSkillClick
+                        _G.Main_MainSkillUI.Button_OnSkillClick = function(self, control)
+                            if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me then
+                                    local curTarget = me.TargetAvatar
+                                    local isMatch = curTarget and not curTarget.isDead and (curTarget.hp and curTarget.hp > 0) and isMatchLockTarget(curTarget, _G.Mod_LockTarget_Name)
+                                    if not isMatch then
+                                        local target = _G.RoleTargetManager.GetPlayerTarget(false, 15)
+                                        if target then
+                                            if me.SetTarget then me:SetTarget(target) else me.TargetAvatar = target end
+                                        else
+                                            if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy mục tiêu đã khóa!")
+                                            end
+                                            return
+                                        end
+                                    end
+                                end
+                            end
+                            return orig_Button_OnSkillClick(self, control)
+                        end
+                    end
+
                     -- Auto PK & Lock Target Logic (Loop động theo _G.Mod_PKScanDelay)
                     if not _G.Mod_PKScanLoopStarted then
                         _G.Mod_PKScanLoopStarted = true
@@ -3847,85 +4067,60 @@ local function CreateModUI()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
+                                        local me = _G.RoleManager.me
+                                        if me.isDead or (me.hp and me.hp <= 0) then
+                                            if me.TargetAvatar ~= nil then
+                                                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                            end
+                                            return
+                                        end
+
+                                        -- Tự động chuyển sang PK Guild nếu đang là Hòa Bình (0) hoặc nil
+                                        if (me.PKMode == 0 or me.PKMode == nil) and _G.NetManager and _G.RoleMessage then
+                                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                                        end
+
                                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                         local delay = _G.Mod_PKScanDelay or 0.8
                                         if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
                                             _G.Mod_LastPKScanTime = nowTime
-                                            
-                                            local me = _G.RoleManager.me
+
                                             local currentTarget = me.TargetAvatar
-                                            if currentTarget and not currentTarget.isDead and currentTarget.hp > 0 and currentTarget.RoleType == 1 and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
+                                            local isCurrentTargetValid = false
+                                            if currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 1 and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
+                                                local dist = 999
+                                                if currentTarget.tempPathFindingDistance then
+                                                    dist = currentTarget.tempPathFindingDistance
+                                                elseif currentTarget.serverCoord and me.serverCoord then
+                                                    dist = math.max(math.abs(currentTarget.serverCoord.x - me.serverCoord.x), math.abs(currentTarget.serverCoord.y - me.serverCoord.y))
+                                                end
+
+                                                if dist <= 15 then
+                                                    if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                                        if isMatchLockTarget(currentTarget, _G.Mod_LockTarget_Name) then
+                                                            isCurrentTargetValid = true
+                                                        end
+                                                    else
+                                                        isCurrentTargetValid = true
+                                                    end
+                                                end
+                                            end
+
+                                            if isCurrentTargetValid then
+                                                if me.SetAutoFight then
+                                                    me:SetAutoFight("ReleaseSkill")
+                                                end
                                                 return
+                                            end
+
+                                            if currentTarget then
+                                                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
                                             end
 
                                             local function modSortRole(a, b)
                                                 local distA = a.tempPathFindingDistance or 9999
                                                 local distB = b.tempPathFindingDistance or 9999
                                                 return distA < distB
-                                            end
-
-                                            local function isMatchLockTarget(p, lockInput)
-                                                if not lockInput or lockInput == "" then return false end
-
-                                                local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
-                                                if cleanInput == "" then return false end
-
-                                                local sId = string.match(cleanInput, "^S(%d+)%.$") or
-                                                    string.match(cleanInput, "^S(%d+)$")
-
-                                                local targetNum = sId and tonumber(sId) or nil
-                                                if targetNum then
-                                                    local pSid = p.serverId or p.sid or p.serverID or p.server_id
-                                                    if not pSid and p.data then
-                                                        pSid = p.data.serverId or p.data.sid or p.data.serverID or
-                                                            p.data.server_id
-                                                    end
-                                                    if pSid and tonumber(pSid) == targetNum then
-                                                        return true
-                                                    end
-                                                end
-
-                                                local strList = {}
-                                                if p.name then table.insert(strList, tostring(p.name)) end
-                                                if p.GetName then
-                                                    pcall(function()
-                                                        local n = p:GetName()
-                                                        if n then table.insert(strList, tostring(n)) end
-                                                    end)
-                                                end
-                                                if p.data then
-                                                    if p.data.name then table.insert(strList, tostring(p.data.name)) end
-                                                    if p.data.showName then
-                                                        table.insert(strList,
-                                                            tostring(p.data.showName))
-                                                    end
-                                                    if p.data.serverId then
-                                                        table.insert(strList,
-                                                            "S" .. tostring(p.data.serverId))
-                                                    end
-                                                end
-                                                if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
-                                                if p.showName then table.insert(strList, tostring(p.showName)) end
-
-                                                if sId then
-                                                    local pattern1 = "S" .. sId .. "%."
-                                                    local pattern2 = "S" .. sId .. "_"
-                                                    local pattern3 = "S" .. sId
-                                                    for _, s in ipairs(strList) do
-                                                        if string.find(s, pattern1) or string.find(s, pattern2) or string.find(s, pattern3) then
-                                                            return true
-                                                        end
-                                                    end
-                                                else
-                                                    local lowerInput = string.lower(cleanInput)
-                                                    for _, s in ipairs(strList) do
-                                                        if string.find(string.lower(s), lowerInput, 1, true) then
-                                                            return true
-                                                        end
-                                                    end
-                                                end
-
-                                                return false
                                             end
 
                                             local function isMonsterNearby(range)
@@ -5035,164 +5230,11 @@ local function CreateModUI()
             end)
         end
 
-        CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateSpeedControl(415, -100, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
-
-        local function CreateRangeMultiplierControl(startX, yPos, prefix, valueVarName, step)
-            local centerX = startX + 90
-            local valGo = GameObject(valueVarName .. "_Val")
-            valGo.transform:SetParent(panelGo.transform, false)
-            local vRt = valGo:AddComponent(typeof(RectTransform))
-            vRt.anchorMin, vRt.anchorMax, vRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            vRt.anchoredPosition = Vector2(centerX - 80, yPos)
-            vRt.sizeDelta = Vector2(160, 30)
-            local vTxt = valGo:AddComponent(typeof(Text))
-            table.insert(_G.CoBanUIList, valGo)
-            vTxt.raycastTarget = false
-            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
-            vTxt.alignment = TextAnchor.MiddleCenter
-            vTxt.color = Color(0.8, 1, 0.8, 1)
-            vTxt.fontSize = 18
-            if defaultFont then vTxt.font = defaultFont end
-
-            local function createBtn(nameSuffix, offsetX, w, h, text, color)
-                local btnGo = GameObject(valueVarName .. nameSuffix)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                local rt = btnGo:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(centerX + offsetX, yPos)
-                rt.sizeDelta = Vector2(w, h)
-                local img = btnGo:AddComponent(typeof(Image))
-                img.color = color
-                local txtGo = GameObject(valueVarName .. nameSuffix .. "Txt")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax, txtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18, TextAnchor.MiddleCenter
-                if defaultFont then txt.font = defaultFont end
-                table.insert(_G.CoBanUIList, btnGo)
-                return btnGo:AddComponent(typeof(Button))
-            end
-
-            local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
-            local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
-
-            local function UpdateLabel()
-                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
-                if valueVarName == "Mod_CustomAttackRangeMultiplier" and _G.Mod_ApplyAttackRangeMultiplier then
-                    _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
-                end
-            end
-
-            mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-            pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-        end
-
-        CreateRangeMultiplierControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
-        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_ApplyAttackRangeMultiplier then
-            _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
-        end
-
-        local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
-            local centerX = startX + 90
-            local valGo = GameObject(valueVarName .. "_Val")
-            valGo.transform:SetParent(panelGo.transform, false)
-            local vRt = valGo:AddComponent(typeof(RectTransform))
-            vRt.anchorMin, vRt.anchorMax, vRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            vRt.anchoredPosition = Vector2(centerX - 80, yPos)
-            vRt.sizeDelta = Vector2(160, 30)
-            local vTxt = valGo:AddComponent(typeof(Text))
-            table.insert(_G.CoBanUIList, valGo)
-            vTxt.raycastTarget = false
-            vTxt.text = string.format("%s%d", prefix, _G[valueVarName] or 0)
-            vTxt.alignment = TextAnchor.MiddleCenter
-            vTxt.color = Color(0.8, 1, 0.8, 1)
-            vTxt.fontSize = 18
-            if defaultFont then vTxt.font = defaultFont end
-
-            local function createBtn(nameSuffix, offsetX, w, h, text, color)
-                local btnGo = GameObject(valueVarName .. nameSuffix)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                local rt = btnGo:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(centerX + offsetX, yPos)
-                rt.sizeDelta = Vector2(w, h)
-                local img = btnGo:AddComponent(typeof(Image))
-                img.color = color
-                local txtGo = GameObject(valueVarName .. nameSuffix .. "Txt")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax, txtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18,
-                    TextAnchor.MiddleCenter
-                if defaultFont then txt.font = defaultFont end
-                table.insert(_G.CoBanUIList, btnGo)
-                return btnGo:AddComponent(typeof(Button))
-            end
-
-            local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
-            local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
-            local m5BtnComp = createBtn("_Minus5", -165, 40, 30, "-5", Color(0.5, 0.2, 0.2, 1))
-            local p5BtnComp = createBtn("_Plus5", 125, 40, 30, "+5", Color(0.2, 0.5, 0.2, 1))
-
-            local function UpdateLabel()
-                vTxt.text = string.format("%s%d", prefix, _G[valueVarName])
-            end
-
-            mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0, _G[valueVarName] - step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-            pBtnComp.onClick:AddListener(function()
-                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
-                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-            m5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0, _G[valueVarName] - (step * 5))
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-            p5BtnComp.onClick:AddListener(function()
-                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
-                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + (step * 5))
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
-            end)
-        end
-        CreateRangeControl(415, -140, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
-
-
-
-
-        local function CreateToggle(label, varName, xPos, yPos, customWidth)
+        local function CreateToggle(label, varName, xPos, yPos, customWidth, targetList)
             local tGo = GameObject(varName .. "_Toggle")
             tGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, tGo)
+            targetList = targetList or _G.NangCaoUIList
+            table.insert(targetList, tGo)
 
             local tRt = tGo:AddComponent(typeof(RectTransform))
             tRt.anchorMin, tRt.anchorMax, tRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
@@ -5275,6 +5317,9 @@ local function CreateModUI()
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
+                if varName == "Mod_SmoothRun_Enabled" and _G.Mod_ApplySmoothRun then
+                    _G.Mod_ApplySmoothRun(_G[varName])
+                end
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
                     _G.LastPickupTime = 0
@@ -5299,6 +5344,160 @@ local function CreateModUI()
                     end
                 end)
             end)
+        end
+
+        local function CreateRangeMultiplierControl(startX, yPos, prefix, valueVarName, step)
+            local centerX = startX + 90
+            local valGo = GameObject(valueVarName .. "_Val")
+            valGo.transform:SetParent(panelGo.transform, false)
+            local vRt = valGo:AddComponent(typeof(RectTransform))
+            vRt.anchorMin, vRt.anchorMax, vRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            vRt.anchoredPosition = Vector2(centerX - 80, yPos)
+            vRt.sizeDelta = Vector2(160, 30)
+            local vTxt = valGo:AddComponent(typeof(Text))
+            table.insert(_G.CoBanUIList, valGo)
+            vTxt.raycastTarget = false
+            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+            vTxt.alignment = TextAnchor.MiddleCenter
+            vTxt.color = Color(0.8, 1, 0.8, 1)
+            vTxt.fontSize = 18
+            if defaultFont then vTxt.font = defaultFont end
+
+            local function createBtn(nameSuffix, offsetX, w, h, text, color)
+                local btnGo = GameObject(valueVarName .. nameSuffix)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(centerX + offsetX, yPos)
+                rt.sizeDelta = Vector2(w, h)
+                local img = btnGo:AddComponent(typeof(Image))
+                img.color = color
+                local txtGo = GameObject(valueVarName .. nameSuffix .. "Txt")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax, txtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18, TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+                table.insert(_G.CoBanUIList, btnGo)
+                return btnGo:AddComponent(typeof(Button))
+            end
+
+            local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
+            local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
+
+            local function UpdateLabel()
+                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+                if valueVarName == "Mod_CustomAttackRangeMultiplier" and _G.Mod_ApplyAttackRangeMultiplier then
+                    _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
+                end
+            end
+
+            mBtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+            pBtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+        end
+
+        local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
+            local centerX = startX + 90
+            local valGo = GameObject(valueVarName .. "_Val")
+            valGo.transform:SetParent(panelGo.transform, false)
+            local vRt = valGo:AddComponent(typeof(RectTransform))
+            vRt.anchorMin, vRt.anchorMax, vRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            vRt.anchoredPosition = Vector2(centerX - 80, yPos)
+            vRt.sizeDelta = Vector2(160, 30)
+            local vTxt = valGo:AddComponent(typeof(Text))
+            table.insert(_G.CoBanUIList, valGo)
+            vTxt.raycastTarget = false
+            vTxt.text = string.format("%s%d", prefix, _G[valueVarName] or 0)
+            vTxt.alignment = TextAnchor.MiddleCenter
+            vTxt.color = Color(0.8, 1, 0.8, 1)
+            vTxt.fontSize = 18
+            if defaultFont then vTxt.font = defaultFont end
+
+            local function createBtn(nameSuffix, offsetX, w, h, text, color)
+                local btnGo = GameObject(valueVarName .. nameSuffix)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(centerX + offsetX, yPos)
+                rt.sizeDelta = Vector2(w, h)
+                local img = btnGo:AddComponent(typeof(Image))
+                img.color = color
+                local txtGo = GameObject(valueVarName .. nameSuffix .. "Txt")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax, txtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget, txt.text, txt.color, txt.fontSize, txt.alignment = false, text, Color.white, 18,
+                    TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+                table.insert(_G.CoBanUIList, btnGo)
+                return btnGo:AddComponent(typeof(Button))
+            end
+
+            local mBtnComp = createBtn("_Minus", -120, 40, 30, "-", Color(0.3, 0.3, 0.3, 1))
+            local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
+            local m5BtnComp = createBtn("_Minus5", -165, 40, 30, "-5", Color(0.5, 0.2, 0.2, 1))
+            local p5BtnComp = createBtn("_Plus5", 125, 40, 30, "+5", Color(0.2, 0.5, 0.2, 1))
+
+            local function UpdateLabel()
+                vTxt.text = string.format("%s%d", prefix, _G[valueVarName])
+            end
+
+            mBtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.max(0, _G[valueVarName] - step)
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+            pBtnComp.onClick:AddListener(function()
+                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
+                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + step)
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+            m5BtnComp.onClick:AddListener(function()
+                _G[valueVarName] = math.max(0, _G[valueVarName] - (step * 5))
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+            p5BtnComp.onClick:AddListener(function()
+                local maxVal = (valueVarName == "Mod_CustomAttackRange") and 15 or 100
+                _G[valueVarName] = math.min(maxVal, _G[valueVarName] + (step * 5))
+                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateLabel()
+            end)
+        end
+
+        -- Cột Phải Tab Cơ Bản
+        CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
+        CreateToggle("CHẠY MƯỢT MÀ", "Mod_SmoothRun_Enabled", 415, -100, 260, _G.CoBanUIList)
+        CreateSpeedControl(415, -140, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
+        CreateRangeControl(415, -180, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
+
+        -- Cột Trái Tab Cơ Bản
+        CreateRangeMultiplierControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
+        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_ApplyAttackRangeMultiplier then
+            _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
         end
 
         local function CreateSmallToggle(label, varName, xPos, yPos, width)
@@ -5386,7 +5585,7 @@ local function CreateModUI()
             local currentY = -95
 
             -- Hàng 1 (50-50 Split): Nút TỰ ĐỘNG NHẶT (Trái) & 2 nút PA NHẶT (Phải)
-            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY, 160)
+            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", rightColX, currentY, 180)
 
             if _G.AutoPick_Mode == nil then
                 _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
@@ -5400,7 +5599,7 @@ local function CreateModUI()
             table.insert(_G.NangCaoUIList, btnPa1Go)
             local rtPa1 = btnPa1Go:AddComponent(typeof(RectTransform))
             rtPa1.anchorMin, rtPa1.anchorMax, rtPa1.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            rtPa1.anchoredPosition = Vector2(rightColX + 210, currentY)
+            rtPa1.anchoredPosition = Vector2(rightColX + 205, currentY)
             rtPa1.sizeDelta = Vector2(80, 35)
 
             local bgPa1 = GameObject("Bg")
@@ -8609,11 +8808,69 @@ local function CreateModUI()
                     if isBone then shouldPick = true end
 
                     if shouldPick then
-                        local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
-                        if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
-                            _G.Mod_PickedItems[dropItemData.id] = true
-                            _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
-                            ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
+                        local scopeVal = 0
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                            scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
+                        end
+                        local pickLimit = tonumber(_G.AutoPick_Limit) or 0
+                        local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1)
+                        local isPriorityBatchActive = _G.Mod_IsAdmin and isSecretTrickActive and (pickLimit >= 7)
+
+                        if isPriorityBatchActive then
+                            local colorScore = (rColor == 2 and 30) or (rColor == 1 and 20) or 10 -- Lam (30) > Lục (20) > Đỏ (10)
+                            local score = 1000
+                            if isRune then
+                                score = 10000 + (rLevel * 100) + colorScore
+                            elseif eType == 24 then
+                                score = 5000
+                            elseif eType == 26 then
+                                score = 4000
+                            end
+
+                            _G.Mod_AdminBatchDropQueue = _G.Mod_AdminBatchDropQueue or {}
+                            table.insert(_G.Mod_AdminBatchDropQueue, {
+                                dropItemData = dropItemData,
+                                startTime = startTime,
+                                interceptTime = interceptTime,
+                                score = score
+                            })
+
+                            if not _G.Mod_AdminBatchTimerRunning then
+                                _G.Mod_AdminBatchTimerRunning = true
+                                if _G.Timer and _G.Timer.StartLoop then
+                                    _G.Timer.StartLoop(0.04, 1, function()
+                                        _G.Mod_AdminBatchTimerRunning = false
+                                        local q = _G.Mod_AdminBatchDropQueue
+                                        _G.Mod_AdminBatchDropQueue = {}
+                                        if q and #q > 0 then
+                                            table.sort(q, function(a, b) return a.score > b.score end)
+                                            for _, item in ipairs(q) do
+                                                local d = item.dropItemData
+                                                local isAlreadyPicked = _G.Mod_PickedItems[d.id]
+                                                if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                                                    _G.Mod_PickedItems[d.id] = true
+                                                    _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                                    ExecutePickupCommon(d, item.startTime, item.interceptTime, "AutoLoot_VIP")
+                                                end
+                                            end
+                                        end
+                                    end)
+                                else
+                                    local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
+                                    if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                                        _G.Mod_PickedItems[dropItemData.id] = true
+                                        _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                        ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
+                                    end
+                                end
+                            end
+                        else
+                            local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
+                            if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                                _G.Mod_PickedItems[dropItemData.id] = true
+                                _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                                ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
+                            end
                         end
                     end
                 end
