@@ -3386,16 +3386,53 @@ local function CreateModUI()
 
             local function isMonsterNearby(range)
                 range = range or 15
-                if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
-                    local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, range, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                    if monsters and #monsters > 0 then return true end
-                end
+                local me = _G.RoleManager and _G.RoleManager.me
+                if not me or me.isDead then return false end
+                local meId = (me.data and me.data.id) or me.id or 0
+                local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+                local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+
                 if _G.RoleManager and _G.RoleManager.GetRolesByType then
                     local monsterRoles = _G.RoleManager.GetRolesByType(2)
                     if monsterRoles then
                         for _, role in pairs(monsterRoles) do
                             if role and not role.isDead and role.hp and role.hp > 0 then
-                                return true
+                                local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+                                local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+                                local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+
+                                local isSameCamp = false
+                                if role.IsSameCamp then
+                                    isSameCamp = role:IsSameCamp()
+                                elseif role.data and role.data.campId and role.data.campId ~= 0 and _G.ViewData and _G.ViewData.meData then
+                                    isSameCamp = (role.data.campId == _G.ViewData.meData.unionId or (_G.ViewData.meData.campId ~= nil and role.data.campId == _G.ViewData.meData.campId))
+                                end
+                                if ownerId ~= 0 and not isSameCamp then
+                                    if _G.WarAllianceData and _G.WarAllianceData.GetIsSameUnion and _G.WarAllianceData.GetIsSameUnion(ownerId) then
+                                        isSameCamp = true
+                                    elseif _G.TeamData and _G.TeamData.IsTeammate and _G.TeamData.IsTeammate(ownerId) then
+                                        isSameCamp = true
+                                    end
+                                end
+
+                                local canAttack = true
+                                if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+                                    canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+                                end
+
+                                if canAttack and not isMySummon and not isSummon and (ownerId == 0 or ownerId == nil) and not isSameCamp then
+                                    local rX = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x) or 0
+                                    local rY = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y) or 0
+                                    local dist = 9999
+                                    if role.tempPathFindingDistance then
+                                        dist = role.tempPathFindingDistance
+                                    elseif meX > 0 and meY > 0 and rX > 0 and rY > 0 then
+                                        dist = math.max(math.abs(meX - rX), math.abs(meY - rY))
+                                    end
+                                    if dist <= range then
+                                        return true
+                                    end
+                                end
                             end
                         end
                     end
@@ -4206,16 +4243,53 @@ local function CreateModUI()
 
                                             local function isMonsterNearby(range)
                                                 range = range or 15
-                                                if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
-                                                    local monsters = _G.RoleManager.GetRolesByTypeAndRangeAlive(2, range, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                                                    if monsters and #monsters > 0 then return true end
-                                                end
+                                                local me = _G.RoleManager and _G.RoleManager.me
+                                                if not me or me.isDead then return false end
+                                                local meId = (me.data and me.data.id) or me.id or 0
+                                                local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+                                                local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+
                                                 if _G.RoleManager and _G.RoleManager.GetRolesByType then
                                                     local monsterRoles = _G.RoleManager.GetRolesByType(2)
                                                     if monsterRoles then
                                                         for _, role in pairs(monsterRoles) do
                                                             if role and not role.isDead and role.hp and role.hp > 0 then
-                                                                return true
+                                                                local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+                                                                local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+                                                                local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+
+                                                                local isSameCamp = false
+                                                                if role.IsSameCamp then
+                                                                    isSameCamp = role:IsSameCamp()
+                                                                elseif role.data and role.data.campId and role.data.campId ~= 0 and _G.ViewData and _G.ViewData.meData then
+                                                                    isSameCamp = (role.data.campId == _G.ViewData.meData.unionId or (_G.ViewData.meData.campId ~= nil and role.data.campId == _G.ViewData.meData.campId))
+                                                                end
+                                                                if ownerId ~= 0 and not isSameCamp then
+                                                                    if _G.WarAllianceData and _G.WarAllianceData.GetIsSameUnion and _G.WarAllianceData.GetIsSameUnion(ownerId) then
+                                                                        isSameCamp = true
+                                                                    elseif _G.TeamData and _G.TeamData.IsTeammate and _G.TeamData.IsTeammate(ownerId) then
+                                                                        isSameCamp = true
+                                                                    end
+                                                                end
+
+                                                                local canAttack = true
+                                                                if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+                                                                    canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+                                                                end
+
+                                                                if canAttack and not isMySummon and not isSummon and (ownerId == 0 or ownerId == nil) and not isSameCamp then
+                                                                    local rX = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x) or 0
+                                                                    local rY = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y) or 0
+                                                                    local dist = 9999
+                                                                    if role.tempPathFindingDistance then
+                                                                        dist = role.tempPathFindingDistance
+                                                                    elseif meX > 0 and meY > 0 and rX > 0 and rY > 0 then
+                                                                        dist = math.max(math.abs(meX - rX), math.abs(meY - rY))
+                                                                    end
+                                                                    if dist <= range then
+                                                                        return true
+                                                                    end
+                                                                end
                                                             end
                                                         end
                                                     end

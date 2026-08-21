@@ -33,19 +33,47 @@ local function AutoFightSortRole(a, b)
   end
 end
 
+local function IsSummonOrFriendly(role)
+  if not role then return true end
+  local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+  local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+  if isSummon or (ownerId ~= 0 and ownerId ~= nil) then
+    return true
+  end
+  if role.IsSameCamp and role:IsSameCamp() then
+    return true
+  end
+  if role.data and role.data.campId and role.data.campId ~= 0 and ViewData and ViewData.meData then
+    if role.data.campId == ViewData.meData.unionId or (ViewData.meData.campId ~= nil and role.data.campId == ViewData.meData.campId) then
+      return true
+    end
+  end
+  return false
+end
+
 function RoleTargetManager.IsCanAttackMonster(role)
-  if role.isSummon then
+  if not role or role.isDead then
+    return false
+  end
+  local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+  local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+  if isSummon or (ownerId ~= 0 and ownerId ~= nil) then
     return false
   end
   if RoleManager.me.level <= QiJiHelperData.limitSelectMonsterLevel and not role:IsBoss() and role.owner ~= 0 and role.owner ~= RoleManager.me.id then
     return false
   end
-  if role.data.status ~= 100 then
-    if role.data.campId ~= 0 and (role.data.campId == ViewData.meData.unionId or ViewData.meData.campId ~= nil and role.data.campId == ViewData.meData.campId) then
+  if role.IsSameCamp and role:IsSameCamp() then
+    return false
+  end
+  if role.data then
+    if role.data.status ~= 100 then
+      if role.data.campId ~= 0 and (role.data.campId == ViewData.meData.unionId or (ViewData.meData.campId ~= nil and role.data.campId == ViewData.meData.campId)) then
+        return false
+      end
+    else
       return false
     end
-  else
-    return false
   end
   return true
 end
@@ -102,7 +130,7 @@ function RoleTargetManager.GetNearestMonsterTarget(isChangeTarget, range)
   if 0 < #monsters then
     if isChangeTarget then
       for i = 1, #monsters do
-        if not table.contains(targetMonsterSelected, monsters[i].id) and not monsters[i].isSummon then
+        if not table.contains(targetMonsterSelected, monsters[i].id) and not IsSummonOrFriendly(monsters[i]) then
           table.insert(targetMonsterSelected, monsters[i].id)
           return monsters[i]
         end
@@ -111,7 +139,7 @@ function RoleTargetManager.GetNearestMonsterTarget(isChangeTarget, range)
       table.insert(targetMonsterSelected, monsters[1].id)
     end
     local index = 1
-    while monsters[index] and monsters[index].isSummon do
+    while monsters[index] and IsSummonOrFriendly(monsters[index]) do
       index = index + 1
     end
     return monsters[index]
@@ -240,7 +268,7 @@ function RoleTargetManager.GetMostRareMonsterTarget(isChangeTarget, distance, co
   if 0 < #monsters then
     if isChangeTarget then
       for i = 1, #monsters do
-        if not table.contains(targetMonsterSelected, monsters[i].id) and not monsters[i].isSummon then
+        if not table.contains(targetMonsterSelected, monsters[i].id) and not IsSummonOrFriendly(monsters[i]) then
           table.insert(targetMonsterSelected, monsters[i].id)
           return monsters[i]
         end
@@ -249,7 +277,7 @@ function RoleTargetManager.GetMostRareMonsterTarget(isChangeTarget, distance, co
       table.insert(targetMonsterSelected, monsters[1].id)
     end
     local index = 1
-    while monsters[index] and monsters[index].isSummon do
+    while monsters[index] and IsSummonOrFriendly(monsters[index]) do
       index = index + 1
     end
     return monsters[index]
@@ -264,7 +292,7 @@ function RoleTargetManager.GetMostRareMonsterTargetOnHook()
   table.sort(monsters, AutoFightSortRole)
   if 0 < #monsters then
     local index = 1
-    while monsters[index] and monsters[index].isSummon do
+    while monsters[index] and IsSummonOrFriendly(monsters[index]) do
       index = index + 1
     end
     return monsters[index]
@@ -301,7 +329,7 @@ function RoleTargetManager.GetNearestMonsterTargetInLimitDistance(isChangeTarget
   if 0 < #monsters then
     if isChangeTarget then
       for i = 1, #monsters do
-        if not table.contains(targetMonsterSelected, monsters[i].id) and not monsters[i].isSummon then
+        if not table.contains(targetMonsterSelected, monsters[i].id) and not IsSummonOrFriendly(monsters[i]) then
           table.insert(targetMonsterSelected, monsters[i].id)
           return monsters[i]
         end
@@ -310,7 +338,7 @@ function RoleTargetManager.GetNearestMonsterTargetInLimitDistance(isChangeTarget
       table.insert(targetMonsterSelected, monsters[1].id)
     end
     local index = 1
-    while monsters[index] and monsters[index].isSummon do
+    while monsters[index] and IsSummonOrFriendly(monsters[index]) do
       index = index + 1
     end
     return monsters[index]
