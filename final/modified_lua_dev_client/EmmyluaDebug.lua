@@ -8801,14 +8801,16 @@ local function CreateModUI()
                             _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                         end
 
-                        -- 3. Đưa vào Hàng Đợi Duy Trì Spam (dùng chung Vòng Lặp Mẹ)
-                        _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
-                        _G.Mod_ActiveSpamItems[dropItemData.id] = {
-                            id = dropItemData.id,
-                            x = dropItemData.x,
-                            y = dropItemData.y,
-                            expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
-                        }
+                        -- 3. Đưa vào Hàng Đợi Duy Trì Spam (dùng chung Vòng Lặp Mẹ) (bỏ qua nếu là KTĐ để tránh spam lệnh đơ máy)
+                        if logPrefix ~= "KTĐ" then
+                            _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                            _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                                id = dropItemData.id,
+                                x = dropItemData.x,
+                                y = dropItemData.y,
+                                expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                            }
+                        end
 
                         local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
                         local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or
@@ -8835,19 +8837,26 @@ local function CreateModUI()
                     end
                 else
                     -- PA NHẶT 2 (Phương án hiện tại với 0.1s delay throttle)
-                    local scheduledTime = nowTime + delaySec
-                    local expireTime = scheduledTime + 5.0
+                    if logPrefix == "KTĐ" then
+                        -- Gửi gói tin nhặt 1 lần, không đưa vào hàng đợi spam
+                        if _G.PickupManager then
+                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                        end
+                    else
+                        local scheduledTime = nowTime + delaySec
+                        local expireTime = scheduledTime + 5.0
 
-                    _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
-                    _G.Mod_ActiveSpamItems[dropItemData.id] = {
-                        id = dropItemData.id,
-                        x = dropItemData.x,
-                        y = dropItemData.y,
-                        startTime = scheduledTime,
-                        expireTime = expireTime,
-                        lastSpamTime = 0,
-                        isTrick = isSecretTrickActive
-                    }
+                        _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                        _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                            id = dropItemData.id,
+                            x = dropItemData.x,
+                            y = dropItemData.y,
+                            startTime = scheduledTime,
+                            expireTime = expireTime,
+                            lastSpamTime = 0,
+                            isTrick = isSecretTrickActive
+                        }
+                    end
 
                     local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
                     local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
@@ -8890,7 +8899,7 @@ local function CreateModUI()
                     end)
                 end
 
-                if _G.Mod_AutoPK_Enabled then
+                if _G.Mod_AutoPK_Enabled or _G.Mod_AutoPick_KTD then
                     local mapId = 0
                     if _G.SceneData and _G.SceneData.mapId then
                         mapId = _G.SceneData.mapId
@@ -8899,7 +8908,14 @@ local function CreateModUI()
                     end
 
                     if mapId == 1077 then
-                        ExecutePickupCommon(dropItemData, startTime, interceptTime, "KTĐ")
+                        local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
+                        if objId then
+                            _G.Mod_PickedItems = _G.Mod_PickedItems or {}
+                            if not _G.Mod_PickedItems[objId] then
+                                _G.Mod_PickedItems[objId] = true
+                                ExecutePickupCommon(dropItemData, startTime, interceptTime, "KTĐ")
+                            end
+                        end
                     end
                 end
 

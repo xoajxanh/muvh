@@ -7480,26 +7480,20 @@ local function CreateModUI()
                     end
 
                     if mapId == 1077 then
-                        if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.1, 3, function()
-                                if _G.PickupManager then _G.PickupManager.ReqPickUpMapItem(dropItemData.id) end
-                            end)
-                        else
-                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                        end
+                        local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
+                        if objId then
+                            _G.Mod_PickedItems = _G.Mod_PickedItems or {}
+                            if not _G.Mod_PickedItems[objId] then
+                                _G.Mod_PickedItems[objId] = true
+                                if _G.PickupManager then
+                                    _G.PickupManager.ReqPickUpMapItem(objId)
+                                end
 
-                        if dropItemData.id then
-                            _G.Mod_PickedItems[dropItemData.id] = true
-                        end
-
-                        if _G.WriteLog then
-                            _G.WriteLog(string.format("[KTĐ] Phát hiện & Tự Nhặt! InstanceId=%s, ConfigId=%s, Type=%s",
-                                tostring(dropItemData.id), tostring(dropItemData.configId), tostring(dropItemData.type)))
-                        end
-                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                            pcall(function()
-                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
-                            end)
+                                if _G.WriteLog then
+                                    _G.WriteLog(string.format("[KTĐ] Phát hiện & Tự Nhặt (1 lần)! InstanceId=%s, ConfigId=%s, Type=%s",
+                                        tostring(objId), tostring(dropItemData.configId), tostring(dropItemData.type)))
+                                end
+                            end
                         end
                     end
                 end
