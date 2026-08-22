@@ -47,7 +47,7 @@ local function WriteLog(msg)
     pcall(function()
         local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
         local finalMsg = tostring(msg)
-        if string.find(finalMsg, "%[AutoLoot%]") then
+        if string.find(finalMsg, "%[AutoLoot") then
             local timeStr = CS.System.DateTime.Now:ToString("yyyy-MM-dd HH:mm:ss.fff")
             finalMsg = timeStr .. ": " .. finalMsg
         end
@@ -3821,7 +3821,10 @@ local function CreateModUI()
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
-                                                if isSecretTrickActive and rawPct <= 0.7 then
+                                                if isSecretTrickActive and rawPct <= 0.5 then
+                                                    local needNotify = false
+
+                                                    -- 1. TẮT AUTO PK
                                                     if _G.Mod_AutoPK_Enabled then
                                                         _G.Mod_AutoPK_Enabled = false
                                                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
@@ -3830,10 +3833,51 @@ local function CreateModUI()
                                                             pcall(_G.ModUpdateFloatingPKBtn)
                                                         end
                                                         if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
-                                                        if _G.FloatingWordUtility then
-                                                            _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, CHUYỂN SANG AUTO FIGHT!")
-                                                        end
+                                                        needNotify = true
                                                     end
+
+                                                    -- 2. TẮT KHÓA MỤC TIÊU
+                                                    if _G.Mod_LockTarget_Enabled then
+                                                        _G.Mod_LockTarget_Enabled = false
+                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
+                                                        CS.UnityEngine.PlayerPrefs.Save()
+                                                        if _G.ModUpdateLockLabel then
+                                                            pcall(_G.ModUpdateLockLabel)
+                                                        end
+                                                        needNotify = true
+                                                    end
+
+                                                    -- 3. BẬT HỒI SINH KIM CƯƠNG (HS KC)
+                                                    if not _G.Mod_AutoResurrect_Here_Enabled then
+                                                        _G.Mod_AutoResurrect_Here_Enabled = true
+                                                        _G.Mod_AutoResurrect_Free_Enabled = false
+                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
+                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
+                                                        CS.UnityEngine.PlayerPrefs.Save()
+                                                        if _G.ModUpdateResurrectVisuals then
+                                                            pcall(_G.ModUpdateResurrectVisuals)
+                                                        end
+                                                        needNotify = true
+                                                    end
+
+                                                    -- 4. CHUYỂN PK VỀ HÒA BÌNH (PARAM = 0)
+                                                    pcall(function()
+                                                        if _G.NetManager and _G.RoleMessage then
+                                                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
+                                                        end
+                                                        if _G.RoleManager and _G.RoleManager.me then
+                                                            _G.RoleManager.me.PKMode = 0
+                                                        end
+                                                        if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.SetPkMode then
+                                                            _G.ViewData.meData:SetPkMode(0)
+                                                        end
+                                                    end)
+
+                                                    if needNotify and _G.FloatingWordUtility then
+                                                        _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, KHÓA MT, VỀ HÒA BÌNH, BẬT HS KC & AUTO FIGHT!")
+                                                    end
+
+                                                    -- 5. CHUYỂN SANG AUTO FIGHT & TARGET VÀO KUNDUN
                                                     pcall(function()
                                                         if _G.RoleManager and _G.RoleManager.me then
                                                             if _G.RoleManager.me.SetTarget then
@@ -3927,8 +3971,14 @@ local function CreateModUI()
                                                                 lvKey = "L6"
                                                             elseif rLevel == 7 then
                                                                 lvKey = "L7"
-                                                            elseif rLevel > 7 then
-                                                                lvKey = "L7M"
+                                                            elseif rLevel == 8 then
+                                                                lvKey = "L8"
+                                                            elseif rLevel == 9 then
+                                                                lvKey = "L9"
+                                                            elseif rLevel == 10 then
+                                                                lvKey = "L10"
+                                                            elseif rLevel > 10 then
+                                                                lvKey = "L10M"
                                                             end
                                                             local clrKey = "Luc"
                                                             if rColor == 2 then
@@ -3949,10 +3999,12 @@ local function CreateModUI()
                                                     _G.Mod_PickedItems[dropItemData.id] = true
                                                     _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
 
-                                                    if _G.PickupManager and _G.PickupManager.AddDropSceneCellPos then
-                                                        -- Đưa vào quy trình nhặt chung
-                                                        local dummyItem = { data = dropItemData }
-                                                        _G.PickupManager.AddDropSceneCellPos(dummyItem)
+                                                    local startTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                                    local interceptTime = os.date("%H:%M:%S")
+                                                    if _G.ExecutePickupCommon then
+                                                        _G.ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
+                                                    elseif _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                                        _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                                                     end
                                                 end
                                             end
@@ -7581,6 +7633,7 @@ local function CreateModUI()
                     end
                 end
                 UpdateResurrectVisuals()
+                _G.ModUpdateResurrectVisuals = UpdateResurrectVisuals
 
                 freeBtn.onClick:AddListener(function()
                     if not _G.Mod_AutoResurrect_Free_Enabled then
@@ -7763,6 +7816,7 @@ local function CreateModUI()
                 end
             end
             UpdateLockLabel()
+            _G.ModUpdateLockLabel = UpdateLockLabel
 
             btnLock.onClick:AddListener(function()
                 _G.Mod_LockTarget_Enabled = not _G.Mod_LockTarget_Enabled
@@ -9171,71 +9225,11 @@ local function CreateModUI()
                     if isBone then shouldPick = true end
 
                     if shouldPick then
-                        local scopeVal = 0
-                        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                            scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-                        end
-                        local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                        local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                        local isFov75 = (math.floor(fovVal + 0.5) == 75)
-                        local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
-                        local isPriorityBatchActive = _G.Mod_IsAdmin and isSecretTrickActive and (pickLimit >= 7)
-
-                        if isPriorityBatchActive then
-                            local colorScore = (rColor == 2 and 30) or (rColor == 1 and 20) or 10 -- Lam (30) > Lục (20) > Đỏ (10)
-                            local score = 1000
-                            if isRune then
-                                score = 10000 + (rLevel * 100) + colorScore
-                            elseif eType == 24 then
-                                score = 5000
-                            elseif eType == 26 then
-                                score = 4000
-                            end
-
-                            _G.Mod_AdminBatchDropQueue = _G.Mod_AdminBatchDropQueue or {}
-                            table.insert(_G.Mod_AdminBatchDropQueue, {
-                                dropItemData = dropItemData,
-                                startTime = startTime,
-                                interceptTime = interceptTime,
-                                score = score
-                            })
-
-                            if not _G.Mod_AdminBatchTimerRunning then
-                                _G.Mod_AdminBatchTimerRunning = true
-                                if _G.Timer and _G.Timer.StartLoop then
-                                    _G.Timer.StartLoop(0.04, 1, function()
-                                        _G.Mod_AdminBatchTimerRunning = false
-                                        local q = _G.Mod_AdminBatchDropQueue
-                                        _G.Mod_AdminBatchDropQueue = {}
-                                        if q and #q > 0 then
-                                            table.sort(q, function(a, b) return a.score > b.score end)
-                                            for _, item in ipairs(q) do
-                                                local d = item.dropItemData
-                                                local isAlreadyPicked = _G.Mod_PickedItems[d.id]
-                                                if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
-                                                    _G.Mod_PickedItems[d.id] = true
-                                                    _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
-                                                    ExecutePickupCommon(d, item.startTime, item.interceptTime, "AutoLoot_VIP")
-                                                end
-                                            end
-                                        end
-                                    end)
-                                else
-                                    local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
-                                    if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
-                                        _G.Mod_PickedItems[dropItemData.id] = true
-                                        _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
-                                        ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
-                                    end
-                                end
-                            end
-                        else
-                            local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
-                            if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
-                                _G.Mod_PickedItems[dropItemData.id] = true
-                                _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
-                                ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
-                            end
+                        local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
+                        if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                            _G.Mod_PickedItems[dropItemData.id] = true
+                            _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
+                            ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
                         end
                     end
                 end
