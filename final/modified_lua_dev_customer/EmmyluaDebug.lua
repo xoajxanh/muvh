@@ -2410,25 +2410,93 @@ local function CreateModUI()
         if not _G.BossHooked then
             _G.BossHooked = true
 
-            -- Mở khóa 120 FPS & Tần số quét cao (Khử giật Camera / Khung cảnh)
+            -- CAMERA FOLLOW ANCHOR (CHỐNG RUNG LẮC CAMERA KHI CHẠY NHANH DO MODEL QUAY HƯỚNG)
             pcall(function()
-                local app = CS.UnityEngine.Application
-                local qs = CS.UnityEngine.QualitySettings
-                local t = CS.UnityEngine.Time
-                app.targetFrameRate = 120
-                qs.vSyncCount = 0
-                t.fixedDeltaTime = 1.0 / 120.0
-                t.maximumDeltaTime = 0.1
-            end)
+                local function InitCameraFollowAnchor()
+                    local mc = _G.MainCamera
+                    if not mc or not mc.transform or IsNil(mc.transform) then
+                        if mc and mc.Init then mc.Init() end
+                    end
+                    if not mc or not mc.transform or IsNil(mc.transform) then return end
 
-            if _G.GameSettingsController and not _G.Mod_Hooked_SetFrameRate then
-                _G.Mod_Hooked_SetFrameRate = true
-                local old_SetFrameRate = _G.GameSettingsController.SetFrameRate
-                _G.GameSettingsController.SetFrameRate = function(fps)
-                    if fps and fps < 120 then fps = 120 end
-                    return old_SetFrameRate(fps)
+                    local anchorGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                    if not anchorGo or IsNil(anchorGo) then
+                        anchorGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                        CS.UnityEngine.Object.DontDestroyOnLoad(anchorGo)
+                    end
+                    local anchorTrans = anchorGo.transform
+                    anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
+                    _G.Mod_CameraAnchor = anchorGo
+
+                    local function RefreshAnchorCam()
+                        local zoom = mc.zoom or 1
+                        local angle = mc.angle or -45
+                        local distX = 4.0 + (9.7 - 4.0) * zoom
+                        local distY = 2.5 + (8.42 - 2.5) * zoom
+                        local angX = 20.0 + (42.0 - 20.0) * zoom
+
+                        local rad = math.rad(angle)
+                        local x = -distX * math.sin(rad)
+                        local z = -distX * math.cos(rad)
+
+                        if mc.transform.SetLocalEulerAngles then
+                            mc.transform:SetLocalEulerAngles(angX, angle, 0)
+                        else
+                            mc.transform.localEulerAngles = CS.UnityEngine.Vector3(angX, angle, 0)
+                        end
+
+                        if mc.transform.SetLocalPosition then
+                            mc.transform:SetLocalPosition(x, distY, z)
+                        else
+                            mc.transform.localPosition = CS.UnityEngine.Vector3(x, distY, z)
+                        end
+                    end
+
+                    local function SyncAnchorPos()
+                        if not anchorGo or IsNil(anchorGo) then return end
+                        local role = _G.RoleManager and _G.RoleManager.me
+                        if role and role.transform and not IsNil(role.transform) then
+                            local p = role.transform.position
+                            anchorTrans.position = p
+                            anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
+                        end
+                    end
+
+                    if mc.transform.parent ~= anchorTrans then
+                        mc.transform:SetParent(anchorTrans, false)
+                        RefreshAnchorCam()
+                        SyncAnchorPos()
+                    end
+
+                    if not _G.Mod_Hooked_AttachRole and mc.AttachRole then
+                        _G.Mod_Hooked_AttachRole = true
+                        local old_AttachRole = mc.AttachRole
+                        mc.AttachRole = function(role)
+                            if not role then return end
+                            mc.target = role.transform
+                            local aGo = _G.Mod_CameraAnchor
+                            if not aGo or IsNil(aGo) then
+                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                                _G.Mod_CameraAnchor = aGo
+                            end
+                            local aTrans = aGo.transform
+                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
+                            mc.transform:SetParent(aTrans, false)
+                            RefreshAnchorCam()
+                            SyncAnchorPos()
+                        end
+                    end
+
+                    if not _G.Mod_SmoothCamera_Timer and _G.Timer and _G.Timer.StartLoopForever then
+                        _G.Mod_SmoothCamera_Timer = _G.Timer.StartLoopForever(0, function()
+                            pcall(SyncAnchorPos)
+                        end)
+                    end
                 end
-            end
+
+                InitCameraFollowAnchor()
+            end)
 
             -- Khóa tốc độ Animation (Cánh & Body) về chuẩn 1.0x khi tăng tốc chạy
             if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
@@ -2455,7 +2523,41 @@ local function CreateModUI()
                 end
             end
 
-            -- Tốc Chạy Hook (Chạy nhanh nhưng Animation giữ nguyên 1.0x)
+            -- Khóa tốc độ Animation & Particle Dấu Chân (Footprint) về chuẩn 1.0x
+            if _G.RoleEquip and not _G.Mod_Hooked_RoleEquipFoot then
+                _G.Mod_Hooked_RoleEquipFoot = true
+                local old_SetFoot = _G.RoleEquip.SetFoot
+                _G.RoleEquip.SetFoot = function(self, position, path)
+                    old_SetFoot(self, position, path)
+                    if self.avatar and self.avatar.isMe then
+                        pcall(function()
+                            if self.footPrintObj and not IsNil(self.footPrintObj) then
+                                local anims = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                                if anims then
+                                    for i = 0, anims.Length - 1 do
+                                        if anims[i] and not IsNil(anims[i]) and anims[i].speed ~= 1.0 then
+                                            anims[i].speed = 1.0
+                                        end
+                                    end
+                                end
+                                local particles = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
+                                if particles then
+                                    for i = 0, particles.Length - 1 do
+                                        if particles[i] and not IsNil(particles[i]) then
+                                            local main = particles[i].main
+                                            if main.simulationSpeed ~= 1.0 then
+                                                main.simulationSpeed = 1.0
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+
+            -- Tốc Chạy Hook (Chạy nhanh nhưng Animation Body, Cánh & Dấu Chân giữ nguyên 1.0x)
             local original_SetMoveSpeed = _G.Role.SetMoveSpeed
             if original_SetMoveSpeed and not _G.ModSpeedRunHooked then
                 _G.ModSpeedRunHooked = true
@@ -2466,19 +2568,57 @@ local function CreateModUI()
                     original_SetMoveSpeed(self, moveSpeed)
                     if self.isMe then
                         pcall(function()
-                            if self.model and self.model.modelObject then
-                                local anims = self.model.modelObject:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                if anims then
-                                    for i = 0, anims.Length - 1 do
-                                        local a = anims[i]
-                                        if a and not IsNil(a) and a.speed ~= 1.0 then
-                                            a.speed = 1.0
+                            local targets = {}
+                            if self.model and self.model.modelObject then table.insert(targets, self.model.modelObject) end
+                            if self.model and self.model.transform then table.insert(targets, self.model.transform) end
+                            if self.AvatarEquip then
+                                if self.AvatarEquip.footPrintObj then table.insert(targets, self.AvatarEquip.footPrintObj) end
+                                if self.AvatarEquip.wingObj then table.insert(targets, self.AvatarEquip.wingObj) end
+                            end
+                            if self.footPrintEffect then table.insert(targets, self.footPrintEffect) end
+
+                            for _, targetGo in ipairs(targets) do
+                                if targetGo and not IsNil(targetGo) then
+                                    local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                                    if anims then
+                                        for i = 0, anims.Length - 1 do
+                                            local a = anims[i]
+                                            if a and not IsNil(a) and a.speed ~= 1.0 then
+                                                a.speed = 1.0
+                                            end
+                                        end
+                                    end
+                                    local particles = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
+                                    if particles then
+                                        for i = 0, particles.Length - 1 do
+                                            local ps = particles[i]
+                                            if ps and not IsNil(ps) then
+                                                local main = ps.main
+                                                if main.simulationSpeed ~= 1.0 then
+                                                    main.simulationSpeed = 1.0
+                                                end
+                                            end
                                         end
                                     end
                                 end
                             end
                         end)
                     end
+                end
+            end
+
+            -- Chống Server Rollback (MoveFailed) gây kẹt con lắc khi chạy tốc độ cao
+            if _G.Me and not _G.Mod_Hooked_Me_ChangePos then
+                _G.Mod_Hooked_Me_ChangePos = true
+                local old_Me_ChangePos = _G.Me.ChangePos
+                _G.Me.ChangePos = function(self, moveType, changeReason, reasonParam)
+                    if self.isMe then
+                        if _G.ERoleChangePosReason and changeReason == _G.ERoleChangePosReason.MoveFailed then
+                            -- Chặn đứng Server Rollback để tránh bị kéo giật lùi tạo thành con lắc lặp vô tận
+                            return
+                        end
+                    end
+                    return old_Me_ChangePos(self, moveType, changeReason, reasonParam)
                 end
             end
 
@@ -2656,6 +2796,105 @@ local function CreateModUI()
 
                 return false
             end
+
+            -- 1. Hàm lọc & Thu hồi đồ rác Trác Việt (Quần Áo / Vũ Khí rác không đạt 2 dòng VIP)
+            local function PerformBagRecycle()
+                pcall(function()
+                    local updatedItems = _G.BagInfoData and _G.BagInfoData.TotalItems
+                    if not updatedItems and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                        pcall(function() updatedItems = _G.BagInfoData:GetTotalItems() end)
+                    end
+                    if updatedItems then
+                        local recycleMap = {}
+                        local recycleCount = 0
+                        for k, item in pairs(updatedItems) do
+                            if item then
+                                local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                                local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
+                                local itemType = tblItem.type or 0
+                                local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
+                                local subType = tblItem.subType or 0
+                                local itemCount = item.count or (item.data and item.data.count) or 1
+
+                                if itemType == 2 or (tblEquip and tblEquip.id) then
+                                    if (not tblEquip or not tblEquip.id) and itemId > 0 and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                                        pcall(function()
+                                            local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
+                                            if eq then tblEquip = eq end
+                                        end)
+                                    end
+                                    tblEquip = tblEquip or {}
+
+                                    local excDesList = {}
+                                    local sInfo = item.serverInfo or item.serverData or {}
+                                    local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or sInfo.excellentAttrs
+
+                                    if _G.RoleEquipUtility then
+                                        if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
+                                            pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc, tblEquip) end)
+                                        end
+                                        if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
+                                            pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo(sInfo) end)
+                                        end
+                                    end
+                                    if (#excDesList == 0) and item.GetEquipExcellenceDesList then
+                                        pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
+                                    end
+
+                                    local name = tblItem.name or item.name or ""
+                                    local isExcellenceItem = (string.find(name, "Trác Việt") ~= nil) or (#excDesList > 0)
+
+                                    local isArmor = (subType >= 13 and subType <= 17)
+                                    local isWeapon = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
+                                    local isSmeltOrJewelry = (subType >= 100) or (subType == 18 or subType == 19 or subType == 20 or subType == 21 or subType == 22 or subType == 26 or (subType >= 34 and subType <= 38))
+
+                                    local isGood = false
+                                    if isSmeltOrJewelry or not isExcellenceItem then
+                                        isGood = true
+                                    elseif isArmor then
+                                        local hasHP, hasReflect = false, false
+                                        for _, str in ipairs(excDesList) do
+                                            if str then
+                                                if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
+                                                if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
+                                            end
+                                        end
+                                        if hasHP and hasReflect then isGood = true end
+                                    elseif isWeapon then
+                                        local hasSpeed, hasAtk = false, false
+                                        for _, str in ipairs(excDesList) do
+                                            if str then
+                                                if string.find(str, "Công Tốc +7", 1, true) ~= nil then hasSpeed = true end
+                                                if string.find(str, "Tấn công +2.0%", 1, true) ~= nil then hasAtk = true end
+                                            end
+                                        end
+                                        if hasSpeed and hasAtk then isGood = true end
+                                    else
+                                        isGood = true
+                                    end
+
+                                    local GUID = item.id or (item.data and item.data.id)
+                                    if not isGood and GUID then
+                                        recycleMap[GUID] = itemCount
+                                        recycleCount = recycleCount + 1
+                                    end
+                                end
+                            end
+                        end
+
+                        if recycleCount > 0 then
+                            if _G.networkRequest and _G.networkRequest.ReqItemRecycle then
+                                local RecycleWayType = _G.RecycleWayType and _G.RecycleWayType.Bag or 1
+                                pcall(function() _G.networkRequest.ReqItemRecycle(recycleMap, RecycleWayType) end)
+                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                    _G.FloatingWordUtility.QuickMsg("Đã thu hồi " .. tostring(recycleCount) .. " món Trác Việt rác!")
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+            _G.Mod_PerformBagRecycle = PerformBagRecycle
 
             _G.Mod_ExecuteAutoSmelt = function()
                 local items = _G.BagInfoData and _G.BagInfoData.TotalItems
@@ -3313,6 +3552,9 @@ local function CreateModUI()
                             pcall(function()
                                 if _G.Mod_ExecuteAutoSmelt then
                                     _G.Mod_ExecuteAutoSmelt()
+                                end
+                                if _G.Mod_PerformBagRecycle then
+                                    _G.Mod_PerformBagRecycle()
                                 end
                             end)
                         end
@@ -4042,54 +4284,12 @@ local function CreateModUI()
                                             if role.hp and role.hp > 0 then
                                                 local maxHp = role.maxHp or role.maxHP or role.hp or 1
                                                 local hpPct = math.max(0.01, (role.hp / maxHp) * 100)
-                                                local rawPct = (role.hp / maxHp) * 100
                                                 local msg = string.format("%s HP: %.2f%%", d.name, hpPct)
                                                 if not _G.AutoPick_Enabled then
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then
                                                     _G.FloatingWordUtility.QuickMsg(msg)
-                                                end
-                                                
-                                                local isSecretTrickActive = false
-                                                if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                                                    local scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-                                                    local pickLimit = tonumber(_G.AutoPick_Limit) or 2
-                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1)
-                                                end
-                                                if isSecretTrickActive and rawPct <= 0.7 then
-                                                    if _G.Mod_AutoPK_Enabled then
-                                                        _G.Mod_AutoPK_Enabled = false
-                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
-                                                        CS.UnityEngine.PlayerPrefs.Save()
-                                                        if _G.ModUpdateFloatingPKBtn then
-                                                            pcall(_G.ModUpdateFloatingPKBtn)
-                                                        end
-                                                        if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
-                                                        if _G.FloatingWordUtility then
-                                                            _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, CHUYỂN SANG AUTO FIGHT!")
-                                                        end
-                                                    end
-                                                    pcall(function()
-                                                        if _G.RoleManager and _G.RoleManager.me then
-                                                            if _G.RoleManager.me.SetTarget then
-                                                                _G.RoleManager.me:SetTarget(role)
-                                                            end
-                                                            _G.RoleManager.me.TargetAvatar = role
-                                                            if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
-                                                                _G.RoleManager.me:SetAutoFight("AutoFight")
-                                                            end
-                                                        end
-                                                        if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
-                                                            _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
-                                                        end
-                                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                            _G.QiJiHelperData.SetAutoFightData(true)
-                                                        end
-                                                        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
-                                                            _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
-                                                        end
-                                                    end)
                                                 end
                                                 break
                                             end
@@ -6292,13 +6492,14 @@ local function CreateModUI()
                 pcall(function()
                     if _G.Mod_PerformSmeltItems then
                         _G.Mod_PerformSmeltItems()
-                    elseif _G.Mod_ExecuteAutoSmelt then
-                        _G.Mod_ExecuteAutoSmelt()
+                    else
+                        if _G.Mod_ExecuteAutoSmelt then _G.Mod_ExecuteAutoSmelt() end
+                        if _G.Mod_PerformBagRecycle then _G.Mod_PerformBagRecycle() end
                     end
                     if _G.FloatingWordUtility then
-                        _G.FloatingWordUtility.QuickMsg("Đã kích hoạt Tách Đồ thủ công!")
+                        _G.FloatingWordUtility.QuickMsg("Đã kích hoạt Tách Đồ & Thu Hồi thủ công!")
                     end
-                    LogMsg("Đã kích hoạt Tách Đồ thủ công!")
+                    LogMsg("Đã kích hoạt Tách Đồ & Thu Hồi thủ công!")
                 end)
             end)
 

@@ -1,118 +1,125 @@
--- SCRIPT TEST: CHẠY MƯỢT MÀ (120 FPS + PHYSICS + ANIMATION 1.0X + ĐỒNG BỘ CÀI ĐẶT GAME)
+-- SCRIPT THEO DÕI & CAN THIỆP TRỰC TIẾP: BẮT QUẢ TANG LỖI CON LẮC
+-- Chạy script này một lần để bật LIVE MONITORING và THỬ CÁC BIỆN PHÁP CỨU HỘ
 
-local function TestSmoothRun()
-    local report = {}
-    local function log(txt)
-        table.insert(report, tostring(txt))
-    end
-
-    log("==================================================")
-    log("=== TEST KÍCH HOẠT CHẠY MƯỢT MÀ (120 FPS) ===")
-    log("==================================================")
-
-    -- 1. ĐỌC THÔNG SỐ BAN ĐẦU
-    pcall(function()
-        local app = CS.UnityEngine.Application
-        local qs = CS.UnityEngine.QualitySettings
-        local t = CS.UnityEngine.Time
-        local scr = CS.UnityEngine.Screen
-
-        log("--- THÔNG SỐ HIỆN TẠI TRƯỚC KHI SET ---")
-        log("Target FrameRate: " .. tostring(app.targetFrameRate))
-        log("vSyncCount: " .. tostring(qs.vSyncCount))
-        log("fixedDeltaTime: " .. tostring(t.fixedDeltaTime))
-        log("maximumDeltaTime: " .. tostring(t.maximumDeltaTime))
-        log("Screen Resolution: " .. tostring(scr.width) .. "x" .. tostring(scr.height))
-        log("Refresh Rate: " .. tostring(scr.currentResolution.refreshRate or "N/A"))
-        if _G.GameSettingsData then
-            log("GameSettingsData.frameRate: " .. tostring(_G.GameSettingsData.frameRate))
-        end
-    end)
-
-    -- 2. THỰC HIỆN SET THÔNG SỐ CHẠY MƯỢT (120 FPS)
-    pcall(function()
-        local app = CS.UnityEngine.Application
-        local qs = CS.UnityEngine.QualitySettings
-        local t = CS.UnityEngine.Time
-
-        app.targetFrameRate = 120
-        qs.vSyncCount = 0
-        t.fixedDeltaTime = 1.0 / 120.0
-        t.maximumDeltaTime = 0.1
-
-        -- Đồng bộ với GameSettingsController
-        if _G.GameSettingsController and _G.GameSettingsController.SetFrameRate then
-            _G.GameSettingsController.SetFrameRate(120)
-            log("-> Đã gọi GameSettingsController.SetFrameRate(120)")
-        elseif _G.GameSettingsData then
-            _G.GameSettingsData.frameRate = 120
-            log("-> Đã gán GameSettingsData.frameRate = 120")
-        end
-
-        _G.Mod_SmoothRun_Enabled = true
-        CS.UnityEngine.PlayerPrefs.SetInt("Mod_SmoothRun_Enabled", 1)
-        CS.UnityEngine.PlayerPrefs.Save()
-        log("-> Đã set PlayerPrefs Mod_SmoothRun_Enabled = 1")
-    end)
-
-    -- 3. KHÓA TỐC ĐỘ ANIMATION BODY VÀ CÁNH VỀ CHUẨN 1.0X KHI CHẠY NHANH
-    pcall(function()
-        if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
-            _G.Mod_Hooked_AnimatorCtrl = true
-            local old_SetAnimatorSpeed = _G.AnimatorCtrl.SetAnimatorSpeed
-            _G.AnimatorCtrl.SetAnimatorSpeed = function(self, speed)
-                if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                    speed = 1.0
-                end
-                return old_SetAnimatorSpeed(self, speed)
-            end
-            log("-> Đã hook AnimatorCtrl.SetAnimatorSpeed = 1.0x")
-        end
-
-        if _G.RoleEquip and not _G.Mod_Hooked_RoleEquipWing then
-            _G.Mod_Hooked_RoleEquipWing = true
-            local old_SetWingAni = _G.RoleEquip.SetWingAni
-            _G.RoleEquip.SetWingAni = function(self, RoleMoveType, isCurIsSafeZone)
-                old_SetWingAni(self, RoleMoveType, isCurIsSafeZone)
-                if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                    if self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
-                        self.wingAnimator.animator.speed = 1.0
-                    end
-                end
-            end
-            log("-> Đã hook RoleEquip.SetWingAni = 1.0x")
-        end
-    end)
-
-    -- 4. ĐỌC LẠI THÔNG SỐ SAU KHI ÁP DỤNG
-    pcall(function()
-        local app = CS.UnityEngine.Application
-        local qs = CS.UnityEngine.QualitySettings
-        local t = CS.UnityEngine.Time
-
-        log("\n--- THÔNG SỐ SAU KHI ÁP DỤNG ---")
-        log("Target FrameRate: " .. tostring(app.targetFrameRate))
-        log("vSyncCount: " .. tostring(qs.vSyncCount))
-        log("fixedDeltaTime: " .. tostring(t.fixedDeltaTime))
-        log("maximumDeltaTime: " .. tostring(t.maximumDeltaTime))
-        if _G.GameSettingsData then
-            log("GameSettingsData.frameRate: " .. tostring(_G.GameSettingsData.frameRate))
-        end
-    end)
-
-    -- 5. XUẤT RA FILE OUTPUT.TXT VÀ BẮN THÔNG BÁO QUICKMSG
-    local finalStr = table.concat(report, "\n")
-    pcall(function()
-        local logPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-        local f = io.open(logPath, "w")
-        if f then
-            f:write(finalStr)
-            f:close()
-        end
-        if _G.FloatingWordUtility then
-            _G.FloatingWordUtility.QuickMsg("ĐÃ KÍCH HOẠT CHẠY MƯỢT (120 FPS / MƯỢT HÓA)!")
-        end
-    end)
+local report = {}
+local function log(txt)
+    local line = tostring(txt)
+    table.insert(report, line)
+    print(line)
 end
 
-TestSmoothRun()
+log("==================================================")
+log("=== LIVE MONITORING & THỬ NGHIỆM CAN THIỆP CON LẮC ===")
+log("==================================================")
+
+pcall(function()
+    local me = _G.RoleManager and _G.RoleManager.me
+    if not me then
+        log("[ERROR] Không tìm thấy RoleManager.me!")
+        return
+    end
+
+    -- ĐỌC TRẠNG THÁI HIỆN TẠI
+    local curX, curY = me.cellPos.x, me.cellPos.y
+    local sX, sY = me.serverCoord.x, me.serverCoord.y
+    local nX, nY = (me.nextCell and me.nextCell.x or 0), (me.nextCell and me.nextCell.y or 0)
+    local eX, eY = (me.moveEndCell and me.moveEndCell.x or 0), (me.moveEndCell and me.moveEndCell.y or 0)
+
+    log(string.format("TỌA ĐỘ HIỆN TẠI: CellPos=(%d, %d) | ServerCoord=(%d, %d) | NextCell=(%d, %d) | EndCell=(%d, %d)", 
+        curX, curY, sX, sY, nX, nY, eX, eY))
+
+    -- 1. KIỂM TRA XEM Ô TIẾP THEO CÓ BỊ CHẶN (BLOCK / COLLISION) KHÔNG
+    if me.nextCell and _G.Scene then
+        local isBlock = _G.Scene.IsBlock and _G.Scene.IsBlock(me.nextCell)
+        local canMove = _G.Scene.TileCanMoveToByRole and _G.Scene.TileCanMoveToByRole(me.nextCell)
+        log(string.format("KIỂM TRA Ô NEXT (%d, %d): IsBlock=%s | CanMoveToByRole=%s", nX, nY, tostring(isBlock), tostring(canMove)))
+    end
+
+    -- 2. HOOK THEO DÕI MOVEFAILED & CHANGEPOS (BẮT SERVER ROLLBACK)
+    if not _G.Mod_Hooked_ChangePos_Monitor and me.ChangePos then
+        _G.Mod_Hooked_ChangePos_Monitor = true
+        local old_ChangePos = me.ChangePos
+        me.ChangePos = function(self, moveType, changeReason, reasonParam)
+            local rName = tostring(changeReason)
+            if _G.ERoleChangePosReason then
+                for k, v in pairs(_G.ERoleChangePosReason) do
+                    if v == changeReason then rName = k; break end
+                end
+            end
+            print(string.format("[CHANGE_POS] Reason: %s | ServerCoord=(%s, %s)", rName, tostring(self.serverCoord.x), tostring(self.serverCoord.y)))
+
+            -- NẾU LÀ MOVEFAILED (SERVER GIẬT LÙI LẠI) -> CHẶN ĐỨNG KHÔNG CHO GIẬT LÙI
+            if _G.ERoleChangePosReason and changeReason == _G.ERoleChangePosReason.MoveFailed then
+                print("[CAN THIỆP] -> PHÁT HIỆN SERVER GỬI MOVEFAILED! Chặn đứng giật lùi để phá vỡ con lắc!")
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("BẮT ĐƯỢC MOVEFAILED (SERVER ROLLBACK) -> ĐÃ CHẶN!")
+                end
+                -- Bỏ qua không gọi FlashTo giật lùi
+                return
+            end
+
+            return old_ChangePos(self, moveType, changeReason, reasonParam)
+        end
+        log("-> ĐÃ HOOK BẢO VỆ CHỐNG MOVEFAILED (SERVER ROLLBACK)!")
+    end
+
+    -- 3. THỰC HIỆN FLASH VƯỢT QUA ĐIỂM KẸT (JUMP QUA 8 Ô VỀ PHÍA ĐÍCH)
+    if eX ~= 0 and eY ~= 0 then
+        -- Tính vector hướng tới đích
+        local dirX = eX - curX
+        local dirY = eY - curY
+        local len = math.sqrt(dirX * dirX + dirY * dirY)
+        if len > 0 then
+            local jumpDist = math.min(10, math.floor(len))
+            local jumpX = math.floor(curX + (dirX / len) * jumpDist)
+            local jumpY = math.floor(curY + (dirY / len) * jumpDist)
+
+            log(string.format("-> THỰC HIỆN JUMP VƯỢT KẸT: Flash từ (%d, %d) qua (%d, %d)...", curX, curY, jumpX, jumpY))
+
+            if me.FlashTo then
+                me:FlashTo(jumpX, jumpY)
+            end
+            if me.SetCell then
+                me:SetCell(jumpX, jumpY)
+            end
+
+            -- Đồng bộ vị trí lên Server
+            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqMove then
+                _G.NetManager.Send(_G.MapMessage.ReqMove, {
+                    x = jumpX,
+                    y = jumpY,
+                    action = 2,
+                    time = _G.Time.GetServerTime()
+                })
+            end
+
+            -- Tiếp tục chạy tới đích
+            me.movePath = {}
+            me.bestGuidePath = nil
+            me.pathIndex = 1
+            if me.MoveTo then
+                me:MoveTo({ x = eX, y = eY }, 0)
+                log(string.format("-> Đã MoveTo tiếp tục tới đích (%d, %d)!", eX, eY))
+            end
+        end
+    end
+
+    if _G.FloatingWordUtility then
+        _G.FloatingWordUtility.QuickMsg("ĐÃ KÍCH HOẠT CHỐNG MOVEFAILED & JUMP VƯỢT KẸT!")
+    end
+end)
+
+log("==================================================")
+log("KẾT THÚC THỰC THI SCRIPT")
+
+local finalStr = table.concat(report, "\n")
+pcall(function()
+    local path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+    local f = io.open(path, "w")
+    if f then
+        f:write(finalStr)
+        f:close()
+    end
+end)
+
+return finalStr

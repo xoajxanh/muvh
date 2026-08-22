@@ -1,20 +1,8 @@
 ==================================================
-=== TEST KÍCH HOẠT CHẠY MƯỢT MÀ (120 FPS) ===
+=== FIX LỖI CON LẮC: VÔ HIỆU HÓA PATHAMEND LOOP ===
 ==================================================
---- THÔNG SỐ HIỆN TẠI TRƯỚC KHI SET ---
-Target FrameRate: 120
-vSyncCount: 0
-fixedDeltaTime: 0.0083333337679505
-maximumDeltaTime: 0.10000000149012
-Screen Resolution: 1920x1080
-Refresh Rate: 60
-GameSettingsData.frameRate: 120
--> Đã gọi GameSettingsController.SetFrameRate(120)
--> Đã set PlayerPrefs Mod_SmoothRun_Enabled = 1
-
---- THÔNG SỐ SAU KHI ÁP DỤNG ---
-Target FrameRate: 120
-vSyncCount: 0
-fixedDeltaTime: 0.0083333337679505
-maximumDeltaTime: 0.10000000149012
-GameSettingsData.frameRate: 120
+-> ĐÃ HOOK VÔ HIỆU HÓA Me:PathAmend (Chặn đứng nguyên nhân gây reset pathIndex = 1)!
+-> Tìm đường đi thẳng toàn map từ (121, 103) đến Boss (15, 45)...
+-> Đã gọi MoveTo thành công! Tổng số điểm đường đi mới: 123
+==================================================
+KẾT THÚC THỰC THI SCRIPT
