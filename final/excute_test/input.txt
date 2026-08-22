@@ -1,5 +1,5 @@
--- SCRIPT THEO DÕI & CAN THIỆP TRỰC TIẾP: BẮT QUẢ TANG LỖI CON LẮC
--- Chạy script này một lần để bật LIVE MONITORING và THỬ CÁC BIỆN PHÁP CỨU HỘ
+-- SCRIPT TEST TRICK MONITOR (FOV = 75)
+-- Chạy script này để kiểm tra trực tiếp trạng thái Trick trên máy
 
 local report = {}
 local function log(txt)
@@ -9,103 +9,86 @@ local function log(txt)
 end
 
 log("==================================================")
-log("=== LIVE MONITORING & THỬ NGHIỆM CAN THIỆP CON LẮC ===")
+log("=== KIỂM TRA TRẠNG THÁI TRICK NHẶT ĐỒ (FOV = 75) ===")
 log("==================================================")
 
 pcall(function()
-    local me = _G.RoleManager and _G.RoleManager.me
-    if not me then
-        log("[ERROR] Không tìm thấy RoleManager.me!")
-        return
+    -- 1. HỦY TIMER CŨ NẾU CÓ
+    if _G.TrickMonitorTimer and _G.Timer and _G.Timer.Stop then
+        _G.Timer.Stop(_G.TrickMonitorTimer)
+        _G.TrickMonitorTimer = nil
+        log("[INFO] Đã hủy Timer giám sát cũ.")
     end
 
-    -- ĐỌC TRẠNG THÁI HIỆN TẠI
-    local curX, curY = me.cellPos.x, me.cellPos.y
-    local sX, sY = me.serverCoord.x, me.serverCoord.y
-    local nX, nY = (me.nextCell and me.nextCell.x or 0), (me.nextCell and me.nextCell.y or 0)
-    local eX, eY = (me.moveEndCell and me.moveEndCell.x or 0), (me.moveEndCell and me.moveEndCell.y or 0)
-
-    log(string.format("TỌA ĐỘ HIỆN TẠI: CellPos=(%d, %d) | ServerCoord=(%d, %d) | NextCell=(%d, %d) | EndCell=(%d, %d)", 
-        curX, curY, sX, sY, nX, nY, eX, eY))
-
-    -- 1. KIỂM TRA XEM Ô TIẾP THEO CÓ BỊ CHẶN (BLOCK / COLLISION) KHÔNG
-    if me.nextCell and _G.Scene then
-        local isBlock = _G.Scene.IsBlock and _G.Scene.IsBlock(me.nextCell)
-        local canMove = _G.Scene.TileCanMoveToByRole and _G.Scene.TileCanMoveToByRole(me.nextCell)
-        log(string.format("KIỂM TRA Ô NEXT (%d, %d): IsBlock=%s | CanMoveToByRole=%s", nX, nY, tostring(isBlock), tostring(canMove)))
-    end
-
-    -- 2. HOOK THEO DÕI MOVEFAILED & CHANGEPOS (BẮT SERVER ROLLBACK)
-    if not _G.Mod_Hooked_ChangePos_Monitor and me.ChangePos then
-        _G.Mod_Hooked_ChangePos_Monitor = true
-        local old_ChangePos = me.ChangePos
-        me.ChangePos = function(self, moveType, changeReason, reasonParam)
-            local rName = tostring(changeReason)
-            if _G.ERoleChangePosReason then
-                for k, v in pairs(_G.ERoleChangePosReason) do
-                    if v == changeReason then rName = k; break end
-                end
-            end
-            print(string.format("[CHANGE_POS] Reason: %s | ServerCoord=(%s, %s)", rName, tostring(self.serverCoord.x), tostring(self.serverCoord.y)))
-
-            -- NẾU LÀ MOVEFAILED (SERVER GIẬT LÙI LẠI) -> CHẶN ĐỨNG KHÔNG CHO GIẬT LÙI
-            if _G.ERoleChangePosReason and changeReason == _G.ERoleChangePosReason.MoveFailed then
-                print("[CAN THIỆP] -> PHÁT HIỆN SERVER GỬI MOVEFAILED! Chặn đứng giật lùi để phá vỡ con lắc!")
-                if _G.FloatingWordUtility then
-                    _G.FloatingWordUtility.QuickMsg("BẮT ĐƯỢC MOVEFAILED (SERVER ROLLBACK) -> ĐÃ CHẶN!")
-                end
-                -- Bỏ qua không gọi FlashTo giật lùi
-                return
-            end
-
-            return old_ChangePos(self, moveType, changeReason, reasonParam)
+    -- 2. HÀM CHECK ĐIỀU KIỆN TRICK
+    local function CheckTrickStatus()
+        local scopeVal = 0
+        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+            scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
         end
-        log("-> ĐÃ HOOK BẢO VỆ CHỐNG MOVEFAILED (SERVER ROLLBACK)!")
+
+        local pickLimit = tonumber(_G.AutoPick_Limit) or 0
+
+        local fovVal = 0
+        if _G.SavedFOV then
+            fovVal = tonumber(_G.SavedFOV) or 0
+        elseif CS.UnityEngine.Camera.main then
+            fovVal = tonumber(CS.UnityEngine.Camera.main.fieldOfView) or 0
+        end
+        local fovRounded = math.floor(fovVal + 0.5)
+
+        local c1_ScopeEqualLimit = (scopeVal == pickLimit) and (scopeVal > 0)
+        local c2_IsOddNumber     = (scopeVal % 2 == 1)
+        local c3_IsFov75         = (fovRounded == 75)
+
+        local isTrick = c1_ScopeEqualLimit and c2_IsOddNumber and c3_IsFov75
+
+        return isTrick, scopeVal, pickLimit, fovRounded, c1_ScopeEqualLimit, c2_IsOddNumber, c3_IsFov75
     end
 
-    -- 3. THỰC HIỆN FLASH VƯỢT QUA ĐIỂM KẸT (JUMP QUA 8 Ô VỀ PHÍA ĐÍCH)
-    if eX ~= 0 and eY ~= 0 then
-        -- Tính vector hướng tới đích
-        local dirX = eX - curX
-        local dirY = eY - curY
-        local len = math.sqrt(dirX * dirX + dirY * dirY)
-        if len > 0 then
-            local jumpDist = math.min(10, math.floor(len))
-            local jumpX = math.floor(curX + (dirX / len) * jumpDist)
-            local jumpY = math.floor(curY + (dirY / len) * jumpDist)
-
-            log(string.format("-> THỰC HIỆN JUMP VƯỢT KẸT: Flash từ (%d, %d) qua (%d, %d)...", curX, curY, jumpX, jumpY))
-
-            if me.FlashTo then
-                me:FlashTo(jumpX, jumpY)
-            end
-            if me.SetCell then
-                me:SetCell(jumpX, jumpY)
-            end
-
-            -- Đồng bộ vị trí lên Server
-            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqMove then
-                _G.NetManager.Send(_G.MapMessage.ReqMove, {
-                    x = jumpX,
-                    y = jumpY,
-                    action = 2,
-                    time = _G.Time.GetServerTime()
-                })
-            end
-
-            -- Tiếp tục chạy tới đích
-            me.movePath = {}
-            me.bestGuidePath = nil
-            me.pathIndex = 1
-            if me.MoveTo then
-                me:MoveTo({ x = eX, y = eY }, 0)
-                log(string.format("-> Đã MoveTo tiếp tục tới đích (%d, %d)!", eX, eY))
-            end
+    -- 3. IN THÔNG TIN TỔNG QUAN HIỆN TẠI VÀO OUTPUT
+    local isTrickNow, sVal, pLim, fVal, c1, c2, c3 = CheckTrickStatus()
+    log(string.format("1. Phạm vi Treo máy (KillMonsterScope) : %s", tostring(sVal)))
+    log(string.format("2. Số lượng nhặt Mod (AutoPick_Limit) : %s", tostring(pLim)))
+    log(string.format("3. Camera FOV (SavedFOV / Cam.FOV)    : %s", tostring(fVal)))
+    log("--------------------------------------------------")
+    log(string.format("-> Điều kiện 1 (Phạm vi == Nhặt)      : %s", c1 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
+    log(string.format("-> Điều kiện 2 (Giá trị là Số Lẻ)     : %s", c2 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
+    log(string.format("-> Điều kiện 3 (FOV == 75)            : %s", c3 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
+    log("--------------------------------------------------")
+    if isTrickNow then
+        log(">>> KẾT QUẢ: 🔥 TRICK ĐANG KÍCH HOẠT (ACTIVE)! <<<")
+        if _G.FloatingWordUtility then
+            _G.FloatingWordUtility.QuickMsg(string.format("🔥 TRICK ACTIVE! Scope=%d | Pick=%d | FOV=%d", sVal, pLim, fVal))
+        end
+    else
+        log(">>> KẾT QUẢ: ❌ TRICK CHƯA KÍCH HOẠT! <<<")
+        if _G.FloatingWordUtility then
+            _G.FloatingWordUtility.QuickMsg(string.format("TRICK OFF: Scope=%d, Pick=%d, FOV=%d", sVal, pLim, fVal))
         end
     end
 
-    if _G.FloatingWordUtility then
-        _G.FloatingWordUtility.QuickMsg("ĐÃ KÍCH HOẠT CHỐNG MOVEFAILED & JUMP VƯỢT KẸT!")
+    -- 4. TẠO TIMER THEO DÕI LIVE (MỖI 0.5 GIÂY)
+    _G.LastTrickAlertState = isTrickNow
+    if _G.Timer and _G.Timer.StartLoop then
+        _G.TrickMonitorTimer = _G.Timer.StartLoop(0.5, -1, function()
+            local isActive, curScope, curPick, curFov = CheckTrickStatus()
+            if isActive ~= _G.LastTrickAlertState then
+                _G.LastTrickAlertState = isActive
+                if isActive then
+                    print(string.format("[TRICK MONITOR] 🔥 KÍCH HOẠT TRICK! Scope=%d, Pick=%d, FOV=%d", curScope, curPick, curFov))
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg(string.format("🔥 TRICK ĐÃ KÍCH HOẠT! (Scope: %d | Pick: %d | FOV: %d)", curScope, curPick, curFov))
+                    end
+                else
+                    print(string.format("[TRICK MONITOR] ❌ TRICK ĐÃ TẮT! Scope=%d, Pick=%d, FOV=%d", curScope, curPick, curFov))
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg(string.format("❌ TRICK TẮT: Scope=%d | Pick=%d | FOV=%d", curScope, curPick, curFov))
+                    end
+                end
+            end
+        end)
+        log("[INFO] Đã khởi chạy Live Monitor Timer (chu kỳ 0.5s). Khi bạn chỉnh thông số khớp trick, game sẽ tự động hiện thông báo nổi!")
     end
 end)
 

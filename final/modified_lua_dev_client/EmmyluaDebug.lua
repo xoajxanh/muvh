@@ -3810,7 +3810,9 @@ local function CreateModUI()
                                                 if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
                                                     local scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                                                     local pickLimit = tonumber(_G.AutoPick_Limit) or 2
-                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and (_G.AtkSpeedMultiplier == 4.6)
+                                                    local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
+                                                    local isFov75 = (math.floor(fovVal + 0.5) == 75)
+                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
                                                 end
 
                                                 local bossDisplayName = isSecretTrickActive and ("[" .. tostring(d.name) .. "]") or tostring(d.name)
@@ -4048,6 +4050,14 @@ local function CreateModUI()
                         end
                     end
 
+                    if _G.SavedFOV then
+                        local cam = CS.UnityEngine.Camera.main
+                        if cam and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
+                            cam.fieldOfView = _G.SavedFOV
+                            if UpdateFOVLabel then UpdateFOVLabel() end
+                        end
+                    end
+
                     if _G.Mod_AutoFarmBoss_Update then
                         _G.Mod_AutoFarmBoss_Update()
                     end
@@ -4061,61 +4071,8 @@ local function CreateModUI()
             end
 
             if _G.Timer and _G.Timer.StartLoop then
-                -- _G.Timer.StartLoop(0.2, -1, function()
-                --     pcall(function()
-                --         if _G.Mod_AutoAoE_BossAn then
-                --             local mapId = _G.SceneData and _G.SceneData.mapId or 0
-                --             if tonumber(mapId) == 240001 then
-                --                 local me = _G.RoleManager and _G.RoleManager.me
-                --                 local target = me and me.TargetAvatar
-                --                 if target and not target.isDead and me.skills then
-                --                     local allowedAoEPrefixes = {
-                --                         ["140401"] = true, -- Ma Ky Sy: Set Danh
-                --                     }
-                --                     for _, skill in pairs(me.skills) do
-                --                         local sid = skill.sid or skill.id or skill.skillId
-                --                         if sid then
-                --                             local prefix = tostring(sid):sub(1, 6)
-                --                             if allowedAoEPrefixes[prefix] then
-                --                                 local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sid)
-                --                                 if tblSkill then
-                --                                     local cdMsg = me.cd and me.cd[tblSkill.groupId]
-                --                                     local endTime = cdMsg and cdMsg.endTime or 0
-                --                                     local publicCdMsg = me.cd and me.cd[1]
-                --                                     local publicEndTime = publicCdMsg and publicCdMsg.endTime or 0
-                --                                     local finalEndTime = math.max(endTime, publicEndTime)
-
-                --                                     if _G.Time and finalEndTime <= _G.Time.GetServerTime() then
-                --                                         local tblaction = _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
-                --                                         if tblaction and _G.SkillMgr and _G.SkillMgr.SendSkillMessage then
-                --                                             local coord = target.serverCoord or me.serverCoord
-                --                                             _G.SkillMgr.SendSkillMessage(tblSkill, tblaction, target.id, coord)
-                --                                             break
-                --                                         end
-                --                                     end
-                --                                 end
-                --                             end
-                --                         end
-                --                     end
-                --                 end
-                --             end
-                --         end
-                --     end)
-                -- end)
-
                 _G.Timer.StartLoop(1, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
-                    pcall(function()
-                        if _G.SavedFOV then
-                            local cam = CS.UnityEngine.Camera.main
-                            if cam and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
-                                cam.fieldOfView = _G.SavedFOV
-                                UpdateFOVLabel()
-                            end
-                        end
-                        -- Removed EventManager.Dispatch hook for UniversalPointDataChanged to improve performance
-                    end)
-
                     pcall(function()
                         if not _G.Mod_IsAdmin or not _G.Mod_TeleNotify_Enabled then return end
 
@@ -5600,25 +5557,25 @@ local function CreateModUI()
             end
 
             mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
+                _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
+                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             m5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - (step * 5))
+                _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + (step * 5))
+                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -8982,7 +8939,9 @@ local function CreateModUI()
                     scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                 end
                 local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and (_G.AtkSpeedMultiplier == 4.6)
+                local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
+                local isFov75 = (math.floor(fovVal + 0.5) == 75)
+                local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
 
                 local eType = dropItemData.type
                 local isRune = (eType == 19 or eType == 28)
@@ -9217,7 +9176,9 @@ local function CreateModUI()
                             scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                         end
                         local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                        local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and (_G.AtkSpeedMultiplier == 4.6)
+                        local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
+                        local isFov75 = (math.floor(fovVal + 0.5) == 75)
+                        local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
                         local isPriorityBatchActive = _G.Mod_IsAdmin and isSecretTrickActive and (pickLimit >= 7)
 
                         if isPriorityBatchActive then
