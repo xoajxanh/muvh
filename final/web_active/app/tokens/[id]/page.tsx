@@ -16,6 +16,10 @@ import {
   User,
   PackageCheck,
   ClipboardPaste,
+  Lock,
+  Ban,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -216,6 +220,14 @@ export default function TokenDetailPage() {
       return;
     }
 
+    const isExp = token?.expireAt ? new Date(token.expireAt) < new Date() : false;
+    const isDel = Boolean(token?.isDeleted);
+    const userCanEdit = user?.role === 'ADMIN' ? !isDel : (!isExp && !isDel);
+    if (!userCanEdit) {
+      setToast({ message: 'Token này đã hết hạn hoặc bị khóa. Bạn không có quyền chỉnh sửa!', type: 'error' });
+      return;
+    }
+
     setUpdating(true);
 
     try {
@@ -279,6 +291,11 @@ export default function TokenDetailPage() {
 
   const now = new Date();
   const isExpired = new Date(token.expireAt) < now;
+  const isSale = user.role === 'SALE';
+  const isDeleted = Boolean(token.isDeleted);
+  // Sale is locked from editing when expired or deleted. Admin can edit/extend expired tokens.
+  const canEdit = user.role === 'ADMIN' ? !isDeleted : (!isExpired && !isDeleted);
+
   const apiUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/v1/config?sn=${token.deviceSnMd5}&uid=${token.characterUid}`;
   const packageName = token.vipPackage?.name || (token.isCustom ? 'Tùy Chỉnh (Custom)' : 'Gói Mặc Định');
 
@@ -305,12 +322,12 @@ export default function TokenDetailPage() {
                 <div className="flex items-center gap-3">
                   <h1 className="text-2xl font-bold text-white font-mono">{token.deviceSnMd5}</h1>
                   {token.isDeleted ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
-                      ĐÃ XÓA (SALE)
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40 flex items-center gap-1">
+                      <Ban className="w-3 h-3" /> ĐÃ XÓA (SALE)
                     </span>
                   ) : isExpired ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                      ĐÃ HẾT HẠN
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> ĐÃ HẾT HẠN
                     </span>
                   ) : (
                     <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -332,13 +349,83 @@ export default function TokenDetailPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition"
-            >
-              {isEditing ? 'Hủy Sửa' : 'Chỉnh Sửa Config'}
-            </button>
+            {canEdit ? (
+              <button
+                onClick={() => setIsEditing(!isEditing)}
+                className={`px-4 py-2 border rounded-xl text-xs font-semibold transition ${
+                  isEditing
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 hover:bg-rose-500/30'
+                    : 'bg-slate-800 hover:bg-slate-700 border-slate-700 text-slate-200'
+                }`}
+              >
+                {isEditing ? 'Hủy Sửa' : 'Chỉnh Sửa Config'}
+              </button>
+            ) : isExpired && isSale ? (
+              <div
+                className="px-3.5 py-2 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed shadow-sm"
+                title="Token đã hết hạn. Quyền chỉnh sửa đã bị khóa đối với Sale."
+              >
+                <Lock className="w-3.5 h-3.5 text-rose-400" />
+                <span>Khóa Sửa (Hết Hạn)</span>
+              </div>
+            ) : (
+              <div
+                className="px-3.5 py-2 bg-slate-800/80 border border-slate-700 text-slate-400 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-not-allowed"
+                title="Token đã bị xóa logic."
+              >
+                <Ban className="w-3.5 h-3.5 text-slate-500" />
+                <span>Đã Xóa (Khóa Sửa)</span>
+              </div>
+            )}
           </div>
+
+          {/* Expiration Alert Banner */}
+          {isExpired && !isDeleted && (
+            <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/30 flex items-start sm:items-center justify-between gap-3 text-rose-300 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/30 shrink-0">
+                  <Clock className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <div className="font-bold text-rose-200 text-sm flex items-center gap-1.5">
+                    TOKEN ĐÃ HẾT HẠN SỬ DỤNG
+                    <span className="text-[11px] font-normal text-rose-300/80">({new Date(token.expireAt).toLocaleString('vi-VN')})</span>
+                  </div>
+                  <p className="text-slate-300 mt-0.5">
+                    {isSale ? (
+                      <span className="text-rose-300/90 font-medium">
+                        🔒 Giao diện chỉnh sửa đã bị khóa đối với nhân viên Sale. Khách hàng cần liên hệ Admin để gia hạn hoặc kích hoạt gói mới.
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 font-medium">
+                        Tài khoản Quản trị viên (Admin) có thể bấm <strong className="text-cyan-300">&quot;Chỉnh Sửa Config&quot;</strong> để gia hạn thêm ngày hoặc cập nhật lại thông số cho khách hàng.
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Deletion Alert Banner */}
+          {isDeleted && (
+            <div className="p-4 rounded-2xl bg-rose-950/50 border border-rose-500/40 flex items-start sm:items-center justify-between gap-3 text-rose-200 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-500/40 shrink-0">
+                  <Ban className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <div className="font-bold text-rose-200 text-sm">
+                    TOKEN ĐÃ BỊ XÓA LOGIC (HỦY KÍCH HOẠT)
+                  </div>
+                  <p className="text-slate-300 mt-0.5">
+                    Token này đã bị hủy kích hoạt trên Client Mod và không thể chỉnh sửa.
+                    {user.role === 'ADMIN' && ' Admin có thể bấm Khôi phục ở danh sách Token.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Top Encrypted Token Copy Card (ADMIN Only) */}
           {user?.role === 'ADMIN' && (
@@ -377,7 +464,7 @@ export default function TokenDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Config Parameter Card */}
             <div className="lg:col-span-2 space-y-6">
-              {isEditing ? (
+              {isEditing && canEdit ? (
                 <form onSubmit={handleUpdateSubmit} className="glass-card p-6 rounded-2xl space-y-5">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-amber-400">

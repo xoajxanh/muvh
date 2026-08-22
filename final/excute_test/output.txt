@@ -1,8 +1,20 @@
 ==================================================
-=== FIX LỖI CON LẮC: VÔ HIỆU HÓA PATHAMEND LOOP ===
+=== KIỂM TRA ĐỒNG BỘ VỊ TRÍ CLIENT vs SERVER ===
 ==================================================
--> ĐÃ HOOK VÔ HIỆU HÓA Me:PathAmend (Chặn đứng nguyên nhân gây reset pathIndex = 1)!
--> Tìm đường đi thẳng toàn map từ (121, 103) đến Boss (15, 45)...
--> Đã gọi MoveTo thành công! Tổng số điểm đường đi mới: 123
+1. Vị trí Client (cellPos)        : (189, 68)
+2. Vị trí Server ghi nhận (Coord) : (116, 112)
+3. Độ lệch khoảng cách (Desync)   : 85.23 ô (tiles)
+4. Vị trí thực tế 3D (World Pos)  : (189.50, 1.83, 68.50)
+--------------------------------------------------
+>>> CẢNH BÁO: BỊ LỆCH TỌA ĐỘ NGHIÊM TRỌNG (85.2 ô)! <<<
+-> Giải thích: Client đã chạy tới đích nhưng Server vẫn giữ bạn ở vị trí cũ.
+-> Do đó Server KHÔNG gửi dữ liệu Boss/Người chơi ở điểm đến!
+--------------------------------------------------
+5. Tổng số Quái/Boss Client đang có : 1
+6. Tổng số Người chơi khác trong bộ nhớ: 1
+Danh sách Boss: Không có con nào quanh vùng Server ghi nhận.
+--------------------------------------------------
+[ĐỀ XUẤT TEST SỬA]:
+Đang thử gửi gói tin sửa tọa độ hoặc phục hồi...
 ==================================================
 KẾT THÚC THỰC THI SCRIPT

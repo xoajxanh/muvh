@@ -28,7 +28,20 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Token không tồn tại' }, { status: 404 });
   }
 
-  return NextResponse.json({ token });
+  const now = new Date();
+  const isExpired = new Date(token.expireAt) < now;
+  const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const isExpiringSoon = !isExpired && new Date(token.expireAt) <= threeDaysLater;
+  const status = token.isDeleted ? 'DELETED' : isExpired ? 'EXPIRED' : isExpiringSoon ? 'EXPIRING_SOON' : 'ACTIVE';
+
+  return NextResponse.json({
+    token: {
+      ...token,
+      isExpired,
+      isExpiringSoon,
+      status,
+    },
+  });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -66,6 +79,24 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       });
 
       return NextResponse.json({ success: true, message: 'Đã khôi phục Token thành công', token: restoredToken });
+    }
+
+    // Role SALE validation: block editing if token is deleted or expired
+    if (session.role === 'SALE') {
+      if (existingToken.isDeleted) {
+        return NextResponse.json(
+          { error: 'Token này đã bị xóa logic, nhân viên Sale không có quyền chỉnh sửa!' },
+          { status: 403 }
+        );
+      }
+
+      const now = new Date();
+      if (new Date(existingToken.expireAt) < now) {
+        return NextResponse.json(
+          { error: 'Token này đã hết hạn sử dụng. Nhân viên Sale không được phép chỉnh sửa! Vui lòng liên hệ Admin để gia hạn.' },
+          { status: 403 }
+        );
+      }
     }
 
     const {

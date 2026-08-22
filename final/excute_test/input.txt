@@ -1,6 +1,4 @@
--- SCRIPT TEST TRICK MONITOR (FOV = 75)
--- Chạy script này để kiểm tra trực tiếp trạng thái Trick trên máy
-
+-- SCRIPT CHẨN ĐOÁN VỊ TRÍ & ĐỒNG BỘ SERVER / CLIENT KHI TỐC ĐỘ CAO
 local report = {}
 local function log(txt)
     local line = tostring(txt)
@@ -9,86 +7,100 @@ local function log(txt)
 end
 
 log("==================================================")
-log("=== KIỂM TRA TRẠNG THÁI TRICK NHẶT ĐỒ (FOV = 75) ===")
+log("=== KIỂM TRA ĐỒNG BỘ VỊ TRÍ CLIENT vs SERVER ===")
 log("==================================================")
 
 pcall(function()
-    -- 1. HỦY TIMER CŨ NẾU CÓ
-    if _G.TrickMonitorTimer and _G.Timer and _G.Timer.Stop then
-        _G.Timer.Stop(_G.TrickMonitorTimer)
-        _G.TrickMonitorTimer = nil
-        log("[INFO] Đã hủy Timer giám sát cũ.")
+    local me = _G.RoleManager and _G.RoleManager.me
+    local meData = _G.ViewData and _G.ViewData.meData
+
+    local clientCellX, clientCellY = -1, -1
+    local clientPosX, clientPosY, clientPosZ = 0, 0, 0
+    if me then
+        if me.cellPos then
+            clientCellX = me.cellPos.x
+            clientCellY = me.cellPos.y
+        end
+        if me.pos then
+            clientPosX = me.pos.x
+            clientPosY = me.pos.y
+            clientPosZ = me.pos.z
+        end
     end
 
-    -- 2. HÀM CHECK ĐIỀU KIỆN TRICK
-    local function CheckTrickStatus()
-        local scopeVal = 0
-        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-            scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-        end
-
-        local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-
-        local fovVal = 0
-        if _G.SavedFOV then
-            fovVal = tonumber(_G.SavedFOV) or 0
-        elseif CS.UnityEngine.Camera.main then
-            fovVal = tonumber(CS.UnityEngine.Camera.main.fieldOfView) or 0
-        end
-        local fovRounded = math.floor(fovVal + 0.5)
-
-        local c1_ScopeEqualLimit = (scopeVal == pickLimit) and (scopeVal > 0)
-        local c2_IsOddNumber     = (scopeVal % 2 == 1)
-        local c3_IsFov75         = (fovRounded == 75)
-
-        local isTrick = c1_ScopeEqualLimit and c2_IsOddNumber and c3_IsFov75
-
-        return isTrick, scopeVal, pickLimit, fovRounded, c1_ScopeEqualLimit, c2_IsOddNumber, c3_IsFov75
+    local serverCellX, serverCellY = -1, -1
+    if meData and meData.serverCoord then
+        serverCellX = meData.serverCoord.x
+        serverCellY = meData.serverCoord.y
+    elseif me and me.serverCoord then
+        serverCellX = me.serverCoord.x
+        serverCellY = me.serverCoord.y
     end
 
-    -- 3. IN THÔNG TIN TỔNG QUAN HIỆN TẠI VÀO OUTPUT
-    local isTrickNow, sVal, pLim, fVal, c1, c2, c3 = CheckTrickStatus()
-    log(string.format("1. Phạm vi Treo máy (KillMonsterScope) : %s", tostring(sVal)))
-    log(string.format("2. Số lượng nhặt Mod (AutoPick_Limit) : %s", tostring(pLim)))
-    log(string.format("3. Camera FOV (SavedFOV / Cam.FOV)    : %s", tostring(fVal)))
+    local dx = clientCellX - serverCellX
+    local dy = clientCellY - serverCellY
+    local dist = math.sqrt(dx * dx + dy * dy)
+
+    log(string.format("1. Vị trí Client (cellPos)        : (%d, %d)", clientCellX, clientCellY))
+    log(string.format("2. Vị trí Server ghi nhận (Coord) : (%d, %d)", serverCellX, serverCellY))
+    log(string.format("3. Độ lệch khoảng cách (Desync)   : %.2f ô (tiles)", dist))
+    log(string.format("4. Vị trí thực tế 3D (World Pos)  : (%.2f, %.2f, %.2f)", clientPosX, clientPosY, clientPosZ))
     log("--------------------------------------------------")
-    log(string.format("-> Điều kiện 1 (Phạm vi == Nhặt)      : %s", c1 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
-    log(string.format("-> Điều kiện 2 (Giá trị là Số Lẻ)     : %s", c2 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
-    log(string.format("-> Điều kiện 3 (FOV == 75)            : %s", c3 and "ĐẠT [OK]" or "CHƯA ĐẠT [X]"))
-    log("--------------------------------------------------")
-    if isTrickNow then
-        log(">>> KẾT QUẢ: 🔥 TRICK ĐANG KÍCH HOẠT (ACTIVE)! <<<")
-        if _G.FloatingWordUtility then
-            _G.FloatingWordUtility.QuickMsg(string.format("🔥 TRICK ACTIVE! Scope=%d | Pick=%d | FOV=%d", sVal, pLim, fVal))
-        end
+
+    if dist > 5 then
+        log(string.format(">>> CẢNH BÁO: BỊ LỆCH TỌA ĐỘ NGHIÊM TRỌNG (%.1f ô)! <<<", dist))
+        log("-> Giải thích: Client đã chạy tới đích nhưng Server vẫn giữ bạn ở vị trí cũ.")
+        log("-> Do đó Server KHÔNG gửi dữ liệu Boss/Người chơi ở điểm đến!")
     else
-        log(">>> KẾT QUẢ: ❌ TRICK CHƯA KÍCH HOẠT! <<<")
-        if _G.FloatingWordUtility then
-            _G.FloatingWordUtility.QuickMsg(string.format("TRICK OFF: Scope=%d, Pick=%d, FOV=%d", sVal, pLim, fVal))
-        end
+        log(">>> TRẠNG THÁI: Tọa độ Client và Server ĐỒNG BỘ TỐT (Khớp nhau) <<<")
     end
+    log("--------------------------------------------------")
 
-    -- 4. TẠO TIMER THEO DÕI LIVE (MỖI 0.5 GIÂY)
-    _G.LastTrickAlertState = isTrickNow
-    if _G.Timer and _G.Timer.StartLoop then
-        _G.TrickMonitorTimer = _G.Timer.StartLoop(0.5, -1, function()
-            local isActive, curScope, curPick, curFov = CheckTrickStatus()
-            if isActive ~= _G.LastTrickAlertState then
-                _G.LastTrickAlertState = isActive
-                if isActive then
-                    print(string.format("[TRICK MONITOR] 🔥 KÍCH HOẠT TRICK! Scope=%d, Pick=%d, FOV=%d", curScope, curPick, curFov))
-                    if _G.FloatingWordUtility then
-                        _G.FloatingWordUtility.QuickMsg(string.format("🔥 TRICK ĐÃ KÍCH HOẠT! (Scope: %d | Pick: %d | FOV: %d)", curScope, curPick, curFov))
-                    end
-                else
-                    print(string.format("[TRICK MONITOR] ❌ TRICK ĐÃ TẮT! Scope=%d, Pick=%d, FOV=%d", curScope, curPick, curFov))
-                    if _G.FloatingWordUtility then
-                        _G.FloatingWordUtility.QuickMsg(string.format("❌ TRICK TẮT: Scope=%d | Pick=%d | FOV=%d", curScope, curPick, curFov))
-                    end
+    -- Thống kê số lượng Quái / Boss / Người chơi hiện có trong bộ nhớ RoleManager
+    local monsterCount = 0
+    local playerCount = 0
+    local bossList = {}
+
+    if _G.RoleManager and _G.RoleManager.GetRoleListByType then
+        local monsters = _G.RoleManager.GetRoleListByType(_G.ERoleType.Monster)
+        if monsters then
+            for id, m in pairs(monsters) do
+                monsterCount = monsterCount + 1
+                local name = (m.data and m.data.name) or "Quái"
+                local mx = (m.cellPos and m.cellPos.x) or 0
+                local my = (m.cellPos and m.cellPos.y) or 0
+                if m.isBoss or (m.data and m.data.isBoss) or string.find(name, "Boss") or string.find(name, "Kundun") then
+                    table.insert(bossList, string.format("%s [ID:%s] tại (%d, %d)", name, tostring(id), mx, my))
                 end
             end
-        end)
-        log("[INFO] Đã khởi chạy Live Monitor Timer (chu kỳ 0.5s). Khi bạn chỉnh thông số khớp trick, game sẽ tự động hiện thông báo nổi!")
+        end
+
+        local players = _G.RoleManager.GetRoleListByType(_G.ERoleType.Player)
+        if players then
+            for id, p in pairs(players) do
+                if not p.isMe then
+                    playerCount = playerCount + 1
+                end
+            end
+        end
+    end
+
+    log(string.format("5. Tổng số Quái/Boss Client đang có : %d", monsterCount))
+    log(string.format("6. Tổng số Người chơi khác trong bộ nhớ: %d", playerCount))
+    if #bossList > 0 then
+        log("Danh sách Boss phát hiện:")
+        for _, b in ipairs(bossList) do
+            log("   + " .. b)
+        end
+    else
+        log("Danh sách Boss: Không có con nào quanh vùng Server ghi nhận.")
+    end
+
+    -- Thử nghiệm lệnh sửa lệch tọa độ tức thì
+    log("--------------------------------------------------")
+    if dist > 5 then
+        log("[ĐỀ XUẤT TEST SỬA]:")
+        log("Đang thử gửi gói tin sửa tọa độ hoặc phục hồi...")
     end
 end)
 
@@ -104,5 +116,9 @@ pcall(function()
         f:close()
     end
 end)
+
+if _G.FloatingWordUtility then
+    _G.FloatingWordUtility.QuickMsg("Đã xuất kết quả kiểm tra tọa độ!")
+end
 
 return finalStr
