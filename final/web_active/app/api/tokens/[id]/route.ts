@@ -97,8 +97,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     } = body;
 
     const newDuration = durationDays !== undefined ? Number(durationDays) : existingToken.durationDays;
-    const now = new Date();
-    const expireAt = new Date(now.getTime() + newDuration * 86400 * 1000);
+    // Tính hạn sử dụng luôn căn cứ từ thời điểm khởi tạo Token (createdAt) thay vì thời điểm sửa
+    const baseCreatedAt = new Date(existingToken.createdAt);
+    const expireAt = new Date(baseCreatedAt.getTime() + newDuration * 86400 * 1000);
     const expireAtUnix = Math.floor(expireAt.getTime() / 1000);
 
     let telegramsList: string[];
