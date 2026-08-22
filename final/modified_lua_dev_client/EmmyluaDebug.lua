@@ -45,18 +45,39 @@ _G.ModCallbacks = {}
 
 local function WriteLog(msg)
     pcall(function()
-        local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
         local finalMsg = tostring(msg)
-        if string.find(finalMsg, "%[AutoLoot") then
-            local timeStr = CS.System.DateTime.Now:ToString("yyyy-MM-dd HH:mm:ss.fff")
-            finalMsg = timeStr .. ": " .. finalMsg
-        end
-        local f = io.open(logPath, "a")
-        if f then
-            f:write(finalMsg .. "\n")
-            f:close()
-        end
-        CS.UnityEngine.Debug.LogError("[MySuperMod] " .. finalMsg)
+        pcall(function()
+            if string.find(finalMsg, "%[AutoLoot") then
+                local ms = 0
+                if CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup then
+                    ms = math.floor((CS.UnityEngine.Time.realtimeSinceStartup % 1) * 1000)
+                end
+                local timeStr = string.format("%s.%03d", os.date("%Y-%m-%d %H:%M:%S"), ms)
+                finalMsg = timeStr .. ": " .. finalMsg
+            end
+        end)
+
+        local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
+
+        -- Ghi bằng C# System.IO.File (100% an toàn trên Android)
+        pcall(function()
+            if CS.System.IO.File and CS.System.IO.File.AppendAllText then
+                CS.System.IO.File.AppendAllText(logPath, finalMsg .. "\n")
+            end
+        end)
+
+        -- Backup bằng Lua io.open
+        pcall(function()
+            local f = io.open(logPath, "a")
+            if f then
+                f:write(finalMsg .. "\n")
+                f:close()
+            end
+        end)
+
+        pcall(function()
+            CS.UnityEngine.Debug.LogError("[MySuperMod] " .. finalMsg)
+        end)
     end)
 end
 _G.WriteLog = WriteLog
@@ -3807,12 +3828,12 @@ local function CreateModUI()
                                                 local rawPct = (role.hp / maxHp) * 100
                                                 local hpPct = math.max(0.01, rawPct)
                                                 local isSecretTrickActive = false
+                                                local pickLimit = tonumber(_G.AutoPick_Limit) or 2
                                                 if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
                                                     local scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-                                                    local pickLimit = tonumber(_G.AutoPick_Limit) or 2
                                                     local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                                                    local isFov75 = (math.floor(fovVal + 0.5) == 75)
-                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
+                                                    local isFov65 = (math.floor(fovVal + 0.5) == 65)
+                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
                                                 end
 
                                                 local bossDisplayName = isSecretTrickActive and ("[" .. tostring(d.name) .. "]") or tostring(d.name)
@@ -3821,85 +3842,90 @@ local function CreateModUI()
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
-                                                if isSecretTrickActive and rawPct <= 0.5 then
-                                                    local needNotify = false
+                                                if isSecretTrickActive and rawPct <= 0.5 and pickLimit == 7 then
+                                                    if not _G.Mod_KundunWeakExecuted then
+                                                        _G.Mod_KundunWeakExecuted = true
 
-                                                    -- 1. TẮT AUTO PK
-                                                    if _G.Mod_AutoPK_Enabled then
-                                                        _G.Mod_AutoPK_Enabled = false
-                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
-                                                        CS.UnityEngine.PlayerPrefs.Save()
-                                                        if _G.ModUpdateFloatingPKBtn then
-                                                            pcall(_G.ModUpdateFloatingPKBtn)
-                                                        end
-                                                        if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
-                                                        needNotify = true
-                                                    end
-
-                                                    -- 2. TẮT KHÓA MỤC TIÊU
-                                                    if _G.Mod_LockTarget_Enabled then
-                                                        _G.Mod_LockTarget_Enabled = false
-                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
-                                                        CS.UnityEngine.PlayerPrefs.Save()
-                                                        if _G.ModUpdateLockLabel then
-                                                            pcall(_G.ModUpdateLockLabel)
-                                                        end
-                                                        needNotify = true
-                                                    end
-
-                                                    -- 3. BẬT HỒI SINH KIM CƯƠNG (HS KC)
-                                                    if not _G.Mod_AutoResurrect_Here_Enabled then
-                                                        _G.Mod_AutoResurrect_Here_Enabled = true
-                                                        _G.Mod_AutoResurrect_Free_Enabled = false
-                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
-                                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
-                                                        CS.UnityEngine.PlayerPrefs.Save()
-                                                        if _G.ModUpdateResurrectVisuals then
-                                                            pcall(_G.ModUpdateResurrectVisuals)
-                                                        end
-                                                        needNotify = true
-                                                    end
-
-                                                    -- 4. CHUYỂN PK VỀ HÒA BÌNH (PARAM = 0)
-                                                    pcall(function()
-                                                        if _G.NetManager and _G.RoleMessage then
-                                                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
-                                                        end
-                                                        if _G.RoleManager and _G.RoleManager.me then
-                                                            _G.RoleManager.me.PKMode = 0
-                                                        end
-                                                        if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.SetPkMode then
-                                                            _G.ViewData.meData:SetPkMode(0)
-                                                        end
-                                                    end)
-
-                                                    if needNotify and _G.FloatingWordUtility then
-                                                        _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, KHÓA MT, VỀ HÒA BÌNH, BẬT HS KC & AUTO FIGHT!")
-                                                    end
-
-                                                    -- 5. CHUYỂN SANG AUTO FIGHT & TARGET VÀO KUNDUN
-                                                    pcall(function()
-                                                        if _G.RoleManager and _G.RoleManager.me then
-                                                            if _G.RoleManager.me.SetTarget then
-                                                                _G.RoleManager.me:SetTarget(role)
+                                                        -- 1. TẮT AUTO PK
+                                                        if _G.Mod_AutoPK_Enabled then
+                                                            _G.Mod_AutoPK_Enabled = false
+                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
+                                                            if _G.ModUpdateFloatingPKBtn then
+                                                                pcall(_G.ModUpdateFloatingPKBtn)
                                                             end
-                                                            _G.RoleManager.me.TargetAvatar = role
-                                                            if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
-                                                                _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                            if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
+                                                        end
+
+                                                        -- 2. TẮT KHÓA MỤC TIÊU
+                                                        if _G.Mod_LockTarget_Enabled then
+                                                            _G.Mod_LockTarget_Enabled = false
+                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
+                                                            if _G.ModUpdateLockLabel then
+                                                                pcall(_G.ModUpdateLockLabel)
                                                             end
                                                         end
-                                                        if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
-                                                            _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+
+                                                        -- 3. BẬT HỒI SINH KIM CƯƠNG (HS KC)
+                                                        if not _G.Mod_AutoResurrect_Here_Enabled then
+                                                            _G.Mod_AutoResurrect_Here_Enabled = true
+                                                            _G.Mod_AutoResurrect_Free_Enabled = false
+                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
+                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
+                                                            if _G.ModUpdateResurrectVisuals then
+                                                                pcall(_G.ModUpdateResurrectVisuals)
+                                                            end
                                                         end
-                                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                            _G.QiJiHelperData.SetAutoFightData(true)
+
+                                                        -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O flash bộ nhớ Android)
+                                                        pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
+
+                                                        -- 4. CHUYỂN PK VỀ HÒA BÌNH (PARAM = 0)
+                                                        pcall(function()
+                                                            if _G.NetManager and _G.RoleMessage then
+                                                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
+                                                            end
+                                                            if _G.RoleManager and _G.RoleManager.me then
+                                                                _G.RoleManager.me.PKMode = 0
+                                                            end
+                                                            if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.SetPkMode then
+                                                                _G.ViewData.meData:SetPkMode(0)
+                                                            end
+                                                        end)
+
+                                                        -- 5. CHUYỂN SANG AUTO FIGHT & TARGET VÀO KUNDUN
+                                                        pcall(function()
+                                                            if _G.RoleManager and _G.RoleManager.me then
+                                                                if _G.RoleManager.me.SetTarget then
+                                                                    _G.RoleManager.me:SetTarget(role)
+                                                                end
+                                                                _G.RoleManager.me.TargetAvatar = role
+                                                                if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                                                    _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                                end
+                                                            end
+                                                            if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
+                                                                _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+                                                            end
+                                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                                _G.QiJiHelperData.SetAutoFightData(true)
+                                                            end
+                                                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
+                                                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
+                                                            end
+                                                        end)
+
+                                                        if _G.FloatingWordUtility then
+                                                            _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, KHÓA MT, VỀ HÒA BÌNH, BẬT HS KC & AUTO FIGHT!")
                                                         end
-                                                        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
-                                                            _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
-                                                        end
-                                                    end)
+                                                    end
+                                                else
+                                                    if rawPct > 0.5 then
+                                                        _G.Mod_KundunWeakExecuted = false
+                                                    end
                                                 end
                                                 break
+                                            else
+                                                _G.Mod_KundunWeakExecuted = false
                                             end
                                         end
                                     end
@@ -8988,127 +9014,132 @@ local function CreateModUI()
             end
 
             local function ExecutePickupCommon(dropItemData, startTime, interceptTime, logPrefix)
-                local scopeVal = 0
-                if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                    scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-                end
-                local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                local isFov75 = (math.floor(fovVal + 0.5) == 75)
-                local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov75
-
-                local eType = dropItemData.type
-                local isRune = (eType == 19 or eType == 28)
-                local isBone = (eType == 24 or eType == 26)
-
-                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                if (nowTime - (_G.Mod_LastItemBatchTime or 0)) > 2.0 then
-                    _G.Mod_PickupItemIndex = 0
-                end
-                _G.Mod_LastItemBatchTime = nowTime
-                _G.Mod_PickupItemIndex = (_G.Mod_PickupItemIndex or 0) + 1
-                local N = _G.Mod_PickupItemIndex
-
-                local delayMs = 0
-                if isRune or logPrefix == "KTĐ" or isSecretTrickActive then
-                    delayMs = 0
-                elseif isBone then
-                    local minDelay = N * 100
-                    local maxDelay = N * 100 + 800
-                    delayMs = math.random(minDelay, maxDelay)
-                end
-
-                local delaySec = delayMs / 1000.0
-
-                if _G.AutoPick_Mode == nil then
-                    _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
-                    if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
-                        _G.AutoPick_Mode = 1
+                local ok, err = pcall(function()
+                    local scopeVal = 0
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                        scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                     end
-                end
+                    local pickLimit = tonumber(_G.AutoPick_Limit) or 0
+                    local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
+                    local isFov65 = (math.floor(fovVal + 0.5) == 65)
+                    local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
 
-                if _G.AutoPick_Mode == 1 then
-                    -- PA NHẶT 1 (Rollback instant + 0ms packet + spam loop)
-                    local function ExecutePickup()
-                        -- 1. Chạy tới vị trí vật phẩm ngay lập tức
-                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                            pcall(function()
-                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
+                    local eType = dropItemData.type
+                    local isRune = (eType == 19 or eType == 28)
+                    local isBone = (eType == 24 or eType == 26)
+
+                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                    if (nowTime - (_G.Mod_LastItemBatchTime or 0)) > 2.0 then
+                        _G.Mod_PickupItemIndex = 0
+                    end
+                    _G.Mod_LastItemBatchTime = nowTime
+                    _G.Mod_PickupItemIndex = (_G.Mod_PickupItemIndex or 0) + 1
+                    local N = _G.Mod_PickupItemIndex
+
+                    local delayMs = 0
+                    if isRune or logPrefix == "KTĐ" or isSecretTrickActive then
+                        delayMs = 0
+                    elseif isBone then
+                        local minDelay = N * 100
+                        local maxDelay = N * 100 + 800
+                        delayMs = math.random(minDelay, maxDelay)
+                    end
+
+                    local delaySec = delayMs / 1000.0
+
+                    if _G.AutoPick_Mode == nil then
+                        _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
+                        if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
+                            _G.AutoPick_Mode = 1
+                        end
+                    end
+
+                    if _G.AutoPick_Mode == 1 then
+                        -- PA NHẶT 1 (Rollback instant + 0ms packet + spam loop)
+                        local function ExecutePickup()
+                            -- 1. Chạy tới vị trí vật phẩm ngay lập tức
+                            if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                                pcall(function()
+                                    _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
+                                end)
+                            end
+
+                            -- 2. Bắn gói tin nhặt LẬP TỨC 0ms
+                            if _G.PickupManager then
+                                _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                            end
+
+                            -- 3. Đưa vào Hàng Đợi Duy Trì Spam (dùng chung Vòng Lặp Mẹ) (bỏ qua nếu là KTĐ để tránh spam lệnh đơ máy)
+                            if logPrefix ~= "KTĐ" then
+                                _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                                _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                                    id = dropItemData.id,
+                                    x = dropItemData.x,
+                                    y = dropItemData.y,
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                                }
+                            end
+
+                            local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                            local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or
+                                "???"
+                            local objId = dropItemData.id or "???"
+                            if _G.WriteLog then
+                                _G.WriteLog(string.format(
+                                    "[%s] Nhặt PA1 (Nhận tin lúc %s | Delay %d ms | Xử lý %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s",
+                                    logPrefix, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
+                                    tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                            end
+                        end
+
+                        if delaySec > 0 and _G.Timer and _G.Timer.StartLoop then
+                            local hasFired = false
+                            _G.Timer.StartLoop(delaySec, 1, function()
+                                if not hasFired then
+                                    hasFired = true
+                                    ExecutePickup()
+                                end
                             end)
+                        else
+                            ExecutePickup()
                         end
+                    else
+                        -- PA NHẶT 2 (Phương án hiện tại với 0.1s delay throttle)
+                        if logPrefix == "KTĐ" then
+                            -- Gửi gói tin nhặt 1 lần, không đưa vào hàng đợi spam
+                            if _G.PickupManager then
+                                _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                            end
+                        else
+                            local scheduledTime = nowTime + delaySec
+                            local expireTime = scheduledTime + 5.0
 
-                        -- 2. Bắn gói tin nhặt LẬP TỨC 0ms
-                        if _G.PickupManager then
-                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                        end
-
-                        -- 3. Đưa vào Hàng Đợi Duy Trì Spam (dùng chung Vòng Lặp Mẹ) (bỏ qua nếu là KTĐ để tránh spam lệnh đơ máy)
-                        if logPrefix ~= "KTĐ" then
                             _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
                             _G.Mod_ActiveSpamItems[dropItemData.id] = {
                                 id = dropItemData.id,
                                 x = dropItemData.x,
                                 y = dropItemData.y,
-                                expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                                startTime = scheduledTime,
+                                expireTime = expireTime,
+                                lastSpamTime = 0,
+                                isTrick = isSecretTrickActive
                             }
                         end
 
                         local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
-                        local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or
-                            "???"
+                        local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
                         local objId = dropItemData.id or "???"
                         if _G.WriteLog then
+                            local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE DELAY %dms", delayMs)
                             _G.WriteLog(string.format(
-                                "[%s] Nhặt PA1 (Nhận tin lúc %s | Delay %d ms | Xử lý %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s",
-                                logPrefix, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
+                                "[%s] Nhặt PA2 [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s",
+                                logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
                                 tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
                         end
                     end
-
-                    if delaySec > 0 and _G.Timer and _G.Timer.StartLoop then
-                        local hasFired = false
-                        _G.Timer.StartLoop(delaySec, 1, function()
-                            if not hasFired then
-                                hasFired = true
-                                ExecutePickup()
-                            end
-                        end)
-                    else
-                        ExecutePickup()
-                    end
-                else
-                    -- PA NHẶT 2 (Phương án hiện tại với 0.1s delay throttle)
-                    if logPrefix == "KTĐ" then
-                        -- Gửi gói tin nhặt 1 lần, không đưa vào hàng đợi spam
-                        if _G.PickupManager then
-                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                        end
-                    else
-                        local scheduledTime = nowTime + delaySec
-                        local expireTime = scheduledTime + 5.0
-
-                        _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
-                        _G.Mod_ActiveSpamItems[dropItemData.id] = {
-                            id = dropItemData.id,
-                            x = dropItemData.x,
-                            y = dropItemData.y,
-                            startTime = scheduledTime,
-                            expireTime = expireTime,
-                            lastSpamTime = 0,
-                            isTrick = isSecretTrickActive
-                        }
-                    end
-
-                    local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
-                    local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
-                    local objId = dropItemData.id or "???"
-                    if _G.WriteLog then
-                        local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE DELAY %dms", delayMs)
-                        _G.WriteLog(string.format(
-                            "[%s] Nhặt PA2 [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s",
-                            logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
-                            tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
-                    end
+                end)
+                if not ok and _G.WriteLog then
+                    _G.WriteLog("[AutoLoot ERROR] " .. tostring(err))
                 end
             end
             _G.ExecutePickupCommon = ExecutePickupCommon
