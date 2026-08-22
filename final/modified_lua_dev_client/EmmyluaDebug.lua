@@ -3846,7 +3846,7 @@ local function CreateModUI()
                                                     if not _G.Mod_KundunWeakExecuted then
                                                         _G.Mod_KundunWeakExecuted = true
 
-                                                        -- 1. TẮT AUTO PK
+                                                        -- 1. TẮT AUTO PK & AUTO PK GUILD
                                                         if _G.Mod_AutoPK_Enabled then
                                                             _G.Mod_AutoPK_Enabled = false
                                                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
@@ -3854,6 +3854,10 @@ local function CreateModUI()
                                                                 pcall(_G.ModUpdateFloatingPKBtn)
                                                             end
                                                             if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
+                                                        end
+                                                        if _G.Mod_AutoGuildPK_Enabled then
+                                                            _G.Mod_AutoGuildPK_Enabled = false
+                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
                                                         end
 
                                                         -- 2. TẮT KHÓA MỤC TIÊU
@@ -3884,11 +3888,8 @@ local function CreateModUI()
                                                             if _G.NetManager and _G.RoleMessage then
                                                                 _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
                                                             end
-                                                            if _G.RoleManager and _G.RoleManager.me then
-                                                                _G.RoleManager.me.PKMode = 0
-                                                            end
-                                                            if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.SetPkMode then
-                                                                _G.ViewData.meData:SetPkMode(0)
+                                                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
+                                                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
                                                             end
                                                         end)
 
@@ -4468,12 +4469,16 @@ local function CreateModUI()
                                             return
                                         end
 
-                                        -- Tự động chuyển sang PK Guild nếu đang là Hòa Bình (0) hoặc nil
+                                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+
+                                        -- Tự động chuyển sang PK Guild nếu đang là Hòa Bình (0) hoặc nil (chống spam liên tục mỗi frame)
                                         if (me.PKMode == 0 or me.PKMode == nil) and _G.NetManager and _G.RoleMessage then
-                                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                                            if (nowTime - (_G.Mod_LastAutoPKSentTime or 0)) >= 1.5 then
+                                                _G.Mod_LastAutoPKSentTime = nowTime
+                                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                                            end
                                         end
 
-                                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                         local delay = _G.Mod_PKScanDelay or 0.8
                                         if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
                                             _G.Mod_LastPKScanTime = nowTime
@@ -4698,7 +4703,11 @@ local function CreateModUI()
                     -- Auto PK Guild Logic
                     if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
                         if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
-                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                            local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
+                                _G.Mod_LastGuildPKReqTime = nowGuildPK
+                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                            end
                         end
                     end
 

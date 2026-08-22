@@ -4739,7 +4739,11 @@ local function CreateModUI()
                     -- Auto PK Guild Logic
                     if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
                         if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
-                            _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                            local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
+                                _G.Mod_LastGuildPKReqTime = nowGuildPK
+                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 2 })
+                            end
                         end
                     end
 
