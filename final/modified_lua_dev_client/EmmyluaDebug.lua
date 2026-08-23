@@ -4138,6 +4138,58 @@ local function CreateModUI()
                         end
                     end
 
+                    -- KTĐ AUTO PATH & LOOT (0.5s / lần)
+                    if (_G.Mod_AutoPK_Enabled or _G.Mod_AutoPick_KTD) and _G.Mod_KTD_Chests then
+                        local mapId = (_G.SceneData and _G.SceneData.mapId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
+                        if mapId == 1077 then
+                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowTime - (_G.Mod_LastKTD_LootTime or 0)) >= 0.5 then
+                                _G.Mod_LastKTD_LootTime = nowTime
+                                pcall(function()
+                                    local me = _G.RoleManager and _G.RoleManager.me
+                                    if not me then return end
+                                    local meX = (me.serverCoord and me.serverCoord.x) or me.x or 0
+                                    local meY = (me.serverCoord and me.serverCoord.y) or me.y or 0
+
+                                    local validChests = {}
+                                    for objId, chestInfo in pairs(_G.Mod_KTD_Chests) do
+                                        if chestInfo and chestInfo.x and chestInfo.y then
+                                            chestInfo.dist = math.max(math.abs(meX - chestInfo.x), math.abs(meY - chestInfo.y))
+                                            table.insert(validChests, chestInfo)
+                                        end
+                                    end
+
+                                    if #validChests > 0 then
+                                        table.sort(validChests, function(a, b) return a.dist < b.dist end)
+                                        local nearestChest = validChests[1]
+
+                                        -- 1. Nếu cách xa hơn 1 ô, tự động chạy tới rương gần nhất
+                                        if nearestChest.dist > 1 then
+                                            pcall(function()
+                                                me:MoveTo({ x = nearestChest.x, y = nearestChest.y })
+                                            end)
+                                        end
+
+                                        -- 2. Gửi gói tin nhặt rương gần nhất
+                                        if _G.PickupManager then
+                                            _G.PickupManager.ReqPickUpMapItem(nearestChest.id)
+                                        end
+
+                                        -- 3. Bổ sung nhặt thêm các rương lân cận nếu đang đứng cạnh (dist <= 2)
+                                        for i = 2, math.min(#validChests, 5) do
+                                            local nearbyChest = validChests[i]
+                                            if nearbyChest.dist <= 2 and _G.PickupManager then
+                                                _G.PickupManager.ReqPickUpMapItem(nearbyChest.id)
+                                            end
+                                        end
+                                    end
+                                end)
+                            end
+                        else
+                            _G.Mod_KTD_Chests = nil
+                        end
+                    end
+
                     if _G.SavedFOV then
                         local cam = CS.UnityEngine.Camera.main
                         if cam and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
@@ -9062,6 +9114,9 @@ local function CreateModUI()
                     if _G.Mod_ActiveSpamItems then
                         _G.Mod_ActiveSpamItems[dropItemData.id] = nil
                     end
+                    if _G.Mod_KTD_Chests then
+                        _G.Mod_KTD_Chests[dropItemData.id] = nil
+                    end
                 end
             end
 
@@ -9255,11 +9310,12 @@ local function CreateModUI()
                     if mapId == 1077 then
                         local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
                         if objId then
-                            _G.Mod_PickedItems = _G.Mod_PickedItems or {}
-                            if not _G.Mod_PickedItems[objId] then
-                                _G.Mod_PickedItems[objId] = true
-                                ExecutePickupCommon(dropItemData, startTime, interceptTime, "KTĐ")
-                            end
+                            _G.Mod_KTD_Chests = _G.Mod_KTD_Chests or {}
+                            _G.Mod_KTD_Chests[objId] = {
+                                id = objId,
+                                x = dropItemData.x,
+                                y = dropItemData.y
+                            }
                         end
                     end
                 end
