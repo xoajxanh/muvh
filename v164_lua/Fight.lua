@@ -1,0 +1,30 @@
+FightMessage = {
+  ReqPlayerUseSkill = 101001,
+  ResPlayerUseSkill = 101002,
+  ResHpMpChange = 101003,
+  ReqRelive = 101004,
+  ResRelive = 101005,
+  ReqTerminationCastSkill = 101006,
+  ReqBroadcastUseSkill = 101007,
+  ResBroadcastUseSkill = 101008,
+  ResUseSubSkill = 101009,
+  ReqDamageList = 101010,
+  ResDamageList = 101011,
+  ResRoleCanRelive = 101012,
+  ResBossKillInfo = 101013,
+  ReqPlayerAttribute = 101015,
+  ReqCloseAttribute = 101016
+}
+MessageIDToName[101001] = "FightPackage.ReqPlayerUseSkill"
+MessageIDToName[101002] = "FightPackage.ResPlayerUseSkill"
+MessageIDToName[101003] = "FightPackage.ResHpMpChange"
+MessageIDToName[101004] = "FightPackage.ReqRelive"
+MessageIDToName[101005] = "FightPackage.ResRelive"
+MessageIDToName[101006] = "FightPackage.ReqTerminationCastSkill"
+MessageIDToName[101007] = "FightPackage.ReqPlayerUseSkill"
+MessageIDToName[101008] = "FightPackage.ResPlayerUseSkill"
+MessageIDToName[101009] = "FightPackage.ResUseSubSkill"
+MessageIDToName[101010] = "FightPackage.ReqFightList"
+MessageIDToName[101011] = "FightPackage.ResFightList"
+MessageIDToName[101013] = "FightPackage.ResBossKillInfo"
+Protobuf.LoadProto("Fight.proto")

@@ -1,0 +1,109 @@
+-- input.txt: SCRIPT KHÔI PHỤC CAMERA NGUYÊN BẢN (KHÔNG CAN THIỆP LATEUPDATE) + 120 FPS + DIAGNOSTICS
+
+local function RunCleanNativeTest()
+    local report = {}
+    local function log(txt)
+        table.insert(report, tostring(txt))
+    end
+
+    log("==================================================")
+    log("=== 1. KHÔI PHỤC CAMERA VỀ CƠ CHẾ NGUYÊN BẢN ===")
+    log("==================================================")
+
+    -- Gỡ bỏ hoàn toàn hook can thiệp LateUpdate để không bị xung đột vị trí
+    _G.Mod_SmoothCamWorldHooked = false
+    if _G.MainCamera then
+        -- Khôi phục AttachRole chuẩn
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me and me.transform then
+            local cam = CS.UnityEngine.Camera.main
+            if cam then
+                cam.transform:SetParent(me.transform, false)
+                _G.MainCamera.RefreshPosition()
+                log("-> Đã khôi phục Camera về Local Position nguyên bản của game.")
+            end
+        end
+    end
+
+    -- Khóa tốc độ Animation 1.0x (Cánh & Body)
+    _G.Mod_LockAnimationSpeed = true
+    if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
+        _G.Mod_Hooked_AnimatorCtrl = true
+        local old_SetAnimatorSpeed = _G.AnimatorCtrl.SetAnimatorSpeed
+        _G.AnimatorCtrl.SetAnimatorSpeed = function(self, speed)
+            if _G.Mod_LockAnimationSpeed and self.avatar and self.avatar.isMe then
+                speed = 1.0
+            end
+            return old_SetAnimatorSpeed(self, speed)
+        end
+    end
+
+    if _G.RoleEquip and not _G.Mod_Hooked_RoleEquipWing then
+        _G.Mod_Hooked_RoleEquipWing = true
+        local old_SetWingAni = _G.RoleEquip.SetWingAni
+        _G.RoleEquip.SetWingAni = function(self, RoleMoveType, isCurIsSafeZone)
+            old_SetWingAni(self, RoleMoveType, isCurIsSafeZone)
+            if _G.Mod_LockAnimationSpeed and self.avatar and self.avatar.isMe then
+                if self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
+                    self.wingAnimator.animator.speed = 1.0
+                end
+            end
+        end
+    end
+
+    -- Quét toàn bộ Components trên Camera và Player để chẩn đoán
+    pcall(function()
+        local cam = CS.UnityEngine.Camera.main
+        if cam then
+            log("\n--- CÁC COMPONENT TRÊN CAMERA MAIN ---")
+            local comps = cam.gameObject:GetComponents(typeof(CS.UnityEngine.Component))
+            if comps then
+                for i = 0, comps.Length - 1 do
+                    local c = comps[i]
+                    if c then log("  [" .. i .. "]: " .. tostring(c:GetType().FullName)) end
+                end
+            end
+        end
+
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me and me.gameObject then
+            log("\n--- CÁC COMPONENT TRÊN PLAYER GAMEOBJECT ---")
+            local comps = me.gameObject:GetComponents(typeof(CS.UnityEngine.Component))
+            if comps then
+                for i = 0, comps.Length - 1 do
+                    local c = comps[i]
+                    if c then log("  [" .. i .. "]: " .. tostring(c:GetType().FullName)) end
+                end
+            end
+        end
+    end)
+
+    -- BẬT 120 FPS
+    pcall(function()
+        local app = CS.UnityEngine.Application
+        local qs = CS.UnityEngine.QualitySettings
+        local t = CS.UnityEngine.Time
+
+        app.targetFrameRate = 120
+        qs.vSyncCount = 0
+        t.fixedDeltaTime = 1.0 / 120.0
+        t.maximumDeltaTime = 0.033
+        log("\n-> Đã set 120 FPS, fixedDeltaTime=1/120s.")
+    end)
+
+    -- GHI FILE OUTPUT.TXT VÀ THÔNG BÁO
+    local finalStr = table.concat(report, "\n")
+    pcall(function()
+        local logPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+        local f = io.open(logPath, "w")
+        if f then
+            f:write(finalStr)
+            f:close()
+        end
+        if _G.FloatingWordUtility then
+            _G.FloatingWordUtility.QuickMsg("ĐÃ KHÔI PHỤC CAMERA NGUYÊN BẢN & 120 FPS!")
+        end
+    end)
+end
+
+RunCleanNativeTest()

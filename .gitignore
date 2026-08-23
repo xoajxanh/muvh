@@ -1,0 +1,41 @@
+*.apk
+*.xapk
+*.aar
+*.jar
+test_apk/v1/app_icon.png
+test_apk/v1/release/
+test_apk/v1/debug_code/
+
+
+# Next.js & Node.js Dependencies & Builds
+**/node_modules/
+**/.next/
+**/out/
+**/build/
+**/dist/
+**/.env
+!**/.env.example
+
+# Logs & temp files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.idea/
+.vscode/
+*.tmp
+final/web_active/next-env.d.ts
+final/web_active/tsconfig.tsbuildinfo
+
+# Build outputs
+final/new_bundles/
+final/new_lua/
+final/compiled_lua/
+final/modified_lua_admin/
+final/modified_lua_client/
+final/modified_lua_customer/
+final/temp_lua/
+final/temp_build/
+
+

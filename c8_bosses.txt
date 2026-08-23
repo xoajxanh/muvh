@@ -1,0 +1,18 @@
+--- MAP 1074 ---
+id: 3409, Param: 107407, Type: 4, name: Kỵ Sĩ Tử Vong
+id: 3410, Param: 107407, Type: 4, name: Kỵ Sĩ Tử Vong
+id: 3411, Param: 107408, Type: 4, name: Phẫn Nộ-Kỵ Sĩ Tử Vong
+id: 3412, Param: 107408, Type: 4, name: Phẫn Nộ-Kỵ Sĩ Tử Vong
+id: 3413, Param: 107409, Type: 4, name: Cuồng Bạo-Kỵ Sĩ Tử Vong
+id: 3414, Param: 107409, Type: 4, name: Cuồng Bạo-Kỵ Sĩ Tử Vong
+--- MAP 105208 ---
+id: 2693, Param: 10520801, Type: 4, name: Kỵ Sĩ Tử Vong
+id: 2694, Param: 10520802, Type: 4, name: Phẫn Nộ-Kỵ Sĩ Tử Vong
+--- MAP 106407 ---
+id: 2789, Param: 10640701, Type: 4, name: Thủ Vệ Giáo Dài
+id: 2790, Param: 10640702, Type: 4, name: Ngang Ngược-Thủ Vệ Giáo Dài
+id: 2791, Param: 10640703, Type: 4, name: Tà Ác-Thủ Vệ Giáo Dài
+--- MAP 106706 ---
+id: 2991, Param: 10670601, Type: 4, name: Ma Đao Phủ
+id: 2992, Param: 10670602, Type: 4, name: Ngang Ngược-Ma Đao Phủ
+id: 2993, Param: 10670603, Type: 4, name: Tà Ác-Ma Đao Phủ

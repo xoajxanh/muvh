@@ -1,0 +1,5 @@
+GM_Level_Tbl = require("Config/data/cfg_Character_level")
+GM_Item_Tbl = require("Config/data/cfg_Item_item")
+GM_Monster_Tbl = require("Config/data/cfg_Monster_monster")
+GM_Skill_Tbl = require("Config/data/cfg_Skill_skill")
+GM_Map_Tbl = require("Config/data/cfg_Map_map")

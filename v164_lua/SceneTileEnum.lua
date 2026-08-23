@@ -1,0 +1,65 @@
+SceneTileOffset = {
+  Normal = 0,
+  Ignore = 1,
+  Block = 2,
+  Safe = 3,
+  BornPoint = 4,
+  Material = 5,
+  Sit = 9,
+  LeanOn = 13,
+  FlyUp = 17,
+  OnHookPoint = 18,
+  HideGrass = 19,
+  GuidePoint = 31
+}
+SceneTileType = {
+  Normal = bit.lshift(0, SceneTileOffset.Normal),
+  Ignore = bit.lshift(1, SceneTileOffset.Ignore),
+  Block = bit.lshift(1, SceneTileOffset.Block),
+  Safe = bit.lshift(1, SceneTileOffset.Safe),
+  BornPoint = bit.lshift(1, SceneTileOffset.BornPoint),
+  Material = bit.lshift(15, SceneTileOffset.Material),
+  HideGrass = bit.lshift(1, SceneTileOffset.HideGrass),
+  Sit = bit.lshift(15, SceneTileOffset.Sit),
+  LeanOn = bit.lshift(15, SceneTileOffset.LeanOn),
+  FlyUp = bit.lshift(1, SceneTileOffset.FlyUp),
+  GuidePoint = bit.lshift(1, SceneTileOffset.GuidePoint),
+  OnHookPoint = bit.lshift(1, SceneTileOffset.OnHookPoint)
+}
+CS.Framework.SceneTileData.blockType = bit.bor(SceneTileType.Block, SceneTileType.Ignore)
+CS.Framework.SceneTileData.guidePointType = SceneTileType.GuidePoint
+SceneTileSitType = {
+  None = 0,
+  Up = bit.lshift(1, SceneTileOffset.Sit),
+  RightUp = bit.lshift(2, SceneTileOffset.Sit),
+  Right = bit.lshift(3, SceneTileOffset.Sit),
+  RightDown = bit.lshift(4, SceneTileOffset.Sit),
+  Down = bit.lshift(5, SceneTileOffset.Sit),
+  LeftDown = bit.lshift(6, SceneTileOffset.Sit),
+  Left = bit.lshift(7, SceneTileOffset.Sit),
+  LeftUp = bit.lshift(8, SceneTileOffset.Sit),
+  All = bit.lshift(15, SceneTileOffset.Sit)
+}
+SceneLeanOnType = {
+  None = 0,
+  Up = bit.lshift(1, SceneTileOffset.LeanOn),
+  RightUp = bit.lshift(2, SceneTileOffset.LeanOn),
+  Right = bit.lshift(3, SceneTileOffset.LeanOn),
+  RightDown = bit.lshift(4, SceneTileOffset.LeanOn),
+  Down = bit.lshift(5, SceneTileOffset.LeanOn),
+  LeftDown = bit.lshift(6, SceneTileOffset.LeanOn),
+  Left = bit.lshift(7, SceneTileOffset.LeanOn),
+  LeftUp = bit.lshift(8, SceneTileOffset.LeanOn),
+  All = bit.lshift(15, SceneTileOffset.LeanOn)
+}
+SceneMaterialType = {
+  None = 0,
+  Stone = bit.lshift(1, SceneTileOffset.Material),
+  Grass = bit.lshift(2, SceneTileOffset.Material),
+  Snow = bit.lshift(3, SceneTileOffset.Material),
+  Land = bit.lshift(4, SceneTileOffset.Material),
+  Water = bit.lshift(5, SceneTileOffset.Material),
+  Wood = bit.lshift(6, SceneTileOffset.Material),
+  Sand = bit.lshift(7, SceneTileOffset.Material),
+  Swamp = bit.lshift(8, SceneTileOffset.Material)
+}

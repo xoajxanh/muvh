@@ -1,0 +1,14 @@
+10179607: Tektus
+10179608: Phẫn Nộ - Tektus
+10179609: Cuồng Bạo - Tektus
+---
+10520701: Tektus
+10520702: Phẫn Nộ-Tektus
+---
+10640601: Chiến Sĩ Rìu To
+10640602: Ngang Ngược-Chiến Sĩ Rìu Lớn
+10640603: Tà Ác-Chiến Sĩ Rìu Lớn
+---
+10670501: Nurmus
+10670502: Ngang Ngược-Nurmus
+10670503: Tà Ác-Nurmus
