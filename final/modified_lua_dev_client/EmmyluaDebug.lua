@@ -9067,6 +9067,7 @@ local function CreateModUI()
 
             local function ExecutePickupCommon(dropItemData, startTime, interceptTime, logPrefix)
                 local ok, err = pcall(function()
+                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                     local scopeVal = 0
                     if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
                         scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
