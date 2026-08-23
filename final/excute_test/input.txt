@@ -1,4 +1,10 @@
--- SCRIPT CHẨN ĐOÁN VỊ TRÍ & ĐỒNG BỘ SERVER / CLIENT KHI TỐC ĐỘ CAO
+-- SCRIPT TEST BẬT / TẮT:
+-- DẬP TẮT CHÍNH XÁC VÀ TRIỆT ĐỂ:
+-- 1. SCENEEFFECTROOT (LỐC XOÁY ĐẦU LÂU, TRẬN ĐỒ ĐỒNG HỒ LA MÃ, BÁNH RĂNG, SẤM SÉT MẶT ĐẤT)
+-- 2. SKILL EFFECT & PARTICLES (HẮC LONG BA, ĐẠN BAY, TIA LỬA, VỆT VŨ KHÍ)
+-- 3. HỒN HOÀN, DẤU CHÂN, VÒNG TRÒN DƯỚI CHÂN KHI DI CHUYỂN
+-- 4. SỐ NHẢY MÁU / DAME HUD TRÊN ĐẦU QUÁI & CHỚP MÀU QUÁI
+
 local report = {}
 local function log(txt)
     local line = tostring(txt)
@@ -6,119 +12,393 @@ local function log(txt)
     print(line)
 end
 
-log("==================================================")
-log("=== KIỂM TRA ĐỒNG BỘ VỊ TRÍ CLIENT vs SERVER ===")
-log("==================================================")
-
-pcall(function()
-    local me = _G.RoleManager and _G.RoleManager.me
-    local meData = _G.ViewData and _G.ViewData.meData
-
-    local clientCellX, clientCellY = -1, -1
-    local clientPosX, clientPosY, clientPosZ = 0, 0, 0
-    if me then
-        if me.cellPos then
-            clientCellX = me.cellPos.x
-            clientCellY = me.cellPos.y
-        end
-        if me.pos then
-            clientPosX = me.pos.x
-            clientPosY = me.pos.y
-            clientPosZ = me.pos.z
-        end
-    end
-
-    local serverCellX, serverCellY = -1, -1
-    if meData and meData.serverCoord then
-        serverCellX = meData.serverCoord.x
-        serverCellY = meData.serverCoord.y
-    elseif me and me.serverCoord then
-        serverCellX = me.serverCoord.x
-        serverCellY = me.serverCoord.y
-    end
-
-    local dx = clientCellX - serverCellX
-    local dy = clientCellY - serverCellY
-    local dist = math.sqrt(dx * dx + dy * dy)
-
-    log(string.format("1. Vị trí Client (cellPos)        : (%d, %d)", clientCellX, clientCellY))
-    log(string.format("2. Vị trí Server ghi nhận (Coord) : (%d, %d)", serverCellX, serverCellY))
-    log(string.format("3. Độ lệch khoảng cách (Desync)   : %.2f ô (tiles)", dist))
-    log(string.format("4. Vị trí thực tế 3D (World Pos)  : (%.2f, %.2f, %.2f)", clientPosX, clientPosY, clientPosZ))
-    log("--------------------------------------------------")
-
-    if dist > 5 then
-        log(string.format(">>> CẢNH BÁO: BỊ LỆCH TỌA ĐỘ NGHIÊM TRỌNG (%.1f ô)! <<<", dist))
-        log("-> Giải thích: Client đã chạy tới đích nhưng Server vẫn giữ bạn ở vị trí cũ.")
-        log("-> Do đó Server KHÔNG gửi dữ liệu Boss/Người chơi ở điểm đến!")
-    else
-        log(">>> TRẠNG THÁI: Tọa độ Client và Server ĐỒNG BỘ TỐT (Khớp nhau) <<<")
-    end
-    log("--------------------------------------------------")
-
-    -- Thống kê số lượng Quái / Boss / Người chơi hiện có trong bộ nhớ RoleManager
-    local monsterCount = 0
-    local playerCount = 0
-    local bossList = {}
-
-    if _G.RoleManager and _G.RoleManager.GetRoleListByType then
-        local monsters = _G.RoleManager.GetRoleListByType(_G.ERoleType.Monster)
-        if monsters then
-            for id, m in pairs(monsters) do
-                monsterCount = monsterCount + 1
-                local name = (m.data and m.data.name) or "Quái"
-                local mx = (m.cellPos and m.cellPos.x) or 0
-                local my = (m.cellPos and m.cellPos.y) or 0
-                if m.isBoss or (m.data and m.data.isBoss) or string.find(name, "Boss") or string.find(name, "Kundun") then
-                    table.insert(bossList, string.format("%s [ID:%s] tại (%d, %d)", name, tostring(id), mx, my))
-                end
-            end
-        end
-
-        local players = _G.RoleManager.GetRoleListByType(_G.ERoleType.Player)
-        if players then
-            for id, p in pairs(players) do
-                if not p.isMe then
-                    playerCount = playerCount + 1
-                end
-            end
-        end
-    end
-
-    log(string.format("5. Tổng số Quái/Boss Client đang có : %d", monsterCount))
-    log(string.format("6. Tổng số Người chơi khác trong bộ nhớ: %d", playerCount))
-    if #bossList > 0 then
-        log("Danh sách Boss phát hiện:")
-        for _, b in ipairs(bossList) do
-            log("   + " .. b)
-        end
-    else
-        log("Danh sách Boss: Không có con nào quanh vùng Server ghi nhận.")
-    end
-
-    -- Thử nghiệm lệnh sửa lệch tọa độ tức thì
-    log("--------------------------------------------------")
-    if dist > 5 then
-        log("[ĐỀ XUẤT TEST SỬA]:")
-        log("Đang thử gửi gói tin sửa tọa độ hoặc phục hồi...")
-    end
-end)
-
-log("==================================================")
-log("KẾT THÚC THỰC THI SCRIPT")
-
-local finalStr = table.concat(report, "\n")
-pcall(function()
-    local path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-    local f = io.open(path, "w")
-    if f then
-        f:write(finalStr)
-        f:close()
-    end
-end)
-
-if _G.FloatingWordUtility then
-    _G.FloatingWordUtility.QuickMsg("Đã xuất kết quả kiểm tra tọa độ!")
+-- Đảo trạng thái toggle
+if _G.Mod_Test_DisableVisuals == nil then
+    _G.Mod_Test_DisableVisuals = true
+else
+    _G.Mod_Test_DisableVisuals = not _G.Mod_Test_DisableVisuals
 end
 
-return finalStr
+_G.Mod_Test_DisableSkillEffects = _G.Mod_Test_DisableVisuals
+_G.Mod_Test_DisableDamageText   = _G.Mod_Test_DisableVisuals
+
+local isOff = _G.Mod_Test_DisableVisuals
+
+log("==================================================")
+if isOff then
+    log(">>> TRẠNG THÁI: [ĐÃ TẮT SKILL + SCENEEFFECT (LỐC XOÁY/TRẬN ĐỒ) + HỒN HOÀN + SỐ MÁU] <<<")
+    log(">>> CHẾ ĐỘ: SIÊU TỐC - CỰC MƯỢT (0% LAG / 0% NÓNG MÁY) <<<")
+else
+    log(">>> TRẠNG THÁI: [ĐÃ BẬT LẠI HIỆN TOÀN BỘ] <<<")
+    log(">>> CHẾ ĐỘ: HIỂN THỊ ĐẦY ĐỦ BÌNH THƯỜNG <<<")
+end
+log("==================================================")
+
+pcall(function()
+    -- 1. HOOK CHÍNH XÁC VÀO SceneEffectProcessor (CHẶN TẬN GỐC LỐC XOÁY & TRẬN ĐỒ ĐỒNG HỒ)
+    local sep = (_G.LuaClass and _G.LuaClass.SceneEffectProcessor) or _G.SceneEffectProcessor
+    if sep then
+        if not sep._Orig_InstantiationEffect then
+            sep._Orig_InstantiationEffect = sep.InstantiationEffect
+            sep.InstantiationEffect = function(self, data)
+                if _G.Mod_Test_DisableVisuals then
+                    return -- Chặn hoàn toàn việc tạo lốc xoáy / trận đồ vào SceneEffectRoot
+                end
+                if sep._Orig_InstantiationEffect then
+                    sep._Orig_InstantiationEffect(self, data)
+                end
+            end
+        end
+    end
+
+    local seo = (_G.LuaClass and _G.LuaClass.SceneEffectObj) or _G.SceneEffectObj
+    if seo then
+        if not seo._Orig_RefreshModel then
+            seo._Orig_RefreshModel = seo.RefreshModel
+            seo.RefreshModel = function(self, data, rootObj)
+                if _G.Mod_Test_DisableVisuals then
+                    return
+                end
+                if seo._Orig_RefreshModel then
+                    seo._Orig_RefreshModel(self, data, rootObj)
+                end
+            end
+        end
+    end
+
+    -- 2. Tắt và dọn sạch GameObject SceneEffectRoot ngay lập tức
+    local sceneEffectRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
+    if sceneEffectRoot and not _G.IsNil(sceneEffectRoot) then
+        sceneEffectRoot:SetActive(not isOff)
+        if isOff then
+            for i = 0, sceneEffectRoot.transform.childCount - 1 do
+                local child = sceneEffectRoot.transform:GetChild(i)
+                if child and child.gameObject and not _G.IsNil(child.gameObject) then
+                    child.gameObject:SetActive(false)
+                end
+            end
+        end
+    end
+
+    -- 3. Hook BaseSkill
+    if _G.BaseSkill then
+        if not _G.BaseSkill._Orig_IsEffectShow then
+            _G.BaseSkill._Orig_IsEffectShow = _G.BaseSkill.IsEffectShow
+            _G.BaseSkill.IsEffectShow = function(skillData_struct)
+                if _G.Mod_Test_DisableSkillEffects then return false end
+                if _G.BaseSkill._Orig_IsEffectShow then
+                    return _G.BaseSkill._Orig_IsEffectShow(skillData_struct)
+                end
+                return true
+            end
+        end
+    end
+
+    -- 4. Hook BulletMgr
+    if _G.BulletMgr then
+        if not _G.BulletMgr._Orig_AddBullet then
+            _G.BulletMgr._Orig_AddBullet = _G.BulletMgr.AddBullet
+            _G.BulletMgr.AddBullet = function(skillData_struct, bulletData)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.BulletMgr._Orig_AddBullet then
+                    _G.BulletMgr._Orig_AddBullet(skillData_struct, bulletData)
+                end
+            end
+        end
+        if not _G.BulletMgr._Orig_LoadEffect then
+            _G.BulletMgr._Orig_LoadEffect = _G.BulletMgr.LoadEffect
+            _G.BulletMgr.LoadEffect = function(bulletData_struct)
+                if _G.Mod_Test_DisableSkillEffects then return nil end
+                if _G.BulletMgr._Orig_LoadEffect then
+                    return _G.BulletMgr._Orig_LoadEffect(bulletData_struct)
+                end
+            end
+        end
+    end
+
+    -- 5. Hook SkillEffectMgr & HitEffectMgr & WeaponEffectMgr & CameraEffectMgr
+    if _G.SkillEffectMgr then
+        if not _G.SkillEffectMgr._Orig_AddEffect then
+            _G.SkillEffectMgr._Orig_AddEffect = _G.SkillEffectMgr.AddEffect
+            _G.SkillEffectMgr.AddEffect = function(effectData, skillData_struct, index)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.SkillEffectMgr._Orig_AddEffect then
+                    _G.SkillEffectMgr._Orig_AddEffect(effectData, skillData_struct, index)
+                end
+            end
+        end
+        if not _G.SkillEffectMgr._Orig_AddUIEffect then
+            _G.SkillEffectMgr._Orig_AddUIEffect = _G.SkillEffectMgr.AddUIEffect
+            _G.SkillEffectMgr.AddUIEffect = function(effectData, skillData_struct, index)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.SkillEffectMgr._Orig_AddUIEffect then
+                    _G.SkillEffectMgr._Orig_AddUIEffect(effectData, skillData_struct, index)
+                end
+            end
+        end
+    end
+
+    if _G.HitEffectMgr then
+        if not _G.HitEffectMgr._Orig_AddEffect then
+            _G.HitEffectMgr._Orig_AddEffect = _G.HitEffectMgr.AddEffect
+            _G.HitEffectMgr.AddEffect = function(hit_struct, role)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.HitEffectMgr._Orig_AddEffect then
+                    _G.HitEffectMgr._Orig_AddEffect(hit_struct, role)
+                end
+            end
+        end
+    end
+
+    if _G.WeaponEffectMgr then
+        if not _G.WeaponEffectMgr._Orig_AddEffect then
+            _G.WeaponEffectMgr._Orig_AddEffect = _G.WeaponEffectMgr.AddEffect
+            _G.WeaponEffectMgr.AddEffect = function(attacker, weaponData, tblSkill, attackSpeed)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.WeaponEffectMgr._Orig_AddEffect then
+                    _G.WeaponEffectMgr._Orig_AddEffect(attacker, weaponData, tblSkill, attackSpeed)
+                end
+            end
+        end
+    end
+
+    if _G.CameraEffectMgr then
+        if not _G.CameraEffectMgr._Orig_Play then
+            _G.CameraEffectMgr._Orig_Play = _G.CameraEffectMgr.Play
+            _G.CameraEffectMgr.Play = function(data)
+                if _G.Mod_Test_DisableSkillEffects then return end
+                if _G.CameraEffectMgr._Orig_Play then
+                    _G.CameraEffectMgr._Orig_Play(data)
+                end
+            end
+        end
+    end
+
+    -- 6. Hook HPData.SetData: Chặn số nhảy máu
+    if _G.HPData then
+        if not _G.HPData._Orig_SetData then
+            _G.HPData._Orig_SetData = _G.HPData.SetData
+            _G.HPData.SetData = function(hpStruct, hurtTarget)
+                if _G.Mod_Test_DisableDamageText then return end
+                if _G.HPData._Orig_SetData then
+                    _G.HPData._Orig_SetData(hpStruct, hurtTarget)
+                end
+            end
+        end
+    end
+
+    -- 7. Hook Player.HurtMaterialEffect & Action_ApplySkillEffect.PerfermHurt (Chớp quái & Xoay)
+    if _G.Player then
+        if not _G.Player._Orig_HurtMaterialEffect then
+            _G.Player._Orig_HurtMaterialEffect = _G.Player.HurtMaterialEffect
+            _G.Player.HurtMaterialEffect = function(self, attackerId)
+                if _G.Mod_Test_DisableVisuals then return end
+                if _G.Player._Orig_HurtMaterialEffect then
+                    _G.Player._Orig_HurtMaterialEffect(self, attackerId)
+                end
+            end
+        end
+    end
+
+    if _G.Action_ApplySkillEffect then
+        if not _G.Action_ApplySkillEffect._Orig_PerfermHurt then
+            _G.Action_ApplySkillEffect._Orig_PerfermHurt = _G.Action_ApplySkillEffect.PerfermHurt
+            _G.Action_ApplySkillEffect.PerfermHurt = function(self)
+                if _G.Mod_Test_DisableVisuals then
+                    local attacker = _G.RoleManager and _G.RoleManager.GetRoleById and _G.RoleManager.GetRoleById(self.attackerId)
+                    for i = 1, #(self.hurtList or {}) do
+                        local hurt = self.hurtList[i]
+                        local target = _G.RoleManager and _G.RoleManager.GetRoleById and _G.RoleManager.GetRoleById(hurt.targetId)
+                        local myId = _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id
+                        if myId and ((hurt.targetId == myId) or (self.attackerId == myId) or 
+                           (target and target.data and target.data.master == myId) or 
+                           (attacker and attacker.data and attacker.data.master == myId) or 
+                           (_G.Activity_LangHunYaoSaiData and _G.Activity_LangHunYaoSaiData.RoleIsLangHunYongBing and _G.Activity_LangHunYaoSaiData.RoleIsLangHunYongBing(hurt.targetId))) 
+                           and (hurt.isDodge or hurt.showHurt ~= 0) then
+                            local aa = -hurt.showHurt
+                            local tbl = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(self.skillId)
+                            if tbl and tbl.groupId == 12120200 and _G.GlobalConfig and _G.GlobalConfig.HLBRatio then
+                                aa = math.floor(aa * _G.GlobalConfig.HLBRatio)
+                            end
+                            if tbl and tbl.skillType == _G.ESkillType.Combo then
+                                _G.HpController.ChangeHPFromComboSkill(hurt.targetId, hurt.hp, hurt, aa)
+                            elseif _G.HpController then
+                                _G.HpController.ChangeHPFromResSkill(hurt.targetId, hurt.hp, hurt, aa)
+                            end
+                        end
+                    end
+                    return
+                end
+                if _G.Action_ApplySkillEffect._Orig_PerfermHurt then
+                    _G.Action_ApplySkillEffect._Orig_PerfermHurt(self)
+                end
+            end
+        end
+    end
+
+    -- 8. Hook BuffEffectMgr (Hồn Hoàn / Quang Hoàn)
+    if _G.BuffEffectMgr then
+        if not _G.BuffEffectMgr._Orig_AddEffect then
+            _G.BuffEffectMgr._Orig_AddEffect = _G.BuffEffectMgr.AddEffect
+            _G.BuffEffectMgr.AddEffect = function(buffData_struct, buffEffect)
+                if _G.Mod_Test_DisableVisuals and buffEffect and buffEffect.prefab then
+                    local pLower = string.lower(buffEffect.prefab)
+                    if string.find(pLower, "hunhuan") or string.find(pLower, "guanghuan") or string.find(pLower, "foot") then
+                        return
+                    end
+                end
+                if _G.BuffEffectMgr._Orig_AddEffect then
+                    _G.BuffEffectMgr._Orig_AddEffect(buffData_struct, buffEffect)
+                end
+            end
+        end
+
+        if _G.BuffEffectMgr.m_Effects then
+            for _, eff in pairs(_G.BuffEffectMgr.m_Effects) do
+                if eff and eff.prefab then
+                    local pLower = string.lower(eff.prefab)
+                    if string.find(pLower, "hunhuan") or string.find(pLower, "guanghuan") or string.find(pLower, "foot") then
+                        if eff.buffEffect and not _G.IsNil(eff.buffEffect) then
+                            eff.buffEffect:SetActive(not isOff)
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    -- 9. Hook Footprint & RoleEquip
+    if _G.RoleEquip then
+        if not _G.RoleEquip._Orig_SetFoot then
+            _G.RoleEquip._Orig_SetFoot = _G.RoleEquip.SetFoot
+            _G.RoleEquip.SetFoot = function(self, position, path)
+                if _G.Mod_Test_DisableVisuals then
+                    if not _G.IsNil(self.footPrintObj) then
+                        local obj = self.footPrintObj
+                        self:RecycleModel(_G.EModelType.Equip, obj.name, obj)
+                        self.equipPosObj[position] = nil
+                        self.footPrintObj = nil
+                    end
+                    return
+                end
+                if _G.RoleEquip._Orig_SetFoot then
+                    _G.RoleEquip._Orig_SetFoot(self, position, path)
+                end
+            end
+        end
+
+        if not _G.RoleEquip._Orig_SetEquipShowOrHideByIndex then
+            _G.RoleEquip._Orig_SetEquipShowOrHideByIndex = _G.RoleEquip.SetEquipShowOrHideByIndex
+            _G.RoleEquip.SetEquipShowOrHideByIndex = function(self, position, isShow)
+                if _G.Mod_Test_DisableVisuals and position == _G.ERoleEquipPosition.footPrintIndex then
+                    if not _G.IsNil(self.footPrintObj) then
+                        self.footPrintObj:SetActive(false)
+                    end
+                    return
+                end
+                if _G.RoleEquip._Orig_SetEquipShowOrHideByIndex then
+                    _G.RoleEquip._Orig_SetEquipShowOrHideByIndex(self, position, isShow)
+                end
+            end
+        end
+    end
+
+    if _G.Me then
+        if not _G.Me._Orig_OpenOtherFootPrint then
+            _G.Me._Orig_OpenOtherFootPrint = _G.Me.OpenOtherFootPrint
+            _G.Me.OpenOtherFootPrint = function(self)
+                if _G.Mod_Test_DisableVisuals then
+                    if not _G.IsNil(self.footPrintEffect) then
+                        self.footPrintEffect:SetActive(false)
+                    end
+                    return
+                end
+                if _G.Me._Orig_OpenOtherFootPrint then
+                    _G.Me._Orig_OpenOtherFootPrint(self)
+                end
+            end
+        end
+    end
+
+    -- 10. Dọn dẹp SkillPool (SkillMgr.ROOT)
+    if isOff and _G.SkillMgr and _G.SkillMgr.ROOT then
+        local root = _G.SkillMgr.ROOT
+        for i = 0, root.childCount - 1 do
+            local child = root:GetChild(i)
+            if child and child.gameObject and not _G.IsNil(child.gameObject) then
+                child.gameObject:SetActive(false)
+            end
+        end
+    end
+
+    -- 11. Xử lý nhân vật hiện tại
+    if _G.RoleManager and _G.RoleManager.me then
+        local me = _G.RoleManager.me
+        if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) then
+            me.footPrintEffect:SetActive(not isOff)
+        end
+        if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) then
+            me.AvatarEquip.footPrintObj:SetActive(not isOff)
+        end
+    end
+
+    -- 12. Timer giám sát liên tục (DẬP TẮT LẬP TỨC SceneEffectRoot & SkillMgr.ROOT)
+    if isOff then
+        if not _G.Mod_VisualMasterTimer then
+            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.05, -1, function()
+                if not _G.Mod_Test_DisableVisuals then
+                    if _G.Mod_VisualMasterTimer then
+                        _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+                        _G.Mod_VisualMasterTimer = nil
+                    end
+                    return
+                end
+
+                -- Luôn dập tắt SceneEffectRoot (Lốc xoáy đầu lâu, trận đồ mặt đất)
+                local sRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
+                if sRoot and not _G.IsNil(sRoot) and sRoot.activeSelf then
+                    sRoot:SetActive(false)
+                end
+
+                -- Luôn dập tắt SkillMgr.ROOT
+                if _G.SkillMgr and _G.SkillMgr.ROOT then
+                    local root = _G.SkillMgr.ROOT
+                    for i = 0, root.childCount - 1 do
+                        local child = root:GetChild(i)
+                        if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
+                            child.gameObject:SetActive(false)
+                        end
+                    end
+                end
+
+                -- Luôn dập tắt Footprint
+                if _G.RoleManager and _G.RoleManager.me then
+                    local me = _G.RoleManager.me
+                    if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
+                        me.footPrintEffect:SetActive(false)
+                    end
+                    if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
+                        me.AvatarEquip.footPrintObj:SetActive(false)
+                    end
+                end
+            end)
+        end
+    else
+        if _G.Mod_VisualMasterTimer then
+            _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+            _G.Mod_VisualMasterTimer = nil
+        end
+        local sRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
+        if sRoot and not _G.IsNil(sRoot) then
+            sRoot:SetActive(true)
+        end
+    end
+
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        if isOff then
+            _G.FloatingWordUtility.QuickMsg("TEST: ĐÃ KHÓA SCENEEFFECT (LỐC XOÁY ĐẦU LÂU/TRẬN ĐỒ)!")
+        else
+            _G.FloatingWordUtility.QuickMsg("TEST: ĐÃ BẬT LẠI HIỂN THỊ ĐẦY ĐỦ!")
+        end
+    end
+end)

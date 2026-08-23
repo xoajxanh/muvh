@@ -94,6 +94,15 @@ local function CreateModUI()
             _G.Mod_AutoApproachTowerBoss = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoApproachTowerBoss", 0) == 1
         end
+        if _G.Mod_DisableVisuals == nil then
+            pcall(function()
+                _G.Mod_DisableVisuals = CS.UnityEngine.PlayerPrefs.GetInt("Mod_DisableVisuals", 0) == 1
+            end)
+            if _G.Mod_DisableVisuals == nil then _G.Mod_DisableVisuals = false end
+        end
+        _G.Mod_IsDisableVisualsActive = function()
+            return (_G.Mod_DisableVisuals == true) or (_G.AutoPick_Enabled == true)
+        end
         if _G.Mod_InfiniteInstance == nil then
             _G.Mod_InfiniteInstance = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_InfiniteInstance", 0) == 1
@@ -4839,7 +4848,8 @@ local function CreateModUI()
                     "Mod_SecondaryTier", "Mod_FOV", "Mod_AutoRefresh", "Mod_RefreshInterval",
                     "AutoPick_Mode", "AutoPick_Enabled", "Mod_AutoPick_Limit", "Mod_CustomAttackRange",
                     "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap", "Mod_AutoHH_Enabled",
-                    "ModAutoBossConfigTab", "Mod_LockTarget_Enabled", "Mod_LockTarget_Name"
+                    "ModAutoBossConfigTab", "Mod_LockTarget_Enabled", "Mod_LockTarget_Name",
+                    "Mod_DisableVisuals"
                 }
                 for _, key in ipairs(modKeys) do
                     CS.UnityEngine.PlayerPrefs.DeleteKey(key)
@@ -4861,6 +4871,7 @@ local function CreateModUI()
                 _cachedAuthResult = false
                 _G.Mod_AutoPK_Enabled = false
                 _G.Mod_AutoApproachTowerBoss = false
+                _G.Mod_DisableVisuals = false
                 _G.Mod_InfiniteInstance = false
                 _G.Mod_AutoUseAngel = false
                 _G.Mod_AutoGuildPK_Enabled = false
@@ -4877,6 +4888,7 @@ local function CreateModUI()
                 _G.Mod_LockTarget_Name = ""
 
                 if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                if _G.ModUpdateDisableVisualsLabel then pcall(_G.ModUpdateDisableVisualsLabel) end
 
                 if _G.FloatingWordUtility then
                     _G.FloatingWordUtility.QuickMsg("Đã xóa toàn bộ cài đặt bản Mod!")
@@ -5749,9 +5761,24 @@ local function CreateModUI()
                 _G.ModUpdateGoldenChestLabel = function()
                     pcall(UpdateLabel)
                 end
+            elseif varName == "Mod_DisableVisuals" then
+                _G.ModUpdateDisableVisualsLabel = function()
+                    pcall(UpdateLabel)
+                end
             end
 
             btn.onClick:AddListener(function()
+                if varName == "Mod_DisableVisuals" then
+                    if _G.AutoPick_Enabled then
+                        _G.Mod_DisableVisuals = true
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đang bật Nhặt Nhanh - Bắt buộc tắt hiệu ứng để chống lag!")
+                        end
+                        UpdateLabel()
+                        return
+                    end
+                end
+
                 _G[varName] = not _G[varName]
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
@@ -5759,11 +5786,24 @@ local function CreateModUI()
                     _G.Mod_IgnoredDropItems = {}
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
+
+                    -- Khi bật Nhặt Nhanh: Tự động BẬT Tắt hiệu ứng
+                    _G.Mod_DisableVisuals = true
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_DisableVisuals", 1)
+                    if _G.ModUpdateDisableVisualsLabel then
+                        pcall(_G.ModUpdateDisableVisualsLabel)
+                    end
                 end
 
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
                     if _G[varName] and _G.Mod_ExecuteGoldenChestAutoProcess then
                         pcall(_G.Mod_ExecuteGoldenChestAutoProcess)
+                    end
+                end
+
+                if varName == "Mod_DisableVisuals" or varName == "AutoPick_Enabled" then
+                    if _G.Mod_ApplyDisableVisualsState then
+                        pcall(_G.Mod_ApplyDisableVisualsState)
                     end
                 end
 
@@ -7536,7 +7576,7 @@ local function CreateModUI()
             local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
             vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             vLineRt.anchoredPosition = Vector2(420, -45)
-            vLineRt.sizeDelta = Vector2(2, 535)
+            vLineRt.sizeDelta = Vector2(2, 580)
             local vLineImg = vLineGo:AddComponent(typeof(Image))
             vLineImg.color = Color(0.4, 0.4, 0.4, 1)
 
@@ -7559,6 +7599,9 @@ local function CreateModUI()
 
             currentY = currentY - 35
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
+            currentY = currentY - 45
+
+            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", rightColX2, currentY)
             currentY = currentY - 45
 
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
@@ -9037,21 +9080,41 @@ local function CreateModUI()
                     local isRune = (eType == 19 or eType == 28)
                     local isBone = (eType == 24 or eType == 26)
 
-                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                    if (nowTime - (_G.Mod_LastItemBatchTime or 0)) > 2.0 then
-                        _G.Mod_PickupItemIndex = 0
+                    local targetUID = "177557978677775000"
+                    local hasTargetNearby = false
+                    local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or
+                        (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id)
+
+                    if myId and tostring(myId) ~= targetUID then
+                        if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            local players = _G.RoleManager.GetRolesByType(1)
+                            if players then
+                                for _, p in pairs(players) do
+                                    if p and not p.isDead then
+                                        local pId = p.id or (p.data and (p.data.id or p.data.roleId))
+                                        if pId and tostring(pId) == targetUID then
+                                            hasTargetNearby = true
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                        end
                     end
-                    _G.Mod_LastItemBatchTime = nowTime
-                    _G.Mod_PickupItemIndex = (_G.Mod_PickupItemIndex or 0) + 1
-                    local N = _G.Mod_PickupItemIndex
 
                     local delayMs = 0
-                    if isRune or logPrefix == "KTĐ" or isSecretTrickActive then
+                    if logPrefix == "KTĐ" or isSecretTrickActive then
                         delayMs = 0
-                    elseif isBone then
-                        local minDelay = N * 100
-                        local maxDelay = N * 100 + 800
-                        delayMs = math.random(minDelay, maxDelay)
+                    elseif hasTargetNearby then
+                        if isBone then
+                            delayMs = math.random(200, 900)
+                        elseif isRune then
+                            delayMs = math.random(300, 700)
+                        else
+                            delayMs = 0
+                        end
+                    else
+                        delayMs = 0
                     end
 
                     local delaySec = delayMs / 1000.0
@@ -9085,7 +9148,7 @@ local function CreateModUI()
                                     id = dropItemData.id,
                                     x = dropItemData.x,
                                     y = dropItemData.y,
-                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 2
                                 }
                             end
 
@@ -9121,7 +9184,7 @@ local function CreateModUI()
                             end
                         else
                             local scheduledTime = nowTime + delaySec
-                            local expireTime = scheduledTime + 5.0
+                            local expireTime = scheduledTime + 2
 
                             _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
                             _G.Mod_ActiveSpamItems[dropItemData.id] = {
@@ -9450,6 +9513,430 @@ local function CreateModUI()
                 if orig_AddMessage then
                     orig_AddMessage(channel, message)
                 end
+            end
+        end
+
+        -- HOOK TẮT HIỆU ỨNG SKILL, LỐC XOÁY, SỐ NHẢY MÁU, CHỚP QUÁI, HỒN HOÀN, DẤU CHÂN & SKILL THÚ CƯỠI (SIÊU NHẸ MÁY)
+        if not _G.Mod_HookedDisableVisuals then
+            _G.Mod_HookedDisableVisuals = true
+
+            -- 1. SceneEffectProcessor & SceneEffectObj (Chặn đứng lốc xoáy đầu lâu, bão cát, trận đồ đồng hồ La Mã, bánh răng, skill thú cưỡi)
+            local sep = (_G.LuaClass and _G.LuaClass.SceneEffectProcessor) or _G.SceneEffectProcessor
+            if sep then
+                local orig_InstantiationEffect = sep.InstantiationEffect
+                sep.InstantiationEffect = function(self, data)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_InstantiationEffect then
+                        orig_InstantiationEffect(self, data)
+                    end
+                end
+            end
+
+            local seo = (_G.LuaClass and _G.LuaClass.SceneEffectObj) or _G.SceneEffectObj
+            if seo then
+                local orig_RefreshModel = seo.RefreshModel
+                seo.RefreshModel = function(self, data, rootObj)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_RefreshModel then
+                        orig_RefreshModel(self, data, rootObj)
+                    end
+                end
+            end
+
+            -- 2. BaseSkill (Chặn đạn bay, Hắc Long Ba, bão sét, mưa sao băng diện rộng)
+            if _G.BaseSkill then
+                local orig_IsEffectShow = _G.BaseSkill.IsEffectShow
+                _G.BaseSkill.IsEffectShow = function(skillData_struct)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return false
+                    end
+                    if orig_IsEffectShow then
+                        return orig_IsEffectShow(skillData_struct)
+                    end
+                    return true
+                end
+            end
+
+            -- 3. BulletMgr (Chặn nạp đạn bay, lốc xoáy và tia năng lượng)
+            if _G.BulletMgr then
+                local orig_AddBullet = _G.BulletMgr.AddBullet
+                _G.BulletMgr.AddBullet = function(skillData_struct, bulletData)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddBullet then
+                        orig_AddBullet(skillData_struct, bulletData)
+                    end
+                end
+
+                local orig_LoadEffect = _G.BulletMgr.LoadEffect
+                _G.BulletMgr.LoadEffect = function(bulletData_struct)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return nil
+                    end
+                    if orig_LoadEffect then
+                        return orig_LoadEffect(bulletData_struct)
+                    end
+                end
+
+                local orig_SetPosScale = _G.BulletMgr.SetSkillEffectPosAndScale
+                _G.BulletMgr.SetSkillEffectPosAndScale = function(bulletData_struct, skillEffect)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_SetPosScale then
+                        orig_SetPosScale(bulletData_struct, skillEffect)
+                    end
+                end
+            end
+
+            -- 4. HitEffectMgr (Chặn hiệu ứng nổ tóe lửa khi đánh trúng)
+            if _G.HitEffectMgr then
+                local orig_AddHitEffect = _G.HitEffectMgr.AddEffect
+                _G.HitEffectMgr.AddEffect = function(hit_struct, role)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddHitEffect then
+                        orig_AddHitEffect(hit_struct, role)
+                    end
+                end
+
+                local orig_AddHitByPos = _G.HitEffectMgr.AddEffectByPos
+                _G.HitEffectMgr.AddEffectByPos = function(hit_struct, targetPos)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddHitByPos then
+                        orig_AddHitByPos(hit_struct, targetPos)
+                    end
+                end
+
+                local orig_LoadHitEffect = _G.HitEffectMgr.LoadEffect
+                _G.HitEffectMgr.LoadEffect = function(effectData_struct)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return nil
+                    end
+                    if orig_LoadHitEffect then
+                        return orig_LoadHitEffect(effectData_struct)
+                    end
+                end
+            end
+
+            -- 5. Action_RandomRangeEffect (Chặn các cơn bão/lốc xoáy diện rộng)
+            if _G.Action_RandomRangeEffect then
+                local orig_RandomRangeInit = _G.Action_RandomRangeEffect.Init
+                _G.Action_RandomRangeEffect.Init = function(self, caster, actionData, speed, attackerPos, targetPos)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_RandomRangeInit then
+                        orig_RandomRangeInit(self, caster, actionData, speed, attackerPos, targetPos)
+                    end
+                end
+            end
+
+            -- 6. SkillEffectMgr (Chặn hạt Particle 3D)
+            if _G.SkillEffectMgr then
+                local orig_AddEffect = _G.SkillEffectMgr.AddEffect
+                _G.SkillEffectMgr.AddEffect = function(effectData, skillData_struct, index)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddEffect then
+                        orig_AddEffect(effectData, skillData_struct, index)
+                    end
+                end
+
+                local orig_AddUIEffect = _G.SkillEffectMgr.AddUIEffect
+                _G.SkillEffectMgr.AddUIEffect = function(effectData, skillData_struct, index)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddUIEffect then
+                        orig_AddUIEffect(effectData, skillData_struct, index)
+                    end
+                end
+            end
+
+            -- 7. Action_HitEffect (Chặn nổ tóe lửa)
+            if _G.Action_HitEffect then
+                local orig_PlayEffect = _G.Action_HitEffect.PlayEffect
+                _G.Action_HitEffect.PlayEffect = function(self)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_PlayEffect then
+                        orig_PlayEffect(self)
+                    end
+                end
+            end
+
+            -- 8. WeaponEffectMgr (Chặn vệt chém sáng vũ khí)
+            if _G.WeaponEffectMgr then
+                local orig_AddWeaponEffect = _G.WeaponEffectMgr.AddEffect
+                _G.WeaponEffectMgr.AddEffect = function(attacker, weaponData, tblSkill, attackSpeed)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_AddWeaponEffect then
+                        orig_AddWeaponEffect(attacker, weaponData, tblSkill, attackSpeed)
+                    end
+                end
+            end
+
+            -- 9. CameraEffectMgr (Chặn rung lắc camera)
+            if _G.CameraEffectMgr then
+                local orig_CameraPlay = _G.CameraEffectMgr.Play
+                _G.CameraEffectMgr.Play = function(data)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_CameraPlay then
+                        orig_CameraPlay(data)
+                    end
+                end
+            end
+
+            -- 10. HPData.SetData: Chặn sinh số nhảy máu / Dame HUD
+            if _G.HPData then
+                local orig_SetData = _G.HPData.SetData
+                _G.HPData.SetData = function(hpStruct, hurtTarget)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_SetData then
+                        orig_SetData(hpStruct, hurtTarget)
+                    end
+                end
+            end
+
+            -- 11. Player.HurtMaterialEffect & Action_ApplySkillEffect.PerfermHurt: Chặn chớp màu & xoay quái
+            if _G.Player then
+                local orig_HurtMat = _G.Player.HurtMaterialEffect
+                _G.Player.HurtMaterialEffect = function(self, attackerId)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        return
+                    end
+                    if orig_HurtMat then
+                        orig_HurtMat(self, attackerId)
+                    end
+                end
+            end
+
+            if _G.Action_ApplySkillEffect then
+                local orig_PerfermHurt = _G.Action_ApplySkillEffect.PerfermHurt
+                _G.Action_ApplySkillEffect.PerfermHurt = function(self)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        pcall(function()
+                            local attacker = _G.RoleManager and _G.RoleManager.GetRoleById and _G.RoleManager.GetRoleById(self.attackerId)
+                            for i = 1, #(self.hurtList or {}) do
+                                local hurt = self.hurtList[i]
+                                local target = _G.RoleManager and _G.RoleManager.GetRoleById and _G.RoleManager.GetRoleById(hurt.targetId)
+                                local myId = _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id
+                                if myId and ((hurt.targetId == myId) or (self.attackerId == myId) or 
+                                   (target and target.data and target.data.master == myId) or 
+                                   (attacker and attacker.data and attacker.data.master == myId) or 
+                                   (_G.Activity_LangHunYaoSaiData and _G.Activity_LangHunYaoSaiData.RoleIsLangHunYongBing and _G.Activity_LangHunYaoSaiData.RoleIsLangHunYongBing(hurt.targetId))) 
+                                   and (hurt.isDodge or hurt.showHurt ~= 0) then
+                                    local aa = -hurt.showHurt
+                                    local tbl = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(self.skillId)
+                                    if tbl and tbl.groupId == 12120200 and _G.GlobalConfig and _G.GlobalConfig.HLBRatio then
+                                        aa = math.floor(aa * _G.GlobalConfig.HLBRatio)
+                                    end
+                                    if tbl and tbl.skillType == _G.ESkillType.Combo then
+                                        if _G.HpController and _G.HpController.ChangeHPFromComboSkill then
+                                            _G.HpController.ChangeHPFromComboSkill(hurt.targetId, hurt.hp, hurt, aa)
+                                        end
+                                    elseif _G.HpController and _G.HpController.ChangeHPFromResSkill then
+                                        _G.HpController.ChangeHPFromResSkill(hurt.targetId, hurt.hp, hurt, aa)
+                                    end
+                                end
+                            end
+                        end)
+                        return
+                    end
+                    if orig_PerfermHurt then
+                        orig_PerfermHurt(self)
+                    end
+                end
+            end
+
+            -- 12. BuffEffectMgr (Chặn và ẩn toàn bộ Hồn Hoàn / Quang Hoàn)
+            if _G.BuffEffectMgr then
+                local orig_AddBuffEffect = _G.BuffEffectMgr.AddEffect
+                _G.BuffEffectMgr.AddEffect = function(buffData_struct, buffEffect)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() and buffEffect and buffEffect.prefab then
+                        local pLower = string.lower(buffEffect.prefab)
+                        if string.find(pLower, "hunhuan") or string.find(pLower, "guanghuan") or string.find(pLower, "foot") then
+                            return
+                        end
+                    end
+                    if orig_AddBuffEffect then
+                        orig_AddBuffEffect(buffData_struct, buffEffect)
+                    end
+                end
+            end
+
+            -- 13. RoleEquip & Me (Chặn dấu chân Footprint)
+            if _G.RoleEquip then
+                local orig_SetFoot = _G.RoleEquip.SetFoot
+                _G.RoleEquip.SetFoot = function(self, position, path)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        if not _G.IsNil(self.footPrintObj) then
+                            local obj = self.footPrintObj
+                            self:RecycleModel(_G.EModelType.Equip, obj.name, obj)
+                            self.equipPosObj[position] = nil
+                            self.footPrintObj = nil
+                        end
+                        return
+                    end
+                    if orig_SetFoot then
+                        orig_SetFoot(self, position, path)
+                    end
+                end
+
+                local orig_SetEquipShow = _G.RoleEquip.SetEquipShowOrHideByIndex
+                _G.RoleEquip.SetEquipShowOrHideByIndex = function(self, position, isShow)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() and position == _G.ERoleEquipPosition.footPrintIndex then
+                        if not _G.IsNil(self.footPrintObj) then
+                            self.footPrintObj:SetActive(false)
+                        end
+                        return
+                    end
+                    if orig_SetEquipShow then
+                        orig_SetEquipShow(self, position, isShow)
+                    end
+                end
+            end
+
+            if _G.Me then
+                local orig_OpenFoot = _G.Me.OpenOtherFootPrint
+                _G.Me.OpenOtherFootPrint = function(self)
+                    if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                        if not _G.IsNil(self.footPrintEffect) then
+                            self.footPrintEffect:SetActive(false)
+                        end
+                        return
+                    end
+                    if orig_OpenFoot then
+                        orig_OpenFoot(self)
+                    end
+                end
+            end
+
+            -- 14. Hàm áp dụng trạng thái trực tiếp & kích hoạt Timer giám sát liên tục
+            _G.Mod_ApplyDisableVisualsState = function()
+                pcall(function()
+                    local isOff = _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()
+                    
+                    -- SceneEffectRoot
+                    local sRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
+                    if sRoot and not _G.IsNil(sRoot) then
+                        sRoot:SetActive(not isOff)
+                        if isOff then
+                            for i = 0, sRoot.transform.childCount - 1 do
+                                local child = sRoot.transform:GetChild(i)
+                                if child and child.gameObject and not _G.IsNil(child.gameObject) then
+                                    child.gameObject:SetActive(false)
+                                end
+                            end
+                        end
+                    end
+
+                    -- SkillMgr.ROOT
+                    if isOff and _G.SkillMgr and _G.SkillMgr.ROOT then
+                        local root = _G.SkillMgr.ROOT
+                        for i = 0, root.childCount - 1 do
+                            local child = root:GetChild(i)
+                            if child and child.gameObject and not _G.IsNil(child.gameObject) then
+                                child.gameObject:SetActive(false)
+                            end
+                        end
+                    end
+
+                    -- Hồn hoàn
+                    if _G.BuffEffectMgr and _G.BuffEffectMgr.m_Effects then
+                        for _, eff in pairs(_G.BuffEffectMgr.m_Effects) do
+                            if eff and eff.prefab then
+                                local pLower = string.lower(eff.prefab)
+                                if string.find(pLower, "hunhuan") or string.find(pLower, "guanghuan") or string.find(pLower, "foot") then
+                                    if eff.buffEffect and not _G.IsNil(eff.buffEffect) then
+                                        eff.buffEffect:SetActive(not isOff)
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    -- Footprint trên Me
+                    if _G.RoleManager and _G.RoleManager.me then
+                        local me = _G.RoleManager.me
+                        if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) then
+                            me.footPrintEffect:SetActive(not isOff)
+                        end
+                        if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) then
+                            me.AvatarEquip.footPrintObj:SetActive(not isOff)
+                        end
+                    end
+
+                    -- Timer giám sát liên tục (0.05s)
+                    if isOff then
+                        if not _G.Mod_VisualMasterTimer then
+                            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.05, -1, function()
+                                if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
+                                    if _G.Mod_VisualMasterTimer then
+                                        _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+                                        _G.Mod_VisualMasterTimer = nil
+                                    end
+                                    return
+                                end
+
+                                -- SceneEffectRoot
+                                local sceneRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
+                                if sceneRoot and not _G.IsNil(sceneRoot) and sceneRoot.activeSelf then
+                                    sceneRoot:SetActive(false)
+                                end
+
+                                -- SkillMgr.ROOT
+                                if _G.SkillMgr and _G.SkillMgr.ROOT then
+                                    local root = _G.SkillMgr.ROOT
+                                    for i = 0, root.childCount - 1 do
+                                        local child = root:GetChild(i)
+                                        if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
+                                            child.gameObject:SetActive(false)
+                                        end
+                                    end
+                                end
+
+                                -- Footprint
+                                if _G.RoleManager and _G.RoleManager.me then
+                                    local me = _G.RoleManager.me
+                                    if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
+                                        me.footPrintEffect:SetActive(false)
+                                    end
+                                    if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
+                                        me.AvatarEquip.footPrintObj:SetActive(false)
+                                    end
+                                end
+                            end)
+                        end
+                    else
+                        if _G.Mod_VisualMasterTimer then
+                            _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+                            _G.Mod_VisualMasterTimer = nil
+                        end
+                    end
+                end)
+            end
+
+            -- Khởi tạo áp dụng ngay trạng thái hiện tại
+            if _G.Mod_ApplyDisableVisualsState then
+                _G.Mod_ApplyDisableVisualsState()
             end
         end
 
