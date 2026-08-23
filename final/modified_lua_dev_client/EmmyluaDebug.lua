@@ -4897,13 +4897,15 @@ local function CreateModUI()
                     "Mod_AutoGuildPK_Enabled", "Mod_AutoPick_KTD", "Mod_AutoRevive_KTD",
                     "Mod_ShowKundunHP", "Mod_AutoResurrect_Enabled", "Mod_AutoResurrect_Free_Enabled",
                     "Mod_AutoResurrect_Here_Enabled", "Mod_PKScanDelay", "Mod_AutoReturnPos_Enabled",
-                    "Mod_AutoReturnPos_Coords", "Mod_AutoReturnPosDelay", "Mod_FarmStatsData",
-                    "Mod_AnStatsDate", "Mod_AnStatsData", "ModMainTab", "Mod_PrimaryTier",
-                    "Mod_SecondaryTier", "Mod_FOV", "Mod_AutoRefresh", "Mod_RefreshInterval",
-                    "AutoPick_Mode", "AutoPick_Enabled", "Mod_AutoPick_Limit", "Mod_CustomAttackRange",
-                    "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap", "Mod_AutoHH_Enabled",
-                    "ModAutoBossConfigTab", "Mod_LockTarget_Enabled", "Mod_LockTarget_Name",
-                    "Mod_DisableVisuals"
+                    "Mod_AutoReturnPos_Coords", "Mod_AutoReturnPosDelay", "Mod_AutoReturnPos_MapId",
+                    "Mod_FarmStatsData", "Mod_AnStatsDate", "Mod_AnStatsData", "ModMainTab",
+                    "Mod_PrimaryTier", "Mod_SecondaryTier", "Mod_FOV", "Mod_AutoRefresh",
+                    "Mod_RefreshInterval", "AutoPick_Mode", "AutoPick_Enabled", "Mod_AutoPick_Limit",
+                    "Mod_CustomAttackRange", "Mod_CustomAttackRangeMultiplier", "Mod_RunSpeedMultiplier",
+                    "Mod_AtkSpeedMultiplier", "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap",
+                    "Mod_AutoHH_Enabled", "ModAutoBossConfigTab", "Mod_LockTarget_Enabled",
+                    "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
+                    "Mod_TeleNotify_Enabled"
                 }
                 for _, key in ipairs(modKeys) do
                     CS.UnityEngine.PlayerPrefs.DeleteKey(key)
@@ -4937,12 +4939,54 @@ local function CreateModUI()
                 _G.Mod_AutoResurrect_Here_Enabled = false
                 _G.Mod_AutoReturnPos_Enabled = false
                 _G.Mod_AutoReturnPos_Coords = ""
+                _G.Mod_AutoReturnPosDelay = 3.0
+                _G.Mod_PKScanDelay = 0.8
                 _G.AutoPick_Enabled = false
                 _G.Mod_LockTarget_Enabled = false
                 _G.Mod_LockTarget_Name = ""
+                _G.Mod_AutoOpenGoldenChest_Enabled = false
+                _G.Mod_AutoHH_Enabled = false
+                _G.Mod_AutoFarmBoss_EnterHiddenMap = false
+                _G.Mod_AutoPick_Limit = 0
+                _G.RunSpeedMultiplier = 1.0
+                _G.AtkSpeedMultiplier = 1.0
+                _G.Mod_CustomAttackRangeMultiplier = 1.0
+                _G.Mod_CustomAttackRange = 0
+                _G.SavedFOV = 35.0
+                _G.IsAutoRefresh = false
+                _G.AutoRefreshInterval = 5
+                _G.Mod_GoldenChestState = "OPEN"
+                _G.Mod_GoldenChestWaitTime = 0
+                _G.Mod_GoldenChestBatchIds = {}
+                _G.Mod_AllDropItems = {}
+                _G.Mod_PickedItems = {}
+                _G.Mod_AutoFarmBoss_Config = {}
+                _G.Mod_SmeltConfig = {
+                    Quality_White = true,
+                    Quality_Green = true,
+                    Quality_Blue = true,
+                    Quality_Purple = false,
+                    Quality_Orange = false,
+                    Quality_Red = false,
+                    Grade_Below6 = true,
+                    Grade_7 = false,
+                    Grade_8 = false,
+                    Grade_9Plus = false,
+                }
 
+                if _G.Mod_AllUIUpdaters then
+                    for _, fn in ipairs(_G.Mod_AllUIUpdaters) do
+                        pcall(fn)
+                    end
+                end
                 if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                if _G.ModUpdateGoldenChestLabel then pcall(_G.ModUpdateGoldenChestLabel) end
                 if _G.ModUpdateDisableVisualsLabel then pcall(_G.ModUpdateDisableVisualsLabel) end
+                if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+                if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+                if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+                if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+                if UpdateFOVLabel then pcall(UpdateFOVLabel) end
 
                 if _G.FloatingWordUtility then
                     _G.FloatingWordUtility.QuickMsg("Đã xóa toàn bộ cài đặt bản Mod!")
@@ -5411,10 +5455,10 @@ local function CreateModUI()
             local authWmGo = GameObject("AuthWatermarkText")
             authWmGo.transform:SetParent(authPanelGo.transform, false)
             local authWmRt = authWmGo:AddComponent(typeof(RectTransform))
-            authWmRt.anchorMin = Vector2(1, 0)
-            authWmRt.anchorMax = Vector2(1, 0)
-            authWmRt.pivot = Vector2(1, 0)
-            authWmRt.anchoredPosition = Vector2(-15, 10)
+            authWmRt.anchorMin = Vector2(0, 0)
+            authWmRt.anchorMax = Vector2(0, 0)
+            authWmRt.pivot = Vector2(0, 0)
+            authWmRt.anchoredPosition = Vector2(15, 10)
             authWmRt.sizeDelta = Vector2(200, 30)
 
             local authWmImg = authWmGo:AddComponent(typeof(Image))
@@ -5430,7 +5474,7 @@ local function CreateModUI()
             authWmTxt.text = "<i>Modded by Xoài</i>"
             authWmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
             authWmTxt.fontSize = 16
-            authWmTxt.alignment = TextAnchor.LowerRight
+            authWmTxt.alignment = TextAnchor.LowerLeft
             if defaultFont then authWmTxt.font = defaultFont end
 
             local authWmBtn = authWmGo:AddComponent(typeof(Button))
@@ -5442,6 +5486,7 @@ local function CreateModUI()
                     _G.Mod_ClearAllPlayerPrefs()
                 end
             end)
+            authWmGo.transform:SetAsLastSibling()
         end
         if not _G.Mod_IsAdmin then CreateAuthUI() end
 
@@ -5708,6 +5753,8 @@ local function CreateModUI()
             local function UpdateLabel()
                 vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
             end
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
@@ -5802,10 +5849,12 @@ local function CreateModUI()
                 else
                     bgImg.color = Color(0.3, 0.3, 0.3, 1)
                     txt.text = label .. extra
-                    txt.color = Color(0.8, 0.8, 0.8, 1)
+                    txt.color = Color.render or Color(0.8, 0.8, 0.8, 1)
                 end
             end
             UpdateLabel()
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
             if varName == "AutoPick_Enabled" then
                 _G.ModUpdateCountText = function()
@@ -5921,6 +5970,8 @@ local function CreateModUI()
                     _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
                 end
             end
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
@@ -5984,6 +6035,8 @@ local function CreateModUI()
             local function UpdateLabel()
                 vTxt.text = string.format("%s%d", prefix, _G[valueVarName])
             end
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0, _G[valueVarName] - step)
@@ -6075,6 +6128,8 @@ local function CreateModUI()
                 end
             end
             UpdateLabel()
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
@@ -9069,10 +9124,10 @@ local function CreateModUI()
         local watermarkGo = GameObject("WatermarkText")
         watermarkGo.transform:SetParent(panelGo.transform, false)
         local wmRt = watermarkGo:AddComponent(typeof(RectTransform))
-        wmRt.anchorMin = Vector2(1, 0)
-        wmRt.anchorMax = Vector2(1, 0)
-        wmRt.pivot = Vector2(1, 0)
-        wmRt.anchoredPosition = Vector2(-15, 2)
+        wmRt.anchorMin = Vector2(0, 0)
+        wmRt.anchorMax = Vector2(0, 0)
+        wmRt.pivot = Vector2(0, 0)
+        wmRt.anchoredPosition = Vector2(15, 2)
         wmRt.sizeDelta = Vector2(200, 25)
 
         local wmImg = watermarkGo:AddComponent(typeof(Image))
@@ -9088,7 +9143,7 @@ local function CreateModUI()
         wmTxt.text = "<i>Modded by Xoài</i>"
         wmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
         wmTxt.fontSize = 15
-        wmTxt.alignment = TextAnchor.LowerRight
+        wmTxt.alignment = TextAnchor.LowerLeft
         if defaultFont then wmTxt.font = defaultFont end
 
         local wmBtn = watermarkGo:AddComponent(typeof(Button))
@@ -9100,6 +9155,7 @@ local function CreateModUI()
                 _G.Mod_ClearAllPlayerPrefs()
             end
         end)
+        watermarkGo.transform:SetAsLastSibling()
 
         -- Auto-Loot DropItem Hook
         _G.LastPickupTime = _G.LastPickupTime or 0
@@ -10150,13 +10206,13 @@ if not _G.Mod_GoldenChestLoopStarted then
                     _G.Mod_GoldenChestState = "WAIT_DROP"
 
                 elseif _G.Mod_GoldenChestState == "WAIT_DROP" then
-                    PerformVacuumItems()
+                    if _G.Mod_PerformVacuumItems then _G.Mod_PerformVacuumItems() end
                     if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
                         _G.Mod_GoldenChestState = "RECYCLE"
                     end
 
                 elseif _G.Mod_GoldenChestState == "RECYCLE" then
-                    PerformBagRecycle()
+                    if _G.Mod_PerformBagRecycle then _G.Mod_PerformBagRecycle() end
                     _G.Mod_GoldenChestWaitTime = nowTime + 0.6
                     _G.Mod_GoldenChestState = "WAIT_SYNC"
 
