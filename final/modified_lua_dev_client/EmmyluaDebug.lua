@@ -4572,7 +4572,9 @@ local function CreateModUI()
                                                 return
                                             end
 
-                                            if currentTarget then
+                                            if currentTarget and currentTarget.RoleType == 1 then
+                                                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                            elseif currentTarget and (currentTarget.isDead or (currentTarget.hp and currentTarget.hp <= 0)) then
                                                 if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
                                             end
 
@@ -4674,8 +4676,8 @@ local function CreateModUI()
                                                     _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                                 end
                                             else
-                                                -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
-                                                if isMonsterNearby(15) then
+                                                -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô) hoặc đang có target Boss/Quái còn sống
+                                                if (currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 2) or isMonsterNearby(15) then
                                                     if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                                                         if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                                             _G.RoleManager.me:SetAutoFight("AutoFight")
