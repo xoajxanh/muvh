@@ -93,7 +93,7 @@ with open('D:/MUVH/android/mu-decompiled/test_apk/bundles.txt', 'r', encoding='u
 with open('D:/MUVH/android/mu-decompiled/final/new_bundles/bundles.txt', 'w', encoding='utf-8') as f:
     for line in lines:
         if line.startswith('lua.mu2|'):
-            f.write(f'lua.mu2|0|$hash|$size|172\n')
+            f.write(f'lua.mu2|0|$hash|$size|175\n')
         else:
             f.write(line)
 "
