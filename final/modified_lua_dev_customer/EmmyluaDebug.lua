@@ -2020,7 +2020,7 @@ local function CreateModUI()
                 local txt = titleGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color(1, 0.8, 0, 1)
-                txt.fontSize = 18
+                txt.fontSize = 16
                 txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
                 titleUIPool[index] = { go = titleGo, txt = txt, rt = rt }
@@ -2075,8 +2075,8 @@ local function CreateModUI()
                 local txt = txtGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color.white
-                txt.fontSize = 15
-                txt.alignment = TextAnchor.MiddleCenter
+                txt.fontSize = 16
+                txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then txt.font = defaultFont end
 
                 local btn = btnGo:AddComponent(typeof(Button))
@@ -2165,12 +2165,13 @@ local function CreateModUI()
                                 local bx = startX
                                 local uiBtn = GetLineButton(btnIdx, bx, yPos, bw, 28)
                                 uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
-                                uiBtn.txt.alignment = TextAnchor.MiddleCenter
+                                uiBtn.txt.alignment = TextAnchor.MiddleLeft
 
                                 if cfg.isExitBtn then
                                     uiBtn.txt.text =
                                     "<color=#FF5555><b>THOÁT PB</b></color> <color=#FFD700>[ Rời ]</color>"
-                                    uiBtn.txt.fontSize = 15
+                                    uiBtn.txt.alignment = TextAnchor.MiddleCenter
+                                    uiBtn.txt.fontSize = 16
                                     uiBtn.btn.onClick:RemoveAllListeners()
                                     uiBtn.btn.onClick:AddListener(function()
                                         pcall(function()
@@ -2204,7 +2205,7 @@ local function CreateModUI()
                                             local totalAlive = bossData.aliveCount[lineNum] or 0
                                             local deadList = bossData.deadTimes[lineNum] or {}
 
-                                            if totalAlive > 0 or #deadList > 0 then
+                                             if totalAlive > 0 or #deadList > 0 then
                                                 bestLine = lineNum
                                                 if totalAlive > 0 then
                                                     statusStr = "<color=#00FF00>[ xuất hiện ]</color>"
@@ -2230,7 +2231,8 @@ local function CreateModUI()
                                     end
 
                                     uiBtn.txt.text = "<b>" .. cfg.name .. "</b> " .. statusStr
-                                    uiBtn.txt.fontSize = 15
+                                    uiBtn.txt.fontSize = 16
+                                    uiBtn.txt.alignment = TextAnchor.MiddleLeft
 
                                     uiBtn.btn.onClick:RemoveAllListeners()
                                     local targetMapId = mapCfg.mapId
