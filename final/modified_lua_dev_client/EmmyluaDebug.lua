@@ -4,6 +4,10 @@
 -- EmmyluaDebug.lua
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
+-- =========================================================================
+-- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
+-- Mô tả: Khởi tạo biến toàn cục mod, phân quyền Admin/Debug, dọn dẹp file bundle cũ.
+-- =========================================================================
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsAdmin = true
 
@@ -43,6 +47,10 @@ _G.ModInitialized = true
 
 _G.ModCallbacks = {}
 
+-- =========================================================================
+-- [MOD FEATURE]: HỆ THỐNG GHI LOG FILE & DEBUG (LOGGER SYSTEM)
+-- Mô tả: Ghi log thời gian thực vào file MyModLog.txt và CS.UnityEngine.Debug.
+-- =========================================================================
 local function WriteLog(msg)
     pcall(function()
         local finalMsg = tostring(msg)
@@ -84,6 +92,10 @@ _G.WriteLog = WriteLog
 
 -- WriteLog("--- BẮT ĐẦU KHỞI TẠO HOOK MOD MENU ---")
 
+-- =========================================================================
+-- [MOD FEATURE]: KHỞI TẠO CẤU HÌNH & TRẠNG THÁI MOD (MOD CONFIG & STATE INITIALIZATION)
+-- Mô tả: Đọc và gán giá trị mặc định từ PlayerPrefs cho các toggle/setting của Mod.
+-- =========================================================================
 local function CreateModUI()
     local status, err = pcall(function()
         if _G.Mod_AutoPK_Enabled == nil then
@@ -171,6 +183,10 @@ local function CreateModUI()
             end)
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: THỐNG KÊ SĂN BOSS & ĐI MAP ẨN (FARM STATS & PERSISTENCE)
+        -- Mô tả: Lưu trữ/tải số lần đi map ẩn và số lượng boss đã tiêu diệt vào PlayerPrefs.
+        -- =========================================================================
         _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
             if not _G.Mod_FarmStats then return end
             local str = "hidden:" .. tostring(_G.Mod_FarmStats.hidden or 0)
@@ -280,6 +296,10 @@ local function CreateModUI()
             end
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: TỌA ĐỘ SPAWN & VỊ TRÍ BOSS (BOSS SPAWN POSITIONS)
+        -- Mô tả: Tra cứu danh sách tọa độ boss theo ID và ID bản đồ từ cấu hình game.
+        -- =========================================================================
         _G.GetAllBossPositions = function(bossId, mapId)
             if not bossId then return {} end
             local positions = {}
@@ -408,6 +428,10 @@ local function CreateModUI()
             return nil
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: QUÉT DANH SÁCH BOSS CÒN SỐNG (ALIVE BOSS SCANNER)
+        -- Mô tả: Lọc và trả về danh sách Boss Huyết Lâu / Hỗn Nguyên đang xuất hiện trên map.
+        -- =========================================================================
         _G.Mod_GetAliveHHBossList = function()
             local hhBosses = {}
             pcall(function()
@@ -523,6 +547,10 @@ local function CreateModUI()
             return hhBosses
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: BÁO CÁO THỐNG KÊ QUA TELEGRAM BOT (TELEGRAM NOTIFICATION)
+        -- Mô tả: Gửi dữ liệu thống kê farm boss / map ẩn qua Telegram Webhook Bot API.
+        -- =========================================================================
         _G.Mod_SendAnStatsTelegram = function()
             pcall(function()
                 if _G.Mod_AnStats_Enabled == false then return end
@@ -627,6 +655,10 @@ local function CreateModUI()
         txt.alignment = TextAnchor.MiddleCenter
         if defaultFont then txt.font = defaultFont end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: PHÍM TẮT PK NỔI (FLOATING PK SHORTCUT BUTTON)
+        -- Mô tả: Hiển thị nút nổi trên màn hình cho phép bật/tắt nhanh chế độ PK & Auto PK.
+        -- =========================================================================
         local pkBtnGo = GameObject("FloatingPKBtn")
         pkBtnGo.transform:SetParent(modRoot.transform, false)
         local pkRt = pkBtnGo:AddComponent(typeof(RectTransform))
@@ -962,6 +994,10 @@ local function CreateModUI()
         end
         _G.GetKundunTiers = GetKundunTiers
 
+        -- =========================================================================
+        -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C3-C12 (BOSS WATCHER & CONFIG)
+        -- Mô tả: Danh mục boss theo từng cấp độ chuyển sinh (c3 -> c12) và bảng theo dõi hồi sinh.
+        -- =========================================================================
         _G.Mod_MapsConfig_c3 = {
             {
                 mapId = 101094,
@@ -1775,6 +1811,10 @@ local function CreateModUI()
             end)
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (RANGE MULTIPLIER & CAMERA FOLLOW)
+        -- Mô tả: Nhân hệ số tầm đánh chiêu thức và điều chỉnh góc cam rộng (FOV/Anchor).
+        -- =========================================================================
         local function ApplyAttackRangeMultiplier(mult)
             mult = mult or _G.Mod_CustomAttackRangeMultiplier or 1.0
             pcall(function()
@@ -2114,6 +2154,10 @@ local function CreateModUI()
                 ParseBossData()
             end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
+            -- Mô tả: Tự tìm đường đến boss trong Tháp và tự động rời phụ bản khi hoàn thành.
+            -- =========================================================================
             _G.Mod_ApproachTowerBoss = function()
                 local success, result = pcall(function()
                     local me = _G.RoleManager and _G.RoleManager.me
@@ -2213,6 +2257,10 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+            -- =========================================================================
+            -- [MOD FEATURE]: LỌC TRANG BỊ & TỰ ĐỘNG NẤU / LUYỆN ĐỒ (ITEM FILTER & AUTO SMELT / RECYCLE)
+            -- Mô tả: Phân loại đồ Trác Việt theo option/bậc và tự động phân giải trang bị rác.
+            -- =========================================================================
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
                 -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
                 if subType >= 34 and subType <= 38 then
@@ -2550,6 +2598,10 @@ local function CreateModUI()
                 end
             end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: MÁY TRẠNG THÁI AUTO SĂN BOSS TOÀN DIỆN (AUTO FARM BOSS FSM)
+            -- Mô tả: FSM điều khiển tự đổi map, tìm boss, di chuyển, xả combo, chờ nhặt đồ.
+            -- =========================================================================
             _G.Mod_AutoFarmBoss_Update = function()
                 if not _G.Mod_AutoFarmBoss_Enabled then
                     if _G.Mod_AutoFarmBoss_State ~= 0 then
@@ -3642,6 +3694,10 @@ local function CreateModUI()
                 end
             end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG COMBO SKILL, CHỌN QUÁI & KHÓA MỤC TIÊU PK (AUTO COMBAT & TARGET LOCK)
+            -- Mô tả: Logic quét mục tiêu xung quanh, ưu tiên PK người chơi hoặc khóa theo tên nhân vật.
+            -- =========================================================================
             local function isMonsterNearby(range)
                 range = range or 15
                 local me = _G.RoleManager and _G.RoleManager.me
@@ -3823,125 +3879,286 @@ local function CreateModUI()
                         end
                     end
 
-                    if _G.Mod_ShowKundunHP then
-                        local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
-                        if currentSec > (_G.Mod_LastKundunHPTime or 0) then
-                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                local monsterRoles = _G.RoleManager.GetRolesByType(2)
-                                if monsterRoles then
-                                    for lid, role in pairs(monsterRoles) do
-                                        local d = role.data
-                                        if d and d.name and string.find(string.lower(d.name), "kundun") then
-                                            if role.hp and role.hp > 0 then
-                                                local maxHp = role.maxHp or role.maxHP or role.hp or 1
-                                                local rawPct = (role.hp / maxHp) * 100
-                                                local hpPct = math.max(0.01, rawPct)
-                                                local isSecretTrickActive = false
-                                                local pickLimit = tonumber(_G.AutoPick_Limit) or 2
-                                                if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                                                    local scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
-                                                    local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                                                    local isFov65 = (math.floor(fovVal + 0.5) == 65)
-                                                    isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
-                                                end
+                    -- =========================================================================
+                    -- [MOD FEATURE]: CHUỖI CHUẨN BỊ GOM ĐỒ KUNDUN & ROLLBACK 15S (KUNDUN WEAK PREP & 15S ROLLBACK)
+                    -- Mô tả: Tự động lưu snapshot, tắt PK, chuyển Hòa Bình, bật HS KC, đẩy tốc chạy 20x,
+                    --        tầm đánh 1, phát hiện địch 5, tắt tự làm mới Boss, tắt quét thông báo máu Kundun,
+                    --        tự động bật THIÊN SỨ GIÁNG THẾ khi Kundun < 0.7% máu,
+                    --        và tự động rollback sau 15s (tắt Nhặt đồ, tắt cả HS Free lẫn HS KC, bật lại thông báo máu).
+                    -- =========================================================================
+                    local function TriggerKundunWeakPrep(targetRole)
+                        if _G.Mod_KundunWeakExecuted then return end
+                        _G.Mod_KundunWeakExecuted = true
 
-                                                local bossDisplayName = isSecretTrickActive and ("[" .. tostring(d.name) .. "]") or tostring(d.name)
-                                                local msg = string.format("%s HP: %.2f%%", bossDisplayName, hpPct)
+                        -- 1. Lưu Snapshot toàn bộ cài đặt hiện tại
+                        _G.Mod_PreKundunSettingsSnapshot = {
+                            AutoPK_Enabled = _G.Mod_AutoPK_Enabled,
+                            AutoGuildPK_Enabled = _G.Mod_AutoGuildPK_Enabled,
+                            LockTarget_Enabled = _G.Mod_LockTarget_Enabled,
+                            AutoResurrect_Here = _G.Mod_AutoResurrect_Here_Enabled,
+                            AutoResurrect_Free = _G.Mod_AutoResurrect_Free_Enabled,
+                            RunSpeed = _G.RunSpeedMultiplier or 1.0,
+                            IsAutoRefresh = _G.IsAutoRefresh,
+                            ShowKundunHP = _G.Mod_ShowKundunHP,
+                            AttackRangeMult = _G.Mod_CustomAttackRangeMultiplier or 1.0,
+                            AttackRange = _G.Mod_CustomAttackRange or 0,
+                            PKMode = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.PKMode) or 0
+                        }
+
+                        -- 2. Tắt Auto PK & Auto Guild PK
+                        _G.Mod_AutoPK_Enabled = false
+                        _G.Mod_AutoGuildPK_Enabled = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
+
+                        -- 3. Chuyển PK sang Hòa Bình (param = 0)
+                        pcall(function()
+                            if _G.NetManager and _G.RoleMessage then
+                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
+                            end
+                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
+                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
+                            end
+                        end)
+
+                        -- 4. Tắt Khóa Mục Tiêu
+                        _G.Mod_LockTarget_Enabled = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
+
+                        -- 5. Bật Hồi Sinh Kim Cương (tại chỗ)
+                        _G.Mod_AutoResurrect_Here_Enabled = true
+                        _G.Mod_AutoResurrect_Free_Enabled = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
+
+                        -- 6. Tăng Tốc Chạy lên MAX 20.0x
+                        _G.RunSpeedMultiplier = 20.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 20.0)
+
+                        -- 7. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
+                        _G.IsAutoRefresh = false
+                        _G.Mod_ShowKundunHP = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoRefresh", 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_ShowKundunHP", 0)
+
+                        -- 8. Chuyển Tầm Đánh về 1.0 và Phát Hiện Địch về 5
+                        _G.Mod_CustomAttackRangeMultiplier = 1.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
+                        if _G.Mod_ApplyAttackRangeMultiplier then
+                            _G.Mod_ApplyAttackRangeMultiplier(1.0)
+                        end
+
+                        _G.Mod_CustomAttackRange = 5
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
+
+                        -- 9. TỰ ĐỘNG BẬT THIÊN SỨ GIÁNG THẾ (ARCHANGEL TRANSFORMATION)
+                        pcall(function()
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local meData = _G.ViewData and _G.ViewData.meData
+                            local angelSkillId = 10200301
+
+                            if me and me.skills and me.skills[10200300] then
+                                local sk = me.skills[10200300]
+                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
+                            elseif meData and meData.skills and meData.skills[10200300] then
+                                local sk = meData.skills[10200300]
+                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
+                            elseif _G.SkillData and _G.SkillData.careerSkillInfos then
+                                for _, sk in pairs(_G.SkillData.careerSkillInfos) do
+                                    if sk and sk.groupId == 10200300 then
+                                        angelSkillId = sk.id or angelSkillId
+                                        break
+                                    end
+                                end
+                            end
+
+                            if me then
+                                local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                                local myId = (me.data and me.data.id) or me.id or 0
+
+                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
+                                    _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
+                                        skillId = angelSkillId,
+                                        targetId = myId,
+                                        x = coord.x or 0,
+                                        y = coord.y or 0,
+                                        position = 0
+                                    })
+                                end
+                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
+                                    _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
+                                        skillId = angelSkillId,
+                                        targetId = myId,
+                                        x = coord.x or 0,
+                                        y = coord.y or 0,
+                                        position = 0
+                                    })
+                                end
+                                if _G.SkillMgr and _G.SkillMgr.ReqCastSkill then
+                                    _G.SkillMgr.ReqCastSkill(angelSkillId, myId, coord, 0)
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                    _G.QiJiHelperData.SetPressSkill(angelSkillId)
+                                end
+                                if me.StartPressSkillAutoFight then
+                                    me:StartPressSkillAutoFight()
+                                end
+                            end
+                        end)
+
+                        -- 10. Chuyển Auto Fight & Target vào Kundun nếu có targetRole
+                        if targetRole then
+                            pcall(function()
+                                if _G.RoleManager and _G.RoleManager.me then
+                                    if _G.RoleManager.me.SetTarget then
+                                        _G.RoleManager.me:SetTarget(targetRole)
+                                    end
+                                    _G.RoleManager.me.TargetAvatar = targetRole
+                                    if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                        _G.RoleManager.me:SetAutoFight("AutoFight")
+                                    end
+                                end
+                                if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
+                                    _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                    _G.QiJiHelperData.SetAutoFightData(true)
+                                end
+                            end)
+                        end
+
+                        -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O)
+                        pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
+
+                        -- Cập nhật tất cả UI
+                        if _G.Mod_AllUIUpdaters then
+                            for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                        end
+                        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+                        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+                        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+                        if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
+
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg("[KUNDUN < 0.7%] BẬT THIÊN SỨ, TỐC 20x, HÒA BÌNH, HS KC! (ROLLBACK SAU 15S)")
+                        end
+                        if _G.WriteLog then
+                            _G.WriteLog("[KUNDUN < 0.7%] Đã kích hoạt Thiên Sứ Giáng Thế & chuỗi chuẩn bị gom đồ siêu tốc (Rollback sau 15s)")
+                        end
+
+                        -- 11. Đặt hẹn giờ Rollback tự động sau 15s
+                        _G.Mod_KundunRollbackTime = (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) + 15.0
+                    end
+
+                    -- Kiểm tra Rollback tự động sau 15s (Hết phiên săn Kundun)
+                    if _G.Mod_KundunRollbackTime and (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) >= _G.Mod_KundunRollbackTime then
+                        _G.Mod_KundunRollbackTime = nil
+                        if _G.Mod_PreKundunSettingsSnapshot then
+                            local snap = _G.Mod_PreKundunSettingsSnapshot
+                            _G.Mod_AutoPK_Enabled = snap.AutoPK_Enabled or false
+                            _G.Mod_AutoGuildPK_Enabled = snap.AutoGuildPK_Enabled or false
+                            _G.Mod_LockTarget_Enabled = snap.LockTarget_Enabled or false
+
+                            -- Hết phiên: Tắt cả HS KC lẫn HS Free
+                            _G.Mod_AutoResurrect_Here_Enabled = false
+                            _G.Mod_AutoResurrect_Free_Enabled = false
+
+                            -- Hết phiên: Tắt Tự Động Nhặt
+                            _G.AutoPick_Enabled = false
+
+                            _G.RunSpeedMultiplier = snap.RunSpeed or 1.0
+                            _G.IsAutoRefresh = snap.IsAutoRefresh or false
+                            _G.Mod_ShowKundunHP = (snap.ShowKundunHP ~= nil) and snap.ShowKundunHP or true
+                            _G.Mod_CustomAttackRangeMultiplier = snap.AttackRangeMult or 1.0
+                            _G.Mod_CustomAttackRange = snap.AttackRange or 0
+
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", _G.Mod_AutoGuildPK_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", _G.Mod_LockTarget_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 0)
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", _G.RunSpeedMultiplier)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoRefresh", _G.IsAutoRefresh and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_ShowKundunHP", _G.Mod_ShowKundunHP and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", _G.Mod_CustomAttackRangeMultiplier)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", _G.Mod_CustomAttackRange)
+                            pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
+
+                            if _G.Mod_ApplyAttackRangeMultiplier then
+                                _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+                            end
+                            if snap.PKMode and snap.PKMode ~= 0 then
+                                pcall(function()
+                                    if _G.NetManager and _G.RoleMessage then
+                                        _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = snap.PKMode })
+                                    end
+                                end)
+                            end
+
+                            if _G.Mod_AllUIUpdaters then
+                                for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                            end
+                            if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+                            if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+                            if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+                            if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                            if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
+
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("HẾT PHIÊN KUNDUN (15S): TẮT NHẶT ĐỒ, TẮT HỒI SINH & PHỤC HỒI CÀI ĐẶT!")
+                            end
+                            if _G.WriteLog then
+                                _G.WriteLog("Hết phiên săn Kundun sau 15s: Đã tắt Nhặt đồ, tắt Hồi sinh và phục hồi cài đặt.")
+                            end
+                            _G.Mod_PreKundunSettingsSnapshot = nil
+                        end
+                    end
+
+                    -- Giám sát Máu Kundun
+                    local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
+                    if currentSec > (_G.Mod_LastKundunHPTime or 0) then
+                        _G.Mod_LastKundunHPTime = currentSec + 1
+                        local kundunFound = false
+
+                        if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                            if monsterRoles then
+                                for lid, role in pairs(monsterRoles) do
+                                    local d = role.data
+                                    if d and d.name and string.find(string.lower(d.name), "kundun") then
+                                        if role.hp and role.hp > 0 then
+                                            kundunFound = true
+                                            local maxHp = role.maxHp or role.maxHP or role.hp or 1
+                                            local rawPct = (role.hp / maxHp) * 100
+                                            local hpPct = math.max(0.01, rawPct)
+
+                                            if _G.Mod_ShowKundunHP then
+                                                local msg = string.format("[%s] HP: %.2f%%", tostring(d.name), hpPct)
                                                 if not _G.AutoPick_Enabled then
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
-                                                if isSecretTrickActive and rawPct <= 0.5 and pickLimit == 7 then
-                                                    if not _G.Mod_KundunWeakExecuted then
-                                                        _G.Mod_KundunWeakExecuted = true
+                                            end
 
-                                                        -- 1. TẮT AUTO PK & AUTO PK GUILD
-                                                        if _G.Mod_AutoPK_Enabled then
-                                                            _G.Mod_AutoPK_Enabled = false
-                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
-                                                            if _G.ModUpdateFloatingPKBtn then
-                                                                pcall(_G.ModUpdateFloatingPKBtn)
-                                                            end
-                                                            if _G.UpdateCoBanUIText then _G.UpdateCoBanUIText() end
-                                                        end
-                                                        if _G.Mod_AutoGuildPK_Enabled then
-                                                            _G.Mod_AutoGuildPK_Enabled = false
-                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
-                                                        end
-
-                                                        -- 2. TẮT KHÓA MỤC TIÊU
-                                                        if _G.Mod_LockTarget_Enabled then
-                                                            _G.Mod_LockTarget_Enabled = false
-                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
-                                                            if _G.ModUpdateLockLabel then
-                                                                pcall(_G.ModUpdateLockLabel)
-                                                            end
-                                                        end
-
-                                                        -- 3. BẬT HỒI SINH KIM CƯƠNG (HS KC)
-                                                        if not _G.Mod_AutoResurrect_Here_Enabled then
-                                                            _G.Mod_AutoResurrect_Here_Enabled = true
-                                                            _G.Mod_AutoResurrect_Free_Enabled = false
-                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
-                                                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
-                                                            if _G.ModUpdateResurrectVisuals then
-                                                                pcall(_G.ModUpdateResurrectVisuals)
-                                                            end
-                                                        end
-
-                                                        -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O flash bộ nhớ Android)
-                                                        pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
-
-                                                        -- 4. CHUYỂN PK VỀ HÒA BÌNH (PARAM = 0)
-                                                        pcall(function()
-                                                            if _G.NetManager and _G.RoleMessage then
-                                                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
-                                                            end
-                                                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
-                                                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
-                                                            end
-                                                        end)
-
-                                                        -- 5. CHUYỂN SANG AUTO FIGHT & TARGET VÀO KUNDUN
-                                                        pcall(function()
-                                                            if _G.RoleManager and _G.RoleManager.me then
-                                                                if _G.RoleManager.me.SetTarget then
-                                                                    _G.RoleManager.me:SetTarget(role)
-                                                                end
-                                                                _G.RoleManager.me.TargetAvatar = role
-                                                                if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
-                                                                    _G.RoleManager.me:SetAutoFight("AutoFight")
-                                                                end
-                                                            end
-                                                            if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
-                                                                _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
-                                                            end
-                                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                                _G.QiJiHelperData.SetAutoFightData(true)
-                                                            end
-                                                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
-                                                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
-                                                            end
-                                                        end)
-
-                                                        if _G.FloatingWordUtility then
-                                                            _G.FloatingWordUtility.QuickMsg("KUNDUN YẾU - TẮT PK, KHÓA MT, VỀ HÒA BÌNH, BẬT HS KC & AUTO FIGHT!")
-                                                        end
-                                                    end
-                                                else
-                                                    if rawPct > 0.5 then
-                                                        _G.Mod_KundunWeakExecuted = false
-                                                    end
-                                                end
-                                                break
-                                            else
+                                            -- Kích hoạt chuẩn bị khi Kundun < 0.7% máu (Cho Admin & Limit >= 16)
+                                            if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and rawPct <= 0.69 then
+                                                TriggerKundunWeakPrep(role)
+                                            elseif rawPct > 0.7 then
                                                 _G.Mod_KundunWeakExecuted = false
                                             end
+                                            break
+                                        else
+                                            _G.Mod_KundunWeakExecuted = false
                                         end
                                     end
                                 end
                             end
-                            _G.Mod_LastKundunHPTime = currentSec + 1
+                        end
+
+                        if not kundunFound then
+                            _G.Mod_KundunWeakExecuted = false
                         end
                     end
 
@@ -4047,6 +4264,32 @@ local function CreateModUI()
                                         end
                                     end
                                 end)
+                            end
+                        end
+                    end
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT SPAMMER)
+                    -- Mô tả: Spam nhịp 0.05s/lần trong 2.0s (tổng 40 lần) bắn ReqPickUpMapItem
+                    --        và MoveTo(x, y) quét sạch mọi ô đồ rơi với tốc độ 20x.
+                    -- =========================================================================
+                    if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and _G.Mod_AdminBurstDropItems then
+                        local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+                        for itemId, itemInfo in pairs(_G.Mod_AdminBurstDropItems) do
+                            if nowRealtime > (itemInfo.expireTime or 0) or (itemInfo.count or 0) >= 40 then
+                                _G.Mod_AdminBurstDropItems[itemId] = nil
+                            elseif nowRealtime >= (itemInfo.nextTick or 0) then
+                                itemInfo.nextTick = nowRealtime + 0.05
+                                itemInfo.count = (itemInfo.count or 0) + 1
+
+                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                    _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+                                end
+                                if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
+                                    pcall(function()
+                                        _G.RoleManager.me:MoveTo({ x = itemInfo.x, y = itemInfo.y }, 0)
+                                    end)
+                                end
                             end
                         end
                     end
@@ -4878,6 +5121,10 @@ local function CreateModUI()
 
         local _lastAuthCheckTime = 0
         local _cachedAuthResult = false
+        -- =========================================================================
+        -- [MOD FEATURE]: HỆ THỐNG XÁC THỰC BẢN QUYỀN / KEY MOD (AUTH & LICENSE SYSTEM)
+        -- Mô tả: Kiểm tra mã bản quyền token, xóa sạch cấu hình nếu hết hạn hoặc chưa kích hoạt.
+        -- =========================================================================
         _G.Mod_IsActive = function()
             if _G.Mod_IsAdmin then return true end
             local now = CS.UnityEngine.Time.realtimeSinceStartup or os.time()
@@ -5012,6 +5259,10 @@ local function CreateModUI()
         end
         _G.Mod_ClearAllPlayerPrefs = _G.Mod_ClearAuthToken
 
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN NHẬP KEY XÁC THỰC (AUTH UI)
+        -- Mô tả: Giao diện popup yêu cầu nhập mã kích hoạt khi người dùng chưa xác thực.
+        -- =========================================================================
         local function CreateAuthUI()
             local authPanelGo = GameObject("AuthPanel")
             authPanelGo.transform:SetParent(modRoot.transform, false)
@@ -5698,6 +5949,10 @@ local function CreateModUI()
         _G.AutoPick_Count = 0
         _G.Mod_PickedItems = {}
 
+        -- =========================================================================
+        -- [MOD FEATURE]: BỘ THÀNH PHẦN WIDGET GIAO DIỆN DÙNG CHUNG (UI CONTROLS & WIDGETS)
+        -- Mô tả: Các hàm helper sinh nút bấm, thanh chỉnh số, checkbox cho UI Mod.
+        -- =========================================================================
         local function CreateSpeedControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
             local valGo = GameObject(valueVarName .. "_Val")
@@ -5763,7 +6018,8 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
+                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 20.0 or 5.0) or 10.0
+                _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -5775,7 +6031,8 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
+                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 20.0 or 5.0) or 10.0
+                _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
@@ -6140,6 +6397,10 @@ local function CreateModUI()
             end)
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN TAB NHẶT ĐỒ SIÊU TỐC (AUTO LOOT UI & VACUUM PICK)
+        -- Mô tả: Giao diện tab Nhặt Đồ Siêu Tốc, tốc độ hút đồ, lọc rune, v.v.
+        -- =========================================================================
         local function CreateAutoLootUI()
             local currentY = -65
             local rightColX = 20
@@ -6646,6 +6907,10 @@ local function CreateModUI()
         end
         _G.Mod_AutoFarmBoss_Config = _G.Mod_AutoFarmBoss_Config or {}
 
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN TAB AUTO SĂN BOSS & LUYỆN ĐỒ (AUTO BOSS & SMELT CONFIG UI)
+        -- Mô tả: Giao diện tab Auto Boss, chọn boss theo tầng, bảng giữ đồ Trác Việt.
+        -- =========================================================================
         local function CreateAutoBossUI()
             local startX = 20
 
@@ -7674,6 +7939,10 @@ local function CreateModUI()
         end
         CreateAutoBossUI()
 
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN TAB KUNDUN, HỒI SINH & VỀ VỊ TRÍ (KUNDUN & AUTO RESURRECT UI)
+        -- Mô tả: Giao diện tab Kundun, cấu hình tự động hồi sinh (miễn phí/tại chỗ), tự chạy lại bãi cắm.
+        -- =========================================================================
         local function CreateKundunUI()
             local currentY = -65
             local rightColX2 = 440
@@ -8270,6 +8539,10 @@ local function CreateModUI()
 
         CreateKundunUI()
 
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN TAB QUẢN TRỊ VIÊN & TẠO KEY (ADMIN PANEL UI)
+        -- Mô tả: Giao diện tab Quản Trị Viên dành cho Admin tạo key mới, xóa key, xem danh sách key.
+        -- =========================================================================
         local function CreateAdminUI()
             local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
             local function Base64Encode(data)
@@ -9233,6 +9506,41 @@ local function CreateModUI()
 
                     local delaySec = delayMs / 1000.0
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT)
+                    -- Mô tả: Kích hoạt khi Mod_IsAdmin == true và AutoPick_Limit >= 16.
+                    --        Đưa item vào danh sách burst 40 lần (0.05s/lần) kèm MoveTo và gửi gói ngay.
+                    -- =========================================================================
+                    if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and logPrefix ~= "KTĐ" then
+                        _G.Mod_AdminBurstDropItems = _G.Mod_AdminBurstDropItems or {}
+                        _G.Mod_AdminBurstDropItems[dropItemData.id] = {
+                            id = dropItemData.id,
+                            x = dropItemData.x,
+                            y = dropItemData.y,
+                            count = 1,
+                            startTime = nowTime,
+                            expireTime = nowTime + 2.0,
+                            nextTick = nowTime + 0.05
+                        }
+
+                        -- Bắn tức thì gói nhặt & MoveTo ngay frame đầu tiên
+                        if _G.PickupManager then
+                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
+                        end
+                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                            pcall(function()
+                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y }, 0)
+                            end)
+                        end
+
+                        if _G.WriteLog then
+                            _G.WriteLog(string.format(
+                                "[AdminSuperBurst] Bắt đầu Bão Nhặt 40 lần (0.05s/lần) cho Item ObjID=%s tại (%s, %s)",
+                                tostring(dropItemData.id), tostring(dropItemData.x), tostring(dropItemData.y)))
+                        end
+                        return
+                    end
+
                     if _G.AutoPick_Mode == nil then
                         _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
                         if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
@@ -9945,6 +10253,10 @@ local function CreateModUI()
             end
 
             -- 14. Hàm áp dụng trạng thái trực tiếp & kích hoạt Timer giám sát liên tục
+            -- =========================================================================
+            -- [MOD FEATURE]: TỐI ƯU ĐỒ HỌA & ẨN HIỆU ỨNG (DISABLE VISUALS & FPS BOOST)
+            -- Mô tả: Tắt hiển thị model nhân vật/quái/cánh/skill để giảm tải GPU/CPU khi cắm máy.
+            -- =========================================================================
             _G.Mod_ApplyDisableVisualsState = function()
                 pcall(function()
                     local isOff = _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()
@@ -10067,6 +10379,10 @@ if _G.RoleManager and not _G.Mod_HookedRoleManager_Monster then
     -- Removed faulty CreateMonster hook. Boss logic moved to Timer.
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: BYPASS KIỂM TRA PHỤ BẢN (INSTANCE ENTRY BYPASS)
+-- Mô tả: Can thiệp hàm điều hướng vào các phụ bản phó bản.
+-- =========================================================================
 _G.Mod_BypassInstanceEnter = function(self, control, originalFunc, uiid)
     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
         if originalFunc then originalFunc(self, control) end
@@ -10130,6 +10446,10 @@ _G.Mod_GoldenChestBatchIds = {}
 
 -- PerformVacuumItems và PerformBagRecycle được định nghĩa tại _G.Mod_PerformVacuumItems / _G.Mod_PerformBagRecycle
 
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MỞ & PHÂN LOẠI RƯƠNG VÀNG (GOLDEN CHEST AUTOMATION)
+-- Mô tả: Tự động mở số lượng lớn Rương Vàng theo đợt và tự nấu trang bị rác.
+-- =========================================================================
 _G.Mod_ExecuteGoldenChestAutoProcess = function()
     _G.Mod_GoldenChestState = "OPEN"
     _G.Mod_GoldenChestWaitTime = 0

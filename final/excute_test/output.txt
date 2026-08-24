@@ -1,106 +1,124 @@
+=== BẮT ĐẦU SOI KỸ NĂNG NHÂN VẬT & TEST THIÊN SỨ ===
 ==================================================
-=== QUÉT VÀ DẬP TẮT TẤT CẢ HIỆU ỨNG 3D TRÊN SÂN ===
+>>> 1. QUÉT TOÀN BỘ SKILL TRONG TÀI KHOẢN HIỆN TẠI <<<
 ==================================================
-Tổng số ParticleSystem tìm thấy trong scene: 82
-Danh sách các cụm hiệu ứng ParticleSystem đang active vừa bị tắt:
- [1] SceneEffectRoot/1/2_guangxin (x1)
- [2] SceneEffectRoot/1/126_wenli02_an (x1)
- [3] Dynamic/shitou /kuosan (x1)
- [4] SceneEffectRoot/0/13_chilun_beijing02 (x1)
- [5] RoleManager/Eff_ArmorMale229_qiji1_02_04/huo (x1)
- [6] SceneEffectRoot/shi/323_fire03_liang (x1)
- [7] SceneEffectRoot/2/glow (x1)
- [8] Dynamic/shanquanwuqi/shuihua (x1)
- [9] Dynamic/kalima_lanhuo/Particle System (x9)
- [10] Dynamic/Eff_Scene_1025luoshi/shitou  (x2)
- [11] SceneEffectRoot/2/3smoke (x1)
- [12] SceneEffectRoot/shi/350_banyuan (x1)
- [13] SceneEffectRoot/shi/420_aeroliteglow02 (x1)
- [14] SceneEffectRoot/2/50wenli (x1)
- [15] SceneEffectRoot/1/15_chilun (x1)
- [16] RoleManager/Sword63/xian (x2)
- [17] RoleManager/Sword63/lizi (x2)
- [18] RoleManager/Eff_ArmorMale229_qiji1_02_04/lizi (x1)
- [19] RoleManager/Bip01 Spine/lizi (x1)
- [20] Main/Eff_UI_nengliangcao/pipao (x1)
- [21] SceneEffectRoot/2/3_dilie (x1)
- [22] SceneEffectRoot/1/126_wenli01 (x1)
- [23] RoleManager/Eff_Scene_shengji/kuosan (x1)
- [24] RoleManager/Sword63/xue (x2)
- [25] Main/1/golow02 (x1)
- [26] Main/2/xian (x1)
- [27] SceneEffectRoot/Bone007/lizi (x1)
- [28] Main/2/lizi (x1)
- [29] Main/Eff_UI_anniutishi04/lizi (x1)
- [30] SceneEffectRoot/1/20_luomashuzi (x1)
- [31] SceneEffectRoot/2/shandian02 (x1)
- [32] Main/0/golow (x1)
- [33] RoleManager/Eff_chibang_lizi02/lizi (x1)
- [34] SceneEffectRoot/0/1_glow (x1)
- [35] RoleManager/Eff_G_shouhuzhiguang_02/yuanhuan (1) (x1)
- [36] SceneEffectRoot/2/wenli (x1)
- [37] SceneEffectRoot/shi/115_trail01 (x1)
- [38] RoleManager/Eff_Scene_shengji/yuanzhu (x1)
- [39] RoleManager/Sword63/glow_02 (x2)
- [40] RoleManager/Bip01 Spine/trail (x1)
- [41] SceneEffectRoot/0/huoyan (x1)
- [42] RoleManager/Wing102/lizi (x1)
- [43] SceneEffectRoot/0/baodian (x1)
- [44] SceneEffectRoot/shitou/yan (x1)
- [45] RoleManager/Wing102/lizi (1) (x1)
- [46] RoleManager/Eff_chibang_glow/glow (x1)
- [47] SceneEffectRoot/0/13_chilun_beijing (x1)
- [48] SceneEffectRoot/0/15_xian (x1)
- [49] SceneEffectRoot/2/bo (x1)
- [50] SceneEffectRoot/2/3_dilie02 (x1)
- [51] RoleManager/Eff_chibang_luoxuan/luoxuan (x1)
- [52] RoleManager/Eff_chibang_glow/glow02 (x1)
- [53] SceneEffectRoot/0/150_glow01 (x1)
- [54] RoleManager/Eff_chibang_glow/glow03 (x1)
- [55] SceneEffectRoot/0/biaopan (x1)
- [56] SceneEffectRoot/0/5lizi (1) (x1)
- [57] SceneEffectRoot/2/lizi (x1)
- [58] RoleManager/Eff_F_shouhuzhihun/yuanhuan (x1)
- [59] Main/Eff_UI_anniutishi04/huo (x1)
- [60] SceneEffectRoot/Bone007/glow (x1)
- [61] Dynamic/Huanshuyuan_shui/shui (x6)
- [62] SceneEffectRoot/1/shitou (x1)
- [63] SceneEffectRoot/0/11_fenzhen (x1)
-
-Tổng số MeshRenderer tìm thấy trong scene: 425
-Danh sách các MeshRenderer hiệu ứng vừa bị tắt:
- [1] Dynamic/mesh25 (x12)
- [2] Dynamic/mesh12 (x9)
- [3] Dynamic/mesh18 (x11)
- [4] Dynamic/mesh10 (x13)
- [5] Dynamic/mesh0 (x3)
- [6] Dynamic/mesh21 (x17)
- [7] Dynamic/mesh17 (x15)
- [8] Dynamic/mesh23 (x6)
- [9] Dynamic/mesh43 (x1)
- [10] RoleManager/SpriteMesh-shieldbg (x5)
- [11] Dynamic/mesh22 (x12)
- [12] Dynamic/mesh15 (x5)
- [13] Dynamic/mesh14 (x14)
- [14] RoleManager/Mesher001 (x1)
- [15] RoleManager/Mesher002 (x1)
- [16] Dynamic/mesh40 (x7)
- [17] RoleManager/SpriteMesh-shield (x5)
- [18] RoleManager/SpriteMesh-hp (x6)
- [19] Dynamic/mesh20 (x4)
- [20] SceneEffectRoot/yuanshi (x1)
- [21] Dynamic/mesh19 (x19)
- [22] Dynamic/mesh26 (x9)
- [23] Dynamic/mesh30 (x1)
- [24] Dynamic/mesh42 (x9)
- [25] SceneEffectRoot/ModEff_Plane (x1)
- [26] Dynamic/mesh5 (x6)
- [27] Dynamic/mesh4 (x74)
- [28] Dynamic/mesh36 (x7)
- [29] Dynamic/mesh28 (x9)
- [30] Dynamic/mesh2 (x3)
- [31] RoleManager/SpriteMesh-hpbg (x6)
- [32] Dynamic/mesh35 (x9)
- [33] Dynamic/mesh31 (x3)
- [34] Dynamic/mesh1 (x20)
- [35] Dynamic/mesh8 (x7)
+Nhân vật: BoyK (ID: 5944968961162558483) | Tọa độ: (145, 118)
+--- A. ViewData.meData.skills ---
+  [Skill] Key=33160000 | ID=33160150 | Group=33160000 | Tên=Kháng DMG Tấn Công Đôi
+  [Skill] Key=10320001 | ID=10320008 | Group=10320001 | Tên=Dược Thần Lv8
+  [Skill] Key=51410500 | ID=51410504 | Group=51410500 | Tên=Mất HP sẽ tăng Kỹ Năng DMG
+  [Skill] Key=20221000 | ID=20221005 | Group=20221000 | Tên=Thánh Hồn Thiên Sứ-Phá Khiên 5
+  [Skill] Key=410700 | ID=410701 | Group=410700 | Tên=Cực Hạn
+  [Skill] Key=13601038 | ID=13601038 | Group=13601038 | Tên=Huỳnh Thạch (Hỏa)
+  [Skill] Key=33050000 | ID=33050004 | Group=33050000 | Tên=Giới hạn Hộ Khiên SD tăng
+  [Skill] Key=410100 | ID=410109 | Group=410100 | Tên=Tỉ lệ tấn công thành công tăng thêm
+  [Skill] Key=14150100 | ID=14150110 | Group=14150100 | Tên=Ma Hồn Thủ Hộ
+  [Skill] Key=14040100 | ID=14040108 | Group=14040100 | Tên=Sét Đánh
+  [Skill] Key=12140100 | ID=12140110 | Group=12140100 | Tên=Cực Quang
+  [Skill] Key=10300001 | ID=10300008 | Group=10300001 | Tên=Thủ Hộ Lv8
+  [Skill] Key=51410200 | ID=51410204 | Group=51410200 | Tên=Tăng phạm vi DMG lan Nổ Lửa
+  [Skill] Key=12221000 | ID=12221001 | Group=12221000 | Tên=Sao Băng Diệt Thế: Nhận Lực Nham Thú, khi tấn công có 0.69% xác suất triệu hồi 4 lần Thiên Thạch: Oanh kích ngẫu nhiên kẻ địch trong phạm vi 5x5 phía trước, mỗi Thiên Thạch gây DMG diện rộng bằng 100% Tấn Công, đồng thời gây 50% giảm tốc, duy trì 0.5s. Cấp Kỹ Năng hiện tại
+  [Skill] Key=12370000 | ID=12370003 | Group=12370000 | Tên=Vòng Thời Không Lv3
+  [Skill] Key=13001000 | ID=13001000 | Group=13001000 | Tên=Né Tránh Vô Hạn
+  [Skill] Key=411100 | ID=411101 | Group=411100 | Tên=Ám Bạo Viêm
+  [Skill] Key=10000500 | ID=10000501 | Group=10000500 | Tên=Tấn công thường (Hai tay)
+  [Skill] Key=14050100 | ID=14050106 | Group=14050100 | Tên=Đột Kích Bóng Đêm
+  [Skill] Key=12080100 | ID=12080106 | Group=12080100 | Tên=Đóng băng
+  [Skill] Key=33020000 | ID=33020120 | Group=33020000 | Tên=Công Tốc tăng
+  [Skill] Key=13603041 | ID=13603041 | Group=13603041 | Tên=Huỳnh Thạch (Băng)
+  [Skill] Key=12160100 | ID=12160110 | Group=12160100 | Tên=Nổ Lửa
+  [Skill] Key=13002000 | ID=13002000 | Group=13002000 | Tên=Mãnh Kích Siêu Cấp
+  [Skill] Key=10000100 | ID=10000101 | Group=10000100 | Tên=Tấn công thường
+  [Skill] Key=10000200 | ID=10000201 | Group=10000200 | Tên=Tấn công thường (Vũ khí cán ngắn)
+  [Skill] Key=33070000 | ID=33070120 | Group=33070000 | Tên=Tăng DMG lên Kiếm Sĩ
+  [Skill] Key=10200400 | ID=10200401 | Group=10200400 | Tên=Ánh Sáng Đại Thiên Sứ Lv1
+  [Skill] Key=84009000 | ID=84009008 | Group=84009000 | Tên=Cường Hóa Cực Quang
+  [Skill] Key=17010100 | ID=17010113 | Group=17010100 | Tên=Kỹ Năng Đỡ Tinh Hạch 13
+  [Skill] Key=33080000 | ID=33080120 | Group=33080000 | Tên=Giảm DMG lên Kiếm Sĩ
+  [Skill] Key=10040100 | ID=10040101 | Group=10040100 | Tên=Liên Kích Kỹ
+  [Skill] Key=10200300 | ID=10200305 | Group=10200300 | Tên=Thiên Sứ Giáng Thế Lv5
+  [Skill] Key=410400 | ID=410402 | Group=410400 | Tên=Bỏng
+  [Skill] Key=10200100 | ID=10200106 | Group=10200100 | Tên=Đại Thiên Sứ Phù Hộ Lv6
+  [Skill] Key=34011800 | ID=34011801 | Group=34011800 | Tên=Thánh Hồn Thiên Sứ-Gai 1
+  [Skill] Key=33190000 | ID=33190120 | Group=33190000 | Tên=Tăng DMG lên Ma Kiếm Sĩ
+  [Skill] Key=10310001 | ID=10310008 | Group=10310001 | Tên=Trác Việt Lv8
+  [Skill] Key=84005000 | ID=84005008 | Group=84005000 | Tên=Tinh Thông Chiến Đấu
+  [Skill] Key=13602035 | ID=13602035 | Group=13602035 | Tên=Huỳnh Thạch (Thủy)
+  [Skill] Key=12050100 | ID=12050106 | Group=12050100 | Tên=Sét Bàn Tay
+  [Skill] Key=33110000 | ID=33110120 | Group=33110000 | Tên=Tăng DMG lên Cung Thủ
+  [Skill] Key=410500 | ID=410506 | Group=410500 | Tên=Thuộc tính trí lực tăng
+  [Skill] Key=84006000 | ID=84006007 | Group=84006000 | Tên=Đòn Đánh Xuyên Thấu
+  [Skill] Key=13003000 | ID=13003000 | Group=13003000 | Tên=Tận Thế Vô Tận
+  [Skill] Key=10000300 | ID=10000301 | Group=10000300 | Tên=Tấn công thường (Vũ khí cán dài)
+  [Skill] Key=12070100 | ID=12070101 | Group=12070100 | Tên=Thiên Thạch
+  [Skill] Key=12151000 | ID=12151001 | Group=12151000 | Tên=Bạo Phong Ma Hạt: Khi tấn công có 3% triệu hồi Bạo Phong Ma Hạt, Ma Hạt sau khi tụ lực sẽ thi triển phong bạo về phía trước, gây 50% giảm tốc và giảm tỉ lệ chính xác của người chơi, duy trì 3s. Phong bạo mỗi 0.5s gây cho kẻ địch lượng DMG bỏ qua phòng ngự bằng 55% Tấn Công. Cấp Kỹ Năng hiện tại
+  [Skill] Key=84007000 | ID=84007007 | Group=84007000 | Tên=Hơi Thở Phục Sinh
+  [Skill] Key=84008000 | ID=84008008 | Group=84008000 | Tên=Bảo Hộ Cực Tốc
+  [Skill] Key=12171000 | ID=12171001 | Group=12171000 | Tên=<color=#e6e600>Bất Diệt Long Viêm: </color><color=#0080FF>Khi tấn công có 2% triệu hồi Tử Viêm Long Hồn xung kích phía trước, gây cho đơn vị trên đường lượng DMG bằng 190% Tấn Công, đồng thời để lại Bất Diệt Long Viêm duy trì 3s, kẻ địch trên đó sẽ chịu DMG duy trì bằng 80% Tấn Công và 50% giảm tốc.</color>Cấp Kỹ Năng hiện tại
+  [Skill] Key=33200000 | ID=33200120 | Group=33200000 | Tên=Giảm DMG lên Ma Kiếm Sĩ
+--- B. SkillData.careerSkillInfos ---
+  (Không có dữ liệu SkillData.careerSkillInfos)
+--- C. RoleManager.me.skills ---
+  [MeSkill] Key=33160000 | ID=33160150 | Tên=Kháng DMG Tấn Công Đôi
+  [MeSkill] Key=10320001 | ID=10320008 | Tên=Dược Thần Lv8
+  [MeSkill] Key=51410500 | ID=51410504 | Tên=Mất HP sẽ tăng Kỹ Năng DMG
+  [MeSkill] Key=20221000 | ID=20221005 | Tên=Thánh Hồn Thiên Sứ-Phá Khiên 5
+  [MeSkill] Key=410700 | ID=410701 | Tên=Cực Hạn
+  [MeSkill] Key=13601038 | ID=13601038 | Tên=Huỳnh Thạch (Hỏa)
+  [MeSkill] Key=33050000 | ID=33050004 | Tên=Giới hạn Hộ Khiên SD tăng
+  [MeSkill] Key=410100 | ID=410109 | Tên=Tỉ lệ tấn công thành công tăng thêm
+  [MeSkill] Key=14150100 | ID=14150110 | Tên=Ma Hồn Thủ Hộ
+  [MeSkill] Key=14040100 | ID=14040108 | Tên=Sét Đánh
+  [MeSkill] Key=12140100 | ID=12140110 | Tên=Cực Quang
+  [MeSkill] Key=10300001 | ID=10300008 | Tên=Thủ Hộ Lv8
+  [MeSkill] Key=51410200 | ID=51410204 | Tên=Tăng phạm vi DMG lan Nổ Lửa
+  [MeSkill] Key=12221000 | ID=12221001 | Tên=Sao Băng Diệt Thế: Nhận Lực Nham Thú, khi tấn công có 0.69% xác suất triệu hồi 4 lần Thiên Thạch: Oanh kích ngẫu nhiên kẻ địch trong phạm vi 5x5 phía trước, mỗi Thiên Thạch gây DMG diện rộng bằng 100% Tấn Công, đồng thời gây 50% giảm tốc, duy trì 0.5s. Cấp Kỹ Năng hiện tại
+  [MeSkill] Key=12370000 | ID=12370003 | Tên=Vòng Thời Không Lv3
+  [MeSkill] Key=13001000 | ID=13001000 | Tên=Né Tránh Vô Hạn
+  [MeSkill] Key=411100 | ID=411101 | Tên=Ám Bạo Viêm
+  [MeSkill] Key=10000500 | ID=10000501 | Tên=Tấn công thường (Hai tay)
+  [MeSkill] Key=14050100 | ID=14050106 | Tên=Đột Kích Bóng Đêm
+  [MeSkill] Key=12080100 | ID=12080106 | Tên=Đóng băng
+  [MeSkill] Key=33020000 | ID=33020120 | Tên=Công Tốc tăng
+  [MeSkill] Key=13603041 | ID=13603041 | Tên=Huỳnh Thạch (Băng)
+  [MeSkill] Key=12160100 | ID=12160110 | Tên=Nổ Lửa
+  [MeSkill] Key=13002000 | ID=13002000 | Tên=Mãnh Kích Siêu Cấp
+  [MeSkill] Key=10000100 | ID=10000101 | Tên=Tấn công thường
+  [MeSkill] Key=10000200 | ID=10000201 | Tên=Tấn công thường (Vũ khí cán ngắn)
+  [MeSkill] Key=33070000 | ID=33070120 | Tên=Tăng DMG lên Kiếm Sĩ
+  [MeSkill] Key=10200400 | ID=10200401 | Tên=Ánh Sáng Đại Thiên Sứ Lv1
+  [MeSkill] Key=84009000 | ID=84009008 | Tên=Cường Hóa Cực Quang
+  [MeSkill] Key=17010100 | ID=17010113 | Tên=Kỹ Năng Đỡ Tinh Hạch 13
+  [MeSkill] Key=33080000 | ID=33080120 | Tên=Giảm DMG lên Kiếm Sĩ
+  [MeSkill] Key=10040100 | ID=10040101 | Tên=Liên Kích Kỹ
+  [MeSkill] Key=10200300 | ID=10200305 | Tên=Thiên Sứ Giáng Thế Lv5
+  [MeSkill] Key=410400 | ID=410402 | Tên=Bỏng
+  [MeSkill] Key=10200100 | ID=10200106 | Tên=Đại Thiên Sứ Phù Hộ Lv6
+  [MeSkill] Key=34011800 | ID=34011801 | Tên=Thánh Hồn Thiên Sứ-Gai 1
+  [MeSkill] Key=33190000 | ID=33190120 | Tên=Tăng DMG lên Ma Kiếm Sĩ
+  [MeSkill] Key=10310001 | ID=10310008 | Tên=Trác Việt Lv8
+  [MeSkill] Key=84005000 | ID=84005008 | Tên=Tinh Thông Chiến Đấu
+  [MeSkill] Key=13602035 | ID=13602035 | Tên=Huỳnh Thạch (Thủy)
+  [MeSkill] Key=12050100 | ID=12050106 | Tên=Sét Bàn Tay
+  [MeSkill] Key=33110000 | ID=33110120 | Tên=Tăng DMG lên Cung Thủ
+  [MeSkill] Key=410500 | ID=410506 | Tên=Thuộc tính trí lực tăng
+  [MeSkill] Key=84006000 | ID=84006007 | Tên=Đòn Đánh Xuyên Thấu
+  [MeSkill] Key=13003000 | ID=13003000 | Tên=Tận Thế Vô Tận
+  [MeSkill] Key=10000300 | ID=10000301 | Tên=Tấn công thường (Vũ khí cán dài)
+  [MeSkill] Key=12070100 | ID=12070101 | Tên=Thiên Thạch
+  [MeSkill] Key=12151000 | ID=12151001 | Tên=Bạo Phong Ma Hạt: Khi tấn công có 3% triệu hồi Bạo Phong Ma Hạt, Ma Hạt sau khi tụ lực sẽ thi triển phong bạo về phía trước, gây 50% giảm tốc và giảm tỉ lệ chính xác của người chơi, duy trì 3s. Phong bạo mỗi 0.5s gây cho kẻ địch lượng DMG bỏ qua phòng ngự bằng 55% Tấn Công. Cấp Kỹ Năng hiện tại
+  [MeSkill] Key=84007000 | ID=84007007 | Tên=Hơi Thở Phục Sinh
+  [MeSkill] Key=84008000 | ID=84008008 | Tên=Bảo Hộ Cực Tốc
+  [MeSkill] Key=12171000 | ID=12171001 | Tên=<color=#e6e600>Bất Diệt Long Viêm: </color><color=#0080FF>Khi tấn công có 2% triệu hồi Tử Viêm Long Hồn xung kích phía trước, gây cho đơn vị trên đường lượng DMG bằng 190% Tấn Công, đồng thời để lại Bất Diệt Long Viêm duy trì 3s, kẻ địch trên đó sẽ chịu DMG duy trì bằng 80% Tấn Công và 50% giảm tốc.</color>Cấp Kỹ Năng hiện tại
+  [MeSkill] Key=33200000 | ID=33200120 | Tên=Giảm DMG lên Ma Kiếm Sĩ
+--- D. Kiểm tra Cooldown nhóm 10200300 ---
+  CD Group 10200300: EndTime=1787578105034 | Còn lại: 91.0 giây
+==================================================
+>>> 2. THỬ KÍCH HOẠT THIÊN SỨ (SKILL ID: 34011801) <<<
+==================================================
+  [Cách 1] Gửi NetManager.Send(ReqPlayerUseSkill)...
+  [Cách 2] Gọi SkillMgr.SendSkillMessage...
+  [Cách 4] QiJiHelperData.SetPressSkill & StartPressSkillAutoFight...
+==================================================
+>>> ĐÃ BẮN TOÀN BỘ 4 PHƯƠNG THỨC! KIỂM TRA LOG SAU ĐÂY <<<
+==================================================
