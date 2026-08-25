@@ -3575,7 +3575,12 @@ local function CreateModUI()
                                     local tx, ty = tonumber(parts[1]), tonumber(parts[2])
 
                                     if tx and ty then
-                                        local tab = _G.ModAutoBossConfigTab or "C7"
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: QUAY LẠI VỊ TRÍ FARM
+                                        -- Mô tả: Lấy mapId theo chuyển chính được cấu hình trong token thay vì tab đang chọn
+                                        local pLevel = _G.Mod_Config_Reincarnation_Primary or 7
+                                        local tab = "C" .. tostring(pLevel)
+                                        -- =========================================================================
                                         local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
                                         if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
