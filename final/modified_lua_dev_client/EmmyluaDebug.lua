@@ -2262,6 +2262,14 @@ local function CreateModUI()
             -- Mô tả: Phân loại đồ Trác Việt theo option/bậc và tự động phân giải trang bị rác.
             -- =========================================================================
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                -- 0. Ưu tiên giữ lại Đồ Dung (canSmelt = true) đối với đồ từ Chuyển 8 trở lên
+                if tier >= 8 then
+                    local sInfo = item.serverInfo or item.serverData or {}
+                    if sInfo.canSmelt == true then
+                        return true -- Là đồ Dung -> Luôn Giữ Lại
+                    end
+                end
+
                 -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
                 if subType >= 34 and subType <= 38 then
                     local sInfo = item.serverInfo or item.serverData or {}
@@ -2311,7 +2319,7 @@ local function CreateModUI()
                     return true -- Không dính dòng rác diệt quái -> Dòng ngon!
                 end
 
-                -- Nhóm 3: Dây chuyền (36), Nhẫn trái (35), Nhẫn phải (38)
+                -- Nhóm 3: Dây chuyền Bộ (36), Nhẫn Bộ (35, 38)
                 if subType == 36 or subType == 35 or subType == 38 then
                     local hasGood = false
                     for _, des in ipairs(excDesList) do
@@ -2326,7 +2334,7 @@ local function CreateModUI()
                     return hasGood
                 end
 
-                -- Nhóm 4: Khuyên trái (34), Khuyên phải (37)
+                -- Nhóm 4: Khuyên Bộ (34, 37)
                 if subType == 34 or subType == 37 then
                     local hasGood = false
                     for _, des in ipairs(excDesList) do
@@ -2337,6 +2345,42 @@ local function CreateModUI()
                         end
                     end
                     return hasGood
+                end
+
+                -- Nhóm 5: Trang Sức Trác Việt - Nhẫn (18) & Dây chuyền (19)
+                if subType == 18 or subType == 19 then
+                    if #excDesList == 0 then return false end
+                    for _, des in ipairs(excDesList) do
+                        local isValid = false
+                        if string.find(des, "Công Tốc +2", 1, true) then isValid = true
+                        elseif string.find(des, "Tỷ lệ Đòn Trác Việt +3.0%", 1, true) then isValid = true
+                        elseif string.find(des, "Tấn công +cấp/20.0", 1, true) then isValid = true
+                        elseif string.find(des, "Tấn công +1.0%", 1, true) then isValid = true
+                        end
+                        
+                        if not isValid then
+                            return false -- Dính 1 dòng rác bất kỳ -> Đem đi tách!
+                        end
+                    end
+                    return true -- Toàn bộ các dòng đều thuộc list ngon -> Giữ lại!
+                end
+
+                -- Nhóm 6: Trang Sức Trác Việt - Khuyên (26)
+                if subType == 26 then
+                    if #excDesList == 0 then return false end
+                    for _, des in ipairs(excDesList) do
+                        local isValid = false
+                        if string.find(des, "Sát thương giảm +2.0%", 1, true) then isValid = true
+                        elseif string.find(des, "Phản DMG +4.0%", 1, true) then isValid = true
+                        elseif string.find(des, "Tỉ lệ Phòng Ngự thành công +5.0%", 1, true) then isValid = true
+                        elseif string.find(des, "HP tối đa +3.0%", 1, true) then isValid = true
+                        end
+                        
+                        if not isValid then
+                            return false -- Dính 1 dòng rác bất kỳ -> Đem đi tách!
+                        end
+                    end
+                    return true -- Toàn bộ các dòng đều thuộc list ngon -> Giữ lại!
                 end
 
                 return false
@@ -2537,9 +2581,8 @@ local function CreateModUI()
                                     end
                                 end
 
-                                -- 3. Bộ lọc [Giữ dòng Ngon] (Chỉ áp dụng cho Đồ Bộ, KHÔNG áp dụng cho Trang Sức Trác Việt 18, 19, 26)
-                                local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
-                                if shouldSmelt and not isJewelryTracViet and tier >= 3 and tier <= 12 then
+                                -- 3. Bộ lọc [Giữ dòng Ngon] (Áp dụng cho cả Đồ Bộ VÀ Trang Sức Trác Việt 18, 19, 26)
+                                if shouldSmelt and tier >= 3 and tier <= 12 then
                                     local keepGoodVar = "KeepGood_C" .. tostring(tier)
                                     if _G.Mod_SmeltConfig[keepGoodVar] then
                                         local excDesList = {}
@@ -3897,19 +3940,23 @@ local function CreateModUI()
                             LockTarget_Enabled = _G.Mod_LockTarget_Enabled,
                             AutoResurrect_Here = _G.Mod_AutoResurrect_Here_Enabled,
                             AutoResurrect_Free = _G.Mod_AutoResurrect_Free_Enabled,
+                            AutoReturnPos_Enabled = _G.Mod_AutoReturnPos_Enabled,
                             RunSpeed = _G.RunSpeedMultiplier or 1.0,
                             IsAutoRefresh = _G.IsAutoRefresh,
                             ShowKundunHP = _G.Mod_ShowKundunHP,
                             AttackRangeMult = _G.Mod_CustomAttackRangeMultiplier or 1.0,
                             AttackRange = _G.Mod_CustomAttackRange or 0,
-                            PKMode = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.PKMode) or 0
+                            PKMode = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.PKMode) or 0,
+                            AutoPick = _G.AutoPick_Enabled
                         }
 
-                        -- 2. Tắt Auto PK & Auto Guild PK
+                        -- 2. Tắt Auto PK, Auto Guild PK và Quay về gốc
                         _G.Mod_AutoPK_Enabled = false
                         _G.Mod_AutoGuildPK_Enabled = false
+                        _G.Mod_AutoReturnPos_Enabled = false
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_Enabled", 0)
 
                         -- 3. Chuyển PK sang Hòa Bình (param = 0)
                         pcall(function()
@@ -3921,48 +3968,62 @@ local function CreateModUI()
                             end
                         end)
 
-                        -- 4. Tắt Khóa Mục Tiêu
+                        -- 4. Tắt Khóa Mục Tiêu & Hủy Mục Tiêu Hiện Tại
                         _G.Mod_LockTarget_Enabled = false
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
+                        pcall(function()
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            if me then me.TargetAvatar = nil end
+                            if _G.RoleTargetManager then
+                                if _G.RoleTargetManager.ClearSelectMonsterTarget then _G.RoleTargetManager.ClearSelectMonsterTarget() end
+                                if _G.RoleTargetManager.ClearSelectPlayerTarget then _G.RoleTargetManager.ClearSelectPlayerTarget() end
+                            end
+                        end)
 
-                        -- 5. Bật Hồi Sinh Kim Cương (tại chỗ)
+                        -- 5. Bật Hồi Sinh Kim Cương (tại chỗ), Tắt HS Miễn Phí
                         _G.Mod_AutoResurrect_Here_Enabled = true
                         _G.Mod_AutoResurrect_Free_Enabled = false
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
 
-                        -- 6. Tăng Tốc Chạy lên MAX 20.0x
+                        -- 6. Bật Tự Động Nhặt, Số lượng nhặt = 16
+                        _G.AutoPick_Enabled = true
+                        _G.Mod_PickCount = 16
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
+                        CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
+
+                        -- 7. Tăng Tốc Chạy lên MAX 20.0x
                         _G.RunSpeedMultiplier = 20.0
                         CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 20.0)
 
-                        -- 7. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
+                        -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
                         _G.Mod_ShowKundunHP = false
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoRefresh", 0)
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_ShowKundunHP", 0)
 
-                        -- 8. Chuyển Tầm Đánh về 1.0 và Phát Hiện Địch về 5
+                        -- 9. Chuyển Tầm Đánh về 1.0 và Phát Hiện Địch về 5
                         _G.Mod_CustomAttackRangeMultiplier = 1.0
+                        _G.Mod_CustomAttackRange = 5
                         CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
                         if _G.Mod_ApplyAttackRangeMultiplier then
                             _G.Mod_ApplyAttackRangeMultiplier(1.0)
                         end
 
-                        _G.Mod_CustomAttackRange = 5
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
-
-                        -- 9. TỰ ĐỘNG BẬT THIÊN SỨ GIÁNG THẾ (ARCHANGEL TRANSFORMATION)
+                        -- 10. TỰ ĐỘNG BẬT THIÊN SỨ GIÁNG THẾ (ARCHANGEL TRANSFORMATION)
                         pcall(function()
                             local me = _G.RoleManager and _G.RoleManager.me
+                            if not me then return end
                             local meData = _G.ViewData and _G.ViewData.meData
-                            local angelSkillId = 10200301
+                            local angelSkillId = 10200305
 
-                            if me and me.skills and me.skills[10200300] then
+                            if me.skills and me.skills[10200300] then
                                 local sk = me.skills[10200300]
-                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
+                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
                             elseif meData and meData.skills and meData.skills[10200300] then
                                 local sk = meData.skills[10200300]
-                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
+                                angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
                             elseif _G.SkillData and _G.SkillData.careerSkillInfos then
                                 for _, sk in pairs(_G.SkillData.careerSkillInfos) do
                                     if sk and sk.groupId == 10200300 then
@@ -3972,36 +4033,64 @@ local function CreateModUI()
                                 end
                             end
 
-                            if me then
-                                local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
-                                local myId = (me.data and me.data.id) or me.id or 0
+                            local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(angelSkillId)
 
-                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
-                                    _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
-                                        skillId = angelSkillId,
-                                        targetId = myId,
-                                        x = coord.x or 0,
-                                        y = coord.y or 0,
-                                        position = 0
-                                    })
+                            if me.StopMoveImmediate then
+                                me:StopMoveImmediate()
+                            end
+
+                            local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                            local myId = (me.data and me.data.id) or me.id or 0
+
+                            if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
+                                _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
+                                    skillId = angelSkillId,
+                                    targetId = myId,
+                                    x = coord.x or 0,
+                                    y = coord.y or 0,
+                                    position = 0
+                                })
+                            end
+                            if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
+                                _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
+                                    skillId = angelSkillId,
+                                    targetId = myId,
+                                    x = coord.x or 0,
+                                    y = coord.y or 0,
+                                    position = 0
+                                })
+                            end
+                            if _G.SkillMgr then
+                                if _G.SkillMgr.RequestSkillToMe then
+                                    _G.SkillMgr.RequestSkillToMe(angelSkillId)
                                 end
-                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
-                                    _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
-                                        skillId = angelSkillId,
-                                        targetId = myId,
-                                        x = coord.x or 0,
-                                        y = coord.y or 0,
-                                        position = 0
-                                    })
+                                if _G.SkillMgr.RequestSkillTest then
+                                    _G.SkillMgr.RequestSkillTest(angelSkillId)
                                 end
-                                if _G.SkillMgr and _G.SkillMgr.ReqCastSkill then
+                                local tblAction = nil
+                                if cfg and _G.ConfigManager and _G.ConfigManager.GetConfig then
+                                    tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "groupId")
+                                    if not tblAction then
+                                        tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "id")
+                                    end
+                                end
+                                if tblAction and _G.SkillMgr.SendSkillMessage then
+                                    _G.SkillMgr.SendSkillMessage(cfg, tblAction, myId, coord)
+                                elseif _G.SkillMgr.ReqCastSkill then
                                     _G.SkillMgr.ReqCastSkill(angelSkillId, myId, coord, 0)
                                 end
-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
-                                    _G.QiJiHelperData.SetPressSkill(angelSkillId)
-                                end
-                                if me.StartPressSkillAutoFight then
-                                    me:StartPressSkillAutoFight()
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                _G.QiJiHelperData.SetPressSkill(angelSkillId)
+                            end
+                            if me.StartPressSkillAutoFight then
+                                me:StartPressSkillAutoFight()
+                            end
+                            if _G.UIManager and _G.UIManager.GetUI and _G.UIID and _G.UIID.Main_MainSkillUI then
+                                local skillUI = _G.UIManager.GetUI(_G.UIID.Main_MainSkillUI)
+                                if skillUI and skillUI.ComboBtnSkill and skillUI.Button_OnSkillClick then
+                                    skillUI.ComboBtnSkill.skillId = angelSkillId
+                                    skillUI:Button_OnSkillClick(skillUI.ComboBtnSkill)
                                 end
                             end
                         end)
@@ -4058,6 +4147,7 @@ local function CreateModUI()
                             _G.Mod_AutoPK_Enabled = snap.AutoPK_Enabled or false
                             _G.Mod_AutoGuildPK_Enabled = snap.AutoGuildPK_Enabled or false
                             _G.Mod_LockTarget_Enabled = snap.LockTarget_Enabled or false
+                            _G.Mod_AutoReturnPos_Enabled = snap.AutoReturnPos_Enabled or false
 
                             -- Hết phiên: Tắt cả HS KC lẫn HS Free
                             _G.Mod_AutoResurrect_Here_Enabled = false
@@ -4075,6 +4165,7 @@ local function CreateModUI()
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", _G.Mod_AutoPK_Enabled and 1 or 0)
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", _G.Mod_AutoGuildPK_Enabled and 1 or 0)
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", _G.Mod_LockTarget_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_Enabled", _G.Mod_AutoReturnPos_Enabled and 1 or 0)
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 0)
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
                             CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
@@ -6459,7 +6550,7 @@ local function CreateModUI()
             txtPa1.raycastTarget = false
             txtPa1.fontSize = 14
             txtPa1.alignment = TextAnchor.MiddleCenter
-            txtPa1.text = "PA NHẶT 1"
+            txtPa1.text = "NHẶT NHANH"
             if defaultFont then txtPa1.font = defaultFont end
 
             local btnPa1 = btnPa1Go:AddComponent(typeof(Button))
@@ -6488,7 +6579,7 @@ local function CreateModUI()
             txtPa2.raycastTarget = false
             txtPa2.fontSize = 14
             txtPa2.alignment = TextAnchor.MiddleCenter
-            txtPa2.text = "PA NHẶT 2"
+            txtPa2.text = "NHẶT GẦN"
             if defaultFont then txtPa2.font = defaultFont end
 
             local btnPa2 = btnPa2Go:AddComponent(typeof(Button))
@@ -9534,9 +9625,16 @@ local function CreateModUI()
                         end
 
                         if _G.WriteLog then
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local meX = (me and me.serverCoord and me.serverCoord.x) or 0
+                            local meY = (me and me.serverCoord and me.serverCoord.y) or 0
+                            local itemX = dropItemData.x or 0
+                            local itemY = dropItemData.y or 0
+                            local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
+                            
                             _G.WriteLog(string.format(
-                                "[AdminSuperBurst] Bắt đầu Bão Nhặt 40 lần (0.05s/lần) cho Item ObjID=%s tại (%s, %s)",
-                                tostring(dropItemData.id), tostring(dropItemData.x), tostring(dropItemData.y)))
+                                "[AdminSuperBurst] Bão Nhặt 40 lần (0.05s/l) ObjID=%s | Pos NV=(%s, %s), Item=(%s, %s), KC=%s",
+                                tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist)))
                         end
                         return
                     end
@@ -9624,11 +9722,19 @@ local function CreateModUI()
                         local itemTypeId = dropItemData.item and dropItemData.item.itemId or dropItemData.configId or "???"
                         local objId = dropItemData.id or "???"
                         if _G.WriteLog then
-                            local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE DELAY %dms", delayMs)
+                            local modeStr = (delayMs == 0) and "TRICK/RUNE 0ms" or string.format("BONE dl=%dms", delayMs)
+                            
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local meX = (me and me.serverCoord and me.serverCoord.x) or 0
+                            local meY = (me and me.serverCoord and me.serverCoord.y) or 0
+                            local itemX = dropItemData.x or 0
+                            local itemY = dropItemData.y or 0
+                            local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
+
                             _G.WriteLog(string.format(
-                                "[%s] Nhặt PA2 [%s] (Nhận tin lúc %s | Delay %d ms | Xử lý trong %d ms): TypeID=%s, ObjID=%s | Pos X=%s, Y=%s",
-                                logPrefix, modeStr, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
-                                tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                                "[%s] Nhặt PA2 [%s] (Time: %s | Xử lý: %dms): TypeID=%s, ObjID=%s | Pos NV=(%s, %s), Item=(%s, %s), KC=%s",
+                                logPrefix, modeStr, tostring(interceptTime), costMs, tostring(itemTypeId),
+                                tostring(objId), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist)))
                         end
                     end
                 end)
@@ -9692,63 +9798,75 @@ local function CreateModUI()
                     local isBone = (eType == 24 or eType == 26)
 
                     local shouldPick = false
-                    if isRune then
-                        local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId
-                        local rLevel = confId % 100
-                        if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
-                        local rColor = 0
 
-                        local cfg = nil
-                        if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
-                            cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
-                        end
-                        if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
-                            cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
-                        end
+                    if isBone then
+                        shouldPick = true
+                    elseif isRune then
+                        local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
+                        local pickLimit = _G.AutoPick_Limit or 0
+                        
+                        if isAdminBurst and pickLimit < 21 then
+                            -- [TỐI ƯU HIỆU NĂNG CỰC ĐẠI] 
+                            -- Admin bão nhặt (limit 16-20): Bỏ qua bộ lọc Rune, nhặt tất cả Rune
+                            shouldPick = true
+                        else
+                            -- Bình thường (hoặc Admin limit >= 21): Lọc Rune theo Level/Color
+                            local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId
+                            local rLevel = confId % 100
+                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
+                            local rColor = 0
 
-                        if cfg and cfg.subType then
-                            if cfg.type == 19 then
-                                rColor = math.floor(cfg.subType / 1000)
-                            elseif cfg.type == 28 then
-                                local lastDigit = cfg.subType % 10
-                                if lastDigit == 1 then
-                                    rColor = 3 -- Đỏ
-                                elseif lastDigit == 2 then
-                                    rColor = 2 -- Lam
-                                elseif lastDigit == 3 then
-                                    rColor = 1 -- Lục
+                            local cfg = nil
+                            if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
+                                cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
+                            end
+                            if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                                cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
+                            end
+
+                            if cfg and cfg.subType then
+                                if cfg.type == 19 then
+                                    rColor = math.floor(cfg.subType / 1000)
+                                elseif cfg.type == 28 then
+                                    local lastDigit = cfg.subType % 10
+                                    if lastDigit == 1 then
+                                        rColor = 3 -- Đỏ
+                                    elseif lastDigit == 2 then
+                                        rColor = 2 -- Lam
+                                    elseif lastDigit == 3 then
+                                        rColor = 1 -- Lục
+                                    end
                                 end
                             end
-                        end
 
-                        local lvKey = "L5L"
-                        if rLevel == 5 then
-                            lvKey = "L5"
-                        elseif rLevel == 6 then
-                            lvKey = "L6"
-                        elseif rLevel == 7 then
-                            lvKey = "L7"
-                        elseif rLevel == 8 then
-                            lvKey = "L8"
-                        elseif rLevel == 9 then
-                            lvKey = "L9"
-                        elseif rLevel == 10 then
-                            lvKey = "L10"
-                        elseif rLevel > 10 then
-                            lvKey = "L10M"
-                        end
+                            local lvKey = "L5L"
+                            if rLevel == 5 then
+                                lvKey = "L5"
+                            elseif rLevel == 6 then
+                                lvKey = "L6"
+                            elseif rLevel == 7 then
+                                lvKey = "L7"
+                            elseif rLevel == 8 then
+                                lvKey = "L8"
+                            elseif rLevel == 9 then
+                                lvKey = "L9"
+                            elseif rLevel == 10 then
+                                lvKey = "L10"
+                            elseif rLevel > 10 then
+                                lvKey = "L10M"
+                            end
 
-                        local clrKey = "Luc"
-                        if rColor == 2 then
-                            clrKey = "Lam"
-                        elseif rColor >= 3 then
-                            clrKey = "Do"
-                        end
+                            local clrKey = "Luc"
+                            if rColor == 2 then
+                                clrKey = "Lam"
+                            elseif rColor >= 3 then
+                                clrKey = "Do"
+                            end
 
-                        local prefKey = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
-                        if _G[prefKey] == true then shouldPick = true end
+                            local prefKey = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
+                            if _G[prefKey] == true then shouldPick = true end
+                        end
                     end
-                    if isBone then shouldPick = true end
 
                     if shouldPick then
                         local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]

@@ -6,6 +6,8 @@ $convertScript = "$projectDir\convert_64_to_32.py"
 $tempLuac = "$testDir\input.luac"
 $androidPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
 
+$androidId = "emulator-5556"
+
 # Nếu máy bạn báo lỗi không nhận diện lệnh adb, hãy đổi đường dẫn adb dưới đây thành đường dẫn tuyệt đối
 # Ví dụ: $adbExe = "C:\Program Files\Nox\bin\adb.exe" (Tuỳ thuộc vào giả lập bạn đang xài)
 $adbExe = "$projectDir\adb.exe" 
@@ -45,8 +47,8 @@ Write-Host "-> Da patch Header Lua 5.3 32-bit thanh cong!"
 
 # 4. Push to Android
 Write-Host "2. Xoa output.txt cu va day file input.luac vao thiet bi Android..."
-& $adbExe -s emulator-5556 shell "rm -f /storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-& $adbExe -s emulator-5556 push $tempLuac $androidPath
+& $adbExe -s $androidId shell "rm -f /storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+& $adbExe -s $androidId push $tempLuac $androidPath
 
 Write-Host ""
 Write-Host "HOAN TAT! Bay gio ban hay bam [ EXECUTE SCRIPT ] trong game." -ForegroundColor Green
@@ -55,7 +57,7 @@ Pause
 
 # 5. Pull output
 Write-Host "Dang lay output.txt ve..."
-& $adbExe -s emulator-5556 pull "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt" "$testDir\output.txt"
+& $adbExe -s $androidId pull "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt" "$testDir\output.txt"
 
 Write-Host "XONG! Hay mo file output.txt de xem ket qua." -ForegroundColor Green
 Pause

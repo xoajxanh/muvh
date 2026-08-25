@@ -1,164 +1,80 @@
--- =========================================================================
--- SCRIPT TEST KÍCH HOẠT CHÍNH XÁC: THIÊN SỨ GIÁNG THẾ (ID: 10200305)
--- =========================================================================
-
-local outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-pcall(function()
-    if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
-        outputPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-    end
-end)
-
-pcall(function()
-    local f = io.open(outputPath, "w")
-    if f then
-        f:write("=== TEST KÍCH HOẠT THIÊN SỨ GIÁNG THẾ LV5 ===\n")
-        f:close()
-    end
-end)
-
-local function log(msg)
-    local text = tostring(msg)
-    print(text)
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        pcall(function() _G.FloatingWordUtility.QuickMsg(text) end)
-    end
-    pcall(function()
-        local f = io.open(outputPath, "a")
-        if f then
-            f:write(text .. "\n")
-            f:close()
+local function SafeDumpTable(t, maxDepth, currentDepth)
+    maxDepth = maxDepth or 2
+    currentDepth = currentDepth or 0
+    if currentDepth > maxDepth then return "{...}" end
+    if type(t) ~= "table" then return tostring(t) end
+    
+    local str = "{\n"
+    for k, v in pairs(t) do
+        local keyStr = tostring(k)
+        local valStr = ""
+        if type(v) == "table" then
+            valStr = SafeDumpTable(v, maxDepth, currentDepth + 1)
+        elseif type(v) == "string" then
+            valStr = "\"" .. v .. "\""
+        else
+            valStr = tostring(v)
         end
-    end)
+        str = str .. string.rep("  ", currentDepth + 1) .. keyStr .. " = " .. valStr .. ",\n"
+    end
+    str = str .. string.rep("  ", currentDepth) .. "}"
+    return str
 end
 
-log("==================================================")
-log(">>> BẮT ĐẦU TEST KÍCH HOẠT THIÊN SỨ GIÁNG THẾ <<<")
-log("==================================================")
-
-pcall(function()
-    local me = _G.RoleManager and _G.RoleManager.me
-    local meData = _G.ViewData and _G.ViewData.meData
-    if not me or not meData then
-        log("[LỖI] Không tìm thấy dữ liệu RoleManager.me!")
-        return
-    end
-
-    local myId = (meData.id) or (me.data and me.data.id) or me.id or 0
-    local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
-
-    -- 1. LẤY CHÍNH XÁC SKILL ID NHÓM 10200300
-    local angelSkillId = 10200301
-    if me.skills and me.skills[10200300] then
-        local sk = me.skills[10200300]
-        angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
-    elseif meData.skills and meData.skills[10200300] then
-        local sk = meData.skills[10200300]
-        angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or 10200301
-    end
-
-    local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(angelSkillId)
-    local skillName = cfg and cfg.name or "Thiên Sứ Giáng Thế"
-    log(string.format(">>> Đã tìm thấy Skill: %s | ID = %s | Group = 10200300", tostring(skillName), tostring(angelSkillId)))
-
-    -- 2. KIỂM TRA COOLDOWN
-    local isCdReady = true
-    if me.cd and me.cd[10200300] then
-        local cdData = me.cd[10200300]
-        local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-        local remainMs = (cdData.endTime or 0) - serverTime
-        if remainMs > 0 then
-            isCdReady = false
-            log(string.format("[CẢNH BÁO COOLDOWN] Kỹ năng đang trong thời gian hồi! Còn lại: %.1f giây", remainMs / 1000.0))
-        else
-            log("[COOLDOWN] Kỹ năng đã HỒI XONG, sẵn sàng kích hoạt!")
-        end
+local function CheckDungItems()
+    local outPath = ""
+    if CS and CS.UnityEngine and CS.UnityEngine.Application then
+        outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
     else
-        log("[COOLDOWN] Kỹ năng sẵn sàng (không dính CD)!")
+        outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
     end
 
-    -- 3. KIỂM TRA MODEL VÀ BUFF HIỆN TẠI
-    local curModel = (me.data and me.data.model) or "Unknown"
-    log(string.format(">>> Model hiện tại trước khi xuất chiêu: %s", tostring(curModel)))
-
-    -- 4. TIẾN HÀNH XUẤT CHIÊU
-    log("--------------------------------------------------")
-    log(">>> ĐANG GỬI LỆNH XUẤT CHIÊU ĐA TẦNG <<<")
-
-    -- Tầng 1: Bắn gói tin Socket ReqPlayerUseSkill
-    if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
-        log("  [1] Gửi NetManager.Send(ReqPlayerUseSkill)...")
-        _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
-            skillId = angelSkillId,
-            targetId = myId,
-            x = coord.x or 0,
-            y = coord.y or 0,
-            position = 0
-        })
+    local file = io.open(outPath, "w")
+    
+    local function LogMsg(msg)
+        if file then
+            file:write(msg .. "\n")
+        else
+            print(msg)
+        end
     end
 
-    -- Tầng 2: Gửi Broadcast Precast
-    if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
-        log("  [2] Gửi NetManager.Send(ReqBroadcastUseSkill)...")
-        _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
-            skillId = angelSkillId,
-            targetId = myId,
-            x = coord.x or 0,
-            y = coord.y or 0,
-            position = 0
-        })
+    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+    if not items then 
+        LogMsg("[DUMP] BagInfoData.TotalItems is nil")
+        if file then file:close() end
+        return 
     end
 
-    -- Tầng 3: Gọi SkillMgr.SendSkillMessage & ReqCastSkill
-    if _G.SkillMgr then
-        log("  [3] Gọi SkillMgr.SendSkillMessage & ReqCastSkill...")
-        pcall(function()
-            local tblAction = nil
-            if cfg and _G.ConfigManager and _G.ConfigManager.GetConfig then
-                tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "id")
+    LogMsg("================ BẮT ĐẦU QUÉT TÚI TÌM ĐỒ DUNG (C8+) ================")
+    local found = 0
+    
+    for k, item in pairs(items) do
+        if item then
+            local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+            local needLevel = tblItem.needLevel or 0
+            local tier = math.floor(needLevel / 400)
+            
+            -- Chỉ quét trang bị (type == 2) từ Chuyển 8 trở lên
+            if tblItem.type == 2 and tier >= 8 then
+                local sInfo = item.serverInfo or item.serverData or {}
+                
+                local dumpStr = SafeDumpTable(sInfo, 3)
+                
+                local msg = string.format("[DUMP_ITEM] Tên: %s | Cấp: %d (C%d) | BagIndex: %s\n-> serverInfo: %s\n-----------------------------------------", 
+                    tostring(tblItem.name), needLevel, tier, tostring(k), dumpStr)
+                LogMsg(msg)
+                found = found + 1
             end
-            if tblAction and _G.SkillMgr.SendSkillMessage then
-                _G.SkillMgr.SendSkillMessage(cfg, tblAction, myId, coord)
-            elseif _G.SkillMgr.ReqCastSkill then
-                _G.SkillMgr.ReqCastSkill(angelSkillId, myId, coord, 0)
-            end
-        end)
+        end
     end
+    
+    LogMsg("================ HOÀN TẤT. QUÉT ĐƯỢC " .. found .. " MÓN ================")
+    
+    if file then 
+        file:close() 
+    end
+    if _G.WriteLog then _G.WriteLog("Đã dump xong đồ Dung ra file output.txt, hãy chạy lệnh adb pull hoặc ấn Enter trên tool.") end
+end
 
-    -- Tầng 4: Client Press Skill & StartPressSkillAutoFight
-    if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
-        log("  [4] Gọi QiJiHelperData.SetPressSkill & StartPressSkillAutoFight...")
-        pcall(function()
-            _G.QiJiHelperData.SetPressSkill(angelSkillId)
-            if me.StartPressSkillAutoFight then
-                me:StartPressSkillAutoFight()
-            end
-        end)
-    end
-
-    -- 5. THEO DÕI BIẾN THÂN SAU 1.5 GIÂY
-    if _G.Timer and _G.Timer.StartLoop then
-        _G.Timer.StartLoop(1.5, 1, function()
-            log("--------------------------------------------------")
-            log(">>> KẾT QUẢ SAU 1.5 GIÂY <<<")
-            local newModel = (me.data and me.data.model) or "Unknown"
-            local hasAngelBuff = false
-            if _G.BuffData and _G.BuffData.GetBuffs then
-                local buffs = _G.BuffData.GetBuffs(myId)
-                if buffs then
-                    for bId, bInfo in pairs(buffs) do
-                        local buffCId = bInfo.buffCId or (bInfo.buffConfig and bInfo.buffConfig.id)
-                        if buffCId and string.match(tostring(buffCId), "^12321") then
-                            hasAngelBuff = true
-                            log(string.format("  -> Tìm thấy Buff Thiên Sứ hoạt động: ID=%s, CId=%s", tostring(bId), tostring(buffCId)))
-                        end
-                    end
-                end
-            end
-            log(string.format("  -> Model hiện tại: %s | Có Buff: %s", tostring(newModel), tostring(hasAngelBuff)))
-            log("==================================================")
-            log(">>> HOÀN TẤT PHIÊN TEST <<<")
-            log("==================================================")
-        end)
-    end
-end)
+pcall(CheckDungItems)

@@ -1,124 +1,7833 @@
-=== BẮT ĐẦU SOI KỸ NĂNG NHÂN VẬT & TEST THIÊN SỨ ===
-==================================================
->>> 1. QUÉT TOÀN BỘ SKILL TRONG TÀI KHOẢN HIỆN TẠI <<<
-==================================================
-Nhân vật: BoyK (ID: 5944968961162558483) | Tọa độ: (145, 118)
---- A. ViewData.meData.skills ---
-  [Skill] Key=33160000 | ID=33160150 | Group=33160000 | Tên=Kháng DMG Tấn Công Đôi
-  [Skill] Key=10320001 | ID=10320008 | Group=10320001 | Tên=Dược Thần Lv8
-  [Skill] Key=51410500 | ID=51410504 | Group=51410500 | Tên=Mất HP sẽ tăng Kỹ Năng DMG
-  [Skill] Key=20221000 | ID=20221005 | Group=20221000 | Tên=Thánh Hồn Thiên Sứ-Phá Khiên 5
-  [Skill] Key=410700 | ID=410701 | Group=410700 | Tên=Cực Hạn
-  [Skill] Key=13601038 | ID=13601038 | Group=13601038 | Tên=Huỳnh Thạch (Hỏa)
-  [Skill] Key=33050000 | ID=33050004 | Group=33050000 | Tên=Giới hạn Hộ Khiên SD tăng
-  [Skill] Key=410100 | ID=410109 | Group=410100 | Tên=Tỉ lệ tấn công thành công tăng thêm
-  [Skill] Key=14150100 | ID=14150110 | Group=14150100 | Tên=Ma Hồn Thủ Hộ
-  [Skill] Key=14040100 | ID=14040108 | Group=14040100 | Tên=Sét Đánh
-  [Skill] Key=12140100 | ID=12140110 | Group=12140100 | Tên=Cực Quang
-  [Skill] Key=10300001 | ID=10300008 | Group=10300001 | Tên=Thủ Hộ Lv8
-  [Skill] Key=51410200 | ID=51410204 | Group=51410200 | Tên=Tăng phạm vi DMG lan Nổ Lửa
-  [Skill] Key=12221000 | ID=12221001 | Group=12221000 | Tên=Sao Băng Diệt Thế: Nhận Lực Nham Thú, khi tấn công có 0.69% xác suất triệu hồi 4 lần Thiên Thạch: Oanh kích ngẫu nhiên kẻ địch trong phạm vi 5x5 phía trước, mỗi Thiên Thạch gây DMG diện rộng bằng 100% Tấn Công, đồng thời gây 50% giảm tốc, duy trì 0.5s. Cấp Kỹ Năng hiện tại
-  [Skill] Key=12370000 | ID=12370003 | Group=12370000 | Tên=Vòng Thời Không Lv3
-  [Skill] Key=13001000 | ID=13001000 | Group=13001000 | Tên=Né Tránh Vô Hạn
-  [Skill] Key=411100 | ID=411101 | Group=411100 | Tên=Ám Bạo Viêm
-  [Skill] Key=10000500 | ID=10000501 | Group=10000500 | Tên=Tấn công thường (Hai tay)
-  [Skill] Key=14050100 | ID=14050106 | Group=14050100 | Tên=Đột Kích Bóng Đêm
-  [Skill] Key=12080100 | ID=12080106 | Group=12080100 | Tên=Đóng băng
-  [Skill] Key=33020000 | ID=33020120 | Group=33020000 | Tên=Công Tốc tăng
-  [Skill] Key=13603041 | ID=13603041 | Group=13603041 | Tên=Huỳnh Thạch (Băng)
-  [Skill] Key=12160100 | ID=12160110 | Group=12160100 | Tên=Nổ Lửa
-  [Skill] Key=13002000 | ID=13002000 | Group=13002000 | Tên=Mãnh Kích Siêu Cấp
-  [Skill] Key=10000100 | ID=10000101 | Group=10000100 | Tên=Tấn công thường
-  [Skill] Key=10000200 | ID=10000201 | Group=10000200 | Tên=Tấn công thường (Vũ khí cán ngắn)
-  [Skill] Key=33070000 | ID=33070120 | Group=33070000 | Tên=Tăng DMG lên Kiếm Sĩ
-  [Skill] Key=10200400 | ID=10200401 | Group=10200400 | Tên=Ánh Sáng Đại Thiên Sứ Lv1
-  [Skill] Key=84009000 | ID=84009008 | Group=84009000 | Tên=Cường Hóa Cực Quang
-  [Skill] Key=17010100 | ID=17010113 | Group=17010100 | Tên=Kỹ Năng Đỡ Tinh Hạch 13
-  [Skill] Key=33080000 | ID=33080120 | Group=33080000 | Tên=Giảm DMG lên Kiếm Sĩ
-  [Skill] Key=10040100 | ID=10040101 | Group=10040100 | Tên=Liên Kích Kỹ
-  [Skill] Key=10200300 | ID=10200305 | Group=10200300 | Tên=Thiên Sứ Giáng Thế Lv5
-  [Skill] Key=410400 | ID=410402 | Group=410400 | Tên=Bỏng
-  [Skill] Key=10200100 | ID=10200106 | Group=10200100 | Tên=Đại Thiên Sứ Phù Hộ Lv6
-  [Skill] Key=34011800 | ID=34011801 | Group=34011800 | Tên=Thánh Hồn Thiên Sứ-Gai 1
-  [Skill] Key=33190000 | ID=33190120 | Group=33190000 | Tên=Tăng DMG lên Ma Kiếm Sĩ
-  [Skill] Key=10310001 | ID=10310008 | Group=10310001 | Tên=Trác Việt Lv8
-  [Skill] Key=84005000 | ID=84005008 | Group=84005000 | Tên=Tinh Thông Chiến Đấu
-  [Skill] Key=13602035 | ID=13602035 | Group=13602035 | Tên=Huỳnh Thạch (Thủy)
-  [Skill] Key=12050100 | ID=12050106 | Group=12050100 | Tên=Sét Bàn Tay
-  [Skill] Key=33110000 | ID=33110120 | Group=33110000 | Tên=Tăng DMG lên Cung Thủ
-  [Skill] Key=410500 | ID=410506 | Group=410500 | Tên=Thuộc tính trí lực tăng
-  [Skill] Key=84006000 | ID=84006007 | Group=84006000 | Tên=Đòn Đánh Xuyên Thấu
-  [Skill] Key=13003000 | ID=13003000 | Group=13003000 | Tên=Tận Thế Vô Tận
-  [Skill] Key=10000300 | ID=10000301 | Group=10000300 | Tên=Tấn công thường (Vũ khí cán dài)
-  [Skill] Key=12070100 | ID=12070101 | Group=12070100 | Tên=Thiên Thạch
-  [Skill] Key=12151000 | ID=12151001 | Group=12151000 | Tên=Bạo Phong Ma Hạt: Khi tấn công có 3% triệu hồi Bạo Phong Ma Hạt, Ma Hạt sau khi tụ lực sẽ thi triển phong bạo về phía trước, gây 50% giảm tốc và giảm tỉ lệ chính xác của người chơi, duy trì 3s. Phong bạo mỗi 0.5s gây cho kẻ địch lượng DMG bỏ qua phòng ngự bằng 55% Tấn Công. Cấp Kỹ Năng hiện tại
-  [Skill] Key=84007000 | ID=84007007 | Group=84007000 | Tên=Hơi Thở Phục Sinh
-  [Skill] Key=84008000 | ID=84008008 | Group=84008000 | Tên=Bảo Hộ Cực Tốc
-  [Skill] Key=12171000 | ID=12171001 | Group=12171000 | Tên=<color=#e6e600>Bất Diệt Long Viêm: </color><color=#0080FF>Khi tấn công có 2% triệu hồi Tử Viêm Long Hồn xung kích phía trước, gây cho đơn vị trên đường lượng DMG bằng 190% Tấn Công, đồng thời để lại Bất Diệt Long Viêm duy trì 3s, kẻ địch trên đó sẽ chịu DMG duy trì bằng 80% Tấn Công và 50% giảm tốc.</color>Cấp Kỹ Năng hiện tại
-  [Skill] Key=33200000 | ID=33200120 | Group=33200000 | Tên=Giảm DMG lên Ma Kiếm Sĩ
---- B. SkillData.careerSkillInfos ---
-  (Không có dữ liệu SkillData.careerSkillInfos)
---- C. RoleManager.me.skills ---
-  [MeSkill] Key=33160000 | ID=33160150 | Tên=Kháng DMG Tấn Công Đôi
-  [MeSkill] Key=10320001 | ID=10320008 | Tên=Dược Thần Lv8
-  [MeSkill] Key=51410500 | ID=51410504 | Tên=Mất HP sẽ tăng Kỹ Năng DMG
-  [MeSkill] Key=20221000 | ID=20221005 | Tên=Thánh Hồn Thiên Sứ-Phá Khiên 5
-  [MeSkill] Key=410700 | ID=410701 | Tên=Cực Hạn
-  [MeSkill] Key=13601038 | ID=13601038 | Tên=Huỳnh Thạch (Hỏa)
-  [MeSkill] Key=33050000 | ID=33050004 | Tên=Giới hạn Hộ Khiên SD tăng
-  [MeSkill] Key=410100 | ID=410109 | Tên=Tỉ lệ tấn công thành công tăng thêm
-  [MeSkill] Key=14150100 | ID=14150110 | Tên=Ma Hồn Thủ Hộ
-  [MeSkill] Key=14040100 | ID=14040108 | Tên=Sét Đánh
-  [MeSkill] Key=12140100 | ID=12140110 | Tên=Cực Quang
-  [MeSkill] Key=10300001 | ID=10300008 | Tên=Thủ Hộ Lv8
-  [MeSkill] Key=51410200 | ID=51410204 | Tên=Tăng phạm vi DMG lan Nổ Lửa
-  [MeSkill] Key=12221000 | ID=12221001 | Tên=Sao Băng Diệt Thế: Nhận Lực Nham Thú, khi tấn công có 0.69% xác suất triệu hồi 4 lần Thiên Thạch: Oanh kích ngẫu nhiên kẻ địch trong phạm vi 5x5 phía trước, mỗi Thiên Thạch gây DMG diện rộng bằng 100% Tấn Công, đồng thời gây 50% giảm tốc, duy trì 0.5s. Cấp Kỹ Năng hiện tại
-  [MeSkill] Key=12370000 | ID=12370003 | Tên=Vòng Thời Không Lv3
-  [MeSkill] Key=13001000 | ID=13001000 | Tên=Né Tránh Vô Hạn
-  [MeSkill] Key=411100 | ID=411101 | Tên=Ám Bạo Viêm
-  [MeSkill] Key=10000500 | ID=10000501 | Tên=Tấn công thường (Hai tay)
-  [MeSkill] Key=14050100 | ID=14050106 | Tên=Đột Kích Bóng Đêm
-  [MeSkill] Key=12080100 | ID=12080106 | Tên=Đóng băng
-  [MeSkill] Key=33020000 | ID=33020120 | Tên=Công Tốc tăng
-  [MeSkill] Key=13603041 | ID=13603041 | Tên=Huỳnh Thạch (Băng)
-  [MeSkill] Key=12160100 | ID=12160110 | Tên=Nổ Lửa
-  [MeSkill] Key=13002000 | ID=13002000 | Tên=Mãnh Kích Siêu Cấp
-  [MeSkill] Key=10000100 | ID=10000101 | Tên=Tấn công thường
-  [MeSkill] Key=10000200 | ID=10000201 | Tên=Tấn công thường (Vũ khí cán ngắn)
-  [MeSkill] Key=33070000 | ID=33070120 | Tên=Tăng DMG lên Kiếm Sĩ
-  [MeSkill] Key=10200400 | ID=10200401 | Tên=Ánh Sáng Đại Thiên Sứ Lv1
-  [MeSkill] Key=84009000 | ID=84009008 | Tên=Cường Hóa Cực Quang
-  [MeSkill] Key=17010100 | ID=17010113 | Tên=Kỹ Năng Đỡ Tinh Hạch 13
-  [MeSkill] Key=33080000 | ID=33080120 | Tên=Giảm DMG lên Kiếm Sĩ
-  [MeSkill] Key=10040100 | ID=10040101 | Tên=Liên Kích Kỹ
-  [MeSkill] Key=10200300 | ID=10200305 | Tên=Thiên Sứ Giáng Thế Lv5
-  [MeSkill] Key=410400 | ID=410402 | Tên=Bỏng
-  [MeSkill] Key=10200100 | ID=10200106 | Tên=Đại Thiên Sứ Phù Hộ Lv6
-  [MeSkill] Key=34011800 | ID=34011801 | Tên=Thánh Hồn Thiên Sứ-Gai 1
-  [MeSkill] Key=33190000 | ID=33190120 | Tên=Tăng DMG lên Ma Kiếm Sĩ
-  [MeSkill] Key=10310001 | ID=10310008 | Tên=Trác Việt Lv8
-  [MeSkill] Key=84005000 | ID=84005008 | Tên=Tinh Thông Chiến Đấu
-  [MeSkill] Key=13602035 | ID=13602035 | Tên=Huỳnh Thạch (Thủy)
-  [MeSkill] Key=12050100 | ID=12050106 | Tên=Sét Bàn Tay
-  [MeSkill] Key=33110000 | ID=33110120 | Tên=Tăng DMG lên Cung Thủ
-  [MeSkill] Key=410500 | ID=410506 | Tên=Thuộc tính trí lực tăng
-  [MeSkill] Key=84006000 | ID=84006007 | Tên=Đòn Đánh Xuyên Thấu
-  [MeSkill] Key=13003000 | ID=13003000 | Tên=Tận Thế Vô Tận
-  [MeSkill] Key=10000300 | ID=10000301 | Tên=Tấn công thường (Vũ khí cán dài)
-  [MeSkill] Key=12070100 | ID=12070101 | Tên=Thiên Thạch
-  [MeSkill] Key=12151000 | ID=12151001 | Tên=Bạo Phong Ma Hạt: Khi tấn công có 3% triệu hồi Bạo Phong Ma Hạt, Ma Hạt sau khi tụ lực sẽ thi triển phong bạo về phía trước, gây 50% giảm tốc và giảm tỉ lệ chính xác của người chơi, duy trì 3s. Phong bạo mỗi 0.5s gây cho kẻ địch lượng DMG bỏ qua phòng ngự bằng 55% Tấn Công. Cấp Kỹ Năng hiện tại
-  [MeSkill] Key=84007000 | ID=84007007 | Tên=Hơi Thở Phục Sinh
-  [MeSkill] Key=84008000 | ID=84008008 | Tên=Bảo Hộ Cực Tốc
-  [MeSkill] Key=12171000 | ID=12171001 | Tên=<color=#e6e600>Bất Diệt Long Viêm: </color><color=#0080FF>Khi tấn công có 2% triệu hồi Tử Viêm Long Hồn xung kích phía trước, gây cho đơn vị trên đường lượng DMG bằng 190% Tấn Công, đồng thời để lại Bất Diệt Long Viêm duy trì 3s, kẻ địch trên đó sẽ chịu DMG duy trì bằng 80% Tấn Công và 50% giảm tốc.</color>Cấp Kỹ Năng hiện tại
-  [MeSkill] Key=33200000 | ID=33200120 | Tên=Giảm DMG lên Ma Kiếm Sĩ
---- D. Kiểm tra Cooldown nhóm 10200300 ---
-  CD Group 10200300: EndTime=1787578105034 | Còn lại: 91.0 giây
-==================================================
->>> 2. THỬ KÍCH HOẠT THIÊN SỨ (SKILL ID: 34011801) <<<
-==================================================
-  [Cách 1] Gửi NetManager.Send(ReqPlayerUseSkill)...
-  [Cách 2] Gọi SkillMgr.SendSkillMessage...
-  [Cách 4] QiJiHelperData.SetPressSkill & StartPressSkillAutoFight...
-==================================================
->>> ĐÃ BẮN TOÀN BỘ 4 PHƯƠNG THỨC! KIỂM TRA LOG SAU ĐÂY <<<
-==================================================
+================ BẮT ĐẦU QUÉT TÚI TÌM ĐỒ DUNG (C8+) ================
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 84
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 83,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560926992412,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787123286",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 85
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 84,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561097090071,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787289397",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 86
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 85,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561341254680,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "NgaNgố",
+      4 = "1787527839",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 87
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 86,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561439647768,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787623926",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 88
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 87,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973142984724,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787367426",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 89
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 88,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973201572875,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787424641",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Lửa | Cấp: 3601 (C9) | BagIndex: 90
+-> serverInfo: {
+  itemId = 2190110,
+  additional = 0,
+  bagGridIndex = 89,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973324649490,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787544833",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Sấm | Cấp: 3601 (C9) | BagIndex: 91
+-> serverInfo: {
+  itemId = 2190210,
+  additional = 0,
+  bagGridIndex = 90,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561053698070,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787247022",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Sấm | Cấp: 3601 (C9) | BagIndex: 92
+-> serverInfo: {
+  itemId = 2190210,
+  additional = 0,
+  bagGridIndex = 91,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561064441871,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787257514",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Sấm | Cấp: 3601 (C9) | BagIndex: 93
+-> serverInfo: {
+  itemId = 2190210,
+  additional = 0,
+  bagGridIndex = 92,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561177394203,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787367819",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Sấm | Cấp: 3601 (C9) | BagIndex: 94
+-> serverInfo: {
+  itemId = 2190210,
+  additional = 0,
+  bagGridIndex = 93,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561314689049,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787501896",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Sấm | Cấp: 3601 (C9) | BagIndex: 95
+-> serverInfo: {
+  itemId = 2190210,
+  additional = 0,
+  bagGridIndex = 94,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973235528802,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787457801",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 96
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 95,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560927347733,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106707",
+      2 = "Quỷ Biển",
+      3 = "BoyK",
+      4 = "1787123633",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 97
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 96,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561066972185,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "270001",
+      2 = "Phù Văn Kundun",
+      3 = "BoyK",
+      4 = "1787259985",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 98
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 97,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561296801811,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787484428",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 99
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 98,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561392072730,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác MaXVI",
+      3 = "BoyK",
+      4 = "1787577466",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 100
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 99,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968972979680310,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787207949",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 101
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 100,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973234774035,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787457064",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Băng | Cấp: 3601 (C9) | BagIndex: 102
+-> serverInfo: {
+  itemId = 2190310,
+  additional = 0,
+  bagGridIndex = 101,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973260209215,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787481903",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 103
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 102,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561182414868,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787372722",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 104
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 103,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561186781212,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Sứ Giả Ác MaXVI",
+      3 = "BoyK",
+      4 = "1787376986",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 105
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 104,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561231720477,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "NgaNgố",
+      4 = "1787420872",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 106
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 105,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561332259858,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Cuồng Bạo - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787519055",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 107
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 106,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561458377773,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787642217",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 108
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 107,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968972893670403,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787123955",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Gió | Cấp: 3601 (C9) | BagIndex: 109
+-> serverInfo: {
+  itemId = 2190410,
+  additional = 0,
+  bagGridIndex = 108,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973407039498,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787625292",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 110
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 109,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560967544847,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787162888",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 111
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 110,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561017087005,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787211269",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 112
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 111,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561178566721,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787368964",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 113
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 112,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561295435792,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787483094",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 114
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 113,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973415067681,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787633132",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Nước | Cấp: 3601 (C9) | BagIndex: 115
+-> serverInfo: {
+  itemId = 2190510,
+  additional = 0,
+  bagGridIndex = 114,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973436554262,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787654115",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 116
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 115,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21902,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560929135643,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787125379",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 117
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 116,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561016451093,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787210648",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 118
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 117,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21901,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561455457300,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787639365",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 119
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 118,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968972971229272,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787199696",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 120
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 119,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21908,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21903,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973144154313,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787368568",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Dây Chuyền Đất | Cấp: 3601 (C9) | BagIndex: 121
+-> serverInfo: {
+  itemId = 2190610,
+  additional = 0,
+  bagGridIndex = 120,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21906,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21907,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973260275779,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787481968",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Lửa | Cấp: 3201 (C8) | BagIndex: 122
+-> serverInfo: {
+  itemId = 2180168,
+  additional = 0,
+  bagGridIndex = 121,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21802,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561332399117,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Cuồng Bạo - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787519191",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Lửa | Cấp: 3201 (C8) | BagIndex: 123
+-> serverInfo: {
+  itemId = 2180168,
+  additional = 0,
+  bagGridIndex = 122,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21801,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561360517158,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác MaXVI",
+      3 = "BoyK",
+      4 = "1787546650",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Lửa | Cấp: 3201 (C8) | BagIndex: 124
+-> serverInfo: {
+  itemId = 2180168,
+  additional = 0,
+  bagGridIndex = 123,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973325344790,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787545512",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Sấm | Cấp: 3201 (C8) | BagIndex: 125
+-> serverInfo: {
+  itemId = 2180178,
+  additional = 0,
+  bagGridIndex = 124,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21803,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973426161732,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787643966",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 126
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 125,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561176589332,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787367033",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 127
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 126,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21802,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561177815062,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787368230",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 128
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 127,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561297075244,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787484695",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 129
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 128,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561444343845,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787628512",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 130
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 129,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973260276800,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787481969",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Băng | Cấp: 3201 (C8) | BagIndex: 131
+-> serverInfo: {
+  itemId = 2180188,
+  additional = 0,
+  bagGridIndex = 130,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973284623368,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "2101039",
+      2 = "Trường Phong-Ma Vương Lời Nguyền",
+      3 = "BoyK",
+      4 = "1787505745",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 132
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 131,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560816320534,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1074",
+      2 = "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+      3 = "BoyK",
+      4 = "1787015208",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 133
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 132,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21801,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560927347732,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106707",
+      2 = "Quỷ Biển",
+      3 = "BoyK",
+      4 = "1787123633",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 134
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 133,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561184078861,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787374347",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 135
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 134,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561327555608,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Cuồng Bạo - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787514461",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 136
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 135,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21801,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561457825815,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Cuồng Bạo - Sứ Giả Ác MaXVII",
+      3 = "BoyK",
+      4 = "1787641678",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 137
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 136,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973149337682,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787373630",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 138
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 137,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973235528774,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787457801",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 139
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 138,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973327721508,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787547833",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Gió | Cấp: 3201 (C8) | BagIndex: 140
+-> serverInfo: {
+  itemId = 2180198,
+  additional = 0,
+  bagGridIndex = 139,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21802,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973415653380,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787633704",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 141
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 140,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560829853706,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1074",
+      2 = "Phẫn Nộ - Kỵ Sĩ Tử Vong",
+      3 = "BoyK",
+      4 = "1787028424",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 142
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 141,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21803,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560945563659,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787141422",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 143
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 142,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21803,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561177271326,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787367699",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 144
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 143,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561190570009,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "250001",
+      2 = "Thánh Cốt Kundun",
+      3 = "Lucius",
+      4 = "1787380686",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 145
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 144,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 21802,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561312861226,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787500111",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 146
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 145,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561448370200,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787632444",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Nước | Cấp: 3201 (C8) | BagIndex: 147
+-> serverInfo: {
+  itemId = 2180208,
+  additional = 0,
+  bagGridIndex = 146,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21801,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973324651629,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787544835",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Đất | Cấp: 3201 (C8) | BagIndex: 148
+-> serverInfo: {
+  itemId = 2180218,
+  additional = 0,
+  bagGridIndex = 147,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560817315867,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105208",
+      2 = "Phẫn Nộ-Kỵ Sĩ Tử Vong",
+      3 = "BoyK",
+      4 = "1787016180",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Đất | Cấp: 3201 (C8) | BagIndex: 149
+-> serverInfo: {
+  itemId = 2180218,
+  additional = 0,
+  bagGridIndex = 148,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561098960919,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Cuồng Bạo - Sứ Giả Ác MaXVI",
+      3 = "BoyK",
+      4 = "1787291224",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Đất | Cấp: 3201 (C8) | BagIndex: 150
+-> serverInfo: {
+  itemId = 2180218,
+  additional = 0,
+  bagGridIndex = 149,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21801,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21808,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561293548561,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106407",
+      2 = "Tà Ác-Thủ Vệ Giáo Dài",
+      3 = "BoyK",
+      4 = "1787481251",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Dung Nham-Nhẫn Đất | Cấp: 3201 (C8) | BagIndex: 151
+-> serverInfo: {
+  itemId = 2180218,
+  additional = 0,
+  bagGridIndex = 150,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21806,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21807,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973325325328,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 1",
+      3 = "BoyK",
+      4 = "1787545493",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Khuyên Chúc Phúc Minh Dạ (Trái) | Cấp: 3601 (C9) | BagIndex: 154
+-> serverInfo: {
+  itemId = 2340009,
+  additional = 0,
+  bagGridIndex = 153,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 1201103,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561470432294,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787653989",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Khuyên Tượng Mộc Hiền Giả (Phải) | Cấp: 3201 (C8) | BagIndex: 155
+-> serverInfo: {
+  itemId = 2370008,
+  additional = 0,
+  bagGridIndex = 154,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 1101203,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561486228516,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787669415",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Bao Chân Kỵ Sĩ | Cấp: 3201 (C8) | BagIndex: 221
+-> serverInfo: {
+  itemId = 32111226,
+  additional = 0,
+  bagGridIndex = 220,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61505,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561470432286,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787653989",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Bao Tay Kỵ Sĩ | Cấp: 3201 (C8) | BagIndex: 223
+-> serverInfo: {
+  itemId = 32111326,
+  additional = 0,
+  bagGridIndex = 222,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61604,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973436772387,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787654328",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Ủng Chiến Sử Thi | Cấp: 3201 (C8) | BagIndex: 225
+-> serverInfo: {
+  itemId = 32111426,
+  additional = 0,
+  bagGridIndex = 224,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61701,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61704,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561457633302,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787641490",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Khiên Kỵ Sĩ | Cấp: 3201 (C8) | BagIndex: 227
+-> serverInfo: {
+  itemId = 32111626,
+  additional = 0,
+  bagGridIndex = 226,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60804,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854684771237783569,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Khỏa Thoái Ma Ảo | Cấp: 3601 (C9) | BagIndex: 237
+-> serverInfo: {
+  itemId = 32112227,
+  additional = 0,
+  bagGridIndex = 236,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61505,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973304418335,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 3",
+      3 = "BoyK",
+      4 = "1787525076",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Găng Tay Ma Ảo | Cấp: 3201 (C8) | BagIndex: 239
+-> serverInfo: {
+  itemId = 32112326,
+  additional = 0,
+  bagGridIndex = 238,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61604,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487157280,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787670322",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Cự Thú Bạo Hống-Găng Tay Ma Ảo | Cấp: 4001 (C10) | BagIndex: 241
+-> serverInfo: {
+  itemId = 32112328,
+  additional = 0,
+  bagGridIndex = 240,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61601,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61603,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973450654750,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787667885",
+    },
+    type = 1,
+  },
+  canSmelt = true,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Khiên Phép Ma Ảo | Cấp: 3201 (C8) | BagIndex: 243
+-> serverInfo: {
+  itemId = 32112626,
+  additional = 0,
+  bagGridIndex = 242,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 68104,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 68103,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560732985385,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Khiên Phép Ma Ảo | Cấp: 3201 (C8) | BagIndex: 253
+-> serverInfo: {
+  itemId = 32112626,
+  additional = 0,
+  bagGridIndex = 252,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 68102,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561367939091,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Vương Miện Du Hiệp | Cấp: 3601 (C9) | BagIndex: 257
+-> serverInfo: {
+  itemId = 32113127,
+  additional = 0,
+  bagGridIndex = 256,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61301,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561402316814,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787587470",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Cự Thú Bạo Hống-Vương Miện Du Hiệp | Cấp: 4001 (C10) | BagIndex: 259
+-> serverInfo: {
+  itemId = 32113128,
+  additional = 0,
+  bagGridIndex = 258,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61304,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61301,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561402316815,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787587470",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Bao Chân Du Hiệp | Cấp: 3601 (C9) | BagIndex: 269
+-> serverInfo: {
+  itemId = 32113227,
+  additional = 0,
+  bagGridIndex = 268,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61504,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61505,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561335806988,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106707",
+      2 = "Tà Ác-Quỷ Biển",
+      3 = "BoyK",
+      4 = "1787522519",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Chiến Cung Du Hiệp | Cấp: 3201 (C8) | BagIndex: 273
+-> serverInfo: {
+  itemId = 32113526,
+  additional = 0,
+  bagGridIndex = 272,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60901,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60904,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560719718402,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Mặt Nạ Ma Kỵ | Cấp: 3601 (C9) | BagIndex: 275
+-> serverInfo: {
+  itemId = 32114127,
+  additional = 0,
+  bagGridIndex = 274,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61301,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61304,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973449648167,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787666902",
+    },
+    type = 1,
+  },
+  canSmelt = true,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Bao Chân Ma Kỵ | Cấp: 3601 (C9) | BagIndex: 279
+-> serverInfo: {
+  itemId = 32114227,
+  additional = 0,
+  bagGridIndex = 278,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61504,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61505,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715560365441050,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Bao Tay Ma Kỵ | Cấp: 3601 (C9) | BagIndex: 285
+-> serverInfo: {
+  itemId = 32114327,
+  additional = 0,
+  bagGridIndex = 284,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61601,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61605,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561341193241,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787527779",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Ủng Chiến Ma Kỵ | Cấp: 3601 (C9) | BagIndex: 291
+-> serverInfo: {
+  itemId = 32114427,
+  additional = 0,
+  bagGridIndex = 290,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61705,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61703,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561406198813,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác MaXVII",
+      3 = "BoyK",
+      4 = "1787591261",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Kiếm Ma Kỵ | Cấp: 3601 (C9) | BagIndex: 295
+-> serverInfo: {
+  itemId = 32114527,
+  additional = 0,
+  bagGridIndex = 294,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60102,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60104,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561334426645,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Gậy Ma Kỵ | Cấp: 3201 (C8) | BagIndex: 296
+-> serverInfo: {
+  itemId = 32114626,
+  additional = 0,
+  bagGridIndex = 295,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60604,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561183580186,
+  durability = -9999,
+  fromInfo = {
+    params = {
+    },
+    type = 0,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Nón Sắt Triệu Hồi | Cấp: 3601 (C9) | BagIndex: 301
+-> serverInfo: {
+  itemId = 32116127,
+  additional = 0,
+  bagGridIndex = 300,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61305,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561481577484,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787664873",
+    },
+    type = 1,
+  },
+  canSmelt = true,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Ủng Dài Triệu Hồi | Cấp: 3601 (C9) | BagIndex: 307
+-> serverInfo: {
+  itemId = 32116427,
+  additional = 0,
+  bagGridIndex = 306,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61701,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 61705,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973451630620,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "240001",
+      2 = "Thể Biến Dị Hoàn Toàn-Đao Phủ Bậc 2",
+      3 = "BoyK",
+      4 = "1787668838",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Tượng Mộc Hiền Giả-Ma Trượng Triệu Hồi | Cấp: 3201 (C8) | BagIndex: 313
+-> serverInfo: {
+  itemId = 32116526,
+  additional = 0,
+  bagGridIndex = 312,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 60603,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 60601,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561438959665,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787623254",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Chúc Phúc Minh Dạ-Sách Ma Triệu Hồi | Cấp: 3601 (C9) | BagIndex: 322
+-> serverInfo: {
+  itemId = 32116627,
+  additional = 0,
+  bagGridIndex = 321,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 65604,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 65601,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561456276518,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787640165",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Trác Việt-Phân Tranh-Khiên Phép Kỳ Lân | Cấp: 3800 (C9) | BagIndex: 366
+-> serverInfo: {
+  itemId = 208740201,
+  additional = 0,
+  bagGridIndex = 365,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+        2 = {...},
+      },
+      configId = 28103,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 28104,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5944968973346094092,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1012017",
+      2 = "Võ Sĩ Mặt Nạ",
+      3 = "BoyK",
+      4 = "1787565775",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Kiếm Phá Hoại | Cấp: 3720 (C9) | BagIndex: 368
+-> serverInfo: {
+  itemId = 201730100,
+  additional = 0,
+  bagGridIndex = 367,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561488230409,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106407",
+      2 = "Ngang Ngược-Thủ Vệ Giáo Dài",
+      3 = "BoyK",
+      4 = "1787671370",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Bao Chân Ma Linh | Cấp: 3710 (C9) | BagIndex: 372
+-> serverInfo: {
+  itemId = 21502810,
+  additional = 0,
+  bagGridIndex = 371,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487694865,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787670847",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Mặt Nạ Bôn Lôi | Cấp: 3730 (C9) | BagIndex: 377
+-> serverInfo: {
+  itemId = 213730400,
+  additional = 0,
+  bagGridIndex = 376,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487157271,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787670322",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Bao Tay Bích Ảnh | Cấp: 3700 (C9) | BagIndex: 382
+-> serverInfo: {
+  itemId = 216730300,
+  additional = 0,
+  bagGridIndex = 381,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487047698,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "105209",
+      2 = "Phẫn Nộ-Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787670215",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Ủng Dài Bích Ảnh | Cấp: 3705 (C9) | BagIndex: 387
+-> serverInfo: {
+  itemId = 217730300,
+  additional = 0,
+  bagGridIndex = 386,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487951882,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106407",
+      2 = "Thủ Vệ Giáo Dài",
+      3 = "BoyK",
+      4 = "1787671098",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Nỏ Lam Linh | Cấp: 3720 (C9) | BagIndex: 393
+-> serverInfo: {
+  itemId = 210730300,
+  additional = 0,
+  bagGridIndex = 392,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561487430668,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787670589",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Trác Việt-Dung Nham-Bao Tay Minh Vương | Cấp: 3540 (C8) | BagIndex: 397
+-> serverInfo: {
+  itemId = 216710201,
+  additional = 0,
+  bagGridIndex = 396,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 21606,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561488134155,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787671276",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Phân Tranh-Mặt Nạ Bôn Lôi | Cấp: 3730 (C9) | BagIndex: 399
+-> serverInfo: {
+  itemId = 213730400,
+  additional = 0,
+  bagGridIndex = 398,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 1,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561488230407,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "106407",
+      2 = "Ngang Ngược-Thủ Vệ Giáo Dài",
+      3 = "BoyK",
+      4 = "1787671370",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+[DUMP_ITEM] Tên: Trác Việt-Phân Tranh-Túi Tên Bích Ảnh | Cấp: 3880 (C9) | BagIndex: 415
+-> serverInfo: {
+  itemId = 224750301,
+  additional = 0,
+  bagGridIndex = 414,
+  nucleusLevel = 0,
+  basicCareer = 0,
+  bind = 0,
+  breach = 0,
+  generateAttr = "{}",
+  cBind = false,
+  excellentInfo = {
+    1 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 22405,
+    },
+    2 = {
+      excellentAttribute = {
+        1 = {...},
+      },
+      configId = 22406,
+    },
+  },
+  levelEnergyReduce = 0,
+  valid = false,
+  regenerateAttrs = {
+  },
+  quickUse = 0,
+  level = 0,
+  intensify = 0,
+  id = 5854715561488376854,
+  durability = -9999,
+  fromInfo = {
+    params = {
+      1 = "1075",
+      2 = "Phẫn Nộ - Sứ Giả Ác Ma",
+      3 = "BoyK",
+      4 = "1787671513",
+    },
+    type = 1,
+  },
+  canSmelt = false,
+  exp = 0,
+  runesLevel = 0,
+  lucky = {
+  },
+  randomAttrs = {
+  },
+  nucleusAttr = {
+  },
+  additionalAttribute = {
+  },
+  specialEffectIds = {
+  },
+  excellent = {
+  },
+  skill = false,
+  regenerateClearAttrs = {
+  },
+  equipExcellentClear = {
+  },
+  enchantAttr = {
+  },
+  equipTime = -9999,
+  honourAttr = {
+  },
+  wingAttr = {
+  },
+  count = 1,
+  luck = 0,
+  time = 0,
+  regenerateLevel = 0,
+  boneSoulInfo = {
+  },
+}
+-----------------------------------------
+================ HOÀN TẤT. QUÉT ĐƯỢC 103 MÓN ================
