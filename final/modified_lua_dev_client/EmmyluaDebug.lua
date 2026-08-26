@@ -3929,7 +3929,7 @@ local function CreateModUI()
                     --        tự động bật THIÊN SỨ GIÁNG THẾ khi Kundun < 0.7% máu,
                     --        và tự động rollback sau 15s (tắt Nhặt đồ, tắt cả HS Free lẫn HS KC, bật lại thông báo máu).
                     -- =========================================================================
-                    local function TriggerKundunWeakPrep(targetRole)
+                    local function TriggerKundunWeakPrep(targetRole, threshold)
                         if _G.Mod_KundunWeakExecuted then return end
                         _G.Mod_KundunWeakExecuted = true
 
@@ -3992,9 +3992,9 @@ local function CreateModUI()
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
 
-                        -- 7. Tăng Tốc Chạy lên MAX 20.0x
-                        _G.RunSpeedMultiplier = 20.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 20.0)
+                        -- 7. Tăng Tốc Chạy lên MAX 100.0x
+                        _G.RunSpeedMultiplier = 100.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 100.0)
 
                         -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
@@ -4098,6 +4098,10 @@ local function CreateModUI()
                         -- 10. Chuyển Auto Fight & Target vào Kundun nếu có targetRole
                         if targetRole then
                             pcall(function()
+                                local coord = targetRole.serverCoord or (targetRole.cellPos and { x = targetRole.cellPos.x, y = targetRole.cellPos.y })
+                                if coord and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+                                    _G.RoleManager.me:MoveTo({ x = coord.x, y = coord.y }, 0)
+                                end
                                 if _G.RoleManager and _G.RoleManager.me then
                                     if _G.RoleManager.me.SetTarget then
                                         _G.RoleManager.me:SetTarget(targetRole)
@@ -4128,11 +4132,12 @@ local function CreateModUI()
                         if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
                         if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
 
+                        local tStr = tostring(threshold or 0.7)
                         if _G.FloatingWordUtility then
-                            _G.FloatingWordUtility.QuickMsg("[KUNDUN < 0.7%] BẬT THIÊN SỨ, TỐC 20x, HÒA BÌNH, HS KC! (ROLLBACK SAU 15S)")
+                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] BẬT THIÊN SỨ, TỐC 100x, HÒA BÌNH, HS KC! (ROLLBACK 15S)", tStr))
                         end
                         if _G.WriteLog then
-                            _G.WriteLog("[KUNDUN < 0.7%] Đã kích hoạt Thiên Sứ Giáng Thế & chuỗi chuẩn bị gom đồ siêu tốc (Rollback sau 15s)")
+                            _G.WriteLog(string.format("[KUNDUN <= %s%%] Đã kích hoạt Thiên Sứ Giáng Thế & chuỗi chuẩn bị gom đồ siêu tốc (Rollback 15s)", tStr))
                         end
 
                         -- 11. Đặt hẹn giờ Rollback tự động sau 15s
@@ -4233,10 +4238,26 @@ local function CreateModUI()
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
                                             end
 
-                                            -- Kích hoạt chuẩn bị khi Kundun < 0.7% máu (Cho Admin & Limit >= 16)
-                                            if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and rawPct <= 0.69 then
-                                                TriggerKundunWeakPrep(role)
-                                            elseif rawPct > 0.7 then
+                                            local kLevel = d.level or role.level or 0
+                                            local triggerThreshold = 0.69
+                                            if kLevel >= 3800 then
+                                                triggerThreshold = 0.5
+                                            elseif kLevel >= 3400 then
+                                                triggerThreshold = 0.7
+                                            elseif kLevel >= 3000 then
+                                                triggerThreshold = 1.0
+                                            elseif kLevel >= 2600 then
+                                                triggerThreshold = 3.0
+                                            elseif kLevel >= 2200 then
+                                                triggerThreshold = 10.0
+                                            else
+                                                triggerThreshold = 20.0
+                                            end
+
+                                            -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & Limit >= 16)
+                                            if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and rawPct <= triggerThreshold then
+                                                TriggerKundunWeakPrep(role, triggerThreshold)
+                                            elseif rawPct > triggerThreshold + 0.1 then
                                                 _G.Mod_KundunWeakExecuted = false
                                             end
                                             break
@@ -9581,16 +9602,24 @@ local function CreateModUI()
                     end
 
                     local delayMs = 0
-                    if logPrefix == "KTĐ" or isSecretTrickActive then
-                        delayMs = 0
-                    elseif hasTargetNearby then
-                        if isBone then
-                            delayMs = math.random(200, 900)
-                        elseif isRune then
-                            delayMs = math.random(300, 700)
+                    if hasTargetNearby then
+                        if isSecretTrickActive then
+                            if isBone or isRune then
+                                delayMs = math.random(100, 300)
+                            else
+                                delayMs = 0
+                            end
                         else
-                            delayMs = 0
+                            if isBone then
+                                delayMs = math.random(200, 900)
+                            elseif isRune then
+                                delayMs = math.random(300, 700)
+                            else
+                                delayMs = 0
+                            end
                         end
+                    elseif logPrefix == "KTĐ" or isSecretTrickActive then
+                        delayMs = 0
                     else
                         delayMs = 0
                     end
@@ -9631,10 +9660,26 @@ local function CreateModUI()
                             local itemX = dropItemData.x or 0
                             local itemY = dropItemData.y or 0
                             local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
+
+                            local kunX, kunY = 0, 0
+                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                local monsters = _G.RoleManager.GetRolesByType(2)
+                                if monsters then
+                                    for _, r in pairs(monsters) do
+                                        local d = r.data
+                                        if d and d.name and string.find(string.lower(d.name), "kundun") then
+                                            kunX = (r.serverCoord and r.serverCoord.x) or (r.cellPos and r.cellPos.x) or 0
+                                            kunY = (r.serverCoord and r.serverCoord.y) or (r.cellPos and r.cellPos.y) or 0
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                            local kunDist = (kunX > 0 and kunY > 0) and math.max(math.abs(kunX - itemX), math.abs(kunY - itemY)) or -1
                             
                             _G.WriteLog(string.format(
-                                "[AdminSuperBurst] Bão Nhặt 40 lần (0.05s/l) ObjID=%s | Pos NV=(%s, %s), Item=(%s, %s), KC=%s",
-                                tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist)))
+                                "[AdminSuperBurst] Bão Nhặt 40 lần (0.05s/l) ObjID=%s | NV=(%s, %s), Item=(%s, %s), KC=%s | Kun=(%s,%s), KunKC=%s",
+                                tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist), tostring(kunX), tostring(kunY), tostring(kunDist)))
                         end
                         return
                     end
@@ -9677,10 +9722,28 @@ local function CreateModUI()
                                 "???"
                             local objId = dropItemData.id or "???"
                             if _G.WriteLog then
+                                local kunX, kunY = 0, 0
+                                if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                    local monsters = _G.RoleManager.GetRolesByType(2)
+                                    if monsters then
+                                        for _, r in pairs(monsters) do
+                                            local d = r.data
+                                            if d and d.name and string.find(string.lower(d.name), "kundun") then
+                                                kunX = (r.serverCoord and r.serverCoord.x) or (r.cellPos and r.cellPos.x) or 0
+                                                kunY = (r.serverCoord and r.serverCoord.y) or (r.cellPos and r.cellPos.y) or 0
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                                local itemX = dropItemData.x or 0
+                                local itemY = dropItemData.y or 0
+                                local kunDist = (kunX > 0 and kunY > 0) and math.max(math.abs(kunX - itemX), math.abs(kunY - itemY)) or -1
+
                                 _G.WriteLog(string.format(
-                                    "[%s] Nhặt PA1 (Nhận tin lúc %s | Delay %d ms | Xử lý %d ms): TypeID=%s, ObjID=%s | MoveTo X=%s, Y=%s",
+                                    "[%s] Nhặt PA1 (Nhận %s | %dms | %dms): Type=%s, Obj=%s | NV->Mv(%s,%s) | Kun=(%s,%s), KunKC=%s",
                                     logPrefix, tostring(interceptTime), delayMs, costMs, tostring(itemTypeId),
-                                    tostring(objId), tostring(dropItemData.x), tostring(dropItemData.y)))
+                                    tostring(objId), tostring(itemX), tostring(itemY), tostring(kunX), tostring(kunY), tostring(kunDist)))
                             end
                         end
 
@@ -9731,10 +9794,26 @@ local function CreateModUI()
                             local itemY = dropItemData.y or 0
                             local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
 
+                            local kunX, kunY = 0, 0
+                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                local monsters = _G.RoleManager.GetRolesByType(2)
+                                if monsters then
+                                    for _, r in pairs(monsters) do
+                                        local d = r.data
+                                        if d and d.name and string.find(string.lower(d.name), "kundun") then
+                                            kunX = (r.serverCoord and r.serverCoord.x) or (r.cellPos and r.cellPos.x) or 0
+                                            kunY = (r.serverCoord and r.serverCoord.y) or (r.cellPos and r.cellPos.y) or 0
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+                            local kunDist = (kunX > 0 and kunY > 0) and math.max(math.abs(kunX - itemX), math.abs(kunY - itemY)) or -1
+
                             _G.WriteLog(string.format(
-                                "[%s] Nhặt PA2 [%s] (Time: %s | Xử lý: %dms): TypeID=%s, ObjID=%s | Pos NV=(%s, %s), Item=(%s, %s), KC=%s",
+                                "[%s] Nhặt PA2 [%s] (Time: %s | Xử: %dms): Type=%s, Obj=%s | NV=(%s,%s), Item=(%s,%s), KC=%s | Kun=(%s,%s), KunKC=%s",
                                 logPrefix, modeStr, tostring(interceptTime), costMs, tostring(itemTypeId),
-                                tostring(objId), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist)))
+                                tostring(objId), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist), tostring(kunX), tostring(kunY), tostring(kunDist)))
                         end
                     end
                 end)
