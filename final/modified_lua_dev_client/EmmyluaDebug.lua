@@ -3992,8 +3992,8 @@ local function CreateModUI()
                         CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
 
                         -- 7. Tăng Tốc Chạy lên MAX 20.0x
-                        _G.RunSpeedMultiplier = 20.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 20.0)
+                        _G.RunSpeedMultiplier = 10.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 10.0)
 
                         -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
@@ -4214,7 +4214,7 @@ local function CreateModUI()
                     -- Giám sát Máu Kundun
                     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
                     if currentSec > (_G.Mod_LastKundunHPTime or 0) then
-                        _G.Mod_LastKundunHPTime = currentSec + 1
+                        _G.Mod_LastKundunHPTime = currentSec + 0.5
                         local kundunFound = false
 
                         if _G.RoleManager and _G.RoleManager.GetRolesByType then
@@ -4229,7 +4229,7 @@ local function CreateModUI()
                                             local rawPct = (role.hp / maxHp) * 100
                                             local hpPct = math.max(0.01, rawPct)
 
-                                            if _G.Mod_ShowKundunHP then
+                                            if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
                                                 local msg
                                                 local limit = tonumber(_G.AutoPick_Limit) or 0
                                                 if _G.Mod_IsAdmin and limit >= 21 then
@@ -4253,9 +4253,9 @@ local function CreateModUI()
                                             elseif kLevel >= 3400 then
                                                 triggerThreshold = 0.7
                                             elseif kLevel >= 3000 then
-                                                triggerThreshold = 1.0
+                                                triggerThreshold = 2.0
                                             elseif kLevel >= 2600 then
-                                                triggerThreshold = 3.0
+                                                triggerThreshold = 5.0
                                             elseif kLevel >= 2200 then
                                                 triggerThreshold = 10.0
                                             else
@@ -9632,6 +9632,14 @@ local function CreateModUI()
                         local itemId = dropItemData.id
                         local itemX = dropItemData.x
                         local itemY = dropItemData.y
+
+                        -- Tắt AutoFight tức thì để không bị giật lại khi MoveTo nhặt đồ
+                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                            pcall(function() _G.RoleManager.me:SetAutoFight("None") end)
+                        end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                            pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end)
+                        end
 
                         if _G.Timer and _G.Timer.StartLoop then
                             _G.Timer.StartLoop(0.1, 30, function()
