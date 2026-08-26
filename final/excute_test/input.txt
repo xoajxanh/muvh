@@ -1,104 +1,34 @@
--- ==========================================
--- SCRIPT TEST RANDOM MOVETO (10 GIÂY) - LOG TO OUTPUT.TXT
--- ==========================================
-
 local outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
 if CS and CS.UnityEngine and CS.UnityEngine.Application then
     outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
 end
 
--- Reset file ở đầu
-local fInit = io.open(outPath, "w")
-if fInit then
-    fInit:write("=== BẮT ĐẦU TEST MOVETO X100 TỐC ĐỘ TRONG 10S ===\n")
-    fInit:close()
+local f = io.open(outPath, "a")
+local function LogOut(text)
+    if f then 
+        f:write(text .. "\n") 
+    end
+    print(text)
 end
 
-local function LogMsg(msg)
-    print(msg) -- Ghi ra console/tool nếu tool hỗ trợ chụp print
-    
-    local f = io.open(outPath, "a")
-    if f then
-        f:write(msg .. "\n")
-        f:close()
-    end
-end
+local rawPct = 18.66
+local triggerThreshold = 20.0
+local isAdmin = _G.Mod_IsAdmin or false
+local autoPickLimit = _G.AutoPick_Limit or "nil"
 
--- Tăng tốc 100x
-local oldSpeed = _G.RunSpeedMultiplier or 1.0
-_G.RunSpeedMultiplier = 100.0
-if CS.UnityEngine.PlayerPrefs then
-    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 100.0)
-end
+local msg = string.format("Kiểm tra điều kiện kích hoạt:\n- Mod_IsAdmin = %s\n- AutoPick_Limit = %s\n- HP <= Threshold: %s <= %s (%s)",
+    tostring(isAdmin), tostring(autoPickLimit), tostring(rawPct), tostring(triggerThreshold), tostring(rawPct <= triggerThreshold))
 
-local center = { x = 0, y = 0 }
-if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-    center.x = _G.QiJiHelperData.SettingData.HangupX or 0
-    center.y = _G.QiJiHelperData.SettingData.HangupY or 0
+if f then
+    f:write("\n========== CHECK TRIGGER KUNDUN ==========\n")
 end
+LogOut(msg)
 
-local me = _G.RoleManager and _G.RoleManager.me
-if center.x == 0 or center.y == 0 then
-    if me and me.serverCoord then
-        center.x = me.serverCoord.x
-        center.y = me.serverCoord.y
-    end
+if f then f:close() end
+
+if _G.FloatingWordUtility then
+    _G.FloatingWordUtility.QuickMsg("Đã ghi log check trigger ra output.txt")
 end
-
-if center.x > 0 and center.y > 0 then
-    if _G.FloatingWordUtility then
-        _G.FloatingWordUtility.QuickMsg(string.format("Test Move Random quanh (%d, %d) tốc 100x trong 10s", center.x, center.y))
-    end
-    
-    local startTime = CS.UnityEngine.Time.realtimeSinceStartup
-    local duration = 10.0
-    local moveCount = 0
-    
-    if _G.Timer and _G.Timer.StartLoop then
-        local timerId = nil
-        timerId = _G.Timer.StartLoop(0.05, -1, function()
-            local now = CS.UnityEngine.Time.realtimeSinceStartup
-            if now - startTime > duration then
-                -- Kết thúc sau 10s
-                if _G.Timer and _G.Timer.Stop and timerId then
-                    _G.Timer.Stop(timerId)
-                end
-                
-                -- Phục hồi tốc độ cũ
-                _G.RunSpeedMultiplier = oldSpeed
-                if CS.UnityEngine.PlayerPrefs then
-                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", oldSpeed)
-                end
-                
-                LogMsg(string.format("=== KẾT THÚC TEST: Thực hiện tổng cộng %d lệnh MoveTo ===", moveCount))
-                
-                if _G.FloatingWordUtility then
-                    _G.FloatingWordUtility.QuickMsg("Kết thúc Test Move Random, đã ghi ra output.txt")
-                end
-                if _G.WriteLog then 
-                    _G.WriteLog("Đã ghi log chạy test ra file output.txt, hãy chạy lệnh adb pull hoặc ấn Enter trên tool.") 
-                end
-                return
-            end
-            
-            -- Random vị trí trong khoảng 3 ô (từ -3 đến +3)
-            local randX = center.x + math.random(-3, 3)
-            local randY = center.y + math.random(-3, 3)
-            
-            if me and me.MoveTo then
-                pcall(function()
-                    me:MoveTo({x = randX, y = randY}, 0)
-                    moveCount = moveCount + 1
-                    
-                    local curCoord = me.serverCoord and string.format("(%d, %d)", me.serverCoord.x, me.serverCoord.y) or "(?, ?)"
-                    LogMsg(string.format("[%.2fs] Đang đứng ở %s -> Lệnh MoveTo điểm thứ %d: (%d, %d)", (now - startTime), curCoord, moveCount, randX, randY))
-                end)
-            end
-        end)
-    end
-else
-    LogMsg("Lỗi: Không tìm thấy vị trí trung tâm để test!")
-    if _G.FloatingWordUtility then
-        _G.FloatingWordUtility.QuickMsg("Không tìm thấy vị trí trung tâm để test!")
-    end
+if _G.WriteLog then
+    _G.WriteLog("Đã ghi log check trigger ra output.txt")
 end

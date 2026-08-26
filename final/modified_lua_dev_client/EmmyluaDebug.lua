@@ -3986,15 +3986,14 @@ local function CreateModUI()
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
 
-                        -- 6. Bật Tự Động Nhặt, Số lượng nhặt = 16
+                        -- 6. Bật Tự Động Nhặt (Giữ nguyên Số lượng nhặt hiện tại để không ảnh hưởng lọc Rune)
                         _G.AutoPick_Enabled = true
-                        _G.Mod_PickCount = 16
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
 
-                        -- 7. Tăng Tốc Chạy lên MAX 100.0x
-                        _G.RunSpeedMultiplier = 100.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 100.0)
+                        -- 7. Tăng Tốc Chạy lên MAX 20.0x
+                        _G.RunSpeedMultiplier = 20.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 20.0)
 
                         -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
@@ -4134,7 +4133,7 @@ local function CreateModUI()
 
                         local tStr = tostring(threshold or 0.7)
                         if _G.FloatingWordUtility then
-                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] BẬT THIÊN SỨ, TỐC 100x, HÒA BÌNH, HS KC! (ROLLBACK 15S)", tStr))
+                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] BẬT THIÊN SỨ, TỐC 30x, HÒA BÌNH, HS KC! (ROLLBACK 15S)", tStr))
                         end
                         if _G.WriteLog then
                             _G.WriteLog(string.format("[KUNDUN <= %s%%] Đã kích hoạt Thiên Sứ Giáng Thế & chuỗi chuẩn bị gom đồ siêu tốc (Rollback 15s)", tStr))
@@ -4231,14 +4230,20 @@ local function CreateModUI()
                                             local hpPct = math.max(0.01, rawPct)
 
                                             if _G.Mod_ShowKundunHP then
-                                                local msg = string.format("[%s] HP: %.2f%%", tostring(d.name), hpPct)
+                                                local msg
+                                                if _G.Mod_IsAdmin and (tonumber(_G.AutoPick_Limit) or 0) >= 16 then
+                                                    msg = string.format("[%s] HP: %.2f%%", tostring(d.name), hpPct)
+                                                else
+                                                    msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
+                                                end
+                                                
                                                 if not _G.AutoPick_Enabled then
                                                     msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
                                                 end
                                                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
                                             end
 
-                                            local kLevel = d.level or role.level or 0
+                                            local kLevel = tonumber(d.level) or tonumber(role.level) or 0
                                             local triggerThreshold = 0.69
                                             if kLevel >= 3800 then
                                                 triggerThreshold = 0.5
@@ -4255,7 +4260,16 @@ local function CreateModUI()
                                             end
 
                                             -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & Limit >= 16)
-                                            if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and rawPct <= triggerThreshold then
+                                            local limitNum = tonumber(_G.AutoPick_Limit) or 0
+                                            
+                                            -- if rawPct <= 30.0 and rawPct >= 15.0 then
+                                            --     local dbgMsg = string.format("[KUNDUN DEBUG] Admin=%s, Limit=%s, kLevel=%s, Thresh=%s, rawPct=%.2f", 
+                                            --         tostring(_G.Mod_IsAdmin), tostring(limitNum), tostring(kLevel), tostring(triggerThreshold), rawPct)
+                                            --     print(dbgMsg)
+                                            --     if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(dbgMsg) end
+                                            -- end
+
+                                            if _G.Mod_IsAdmin and limitNum >= 16 and rawPct <= triggerThreshold then
                                                 TriggerKundunWeakPrep(role, triggerThreshold)
                                             elseif rawPct > triggerThreshold + 0.1 then
                                                 _G.Mod_KundunWeakExecuted = false
@@ -4276,7 +4290,7 @@ local function CreateModUI()
 
                     -- BATCH LOOT: Quét sạch đồ mặt đất định kỳ 0.05s/lần
                     if _G.AutoPick_Enabled then
-                        if (_G.AutoPick_Count or 0) < (_G.AutoPick_Limit or 23) then
+                        if (tonumber(_G.AutoPick_Count) or 0) < (tonumber(_G.AutoPick_Limit) or 23) then
                             local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
                             if (nowRealtime - (_G.Mod_LastGroundScanTime or 0)) >= 0.05 then
                                 _G.Mod_LastGroundScanTime = nowRealtime
