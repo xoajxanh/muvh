@@ -4231,8 +4231,11 @@ local function CreateModUI()
 
                                             if _G.Mod_ShowKundunHP then
                                                 local msg
-                                                if _G.Mod_IsAdmin and (tonumber(_G.AutoPick_Limit) or 0) >= 16 then
-                                                    msg = string.format("[%s] HP: %.2f%%", tostring(d.name), hpPct)
+                                                local limit = tonumber(_G.AutoPick_Limit) or 0
+                                                if _G.Mod_IsAdmin and limit >= 21 then
+                                                    msg = string.format("[ %s ] (2) HP: %.2f%%", tostring(d.name), hpPct)
+                                                elseif _G.Mod_IsAdmin and limit >= 16 then
+                                                    msg = string.format("[ %s ] (1) HP: %.2f%%", tostring(d.name), hpPct)
                                                 else
                                                     msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
                                                 end
@@ -4397,28 +4400,8 @@ local function CreateModUI()
                     -- =========================================================================
                     -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT SPAMMER)
                     -- Mô tả: Spam nhịp 0.05s/lần trong 2.0s (tổng 40 lần) bắn ReqPickUpMapItem
-                    --        và MoveTo(x, y) quét sạch mọi ô đồ rơi với tốc độ 20x.
+                    --        được quản lý bởi _G.Timer độc lập với vòng lặp mẹ.
                     -- =========================================================================
-                    if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and _G.Mod_AdminBurstDropItems then
-                        local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
-                        for itemId, itemInfo in pairs(_G.Mod_AdminBurstDropItems) do
-                            if nowRealtime > (itemInfo.expireTime or 0) or (itemInfo.count or 0) >= 40 then
-                                _G.Mod_AdminBurstDropItems[itemId] = nil
-                            elseif nowRealtime >= (itemInfo.nextTick or 0) then
-                                itemInfo.nextTick = nowRealtime + 0.05
-                                itemInfo.count = (itemInfo.count or 0) + 1
-
-                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                                    _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
-                                end
-                                if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
-                                    pcall(function()
-                                        _G.RoleManager.me:MoveTo({ x = itemInfo.x, y = itemInfo.y }, 0)
-                                    end)
-                                end
-                            end
-                        end
-                    end
 
                     if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
                         if _G.AutoPick_Mode == nil then
@@ -9646,16 +9629,22 @@ local function CreateModUI()
                     --        Đưa item vào danh sách burst 40 lần (0.05s/lần) kèm MoveTo và gửi gói ngay.
                     -- =========================================================================
                     if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and logPrefix ~= "KTĐ" then
-                        _G.Mod_AdminBurstDropItems = _G.Mod_AdminBurstDropItems or {}
-                        _G.Mod_AdminBurstDropItems[dropItemData.id] = {
-                            id = dropItemData.id,
-                            x = dropItemData.x,
-                            y = dropItemData.y,
-                            count = 1,
-                            startTime = nowTime,
-                            expireTime = nowTime + 2.0,
-                            nextTick = nowTime + 0.05
-                        }
+                        local itemId = dropItemData.id
+                        local itemX = dropItemData.x
+                        local itemY = dropItemData.y
+
+                        if _G.Timer and _G.Timer.StartLoop then
+                            _G.Timer.StartLoop(0.1, 30, function()
+                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                                end
+                                if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
+                                    pcall(function()
+                                        _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
+                                    end)
+                                end
+                            end)
+                        end
 
                         -- Bắn tức thì gói nhặt & MoveTo ngay frame đầu tiên
                         if _G.PickupManager then
@@ -9692,8 +9681,8 @@ local function CreateModUI()
                             local kunDist = (kunX > 0 and kunY > 0) and math.max(math.abs(kunX - itemX), math.abs(kunY - itemY)) or -1
                             
                             _G.WriteLog(string.format(
-                                "[AdminSuperBurst] Bão Nhặt 40 lần (0.05s/l) ObjID=%s | NV=(%s, %s), Item=(%s, %s), KC=%s | Kun=(%s,%s), KunKC=%s",
-                                tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist), tostring(kunX), tostring(kunY), tostring(kunDist)))
+                                "[%s] [AdminSuperBurst] (Nhận %s) Bão Nhặt 40 lần (0.05s/l) ObjID=%s | NV=(%s, %s), Item=(%s, %s), KC=%s | Kun=(%s,%s), KunKC=%s",
+                                logPrefix, tostring(interceptTime), tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist), tostring(kunX), tostring(kunY), tostring(kunDist)))
                         end
                         return
                     end
