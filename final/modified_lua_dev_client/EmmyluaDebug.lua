@@ -3991,9 +3991,9 @@ local function CreateModUI()
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
 
-                        -- 7. Tăng Tốc Chạy lên MAX 20.0x
-                        _G.RunSpeedMultiplier = 10.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 10.0)
+                        -- 7. Tăng Tốc Chạy lên MAX 30.0x
+                        _G.RunSpeedMultiplier = 30.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 30.0)
 
                         -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
@@ -9633,34 +9633,27 @@ local function CreateModUI()
                         local itemX = dropItemData.x
                         local itemY = dropItemData.y
 
-                        -- Tắt AutoFight tức thì để không bị giật lại khi MoveTo nhặt đồ
-                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                            pcall(function() _G.RoleManager.me:SetAutoFight("None") end)
-                        end
-                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                            pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end)
-                        end
+                        -- -- Tắt AutoFight tức thì để không bị giật lại khi MoveTo nhặt đồ
+                        -- if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                        --     pcall(function() _G.RoleManager.me:SetAutoFight("None") end)
+                        -- end
+                        -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                        --     pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end)
+                        -- end
 
-                        if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.1, 30, function()
-                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                                    _G.PickupManager.ReqPickUpMapItem(itemId)
-                                end
-                                if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
-                                    pcall(function()
-                                        _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
-                                    end)
-                                end
+                        -- 1. Gửi lệnh MoveTo 1 lần duy nhất để bắt đầu di chuyển tới vật phẩm
+                        if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
+                            pcall(function()
+                                _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
                             end)
                         end
 
-                        -- Bắn tức thì gói nhặt & MoveTo ngay frame đầu tiên
-                        if _G.PickupManager then
-                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
-                        end
-                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
-                            pcall(function()
-                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y }, 0)
+                        -- 2. Trong khi di chuyển, liên tục spam gói nhặt (20 lần x 0.05s = 1s)
+                        if _G.Timer and _G.Timer.StartLoop then
+                            _G.Timer.StartLoop(0.05, 20, function()
+                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                                end
                             end)
                         end
 
