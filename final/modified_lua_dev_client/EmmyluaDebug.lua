@@ -9640,7 +9640,9 @@ local function CreateModUI()
                         -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
                         --     pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end)
                         -- end
-
+                        if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                            _G.PickupManager.ReqPickUpMapItem(itemId)
+                        end
                         -- 1. Gửi lệnh MoveTo 1 lần duy nhất để bắt đầu di chuyển tới vật phẩm
                         if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
                             pcall(function()
@@ -9650,7 +9652,7 @@ local function CreateModUI()
 
                         -- 2. Trong khi di chuyển, liên tục spam gói nhặt (20 lần x 0.05s = 1s)
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.05, 20, function()
+                            _G.Timer.StartLoop(0.05, 40, function()
                                 if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
                                     _G.PickupManager.ReqPickUpMapItem(itemId)
                                 end
