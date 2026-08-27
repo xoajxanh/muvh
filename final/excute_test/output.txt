@@ -1,6 +1,4 @@
 
-========== CHECK TRIGGER KUNDUN ==========
-Kiểm tra điều kiện kích hoạt:
-- Mod_IsAdmin = true
-- AutoPick_Limit = 16
-- HP <= Threshold: 18.66 <= 20.0 (true)
+========== BẮT ĐẦU TEST ADMIN BURST PICKUP ==========
+Vui lòng tự mở rương vàng. Script đã override AddDropSceneCellPos...
+Đã hook thành công vào _G.PickupManager.AddDropSceneCellPos!

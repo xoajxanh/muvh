@@ -3991,9 +3991,7 @@ local function CreateModUI()
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
                         CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
 
-                        -- 7. Tăng Tốc Chạy lên MAX 30.0x
-                        _G.RunSpeedMultiplier = 30.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 30.0)
+                        -- 7. (Đã gỡ bỏ đẩy tốc chạy, giữ nguyên tốc hiện tại)
 
                         -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
                         _G.IsAutoRefresh = false
@@ -4133,7 +4131,7 @@ local function CreateModUI()
 
                         local tStr = tostring(threshold or 0.7)
                         if _G.FloatingWordUtility then
-                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] BẬT THIÊN SỨ, TỐC 30x, HÒA BÌNH, HS KC! (ROLLBACK 15S)", tStr))
+                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] BẬT THIÊN SỨ, HÒA BÌNH, HS KC! (ROLLBACK 15S)", tStr))
                         end
                         if _G.WriteLog then
                             _G.WriteLog(string.format("[KUNDUN <= %s%%] Đã kích hoạt Thiên Sứ Giáng Thế & chuỗi chuẩn bị gom đồ siêu tốc (Rollback 15s)", tStr))
@@ -4253,13 +4251,13 @@ local function CreateModUI()
                                             elseif kLevel >= 3400 then
                                                 triggerThreshold = 0.7
                                             elseif kLevel >= 3000 then
-                                                triggerThreshold = 2.0
+                                                triggerThreshold = 1.5
                                             elseif kLevel >= 2600 then
-                                                triggerThreshold = 5.0
+                                                triggerThreshold = 3.0
                                             elseif kLevel >= 2200 then
-                                                triggerThreshold = 10.0
+                                                triggerThreshold = 5.0
                                             else
-                                                triggerThreshold = 20.0
+                                                triggerThreshold = 10.0
                                             end
 
                                             -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & Limit >= 16)
@@ -6127,7 +6125,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 20.0 or 5.0) or 10.0
+                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 50.0 or 5.0) or 10.0
                 _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -6140,7 +6138,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 20.0 or 5.0) or 10.0
+                local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 50.0 or 5.0) or 10.0
                 _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()

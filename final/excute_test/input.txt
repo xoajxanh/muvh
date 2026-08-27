@@ -3,32 +3,78 @@ if CS and CS.UnityEngine and CS.UnityEngine.Application then
     outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
 end
 
-local f = io.open(outPath, "a")
 local function LogOut(text)
-    if f then 
-        f:write(text .. "\n") 
+    if _G.WriteLog then 
+        _G.WriteLog(text)
+    else
+        print(text)
     end
-    print(text)
 end
 
-local rawPct = 18.66
-local triggerThreshold = 20.0
-local isAdmin = _G.Mod_IsAdmin or false
-local autoPickLimit = _G.AutoPick_Limit or "nil"
+LogOut("\n========== BẮT ĐẦU TEST ADMIN BURST PICKUP ==========")
+LogOut("Vui lòng tự mở rương vàng. Script đã override AddDropSceneCellPos...")
 
-local msg = string.format("Kiểm tra điều kiện kích hoạt:\n- Mod_IsAdmin = %s\n- AutoPick_Limit = %s\n- HP <= Threshold: %s <= %s (%s)",
-    tostring(isAdmin), tostring(autoPickLimit), tostring(rawPct), tostring(triggerThreshold), tostring(rawPct <= triggerThreshold))
-
-if f then
-    f:write("\n========== CHECK TRIGGER KUNDUN ==========\n")
+-- Khôi phục hook cũ nếu có để tránh đè nhiều lớp khi chạy excute nhiều lần
+if _G.Original_AddDropSceneCellPos_Test then
+    _G.PickupManager.AddDropSceneCellPos = _G.Original_AddDropSceneCellPos_Test
 end
-LogOut(msg)
 
-if f then f:close() end
+if _G.PickupManager and _G.PickupManager.AddDropSceneCellPos then
+    _G.Original_AddDropSceneCellPos_Test = _G.PickupManager.AddDropSceneCellPos
+
+    _G.PickupManager.AddDropSceneCellPos = function(item)
+        -- Gọi lại hàm gốc để game vẫn hiển thị item bình thường
+        if _G.Original_AddDropSceneCellPos_Test then
+            _G.Original_AddDropSceneCellPos_Test(item)
+        end
+
+        if not (item and item.data) then return end
+        local dropItemData = item.data
+
+        local itemId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
+        local itemX = dropItemData.x or (dropItemData.pos and dropItemData.pos.x)
+        local itemY = dropItemData.y or (dropItemData.pos and dropItemData.pos.y)
+
+        if not itemId or not itemX or not itemY then
+            return
+        end
+
+        LogOut(string.format("[TEST] Phát hiện item rớt: ID=%s, X=%s, Y=%s", tostring(itemId), tostring(itemX), tostring(itemY)))
+
+        -- =========================================================================
+        -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT)
+        -- =========================================================================
+        if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+            _G.PickupManager.ReqPickUpMapItem(itemId)
+            LogOut("[TEST] Gửi ReqPickUpMapItem lần 1")
+        end
+
+        -- 1. Gửi lệnh MoveTo 1 lần duy nhất để bắt đầu di chuyển tới vật phẩm
+        if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
+            pcall(function()
+                _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
+                LogOut(string.format("[TEST] Đã gọi MoveTo({ x = %s, y = %s }, 0)", tostring(itemX), tostring(itemY)))
+            end)
+        end
+
+        -- 2. Trong khi di chuyển, liên tục spam gói nhặt (40 lần x 0.05s = 2s)
+        if _G.Timer and _G.Timer.StartLoop then
+            _G.Timer.StartLoop(0.1, 10, function()
+                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                end
+            end)
+            LogOut("[TEST] Bắt đầu spam gói nhặt 40 lần")
+        end
+    end
+
+    LogOut("Đã hook thành công vào _G.PickupManager.AddDropSceneCellPos!")
+else
+    LogOut("LỖI: Không tìm thấy _G.PickupManager.AddDropSceneCellPos để hook!")
+end
+
+-- (Removed file close)
 
 if _G.FloatingWordUtility then
-    _G.FloatingWordUtility.QuickMsg("Đã ghi log check trigger ra output.txt")
-end
-if _G.WriteLog then
-    _G.WriteLog("Đã ghi log check trigger ra output.txt")
+    _G.FloatingWordUtility.QuickMsg("Đã nạp kịch bản test hook AddDropSceneCellPos!")
 end
