@@ -9555,6 +9555,13 @@ local function CreateModUI()
                     if _G.Mod_KTD_Chests then
                         _G.Mod_KTD_Chests[dropItemData.id] = nil
                     end
+                    if _G.Mod_AdminHooverQueue then
+                        for i = #_G.Mod_AdminHooverQueue, 1, -1 do
+                            if _G.Mod_AdminHooverQueue[i].id == dropItemData.id then
+                                table.remove(_G.Mod_AdminHooverQueue, i)
+                            end
+                        end
+                    end
                 end
             end
 
@@ -9598,21 +9605,11 @@ local function CreateModUI()
 
                     local delayMs = 0
                     if hasTargetNearby then
-                        if isSecretTrickActive then
-                            if isBone or isRune then
-                                delayMs = math.random(100, 300)
+                        if isBone or isRune then
+                                delayMs = math.random(500, 1000)
                             else
                                 delayMs = 0
                             end
-                        else
-                            if isBone then
-                                delayMs = math.random(200, 900)
-                            elseif isRune then
-                                delayMs = math.random(300, 700)
-                            else
-                                delayMs = 0
-                            end
-                        end
                     elseif logPrefix == "KTĐ" or isSecretTrickActive then
                         delayMs = 0
                     else
@@ -9622,71 +9619,85 @@ local function CreateModUI()
                     local delaySec = delayMs / 1000.0
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT)
-                    -- Mô tả: Kích hoạt khi Mod_IsAdmin == true và AutoPick_Limit >= 16.
-                    --        Đưa item vào danh sách burst 40 lần (0.05s/lần) kèm MoveTo và gửi gói ngay.
+                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (HOOVER ALGORITHM)
                     -- =========================================================================
                     if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and logPrefix ~= "KTĐ" then
-                        local itemId = dropItemData.id
-                        local itemX = dropItemData.x
-                        local itemY = dropItemData.y
-
-                        -- -- Tắt AutoFight tức thì để không bị giật lại khi MoveTo nhặt đồ
-                        -- if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                        --     pcall(function() _G.RoleManager.me:SetAutoFight("None") end)
-                        -- end
-                        -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                        --     pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end)
-                        -- end
+                        _G.Mod_AdminHooverQueue = _G.Mod_AdminHooverQueue or {}
+                        
+                        -- Thử nhặt 0ms lập tức để ăn cướp
                         if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                            _G.PickupManager.ReqPickUpMapItem(itemId)
+                            _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                         end
-                        -- 1. Gửi lệnh MoveTo 1 lần duy nhất để bắt đầu di chuyển tới vật phẩm
-                        if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
-                            pcall(function()
-                                _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
-                            end)
-                        end
+                        
+                        table.insert(_G.Mod_AdminHooverQueue, {
+                            id = dropItemData.id, 
+                            x = dropItemData.x, 
+                            y = dropItemData.y,
+                            dropTime = CS.UnityEngine.Time.realtimeSinceStartup,
+                            lastReqTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        })
 
-                        -- 2. Trong khi di chuyển, liên tục spam gói nhặt (20 lần x 0.05s = 1s)
-                        if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.05, 40, function()
-                                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                                    _G.PickupManager.ReqPickUpMapItem(itemId)
-                                end
-                            end)
-                        end
+                        -- Đăng ký vòng lặp Hoover 1 lần duy nhất
+                        if not _G.Mod_AdminHooverLoopStarted then
+                            if _G.Timer and _G.Timer.StartLoop then
+                                _G.Timer.StartLoop(0.05, -1, function()
+                                    if not _G.Mod_AdminHooverQueue or #_G.Mod_AdminHooverQueue == 0 then return end
+                                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                    local meX, meY = 0, 0
+                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                        meX = _G.RoleManager.me.serverCoord.x or 0
+                                        meY = _G.RoleManager.me.serverCoord.y or 0
+                                    end
+                                    local nearestDist = 9999
+                                    local nearestItem = nil
+                                    local packetsSentThisTick = 0
 
-                        if _G.WriteLog then
-                            local me = _G.RoleManager and _G.RoleManager.me
-                            local meX = (me and me.serverCoord and me.serverCoord.x) or 0
-                            local meY = (me and me.serverCoord and me.serverCoord.y) or 0
-                            local itemX = dropItemData.x or 0
-                            local itemY = dropItemData.y or 0
-                            local dist = math.max(math.abs(meX - itemX), math.abs(meY - itemY))
-
-                            local kunX, kunY = 0, 0
-                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                local monsters = _G.RoleManager.GetRolesByType(2)
-                                if monsters then
-                                    for _, r in pairs(monsters) do
-                                        local d = r.data
-                                        if d and d.name and string.find(string.lower(d.name), "kundun") then
-                                            kunX = (r.serverCoord and r.serverCoord.x) or (r.cellPos and r.cellPos.x) or 0
-                                            kunY = (r.serverCoord and r.serverCoord.y) or (r.cellPos and r.cellPos.y) or 0
-                                            break
+                                    for i = #_G.Mod_AdminHooverQueue, 1, -1 do
+                                        local item = _G.Mod_AdminHooverQueue[i]
+                                        if nowTime - item.dropTime > 8.0 then
+                                            table.remove(_G.Mod_AdminHooverQueue, i)
+                                        else
+                                            local dist = math.max(math.abs(meX - item.x), math.abs(meY - item.y))
+                                            if dist <= 2.5 then
+                                                if (nowTime - item.lastReqTime) >= 0.1 then
+                                                    if packetsSentThisTick < 3 then
+                                                        item.lastReqTime = nowTime
+                                                        packetsSentThisTick = packetsSentThisTick + 1
+                                                        if _G.PickupManager then
+                                                            _G.PickupManager.ReqPickUpMapItem(item.id)
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                            if dist < nearestDist then
+                                                nearestDist = dist
+                                                nearestItem = item
+                                            end
                                         end
                                     end
-                                end
+
+                                    if nearestItem and _G.RoleManager and _G.RoleManager.me then
+                                        if nearestItem.id ~= _G.Mod_AdminHooverLastTarget or (nowTime - (_G.Mod_AdminHooverLastMove or 0)) > 0.8 then
+                                            _G.Mod_AdminHooverLastTarget = nearestItem.id
+                                            _G.Mod_AdminHooverLastMove = nowTime
+                                            pcall(function()
+                                                _G.RoleManager.me:MoveTo({ x = nearestItem.x, y = nearestItem.y })
+                                            end)
+                                        end
+                                    end
+                                end)
+                                _G.Mod_AdminHooverLoopStarted = true
+                                if _G.WriteLog then _G.WriteLog("[AdminHoover] Đã kích hoạt Vòng lặp Hút Bụi!") end
                             end
-                            local kunDist = (kunX > 0 and kunY > 0) and math.max(math.abs(kunX - itemX), math.abs(kunY - itemY)) or -1
-                            
-                            _G.WriteLog(string.format(
-                                "[%s] [AdminSuperBurst] (Nhận %s) Bão Nhặt 40 lần (0.05s/l) ObjID=%s | NV=(%s, %s), Item=(%s, %s), KC=%s | Kun=(%s,%s), KunKC=%s",
-                                logPrefix, tostring(interceptTime), tostring(dropItemData.id), tostring(meX), tostring(meY), tostring(itemX), tostring(itemY), tostring(dist), tostring(kunX), tostring(kunY), tostring(kunDist)))
                         end
-                        return
+                        
+                        local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
+                        if _G.WriteLog then
+                            _G.WriteLog(string.format("[%s] [AdminHoover] Đã thêm Obj=%s vào Queue Hút Bụi | Cost=%dms", logPrefix, tostring(dropItemData.id), costMs))
+                        end
+                        return -- Kết thúc, không chạy luồng AutoPick thường nữa
                     end
+
 
                     if _G.AutoPick_Mode == nil then
                         _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)

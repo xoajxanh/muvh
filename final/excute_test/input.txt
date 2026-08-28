@@ -1,80 +1,172 @@
-local outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-if CS and CS.UnityEngine and CS.UnityEngine.Application then
-    outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+-- Hàm xuất log để debug
+local function log_to_file(msg)
+    local text = tostring(msg)
+    pcall(function()
+        if CS.System.IO.File then
+            CS.System.IO.File.AppendAllText("/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt", text .. "\n")
+        end
+    end)
+    pcall(function()
+        if _G.WriteLog then _G.WriteLog(text) end
+    end)
 end
 
-local function LogOut(text)
-    if _G.WriteLog then 
-        _G.WriteLog(text)
-    else
-        print(text)
-    end
-end
+log_to_file("========== BẮT ĐẦU TEST LƯỚT NHẶT SIÊU TỐC ==========")
 
-LogOut("\n========== BẮT ĐẦU TEST ADMIN BURST PICKUP ==========")
-LogOut("Vui lòng tự mở rương vàng. Script đã override AddDropSceneCellPos...")
+local status, err = pcall(function()
+    _G.Test_PickQueue = {}
+    _G.Test_LastMoveTime = 0
+    _G.Test_LastTargetId = nil
 
--- Khôi phục hook cũ nếu có để tránh đè nhiều lớp khi chạy excute nhiều lần
-if _G.Original_AddDropSceneCellPos_Test then
-    _G.PickupManager.AddDropSceneCellPos = _G.Original_AddDropSceneCellPos_Test
-end
-
-if _G.PickupManager and _G.PickupManager.AddDropSceneCellPos then
-    _G.Original_AddDropSceneCellPos_Test = _G.PickupManager.AddDropSceneCellPos
-
-    _G.PickupManager.AddDropSceneCellPos = function(item)
-        -- Gọi lại hàm gốc để game vẫn hiển thị item bình thường
-        if _G.Original_AddDropSceneCellPos_Test then
-            _G.Original_AddDropSceneCellPos_Test(item)
+    -- 1. Hook sự kiện rơi đồ (Lắng nghe đồ rơi)
+    if _G.PickupManager and _G.PickupManager.AddDropSceneCellPos then
+        if not _G.Original_AddDropSceneCellPos_Test then
+            _G.Original_AddDropSceneCellPos_Test = _G.PickupManager.AddDropSceneCellPos
         end
-
-        if not (item and item.data) then return end
-        local dropItemData = item.data
-
-        local itemId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
-        local itemX = dropItemData.x or (dropItemData.pos and dropItemData.pos.x)
-        local itemY = dropItemData.y or (dropItemData.pos and dropItemData.pos.y)
-
-        if not itemId or not itemX or not itemY then
-            return
-        end
-
-        LogOut(string.format("[TEST] Phát hiện item rớt: ID=%s, X=%s, Y=%s", tostring(itemId), tostring(itemX), tostring(itemY)))
-
-        -- =========================================================================
-        -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT)
-        -- =========================================================================
-        if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-            _G.PickupManager.ReqPickUpMapItem(itemId)
-            LogOut("[TEST] Gửi ReqPickUpMapItem lần 1")
-        end
-
-        -- 1. Gửi lệnh MoveTo 1 lần duy nhất để bắt đầu di chuyển tới vật phẩm
-        if _G.RoleManager and _G.RoleManager.me and itemX and itemY then
-            pcall(function()
-                _G.RoleManager.me:MoveTo({ x = itemX, y = itemY }, 0)
-                LogOut(string.format("[TEST] Đã gọi MoveTo({ x = %s, y = %s }, 0)", tostring(itemX), tostring(itemY)))
-            end)
-        end
-
-        -- 2. Trong khi di chuyển, liên tục spam gói nhặt (40 lần x 0.05s = 2s)
-        if _G.Timer and _G.Timer.StartLoop then
-            _G.Timer.StartLoop(0.1, 10, function()
-                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
-                    _G.PickupManager.ReqPickUpMapItem(itemId)
+        
+        _G.PickupManager.AddDropSceneCellPos = function(dropItemData, ...)
+            if dropItemData and dropItemData.id then
+                local posX = dropItemData.x or 0
+                local posY = dropItemData.y or 0
+                
+                local exists = false
+                for _, v in ipairs(_G.Test_PickQueue) do
+                    if v.id == dropItemData.id then exists = true break end
                 end
-            end)
-            LogOut("[TEST] Bắt đầu spam gói nhặt 40 lần")
+                
+                if not exists then
+                    table.insert(_G.Test_PickQueue, {
+                        id = dropItemData.id, 
+                        x = posX, 
+                        y = posY,
+                        dropTime = CS.UnityEngine.Time.realtimeSinceStartup,
+                        lastReqTime = 0
+                    })
+                end
+            end
+            return _G.Original_AddDropSceneCellPos_Test(dropItemData, ...)
         end
     end
 
-    LogOut("Đã hook thành công vào _G.PickupManager.AddDropSceneCellPos!")
-else
-    LogOut("LỖI: Không tìm thấy _G.PickupManager.AddDropSceneCellPos để hook!")
-end
+    -- 1.5 Hook sự kiện item biến mất (đã nhặt thành công)
+    if _G.PickupManager and _G.PickupManager.RemoveDropSceneCellPos then
+        if not _G.Original_RemoveDropSceneCellPos_Test then
+            _G.Original_RemoveDropSceneCellPos_Test = _G.PickupManager.RemoveDropSceneCellPos
+        end
+        _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData, ...)
+            if dropItemData and dropItemData.id then
+                -- Xóa khỏi queue ngay lập tức
+                for i = #_G.Test_PickQueue, 1, -1 do
+                    if _G.Test_PickQueue[i].id == dropItemData.id then
+                        table.remove(_G.Test_PickQueue, i)
+                    end
+                end
+            end
+            return _G.Original_RemoveDropSceneCellPos_Test(dropItemData, ...)
+        end
+    end
 
--- (Removed file close)
+    -- 2. Vòng lặp Hút Đồ (Hoover/Sweep)
+    _G.Test_ProcessQueue = function()
+        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
 
-if _G.FloatingWordUtility then
-    _G.FloatingWordUtility.QuickMsg("Đã nạp kịch bản test hook AddDropSceneCellPos!")
+        if #_G.Test_PickQueue == 0 then return end
+
+        local meX, meY = 0, 0
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+            meX = _G.RoleManager.me.serverCoord.x or 0
+            meY = _G.RoleManager.me.serverCoord.y or 0
+        end
+
+        local nearestDist = 9999
+        local nearestItem = nil
+
+        local packetsSentThisTick = 0
+
+        -- Duyệt ngược để dễ xóa đồ
+        for i = #_G.Test_PickQueue, 1, -1 do
+            local item = _G.Test_PickQueue[i]
+            
+            -- Tăng thời gian sống lên 8s vì lướt nhanh có thể nhặt sót
+            if nowTime - item.dropTime > 8.0 then
+                table.remove(_G.Test_PickQueue, i)
+            else
+                local dist = math.max(math.abs(meX - item.x), math.abs(meY - item.y))
+                
+                -- Nhặt đồ bằng ReqPickUpMapItem (do đồ Boss xài chung không dùng Batch được)
+                -- CHỐNG ĐƠ GAME: Chỉ gửi tối đa 3 packet nhặt trong mỗi 0.05s (60 packet/giây)
+                if dist <= 1.5 then
+                    if (nowTime - item.lastReqTime) >= 0.1 then
+                        if packetsSentThisTick < 3 then
+                            item.lastReqTime = nowTime
+                            packetsSentThisTick = packetsSentThisTick + 1
+                            if _G.PickupManager then
+                                _G.PickupManager.ReqPickUpMapItem(item.id)
+                            end
+                        end
+                    end
+                end
+
+                if dist < nearestDist then
+                    nearestDist = dist
+                    nearestItem = item
+                end
+            end
+        end
+
+        -- Liên tục chạy tới món đồ gần nhất (Giãn cách MoveTo ra 0.8s để khỏi bị khựng animation/pathfinding)
+        if nearestItem and _G.RoleManager and _G.RoleManager.me then
+            if nearestItem.id ~= _G.Test_LastTargetId or (nowTime - _G.Test_LastMoveTime) > 0.8 then
+                _G.Test_LastTargetId = nearestItem.id
+                _G.Test_LastMoveTime = nowTime
+                pcall(function()
+                    _G.RoleManager.me:MoveTo({ x = nearestItem.x, y = nearestItem.y })
+                end)
+            end
+        end
+    end
+
+    -- 3. Đăng ký vòng lặp
+    if not _G.Test_PickLoopStarted then
+        if _G.Timer and _G.Timer.StartLoop then
+            -- Vẫn chạy siêu tốc nhưng được bảo vệ bởi anti-spam packet
+            _G.Timer.StartLoop(0.05, -1, function()
+                if _G.Test_ProcessQueue then _G.Test_ProcessQueue() end
+            end)
+            _G.Test_PickLoopStarted = true
+            log_to_file("Đã kích hoạt Thuật Toán Lướt Nhặt (Hoover)!")
+        end
+    end
+
+    -- 4. Tìm và mở Rương Vàng
+    local targetChestId = nil
+    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+    if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+        pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+    end
+    if items then
+        for k, item in pairs(items) do
+            if item then
+                local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                local name = tblItem.name or item.name or ""
+                local itemType = tblItem.type or 0
+                if itemType == 5 and string.find(name, "Rương Vàng") then
+                    targetChestId = item.id or (item.data and item.data.id)
+                    break
+                end
+            end
+        end
+    end
+
+    if targetChestId then
+        log_to_file("Đang gửi lệnh mở 20 Rương Vàng...")
+        if _G.networkRequest and _G.networkRequest.ReqUseItem then
+            _G.networkRequest.ReqUseItem(20, targetChestId)
+        end
+    end
+
+end)
+
+if not status then
+    log_to_file("[CRASH LỖI SCRIPT] " .. tostring(err))
 end
