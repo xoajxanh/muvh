@@ -1,0 +1,1 @@
+﻿ = Get-Content final\extracted_lua\cfg_Item_item.lua;  = ''; foreach ( in ) { if ( -match 'name\s*=\s*"([^"]+)') {  = [1] } elseif ( -match 'type\s*=\s*(\d+)') {  = [1]; if ( -match 'Th.*nh.*H.*n|Th.*nh.*C.*t|C.*t|H.*n') { Write-Host  - type:  } } }

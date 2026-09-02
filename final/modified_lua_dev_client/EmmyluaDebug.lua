@@ -2500,12 +2500,12 @@ local function CreateModUI()
             _G.Mod_AutoFarmBoss_Ignore = _G.Mod_AutoFarmBoss_Ignore or {}
 
             local function LogMsg(msg)
-                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg(tostring(msg))
-                end
-                if _G.WriteLog then
-                    _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
-                end
+                -- if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                --     _G.FloatingWordUtility.QuickMsg(tostring(msg))
+                -- end
+                -- if _G.WriteLog then
+                --     _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
+                -- end
             end
 
             local function GetMapName(mapId)
@@ -2900,6 +2900,53 @@ local function CreateModUI()
             end
 
             -- =========================================================================
+            -- [MOD FEATURE]: CHỐNG LAO VỀ ĐẦU MAP KHI BOSS CHẾT (ANTI-RUSH ENTRANCE & JIGGLE)
+            -- Mô tả: Ngắt lộ trình tìm đường của game, tắt AutoFight/AutoTaskFight và nhích nhẹ +-1 ô bằng Vector2Int.
+            -- =========================================================================
+            _G.Mod_LastBossDeathJiggleTime = 0
+            _G.Mod_StopBossDeathRushAndJiggle = function(reason)
+                pcall(function()
+                    -- 1. Ngắt lộ trình tìm đường của game
+                    if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                        _G.PathFinderManager.ResetData()
+                    end
+
+                    -- 2. Dừng di chuyển & tắt Auto
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me then
+                        if me.StopMove then me:StopMove() end
+                        if me.SetAutoFight then me:SetAutoFight("None") end
+                        if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+                    end
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                        _G.QiJiHelperData.SetAutoFightData(false)
+                    end
+
+                    local now = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
+                    if now - (_G.Mod_LastBossDeathJiggleTime or 0) < 0.8 then
+                        return -- Tránh spam lệnh di chuyển dồn dập trong 0.8 giây
+                    end
+                    _G.Mod_LastBossDeathJiggleTime = now
+
+                    -- 3. Di chuyển nhẹ +- 1 ô bằng Vector2Int chuẩn C#
+                    if me and me.MoveTo then
+                        local meCell = me.cellPos or me.serverCoord
+                        local meX = meCell and meCell.x or (me.data and me.data.x) or 0
+                        local meY = meCell and meCell.y or (me.data and me.data.y) or 0
+                        if meX > 0 and meY > 0 then
+                            local dx = math.random(-1, 1)
+                            local dy = math.random(-1, 1)
+                            if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                            local targetCell = (CS.UnityEngine.Vector2Int and CS.UnityEngine.Vector2Int(meX + dx, meY + dy))
+                                or (_G.Vector2Int and _G.Vector2Int(meX + dx, meY + dy))
+                                or { x = meX + dx, y = meY + dy }
+                            me:MoveTo(targetCell, 0)
+                        end
+                    end
+                end)
+            end
+
+            -- =========================================================================
             -- [MOD FEATURE]: MÁY TRẠNG THÁI AUTO SĂN BOSS TOÀN DIỆN (AUTO FARM BOSS FSM)
             -- Mô tả: FSM điều khiển tự đổi map, tìm boss, di chuyển, xả combo, chờ nhặt đồ.
             -- =========================================================================
@@ -3040,6 +3087,13 @@ local function CreateModUI()
                 -- PRIORITY 0: BOSS ẨN
                 if _G.UIManager and _G.UIManager.IsVisible then
                     if _G.UIManager.IsVisible("Tip_MonsterTipUI") then
+                        if not _G.Mod_TipMonsterTipUI_Handled then
+                            _G.Mod_TipMonsterTipUI_Handled = true
+                            if _G.Mod_StopBossDeathRushAndJiggle then
+                                _G.Mod_StopBossDeathRushAndJiggle("Cổng Map Ẩn xuất hiện")
+                            end
+                        end
+
                         if _G.Mod_AutoFarmBoss_State == 5 or _G.Mod_AutoFarmBoss_State == 6 then
                             -- Do nothing, let the state machine run below so it can finish picking up items
                         else
@@ -3075,6 +3129,7 @@ local function CreateModUI()
                         end
                     else
                         _G.Mod_MapAn_UI_SeenTime = nil
+                        _G.Mod_TipMonsterTipUI_Handled = false
                     end
                 end
 
@@ -3894,14 +3949,11 @@ local function CreateModUI()
 
                         if bossIsDead or not foundBoss then
                             if bossIsDead or (_G.Mod_AutoFarmBoss_TargetWait or 0) >= 1 then
-                                LogMsg("Boss đã chết! Tắt AutoFight & Chờ nhặt đồ...")
+                                LogMsg("Boss đã chết! Dừng di chuyển, nhích +-1 ô & Chờ nhặt đồ...")
 
-                                -- Tắt Auto Fight ngay khi Boss chết
-                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                                    _G.RoleManager.me:SetAutoFight("None")
-                                end
-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                    _G.QiJiHelperData.SetAutoFightData(false)
+                                -- Ngắt ngay lộ trình lao về đầu map & nhích nhẹ +- 1 ô
+                                if _G.Mod_StopBossDeathRushAndJiggle then
+                                    _G.Mod_StopBossDeathRushAndJiggle("Boss chết State 5")
                                 end
 
                                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
@@ -3913,7 +3965,7 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_State = 6
                                 _G.Mod_AutoFarmBoss_LootStartTime = nowRealtime
-                                _G.Mod_AutoFarmBoss_DidLootMove = false
+                                _G.Mod_AutoFarmBoss_DidLootMove = true
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
                             else
                                 _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
@@ -3929,31 +3981,23 @@ local function CreateModUI()
                         local lootDuration = 5.0 -- 5 giây chờ nhặt đồ cho Client
                         local lootStart = _G.Mod_AutoFarmBoss_LootStartTime or nowRealtime
 
+                        -- Duy trì ngắt di chuyển & chặn game tự ý bật lại Auto Fight kéo về đầu map
+                        if _G.RoleManager and _G.RoleManager.me then
+                            if _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
+                                if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                            end
+                            if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
+                                if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+                            end
+                        end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
+                            if _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
+                        end
+
                         if not _G.Mod_AutoFarmBoss_DidLootMove then
                             _G.Mod_AutoFarmBoss_DidLootMove = true
-                            LogMsg("Boss đã chết: Tắt Đánh, di chuyển nhẹ +-1 ô & chờ 5s nhặt đồ...")
-
-                            -- Đảm bảo Auto Fight đã tắt hoàn toàn
-                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                                _G.RoleManager.me:SetAutoFight("None")
-                            end
-                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                _G.QiJiHelperData.SetAutoFightData(false)
-                            end
-
-                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
-                                local meX = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.x or
-                                    (_G.RoleManager.me.data and _G.RoleManager.me.data.x) or 0
-                                local meY = _G.RoleManager.me.serverCoord and _G.RoleManager.me.serverCoord.y or
-                                    (_G.RoleManager.me.data and _G.RoleManager.me.data.y) or 0
-                                if meX > 0 and meY > 0 then
-                                    local dx = math.random(-1, 1)
-                                    local dy = math.random(-1, 1)
-                                    if dx == 0 and dy == 0 then
-                                        dx = 1; dy = 1
-                                    end
-                                    _G.RoleManager.me:MoveTo({ x = meX + dx, y = meY + dy })
-                                end
+                            if _G.Mod_StopBossDeathRushAndJiggle then
+                                _G.Mod_StopBossDeathRushAndJiggle("State 6 Loot Move")
                             end
                         end
 
@@ -4528,6 +4572,104 @@ local function CreateModUI()
                         end
                     end
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BỘ NHẬN DIỆN & CACHE O(1) THÁNH CỐT, THÁNH HỒN & RUNE
+                    -- Mô tả: Tra cứu cực nhanh qua bảng băm Lua không qua C# reflection,
+                    --        nhận diện chính xác Thánh Cốt (Boss Đặc Biệt / Thống Lĩnh) & Thánh Hồn (Thường / Công / HP)
+                    -- =========================================================================
+                    _G.Mod_ItemDecisionCache = _G.Mod_ItemDecisionCache or {}
+
+                    local function Mod_GetItemDecision(confId, eType)
+                        if not confId then
+                            return {
+                                isBoneCot = (eType == 24),
+                                isBoneHon = (eType == 26),
+                                isRune = (eType == 19 or eType == 28),
+                                runePref = nil
+                            }
+                        end
+                        local cached = _G.Mod_ItemDecisionCache[confId]
+                        if cached ~= nil then
+                            return cached
+                        end
+
+                        local cfg = nil
+                        if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
+                            cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
+                        end
+                        if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+                            cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
+                        end
+
+                        local itemType = (cfg and cfg.type) or eType
+                        local subType = cfg and cfg.subType
+                        local quality = cfg and cfg.quality
+
+                        local isBoneCot = false
+                        local isBoneHon = false
+                        local isRune = (itemType == 19 or itemType == 28)
+                        local runePref = nil
+
+                        if itemType == 24 then
+                            if subType == 2400 or subType == 2450 or (quality and quality >= 9000) then
+                                isBoneCot = true
+                            elseif subType and subType >= 2401 and subType <= 2406 then
+                                isBoneHon = true
+                            else
+                                isBoneCot = true
+                            end
+                        elseif itemType == 26 then
+                            isBoneHon = true
+                        end
+
+                        if isRune then
+                            local rLevel = confId % 100
+                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
+                            local rColor = 0
+                            if subType then
+                                if itemType == 19 then
+                                    rColor = math.floor(subType / 1000)
+                                elseif itemType == 28 then
+                                    local lastDigit = subType % 10
+                                    if lastDigit == 1 then
+                                        rColor = 3 -- Đỏ
+                                    elseif lastDigit == 2 then
+                                        rColor = 2 -- Lam
+                                    elseif lastDigit == 3 then
+                                        rColor = 1 -- Lục
+                                    end
+                                end
+                            end
+
+                            local lvKey = "L5L"
+                            if rLevel == 5 then lvKey = "L5"
+                            elseif rLevel == 6 then lvKey = "L6"
+                            elseif rLevel == 7 then lvKey = "L7"
+                            elseif rLevel == 8 then lvKey = "L8"
+                            elseif rLevel == 9 then lvKey = "L9"
+                            elseif rLevel == 10 then lvKey = "L10"
+                            elseif rLevel > 10 then lvKey = "L10M"
+                            end
+
+                            local clrKey = "Luc"
+                            if rColor == 2 then clrKey = "Lam"
+                            elseif rColor >= 3 then clrKey = "Do"
+                            end
+
+                            runePref = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
+                        end
+
+                        local res = {
+                            isBoneCot = isBoneCot,
+                            isBoneHon = isBoneHon,
+                            isRune = isRune,
+                            runePref = runePref
+                        }
+                        _G.Mod_ItemDecisionCache[confId] = res
+                        return res
+                    end
+                    _G.Mod_GetItemDecision = Mod_GetItemDecision
+
                     -- BATCH LOOT: Quét sạch đồ mặt đất định kỳ 0.05s/lần
                     if _G.AutoPick_Enabled then
                         if (tonumber(_G.AutoPick_Count) or 0) < (tonumber(_G.AutoPick_Limit) or 23) then
@@ -4542,75 +4684,24 @@ local function CreateModUI()
                                     end
 
                                     if dropItems then
-                                        _G.Mod_ItemConfigCache = _G.Mod_ItemConfigCache or {}
                                         for _, itemObj in pairs(dropItems) do
                                             local dropItemData = itemObj and (itemObj.data or itemObj)
                                             if dropItemData and dropItemData.id and not (_G.Mod_PickedItems and _G.Mod_PickedItems[dropItemData.id]) then
                                                 local eType = dropItemData.type
-                                                local isRune = (eType == 19 or eType == 28)
-                                                local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
-                                                local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                                                local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.configID
+                                                local decision = Mod_GetItemDecision(confId, eType)
+                                                local isBoneHon = decision.isBoneHon and (_G.AutoPick_Bone_Hon == true)
+                                                local isBoneCot = decision.isBoneCot and (_G.AutoPick_Bone_Cot == true)
                                                 local isBone = isBoneHon or isBoneCot
                                                 local shouldPick = false
 
-                                                if isRune then
-                                                    local confId = (dropItemData.item and dropItemData.item.itemId) or
-                                                        dropItemData.configId
-                                                    if confId then
-                                                        local cachedPref = _G.Mod_ItemConfigCache[confId]
-                                                        if cachedPref == nil then
-                                                            local rLevel = confId % 100
-                                                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
-                                                            local rColor = 0
-                                                            local cfg = nil
-                                                            if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
-                                                                cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(
-                                                                    confId)
-                                                            end
-                                                            if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
-                                                                cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(
-                                                                    confId)
-                                                            end
-                                                            if cfg and cfg.subType then
-                                                                if cfg.type == 19 then
-                                                                    rColor = math.floor(cfg.subType / 1000)
-                                                                elseif cfg.type == 28 then
-                                                                    local lastDigit = cfg.subType % 10
-                                                                    if lastDigit == 1 then
-                                                                        rColor = 3
-                                                                    elseif lastDigit == 2 then
-                                                                        rColor = 2
-                                                                    elseif lastDigit == 3 then
-                                                                        rColor = 1
-                                                                    end
-                                                                end
-                                                            end
-                                                            local lvKey = "L5L"
-                                                            if rLevel == 5 then
-                                                                lvKey = "L5"
-                                                            elseif rLevel == 6 then
-                                                                lvKey = "L6"
-                                                            elseif rLevel == 7 then
-                                                                lvKey = "L7"
-                                                            elseif rLevel == 8 then
-                                                                lvKey = "L8"
-                                                            elseif rLevel == 9 then
-                                                                lvKey = "L9"
-                                                            elseif rLevel == 10 then
-                                                                lvKey = "L10"
-                                                            elseif rLevel > 10 then
-                                                                lvKey = "L10M"
-                                                            end
-                                                            local clrKey = "Luc"
-                                                            if rColor == 2 then
-                                                                clrKey = "Lam"
-                                                            elseif rColor >= 3 then
-                                                                clrKey = "Do"
-                                                            end
-                                                            cachedPref = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
-                                                            _G.Mod_ItemConfigCache[confId] = cachedPref
-                                                        end
-                                                        if _G[cachedPref] == true then shouldPick = true end
+                                                if decision.isRune then
+                                                    local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
+                                                    local pickLimit = _G.AutoPick_Limit or 0
+                                                    if isAdminBurst and pickLimit < 21 then
+                                                        shouldPick = true
+                                                    elseif decision.runePref and _G[decision.runePref] == true then
+                                                        shouldPick = true
                                                     end
                                                 end
                                                 if isBone then shouldPick = true end
@@ -4637,9 +4728,9 @@ local function CreateModUI()
                     end
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (ADMIN SUPER BURST LOOT SPAMMER)
-                    -- Mô tả: Spam nhịp 0.05s/lần trong 2.0s (tổng 40 lần) bắn ReqPickUpMapItem
-                    --        được quản lý bởi _G.Timer độc lập với vòng lặp mẹ.
+                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN & AUTO LOOT SPAMMER
+                    -- Mô tả: Spam mỗi frame liên tục 60fps, bắn gói kép khi cự ly <= 2 ô,
+                    --        tự động điều hướng nhân vật đến item gần nhất mượt mà.
                     -- =========================================================================
 
                     if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
@@ -4651,9 +4742,18 @@ local function CreateModUI()
                         end
 
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
 
-                        if _G.AutoPick_Mode == 1 then
-                            -- PA NHẶT 1: Rollback spam siêu tốc mỗi frame
+                        if _G.AutoPick_Mode == 1 or isAdminBurst then
+                            -- PA NHẶT 1 / ADMIN HYPER BURST: Spam siêu tốc mỗi frame
+                            local nearestDist = 9999
+                            local nearestItem = nil
+                            local meX, meY = 0, 0
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                meX = _G.RoleManager.me.serverCoord.x or 0
+                                meY = _G.RoleManager.me.serverCoord.y or 0
+                            end
+
                             for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
                                 if nowTime > itemInfo.expireTime then
                                     _G.Mod_ActiveSpamItems[itemId] = nil
@@ -4662,18 +4762,28 @@ local function CreateModUI()
                                         _G.PickupManager.ReqPickUpMapItem(itemId)
 
                                         -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
-                                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                            local meX = _G.RoleManager.me.serverCoord.x or 0
-                                            local meY = _G.RoleManager.me.serverCoord.y or 0
-                                            if itemInfo.x and itemInfo.y then
-                                                local dist = math.max(math.abs(meX - itemInfo.x),
-                                                    math.abs(meY - itemInfo.y))
-                                                if dist <= 2 then
-                                                    _G.PickupManager.ReqPickUpMapItem(itemId)
-                                                end
+                                        if itemInfo.x and itemInfo.y then
+                                            local dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
+                                            if dist <= 2 then
+                                                _G.PickupManager.ReqPickUpMapItem(itemId)
+                                            end
+                                            if dist < nearestDist then
+                                                nearestDist = dist
+                                                nearestItem = itemInfo
                                             end
                                         end
                                     end
+                                end
+                            end
+
+                            -- Với Admin Bão Nhặt: Tự động điều hướng MoveTo mượt mà về phía item gần nhất chưa nhặt
+                            if isAdminBurst and nearestItem and _G.RoleManager and _G.RoleManager.me then
+                                if nearestItem.id ~= _G.Mod_AdminLastTargetMove or (nowTime - (_G.Mod_AdminLastMoveTime or 0)) > 0.3 then
+                                    _G.Mod_AdminLastTargetMove = nearestItem.id
+                                    _G.Mod_AdminLastMoveTime = nowTime
+                                    pcall(function()
+                                        _G.RoleManager.me:MoveTo({ x = nearestItem.x, y = nearestItem.y })
+                                    end)
                                 end
                             end
                         else
@@ -6502,17 +6612,6 @@ local function CreateModUI()
             end
 
             btn.onClick:AddListener(function()
-                if varName == "Mod_DisableVisuals" then
-                    if _G.AutoPick_Enabled then
-                        _G.Mod_DisableVisuals = true
-                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                            _G.FloatingWordUtility.QuickMsg("Đang bật Nhặt Nhanh - Bắt buộc giảm cấu hình để chống lag!")
-                        end
-                        UpdateLabel()
-                        return
-                    end
-                end
-
                 _G[varName] = not _G[varName]
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
@@ -6520,13 +6619,6 @@ local function CreateModUI()
                     _G.Mod_IgnoredDropItems = {}
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
-
-                    -- Khi bật Nhặt Nhanh: Tự động BẬT Giảm cấu hình
-                    _G.Mod_DisableVisuals = true
-                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_DisableVisuals", 1)
-                    if _G.ModUpdateDisableVisualsLabel then
-                        pcall(_G.ModUpdateDisableVisualsLabel)
-                    end
                 end
 
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
@@ -6536,10 +6628,7 @@ local function CreateModUI()
                 end
 
                 if varName == "Mod_DisableVisuals" or varName == "AutoPick_Enabled" then
-                    local isLow = _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()
-                    if _G.Mod_ApplyPerformanceOptimization then
-                        pcall(_G.Mod_ApplyPerformanceOptimization, isLow)
-                    elseif _G.Mod_ApplyDisableVisualsState then
+                    if _G.Mod_ApplyDisableVisualsState then
                         pcall(_G.Mod_ApplyDisableVisualsState)
                     end
                 end
@@ -8514,7 +8603,7 @@ local function CreateModUI()
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
             currentY = currentY - 45
 
-            CreateToggle("GIẢM CẤU HÌNH", "Mod_DisableVisuals", rightColX2, currentY)
+            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", rightColX2, currentY)
             currentY = currentY - 45
 
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
@@ -10007,12 +10096,18 @@ local function CreateModUI()
                     local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
 
                     local eType = dropItemData.type
-                    local isRune = (eType == 19 or eType == 28)
-                    local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
-                    local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                    local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.configID
+                    local decision = (_G.Mod_GetItemDecision and _G.Mod_GetItemDecision(confId, eType)) or {
+                        isBoneCot = (eType == 24),
+                        isBoneHon = (eType == 26),
+                        isRune = (eType == 19 or eType == 28)
+                    }
+                    local isRune = decision.isRune
+                    local isBoneHon = decision.isBoneHon and (_G.AutoPick_Bone_Hon == true)
+                    local isBoneCot = decision.isBoneCot and (_G.AutoPick_Bone_Cot == true)
                     local isBone = isBoneHon or isBoneCot
 
-                    local targetUID = "177557978677775000"
+                    local targetUID = _G.Mod_TargetAdminUID or "177557978677775000"
                     local hasTargetNearby = false
                     if not _G.Mod_IsAdmin then
                         local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or
@@ -10024,7 +10119,7 @@ local function CreateModUI()
                                 if players then
                                     for _, p in pairs(players) do
                                         if p and not p.isDead then
-                                            local pId = p.id or (p.data and (p.data.id or p.data.roleId))
+                                            local pId = p.id or (p.data and (p.data.id or p.data.roleId)) or p.roleId
                                             if pId and tostring(pId) == targetUID then
                                                 hasTargetNearby = true
                                                 break
@@ -10039,10 +10134,10 @@ local function CreateModUI()
                     local delayMs = 0
                     if hasTargetNearby then
                         if isBone or isRune then
-                                delayMs = math.random(500, 1000)
-                            else
-                                delayMs = 0
-                            end
+                            delayMs = math.random(800, 1500)
+                        else
+                            delayMs = 0
+                        end
                     elseif logPrefix == "KTĐ" or isSecretTrickActive then
                         delayMs = 0
                     else
@@ -10052,83 +10147,37 @@ local function CreateModUI()
                     local delaySec = delayMs / 1000.0
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (HOOVER ALGORITHM)
+                    -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (HYPER-BURST 0MS & SPAM MỖI FRAME)
                     -- =========================================================================
                     if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and logPrefix ~= "KTĐ" then
-                        _G.Mod_AdminHooverQueue = _G.Mod_AdminHooverQueue or {}
-                        
-                        -- Thử nhặt 0ms lập tức để ăn cướp
+                        -- 1. Bắn gói tin nhặt tức thì 0ms
                         if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
                             _G.PickupManager.ReqPickUpMapItem(dropItemData.id)
                         end
-                        
-                        table.insert(_G.Mod_AdminHooverQueue, {
-                            id = dropItemData.id, 
-                            x = dropItemData.x, 
-                            y = dropItemData.y,
-                            dropTime = CS.UnityEngine.Time.realtimeSinceStartup,
-                            lastReqTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        })
 
-                        -- Đăng ký vòng lặp Hoover 1 lần duy nhất
-                        if not _G.Mod_AdminHooverLoopStarted then
-                            if _G.Timer and _G.Timer.StartLoop then
-                                _G.Timer.StartLoop(0.05, -1, function()
-                                    if not _G.Mod_AdminHooverQueue or #_G.Mod_AdminHooverQueue == 0 then return end
-                                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                                    local meX, meY = 0, 0
-                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                        meX = _G.RoleManager.me.serverCoord.x or 0
-                                        meY = _G.RoleManager.me.serverCoord.y or 0
-                                    end
-                                    local nearestDist = 9999
-                                    local nearestItem = nil
-                                    local packetsSentThisTick = 0
-
-                                    for i = #_G.Mod_AdminHooverQueue, 1, -1 do
-                                        local item = _G.Mod_AdminHooverQueue[i]
-                                        if nowTime - item.dropTime > 8.0 then
-                                            table.remove(_G.Mod_AdminHooverQueue, i)
-                                        else
-                                            local dist = math.max(math.abs(meX - item.x), math.abs(meY - item.y))
-                                            if dist <= 2.5 then
-                                                if (nowTime - item.lastReqTime) >= 0.1 then
-                                                    if packetsSentThisTick < 3 then
-                                                        item.lastReqTime = nowTime
-                                                        packetsSentThisTick = packetsSentThisTick + 1
-                                                        if _G.PickupManager then
-                                                            _G.PickupManager.ReqPickUpMapItem(item.id)
-                                                        end
-                                                    end
-                                                end
-                                            end
-                                            if dist < nearestDist then
-                                                nearestDist = dist
-                                                nearestItem = item
-                                            end
-                                        end
-                                    end
-
-                                    if nearestItem and _G.RoleManager and _G.RoleManager.me then
-                                        if nearestItem.id ~= _G.Mod_AdminHooverLastTarget or (nowTime - (_G.Mod_AdminHooverLastMove or 0)) > 0.8 then
-                                            _G.Mod_AdminHooverLastTarget = nearestItem.id
-                                            _G.Mod_AdminHooverLastMove = nowTime
-                                            pcall(function()
-                                                _G.RoleManager.me:MoveTo({ x = nearestItem.x, y = nearestItem.y })
-                                            end)
-                                        end
-                                    end
-                                end)
-                                _G.Mod_AdminHooverLoopStarted = true
-                                if _G.WriteLog then _G.WriteLog("[AdminHoover] Đã kích hoạt Vòng lặp Hút Bụi!") end
-                            end
+                        -- 2. Di chuyển thẳng đến item ngay lập tức
+                        if _G.RoleManager and _G.RoleManager.me and dropItemData.x and dropItemData.y then
+                            pcall(function()
+                                _G.RoleManager.me:MoveTo({ x = dropItemData.x, y = dropItemData.y })
+                            end)
                         end
-                        
+
+                        -- 3. Nạp vào Hàng Đợi Spam Mẹ (mỗi frame 60fps)
+                        _G.Mod_ActiveSpamItems = _G.Mod_ActiveSpamItems or {}
+                        _G.Mod_ActiveSpamItems[dropItemData.id] = {
+                            id = dropItemData.id,
+                            x = dropItemData.x,
+                            y = dropItemData.y,
+                            startTime = nowTime,
+                            expireTime = nowTime + 2.5
+                        }
+
                         local costMs = math.floor((CS.UnityEngine.Time.realtimeSinceStartup - startTime) * 1000)
                         if _G.WriteLog then
-                            _G.WriteLog(string.format("[%s] [AdminHoover] Đã thêm Obj=%s vào Queue Hút Bụi | Cost=%dms", logPrefix, tostring(dropItemData.id), costMs))
+                            _G.WriteLog(string.format("[%s] [AdminHyperBurst 0ms] Obj=%s | Pos=(%s,%s) | Cost=%dms",
+                                logPrefix, tostring(dropItemData.id), tostring(dropItemData.x), tostring(dropItemData.y), costMs))
                         end
-                        return -- Kết thúc, không chạy luồng AutoPick thường nữa
+                        return
                     end
 
 
@@ -10321,16 +10370,21 @@ local function CreateModUI()
 
                 if _G.AutoPick_Enabled then
                     local eType = dropItemData.type
-                    local isRune = (eType == 19 or eType == 28)
-                    local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
-                    local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                    local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.configID
+                    local decision = (_G.Mod_GetItemDecision and _G.Mod_GetItemDecision(confId, eType)) or {
+                        isBoneCot = (eType == 24),
+                        isBoneHon = (eType == 26),
+                        isRune = (eType == 19 or eType == 28)
+                    }
+                    local isBoneHon = decision.isBoneHon and (_G.AutoPick_Bone_Hon == true)
+                    local isBoneCot = decision.isBoneCot and (_G.AutoPick_Bone_Cot == true)
                     local isBone = isBoneHon or isBoneCot
 
                     local shouldPick = false
 
                     if isBone then
                         shouldPick = true
-                    elseif isRune then
+                    elseif decision.isRune then
                         local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
                         local pickLimit = _G.AutoPick_Limit or 0
                         
@@ -10339,67 +10393,17 @@ local function CreateModUI()
                             -- Admin bão nhặt (limit 16-20): Bỏ qua bộ lọc Rune, nhặt tất cả Rune
                             shouldPick = true
                         else
-                            -- Bình thường (hoặc Admin limit >= 21): Lọc Rune theo Level/Color
-                            local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId
-                            local rLevel = confId % 100
-                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
-                            local rColor = 0
-
-                            local cfg = nil
-                            if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
-                                cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
+                            -- Bình thường (hoặc Admin limit >= 21): Lọc Rune theo Level/Color qua Cache O(1)
+                            if decision.runePref and _G[decision.runePref] == true then
+                                shouldPick = true
                             end
-                            if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
-                                cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
-                            end
-
-                            if cfg and cfg.subType then
-                                if cfg.type == 19 then
-                                    rColor = math.floor(cfg.subType / 1000)
-                                elseif cfg.type == 28 then
-                                    local lastDigit = cfg.subType % 10
-                                    if lastDigit == 1 then
-                                        rColor = 3 -- Đỏ
-                                    elseif lastDigit == 2 then
-                                        rColor = 2 -- Lam
-                                    elseif lastDigit == 3 then
-                                        rColor = 1 -- Lục
-                                    end
-                                end
-                            end
-
-                            local lvKey = "L5L"
-                            if rLevel == 5 then
-                                lvKey = "L5"
-                            elseif rLevel == 6 then
-                                lvKey = "L6"
-                            elseif rLevel == 7 then
-                                lvKey = "L7"
-                            elseif rLevel == 8 then
-                                lvKey = "L8"
-                            elseif rLevel == 9 then
-                                lvKey = "L9"
-                            elseif rLevel == 10 then
-                                lvKey = "L10"
-                            elseif rLevel > 10 then
-                                lvKey = "L10M"
-                            end
-
-                            local clrKey = "Luc"
-                            if rColor == 2 then
-                                clrKey = "Lam"
-                            elseif rColor >= 3 then
-                                clrKey = "Do"
-                            end
-
-                            local prefKey = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
-                            if _G[prefKey] == true then shouldPick = true end
                         end
                     end
 
                     if shouldPick then
-                        local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
+                        local isAlreadyPicked = _G.Mod_PickedItems and _G.Mod_PickedItems[dropItemData.id]
                         if not isAlreadyPicked and ((_G.AutoPick_Count or 0) < _G.AutoPick_Limit) then
+                            _G.Mod_PickedItems = _G.Mod_PickedItems or {}
                             _G.Mod_PickedItems[dropItemData.id] = true
                             _G.AutoPick_Count = (_G.AutoPick_Count or 0) + 1
                             ExecutePickupCommon(dropItemData, startTime, interceptTime, "AutoLoot")
@@ -10900,195 +10904,8 @@ local function CreateModUI()
             end
 
             -- =========================================================================
-            -- [MOD FEATURE]: GIẢM CẤU HÌNH & TỐI ƯU HIỆU NĂNG (PERFORMANCE BOOST & SETTINGS SNAPSHOT)
-            -- Mô tả: Khi BẬT: Lưu Snapshot 100% các cài đặt "Hiển thị cảnh" của người chơi vào PlayerPrefs,
-            --        sau đó áp dụng cấu hình siêu nhẹ (Low) và ẩn các hiệu ứng nặng.
-            --        Khi TẮT: Đọc Snapshot từ PlayerPrefs để khôi phục chính xác 100% từng tùy chọn
-            --        (Ẩn người chơi, Ẩn skill, Ẩn cánh, Ẩn dấu chân, Ẩn thú triệu hồi, Ẩn quái, Ẩn skill quái...).
-            -- =========================================================================
-            _G.Mod_ApplyPerformanceOptimization = function(isLow)
-                pcall(function()
-                    if isLow then
-                        -- 1. Lưu snapshot cài đặt ban đầu của người chơi vào PlayerPrefs (nếu chưa có)
-                        local existingSnapStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_GameSettingsSnapshot", "")
-                        if (not existingSnapStr or existingSnapStr == "" or existingSnapStr == "[]" or existingSnapStr == "{}") and _G.GameSettingsData then
-                            local snap = {
-                                hidePlayerModelCamp = _G.GameSettingsData.hidePlayerModelCamp,
-                                hideSkillEffectCamp = _G.GameSettingsData.hideSkillEffectCamp,
-                                hideSummonMonster = _G.GameSettingsData.hideSummonMonster,
-                                hidePlayerWingCamp = _G.GameSettingsData.hidePlayerWingCamp,
-                                hidePlayerBootCamp = _G.GameSettingsData.hidePlayerBootCamp,
-                                hideMonsterModel = _G.GameSettingsData.hideMonsterModel,
-                                hideMonsterSkillEffect = _G.GameSettingsData.hideMonsterSkillEffect,
-                                showShadow = _G.GameSettingsData.showShadow,
-                                showWeatherEffect = _G.GameSettingsData.showWeatherEffect,
-                                showSceneAnimals = _G.GameSettingsData.showSceneAnimals,
-                                limitMaxVisiblePlayers = _G.GameSettingsData.limitMaxVisiblePlayers,
-                                maxVisiblePlayers = _G.GameSettingsData.maxVisiblePlayers,
-                                performQuality = _G.GameSettingsData.performQuality,
-                                resolution = _G.GameSettingsData.resolution,
-                                frameRate = _G.GameSettingsData.frameRate,
-                                LOD = _G.GameSettingsData.LOD,
-                                maxInstantiateCount = _G.GameSettingsData.maxInstantiateCount
-                            }
-                            _G.Mod_OriginalGameSettingsSnapshot = snap
-                            if _G.json and _G.json.encode then
-                                local snapStr = _G.json.encode(snap)
-                                CS.UnityEngine.PlayerPrefs.SetString("Mod_GameSettingsSnapshot", snapStr)
-                                CS.UnityEngine.PlayerPrefs.Save()
-                            end
-                        end
-
-                        -- 2. Áp dụng chuẩn 100% thiết lập Khóa Màn Hình (EPerformanceQuality.Low)
-                        if _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.GameSettingsController then
-                            local lowSettings = _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.Low]
-                            if lowSettings then
-                                _G.GameSettingsController.SetGamingSettings(lowSettings)
-                                _G.GameSettingsController.ApplyDisplaySettings(lowSettings)
-                                _G.GameSettingsController.SetSettings(lowSettings)
-                            end
-                        end
-                    else
-                        -- 3. Khôi phục từ Snapshot đã lưu trong PlayerPrefs
-                        local snap = _G.Mod_OriginalGameSettingsSnapshot
-                        if not snap then
-                            local snapStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_GameSettingsSnapshot", "")
-                            if snapStr and snapStr ~= "" and snapStr ~= "[]" and snapStr ~= "{}" then
-                                if _G.json and _G.json.decode then
-                                    local ok, decoded = pcall(_G.json.decode, snapStr)
-                                    if ok and type(decoded) == "table" then
-                                        snap = decoded
-                                    end
-                                end
-                            end
-                        end
-
-                        if snap and _G.GameSettingsController then
-                            -- Khôi phục chính xác từng mục cài đặt "Hiển thị cảnh" của người chơi
-                            if snap.hidePlayerModelCamp ~= nil then
-                                _G.GameSettingsController.SetHidePlayerModelType(snap.hidePlayerModelCamp, true)
-                            end
-                            if snap.hideSkillEffectCamp ~= nil then
-                                _G.GameSettingsController.SetHideModelSkillEffectType(snap.hideSkillEffectCamp, true)
-                            end
-                            if snap.hideSummonMonster ~= nil then
-                                _G.GameSettingsController.SetSummonMonsterModelType(snap.hideSummonMonster, true)
-                            end
-                            if snap.hidePlayerWingCamp ~= nil then
-                                _G.GameSettingsController.SetHidePlayerWingType(snap.hidePlayerWingCamp, true)
-                            end
-                            if snap.hidePlayerBootCamp ~= nil then
-                                _G.GameSettingsController.SetHidePlayerBootType(snap.hidePlayerBootCamp, true)
-                            end
-                            if snap.hideMonsterModel ~= nil then
-                                _G.GameSettingsController.SetHideMonsterModel(snap.hideMonsterModel, true)
-                            end
-                            if snap.hideMonsterSkillEffect ~= nil then
-                                _G.GameSettingsController.SetHideMonsterSkillEffect(snap.hideMonsterSkillEffect, true)
-                            end
-                            if snap.showShadow ~= nil then
-                                _G.GameSettingsController.SetShowRoleShadow(snap.showShadow)
-                            end
-                            if snap.showWeatherEffect ~= nil then
-                                _G.GameSettingsController.ShowSceneWeatherEffect(snap.showWeatherEffect)
-                            end
-                            if snap.showSceneAnimals ~= nil then
-                                _G.GameSettingsController.ShowSceneAnimals(snap.showSceneAnimals)
-                            end
-                            if snap.limitMaxVisiblePlayers ~= nil then
-                                _G.GameSettingsController.SetLimitShowPlayers(snap.limitMaxVisiblePlayers)
-                            end
-                            if snap.maxVisiblePlayers ~= nil then
-                                _G.GameSettingsController.SetPlayerShowLimitCount(snap.maxVisiblePlayers)
-                            end
-                            if snap.resolution ~= nil then
-                                _G.GameSettingsController.SetResolution(snap.resolution)
-                            end
-                            if snap.frameRate ~= nil then
-                                _G.GameSettingsController.SetFrameRate(snap.frameRate)
-                            end
-                            if snap.LOD ~= nil and CS.UnityEngine.Shader then
-                                CS.UnityEngine.Shader.globalMaximumLOD = snap.LOD
-                            end
-                            if snap.performQuality ~= nil and _G.GameSettingsData then
-                                _G.GameSettingsData.performQuality = snap.performQuality
-                            end
-                            if snap.maxInstantiateCount ~= nil and CS.Framework and CS.Framework.ResourceManager then
-                                CS.Framework.ResourceManager.MaxLoadOrInstanceCount = snap.maxInstantiateCount
-                            end
-                            _G.GameSettingsController.Save()
-                        else
-                            -- Fallback nếu chưa từng có snapshot: Khôi phục cấu hình High mặc định
-                            local highSettings = _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.High]
-                            if highSettings and _G.GameSettingsController then
-                                _G.GameSettingsController.SetGamingSettings(highSettings)
-                                _G.GameSettingsController.ApplyDisplaySettings(highSettings)
-                                _G.GameSettingsController.SetSettings(highSettings)
-                            end
-                        end
-
-                        -- Xóa Snapshot sau khi đã khôi phục thành công
-                        _G.Mod_OriginalGameSettingsSnapshot = nil
-                        CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_GameSettingsSnapshot")
-                        CS.UnityEngine.PlayerPrefs.Save()
-
-                        -- 3.3. Đảm bảo FrameRate tối thiểu 60 FPS
-                        pcall(function()
-                            if _G.GameSettingsController and _G.GameSettingsController.SetFrameRate then
-                                local targetFps = (_G.C_FrameRate and _G.C_FrameRate.HIGH) or 60
-                                if targetFps < 60 then targetFps = 60 end
-                                _G.GameSettingsController.SetFrameRate(targetFps)
-                            elseif CS.UnityEngine.Application then
-                                CS.UnityEngine.Application.targetFrameRate = 60
-                            end
-                        end)
-
-                        -- 3.4. [TINH CHỈNH ANIMATOR]: Khóa chuẩn tốc độ 1.0x cho Body, Cánh & Dấu Chân Me
-                        pcall(function()
-                            if _G.RoleManager and _G.RoleManager.me then
-                                local me = _G.RoleManager.me
-                                local targets = {}
-                                if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
-                                if me.model and me.model.transform then table.insert(targets, me.model.transform) end
-                                if me.AvatarEquip then
-                                    if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
-                                    if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
-                                end
-                                if me.footPrintEffect then table.insert(targets, me.footPrintEffect) end
-
-                                for _, targetGo in ipairs(targets) do
-                                    if targetGo and not IsNil(targetGo) then
-                                        local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                        if anims then
-                                            for i = 0, anims.Length - 1 do
-                                                local a = anims[i]
-                                                if a and not IsNil(a) and a.speed ~= 1.0 then
-                                                    a.speed = 1.0
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-
-                                if me.SetMoveSpeed then
-                                    local base = me._modBaseMoveSpeed or 5.0
-                                    me:SetMoveSpeed(base, true)
-                                end
-                            end
-                        end)
-                    end
-
-                    -- 4. Đồng bộ các hiệu ứng Scene & Footprint
-                    if _G.Mod_ApplyDisableVisualsState then
-                        _G.Mod_ApplyDisableVisualsState()
-                    end
-                end)
-            end
-
-            -- 14. Hàm áp dụng trạng thái trực tiếp & kích hoạt Timer giám sát liên tục
-            -- =========================================================================
             -- [MOD FEATURE]: TỐI ƯU ĐỒ HỌA & ẨN HIỆU ỨNG (DISABLE VISUALS & FPS BOOST)
-            -- Mô tả: Tắt hiển thị model nhân vật/quái/cánh/skill để giảm tải GPU/CPU khi cắm máy.
+            -- Mô tả: Tắt hiển thị SceneEffect, Skill, Hồn hoàn, Footprint để giảm tải GPU/CPU.
             -- =========================================================================
             _G.Mod_ApplyDisableVisualsState = function()
                 pcall(function()
@@ -11187,9 +11004,7 @@ local function CreateModUI()
             end
 
             -- Khởi tạo áp dụng ngay trạng thái hiện tại
-            if _G.Mod_ApplyPerformanceOptimization then
-                _G.Mod_ApplyPerformanceOptimization(_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive())
-            elseif _G.Mod_ApplyDisableVisualsState then
+            if _G.Mod_ApplyDisableVisualsState then
                 _G.Mod_ApplyDisableVisualsState()
             end
         end
@@ -11243,6 +11058,12 @@ local status, err = pcall(function()
         _G.UIManager.Show = function(name, args, animation)
             local ret = nil
             if original_Show then ret = original_Show(name, args, animation) end
+
+            if name == "Tip_MonsterTipUI" then
+                if _G.Mod_StopBossDeathRushAndJiggle then
+                    _G.Mod_StopBossDeathRushAndJiggle("UIManager.Show Tip_MonsterTipUI")
+                end
+            end
 
             if name == "Main_MainMenuUI" then
                 if not _G.MyModCreated then
