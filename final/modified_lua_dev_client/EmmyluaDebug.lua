@@ -5070,7 +5070,7 @@ local function CreateModUI()
                     if not _G.Mod_PKScanLoopStarted then
                         _G.Mod_PKScanLoopStarted = true
                         if _G.Timer and _G.Timer.StartLoop then
-                            _G.Timer.StartLoop(0.05, -1, function()
+                            _G.Timer.StartLoop(0.25, -1, function()
                                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                                 pcall(function()
                                     if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
