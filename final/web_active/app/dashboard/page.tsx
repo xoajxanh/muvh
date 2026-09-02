@@ -328,6 +328,7 @@ export default function DashboardPage() {
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-900/60 uppercase text-slate-400 border-b border-slate-800 text-[11px]">
                   <tr>
+                    <th className="py-3 px-4">Khách Hàng</th>
                     <th className="py-3 px-4">Thiết Bị MD5</th>
                     <th className="py-3 px-4">UID Nhân Vật</th>
                     <th className="py-3 px-4">Gói VIP</th>
@@ -340,12 +341,15 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-slate-800/60">
                   {data?.recentTokens?.map((tok: any) => (
                     <tr key={tok.id} className="hover:bg-slate-800/30 transition">
+                      <td className="py-3.5 px-4 font-semibold text-amber-300">
+                        {tok.customerName || <span className="text-slate-500 font-normal italic">Chưa nhập</span>}
+                      </td>
                       <td className="py-3.5 px-4 font-mono font-semibold text-cyan-300">
                         {tok.deviceSnMd5.substring(0, 10)}...
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-200">{tok.characterUid}</td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium whitespace-nowrap">
                           {tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định')}
                         </span>
                       </td>
@@ -368,7 +372,7 @@ export default function DashboardPage() {
                   ))}
                   {(!data?.recentTokens || data.recentTokens.length === 0) && (
                     <tr>
-                      <td colSpan={7} className="py-8 text-center text-slate-500 italic">
+                      <td colSpan={8} className="py-8 text-center text-slate-500 italic">
                         Chưa có token nào được tạo
                       </td>
                     </tr>

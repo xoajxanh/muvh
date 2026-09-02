@@ -289,7 +289,7 @@ export default function TokensPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px]">
+                  <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
                     <tr>
                       <th className="py-3.5 px-4">Trạng Thái</th>
                       <th className="py-3.5 px-4">Khách Hàng</th>
@@ -312,7 +312,7 @@ export default function TokensPage() {
                           className="hover:bg-slate-800/50 cursor-pointer transition"
                         >
                           <td className="py-3.5 px-4">{getStatusBadge(tok)}</td>
-                          <td className="py-3.5 px-4 font-semibold text-amber-300">
+                          <td className="py-3.5 px-4 font-semibold text-amber-300 whitespace-nowrap">
                             {tok.customerName || <span className="text-slate-500 font-normal italic">Chưa nhập</span>}
                           </td>
                           <td className="py-3.5 px-4 font-mono font-bold text-cyan-300">
@@ -321,12 +321,12 @@ export default function TokensPage() {
                           <td className="py-3.5 px-4 font-mono text-slate-200 font-medium">
                             {tok.characterUid}
                           </td>
-                          <td className="py-3.5 px-4">
-                            <span className="px-2.5 py-1 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold text-xs">
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span className="inline-flex items-center justify-center px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-semibold text-xs whitespace-nowrap">
                               {tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định')}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 font-medium text-slate-200">
+                          <td className="py-3.5 px-4 font-medium text-slate-200 whitespace-nowrap">
                             {new Date(tok.expireAt).toLocaleDateString('vi-VN')} ({tok.durationDays}d)
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-emerald-400">

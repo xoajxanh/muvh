@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Download,
   LogIn,
   Zap,
   Eye,
@@ -15,6 +14,7 @@ import {
   RefreshCw,
   Layers,
   Send,
+  MessageCircle,
   Crosshair,
   LayoutDashboard,
 } from 'lucide-react';
@@ -92,18 +92,28 @@ export default function HomePage() {
             <a href="#packages" className="hover:text-emerald-400 transition-colors">
               Bảng giá VIP
             </a>
-            <a href="#download" className="hover:text-emerald-400 transition-colors">
-              Tải APK
+            <a href="#contact" className="hover:text-emerald-400 transition-colors">
+              Liên hệ
             </a>
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href="https://zalo.me/0386918686"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs sm:text-sm transition-all shadow-lg shadow-blue-600/30 border border-blue-400/40 active:scale-95"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Zalo 0386918686</span>
+            </a>
+
             <a
               href="https://t.me/vutmod"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm transition-all shadow-lg shadow-sky-600/30 border border-sky-400/40 active:scale-95"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-medium text-xs sm:text-sm transition-all shadow-lg shadow-sky-600/30 border border-sky-400/40 active:scale-95"
             >
               <Send className="w-4 h-4" />
               <span>Telegram @vutmod</span>
@@ -152,20 +162,22 @@ export default function HomePage() {
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <a
-              href="/downloads/MU_vut_teams.apk"
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-base shadow-xl shadow-emerald-500/30 border border-emerald-300/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              href="https://zalo.me/0386918686"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-blue-600/25 border border-blue-400/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              <Download className="w-5 h-5 animate-bounce" />
-              <span>TẢI BẢN MOD APK NGAY</span>
+              <MessageCircle className="w-5 h-5" />
+              <span>LIÊN HỆ ZALO 0386918686</span>
             </a>
             <a
               href="https://t.me/vutmod"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-semibold text-base transition-all border border-sky-400/40 shadow-lg shadow-sky-500/20"
+              className="inline-flex items-center gap-2.5 px-7 py-4 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-600 hover:from-sky-400 hover:to-cyan-500 text-white font-bold text-base shadow-xl shadow-sky-500/25 border border-sky-300/40 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
             >
               <Send className="w-5 h-5" />
-              <span>Liên Hệ Telegram @vutmod</span>
+              <span>LIÊN HỆ TELEGRAM @vutmod</span>
             </a>
           </div>
 
@@ -181,7 +193,7 @@ export default function HomePage() {
             </div>
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
               <div className="text-emerald-400 font-bold text-2xl">Auto Boss</div>
-              <div className="text-slate-400 text-xs">Tự vào Map Ẩn &amp; C3-C5</div>
+              <div className="text-slate-400 text-xs">Tự vào Map Ẩn &amp; C3-C12</div>
             </div>
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
               <div className="text-emerald-400 font-bold text-2xl">Kundun HP</div>
@@ -459,33 +471,33 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* Row 2: Tách Đồ (C3, C4, C5) */}
+              {/* Row 2: Tách Đồ (C3 đến C12) */}
               <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 space-y-2 text-xs">
                 <div className="text-slate-300 font-bold mb-1">TỰ ĐỘNG PHÂN TÁCH TRANG BỊ:</div>
 
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                  <span className="text-slate-400">TÁCH NHẪN:</span>
-                  <div className="flex gap-1">
-                    {['C3', 'C4', 'C5'].map((lv) => (
-                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 overflow-x-auto">
+                  <span className="text-slate-400 shrink-0 mr-2">TÁCH NHẪN:</span>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {['C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12'].map((lv) => (
+                      <span key={lv} className="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold text-[11px] border border-slate-700">{lv}</span>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
-                  <span className="text-slate-400">TÁCH DÂY:</span>
-                  <div className="flex gap-1">
-                    {['C3', 'C4', 'C5'].map((lv) => (
-                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5 overflow-x-auto">
+                  <span className="text-slate-400 shrink-0 mr-2">TÁCH DÂY:</span>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {['C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12'].map((lv) => (
+                      <span key={lv} className="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold text-[11px] border border-slate-700">{lv}</span>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">TÁCH KHUYÊN:</span>
-                  <div className="flex gap-1">
-                    {['C3', 'C4', 'C5'].map((lv) => (
-                      <span key={lv} className="px-2 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold border border-slate-700">{lv}</span>
+                <div className="flex items-center justify-between overflow-x-auto">
+                  <span className="text-slate-400 shrink-0 mr-2">TÁCH KHUYÊN:</span>
+                  <div className="flex gap-1 flex-wrap justify-end">
+                    {['C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10', 'C11', 'C12'].map((lv) => (
+                      <span key={lv} className="px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 font-mono font-bold text-[11px] border border-slate-700">{lv}</span>
                     ))}
                   </div>
                 </div>
@@ -558,10 +570,10 @@ export default function HomePage() {
               <Layers className="w-6 h-6" />
             </div>
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-emerald-400 transition-colors">
-              Nhặt Đồ Siêu Tốc &amp; Tách Đồ C3-C5
+              Nhặt Đồ Siêu Tốc &amp; Tách Đồ C3-C12
             </h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Hệ thống lọc vật phẩm thông minh, tự động nhặt ngọc &amp; trang bị quý. Tự động phân tách Nhẫn, Dây, Khuyên C3/C4/C5 tránh đầy rương.
+              Hệ thống lọc vật phẩm thông minh, tự động nhặt ngọc &amp; trang bị quý. Tự động phân tách Nhẫn, Dây, Khuyên từ C3 đến C12 tránh đầy rương.
             </p>
           </div>
 
@@ -610,7 +622,7 @@ export default function HomePage() {
       <section id="packages" className="relative z-10 py-12 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h2 className="text-3xl font-black text-white">Bảng Gói VIP &amp; Đăng Ký Bản Quyền</h2>
-          <p className="text-slate-400 text-sm mt-2">Liên hệ hỗ trợ cài đặt &amp; mua key VIP qua Telegram chính thức</p>
+          <p className="text-slate-400 text-sm mt-2">Liên hệ hỗ trợ cài đặt &amp; mua key VIP qua Zalo hoặc Telegram chính thức</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -642,15 +654,26 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-            <a
-              href="https://t.me/vutmod"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-bold text-center text-sm border border-sky-400/40 shadow-lg shadow-sky-600/20 flex items-center justify-center gap-2 transition-all"
-            >
-              <Send className="w-4 h-4" />
-              <span>Liên hệ Telegram @vutmod</span>
-            </a>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+              <a
+                href="https://zalo.me/0386918686"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-xl bg-blue-600/90 hover:bg-blue-500 text-white font-bold text-center text-xs border border-blue-400/40 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Zalo 0386918686</span>
+              </a>
+              <a
+                href="https://t.me/vutmod"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-xl bg-sky-600/90 hover:bg-sky-500 text-white font-bold text-center text-xs border border-sky-400/40 shadow-lg shadow-sky-600/20 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Telegram @vutmod</span>
+              </a>
+            </div>
           </div>
 
           {/* Gói VIP */}
@@ -688,15 +711,26 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-            <a
-              href="https://t.me/vutmod"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white font-bold text-center text-sm border border-emerald-300/40 shadow-lg shadow-emerald-500/30 flex items-center justify-center gap-2 transition-all"
-            >
-              <Send className="w-4 h-4" />
-              <span>Liên hệ Telegram @vutmod</span>
-            </a>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+              <a
+                href="https://zalo.me/0386918686"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-center text-xs border border-blue-400/40 shadow-lg shadow-blue-600/20 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Zalo 0386918686</span>
+              </a>
+              <a
+                href="https://t.me/vutmod"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-emerald-600 hover:from-sky-400 hover:to-emerald-500 text-white font-bold text-center text-xs border border-sky-300/40 shadow-lg shadow-sky-500/20 flex items-center justify-center gap-1.5 transition-all"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Telegram @vutmod</span>
+              </a>
+            </div>
           </div>
 
           {/* Admin */}
@@ -740,32 +774,34 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* DOWNLOAD CTA BANNER */}
-      <section id="download" className="relative z-10 pt-8 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      {/* CONTACT CTA BANNER */}
+      <section id="contact" className="relative z-10 pt-8 pb-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
         <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-emerald-900/70 via-slate-900 to-green-950/80 border border-emerald-500/40 shadow-2xl text-center space-y-6">
           <h2 className="text-3xl sm:text-4xl font-black text-white">
-            Trải Nghiệm Bản Mod MU Vĩnh Hằng Ngay
+            Liên Hệ Kích Hoạt &amp; Cài Đặt Bản Mod
           </h2>
           <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto">
-            Tải về file APK cài đặt trực tiếp trên điện thoại Android hoặc giả lập PC (NoxPlayer, LDPlayer, Bluestacks).
+            Hỗ trợ kích hoạt bản quyền nhanh chóng, tư vấn và hướng dẫn cài đặt tận tình cho mọi thiết bị Android &amp; Giả lập PC (NoxPlayer, LDPlayer, Bluestacks).
           </p>
 
           <div className="flex flex-wrap justify-center gap-4 pt-2">
             <a
-              href="/downloads/MU_vut_teams.apk"
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-base transition-all shadow-xl shadow-emerald-500/30"
+              href="https://zalo.me/0386918686"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base transition-all shadow-xl shadow-blue-600/30 border border-blue-400/40"
             >
-              <Download className="w-5 h-5" />
-              <span>TẢI FILE MU_vut_teams.apk</span>
+              <MessageCircle className="w-5 h-5" />
+              <span>LIÊN HỆ ZALO 0386918686</span>
             </a>
             <a
               href="https://t.me/vutmod"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-base transition-all border border-sky-400/40 shadow-lg shadow-sky-500/20"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-base transition-all border border-sky-400/40 shadow-lg shadow-sky-500/20"
             >
               <Send className="w-5 h-5" />
-              <span>Hỗ trợ Telegram @vutmod</span>
+              <span>LIÊN HỆ TELEGRAM @vutmod</span>
             </a>
           </div>
         </div>
