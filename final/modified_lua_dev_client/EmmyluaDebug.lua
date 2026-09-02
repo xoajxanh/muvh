@@ -4377,7 +4377,7 @@ local function CreateModUI()
                         end
 
                         -- 11. Đặt hẹn giờ Rollback tự động sau 15s
-                        _G.Mod_KundunRollbackTime = (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) + 15.0
+                        _G.Mod_KundunRollbackTime = (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) + 20.0
                     end
 
                     -- Kiểm tra Rollback tự động sau 15s (Hết phiên săn Kundun)
@@ -4492,7 +4492,7 @@ local function CreateModUI()
                                             elseif kLevel >= 3000 then
                                                 triggerThreshold = 3
                                             elseif kLevel >= 2600 then
-                                                triggerThreshold = 10.0
+                                                triggerThreshold = 5.0
                                             elseif kLevel >= 2200 then
                                                 triggerThreshold = 15.0
                                             else
@@ -4548,7 +4548,9 @@ local function CreateModUI()
                                             if dropItemData and dropItemData.id and not (_G.Mod_PickedItems and _G.Mod_PickedItems[dropItemData.id]) then
                                                 local eType = dropItemData.type
                                                 local isRune = (eType == 19 or eType == 28)
-                                                local isBone = (eType == 24 or eType == 26)
+                                                local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
+                                                local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                                                local isBone = isBoneHon or isBoneCot
                                                 local shouldPick = false
 
                                                 if isRune then
@@ -5497,6 +5499,7 @@ local function CreateModUI()
                     "Mod_CustomAttackRange", "Mod_CustomAttackRangeMultiplier", "Mod_RunSpeedMultiplier",
                     "Mod_AtkSpeedMultiplier", "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap",
                     "Mod_AutoHH_Enabled", "ModAutoBossConfigTab", "Mod_LockTarget_Enabled",
+                    "Mod_AutoPick_Bone_Hon", "Mod_AutoPick_Bone_Cot",
                     "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
                     "Mod_TeleNotify_Enabled"
                 }
@@ -5535,6 +5538,8 @@ local function CreateModUI()
                 _G.Mod_AutoReturnPosDelay = 3.0
                 _G.Mod_PKScanDelay = 0.8
                 _G.AutoPick_Enabled = false
+                _G.AutoPick_Bone_Hon = true
+                _G.AutoPick_Bone_Cot = true
                 _G.Mod_LockTarget_Enabled = false
                 _G.Mod_LockTarget_Name = ""
                 _G.Mod_AutoOpenGoldenChest_Enabled = false
@@ -6282,6 +6287,12 @@ local function CreateModUI()
             _G.AutoJumpBoss_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoJumpBoss_Enabled", 1) == 1
         end
+        if _G.AutoPick_Bone_Hon == nil then
+            _G.AutoPick_Bone_Hon = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Bone_Hon", 1) == 1
+        end
+        if _G.AutoPick_Bone_Cot == nil then
+            _G.AutoPick_Bone_Cot = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Bone_Cot", 1) == 1
+        end
         local runeLevels = { "L5L", "L5", "L6", "L7", "L8", "L9", "L10", "L10M" }
         local runeColors = { "Luc", "Lam", "Do" }
         for _, lv in ipairs(runeLevels) do
@@ -6908,7 +6919,85 @@ local function CreateModUI()
                 UpdatePAModeLabels()
             end)
 
+            -- =========================================================================
+            -- [MOD FEATURE]: BẢNG LỰA CHỌN NHẶT THÁNH CỐT (BONE LOOT FILTER UI)
+            -- Mô tả: Lựa chọn nhặt Hồn (Type 26) và Nhặt Cốt (Type 24)
+            -- =========================================================================
             currentY = currentY - 45
+
+            local boneTitleGo = GameObject("BoneTitle")
+            boneTitleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, boneTitleGo)
+            local boneTitleRt = boneTitleGo:AddComponent(typeof(RectTransform))
+            boneTitleRt.anchorMin, boneTitleRt.anchorMax, boneTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            boneTitleRt.anchoredPosition = Vector2(rightColX, currentY)
+            boneTitleRt.sizeDelta = Vector2(375, 25)
+            local boneTitleTxt = boneTitleGo:AddComponent(typeof(Text))
+            boneTitleTxt.raycastTarget = false
+            boneTitleTxt.text = "[ LỰA CHỌN NHẶT THÁNH CỐT ]"
+            boneTitleTxt.color = Color(1, 0.8, 0, 1)
+            boneTitleTxt.fontSize = 16
+            boneTitleTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then boneTitleTxt.font = defaultFont end
+
+            currentY = currentY - 30
+
+            -- 2 Option: NHẶT HỒN (Type 26) & NHẶT CỐT (Type 24)
+            local function CreateBoneToggle(label, varName, xPos, yPos, width)
+                local tGo = GameObject(varName .. "_Toggle")
+                tGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, tGo)
+
+                local tRt = tGo:AddComponent(typeof(RectTransform))
+                tRt.anchorMin, tRt.anchorMax, tRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tRt.anchoredPosition = Vector2(xPos, yPos)
+                tRt.sizeDelta = Vector2(width, 30)
+
+                local bgImg = tGo:AddComponent(typeof(Image))
+                bgImg.raycastTarget = true
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(tGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 15
+                txt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txt.font = defaultFont end
+
+                local btn = tGo:AddComponent(typeof(Button))
+                btn.targetGraphic = bgImg
+
+                local function UpdateLabel()
+                    if _G[varName] then
+                        bgImg.color = Color(0.1, 0.6, 0.2, 1)
+                        txt.text = label
+                        txt.color = Color.white
+                    else
+                        bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        txt.text = label
+                        txt.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateLabel()
+                _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+                table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
+
+                btn.onClick:AddListener(function()
+                    _G[varName] = not _G[varName]
+                    local prefKey = "Mod_" .. varName
+                    CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[varName] and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateLabel()
+                end)
+            end
+
+            CreateBoneToggle("NHẶT HỒN", "AutoPick_Bone_Hon", rightColX + 15, currentY, 160)
+            CreateBoneToggle("NHẶT CỐT", "AutoPick_Bone_Cot", rightColX + 200, currentY, 160)
+
+            currentY = currentY - 35
 
             -- BẢNG PHÙ VĂN (2 CỘT x 4 HÀNG)
             local titleGo = GameObject("RuneTitle")
@@ -8318,10 +8407,10 @@ local function CreateModUI()
             table.insert(_G.NangCaoUIList, vLineGo)
             local vLineRt = vLineGo:AddComponent(typeof(RectTransform))
             vLineRt.anchorMin, vLineRt.anchorMax, vLineRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            vLineRt.anchoredPosition = Vector2(420, -45)
-            vLineRt.sizeDelta = Vector2(2, 580)
+            vLineRt.anchoredPosition = Vector2(420, -60)
+            vLineRt.sizeDelta = Vector2(2, 500)
             local vLineImg = vLineGo:AddComponent(typeof(Image))
-            vLineImg.color = Color(0.4, 0.4, 0.4, 1)
+            vLineImg.color = Color(0.4, 0.4, 0.4, 0.6)
 
             local ChucNangTitle = GameObject("ChucNangTitle")
             ChucNangTitle.transform:SetParent(panelGo.transform, false)
@@ -9778,8 +9867,8 @@ local function CreateModUI()
         wmTxtRt.sizeDelta = Vector2(0, 0)
         local wmTxt = wmTxtGo:AddComponent(typeof(Text))
         wmTxt.raycastTarget = false
-        wmTxt.text = "<i>Modded by Xoài</i>"
-        wmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
+        wmTxt.text = ""
+        wmTxt.color = Color(0, 0, 0, 0)
         wmTxt.fontSize = 15
         wmTxt.alignment = TextAnchor.LowerLeft
         if defaultFont then wmTxt.font = defaultFont end
@@ -9793,6 +9882,7 @@ local function CreateModUI()
                 _G.Mod_ClearAllPlayerPrefs()
             end
         end)
+        watermarkGo:SetActive(false)
         watermarkGo.transform:SetAsLastSibling()
 
         -- Auto-Loot DropItem Hook
@@ -9837,7 +9927,9 @@ local function CreateModUI()
 
                     local eType = dropItemData.type
                     local isRune = (eType == 19 or eType == 28)
-                    local isBone = (eType == 24 or eType == 26)
+                    local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
+                    local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                    local isBone = isBoneHon or isBoneCot
 
                     local targetUID = "177557978677775000"
                     local hasTargetNearby = false
@@ -10149,7 +10241,9 @@ local function CreateModUI()
                 if _G.AutoPick_Enabled then
                     local eType = dropItemData.type
                     local isRune = (eType == 19 or eType == 28)
-                    local isBone = (eType == 24 or eType == 26)
+                    local isBoneHon = (eType == 26 and _G.AutoPick_Bone_Hon == true)
+                    local isBoneCot = (eType == 24 and _G.AutoPick_Bone_Cot == true)
+                    local isBone = isBoneHon or isBoneCot
 
                     local shouldPick = false
 
