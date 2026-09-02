@@ -1,172 +1,100 @@
--- Hàm xuất log để debug
-local function log_to_file(msg)
+-- =========================================================================
+-- [TEST SCRIPT]: FIX LỖI RENDER 10FPS / BÓNG DÍNH VỊ TRÍ CŨ (SKINNING & SHADER FIX)
+-- Mô tả:
+-- 1. Ép SkinnedMeshRenderer.updateWhenOffscreen = true (Khắc phục trễ khung xương)
+-- 2. Ép Animator.cullingMode = AlwaysAnimate (Không bỏ nhịp frame xương)
+-- 3. Đặt Shader.globalMaximumLOD = 100 (Chế độ shader nhẹ không delay buffer)
+-- 4. Khóa 60 FPS mượt mà
+-- =========================================================================
+
+local function log_msg(msg)
     local text = tostring(msg)
     pcall(function()
-        if CS.System.IO.File then
-            CS.System.IO.File.AppendAllText("/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt", text .. "\n")
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(text)
         end
     end)
     pcall(function()
-        if _G.WriteLog then _G.WriteLog(text) end
+        if _G.WriteLog then _G.WriteLog("[SM_FIX] " .. text) end
     end)
 end
 
-log_to_file("========== BẮT ĐẦU TEST LƯỚT NHẶT SIÊU TỐC ==========")
+local ok, err = pcall(function()
+    _G.Test_SkinFix_State = not _G.Test_SkinFix_State
 
-local status, err = pcall(function()
-    _G.Test_PickQueue = {}
-    _G.Test_LastMoveTime = 0
-    _G.Test_LastTargetId = nil
-
-    -- 1. Hook sự kiện rơi đồ (Lắng nghe đồ rơi)
-    if _G.PickupManager and _G.PickupManager.AddDropSceneCellPos then
-        if not _G.Original_AddDropSceneCellPos_Test then
-            _G.Original_AddDropSceneCellPos_Test = _G.PickupManager.AddDropSceneCellPos
+    if _G.Test_SkinFix_State then
+        -- 1. TỐC CHẠY 6.0X
+        _G.RunSpeedMultiplier = 6.0
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetMoveSpeed then
+            local baseSpeed = _G.RoleManager.me._modBaseMoveSpeed or (_G.RoleManager.me.data and _G.RoleManager.me.data.moveSpeed) or 350
+            _G.RoleManager.me:SetMoveSpeed(baseSpeed)
         end
-        
-        _G.PickupManager.AddDropSceneCellPos = function(dropItemData, ...)
-            if dropItemData and dropItemData.id then
-                local posX = dropItemData.x or 0
-                local posY = dropItemData.y or 0
-                
-                local exists = false
-                for _, v in ipairs(_G.Test_PickQueue) do
-                    if v.id == dropItemData.id then exists = true break end
-                end
-                
-                if not exists then
-                    table.insert(_G.Test_PickQueue, {
-                        id = dropItemData.id, 
-                        x = posX, 
-                        y = posY,
-                        dropTime = CS.UnityEngine.Time.realtimeSinceStartup,
-                        lastReqTime = 0
-                    })
-                end
+
+        -- 2. KHÓA 60 FPS
+        if CS.UnityEngine.Application then
+            CS.UnityEngine.Application.targetFrameRate = 60
+        end
+
+        -- 3. ÉP SHADER NHẸ (LOD 100 - CHÍNH LÀ CHẾ ĐỘ CỦA GIẢM CẤU HÌNH)
+        if CS.UnityEngine.Shader then
+            CS.UnityEngine.Shader.globalMaximumLOD = 100
+        end
+
+        -- 4. ÉP UPDATE TOÀN BỘ SKINNED MESH & ANIMATOR KHÔNG CULLING
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me then
+            local targets = {}
+            if me.gameObject then table.insert(targets, me.gameObject) end
+            if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
+            if me.model and me.model.transform then table.insert(targets, me.model.transform) end
+            if me.AvatarEquip then
+                if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
+                if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
             end
-            return _G.Original_AddDropSceneCellPos_Test(dropItemData, ...)
-        end
-    end
 
-    -- 1.5 Hook sự kiện item biến mất (đã nhặt thành công)
-    if _G.PickupManager and _G.PickupManager.RemoveDropSceneCellPos then
-        if not _G.Original_RemoveDropSceneCellPos_Test then
-            _G.Original_RemoveDropSceneCellPos_Test = _G.PickupManager.RemoveDropSceneCellPos
-        end
-        _G.PickupManager.RemoveDropSceneCellPos = function(dropItemData, ...)
-            if dropItemData and dropItemData.id then
-                -- Xóa khỏi queue ngay lập tức
-                for i = #_G.Test_PickQueue, 1, -1 do
-                    if _G.Test_PickQueue[i].id == dropItemData.id then
-                        table.remove(_G.Test_PickQueue, i)
+            for _, targetGo in ipairs(targets) do
+                if targetGo and not IsNil(targetGo) then
+                    -- SkinnedMeshRenderer fix
+                    local smrs = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.SkinnedMeshRenderer))
+                    if smrs then
+                        for i = 0, smrs.Length - 1 do
+                            local s = smrs[i]
+                            if s and not IsNil(s) then
+                                s.updateWhenOffscreen = true
+                            end
+                        end
                     end
-                end
-            end
-            return _G.Original_RemoveDropSceneCellPos_Test(dropItemData, ...)
-        end
-    end
 
-    -- 2. Vòng lặp Hút Đồ (Hoover/Sweep)
-    _G.Test_ProcessQueue = function()
-        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-
-        if #_G.Test_PickQueue == 0 then return end
-
-        local meX, meY = 0, 0
-        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-            meX = _G.RoleManager.me.serverCoord.x or 0
-            meY = _G.RoleManager.me.serverCoord.y or 0
-        end
-
-        local nearestDist = 9999
-        local nearestItem = nil
-
-        local packetsSentThisTick = 0
-
-        -- Duyệt ngược để dễ xóa đồ
-        for i = #_G.Test_PickQueue, 1, -1 do
-            local item = _G.Test_PickQueue[i]
-            
-            -- Tăng thời gian sống lên 8s vì lướt nhanh có thể nhặt sót
-            if nowTime - item.dropTime > 8.0 then
-                table.remove(_G.Test_PickQueue, i)
-            else
-                local dist = math.max(math.abs(meX - item.x), math.abs(meY - item.y))
-                
-                -- Nhặt đồ bằng ReqPickUpMapItem (do đồ Boss xài chung không dùng Batch được)
-                -- CHỐNG ĐƠ GAME: Chỉ gửi tối đa 3 packet nhặt trong mỗi 0.05s (60 packet/giây)
-                if dist <= 1.5 then
-                    if (nowTime - item.lastReqTime) >= 0.1 then
-                        if packetsSentThisTick < 3 then
-                            item.lastReqTime = nowTime
-                            packetsSentThisTick = packetsSentThisTick + 1
-                            if _G.PickupManager then
-                                _G.PickupManager.ReqPickUpMapItem(item.id)
+                    -- Animator Culling fix
+                    local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                    if anims then
+                        for i = 0, anims.Length - 1 do
+                            local a = anims[i]
+                            if a and not IsNil(a) then
+                                a.cullingMode = CS.UnityEngine.AnimatorCullingMode.AlwaysAnimate
                             end
                         end
                     end
                 end
-
-                if dist < nearestDist then
-                    nearestDist = dist
-                    nearestItem = item
-                end
             end
         end
 
-        -- Liên tục chạy tới món đồ gần nhất (Giãn cách MoveTo ra 0.8s để khỏi bị khựng animation/pathfinding)
-        if nearestItem and _G.RoleManager and _G.RoleManager.me then
-            if nearestItem.id ~= _G.Test_LastTargetId or (nowTime - _G.Test_LastMoveTime) > 0.8 then
-                _G.Test_LastTargetId = nearestItem.id
-                _G.Test_LastMoveTime = nowTime
-                pcall(function()
-                    _G.RoleManager.me:MoveTo({ x = nearestItem.x, y = nearestItem.y })
-                end)
-            end
+        log_msg("ĐÃ BẬT TỐC 6.0X + UPDATEWHENOFFSCREEN + SHADER LOD 100 + 60FPS!")
+    else
+        _G.RunSpeedMultiplier = 1.0
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetMoveSpeed then
+            local baseSpeed = _G.RoleManager.me._modBaseMoveSpeed or (_G.RoleManager.me.data and _G.RoleManager.me.data.moveSpeed) or 350
+            _G.RoleManager.me:SetMoveSpeed(baseSpeed)
         end
-    end
 
-    -- 3. Đăng ký vòng lặp
-    if not _G.Test_PickLoopStarted then
-        if _G.Timer and _G.Timer.StartLoop then
-            -- Vẫn chạy siêu tốc nhưng được bảo vệ bởi anti-spam packet
-            _G.Timer.StartLoop(0.05, -1, function()
-                if _G.Test_ProcessQueue then _G.Test_ProcessQueue() end
-            end)
-            _G.Test_PickLoopStarted = true
-            log_to_file("Đã kích hoạt Thuật Toán Lướt Nhặt (Hoover)!")
+        if CS.UnityEngine.Shader then
+            CS.UnityEngine.Shader.globalMaximumLOD = 900
         end
-    end
 
-    -- 4. Tìm và mở Rương Vàng
-    local targetChestId = nil
-    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
-    if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
-        pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+        log_msg("ĐÃ TẮT TEST, KHÔI PHỤC NGUYÊN BẢN!")
     end
-    if items then
-        for k, item in pairs(items) do
-            if item then
-                local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
-                local name = tblItem.name or item.name or ""
-                local itemType = tblItem.type or 0
-                if itemType == 5 and string.find(name, "Rương Vàng") then
-                    targetChestId = item.id or (item.data and item.data.id)
-                    break
-                end
-            end
-        end
-    end
-
-    if targetChestId then
-        log_to_file("Đang gửi lệnh mở 20 Rương Vàng...")
-        if _G.networkRequest and _G.networkRequest.ReqUseItem then
-            _G.networkRequest.ReqUseItem(20, targetChestId)
-        end
-    end
-
 end)
 
-if not status then
-    log_to_file("[CRASH LỖI SCRIPT] " .. tostring(err))
+if not ok then
+    log_msg("LỖI TEST: " .. tostring(err))
 end

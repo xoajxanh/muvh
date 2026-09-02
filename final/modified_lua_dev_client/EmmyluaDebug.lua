@@ -2170,6 +2170,52 @@ local function CreateModUI()
                 InitCameraFollowAnchor()
             end)
 
+            -- =========================================================================
+            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO BODY, CÁNH & DẤU CHÂN ME
+            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không bị giật/bóng ma/2 người
+            -- =========================================================================
+            _G.Mod_LockMyAnimatorsToNormal = function()
+                pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if not me then return end
+
+                    local targets = {}
+                    if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
+                    if me.model and me.model.transform then table.insert(targets, me.model.transform) end
+                    if me.AvatarEquip then
+                        if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
+                        if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
+                    end
+                    if me.footPrintEffect then table.insert(targets, me.footPrintEffect) end
+
+                    for _, targetGo in ipairs(targets) do
+                        if targetGo and not IsNil(targetGo) then
+                            local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                            if anims then
+                                for i = 0, anims.Length - 1 do
+                                    local a = anims[i]
+                                    if a and not IsNil(a) and a.speed ~= 1.0 then
+                                        a.speed = 1.0
+                                    end
+                                end
+                            end
+                            local particles = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
+                            if particles then
+                                for i = 0, particles.Length - 1 do
+                                    local ps = particles[i]
+                                    if ps and not IsNil(ps) then
+                                        local main = ps.main
+                                        if main.simulationSpeed ~= 1.0 then
+                                            main.simulationSpeed = 1.0
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+
             -- Khóa tốc độ Animation (Cánh & Body) về chuẩn 1.0x khi tăng tốc chạy
             if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
                 _G.Mod_Hooked_AnimatorCtrl = true
@@ -2179,6 +2225,17 @@ local function CreateModUI()
                         speed = 1.0
                     end
                     return old_SetAnimatorSpeed(self, speed)
+                end
+            end
+
+            if _G.RoleModel and not _G.Mod_Hooked_RoleModel_PlayAnimation then
+                _G.Mod_Hooked_RoleModel_PlayAnimation = true
+                local old_RoleModel_Play = _G.RoleModel.PlayAnimation
+                _G.RoleModel.PlayAnimation = function(self, name, speed, fadeTime, startTime, realTime, callback)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
+                        speed = 1.0
+                    end
+                    return old_RoleModel_Play(self, name, speed, fadeTime, startTime, realTime, callback)
                 end
             end
 
@@ -2202,29 +2259,31 @@ local function CreateModUI()
                 _G.RoleEquip.SetFoot = function(self, position, path)
                     old_SetFoot(self, position, path)
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                        pcall(function()
-                            if self.footPrintObj and not IsNil(self.footPrintObj) then
-                                local anims = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                if anims then
-                                    for i = 0, anims.Length - 1 do
-                                        if anims[i] and not IsNil(anims[i]) and anims[i].speed ~= 1.0 then
-                                            anims[i].speed = 1.0
-                                        end
-                                    end
-                                end
-                                local particles = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
-                                if particles then
-                                    for i = 0, particles.Length - 1 do
-                                        if particles[i] and not IsNil(particles[i]) then
-                                            local main = particles[i].main
-                                            if main.simulationSpeed ~= 1.0 then
-                                                main.simulationSpeed = 1.0
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end)
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
+                    end
+                end
+            end
+
+            -- Hook Me:MoveTo và Player:SetMoving để khóa ngay lập tức khi người chơi click di chuyển
+            if _G.Me and not _G.Mod_Hooked_Me_MoveTo then
+                _G.Mod_Hooked_Me_MoveTo = true
+                local old_Me_MoveTo = _G.Me.MoveTo
+                _G.Me.MoveTo = function(self, cell, stopRange, onEndMove)
+                    local ret = old_Me_MoveTo(self, cell, stopRange, onEndMove)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
+                    end
+                    return ret
+                end
+            end
+
+            if _G.Player and not _G.Mod_Hooked_Player_SetMoving then
+                _G.Mod_Hooked_Player_SetMoving = true
+                local old_Player_SetMoving = _G.Player.SetMoving
+                _G.Player.SetMoving = function(self, moveType)
+                    old_Player_SetMoving(self, moveType)
+                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
                     end
                 end
             end
@@ -2233,49 +2292,37 @@ local function CreateModUI()
             local original_SetMoveSpeed = _G.Role.SetMoveSpeed
             if original_SetMoveSpeed and not _G.ModSpeedRunHooked then
                 _G.ModSpeedRunHooked = true
-                _G.Role.SetMoveSpeed = function(self, moveSpeed)
-                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe and _G.RunSpeedMultiplier and _G.RunSpeedMultiplier > 1.0 then
-                        moveSpeed = moveSpeed * _G.RunSpeedMultiplier
+                _G.Role.SetMoveSpeed = function(self, moveSpeed, isFromMod)
+                    if self.isMe then
+                        if not isFromMod then
+                            -- Lưu lại tốc độ gốc chuẩn của game/server, chống bị nhân dồn lũy kế
+                            self._modBaseMoveSpeed = moveSpeed
+                        end
+                        local base = self._modBaseMoveSpeed or moveSpeed or 5.0
+                        local mult = (_G.Mod_IsActive and _G.Mod_IsActive() and _G.RunSpeedMultiplier) or 1.0
+                        if mult < 1.0 then mult = 1.0 end
+                        local finalSpeed = base * mult
+                        original_SetMoveSpeed(self, finalSpeed)
+                    else
+                        original_SetMoveSpeed(self, moveSpeed)
                     end
-                    original_SetMoveSpeed(self, moveSpeed)
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
-                        pcall(function()
-                            local targets = {}
-                            if self.model and self.model.modelObject then table.insert(targets, self.model.modelObject) end
-                            if self.model and self.model.transform then table.insert(targets, self.model.transform) end
-                            if self.AvatarEquip then
-                                if self.AvatarEquip.footPrintObj then table.insert(targets, self.AvatarEquip.footPrintObj) end
-                                if self.AvatarEquip.wingObj then table.insert(targets, self.AvatarEquip.wingObj) end
-                            end
-                            if self.footPrintEffect then table.insert(targets, self.footPrintEffect) end
-
-                            for _, targetGo in ipairs(targets) do
-                                if targetGo and not IsNil(targetGo) then
-                                    local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                    if anims then
-                                        for i = 0, anims.Length - 1 do
-                                            local a = anims[i]
-                                            if a and not IsNil(a) and a.speed ~= 1.0 then
-                                                a.speed = 1.0
-                                            end
-                                        end
-                                    end
-                                    local particles = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
-                                    if particles then
-                                        for i = 0, particles.Length - 1 do
-                                            local ps = particles[i]
-                                            if ps and not IsNil(ps) then
-                                                local main = ps.main
-                                                if main.simulationSpeed ~= 1.0 then
-                                                    main.simulationSpeed = 1.0
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end)
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
                     end
+                end
+            end
+
+            -- Loop giám sát định kỳ 0.3s khóa chuẩn Animator 1.0x khi chạy tốc độ cao
+            if not _G.Mod_SpeedAnimLockLoop then
+                _G.Mod_SpeedAnimLockLoop = true
+                if _G.Timer and _G.Timer.StartLoop then
+                    _G.Timer.StartLoop(0.3, -1, function()
+                        if (_G.Mod_IsActive and _G.Mod_IsActive()) and (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            if _G.Mod_LockMyAnimatorsToNormal then
+                                _G.Mod_LockMyAnimatorsToNormal()
+                            end
+                        end
+                    end)
                 end
             end
 
@@ -2453,12 +2500,11 @@ local function CreateModUI()
             _G.Mod_AutoFarmBoss_Ignore = _G.Mod_AutoFarmBoss_Ignore or {}
 
             local function LogMsg(msg)
-                local noWriteLog = true
-                if noWriteLog then
-                    --if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
-                else
-                    local t = os.date("%H:%M:%S")
-                    _G.Mod_DebugMsg("[" .. t .. "] " .. msg)
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(tostring(msg))
+                end
+                if _G.WriteLog then
+                    _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
                 end
             end
 
@@ -3019,7 +3065,7 @@ local function CreateModUI()
 
                                     _G.Mod_AutoFarmBoss_State = 0
                                     _G.Mod_AutoFarmBoss_Target = nil
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 else
                                     LogMsg("[BOSS ẨN] Tính năng Tự vào Map Ẩn đang TẮT")
                                     if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
@@ -3052,8 +3098,8 @@ local function CreateModUI()
                         end
                     end
 
-                    if currentSec >= (_G.Mod_MapAn_LastScanTime or 0) + 5 then
-                        _G.Mod_MapAn_LastScanTime = currentSec
+                    if nowRealtime >= (_G.Mod_MapAn_LastScanTime or 0) + 1.0 then
+                        _G.Mod_MapAn_LastScanTime = nowRealtime
 
                         local quaiThuong = 0
                         local quaiBoss = 0
@@ -3117,9 +3163,9 @@ local function CreateModUI()
                         end
                     else
                         if not _G.Mod_MapAn_ClearTime then
-                            _G.Mod_MapAn_ClearTime = currentSec + 5
+                            _G.Mod_MapAn_ClearTime = nowRealtime + 5.0
                             LogMsg("[MAP ẨN] Sạch bóng quân thù! Chờ 5s nhặt đồ rồi rời đi...")
-                        elseif currentSec >= _G.Mod_MapAn_ClearTime then
+                        elseif nowRealtime >= _G.Mod_MapAn_ClearTime then
                             if _G.RoleManager.me then
                                 if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
                                     if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
@@ -3132,7 +3178,7 @@ local function CreateModUI()
                             if ExitDungeon() then
                                 LogMsg("[MAP ẨN] Đã tắt Auto Fight và thoát phó bản Boss Ẩn thành công!")
                             end
-                            _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
+                            _G.Mod_MapAn_ClearTime = nowRealtime + 10.0 -- Tránh spam lệnh
                         end
                     end
                     return -- DỪNG TẠI ĐÂY KHI ĐANG TRONG MAP ẨN, KHÔNG CHO CHẠY TIẾP XUỐNG LOGIC BOSS BÌNH THƯỜNG
@@ -3210,24 +3256,24 @@ local function CreateModUI()
                             LogMsg("Đang ở cạnh Boss " .. tostring(foundCombatBoss.cfg.name) .. ", đập luôn!")
                             _G.Mod_AutoFarmBoss_Target = foundCombatBoss
                             _G.Mod_AutoFarmBoss_State = 5
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         else
                             LogMsg("Bắt đầu lấy dữ liệu Boss...")
                             _G.Mod_AutoFarmBoss_State = 2
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         end
 
                         -- STATE 1: IDLE / RETURN HOME (Lorencia)
                     elseif _G.Mod_AutoFarmBoss_State == 1 then
                         if currentMapId == 1001 then
                             _G.Mod_AutoFarmBoss_State = 2
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             return
                         end
 
                         if ExitDungeon() then
                             LogMsg("Đang thoát phó bản...")
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
                             return
                         end
 
@@ -3246,10 +3292,10 @@ local function CreateModUI()
 
                         if not foundScroll then
                             LogMsg("Không có Bùa Về Thành! Đợi 10s...")
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 10
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 10.0
                         else
                             LogMsg("Dùng Bùa Về Thành quay về Lorencia...")
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                         end
 
                         -- STATE 2: FETCH DATA & FIND TARGET
@@ -3266,7 +3312,7 @@ local function CreateModUI()
                             end
                             _G.Mod_AutoFarmBoss_NextReqTime = currentSec + 15
                             _G.Mod_AutoFarmBoss_ReqSentTime = currentSec
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
                             return
                         end
 
@@ -3570,15 +3616,13 @@ local function CreateModUI()
                                                     end
                                                     isStillReturning, isChangingMap = true, false
                                                 else
-                                                    --LogMsg(string.format("[TRAIN_ACTION] -> ĐÃ TỚI CHÍNH XÁC VỊ TRÍ (%d,%d) (cự ly %.1fm)! Bật Auto Fight...", tx, ty, dist))
                                                     local me = _G.RoleManager and _G.RoleManager.me
                                                     if me then
                                                         if me.StopMove then me:StopMove() end
                                                         if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
                                                     end
                                                     if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                        _G
-                                                            .QiJiHelperData.SetAutoFightData(true)
+                                                        _G.QiJiHelperData.SetAutoFightData(true)
                                                     end
                                                     _G.Mod_IsMovingToTrainPos = false
                                                     _G.Mod_TrainArrivedAtPos = false
@@ -3586,14 +3630,7 @@ local function CreateModUI()
                                                 end
                                             end
                                         end
-                                    else
-                                        LogMsg(string.format(
-                                            "[TRAIN_ERROR] Không bóc tách được tx, ty từ Mod_TrainCoord: '%s'",
-                                            tostring(coordStr)))
                                     end
-                                else
-                                    LogMsg(string.format("[TRAIN_ERROR] Mod_TrainCoord không chứa dấu '#': '%s'",
-                                        tostring(coordStr)))
                                 end
                             end)
                             return isStillReturning, isChangingMap
@@ -3612,10 +3649,10 @@ local function CreateModUI()
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
                                 if currentMapId == bestBoss.mapCfg.mapId and currentLine == bestBoss.line then
                                     _G.Mod_AutoFarmBoss_State = 4
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 else
                                     _G.Mod_AutoFarmBoss_State = 3
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 end
                             else
                                 LogMsg(string.format("Chưa có Boss! Gần nhất: %s còn %ds", bestBoss.cfg.name,
@@ -3626,14 +3663,14 @@ local function CreateModUI()
                                 if bestBoss.wait and bestBoss.wait > 5 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                                     local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
                                     if isChangingMap then
-                                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
                                     else
-                                        _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and currentSec or
-                                            (currentSec + 5)
+                                        _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and nowRealtime or
+                                            (nowRealtime + 5.0)
                                     end
                                     return
                                 else
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 end
                             end
                         else
@@ -3643,24 +3680,24 @@ local function CreateModUI()
                             if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                                 local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
                                 if isChangingMap then
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
                                 else
-                                    _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and currentSec or (currentSec + 5)
+                                    _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and nowRealtime or (nowRealtime + 5.0)
                                 end
                                 return
                             elseif currentMapId == 1001 then
                                 LogMsg("Không có Boss! Chờ ở Lorencia...")
                                 _G.Mod_AutoFarmBoss_State = 2
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 Mod_PerformSmeltItems()
                             else
                                 if currentSec - (_G.Mod_AutoFarmBoss_ReqSentTime or 0) < 15 then
                                     LogMsg("Không có Boss quanh đây. Chờ check lại...")
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 else
                                     LogMsg("Hoàn toàn không có Boss! Rút về Lorencia")
                                     _G.Mod_AutoFarmBoss_State = 1
-                                    _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 end
                             end
                         end
@@ -3675,7 +3712,7 @@ local function CreateModUI()
 
                         if currentMapId ~= target.mapCfg.mapId and ExitDungeon() then
                             LogMsg("Đang thoát phó bản cũ trước khi bay tới Boss mới...")
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 3
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
                             return
                         end
 
@@ -3687,7 +3724,7 @@ local function CreateModUI()
                         _G.Mod_AutoFarmBoss_State = 4
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_DidJiggle = false
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
+                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
 
                         -- STATE 4: WAIT & VALIDATE
                     elseif _G.Mod_AutoFarmBoss_State == 4 then
@@ -3705,9 +3742,9 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             else
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
                             return
                         end
@@ -6320,31 +6357,68 @@ local function CreateModUI()
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
+            local function CheckSpeedAutoBoost()
+                if valueVarName == "RunSpeedMultiplier" and (_G.RunSpeedMultiplier or 1.0) > 3.5 then
+                    if not _G.Mod_DisableVisuals then
+                        _G.Mod_DisableVisuals = true
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_DisableVisuals", 1)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                        if _G.ModUpdateDisableVisualsLabel then
+                            pcall(_G.ModUpdateDisableVisualsLabel)
+                        end
+                        if _G.Mod_ApplyPerformanceOptimization then
+                            pcall(_G.Mod_ApplyPerformanceOptimization, true)
+                        end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Tốc chạy > 3.5x: Tự động BẬT GIẢM CẤU HÌNH chống lag map!")
+                        end
+                    end
+                end
+            end
+
+            local function OnSpeedChanged()
+                UpdateLabel()
+                if valueVarName == "RunSpeedMultiplier" then
+                    pcall(function()
+                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetMoveSpeed then
+                            local me = _G.RoleManager.me
+                            local base = me._modBaseMoveSpeed or 5.0
+                            me:SetMoveSpeed(base, true)
+                        end
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            if CS.UnityEngine.Application then CS.UnityEngine.Application.targetFrameRate = 60 end
+                        end
+                    end)
+                end
+            end
+
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
+                OnSpeedChanged()
             end)
             pBtnComp.onClick:AddListener(function()
                 local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 50.0 or 5.0) or 10.0
                 _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
+                OnSpeedChanged()
+                CheckSpeedAutoBoost()
             end)
             m5BtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
+                OnSpeedChanged()
             end)
             p5BtnComp.onClick:AddListener(function()
                 local maxVal = (valueVarName == "RunSpeedMultiplier") and (_G.Mod_IsAdmin and 50.0 or 5.0) or 10.0
                 _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLabel()
+                OnSpeedChanged()
+                CheckSpeedAutoBoost()
             end)
         end
 
@@ -6441,7 +6515,7 @@ local function CreateModUI()
                     if _G.AutoPick_Enabled then
                         _G.Mod_DisableVisuals = true
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                            _G.FloatingWordUtility.QuickMsg("Đang bật Nhặt Nhanh - Bắt buộc tắt hiệu ứng để chống lag!")
+                            _G.FloatingWordUtility.QuickMsg("Đang bật Nhặt Nhanh - Bắt buộc giảm cấu hình để chống lag!")
                         end
                         UpdateLabel()
                         return
@@ -6456,7 +6530,7 @@ local function CreateModUI()
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
 
-                    -- Khi bật Nhặt Nhanh: Tự động BẬT Tắt hiệu ứng
+                    -- Khi bật Nhặt Nhanh: Tự động BẬT Giảm cấu hình
                     _G.Mod_DisableVisuals = true
                     CS.UnityEngine.PlayerPrefs.SetInt("Mod_DisableVisuals", 1)
                     if _G.ModUpdateDisableVisualsLabel then
@@ -6471,7 +6545,10 @@ local function CreateModUI()
                 end
 
                 if varName == "Mod_DisableVisuals" or varName == "AutoPick_Enabled" then
-                    if _G.Mod_ApplyDisableVisualsState then
+                    local isLow = _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()
+                    if _G.Mod_ApplyPerformanceOptimization then
+                        pcall(_G.Mod_ApplyPerformanceOptimization, isLow)
+                    elseif _G.Mod_ApplyDisableVisualsState then
                         pcall(_G.Mod_ApplyDisableVisualsState)
                     end
                 end
@@ -8267,7 +8344,7 @@ local function CreateModUI()
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
             currentY = currentY - 45
 
-            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", rightColX2, currentY)
+            CreateToggle("GIẢM CẤU HÌNH", "Mod_DisableVisuals", rightColX2, currentY)
             currentY = currentY - 45
 
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
@@ -10647,6 +10724,126 @@ local function CreateModUI()
                 end
             end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: GIẢM CẤU HÌNH & TỐI ƯU HIỆU NĂNG (PERFORMANCE BOOST)
+            -- Mô tả: Áp dụng chuẩn 100% logic EPerformanceQuality.Low của Khóa Màn Hình
+            --        kết hợp ẩn hiệu ứng skill/lốc xoay/chữ nhảy số để máy siêu mát và load quái tức thì.
+            --        Khi TẮT: Ép khôi phục 100% độ nét cao Full HD, RenderScale 1.0, Max LOD 900, 60 FPS và unhide toàn bộ model/hiệu ứng.
+            -- =========================================================================
+            _G.Mod_ApplyPerformanceOptimization = function(isLow)
+                pcall(function()
+                    if isLow then
+                        -- 1. Lưu snapshot cài đặt ban đầu của người chơi
+                        if _G.GameSettingsData and not _G.Mod_OriginalGameSettingsSnapshot then
+                            _G.Mod_OriginalGameSettingsSnapshot = table.clone(_G.GameSettingsData)
+                        end
+
+                        -- 2. Áp dụng chuẩn 100% thiết lập Khóa Màn Hình (EPerformanceQuality.Low)
+                        if _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.GameSettingsController then
+                            local lowSettings = _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.Low]
+                            if lowSettings then
+                                _G.GameSettingsController.SetGamingSettings(lowSettings)
+                                _G.GameSettingsController.ApplyDisplaySettings(lowSettings)
+                                _G.GameSettingsController.SetSettings(lowSettings)
+                            end
+                        end
+                    else
+                        -- 3. Khôi phục lại toàn bộ chất lượng đồ họa ĐỘ NÉT CAO (Full HD, Max LOD, Full Model, 60 FPS)
+                        local highSettings = _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.High]
+                        if highSettings and _G.GameSettingsController then
+                            _G.GameSettingsController.SetGamingSettings(highSettings)
+                            _G.GameSettingsController.ApplyDisplaySettings(highSettings)
+                            _G.GameSettingsController.SetSettings(highSettings)
+                        end
+
+                        -- 3.1. Ép Độ phân giải Full HD (RenderScale = 1.0) & Max LOD 900
+                        pcall(function()
+                            if _G.GameSettingsController and _G.C_ResolutionQuality then
+                                _G.GameSettingsController.SetResolution(_G.C_ResolutionQuality.FHD)
+                            end
+                            if _G.GraphicEx and _G.GraphicEx.SetRenderScale then
+                                _G.GraphicEx.SetRenderScale(1.0)
+                            end
+                            if CS.UnityEngine.Shader then
+                                CS.UnityEngine.Shader.globalMaximumLOD = 900
+                            end
+                            if _G.GameSettingsData and _G.EPerformanceQuality then
+                                _G.GameSettingsData.performQuality = _G.EPerformanceQuality.High
+                            end
+                        end)
+
+                        -- 3.2. Hiển thị lại toàn bộ model, cánh, dấu chân, hiệu ứng thời tiết, đổ bóng
+                        pcall(function()
+                            if _G.GameSettingsController and _G.EBattleCamp then
+                                _G.GameSettingsController.SetHidePlayerModelType(_G.EBattleCamp.None, true)
+                                _G.GameSettingsController.SetHideModelSkillEffectType(_G.EBattleCamp.None, true)
+                                _G.GameSettingsController.SetSummonMonsterModelType(false, true)
+                                _G.GameSettingsController.SetHidePlayerWingType(_G.EBattleCamp.None, true)
+                                _G.GameSettingsController.SetHidePlayerBootType(_G.EBattleCamp.None)
+                                _G.GameSettingsController.SetHideMonsterModel(false, true)
+                                _G.GameSettingsController.SetHideMonsterSkillEffect(false, true)
+                                _G.GameSettingsController.SetShowRoleShadow(true)
+                                _G.GameSettingsController.ShowSceneWeatherEffect(true)
+                                _G.GameSettingsController.ShowSceneAnimals(true)
+                                _G.GameSettingsController.SetMaxVisiblePLayers()
+                            end
+                        end)
+
+                        -- 3.3. [TINH CHỈNH MƯỢT MÀ]: Đẩy FrameRate lên 60 FPS chống giật hoạt cảnh khi chạy tốc độ cao
+                        pcall(function()
+                            if _G.GameSettingsController and _G.GameSettingsController.SetFrameRate then
+                                local targetFps = (_G.C_FrameRate and _G.C_FrameRate.HIGH) or 60
+                                if targetFps < 60 then targetFps = 60 end
+                                _G.GameSettingsController.SetFrameRate(targetFps)
+                            elseif CS.UnityEngine.Application then
+                                CS.UnityEngine.Application.targetFrameRate = 60
+                            end
+                        end)
+
+                        -- 3.4. [TINH CHỈNH ANIMATOR]: Đồng bộ khóa chuẩn tốc độ 1.0x cho Body, Cánh & Dấu Chân Me
+                        pcall(function()
+                            if _G.RoleManager and _G.RoleManager.me then
+                                local me = _G.RoleManager.me
+                                local targets = {}
+                                if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
+                                if me.model and me.model.transform then table.insert(targets, me.model.transform) end
+                                if me.AvatarEquip then
+                                    if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
+                                    if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
+                                end
+                                if me.footPrintEffect then table.insert(targets, me.footPrintEffect) end
+
+                                for _, targetGo in ipairs(targets) do
+                                    if targetGo and not IsNil(targetGo) then
+                                        local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
+                                        if anims then
+                                            for i = 0, anims.Length - 1 do
+                                                local a = anims[i]
+                                                if a and not IsNil(a) and a.speed ~= 1.0 then
+                                                    a.speed = 1.0
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+
+                                if me.SetMoveSpeed then
+                                    local base = me._modBaseMoveSpeed or 5.0
+                                    me:SetMoveSpeed(base, true)
+                                end
+                            end
+                        end)
+
+                        _G.Mod_OriginalGameSettingsSnapshot = nil
+                    end
+
+                    -- 4. Đồng bộ các hiệu ứng Scene & Footprint
+                    if _G.Mod_ApplyDisableVisualsState then
+                        _G.Mod_ApplyDisableVisualsState()
+                    end
+                end)
+            end
+
             -- 14. Hàm áp dụng trạng thái trực tiếp & kích hoạt Timer giám sát liên tục
             -- =========================================================================
             -- [MOD FEATURE]: TỐI ƯU ĐỒ HỌA & ẨN HIỆU ỨNG (DISABLE VISUALS & FPS BOOST)
@@ -10660,23 +10857,21 @@ local function CreateModUI()
                     local sRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
                     if sRoot and not _G.IsNil(sRoot) then
                         sRoot:SetActive(not isOff)
-                        if isOff then
-                            for i = 0, sRoot.transform.childCount - 1 do
-                                local child = sRoot.transform:GetChild(i)
-                                if child and child.gameObject and not _G.IsNil(child.gameObject) then
-                                    child.gameObject:SetActive(false)
-                                end
+                        for i = 0, sRoot.transform.childCount - 1 do
+                            local child = sRoot.transform:GetChild(i)
+                            if child and child.gameObject and not _G.IsNil(child.gameObject) then
+                                child.gameObject:SetActive(not isOff)
                             end
                         end
                     end
 
                     -- SkillMgr.ROOT
-                    if isOff and _G.SkillMgr and _G.SkillMgr.ROOT then
+                    if _G.SkillMgr and _G.SkillMgr.ROOT then
                         local root = _G.SkillMgr.ROOT
                         for i = 0, root.childCount - 1 do
                             local child = root:GetChild(i)
                             if child and child.gameObject and not _G.IsNil(child.gameObject) then
-                                child.gameObject:SetActive(false)
+                                child.gameObject:SetActive(not isOff)
                             end
                         end
                     end
@@ -10706,22 +10901,16 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Timer giám sát liên tục (0.05s)
+                    -- Timer giám sát liên tục (0.5s thay vì 0.05s để tránh nghẽn CPU)
                     if isOff then
                         if not _G.Mod_VisualMasterTimer then
-                            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.05, -1, function()
+                            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.5, -1, function()
                                 if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
                                     if _G.Mod_VisualMasterTimer then
                                         _G.Timer.Stop(_G.Mod_VisualMasterTimer)
                                         _G.Mod_VisualMasterTimer = nil
                                     end
                                     return
-                                end
-
-                                -- SceneEffectRoot
-                                local sceneRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
-                                if sceneRoot and not _G.IsNil(sceneRoot) and sceneRoot.activeSelf then
-                                    sceneRoot:SetActive(false)
                                 end
 
                                 -- SkillMgr.ROOT
@@ -10757,7 +10946,9 @@ local function CreateModUI()
             end
 
             -- Khởi tạo áp dụng ngay trạng thái hiện tại
-            if _G.Mod_ApplyDisableVisualsState then
+            if _G.Mod_ApplyPerformanceOptimization then
+                _G.Mod_ApplyPerformanceOptimization(_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive())
+            elseif _G.Mod_ApplyDisableVisualsState then
                 _G.Mod_ApplyDisableVisualsState()
             end
         end
