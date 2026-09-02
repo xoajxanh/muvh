@@ -590,6 +590,203 @@ if _G.EventManager and _G.EventManager.Regist and _G.Event and _G.Event.Map_Boss
     end)
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: CẤU HÌNH SKILL MAP ẨN (MAP ẨN SKILL MEMORY & AUTO TOGGLE)
+-- Mô tả: Ghi nhớ cấu hình skill tùy chọn cho Map Ẩn, tự động áp dụng khi vào Map Ẩn và rollback khi rời map.
+-- =========================================================================
+_G.Mod_SaveMapAnSkills = function()
+    local saved = {}
+    local onSkills = {}
+    local offSkills = {}
+    pcall(function()
+        local skills = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.skills) or
+                       (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+        if skills and _G.ClientTable and _G.QiJiHelperData then
+            for _, v in pairs(skills) do
+                local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
+                if skillData and skillData.groupId and skillData.autoSkillType then
+                    local aType = skillData.autoSkillType
+                    local isBuff = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5))
+                    local isGroup = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelGroupSkill or 9))
+                    local isInd = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelIndSkill or 8))
+                    local isCommon = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.CommonSkill or 4))
+
+                    if isBuff or isGroup or isInd or isCommon then
+                        local isOpen = false
+                        if isBuff then
+                            local buffSkill = _G.QiJiHelperData.GetBuffSkill and _G.QiJiHelperData.GetBuffSkill(skillData.groupId)
+                            isOpen = buffSkill and buffSkill.isOpen or false
+                        else
+                            local selSkill = _G.QiJiHelperData.GetSelfSelSkill and _G.QiJiHelperData.GetSelfSelSkill(skillData.groupId)
+                            isOpen = selSkill and selSkill.isOpen or false
+                        end
+
+                        local sName = skillData.name or tostring(v.sid)
+                        local isOnNum = isOpen and 1 or 0
+                        local typeFlag = isBuff and "BUFF" or "SKILL"
+                        table.insert(saved, tostring(v.sid) .. "=" .. tostring(isOnNum) .. ":" .. typeFlag)
+                        if isOpen then
+                            table.insert(onSkills, sName)
+                        else
+                            table.insert(offSkills, sName)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    if #saved > 0 then
+        local dataStr = table.concat(saved, ";")
+        pcall(function()
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_MapAn_SavedSkills", dataStr)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end)
+        local msg = string.format("Đã nhớ %d Skill Map Ẩn (%d Bật, %d Tắt)", #saved, #onSkills, #offSkills)
+        if _G.FloatingWordUtility then
+            _G.FloatingWordUtility.QuickMsg(msg)
+        end
+        if LogMsg then LogMsg(string.format("[MAP ẨN] %s (Bật: %s | Tắt: %s)", msg, table.concat(onSkills, ", "), table.concat(offSkills, ", "))) end
+        return true
+    else
+        if _G.FloatingWordUtility then
+            _G.FloatingWordUtility.QuickMsg("Không tìm thấy dữ liệu Skill để lưu!")
+        end
+        return false
+    end
+end
+
+_G.Mod_ApplyMapAnSkills = function()
+    local dataStr = ""
+    pcall(function()
+        dataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_MapAn_SavedSkills", "")
+    end)
+    if not dataStr or dataStr == "" then
+        return
+    end
+
+    if not _G.Mod_MapAn_OriginalSkillsSnapshot then
+        _G.Mod_MapAn_OriginalSkillsSnapshot = {}
+        pcall(function()
+            local skills = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.skills) or
+                           (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+            if skills and _G.ClientTable and _G.QiJiHelperData then
+                for _, v in pairs(skills) do
+                    local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
+                    if skillData and skillData.groupId and skillData.autoSkillType then
+                        local aType = skillData.autoSkillType
+                        local isBuff = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5))
+                        local isGroup = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelGroupSkill or 9))
+                        local isInd = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelIndSkill or 8))
+                        local isCommon = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.CommonSkill or 4))
+
+                        if isBuff or isGroup or isInd or isCommon then
+                            local isOpen = false
+                            if isBuff then
+                                local buffSkill = _G.QiJiHelperData.GetBuffSkill and _G.QiJiHelperData.GetBuffSkill(skillData.groupId)
+                                isOpen = buffSkill and buffSkill.isOpen or false
+                            else
+                                local selSkill = _G.QiJiHelperData.GetSelfSelSkill and _G.QiJiHelperData.GetSelfSelSkill(skillData.groupId)
+                                isOpen = selSkill and selSkill.isOpen or false
+                            end
+                            _G.Mod_MapAn_OriginalSkillsSnapshot[v.sid] = {
+                                isOpen = isOpen,
+                                isBuff = isBuff
+                            }
+                        end
+                    end
+                end
+            end
+        end)
+    end
+
+    local toggledAny = false
+    pcall(function()
+        local pairsList = string.split(dataStr, ";")
+        for _, pair in ipairs(pairsList) do
+            if pair and pair ~= "" then
+                local parts = string.split(pair, "=")
+                if #parts == 2 then
+                    local sId = tonumber(parts[1])
+                    local subParts = string.split(parts[2], ":")
+                    local isOn = (tonumber(subParts[1]) == 1)
+                    local isBuff = (subParts[2] == "BUFF")
+
+                    if subParts[2] == nil and _G.ClientTable then
+                        local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sId)
+                        if skillData and skillData.autoSkillType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5) then
+                            isBuff = true
+                        end
+                    end
+
+                    if sId and _G.QiJiHelperController then
+                        if isBuff and _G.QiJiHelperController.SetMeBuffSkill then
+                            _G.QiJiHelperController.SetMeBuffSkill(sId, isOn)
+                            toggledAny = true
+                        elseif _G.QiJiHelperController.SetSelfSelSkill then
+                            _G.QiJiHelperController.SetSelfSelSkill(sId, isOn)
+                            toggledAny = true
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    if toggledAny then
+        if _G.QiJiHelperController and _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+        if _G.UIManager and _G.UIManager.GetUiByName then
+            local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+            if ui and ui.Refresh then ui:Refresh() end
+        end
+        if LogMsg then LogMsg("[MAP ẨN] Đã chuyển sang cấu hình Skill Map Ẩn đã lưu!") end
+    end
+end
+
+_G.Mod_RestoreMapAnSkills = function()
+    if not _G.Mod_MapAn_OriginalSkillsSnapshot then return end
+
+    local toggledAny = false
+    pcall(function()
+        if _G.QiJiHelperController then
+            for skillId, snapData in pairs(_G.Mod_MapAn_OriginalSkillsSnapshot) do
+                local isOpen = snapData
+                local isBuff = false
+                if type(snapData) == "table" then
+                    isOpen = snapData.isOpen
+                    isBuff = snapData.isBuff
+                else
+                    if _G.ClientTable then
+                        local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(skillId)
+                        if skillData and skillData.autoSkillType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5) then
+                            isBuff = true
+                        end
+                    end
+                end
+
+                if isBuff and _G.QiJiHelperController.SetMeBuffSkill then
+                    _G.QiJiHelperController.SetMeBuffSkill(skillId, isOpen)
+                    toggledAny = true
+                elseif _G.QiJiHelperController.SetSelfSelSkill then
+                    _G.QiJiHelperController.SetSelfSelSkill(skillId, isOpen)
+                    toggledAny = true
+                end
+            end
+        end
+    end)
+
+    _G.Mod_MapAn_OriginalSkillsSnapshot = nil
+
+    if toggledAny then
+        if _G.QiJiHelperController and _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+        if _G.UIManager and _G.UIManager.GetUiByName then
+            local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+            if ui and ui.Refresh then ui:Refresh() end
+        end
+        if LogMsg then LogMsg("[MAP ẨN] Đã khôi phục cấu hình Skill ban đầu!") end
+    end
+end
+
 if _G.PathFinderManager and not _G.Mod_Hooked_JumpMapToMoveToPos then
     _G.Mod_Hooked_JumpMapToMoveToPos = true
     local old_JumpMapToMoveToPos = _G.PathFinderManager.JumpMapToMoveToPos
@@ -2680,6 +2877,86 @@ local function CreateModUI()
                 if original_MonsterMapDataInit then original_MonsterMapDataInit(data) end
                 ParseBossData()
             end
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
+            -- Mô tả: Tự tìm đường đến boss trong Tháp và tự động rời phụ bản khi hoàn thành.
+            -- =========================================================================
+            _G.Mod_ApproachTowerBoss = function()
+                local success, result = pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if not me or me.isDead then return false end
+
+                    local targetX, targetY, targetRole
+                    local monsterRoles = _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+                    if monsterRoles then
+                        local meId = me and me.data and me.data.id or 0
+                        for lid, role in pairs(monsterRoles) do
+                            if role and not role.isDead and role.hp and role.hp > 0 then
+                                local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+                                local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or 0
+                                local isMySummon = (isSummon == true) or
+                                    (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+
+                                local canAttack = true
+                                if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+                                    canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+                                elseif isMySummon then
+                                    canAttack = false
+                                end
+
+                                if canAttack and not isMySummon then
+                                    local x = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                                    local y = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
+                                    if x and y then
+                                        targetX = tonumber(x)
+                                        targetY = tonumber(y)
+                                        targetRole = role
+                                        break
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    if not targetX or not targetY then return false end
+
+                    local myX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+                    local myY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+
+                    if myX == 0 or myY == 0 then return false end
+
+                    local dx = myX - targetX
+                    local dy = myY - targetY
+                    local dist = math.sqrt(dx * dx + dy * dy)
+
+                    if dist > 1.5 then
+                        -- Chưa tới vị trí Boss (cách > 1.5m): Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
+                        pcall(function()
+                            if me.MoveTo then
+                                me:MoveTo({ x = targetX, y = targetY }, 0)
+                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
+                                _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
+                            end
+                        end)
+                        return false -- Trả về false để tiếp tục di chuyển ở tick sau
+                    else
+                        -- Đã tới cách Boss tháp <= 1.5m: Dừng di chuyển & Bật Auto Fight đập Boss
+                        pcall(function()
+                            if me.StopMove then me:StopMove() end
+                            if targetRole and me.SetTarget then
+                                me:SetTarget(targetRole)
+                            end
+                            if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                _G.QiJiHelperData.SetAutoFightData(true)
+                            end
+                        end)
+                        LogMsg(string.format("[TOWER_BOSS] Đã tiếp cận Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
+                        return true -- Đã hoàn thành tiếp cận
+                    end
+                end)
+                if success then return result else return false end
+            end
 
             _G.Mod_AutoFarmBoss_State = _G.Mod_AutoFarmBoss_State or 0
             _G.Mod_AutoFarmBoss_Target = _G.Mod_AutoFarmBoss_Target or nil
@@ -3065,22 +3342,13 @@ local function CreateModUI()
 
                 local currentMapId = _G.SceneData and _G.SceneData.mapId
                 local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
+                local nowRealtime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
 
                 if currentMapId ~= 240001 then
                     _G.Mod_MapAn_Recorded = false
-                    if _G.Mod_MapAn_SingleSkillsDisabled then
-                        if _G.QiJiHelperController and _G.QiJiHelperController.SetSelfSelSkill then
-                            for skillId, _ in pairs(_G.Mod_MapAn_SingleSkillsDisabled) do
-                                _G.QiJiHelperController.SetSelfSelSkill(skillId, true)
-                            end
-                            if _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
-                            if _G.UIManager and _G.UIManager.GetUiByName then
-                                local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
-                                if ui and ui.Refresh then ui:Refresh() end
-                            end
-                        end
-                        _G.Mod_MapAn_SingleSkillsDisabled = nil
-                        LogMsg("[MAP ẨN] Đã bật lại các Skill Đơn mục tiêu")
+                    _G.Mod_MapAn_SkillsApplied = false
+                    if _G.Mod_RestoreMapAnSkills then
+                        _G.Mod_RestoreMapAnSkills()
                     end
                 end
 
@@ -3132,6 +3400,8 @@ local function CreateModUI()
                 if _G.TranScriptData and _G.TranScriptData.InTranscript and currentMapId == 240001 then
                     if not _G.Mod_MapAn_Recorded then
                         _G.Mod_MapAn_Recorded = true
+                        _G.Mod_MapAn_ClearTime = nil
+                        _G.Mod_MapAn_LastScanTime = 0
                         _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                         _G.Mod_FarmStats.hidden = _G.Mod_FarmStats.hidden + 1
                         if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
@@ -3139,58 +3409,43 @@ local function CreateModUI()
                         LogMsg("[MAP ẨN] Đã vào Map Ẩn! Ghi nhận thống kê +1 Map.")
                     end
 
-                    if not _G.Mod_MapAn_SingleSkillsDisabled then
-                        _G.Mod_MapAn_SingleSkillsDisabled = {}
-                        local toggledAny = false
-                        if _G.QiJiHelperController and _G.QiJiHelperData and _G.ClientTable and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills then
-                            for _, v in pairs(_G.ViewData.meData.skills) do
-                                local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
-                                if skillData and skillData.autoSkillType == 8 then -- AutoSkillEnum.SelfSelIndSkill
-                                    local selfSelSkill = _G.QiJiHelperData.GetSelfSelSkill(tostring(skillData.groupId))
-                                    if selfSelSkill and selfSelSkill.isOpen then
-                                        _G.Mod_MapAn_SingleSkillsDisabled[v.sid] = true
-                                        _G.QiJiHelperController.SetSelfSelSkill(v.sid, false)
-                                        toggledAny = true
-                                    end
-                                end
-                            end
-                        end
-                        if toggledAny then
-                            if _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
-                            if _G.UIManager and _G.UIManager.GetUiByName then
-                                local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
-                                if ui and ui.Refresh then ui:Refresh() end
-                            end
-                            LogMsg("[MAP ẨN] Đã tắt tạm các Skill Đơn mục tiêu (Chỉ dùng AOE)")
+                    if not _G.Mod_MapAn_SkillsApplied then
+                        _G.Mod_MapAn_SkillsApplied = true
+                        if _G.Mod_ApplyMapAnSkills then
+                            _G.Mod_ApplyMapAnSkills()
                         end
                     end
 
-                    if currentSec >= (_G.Mod_MapAn_LastScanTime or 0) + 5 then
-                        _G.Mod_MapAn_LastScanTime = currentSec
+                    if nowRealtime >= (_G.Mod_MapAn_LastScanTime or 0) + 1.0 then
+                        _G.Mod_MapAn_LastScanTime = nowRealtime
 
                         local quaiThuong = 0
                         local quaiBoss = 0
                         local hpBoss = 0
 
-                        if _G.RoleManager then
-                            local monsters = _G.RoleManager.GetRolesByType(1) or {}
+                        if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            local monsters = _G.RoleManager.GetRolesByType(2) or {}
+                            local me = _G.RoleManager.me
+                            local meId = me and me.data and me.data.id or 0
                             for _, role in pairs(monsters) do
-                                if role.hp and role.hp > 0 then quaiThuong = quaiThuong + 1 end
-                            end
+                                if role and role.hp and role.hp > 0 then
+                                    local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+                                    local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or
+                                        0
+                                    local isMySummon = (isSummon == true) or
+                                        (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
 
-                            local bosses = _G.RoleManager.GetRolesByType(2) or {}
-                            for _, role in pairs(bosses) do
-                                if role.hp and role.hp > 0 then
-                                    quaiBoss = quaiBoss + 1
-                                    hpBoss = role.hp
-                                end
-                            end
+                                    local canAttack = true
+                                    if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+                                        canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+                                    elseif isMySummon then
+                                        canAttack = false
+                                    end
 
-                            local elites = _G.RoleManager.GetRolesByType(3) or {}
-                            for _, role in pairs(elites) do
-                                if role.hp and role.hp > 0 then
-                                    quaiBoss = quaiBoss + 1
-                                    hpBoss = role.hp
+                                    if canAttack and not isMySummon then
+                                        quaiBoss = quaiBoss + 1
+                                        hpBoss = role.hp
+                                    end
                                 end
                             end
                         end
@@ -3226,9 +3481,9 @@ local function CreateModUI()
                         end
                     else
                         if not _G.Mod_MapAn_ClearTime then
-                            _G.Mod_MapAn_ClearTime = currentSec + 5
+                            _G.Mod_MapAn_ClearTime = nowRealtime + 5.0
                             LogMsg("[MAP ẨN] Sạch bóng quân thù! Chờ 5s nhặt đồ rồi rời đi...")
-                        elseif currentSec >= _G.Mod_MapAn_ClearTime then
+                        elseif nowRealtime >= _G.Mod_MapAn_ClearTime then
                             if _G.RoleManager.me then
                                 if _G.RoleManager.me.isAutoTaskFight and _G.RoleManager.me.isAutoTaskFight ~= "None" then
                                     if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
@@ -3241,7 +3496,7 @@ local function CreateModUI()
                             if ExitDungeon() then
                                 LogMsg("[MAP ẨN] Đã tắt Auto Fight và thoát phó bản Boss Ẩn thành công!")
                             end
-                            _G.Mod_MapAn_ClearTime = currentSec + 10 -- Tránh spam lệnh
+                            _G.Mod_MapAn_ClearTime = nowRealtime + 10.0 -- Tránh spam lệnh
                         end
                     end
                     return -- DỪNG TẠI ĐÂY KHI ĐANG TRONG MAP ẨN, KHÔNG CHO CHẠY TIẾP XUỐNG LOGIC BOSS BÌNH THƯỜNG
@@ -3266,11 +3521,11 @@ local function CreateModUI()
                 --     end
                 -- end
 
-                if currentSec < (_G.Mod_AutoFarmBoss_WaitTime or 0) then
+                if nowRealtime < (_G.Mod_AutoFarmBoss_WaitTime or 0) then
                     -- Đột phá WaitTime: Nếu đang đợi về Lorencia mà đã load xong Map 1001, cho đi tiếp luôn!
                     if _G.Mod_AutoFarmBoss_State == 1 and currentMapId == 1001 then
                         _G.Mod_AutoFarmBoss_State = 2
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                     end
                     return
                 end
@@ -3402,11 +3657,14 @@ local function CreateModUI()
 
                         local candidates = {}
 
-                        local function CheckConfig(mapsConfig, tierScore)
+                        local function CheckConfig(mapsConfig, tierIndex)
                             if not mapsConfig then return end
-                            for _, mapCfg in ipairs(mapsConfig) do
+                            for mIdx, mapCfg in ipairs(mapsConfig) do
+                                -- Map type priority: Hoang Dã (mIdx=1) > Trang Sức (mIdx=2) > Tháp/Cánh (mIdx=3) > Luyện Ngục (mIdx=4)
+                                local mapPriority = (10 - math.min(mIdx, 9)) * 10000
+
                                 if mapCfg.bosses then
-                                    for _, cfg in ipairs(mapCfg.bosses) do
+                                    for bIdx, cfg in ipairs(mapCfg.bosses) do
                                         if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
                                             _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
                                         end
@@ -3414,7 +3672,10 @@ local function CreateModUI()
                                             local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
                                             local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
                                             if currentSec > ignoreUntil then
-                                                local baseScore = tierScore + math.random(1, 100)
+                                                -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
+                                                local colVal = cfg.col or 1
+                                                local colPriority = math.min(colVal, 3) * 100
+
                                                 local bossData = mapBosses[mapCfg.mapId] and
                                                     mapBosses[mapCfg.mapId][cfg.id]
                                                 if bossData then
@@ -3434,21 +3695,20 @@ local function CreateModUI()
                                                         local deadList = bossData.deadTimes[lineNum] or {}
                                                         if not isAlive and #deadList > 0 then
                                                             local rt = deadList[1]
-                                                            if rt <= currentSec + 60 then
+                                                            if rt <= currentSec + 10 then
                                                                 bestLine = lineNum
-                                                                respawnWait = rt - currentSec
+                                                                respawnWait = math.max(0, rt - currentSec)
                                                                 break
                                                             end
                                                         end
                                                     end
 
                                                     if bestLine then
-                                                        local finalScore = baseScore
-                                                        if isAlive then
-                                                            finalScore = finalScore + 10000
-                                                        else
-                                                            finalScore = finalScore + (60 - respawnWait) * 30
-                                                        end
+                                                        local aliveScore = isAlive and 1000000 or 0
+                                                        local waitScore = (not isAlive) and math.max(0, (10 - respawnWait) * 1000) or 0
+                                                        local tierScore = tierIndex * 100000
+
+                                                        local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
 
                                                         if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
                                                             finalScore = finalScore + 5000
@@ -3460,22 +3720,10 @@ local function CreateModUI()
                                                             score = finalScore,
                                                             isAlive = isAlive,
                                                             wait = respawnWait,
-                                                            mapName = GetMapName(mapCfg.mapId),
+                                                            mapName = mapCfg.title or GetMapName(mapCfg.mapId),
                                                             mapId = mapCfg.mapId,
                                                             obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
                                                         })
-
-                                                        if finalScore > bestScore then
-                                                            bestScore = finalScore
-                                                            bestBoss = {
-                                                                cfg = cfg,
-                                                                mapCfg = mapCfg,
-                                                                line = bestLine,
-                                                                isAlive =
-                                                                    isAlive,
-                                                                wait = respawnWait
-                                                            }
-                                                        end
                                                     end
                                                 end
                                             end
@@ -3485,16 +3733,15 @@ local function CreateModUI()
                             end
                         end
 
-                        local currentTiers = GetAvailableTiers and GetAvailableTiers() or { "C6", "C7" }
-                        for idx, tag in ipairs(currentTiers) do
-                            local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tag)
-                            if mapsConfig then
-                                CheckConfig(mapsConfig, idx * 1000)
+                        if GetAvailableTiers then
+                            for tIdx, tTag in ipairs(GetAvailableTiers()) do
+                                CheckConfig(GetMapsConfigByTier(tTag), tIdx)
                             end
                         end
 
                         if #candidates > 0 then
                             table.sort(candidates, function(a, b) return a.score > b.score end)
+                            bestBoss = candidates[1].obj
                             LogMsg("--- TOP 3 BOSSES SCORE ---")
                             for i = 1, math.min(3, #candidates) do
                                 local c = candidates[i]
@@ -3541,10 +3788,12 @@ local function CreateModUI()
                                     end
                                 end
                             end
-                            for _, tag in ipairs(currentTiers) do
-                                local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tag)
-                                if mapsConfig then
-                                    DebugConfig(mapsConfig)
+                            if GetAvailableTiers then
+                                for _, tTag in ipairs(GetAvailableTiers()) do
+                                    local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tTag)
+                                    if mapsConfig then
+                                        DebugConfig(mapsConfig)
+                                    end
                                 end
                             end
                             --LogMsg(string.format("Tổng theo dõi: %d Boss. (Không có data từ Server cho %d Boss)", countConfig, countNoData))
@@ -3701,9 +3950,10 @@ local function CreateModUI()
                         if bestBoss then
                             _G.Mod_AutoFarmBoss_Target = bestBoss
                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                            if bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 30) then
-                                LogMsg(string.format("Bắt đầu săn: %s (Map: %s)", bestBoss.cfg.name,
-                                    GetMapName(bestBoss.mapCfg.mapId)))
+                            if bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 10) then
+                                local waitSuffix = (not bestBoss.isAlive) and string.format(" (Chờ %ds xuất hiện)", bestBoss.wait or 0) or ""
+                                LogMsg(string.format("Bắt đầu săn: %s (Map: %s)%s", bestBoss.cfg.name,
+                                    GetMapName(bestBoss.mapCfg.mapId), waitSuffix))
                                 _G.Mod_AutoFarmBoss_Target = bestBoss
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
@@ -3781,8 +4031,8 @@ local function CreateModUI()
                                 GetMapName(target.mapCfg.mapId), target.line))
                             _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
 
-                            local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
-                                target.cfg.transferId or target.mapCfg.mapId
+                            local transId = target.cfg.transferId or (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
+                                target.mapCfg.mapId
                             if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                 _G.SceneController.OnReqTransferTransmitMap(nil,
                                     { mapId = transId, line = target.line, changeLine = true })
@@ -3822,7 +4072,10 @@ local function CreateModUI()
                         local alivePos, aliveCount, totalCandidates = _G.GetAliveBossPosition(target.cfg.id,
                             target.mapCfg.mapId)
 
-                        if totalCandidates > 0 and aliveCount == 0 then
+                        -- Chỉ hủy mục tiêu khi target ban đầu là Boss SỐNG mà Minimap báo đã bị hạ (bị KS)
+                        -- Nếu là Boss đang đếm lùi hồi sinh (target.isAlive == false hoặc target.wait <= 10) thì KHÔNG hủy mục tiêu
+                        local isWaitingRespawn = (target.isAlive == false) or (target.wait and target.wait <= 10)
+                        if not isWaitingRespawn and totalCandidates > 0 and aliveCount == 0 then
                             LogMsg(string.format("Minimap xác nhận tất cả điểm của Boss %s đã bị hạ. Trở về State 1...",
                                 target.cfg.name or ""))
                             _G.Mod_AutoFarmBoss_Target = nil
@@ -4061,18 +4314,24 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                             end
                         else
-                            -- Đã thực sự đến nơi 1.5m nhưng không thấy Boss
+                            -- Đã thực sự đến nơi 1.5m nhưng chưa thấy Boss (đang đợi Boss xuất hiện)
                             _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
-                            if _G.Mod_AutoFarmBoss_BossWait > 5 then
-                                LogMsg(string.format("Đã đến tận nơi tọa độ %s nhưng không thấy Boss. Trở về State 1...",
+                            if _G.Mod_AutoFarmBoss_BossWait <= 20 then
+                                if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
+                                    LogMsg(string.format("[ĐÓN ĐẦU] Đã tới tọa độ %s, đang đứng chờ Boss %s xuất hiện (%ds/20s)...",
+                                        target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "",
+                                        target.cfg.name or "",
+                                        _G.Mod_AutoFarmBoss_BossWait))
+                                end
+                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            else
+                                LogMsg(string.format("Đã đứng chờ 20s tại tọa độ %s nhưng Boss không xuất hiện. Trở về State 1...",
                                     target.currentPos and
                                     string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
                                 _G.Mod_AutoFarmBoss_BossWait = 0
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
-                            else
                                 _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
                             end
                         end
@@ -4121,7 +4380,15 @@ local function CreateModUI()
                         if not foundBoss then
                             _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_TargetWait >= 2 then
-                                LogMsg("Boss chết hoặc biến mất! Chờ nhặt đồ...")
+                                LogMsg("Boss chết hoặc biến mất! Tắt AutoFight & Chờ 7s nhặt đồ...")
+
+                                -- Tắt Auto Fight ngay khi Boss chết
+                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                    _G.RoleManager.me:SetAutoFight("None")
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                    _G.QiJiHelperData.SetAutoFightData(false)
+                                end
 
                                 _G.Mod_FarmStats = _G.Mod_FarmStats or { hidden = 0, bosses = {} }
                                 _G.Mod_FarmStats.bosses[target.cfg.id] = (_G.Mod_FarmStats.bosses[target.cfg.id] or 0) +
@@ -4131,22 +4398,41 @@ local function CreateModUI()
 
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_State = 6
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                                _G.Mod_AutoFarmBoss_LootStartTime = nowRealtime
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
                             else
-                                _G.Mod_AutoFarmBoss_WaitTime = currentSec + 2
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                             end
                         else
                             _G.Mod_AutoFarmBoss_TargetWait = 0
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                         end
 
                         -- STATE 6: LOOT WAIT
                     elseif _G.Mod_AutoFarmBoss_State == 6 then
-                        LogMsg("Đang chờ 5s nhặt đồ rồi rút về Lorencia...")
+                        local lootDuration = 7.0 -- Customer: 7 giây chờ nhặt đồ
+                        local lootStart = _G.Mod_AutoFarmBoss_LootStartTime or nowRealtime
+
+                        -- Đảm bảo Auto Fight đã tắt hoàn toàn trong thời gian nhặt đồ
+                        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                            _G.RoleManager.me:SetAutoFight("None")
+                        end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                            _G.QiJiHelperData.SetAutoFightData(false)
+                        end
+
+                        if nowRealtime < lootStart + lootDuration then
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                            return
+                        end
+
+                        -- Hết 7s chờ nhặt đồ -> Rút về Lorencia
+                        LogMsg("Đã xong 7s nhặt đồ! Rút về Lorencia...")
                         _G.Mod_AutoFarmBoss_Target = nil
+                        _G.Mod_AutoFarmBoss_LootStartTime = nil
                         _G.Mod_AutoFarmBoss_State = 1 -- Đổi về 1 để bắt buộc bay về Lorencia
                         _G.Mod_AutoFarmBoss_TargetWait = 0
-                        _G.Mod_AutoFarmBoss_WaitTime = currentSec + 5
+                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                     end
                 end)
                 if not status then
@@ -4276,6 +4562,24 @@ local function CreateModUI()
                             if _G.QiJiHelperData.SettingData.KillMonsterScope ~= _G.Mod_CustomAttackRange then
                                 _G.QiJiHelperData.SettingData.KillMonsterScope = _G.Mod_CustomAttackRange
                             end
+                        end
+                    end
+
+                    if _G.Mod_AutoApproachTowerBoss then
+                        local groupId = _G.SceneData and _G.SceneData.groupId
+                        if groupId and string.match(tostring(groupId), "^1059") then
+                            if _G.LastTowerMapId ~= groupId then
+                                _G.LastTowerMapId = groupId
+                                _G.Mod_ApproachTowerBoss_Done = false
+                            end
+                            if not _G.Mod_ApproachTowerBoss_Done then
+                                if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
+                                    _G.Mod_ApproachTowerBoss_Done = true
+                                end
+                            end
+                        else
+                            _G.LastTowerMapId = nil
+                            _G.Mod_ApproachTowerBoss_Done = false
                         end
                     end
 
@@ -5227,6 +5531,10 @@ local function CreateModUI()
         if _G.Mod_CustomAttackRange == nil then
             _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_CustomAttackRange", 0)
+        end
+        if _G.Mod_AutoApproachTowerBoss == nil then
+            pcall(function() _G.Mod_AutoApproachTowerBoss = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoApproachTowerBoss", 0) == 1) end)
+            if _G.Mod_AutoApproachTowerBoss == nil then _G.Mod_AutoApproachTowerBoss = false end
         end
         if _G.Mod_AntiCC == nil then _G.Mod_AntiCC = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AntiCC", 0) == 1 end
         if _G.AutoPick_FilterNormal == nil then
@@ -6967,6 +7275,9 @@ local function CreateModUI()
 
             currentY = currentY - 45
 
+            CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
+            currentY = currentY - 45
+
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
             currentY = currentY - 45
 
@@ -7535,6 +7846,44 @@ local function CreateModUI()
             end)
 
             currentY = currentY - 45
+
+            -- Nút NHỚ SKILL MAP ẨN (Dưới LẤY VỊ TRÍ)
+            local saveSkillBtnGo = GameObject("SaveMapAnSkillBtn")
+            saveSkillBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, saveSkillBtnGo)
+            local ssRt = saveSkillBtnGo:AddComponent(typeof(RectTransform))
+            ssRt.anchorMin, ssRt.anchorMax, ssRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ssRt.anchoredPosition = Vector2(rightColX2, currentY)
+            ssRt.sizeDelta = Vector2(280, 32)
+
+            local ssBg = GameObject("Bg")
+            ssBg.transform:SetParent(saveSkillBtnGo.transform, false)
+            local ssBgRt = ssBg:AddComponent(typeof(RectTransform))
+            ssBgRt.anchorMin, ssBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            ssBgRt.sizeDelta = Vector2(0, 0)
+            local ssBgImg = ssBg:AddComponent(typeof(Image))
+            ssBgImg.color = Color(0.18, 0.48, 0.42, 1)
+
+            local ssTxtGo = GameObject("Text")
+            ssTxtGo.transform:SetParent(saveSkillBtnGo.transform, false)
+            local ssTxtRt = ssTxtGo:AddComponent(typeof(RectTransform))
+            ssTxtRt.anchorMin, ssTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            ssTxtRt.sizeDelta = Vector2(0, 0)
+            local ssTxt = ssTxtGo:AddComponent(typeof(Text))
+            ssTxt.raycastTarget = false
+            ssTxt.text = "NHỚ SKILL MAP ẨN"
+            ssTxt.color = Color.white
+            ssTxt.fontSize = 15
+            ssTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then ssTxt.font = defaultFont end
+
+            local ssBtn = saveSkillBtnGo:AddComponent(typeof(Button))
+            ssBtn.onClick:AddListener(function()
+                if _G.Mod_SaveMapAnSkills then
+                    _G.Mod_SaveMapAnSkills()
+                end
+            end)
+            currentY = currentY - 45
         end
         CreateAutoBossUI()
         CreateKundunUI()
@@ -7744,8 +8093,8 @@ local function CreateModUI()
 
                             local lootCount = _G.Mod_IsDev and 3 or 2
                             local delayTime = _G.Mod_IsDev and 0.05 or 0.2
-                            local minPDelay = _G.Mod_Config_PickupDelay_Min or 100
-                            local maxPDelay = _G.Mod_Config_PickupDelay_Max or 500
+                            local minPDelay = _G.Mod_Config_PickupDelay_Min or 300
+                            local maxPDelay = _G.Mod_Config_PickupDelay_Max or 2000
                             if minPDelay > maxPDelay then minPDelay, maxPDelay = maxPDelay, minPDelay end
                             local initialDelay = math.random(minPDelay, maxPDelay) / 1000
 
