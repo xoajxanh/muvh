@@ -5500,6 +5500,7 @@ local function CreateModUI()
                     "Mod_AtkSpeedMultiplier", "Mod_TrainCoord", "Mod_AutoFarmBoss_EnterHiddenMap",
                     "Mod_AutoHH_Enabled", "ModAutoBossConfigTab", "Mod_LockTarget_Enabled",
                     "Mod_AutoPick_Bone_Hon", "Mod_AutoPick_Bone_Cot",
+                    "Mod_GameSettingsSnapshot",
                     "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
                     "Mod_TeleNotify_Enabled"
                 }
@@ -6368,25 +6369,6 @@ local function CreateModUI()
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
 
-            local function CheckSpeedAutoBoost()
-                if valueVarName == "RunSpeedMultiplier" and (_G.RunSpeedMultiplier or 1.0) > 3.5 then
-                    if not _G.Mod_DisableVisuals then
-                        _G.Mod_DisableVisuals = true
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_DisableVisuals", 1)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                        if _G.ModUpdateDisableVisualsLabel then
-                            pcall(_G.ModUpdateDisableVisualsLabel)
-                        end
-                        if _G.Mod_ApplyPerformanceOptimization then
-                            pcall(_G.Mod_ApplyPerformanceOptimization, true)
-                        end
-                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                            _G.FloatingWordUtility.QuickMsg("Tốc chạy > 3.5x: Tự động BẬT GIẢM CẤU HÌNH chống lag map!")
-                        end
-                    end
-                end
-            end
-
             local function OnSpeedChanged()
                 UpdateLabel()
                 if valueVarName == "RunSpeedMultiplier" then
@@ -6415,7 +6397,6 @@ local function CreateModUI()
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 OnSpeedChanged()
-                CheckSpeedAutoBoost()
             end)
             m5BtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - (step * 5)) * 10 + 0.5) / 10)
@@ -6429,7 +6410,6 @@ local function CreateModUI()
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 OnSpeedChanged()
-                CheckSpeedAutoBoost()
             end)
         end
 
@@ -6724,13 +6704,114 @@ local function CreateModUI()
             end)
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT GỠ LAG & ĐỒNG BỘ ĐIỂM NEO SERVER (SPEED SYNC UNSTICK)
+        -- Mô tả: Chạy bộ tốc độ cao (speed 20x) MoveTo về tọa độ Server, khi đến nơi set lại speed 1.8x.
+        -- =========================================================================
         -- Cột Phải Tab Cơ Bản
         CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
-        CreateSpeedControl(415, -100, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
-        CreateRangeControl(415, -140, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
+
+        -- NÚT GỠ LAG (Nằm ngay bên dưới Tốc Chạy, độ dài 330px bằng toàn bộ cụm control bên phải)
+        local unstickBtnGo = GameObject("UnstickSpeedBtn")
+        unstickBtnGo.transform:SetParent(panelGo.transform, false)
+        table.insert(_G.CoBanUIList, unstickBtnGo)
+
+        local uRt = unstickBtnGo:AddComponent(typeof(RectTransform))
+        uRt.anchorMin, uRt.anchorMax, uRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+        uRt.anchoredPosition = Vector2(340, -98)
+        uRt.sizeDelta = Vector2(330, 32)
+
+        local uImg = unstickBtnGo:AddComponent(typeof(Image))
+        uImg.color = Color(0.8, 0.35, 0.1, 1)
+        uImg.raycastTarget = true
+
+        local uTxtGo = GameObject("Text")
+        uTxtGo.transform:SetParent(unstickBtnGo.transform, false)
+        local uTxtRt = uTxtGo:AddComponent(typeof(RectTransform))
+        uTxtRt.anchorMin, uTxtRt.anchorMax, uTxtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+        local uTxt = uTxtGo:AddComponent(typeof(Text))
+        uTxt.raycastTarget = false
+        uTxt.text = "GỠ LAG (VỀ NEO SERVER)"
+        uTxt.color = Color.white
+        uTxt.fontSize = 15
+        uTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then uTxt.font = defaultFont end
+
+        local uBtn = unstickBtnGo:AddComponent(typeof(Button))
+        uBtn.targetGraphic = uImg
+        uBtn.onClick:AddListener(function()
+            pcall(function()
+                local me = _G.RoleManager and _G.RoleManager.me
+                if not me then return end
+
+                local sX = me.serverCoord and me.serverCoord.x or (me.data and me.data.serverCoord and me.data.serverCoord.x) or 0
+                local sY = me.serverCoord and me.serverCoord.y or (me.data and me.data.serverCoord and me.data.serverCoord.y) or 0
+
+                if sX <= 0 or sY <= 0 then
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("[GỠ LAG] Không tìm thấy tọa độ Server hợp lệ!")
+                    end
+                    return
+                end
+
+                -- 1. Tạm thời set speed lên 20.0 để lao nhanh về điểm neo Server
+                _G.RunSpeedMultiplier = 20.0
+                if me.SetMoveSpeed then
+                    local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 350
+                    me:SetMoveSpeed(base, true)
+                end
+
+                -- 2. Dừng đường chạy ảo hiện tại
+                if me.StopMoveImmediate then
+                    me:StopMoveImmediate()
+                end
+
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("[GỠ LAG] Đang chạy tốc độ cao về điểm neo Server (%d,%d)...", sX, sY))
+                end
+
+                -- 3. Di chuyển MoveTo về sX, sY và khi đến nơi set lại speed về 1.8x
+                local isFinished = false
+                local function OnArrivedAtServerPos()
+                    if isFinished then return end
+                    isFinished = true
+                    pcall(function()
+                        _G.RunSpeedMultiplier = 1.8
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.8)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                        if me.SetMoveSpeed then
+                            local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 350
+                            me:SetMoveSpeed(base, true)
+                        end
+                        if _G.Mod_AllUIUpdaters then
+                            for _, upd in ipairs(_G.Mod_AllUIUpdaters) do pcall(upd) end
+                        end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg(string.format("[GỠ LAG THÀNH CÔNG] Đã về điểm neo (%d,%d)! Tốc chạy: 1.8x", sX, sY))
+                        end
+                    end)
+                end
+
+                if me.MoveTo then
+                    me:MoveTo({ x = sX, y = sY }, 0, OnArrivedAtServerPos)
+                end
+
+                -- Timer an toàn sau 1.5s nếu hoàn thành đường chạy hoặc gần tới nơi thì chốt 1.8x
+                if _G.Timer and _G.Timer.Start then
+                    _G.Timer.Start(1.5, function()
+                        if not isFinished and _G.RunSpeedMultiplier == 20.0 then
+                            OnArrivedAtServerPos()
+                        end
+                    end)
+                end
+            end)
+        end)
+
+        CreateSpeedControl(415, -138, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
+        CreateRangeControl(415, -178, "Phát Hiện Địch: ", "Mod_CustomAttackRange", 1)
 
         -- Cột Trái Tab Cơ Bản
-        CreateRangeMultiplierControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
+        CreateRangeMultiplierControl(70, -178, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
         if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_ApplyAttackRangeMultiplier then
             _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
         end
@@ -8988,7 +9069,7 @@ local function CreateModUI()
             end)
 
             currentY = currentY - 40
-            CreateToggle("MỞ RƯƠNG VÀNG LẺ", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
+            CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
         end
 
         CreateKundunUI()
@@ -10819,17 +10900,43 @@ local function CreateModUI()
             end
 
             -- =========================================================================
-            -- [MOD FEATURE]: GIẢM CẤU HÌNH & TỐI ƯU HIỆU NĂNG (PERFORMANCE BOOST)
-            -- Mô tả: Áp dụng chuẩn 100% logic EPerformanceQuality.Low của Khóa Màn Hình
-            --        kết hợp ẩn hiệu ứng skill/lốc xoay/chữ nhảy số để máy siêu mát và load quái tức thì.
-            --        Khi TẮT: Ép khôi phục 100% độ nét cao Full HD, RenderScale 1.0, Max LOD 900, 60 FPS và unhide toàn bộ model/hiệu ứng.
+            -- [MOD FEATURE]: GIẢM CẤU HÌNH & TỐI ƯU HIỆU NĂNG (PERFORMANCE BOOST & SETTINGS SNAPSHOT)
+            -- Mô tả: Khi BẬT: Lưu Snapshot 100% các cài đặt "Hiển thị cảnh" của người chơi vào PlayerPrefs,
+            --        sau đó áp dụng cấu hình siêu nhẹ (Low) và ẩn các hiệu ứng nặng.
+            --        Khi TẮT: Đọc Snapshot từ PlayerPrefs để khôi phục chính xác 100% từng tùy chọn
+            --        (Ẩn người chơi, Ẩn skill, Ẩn cánh, Ẩn dấu chân, Ẩn thú triệu hồi, Ẩn quái, Ẩn skill quái...).
             -- =========================================================================
             _G.Mod_ApplyPerformanceOptimization = function(isLow)
                 pcall(function()
                     if isLow then
-                        -- 1. Lưu snapshot cài đặt ban đầu của người chơi
-                        if _G.GameSettingsData and not _G.Mod_OriginalGameSettingsSnapshot then
-                            _G.Mod_OriginalGameSettingsSnapshot = table.clone(_G.GameSettingsData)
+                        -- 1. Lưu snapshot cài đặt ban đầu của người chơi vào PlayerPrefs (nếu chưa có)
+                        local existingSnapStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_GameSettingsSnapshot", "")
+                        if (not existingSnapStr or existingSnapStr == "" or existingSnapStr == "[]" or existingSnapStr == "{}") and _G.GameSettingsData then
+                            local snap = {
+                                hidePlayerModelCamp = _G.GameSettingsData.hidePlayerModelCamp,
+                                hideSkillEffectCamp = _G.GameSettingsData.hideSkillEffectCamp,
+                                hideSummonMonster = _G.GameSettingsData.hideSummonMonster,
+                                hidePlayerWingCamp = _G.GameSettingsData.hidePlayerWingCamp,
+                                hidePlayerBootCamp = _G.GameSettingsData.hidePlayerBootCamp,
+                                hideMonsterModel = _G.GameSettingsData.hideMonsterModel,
+                                hideMonsterSkillEffect = _G.GameSettingsData.hideMonsterSkillEffect,
+                                showShadow = _G.GameSettingsData.showShadow,
+                                showWeatherEffect = _G.GameSettingsData.showWeatherEffect,
+                                showSceneAnimals = _G.GameSettingsData.showSceneAnimals,
+                                limitMaxVisiblePlayers = _G.GameSettingsData.limitMaxVisiblePlayers,
+                                maxVisiblePlayers = _G.GameSettingsData.maxVisiblePlayers,
+                                performQuality = _G.GameSettingsData.performQuality,
+                                resolution = _G.GameSettingsData.resolution,
+                                frameRate = _G.GameSettingsData.frameRate,
+                                LOD = _G.GameSettingsData.LOD,
+                                maxInstantiateCount = _G.GameSettingsData.maxInstantiateCount
+                            }
+                            _G.Mod_OriginalGameSettingsSnapshot = snap
+                            if _G.json and _G.json.encode then
+                                local snapStr = _G.json.encode(snap)
+                                CS.UnityEngine.PlayerPrefs.SetString("Mod_GameSettingsSnapshot", snapStr)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                            end
                         end
 
                         -- 2. Áp dụng chuẩn 100% thiết lập Khóa Màn Hình (EPerformanceQuality.Low)
@@ -10842,48 +10949,90 @@ local function CreateModUI()
                             end
                         end
                     else
-                        -- 3. Khôi phục lại toàn bộ chất lượng đồ họa ĐỘ NÉT CAO (Full HD, Max LOD, Full Model, 60 FPS)
-                        local highSettings = _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.High]
-                        if highSettings and _G.GameSettingsController then
-                            _G.GameSettingsController.SetGamingSettings(highSettings)
-                            _G.GameSettingsController.ApplyDisplaySettings(highSettings)
-                            _G.GameSettingsController.SetSettings(highSettings)
+                        -- 3. Khôi phục từ Snapshot đã lưu trong PlayerPrefs
+                        local snap = _G.Mod_OriginalGameSettingsSnapshot
+                        if not snap then
+                            local snapStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_GameSettingsSnapshot", "")
+                            if snapStr and snapStr ~= "" and snapStr ~= "[]" and snapStr ~= "{}" then
+                                if _G.json and _G.json.decode then
+                                    local ok, decoded = pcall(_G.json.decode, snapStr)
+                                    if ok and type(decoded) == "table" then
+                                        snap = decoded
+                                    end
+                                end
+                            end
                         end
 
-                        -- 3.1. Ép Độ phân giải Full HD (RenderScale = 1.0) & Max LOD 900
-                        pcall(function()
-                            if _G.GameSettingsController and _G.C_ResolutionQuality then
-                                _G.GameSettingsController.SetResolution(_G.C_ResolutionQuality.FHD)
+                        if snap and _G.GameSettingsController then
+                            -- Khôi phục chính xác từng mục cài đặt "Hiển thị cảnh" của người chơi
+                            if snap.hidePlayerModelCamp ~= nil then
+                                _G.GameSettingsController.SetHidePlayerModelType(snap.hidePlayerModelCamp, true)
                             end
-                            if _G.GraphicEx and _G.GraphicEx.SetRenderScale then
-                                _G.GraphicEx.SetRenderScale(1.0)
+                            if snap.hideSkillEffectCamp ~= nil then
+                                _G.GameSettingsController.SetHideModelSkillEffectType(snap.hideSkillEffectCamp, true)
                             end
-                            if CS.UnityEngine.Shader then
-                                CS.UnityEngine.Shader.globalMaximumLOD = 900
+                            if snap.hideSummonMonster ~= nil then
+                                _G.GameSettingsController.SetSummonMonsterModelType(snap.hideSummonMonster, true)
                             end
-                            if _G.GameSettingsData and _G.EPerformanceQuality then
-                                _G.GameSettingsData.performQuality = _G.EPerformanceQuality.High
+                            if snap.hidePlayerWingCamp ~= nil then
+                                _G.GameSettingsController.SetHidePlayerWingType(snap.hidePlayerWingCamp, true)
                             end
-                        end)
+                            if snap.hidePlayerBootCamp ~= nil then
+                                _G.GameSettingsController.SetHidePlayerBootType(snap.hidePlayerBootCamp, true)
+                            end
+                            if snap.hideMonsterModel ~= nil then
+                                _G.GameSettingsController.SetHideMonsterModel(snap.hideMonsterModel, true)
+                            end
+                            if snap.hideMonsterSkillEffect ~= nil then
+                                _G.GameSettingsController.SetHideMonsterSkillEffect(snap.hideMonsterSkillEffect, true)
+                            end
+                            if snap.showShadow ~= nil then
+                                _G.GameSettingsController.SetShowRoleShadow(snap.showShadow)
+                            end
+                            if snap.showWeatherEffect ~= nil then
+                                _G.GameSettingsController.ShowSceneWeatherEffect(snap.showWeatherEffect)
+                            end
+                            if snap.showSceneAnimals ~= nil then
+                                _G.GameSettingsController.ShowSceneAnimals(snap.showSceneAnimals)
+                            end
+                            if snap.limitMaxVisiblePlayers ~= nil then
+                                _G.GameSettingsController.SetLimitShowPlayers(snap.limitMaxVisiblePlayers)
+                            end
+                            if snap.maxVisiblePlayers ~= nil then
+                                _G.GameSettingsController.SetPlayerShowLimitCount(snap.maxVisiblePlayers)
+                            end
+                            if snap.resolution ~= nil then
+                                _G.GameSettingsController.SetResolution(snap.resolution)
+                            end
+                            if snap.frameRate ~= nil then
+                                _G.GameSettingsController.SetFrameRate(snap.frameRate)
+                            end
+                            if snap.LOD ~= nil and CS.UnityEngine.Shader then
+                                CS.UnityEngine.Shader.globalMaximumLOD = snap.LOD
+                            end
+                            if snap.performQuality ~= nil and _G.GameSettingsData then
+                                _G.GameSettingsData.performQuality = snap.performQuality
+                            end
+                            if snap.maxInstantiateCount ~= nil and CS.Framework and CS.Framework.ResourceManager then
+                                CS.Framework.ResourceManager.MaxLoadOrInstanceCount = snap.maxInstantiateCount
+                            end
+                            _G.GameSettingsController.Save()
+                        else
+                            -- Fallback nếu chưa từng có snapshot: Khôi phục cấu hình High mặc định
+                            local highSettings = _G.C_DefaultGameSettings and _G.EPerformanceQuality and _G.C_DefaultGameSettings.PerformanceConfig[_G.EPerformanceQuality.High]
+                            if highSettings and _G.GameSettingsController then
+                                _G.GameSettingsController.SetGamingSettings(highSettings)
+                                _G.GameSettingsController.ApplyDisplaySettings(highSettings)
+                                _G.GameSettingsController.SetSettings(highSettings)
+                            end
+                        end
 
-                        -- 3.2. Hiển thị lại toàn bộ model, cánh, dấu chân, hiệu ứng thời tiết, đổ bóng
-                        pcall(function()
-                            if _G.GameSettingsController and _G.EBattleCamp then
-                                _G.GameSettingsController.SetHidePlayerModelType(_G.EBattleCamp.None, true)
-                                _G.GameSettingsController.SetHideModelSkillEffectType(_G.EBattleCamp.None, true)
-                                _G.GameSettingsController.SetSummonMonsterModelType(false, true)
-                                _G.GameSettingsController.SetHidePlayerWingType(_G.EBattleCamp.None, true)
-                                _G.GameSettingsController.SetHidePlayerBootType(_G.EBattleCamp.None)
-                                _G.GameSettingsController.SetHideMonsterModel(false, true)
-                                _G.GameSettingsController.SetHideMonsterSkillEffect(false, true)
-                                _G.GameSettingsController.SetShowRoleShadow(true)
-                                _G.GameSettingsController.ShowSceneWeatherEffect(true)
-                                _G.GameSettingsController.ShowSceneAnimals(true)
-                                _G.GameSettingsController.SetMaxVisiblePLayers()
-                            end
-                        end)
+                        -- Xóa Snapshot sau khi đã khôi phục thành công
+                        _G.Mod_OriginalGameSettingsSnapshot = nil
+                        CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_GameSettingsSnapshot")
+                        CS.UnityEngine.PlayerPrefs.Save()
 
-                        -- 3.3. [TINH CHỈNH MƯỢT MÀ]: Đẩy FrameRate lên 60 FPS chống giật hoạt cảnh khi chạy tốc độ cao
+                        -- 3.3. Đảm bảo FrameRate tối thiểu 60 FPS
                         pcall(function()
                             if _G.GameSettingsController and _G.GameSettingsController.SetFrameRate then
                                 local targetFps = (_G.C_FrameRate and _G.C_FrameRate.HIGH) or 60
@@ -10894,7 +11043,7 @@ local function CreateModUI()
                             end
                         end)
 
-                        -- 3.4. [TINH CHỈNH ANIMATOR]: Đồng bộ khóa chuẩn tốc độ 1.0x cho Body, Cánh & Dấu Chân Me
+                        -- 3.4. [TINH CHỈNH ANIMATOR]: Khóa chuẩn tốc độ 1.0x cho Body, Cánh & Dấu Chân Me
                         pcall(function()
                             if _G.RoleManager and _G.RoleManager.me then
                                 local me = _G.RoleManager.me
@@ -10927,8 +11076,6 @@ local function CreateModUI()
                                 end
                             end
                         end)
-
-                        _G.Mod_OriginalGameSettingsSnapshot = nil
                     end
 
                     -- 4. Đồng bộ các hiệu ứng Scene & Footprint

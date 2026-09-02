@@ -1,10 +1,5 @@
 -- =========================================================================
--- [TEST SCRIPT]: FIX LỖI RENDER 10FPS / BÓNG DÍNH VỊ TRÍ CŨ (SKINNING & SHADER FIX)
--- Mô tả:
--- 1. Ép SkinnedMeshRenderer.updateWhenOffscreen = true (Khắc phục trễ khung xương)
--- 2. Ép Animator.cullingMode = AlwaysAnimate (Không bỏ nhịp frame xương)
--- 3. Đặt Shader.globalMaximumLOD = 100 (Chế độ shader nhẹ không delay buffer)
--- 4. Khóa 60 FPS mượt mà
+-- [TEST SCRIPT]: THỬ NGHIỆM CÁC CƠ CHẾ PHỤC HỒI ĐỒNG BỘ VỊ TRÍ SERVER
 -- =========================================================================
 
 local function log_msg(msg)
@@ -15,83 +10,84 @@ local function log_msg(msg)
         end
     end)
     pcall(function()
-        if _G.WriteLog then _G.WriteLog("[SM_FIX] " .. text) end
+        if _G.WriteLog then _G.WriteLog("[SYNC_TEST] " .. text) end
     end)
 end
 
 local ok, err = pcall(function()
-    _G.Test_SkinFix_State = not _G.Test_SkinFix_State
+    local me = _G.RoleManager and _G.RoleManager.me
+    if not me then
+        log_msg("LỖI: Không tìm thấy RoleManager.me!")
+        return
+    end
 
-    if _G.Test_SkinFix_State then
-        -- 1. TỐC CHẠY 6.0X
-        _G.RunSpeedMultiplier = 6.0
-        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetMoveSpeed then
-            local baseSpeed = _G.RoleManager.me._modBaseMoveSpeed or (_G.RoleManager.me.data and _G.RoleManager.me.data.moveSpeed) or 350
-            _G.RoleManager.me:SetMoveSpeed(baseSpeed)
-        end
+    local cX = me.cellPos and me.cellPos.x or 0
+    local cY = me.cellPos and me.cellPos.y or 0
 
-        -- 2. KHÓA 60 FPS
-        if CS.UnityEngine.Application then
-            CS.UnityEngine.Application.targetFrameRate = 60
-        end
+    local sX = me.serverCoord and me.serverCoord.x or (me.data and me.data.serverCoord and me.data.serverCoord.x) or 0
+    local sY = me.serverCoord and me.serverCoord.y or (me.data and me.data.serverCoord and me.data.serverCoord.y) or 0
 
-        -- 3. ÉP SHADER NHẸ (LOD 100 - CHÍNH LÀ CHẾ ĐỘ CỦA GIẢM CẤU HÌNH)
-        if CS.UnityEngine.Shader then
-            CS.UnityEngine.Shader.globalMaximumLOD = 100
-        end
+    local dist = math.floor(math.sqrt((cX - sX)^2 + (cY - sY)^2) + 0.5)
+    log_msg(string.format("TRƯỚC PHỤC HỒI: Client:(%d,%d) | Server:(%d,%d) => LỆCH: %d Ô", cX, cY, sX, sY, dist))
 
-        -- 4. ÉP UPDATE TOÀN BỘ SKINNED MESH & ANIMATOR KHÔNG CULLING
-        local me = _G.RoleManager and _G.RoleManager.me
-        if me then
-            local targets = {}
-            if me.gameObject then table.insert(targets, me.gameObject) end
-            if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
-            if me.model and me.model.transform then table.insert(targets, me.model.transform) end
-            if me.AvatarEquip then
-                if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
-                if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
-            end
+    if dist <= 2 then
+        log_msg("VỊ TRÍ ĐÃ ĐỒNG BỘ TỐT (Không bị lệch)!")
+        return
+    end
 
-            for _, targetGo in ipairs(targets) do
-                if targetGo and not IsNil(targetGo) then
-                    -- SkinnedMeshRenderer fix
-                    local smrs = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.SkinnedMeshRenderer))
-                    if smrs then
-                        for i = 0, smrs.Length - 1 do
-                            local s = smrs[i]
-                            if s and not IsNil(s) then
-                                s.updateWhenOffscreen = true
-                            end
-                        end
-                    end
+    -- =========================================================================
+    -- CƠ CHẾ PHỤC HỒI 1: TÌM ĐƯỜNG PATH TỪ SERVER XY -> CLIENT XY VÀ GỬI TỪNG BƯỚC
+    -- Dẫn Server đi từ điểm kẹt đến đích theo đúng bản đồ
+    -- =========================================================================
+    local mapId = (_G.SceneData and _G.SceneData.mapId) or 0
+    local line = (_G.SceneData and _G.SceneData.line) or 0
 
-                    -- Animator Culling fix
-                    local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                    if anims then
-                        for i = 0, anims.Length - 1 do
-                            local a = anims[i]
-                            if a and not IsNil(a) then
-                                a.cullingMode = CS.UnityEngine.AnimatorCullingMode.AlwaysAnimate
-                            end
-                        end
-                    end
+    if _G.Scene and _G.Scene.SearchTilePath then
+        local startCell = CS.UnityEngine.Vector2Int(sX, sY)
+        local endCell = CS.UnityEngine.Vector2Int(cX, cY)
+        local canArrive, path = _G.Scene.SearchTilePath(startCell, endCell, 0, true)
+
+        if canArrive and path and #path > 1 then
+            log_msg(string.format("-> Tìm thấy đường hợp lệ từ Server tới Client (#path = %d)", #path))
+            local sTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or os.time()
+            for i = 2, #path do
+                local pt = path[i]
+                if pt then
+                    _G.NetManager.Send(_G.MapMessage.ReqMove, {
+                        x = pt.x,
+                        y = pt.y,
+                        action = 2,
+                        time = sTime
+                    })
                 end
             end
+        else
+            -- Nếu không tìm được path, gửi gói truyền tin Transmit
+            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqTransmit and mapId > 0 then
+                _G.NetManager.Send(_G.MapMessage.ReqTransmit, {
+                    mapId = mapId,
+                    line = line,
+                    x = cX,
+                    y = cY
+                })
+            end
         end
+    end
 
-        log_msg("ĐÃ BẬT TỐC 6.0X + UPDATEWHENOFFSCREEN + SHADER LOD 100 + 60FPS!")
-    else
-        _G.RunSpeedMultiplier = 1.0
-        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetMoveSpeed then
-            local baseSpeed = _G.RoleManager.me._modBaseMoveSpeed or (_G.RoleManager.me.data and _G.RoleManager.me.data.moveSpeed) or 350
-            _G.RoleManager.me:SetMoveSpeed(baseSpeed)
-        end
+    -- =========================================================================
+    -- CƠ CHẾ PHỤC HỒI 2: KÉO AVATAR VỀ LẠI VỊ TRÍ SERVER NẾU SERVER BỊ KHÓA
+    -- (Bỏ comment dòng dưới nếu muốn Avatar tức thì snap về Server để không mất máu)
+    -- me:FlashTo(sX, sY)
+    -- =========================================================================
 
-        if CS.UnityEngine.Shader then
-            CS.UnityEngine.Shader.globalMaximumLOD = 900
-        end
-
-        log_msg("ĐÃ TẮT TEST, KHÔI PHỤC NGUYÊN BẢN!")
+    -- Kiểm tra lại sau 0.5s
+    if _G.Timer and _G.Timer.Start then
+        _G.Timer.Start(0.5, function()
+            local curSX = me.serverCoord and me.serverCoord.x or 0
+            local curSY = me.serverCoord and me.serverCoord.y or 0
+            local newDist = math.floor(math.sqrt((cX - curSX)^2 + (cY - curSY)^2) + 0.5)
+            log_msg(string.format("KẾT QUẢ: Server hiện tại: (%d,%d) | Lệch: %d Ô", curSX, curSY, newDist))
+        end)
     end
 end)
 
