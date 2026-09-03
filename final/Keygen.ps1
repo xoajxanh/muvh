@@ -2,8 +2,10 @@
 #                      MU MOD VIP KEYGEN (NEW VERSION)
 # ============================================================================
 
+chcp 65001 > $null
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding  = [System.Text.Encoding]::UTF8
+$OutputEncoding           = [System.Text.Encoding]::UTF8
 
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host "         MU MOD VIP KEYGEN 2026          " -ForegroundColor Yellow
@@ -16,6 +18,7 @@ if ([string]::IsNullOrWhiteSpace($DeviceCode)) {
     Write-Host "Lỗi: Mã Thiết Bị không được để trống!" -ForegroundColor Red
     exit
 }
+$DeviceCode = $DeviceCode.Trim()
 
 # 2. Nhập UID Nhân Vật (mặc định ALL)
 $InputUID = Read-Host "2. Nhập UID nhân vật khách (Ấn Enter để mặc định ALL cho mọi NV)"
@@ -29,7 +32,7 @@ $InputMainTier = Read-Host "3. Nhập Chuyển Chính (3-12, Ấn Enter để m�
 $MainTier = 8
 if (-not [string]::IsNullOrWhiteSpace($InputMainTier)) {
     $parsedMain = 0
-    if ([int]::TryParse($InputMainTier, [ref]$parsedMain) -and $parsedMain -ge 3 -and $parsedMain -le 12) {
+    if ([int]::TryParse($InputMainTier.Trim(), [ref]$parsedMain) -and $parsedMain -ge 3 -and $parsedMain -le 12) {
         $MainTier = $parsedMain
     } else {
         Write-Host "Chuyển chính không hợp lệ, lấy mặc định: 8" -ForegroundColor DarkYellow
@@ -41,22 +44,60 @@ $InputSubTier = Read-Host "4. Nhập Chuyển Phụ (3-12, Ấn Enter để mặ
 $SubTier = 7
 if (-not [string]::IsNullOrWhiteSpace($InputSubTier)) {
     $parsedSub = 0
-    if ([int]::TryParse($InputSubTier, [ref]$parsedSub) -and $parsedSub -ge 3 -and $parsedSub -le 12) {
+    if ([int]::TryParse($InputSubTier.Trim(), [ref]$parsedSub) -and $parsedSub -ge 3 -and $parsedSub -le 12) {
         $SubTier = $parsedSub
     } else {
         Write-Host "Chuyển phụ không hợp lệ, lấy mặc định: 7" -ForegroundColor DarkYellow
     }
 }
 
-# 5. Chọn Thời Hạn
+# 5. Nhập Ngày Bắt Đầu (Start Date)
+Write-Host ""
+$InputStartDate = Read-Host "5. Nhập Ngày Bắt Đầu (dd/MM/yyyy hoặc yyyy-MM-dd, Ấn Enter để lấy Ngày/Giờ Hiện Tại)"
+$StartDate = Get-Date
+if (-not [string]::IsNullOrWhiteSpace($InputStartDate)) {
+    $formats = @(
+        'dd/MM/yyyy HH:mm:ss', 'dd/MM/yyyy HH:mm', 'dd/MM/yyyy',
+        'd/M/yyyy HH:mm:ss', 'd/M/yyyy HH:mm', 'd/M/yyyy',
+        'yyyy-MM-dd HH:mm:ss', 'yyyy-MM-dd HH:mm', 'yyyy-MM-dd',
+        'yyyy/MM/dd HH:mm:ss', 'yyyy/MM/dd HH:mm', 'yyyy/MM/dd',
+        'dd-MM-yyyy HH:mm:ss', 'dd-MM-yyyy HH:mm', 'dd-MM-yyyy'
+    )
+    $parsedDate = [DateTime]::MinValue
+    $isParsed = $false
+    foreach ($fmt in $formats) {
+        if ([DateTime]::TryParseExact($InputStartDate.Trim(), $fmt, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::None, [ref]$parsedDate)) {
+            $isParsed = $true
+            break
+        }
+    }
+    if (-not $isParsed) {
+        $isParsed = [DateTime]::TryParse($InputStartDate.Trim(), [ref]$parsedDate)
+    }
+
+    if ($isParsed) {
+        $StartDate = $parsedDate
+        Write-Host (" -> Đã chọn Ngày Bắt Đầu: " + $StartDate.ToString("yyyy/MM/dd HH:mm:ss")) -ForegroundColor Green
+    } else {
+        Write-Host "Định dạng ngày không hợp lệ! Lấy Ngày/Giờ Hiện Tại." -ForegroundColor DarkYellow
+        $StartDate = Get-Date
+    }
+} else {
+    Write-Host (" -> Mặc định Ngày Bắt Đầu: " + $StartDate.ToString("yyyy/MM/dd HH:mm:ss")) -ForegroundColor DarkGray
+}
+
+# 6. Chọn Thời Hạn (Duration)
 Write-Host ""
 Write-Host "Chọn thời hạn Token:" -ForegroundColor Green
 Write-Host "1. 3 ngày"
 Write-Host "2. 7 ngày"
 Write-Host "3. 15 ngày"
 Write-Host "4. 30 ngày"
-Write-Host "5. 60 giây (Test)"
-$opt = Read-Host "Nhập lựa chọn (1-5)"
+Write-Host "5. 60 ngày"
+Write-Host "6. 90 ngày"
+Write-Host "7. Tùy chọn (Nhập số ngày bất kỳ)"
+Write-Host "8. 60 giây (Test hết hạn)"
+$opt = Read-Host "Nhập lựa chọn (1-8, Mặc định: 1 - 3 ngày)"
 
 $Duration = 3
 switch ($opt) {
@@ -64,15 +105,27 @@ switch ($opt) {
     "2" { $Duration = 7 }
     "3" { $Duration = 15 }
     "4" { $Duration = 30 }
-    "5" { $Duration = "0.000694444" }
+    "5" { $Duration = 60 }
+    "6" { $Duration = 90 }
+    "7" {
+        $customDays = Read-Host "Nhập số ngày hiệu lực"
+        $parsedCustom = 0
+        if ([double]::TryParse($customDays.Trim(), [ref]$parsedCustom) -and $parsedCustom -gt 0) {
+            $Duration = $parsedCustom
+        } else {
+            Write-Host "Số ngày không hợp lệ, lấy mặc định 30 ngày." -ForegroundColor DarkYellow
+            $Duration = 30
+        }
+    }
+    "8" { $Duration = "0.000694444" } # 60s
     default { 
-        Write-Host "Lựa chọn không hợp lệ! Mặc định 3 ngày." -ForegroundColor Red
+        Write-Host "Lựa chọn không hợp lệ! Mặc định 3 ngày." -ForegroundColor DarkYellow
         $Duration = 3
     }
 }
 
-# 6. Tính toán Token
-$unixTime = [int][double]::Parse((Get-Date (Get-Date).ToUniversalTime() -UFormat %s))
+# 7. Tính toán Token & Ngày Hết Hạn
+$unixTime = [int][double]::Parse((Get-Date ($StartDate.ToUniversalTime()) -UFormat %s))
 $secretSalt = "MUVH_SECRET_SALT_XOAI"
 
 $tokenData = "$DeviceCode|$UID|$MainTier|$SubTier|$Duration|$unixTime"
@@ -93,20 +146,25 @@ $finalString = "$tokenData|$signature"
 $finalBytes = [System.Text.Encoding]::UTF8.GetBytes($finalString)
 $base64Token = [Convert]::ToBase64String($finalBytes)
 
-# 7. Xuất Kết Quả
+# Tính ngày hết hạn để hiển thị
+$expireDate = $StartDate.AddDays([double]$Duration)
+
+# 8. Xuất Kết QuẢ
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host "TOKEN CỦA KHÁCH HÀNG: " -ForegroundColor Yellow
 Write-Host $base64Token -ForegroundColor Green
 Write-Host "=========================================" -ForegroundColor Cyan
 Write-Host "Cấu hình Key:" -ForegroundColor Gray
-Write-Host " - Device: $DeviceCode"
-Write-Host " - UID:    $UID"
-Write-Host " - Tier:   Chính C$MainTier | Phụ C$SubTier"
-Write-Host " - Thời gian: $Duration ngày"
+Write-Host " - Device:       $DeviceCode"
+Write-Host " - UID:          $UID"
+Write-Host " - Cấp Chuyển:   Chính C$MainTier | Phụ C$SubTier"
+Write-Host (" - Ngày Bắt Đầu: " + $StartDate.ToString("yyyy/MM/dd HH:mm:ss"))
+Write-Host " - Thời Lượng:   $Duration ngày"
+Write-Host (" - Ngày Hết Hạn: " + $expireDate.ToString("yyyy/MM/dd HH:mm:ss"))
 Write-Host "=========================================" -ForegroundColor Cyan
 
-# 8. Copy Clipboard an toàn không crash
+# 9. Copy Clipboard an toàn không crash
 $copied = $false
 try {
     Set-Clipboard -Value $base64Token -ErrorAction Stop

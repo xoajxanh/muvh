@@ -5163,6 +5163,49 @@ local function CreateModUI()
                         end
                     end
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: KHÓA MỤC TIÊU & LỌC KỸ NĂNG SELF-BUFF (LOCK TARGET & SELF-BUFF BYPASS)
+                    -- Mô tả: Khóa tuyệt đối mục tiêu chỉ định khi đánh thường/skill tấn công,
+                    -- đồng thời cho phép thi triển tự do các kỹ năng Self-Buff / Hồi phục / Triệu hồi.
+                    -- =========================================================================
+                    local function IsSelfBuffOrNoTargetSkill(skillId)
+                        if not skillId or skillId == 0 then return false end
+                        local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(skillId)
+                        if not tblSkill then return false end
+
+                        -- 1. Hàm chuẩn của game: IsDontNeedTargetSkill
+                        if _G.SkillUtility and _G.SkillUtility.IsDontNeedTargetSkill and _G.SkillUtility.IsDontNeedTargetSkill(skillId) then
+                            return true
+                        end
+
+                        -- 2. Kiểm tra autoSkillType (BuffSkill = 5, SummonSkill = 6, TreatSkill = 7)
+                        if tblSkill.autoSkillType then
+                            if (_G.AutoSkillEnum and (tblSkill.autoSkillType == _G.AutoSkillEnum.BuffSkill or tblSkill.autoSkillType == _G.AutoSkillEnum.TreatSkill or tblSkill.autoSkillType == _G.AutoSkillEnum.SummonSkill)) or
+                               (tblSkill.autoSkillType == 5 or tblSkill.autoSkillType == 6 or tblSkill.autoSkillType == 7) then
+                                return true
+                            end
+                        end
+
+                        -- 3. Kiểm tra needTarget trong actionLogic (0 = cần target kẻ địch, ~= 0 = skill tự định hướng / tự buff bản thân)
+                        if _G.ConfigManager and _G.ConfigManager.GetConfig then
+                            local tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
+                            if tblAction and tblAction.needTarget and tblAction.needTarget ~= 0 then
+                                return true
+                            end
+                        end
+
+                        -- 4. Kiểm tra castTargetType (Mine, Me, MePos)
+                        if _G.ESkillCastType and tblSkill.castTargetType then
+                            if tblSkill.castTargetType == _G.ESkillCastType.Mine or 
+                               tblSkill.castTargetType == _G.ESkillCastType.Me or 
+                               tblSkill.castTargetType == _G.ESkillCastType.MePos then
+                                return true
+                            end
+                        end
+
+                        return false
+                    end
+
                     -- Hook nút Attack (BtnCommon) và nút Skill chiêu thức theo Khóa Mục Tiêu
                     if _G.Main_MainSkillUI and not _G.Mod_Hooked_MainSkillUI_LockTarget then
                         _G.Mod_Hooked_MainSkillUI_LockTarget = true
@@ -5193,6 +5236,11 @@ local function CreateModUI()
                         local orig_Button_OnSkillClick = _G.Main_MainSkillUI.Button_OnSkillClick
                         _G.Main_MainSkillUI.Button_OnSkillClick = function(self, control)
                             if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                -- Cho phép thi triển tự do các kỹ năng Self-Buff / Hồi máu / Triệu hồi mà không đòi hỏi mục tiêu đã khóa
+                                if control and control.skillId and IsSelfBuffOrNoTargetSkill(control.skillId) then
+                                    return orig_Button_OnSkillClick(self, control)
+                                end
+
                                 local me = _G.RoleManager and _G.RoleManager.me
                                 if me then
                                     local curTarget = me.TargetAvatar
@@ -10590,17 +10638,52 @@ local function CreateModUI()
             end
         end
 
-        -- HOOK TẮT HIỆU ỨNG SKILL, LỐC XOÁY, SỐ NHẢY MÁU, CHỚP QUÁI, HỒN HOÀN, DẤU CHÂN & SKILL THÚ CƯỠI (SIÊU NHẸ MÁY)
+        -- =========================================================================
+        -- [MOD FEATURE]: TỐI ƯU ĐỒ HỌA & TẮT HIỆU ỨNG (DISABLE VISUALS & FPS BOOST)
+        -- Mô tả: Tắt hiển thị Skill diện rộng, Thú cưỡi, Hồn hoàn, Footprint để giảm tải GPU/CPU.
+        -- Khắc phục: Giữ nguyên Buff 3vs3, Rune bản đồ, Cổng dịch chuyển, Vòng bo và chống lag cache hồi sinh skill cũ.
+        -- =========================================================================
         if not _G.Mod_HookedDisableVisuals then
             _G.Mod_HookedDisableVisuals = true
 
-            -- 1. SceneEffectProcessor & SceneEffectObj (Chặn đứng lốc xoáy đầu lâu, bão cát, trận đồ đồng hồ La Mã, bánh răng, skill thú cưỡi)
+            -- Hàm nhận diện hiệu ứng quan trọng của bản đồ / chiến trường 3vs3 / Rune / Cổng / Vòng bo (Không được ẩn)
+            local function IsEssentialSceneEffect(data)
+                if not data then return false end
+                local tbl = data.EffectTbl
+                if not tbl and data.effectId and _G.ClientTable and _G.ClientTable.cfg_EffectsManager then
+                    tbl = _G.ClientTable.cfg_EffectsManager:TryGetValue(data.effectId)
+                end
+                if tbl then
+                    -- 1. Game config closeEffect == 0 (Quy ước chuẩn của game: 0 = Hiệu ứng bản đồ/buff/cổng/rune không đóng, 1 = Skill/thú cưỡi)
+                    if tbl.closeEffect == 0 then
+                        return true
+                    end
+                    -- 2. Tên prefab/hiệu ứng là buff 3vs3, cảnh quan, cờ chiến, vòng bo, cổng hồi sinh
+                    local name = tbl.name or ""
+                    local nameLower = string.lower(name)
+                    if string.find(nameLower, "eff_buff_") or 
+                       string.find(nameLower, "eff_changjing_") or 
+                       string.find(nameLower, "eff_zhanqi") or 
+                       string.find(nameLower, "zaishengmen") or 
+                       string.find(nameLower, "chuansongmen") or 
+                       string.find(nameLower, "duquan") or 
+                       string.find(nameLower, "menzhu") then
+                        return true
+                    end
+                end
+                return false
+            end
+
+            -- 1. SceneEffectProcessor & SceneEffectObj (Chặn đứng lốc xoáy đầu lâu, bão cát, trận đồ đồng hồ La Mã, bánh răng, skill thú cưỡi - KHÔNG chặn buff/rune bản đồ)
             local sep = (_G.LuaClass and _G.LuaClass.SceneEffectProcessor) or _G.SceneEffectProcessor
             if sep then
                 local orig_InstantiationEffect = sep.InstantiationEffect
                 sep.InstantiationEffect = function(self, data)
                     if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
-                        return
+                        -- Cho phép khởi tạo nếu là Buff 3vs3 / Rune / Portal / Vòng bo
+                        if not IsEssentialSceneEffect(data) then
+                            return
+                        end
                     end
                     if orig_InstantiationEffect then
                         orig_InstantiationEffect(self, data)
@@ -10613,7 +10696,10 @@ local function CreateModUI()
                 local orig_RefreshModel = seo.RefreshModel
                 seo.RefreshModel = function(self, data, rootObj)
                     if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
-                        return
+                        -- Cho phép hiển thị nếu là Buff 3vs3 / Rune / Portal / Vòng bo
+                        if not IsEssentialSceneEffect(data) then
+                            return
+                        end
                     end
                     if orig_RefreshModel then
                         orig_RefreshModel(self, data, rootObj)
@@ -10696,7 +10782,7 @@ local function CreateModUI()
                         return nil
                     end
                     if orig_LoadHitEffect then
-                        return orig_LoadHitEffect(effectData_struct)
+                        orig_LoadHitEffect(effectData_struct)
                     end
                 end
             end
@@ -10906,35 +10992,53 @@ local function CreateModUI()
             -- =========================================================================
             -- [MOD FEATURE]: TỐI ƯU ĐỒ HỌA & ẨN HIỆU ỨNG (DISABLE VISUALS & FPS BOOST)
             -- Mô tả: Tắt hiển thị SceneEffect, Skill, Hồn hoàn, Footprint để giảm tải GPU/CPU.
+            -- Khắc phục: Giữ nguyên Buff 3vs3, Rune bản đồ và chống lag cache hồi sinh skill cũ.
             -- =========================================================================
             _G.Mod_ApplyDisableVisualsState = function()
                 pcall(function()
                     local isOff = _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()
                     
-                    -- SceneEffectRoot
-                    local sRoot = CS.UnityEngine.GameObject.Find("SceneEffectRoot")
-                    if sRoot and not _G.IsNil(sRoot) then
-                        sRoot:SetActive(not isOff)
-                        for i = 0, sRoot.transform.childCount - 1 do
-                            local child = sRoot.transform:GetChild(i)
-                            if child and child.gameObject and not _G.IsNil(child.gameObject) then
-                                child.gameObject:SetActive(not isOff)
+                    -- SceneEffectProcessor: Chỉ ẩn/hiện các Effect đang thực sự hoạt động trong map hiện tại
+                    local sepInstance = _G.SceneEffectProcessor or (_G.LuaClass and _G.LuaClass.SceneEffectProcessor)
+                    if _G.gameMgr and _G.gameMgr.GetSceneManager then
+                        local sm = _G.gameMgr:GetSceneManager()
+                        if sm and sm.GetSceneEffectProcessor then
+                            sepInstance = sm:GetSceneEffectProcessor()
+                        end
+                    end
+
+                    if sepInstance and sepInstance.EffectObjList then
+                        for _, obj in pairs(sepInstance.EffectObjList) do
+                            if obj and obj.ControlShowState then
+                                if isOff then
+                                    if not IsEssentialSceneEffect(obj.EffectData) then
+                                        obj:ControlShowState(false)
+                                    else
+                                        obj:ControlShowState(true)
+                                    end
+                                else
+                                    obj:ControlShowState(true)
+                                end
                             end
                         end
                     end
 
-                    -- SkillMgr.ROOT
-                    if _G.SkillMgr and _G.SkillMgr.ROOT then
-                        local root = _G.SkillMgr.ROOT
-                        for i = 0, root.childCount - 1 do
-                            local child = root:GetChild(i)
-                            if child and child.gameObject and not _G.IsNil(child.gameObject) then
-                                child.gameObject:SetActive(not isOff)
+                    -- Khi tắt hiệu ứng (isOff = true), ẩn các particle chiêu thức đang bay
+                    if isOff then
+                        if _G.SkillMgr and _G.SkillMgr.ROOT then
+                            local root = _G.SkillMgr.ROOT
+                            for i = 0, root.childCount - 1 do
+                                local child = root:GetChild(i)
+                                if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
+                                    child.gameObject:SetActive(false)
+                                end
                             end
                         end
                     end
+                    -- LƯU Ý QUAN TRỌNG: Khi isOff = false (Bật lại hiệu ứng), TUYỆT ĐỐI KHÔNG duyệt SetActive(true) trên SkillMgr.ROOT
+                    -- vì SkillMgr.ROOT chứa toàn bộ pool hiệu ứng chết của các map cũ. Game sẽ tự spawn hiệu ứng mới khi xuất chiêu.
 
-                    -- Hồn hoàn
+                    -- Hồn hoàn / Quang hoàn
                     if _G.BuffEffectMgr and _G.BuffEffectMgr.m_Effects then
                         for _, eff in pairs(_G.BuffEffectMgr.m_Effects) do
                             if eff and eff.prefab then
@@ -10959,7 +11063,7 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Timer giám sát liên tục (0.5s thay vì 0.05s để tránh nghẽn CPU)
+                    -- Timer giám sát liên tục khi đang TẮT hiệu ứng
                     if isOff then
                         if not _G.Mod_VisualMasterTimer then
                             _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.5, -1, function()
@@ -10971,7 +11075,7 @@ local function CreateModUI()
                                     return
                                 end
 
-                                -- SkillMgr.ROOT
+                                -- SkillMgr.ROOT: Ẩn các skill vừa mới spawn trong lúc đang tắt hiệu ứng
                                 if _G.SkillMgr and _G.SkillMgr.ROOT then
                                     local root = _G.SkillMgr.ROOT
                                     for i = 0, root.childCount - 1 do
