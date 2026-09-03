@@ -1,16 +1,22 @@
 -- =========================================================================
--- [TEST SCRIPT]: THỬ NGHIỆM CÁC CƠ CHẾ PHỤC HỒI ĐỒNG BỘ VỊ TRÍ SERVER
+-- [TEST SCRIPT]: DEBUG TOÀN DIỆN BẢO HỘ KHI TREO MÁY (QUÉT TẤT CẢ NGƯỜI CHƠI)
 -- =========================================================================
+
+local outputLines = {}
 
 local function log_msg(msg)
     local text = tostring(msg)
+    table.insert(outputLines, text)
+    print(text)
     pcall(function()
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
             _G.FloatingWordUtility.QuickMsg(text)
         end
     end)
     pcall(function()
-        if _G.WriteLog then _G.WriteLog("[SYNC_TEST] " .. text) end
+        if _G.WriteLog then
+            _G.WriteLog("[PROTECT_DEBUG] " .. text)
+        end
     end)
 end
 
@@ -21,76 +27,183 @@ local ok, err = pcall(function()
         return
     end
 
-    local cX = me.cellPos and me.cellPos.x or 0
-    local cY = me.cellPos and me.cellPos.y or 0
+    local serverTimeMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+    local serverTimeSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or math.floor(serverTimeMs / 1000)
 
-    local sX = me.serverCoord and me.serverCoord.x or (me.data and me.data.serverCoord and me.data.serverCoord.x) or 0
-    local sY = me.serverCoord and me.serverCoord.y or (me.data and me.data.serverCoord and me.data.serverCoord.y) or 0
+    log_msg("=========================================================================")
+    log_msg(string.format("=== DEBUG BẢO HỘ KHI TREO MÁY (ServerTime: %s ms | %s s) ===", tostring(serverTimeMs), tostring(serverTimeSec)))
+    log_msg("=========================================================================")
 
-    local dist = math.floor(math.sqrt((cX - sX)^2 + (cY - sY)^2) + 0.5)
-    log_msg(string.format("TRƯỚC PHỤC HỒI: Client:(%d,%d) | Server:(%d,%d) => LỆCH: %d Ô", cX, cY, sX, sY, dist))
+    local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+    local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+    log_msg(string.format("Vị trí Me: (%d, %d) | ID: %s | PKMode: %s", meX, meY, tostring(me.id), tostring(me.PKMode)))
 
-    if dist <= 2 then
-        log_msg("VỊ TRÍ ĐÃ ĐỒNG BỘ TỐT (Không bị lệch)!")
-        return
+    -- Gom tất cả người chơi tìm được từ nhiều nguồn khác nhau
+    local allPlayers = {}
+
+    local function addPlayer(p, sourceTag)
+        if not p or p.id == me.id or p.isMe then return end
+        local pId = p.id or (p.data and p.data.id) or 0
+        if not allPlayers[pId] then
+            allPlayers[pId] = { role = p, sources = { sourceTag } }
+        else
+            table.insert(allPlayers[pId].sources, sourceTag)
+        end
     end
 
-    -- =========================================================================
-    -- CƠ CHẾ PHỤC HỒI 1: TÌM ĐƯỜNG PATH TỪ SERVER XY -> CLIENT XY VÀ GỬI TỪNG BƯỚC
-    -- Dẫn Server đi từ điểm kẹt đến đích theo đúng bản đồ
-    -- =========================================================================
-    local mapId = (_G.SceneData and _G.SceneData.mapId) or 0
-    local line = (_G.SceneData and _G.SceneData.line) or 0
+    -- 1. Mục tiêu đang chọn (TargetAvatar)
+    if me.TargetAvatar then
+        addPlayer(me.TargetAvatar, "TargetAvatar")
+    end
 
-    if _G.Scene and _G.Scene.SearchTilePath then
-        local startCell = CS.UnityEngine.Vector2Int(sX, sY)
-        local endCell = CS.UnityEngine.Vector2Int(cX, cY)
-        local canArrive, path = _G.Scene.SearchTilePath(startCell, endCell, 0, true)
-
-        if canArrive and path and #path > 1 then
-            log_msg(string.format("-> Tìm thấy đường hợp lệ từ Server tới Client (#path = %d)", #path))
-            local sTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or os.time()
-            for i = 2, #path do
-                local pt = path[i]
-                if pt then
-                    _G.NetManager.Send(_G.MapMessage.ReqMove, {
-                        x = pt.x,
-                        y = pt.y,
-                        action = 2,
-                        time = sTime
-                    })
-                end
-            end
-        else
-            -- Nếu không tìm được path, gửi gói truyền tin Transmit
-            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqTransmit and mapId > 0 then
-                _G.NetManager.Send(_G.MapMessage.ReqTransmit, {
-                    mapId = mapId,
-                    line = line,
-                    x = cX,
-                    y = cY
-                })
+    -- 2. Quét qua RoleManager.GetRolesByType(1) (Dictionary [id] = role)
+    if _G.RoleManager and _G.RoleManager.GetRolesByType then
+        local pDict = _G.RoleManager.GetRolesByType(1)
+        if pDict then
+            for id, p in pairs(pDict) do
+                addPlayer(p, "GetRolesByType(1)")
             end
         end
     end
 
-    -- =========================================================================
-    -- CƠ CHẾ PHỤC HỒI 2: KÉO AVATAR VỀ LẠI VỊ TRÍ SERVER NẾU SERVER BỊ KHÓA
-    -- (Bỏ comment dòng dưới nếu muốn Avatar tức thì snap về Server để không mất máu)
-    -- me:FlashTo(sX, sY)
-    -- =========================================================================
-
-    -- Kiểm tra lại sau 0.5s
-    if _G.Timer and _G.Timer.Start then
-        _G.Timer.Start(0.5, function()
-            local curSX = me.serverCoord and me.serverCoord.x or 0
-            local curSY = me.serverCoord and me.serverCoord.y or 0
-            local newDist = math.floor(math.sqrt((cX - curSX)^2 + (cY - curSY)^2) + 0.5)
-            log_msg(string.format("KẾT QUẢ: Server hiện tại: (%d,%d) | Lệch: %d Ô", curSX, curSY, newDist))
-        end)
+    -- 3. Quét qua RoleManager.GetRolesByType(ERoleType.Player)
+    if _G.ERoleType and _G.RoleManager and _G.RoleManager.GetRolesByType then
+        local pDict = _G.RoleManager.GetRolesByType(_G.ERoleType.Player)
+        if pDict then
+            for id, p in pairs(pDict) do
+                addPlayer(p, "GetRolesByType(ERoleType.Player)")
+            end
+        end
     end
+
+    -- 4. Quét qua RoleManager.GetRolesByTypeAndRangeAlive(1, 50)
+    if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
+        local aliveList = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 50)
+        if aliveList then
+            for _, p in ipairs(aliveList) do
+                addPlayer(p, "GetRolesByTypeAndRangeAlive")
+            end
+        end
+    end
+
+    -- Đếm số lượng người chơi tìm được
+    local count = 0
+    for _ in pairs(allPlayers) do count = count + 1 end
+
+    if count == 0 then
+        log_msg("-> CẢNH BÁO: Không tìm thấy bất kỳ người chơi nào trong bộ nhớ!")
+        return
+    end
+
+    log_msg(string.format("-> Tìm thấy %d người chơi xung quanh:", count))
+
+    local idx = 0
+    for pId, item in pairs(allPlayers) do
+        idx = idx + 1
+        local r = item.role
+        local sourcesStr = table.concat(item.sources, ", ")
+        local rName = (r.data and r.data.name) or r.name or "N/A"
+        local rPKMode = (r.data and r.data.PKMode) or r.PKMode or "N/A"
+        local rLevel = (r.data and r.data.level) or r.level or "N/A"
+        local rHp = r.hp or (r.data and r.data.hp) or "N/A"
+        local rDead = r.isDead or false
+
+        local rX = r.serverCoord and r.serverCoord.x or (r.cellPos and r.cellPos.x) or (r.data and r.data.x) or 0
+        local rY = r.serverCoord and r.serverCoord.y or (r.cellPos and r.cellPos.y) or (r.data and r.data.y) or 0
+        local dist = math.max(math.abs(meX - rX), math.abs(meY - rY))
+
+        log_msg("")
+        log_msg(string.format("------------------ [%d] %s (ID: %s) ------------------", idx, rName, tostring(pId)))
+        log_msg(string.format("  Nguồn tìm thấy: [%s]", sourcesStr))
+        log_msg(string.format("  Vị trí: (%d, %d) | Khoảng cách: %d ô | Máu: %s | Chết: %s | PKMode: %s", rX, rY, dist, tostring(rHp), tostring(rDead), tostring(rPKMode)))
+
+        -- A. THỜI GIAN BẢO HỘ (hangUpProtectionTime / crossServerHangUpTime / GetProtectTIme)
+        local pTimeMethod = r.GetProtectTIme and r:GetProtectTIme()
+        local hangUpTime = r.hangUpProtectionTime or (r.data and r.data.hangUpProtectionTime)
+        local crossTime = r.crossServerHangUpTime or (r.data and r.data.crossServerHangUpTime)
+
+        log_msg("  [A] THỜI GIAN BẢO HỘ:")
+        log_msg(string.format("      -> r:GetProtectTIme():         %s", tostring(pTimeMethod)))
+        log_msg(string.format("      -> r.hangUpProtectionTime:     %s", tostring(hangUpTime)))
+        log_msg(string.format("      -> r.crossServerHangUpTime:    %s", tostring(crossTime)))
+
+        local checkTime = pTimeMethod or hangUpTime or crossTime or 0
+        if checkTime > 0 then
+            if checkTime > 1000000000000 then
+                local remainSec = math.floor((checkTime - serverTimeMs) / 1000)
+                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Còn %d giây = %.2f giờ)", remainSec, remainSec / 3600))
+            elseif checkTime > 1000000000 then
+                local remainSec = checkTime - serverTimeSec
+                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Còn %d giây = %.2f giờ)", remainSec, remainSec / 3600))
+            else
+                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Giá trị flag = %s)", tostring(checkTime)))
+            end
+        else
+            log_msg("      => KẾT LUẬN: KHÔNG CÓ BẢO HỘ (Giá trị <= 0)")
+        end
+
+        -- B. HIỆU ỨNG MIỄN DỊCH PK (killMonsterEffect / Eff_PK_mianyi)
+        log_msg("  [B] HIỆU ỨNG MIỄN DỊCH PK (killMonsterEffect):")
+        if r.killMonsterEffect then
+            local isModelActive = r.killMonsterEffect.isModelActive
+            local goActive = false
+            local modelName = r.killMonsterEffect.name or "N/A"
+            if r.killMonsterEffect.model and not _G.IsNil(r.killMonsterEffect.model) then
+                goActive = r.killMonsterEffect.model.activeSelf
+                modelName = r.killMonsterEffect.model.name or modelName
+            end
+            log_msg(string.format("      -> Có killMonsterEffect: isModelActive=%s, goActive=%s, name='%s'", tostring(isModelActive), tostring(goActive), tostring(modelName)))
+        else
+            log_msg("      -> killMonsterEffect: nil (Không có)")
+        end
+
+        -- C. TITLE / ĐẾM NGƯỢC TRÊN ĐẦU (head3DMesh)
+        log_msg("  [C] TITLE / ĐẾM NGƯỢC TRÊN ĐẦU (head3DMesh):")
+        if r.head3DMesh then
+            local cdObj = r.head3DMesh.labelCountDown
+            local cdText = (cdObj and cdObj.text) or "N/A"
+            local cdActive = (cdObj and not _G.IsNil(cdObj.gameObject) and cdObj.gameObject.activeSelf) or false
+            local kmSec = r.head3DMesh.killMonsterSecond or "nil"
+            log_msg(string.format("      -> labelCountDown: activeSelf=%s, text='%s'", tostring(cdActive), tostring(cdText)))
+            log_msg(string.format("      -> killMonsterSecond: %s", tostring(kmSec)))
+        else
+            log_msg("      -> head3DMesh: nil")
+        end
+
+        -- D. HÀM KIỂM TRA MỤC TIÊU CỦA GAME
+        log_msg("  [D] HÀM KIỂM TRA MỤC TIÊU CỦA GAME:")
+        if _G.RoleTargetManager then
+            local isCanAttackP = _G.RoleTargetManager.IsCanAttackPlayer and _G.RoleTargetManager.IsCanAttackPlayer(r)
+            local getCanAttackR = _G.RoleTargetManager.GetCanAttackRole and _G.RoleTargetManager.GetCanAttackRole(r)
+            log_msg(string.format("      -> RoleTargetManager.IsCanAttackPlayer: %s", tostring(isCanAttackP)))
+            log_msg(string.format("      -> RoleTargetManager.GetCanAttackRole:  %s", tostring(getCanAttackR)))
+        end
+
+        if _G.RoleUtility and _G.RoleUtility.TargetIsFitMyPkMode then
+            local fitPK = _G.RoleUtility.TargetIsFitMyPkMode(r)
+            log_msg(string.format("      -> RoleUtility.TargetIsFitMyPkMode:    %s", tostring(fitPK)))
+        end
+    end
+
+    log_msg("")
+    log_msg("=========================================================================")
+    log_msg("=== HOÀN TẤT DEBUG BẢO HỘ KHI TREO MÁY ===")
+    log_msg("=========================================================================")
 end)
 
 if not ok then
-    log_msg("LỖI TEST: " .. tostring(err))
+    log_msg("LỖI RUNTIME TEST: " .. tostring(err))
 end
+
+-- Ghi đè vào output.txt trên Android
+pcall(function()
+    local fullContent = table.concat(outputLines, "\n")
+    local outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+    local f = io.open(outPath, "w")
+    if f then
+        f:write(fullContent)
+        f:close()
+    end
+end)
+
+return table.concat(outputLines, "\n")

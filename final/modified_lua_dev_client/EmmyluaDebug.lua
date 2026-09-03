@@ -5020,30 +5020,66 @@ local function CreateModUI()
 
 
 
-                    local function isMatchLockTarget(p, lockInput)
-                        if not lockInput or lockInput == "" then return false end
-                        if not p then return false end
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BỘ LỌC BẢO HỘ KHI TREO MÁY & KHÓA MỤC TIÊU ĐA ĐIỀU KIỆN (LOCK TARGET & PROTECTION BYPASS)
+                    -- Mô tả:
+                    -- 1. Tự động nhận diện và bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy (Thủ Hộ / Miễn Dịch PK).
+                    -- 2. Khóa mục tiêu hỗ trợ tổ hợp đa điều kiện phân tách bằng dấu chấm phẩy ';' (VD: S393.;S395.;LucMac).
+                    -- =========================================================================
+                    local function IsPlayerProtected(role)
+                        if not role or role.isDead then return false end
 
-                        local cleanInput = string.gsub(lockInput, "^%s*(.-)%s*$", "%1")
-                        if cleanInput == "" then return false end
+                        local protectTime = 0
+                        if role.GetProtectTIme then
+                            protectTime = role:GetProtectTIme() or 0
+                        end
+                        if protectTime == 0 and role.data then
+                            protectTime = role.data.hangUpProtectionTime or role.data.crossServerHangUpTime or 0
+                        end
+                        if protectTime == 0 then
+                            protectTime = role.hangUpProtectionTime or role.crossServerHangUpTime or 0
+                        end
 
-                        local sId = string.match(cleanInput, "^S(%d+)%.$") or
-                            string.match(cleanInput, "^S(%d+)$") or
-                            string.match(cleanInput, "^s(%d+)%.$") or
-                            string.match(cleanInput, "^s(%d+)$")
+                        if protectTime and protectTime > 0 then
+                            local nowMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                            if nowMs > 0 and protectTime > nowMs then
+                                return true
+                            end
+                            local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+                            if protectTime > nowSec and protectTime < 1000000000000 then
+                                return true
+                            end
+                        end
+
+                        if role.killMonsterEffect and role.killMonsterEffect.isModelActive then
+                            return true
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsPlayerProtected = IsPlayerProtected
+
+                    local function isMatchSingleToken(p, token)
+                        if not token or token == "" or not p then return false end
+                        local cleanToken = string.gsub(token, "^%s*(.-)%s*$", "%1")
+                        if cleanToken == "" then return false end
+
+                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393)
+                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
+                                    string.match(cleanToken, "^[Ss](%d+)$")
 
                         local targetNum = sId and tonumber(sId) or nil
                         if targetNum then
                             local pSid = p.serverId or p.sid or p.serverID or p.server_id
                             if not pSid and p.data then
-                                pSid = p.data.serverId or p.data.sid or p.data.serverID or
-                                    p.data.server_id
+                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
                             end
                             if pSid and tonumber(pSid) == targetNum then
                                 return true
                             end
                         end
 
+                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
                         local strList = {}
                         if p.name then table.insert(strList, tostring(p.name)) end
                         if p.GetName then
@@ -5054,16 +5090,17 @@ local function CreateModUI()
                         end
                         if p.data then
                             if p.data.name then table.insert(strList, tostring(p.data.name)) end
-                            if p.data.showName then
-                                table.insert(strList,
-                                    tostring(p.data.showName))
-                            end
+                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                            if p.data.unionName then table.insert(strList, tostring(p.data.unionName)) end
                             if p.data.serverId then
-                                table.insert(strList,
-                                    "S" .. tostring(p.data.serverId))
+                                table.insert(strList, "S" .. tostring(p.data.serverId) .. ".")
+                                table.insert(strList, "S" .. tostring(p.data.serverId))
                             end
                         end
-                        if p.serverId then table.insert(strList, "S" .. tostring(p.serverId)) end
+                        if p.serverId then
+                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
+                            table.insert(strList, "S" .. tostring(p.serverId))
+                        end
                         if p.showName then table.insert(strList, tostring(p.showName)) end
 
                         if sId then
@@ -5076,11 +5113,31 @@ local function CreateModUI()
                                 end
                             end
                         else
-                            local lowerInput = string.lower(cleanInput)
+                            local lowerInput = string.lower(cleanToken)
                             for _, s in ipairs(strList) do
                                 if string.find(string.lower(s), lowerInput, 1, true) then
                                     return true
                                 end
+                            end
+                        end
+
+                        return false
+                    end
+
+                    local function isMatchLockTarget(p, lockInput)
+                        if not lockInput or lockInput == "" then return false end
+                        if not p or p.isDead then return false end
+
+                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
+                        if IsPlayerProtected(p) then
+                            return false
+                        end
+
+                        -- Tách chuỗi theo dấu chấm phẩy ';' (Hỗ trợ đa điều kiện - Logic OR)
+                        for token in string.gmatch(lockInput, "([^;]+)") do
+                            local cleanToken = string.gsub(token, "^%s*(.-)%s*$", "%1")
+                            if cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
+                                return true
                             end
                         end
 
@@ -5104,9 +5161,21 @@ local function CreateModUI()
                         end)
                     end
 
-                    -- Hook RoleTargetManager cho Khóa Mục Tiêu (Lựa chọn A - Khóa Tuyệt Đối)
+                    -- Hook RoleTargetManager cho Khóa Mục Tiêu & Loại trừ Bảo Hộ Treo Máy
                     if _G.RoleTargetManager and not _G.Mod_Hooked_RoleTargetManager then
                         _G.Mod_Hooked_RoleTargetManager = true
+
+                        local orig_IsCanAttackPlayer = _G.RoleTargetManager.IsCanAttackPlayer
+                        _G.RoleTargetManager.IsCanAttackPlayer = function(role)
+                            if (_G.Mod_IsActive and _G.Mod_IsActive()) and IsPlayerProtected(role) then
+                                return false
+                            end
+                            if orig_IsCanAttackPlayer then
+                                return orig_IsCanAttackPlayer(role)
+                            end
+                            return true
+                        end
+
                         local orig_GetPlayerTarget = _G.RoleTargetManager.GetPlayerTarget
                         _G.RoleTargetManager.GetPlayerTarget = function(isChangeTarget, distance, confirmCallback)
                             if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
@@ -5295,7 +5364,7 @@ local function CreateModUI()
 
                                             local currentTarget = me.TargetAvatar
                                             local isCurrentTargetValid = false
-                                            if currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 1 and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
+                                            if currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 1 and not IsPlayerProtected(currentTarget) and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
                                                 local dist = 999
                                                 if currentTarget.tempPathFindingDistance then
                                                     dist = currentTarget.tempPathFindingDistance
@@ -5321,7 +5390,7 @@ local function CreateModUI()
                                                 return
                                             end
 
-                                            if currentTarget and currentTarget.RoleType == 1 then
+                                            if currentTarget and (currentTarget.RoleType == 1 or IsPlayerProtected(currentTarget)) then
                                                 if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
                                             elseif currentTarget and (currentTarget.isDead or (currentTarget.hp and currentTarget.hp <= 0)) then
                                                 if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
@@ -5399,7 +5468,7 @@ local function CreateModUI()
                                                     if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
                                                         local matchedPlayers = {}
                                                         for _, p in ipairs(players) do
-                                                            if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                            if not IsPlayerProtected(p) and isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
                                                                 table.insert(matchedPlayers, p)
                                                             end
                                                         end
@@ -5409,9 +5478,17 @@ local function CreateModUI()
                                                         end
                                                     end
                                                 else
-                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
-                                                    table.sort(players, modSortRole)
-                                                    target = players[1]
+                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK (loại bỏ bảo hộ)
+                                                    local validPlayers = {}
+                                                    for _, p in ipairs(players) do
+                                                        if not IsPlayerProtected(p) then
+                                                            table.insert(validPlayers, p)
+                                                        end
+                                                    end
+                                                    if #validPlayers > 0 then
+                                                        table.sort(validPlayers, modSortRole)
+                                                        target = validPlayers[1]
+                                                    end
                                                 end
                                             end
 

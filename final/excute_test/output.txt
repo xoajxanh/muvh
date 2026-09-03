@@ -1,4 +1,17 @@
+=========================================================================
+=== DEBUG BẢO HỘ KHI TREO MÁY (ServerTime: 1788454847679 ms | 1788454847 s) ===
+=========================================================================
+Vị trí Me: (119, 180) | ID: 5944970060872593508 | PKMode: 2
+-> Tìm thấy 1 người chơi xung quanh:
 
-========== BẮT ĐẦU TEST ADMIN BURST PICKUP ==========
-Vui lòng tự mở rương vàng. Script đã override AddDropSceneCellPos...
-Đã hook thành công vào _G.PickupManager.AddDropSceneCellPos!
+------------------ [1] Jin (ID: 5944971710521466981) ------------------
+  Nguồn tìm thấy: [GetRolesByType(1), GetRolesByType(ERoleType.Player), GetRolesByTypeAndRangeAlive]
+  Vị trí: (122, 180) | Khoảng cách: 3 ô | Máu: 6078857 | Chết: false | PKMode: 0
+  [A] THỜI GIAN BẢO HỘ:
+      -> r:GetProtectTIme():         1788514561583
+      -> r.hangUpProtectionTime:     1788514561583
+      -> r.crossServerHangUpTime:    0
+      => KẾT LUẬN: ĐANG BẢO HỘ (Còn 59713 giây = 16.59 giờ)
+  [B] HIỆU ỨNG MIỄN DỊCH PK (killMonsterEffect):
+LỖI RUNTIME TEST: c# exception:System.InvalidCastException: Unable to cast object of type 'GameModel' to type 'Object'.
+  at XLua.CSObjectWrap.FrameworkObjectExWrap._m_IsNull_xlua_st_ (System.IntPtr L) [0x00000] in <00000000000000000000000000000000>:0 

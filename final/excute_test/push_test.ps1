@@ -6,7 +6,7 @@ $convertScript = "$projectDir\convert_64_to_32.py"
 $tempLuac = "$testDir\input.luac"
 $androidPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
 
-$androidId = "emulator-5556"
+$androidId = "emulator-5562"
 
 # Nếu máy bạn báo lỗi không nhận diện lệnh adb, hãy đổi đường dẫn adb dưới đây thành đường dẫn tuyệt đối
 # Ví dụ: $adbExe = "C:\Program Files\Nox\bin\adb.exe" (Tuỳ thuộc vào giả lập bạn đang xài)
