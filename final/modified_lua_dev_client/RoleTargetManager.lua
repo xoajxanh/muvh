@@ -82,6 +82,9 @@ function RoleTargetManager.IsCanAttackPlayer(role)
   if not role or role.isDead then
     return false
   end
+  if _G.Mod_IsPlayerProtected and _G.Mod_IsPlayerProtected(role) then
+    return false
+  end
   if role.RoleType ~= ERoleType.Player then
     return true
   end

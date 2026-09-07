@@ -5621,24 +5621,34 @@ local function CreateModUI()
                                             _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
                                         local target = nil
                                         if players and #players > 0 then
-                                            if _G.Mod_LockTarget_Enabled then
-                                                -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
-                                                if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
-                                                    local matchedPlayers = {}
-                                                    for _, p in ipairs(players) do
-                                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
-                                                            table.insert(matchedPlayers, p)
+                                            -- LỌC BỎ TẤT CẢ NGƯỜI CHƠI ĐANG THỦ HỘ / BẢO HỘ KHI TREO MÁY
+                                            local validPlayers = {}
+                                            for _, p in ipairs(players) do
+                                                if p and not p.isDead and (p.hp and p.hp > 0) and not IsPlayerProtected(p) then
+                                                    table.insert(validPlayers, p)
+                                                end
+                                            end
+
+                                            if #validPlayers > 0 then
+                                                if _G.Mod_LockTarget_Enabled then
+                                                    -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập
+                                                    if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                                        local matchedPlayers = {}
+                                                        for _, p in ipairs(validPlayers) do
+                                                            if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                                table.insert(matchedPlayers, p)
+                                                            end
+                                                        end
+                                                        if #matchedPlayers > 0 then
+                                                            table.sort(matchedPlayers, modSortRole)
+                                                            target = matchedPlayers[1]
                                                         end
                                                     end
-                                                    if #matchedPlayers > 0 then
-                                                        table.sort(matchedPlayers, modSortRole)
-                                                        target = matchedPlayers[1]
-                                                    end
+                                                else
+                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch không thủ hộ ở gần theo chế độ PK
+                                                    table.sort(validPlayers, modSortRole)
+                                                    target = validPlayers[1]
                                                 end
-                                            else
-                                                -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
-                                                table.sort(players, modSortRole)
-                                                target = players[1]
                                             end
                                         end
 
