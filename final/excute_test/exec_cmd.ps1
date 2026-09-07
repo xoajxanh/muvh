@@ -1,38 +1,65 @@
-# Kich ban scan diff duoc thuc thi boi Executor
-$oldLines = git show "dc9a1d7:final/modified_lua_dev_client/EmmyluaDebug.lua"
-$old = $oldLines -join "`n"
-$curr = Get-Content 'd:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\EmmyluaDebug.lua' -Raw
+@'
+import re
 
-Write-Host "================== KET QUA SCAN DIFF QUA EXECUTOR ==================" -ForegroundColor Yellow
+def isMatchSingleToken(p, token):
+    cleanToken = token.strip()
+    if not cleanToken: return False
+    
+    m1 = re.match(r'^[Ss](\d+)\.?$', cleanToken)
+    m2 = re.match(r'^(\d+)$', cleanToken)
+    sId = m1.group(1) if m1 else (m2.group(1) if m2 else None)
+    
+    if sId:
+        targetNum = int(sId)
+        pSid = p.get('serverId') or (p.get('data', {}).get('serverId'))
+        if pSid and int(pSid) == targetNum:
+            return True
+            
+    strList = []
+    pName = p.get('name') or p.get('data', {}).get('name') or ''
+    if pName: strList.append(pName)
+    pSid = p.get('serverId') or (p.get('data', {}).get('serverId'))
+    if pSid:
+        strList.extend(['S' + str(pSid) + '.', 'S' + str(pSid), str(pSid)])
+        if pName:
+            strList.extend(['S' + str(pSid) + '.' + pName, 'S' + str(pSid) + ' ' + pName, '[S' + str(pSid) + ']' + pName])
+            
+    if sId:
+        for s in strList:
+            sLower = s.lower()
+            if f's{sId}.' in sLower or f's{sId}_' in sLower or f's{sId}' in sLower:
+                return True
+    else:
+        lowerInput = cleanToken.lower()
+        for s in strList:
+            if lowerInput in s.lower():
+                return True
+    return False
 
-Write-Host "`n--- 1. Auto PK & Khoa Muc Tieu ---" -ForegroundColor Cyan
-$pkKeys = @('isMatchLockTarget', 'IsPlayerProtected', 'GetNearestPlayerTarget', 'GetPlayerTarget', 'IsSelfBuffOrNoTargetSkill', 'isMonsterNearby', 'Mod_StartPKScanLoop')
-foreach ($k in $pkKeys) {
-    $inOld = if ($old.Contains($k)) { "YES" } else { "NO" }
-    $inNew = if ($curr.Contains($k)) { "YES" } else { "NO" }
-    Write-Host ("  * " + $k.PadRight(28) + " -> Ban cu (dc9a1d7): " + $inOld.PadRight(5) + "| Ban moi (HEAD): " + $inNew)
+def isMatchLockTarget(p, lockInput):
+    if not lockInput: return True
+    if p.get('isDead') or p.get('isProtected'): return False
+    tokens = [t.strip() for t in re.split(r'[;,|\r\n]+', lockInput) if t.strip()]
+    for t in tokens:
+        if isMatchSingleToken(p, t):
+            return True
+    return False
+
+roles = {
+    'A (S393, LucMac)': {'serverId': 393, 'name': 'LucMac'},
+    'B (S395, Dino)': {'serverId': 395, 'name': 'Dino'},
+    'C (S393, Dino)': {'serverId': 393, 'name': 'Dino'},
+    'D (S100, Noob)': {'serverId': 100, 'name': 'Noob'},
+    'E (S393, Dino - Protected)': {'serverId': 393, 'name': 'Dino', 'isProtected': True}
 }
 
-Write-Host "`n--- 2. Auto Loot & Nhat Do ---" -ForegroundColor Cyan
-$lootKeys = @('ExecutePickupCommon', 'Mod_PerformVacuumItems', 'Mod_PerformBagRecycle', 'Fumo', 'Rune', 'Bone', 'AutoPick_Mode', 'CanAutoPickUpDropItem')
-foreach ($k in $lootKeys) {
-    $inOld = if ($old.Contains($k)) { "YES" } else { "NO" }
-    $inNew = if ($curr.Contains($k)) { "YES" } else { "NO" }
-    Write-Host ("  * " + $k.PadRight(28) + " -> Ban cu (dc9a1d7): " + $inOld.PadRight(5) + "| Ban moi (HEAD): " + $inNew)
-}
+test_queries = ['S393.;Dino', 'S393.', 'Dino', 's393.; dino', 'S393.Dino', 'S395.; S393.']
 
-Write-Host "`n--- 3. Săn Boss & Kundun & Telegram ---" -ForegroundColor Cyan
-$bossKeys = @('ReqGetBossMapAndCount', 'ReqAncientBossInfo', 'Mod_AutoBoss_SkipHpPct', 'KundunTitleGo', 'ModUpdateKundunUI', 'Mod_StartReturnPosLoop')
-foreach ($k in $bossKeys) {
-    $inOld = if ($old.Contains($k)) { "YES" } else { "NO" }
-    $inNew = if ($curr.Contains($k)) { "YES" } else { "NO" }
-    Write-Host ("  * " + $k.PadRight(28) + " -> Ban cu (dc9a1d7): " + $inOld.PadRight(5) + "| Ban moi (HEAD): " + $inNew)
-}
-
-Write-Host "`n--- 4. Speed & Camera & Lam Muot ---" -ForegroundColor Cyan
-$speedKeys = @('Mod_DoSystemFreshCleanup', 'Mod_StartTrackedTimer', 'Mod_StartSpeedAnimLockLoop', 'Mod_StartSmoothCameraLoop', 'Mod_StartVisualMasterLoop', 'Mod_StartGoldenChestLoop')
-foreach ($k in $speedKeys) {
-    $inOld = if ($old.Contains($k)) { "YES" } else { "NO" }
-    $inNew = if ($curr.Contains($k)) { "YES" } else { "NO" }
-    Write-Host ("  * " + $k.PadRight(28) + " -> Ban cu (dc9a1d7): " + $inOld.PadRight(5) + "| Ban moi (HEAD): " + $inNew)
-}
+for q in test_queries:
+    print(f'=== Query: \"{q}\" ===')
+    for r_name, r_obj in roles.items():
+        res = isMatchLockTarget(r_obj, q)
+        print(f'  {r_name} -> {res}')
+'@ | Out-File -FilePath "d:\MUVH\android\mu-decompiled\final\test_target_logic.py" -Encoding utf8
+python "d:\MUVH\android\mu-decompiled\final\test_target_logic.py"
+Remove-Item "d:\MUVH\android\mu-decompiled\final\test_target_logic.py" -Force

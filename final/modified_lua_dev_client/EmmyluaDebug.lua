@@ -5355,22 +5355,123 @@ local function CreateModUI()
                     end
                     _G.Mod_IsPlayerProtected = IsPlayerProtected
 
-                    local function isMatchLockTarget(role, query)
-                        if not role or not query or query == "" then return true end
-                        local rName = (role.data and role.data.name) or role.name or ""
-                        local rZone = (role.data and role.data.zoneName) or role.zoneName or ""
+                    -- =========================================================================
+                    -- [MOD FEATURE]: KHÓA MỤC TIÊU ĐA ĐIỀU KIỆN & SERVER PREFIX (S393., S395., NAME, GUILD)
+                    -- =========================================================================
+                    local function isMatchSingleToken(p, token)
+                        if not token or token == "" or not p then return false end
+                        local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                        if not cleanToken or cleanToken == "" then return false end
 
-                        for subQ in string.gmatch(query, "([^;]+)") do
-                            local qTrimmed = string.match(subQ, "^%s*(.-)%s*$")
-                            if qTrimmed and qTrimmed ~= "" then
-                                if (rName ~= "" and string.find(rName, qTrimmed, 1, true)) or
-                                    (rZone ~= "" and string.find(rZone, qTrimmed, 1, true)) then
+                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
+                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
+                            string.match(cleanToken, "^[Ss](%d+)$") or
+                            string.match(cleanToken, "^(%d+)$")
+
+                        local targetNum = sId and tonumber(sId) or nil
+                        if targetNum then
+                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                            if not pSid and p.data then
+                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
+                            end
+                            if pSid and tonumber(pSid) == targetNum then
+                                return true
+                            end
+                        end
+
+                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
+                        local strList = {}
+                        local pName = ""
+                        if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
+                        if p.GetName then
+                            pcall(function()
+                                local n = p:GetName()
+                                if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
+                            end)
+                        end
+                        if p.GetUnionName then
+                            pcall(function()
+                                local u = p:GetUnionName()
+                                if u then
+                                    table.insert(strList, tostring(u))
+                                    table.insert(strList, "[" .. tostring(u) .. "]")
+                                end
+                            end)
+                        end
+                        if p.data then
+                            if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
+                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                            if p.data.unionName then
+                                table.insert(strList, tostring(p.data.unionName))
+                                table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
+                            end
+                            local dataSid = p.data.serverId or p.data.sid
+                            if dataSid then
+                                table.insert(strList, "S" .. tostring(dataSid) .. ".")
+                                table.insert(strList, "S" .. tostring(dataSid))
+                            end
+                        end
+                        if p.serverId then
+                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
+                            table.insert(strList, "S" .. tostring(p.serverId))
+                        end
+                        if p.showName then table.insert(strList, tostring(p.showName)) end
+                        if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
+
+                        -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
+                        local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
+                        if sidVal and pName ~= "" then
+                            local sValStr = tostring(sidVal)
+                            table.insert(strList, "S" .. sValStr .. "." .. pName)
+                            table.insert(strList, "S" .. sValStr .. ". " .. pName)
+                            table.insert(strList, "S" .. sValStr .. "_" .. pName)
+                            table.insert(strList, "S" .. sValStr .. " " .. pName)
+                            table.insert(strList, "[S" .. sValStr .. "]" .. pName)
+                            table.insert(strList, "[S" .. sValStr .. "] " .. pName)
+                        end
+
+                        if sId then
+                            local pattern1 = "s" .. sId .. "%."
+                            local pattern2 = "s" .. sId .. "_"
+                            local pattern3 = "s" .. sId
+                            for _, s in ipairs(strList) do
+                                local sLower = string.lower(s)
+                                if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
+                                    return true
+                                end
+                            end
+                        else
+                            local lowerInput = string.lower(cleanToken)
+                            for _, s in ipairs(strList) do
+                                if string.find(string.lower(s), lowerInput, 1, true) then
                                     return true
                                 end
                             end
                         end
+
                         return false
                     end
+
+                    local function isMatchLockTarget(p, lockInput)
+                        if not lockInput or lockInput == "" then return true end
+                        if not p or p.isDead then return false end
+
+                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
+                        if IsPlayerProtected(p) then
+                            return false
+                        end
+
+                        -- Tách chuỗi theo dấu chấm phẩy ';', phẩy ',', gạch '|' (Hỗ trợ đa điều kiện - Logic OR)
+                        for token in string.gmatch(lockInput, "([^;,|\r\n]+)") do
+                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                            if cleanToken and cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
+                                return true
+                            end
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
 
                     local function IsSelfBuffOrNoTargetSkill(skillId)
                         if not skillId then return false end
@@ -5395,37 +5496,31 @@ local function CreateModUI()
                         _G.Mod_HookedRoleTargetManager = true
                         local original_GetPlayerTarget = _G.RoleTargetManager.GetPlayerTarget
                         if original_GetPlayerTarget then
-                            _G.RoleTargetManager.GetPlayerTarget = function(isSelectChange, maxDistance)
-                                local target = original_GetPlayerTarget(isSelectChange, maxDistance)
+                            _G.RoleTargetManager.GetPlayerTarget = function(isSelectChange, maxDistance, confirmCallback)
+                                local dist = maxDistance or 15
+                                confirmCallback = confirmCallback or (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
                                 if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
-                                    if target and not isMatchLockTarget(target, _G.Mod_LockTarget_Name) then
-                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, maxDistance or 15,
-                                            _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                                        if players and #players > 0 then
-                                            for _, p in ipairs(players) do
-                                                if not IsPlayerProtected(p) and isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
-                                                    return p
-                                                end
+                                    local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, dist, confirmCallback)
+                                    if players and #players > 0 then
+                                        local matched = {}
+                                        for _, p in ipairs(players) do
+                                            if not IsPlayerProtected(p) and isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                table.insert(matched, p)
                                             end
                                         end
-                                        return nil
-                                    end
-                                end
-                                if target and IsPlayerProtected(target) then
-                                    local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, maxDistance or 15,
-                                        _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
-                                    if players and #players > 0 then
-                                        for _, p in ipairs(players) do
-                                            if not IsPlayerProtected(p) then
-                                                if not _G.Mod_LockTarget_Enabled or isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
-                                                    return p
-                                                end
+                                        if #matched > 0 then
+                                            local function modSortRole(a, b)
+                                                local distA = a.tempPathFindingDistance or 9999
+                                                local distB = b.tempPathFindingDistance or 9999
+                                                return distA < distB
                                             end
+                                            table.sort(matched, modSortRole)
+                                            return matched[1]
                                         end
                                     end
                                     return nil
                                 end
-                                return target
+                                return original_GetPlayerTarget(isSelectChange, dist, confirmCallback)
                             end
                         end
                     end
