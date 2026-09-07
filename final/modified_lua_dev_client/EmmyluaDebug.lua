@@ -105,7 +105,7 @@ _G.Mod_RestartAllBackgroundLoops = function()
     if _G.Mod_StartSmoothCameraLoop then pcall(_G.Mod_StartSmoothCameraLoop) end
     if _G.Mod_StartSpeedAnimLockLoop then pcall(_G.Mod_StartSpeedAnimLockLoop) end
     if _G.Mod_StartMainUpdateLoop then pcall(_G.Mod_StartMainUpdateLoop) end
-    if _G.Mod_StartKundunTeleNotifyLoop then pcall(_G.Mod_StartKundunTeleNotifyLoop) end
+    if _G.Mod_StartBossAutoRefreshLoop then pcall(_G.Mod_StartBossAutoRefreshLoop) end
     if _G.Mod_StartPKScanLoop then pcall(_G.Mod_StartPKScanLoop) end
     if _G.Mod_StartReturnPosLoop then pcall(_G.Mod_StartReturnPosLoop) end
     if _G.Mod_StartVisualMasterLoop then pcall(_G.Mod_StartVisualMasterLoop) end
@@ -413,13 +413,17 @@ local function CreateModUI()
             _G.Mod_AnStats_Loaded = true
         end
 
-        -- COMMERCIAL BRANCH BOSS POSITION HELPERS
+        -- =========================================================================
+        -- [MOD FEATURE]: ĐỒNG BỘ TRẠNG THÁI BOSS TỪ SERVER (BOSS STATE EVENT REGISTRY)
+        -- Mô tả: Lắng nghe các sự kiện Server gửi về để cập nhật bảng Mod_BossStateMap và refresh UI.
+        -- =========================================================================
         _G.Mod_BossStateMap = _G.Mod_BossStateMap or {}
 
         if _G.EventManager and _G.Event then
             pcall(function()
-                if _G.Event.Map_MonsterAllState then
-                    _G.EventManager.AddListener(_G.Event.Map_MonsterAllState, function(_, msg)
+                if _G.Event.Map_MonsterAllState and not _G.Mod_Hooked_MonsterAllState then
+                    _G.Mod_Hooked_MonsterAllState = true
+                    _G.EventManager.Regist(_G.Event.Map_MonsterAllState, function(_, msg)
                         if msg and msg.list then
                             for _, mon in ipairs(msg.list) do
                                 if mon and mon.id then
@@ -427,14 +431,38 @@ local function CreateModUI()
                                 end
                             end
                         end
-                    end)
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MonsterAllState")
                 end
-                if _G.Event.Map_MonsterStateChange then
-                    _G.EventManager.AddListener(_G.Event.Map_MonsterStateChange, function(_, msg)
+                if _G.Event.Map_MonsterStateChange and not _G.Mod_Hooked_MonsterStateChange then
+                    _G.Mod_Hooked_MonsterStateChange = true
+                    _G.EventManager.Regist(_G.Event.Map_MonsterStateChange, function(_, msg)
                         if msg and msg.id then
                             _G.Mod_BossStateMap[msg.id] = (msg.state == 0 and 1 or 0)
                         end
-                    end)
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MonsterStateChange")
+                end
+                if _G.Event.Map_BossAndElite and not _G.Mod_Hooked_MapBossAndElite then
+                    _G.Mod_Hooked_MapBossAndElite = true
+                    _G.EventManager.Regist(_G.Event.Map_BossAndElite, function(_, msg)
+                        if msg and msg.list then
+                            for _, mon in ipairs(msg.list) do
+                                if mon and mon.id then
+                                    _G.Mod_BossStateMap[mon.id] = (mon.state == 0 and 1 or 0)
+                                end
+                            end
+                        end
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MapBossAndElite")
+                end
+                if _G.Event.Scene_SceneBossCount and not _G.Mod_Hooked_SceneBossCount then
+                    _G.Mod_Hooked_SceneBossCount = true
+                    _G.EventManager.Regist(_G.Event.Scene_SceneBossCount, function()
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                        if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+                    end, "Mod_SceneBossCount")
                 end
             end)
         end
@@ -2158,9 +2186,12 @@ local function CreateModUI()
                 mapBosses = tempBosses
                 _G.Mod_MapBosses = mapBosses
                 UpdateBossWatchUIText()
+                if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end)
         end
+        _G.UpdateBossWatchUIText = UpdateBossWatchUIText
+        _G.ParseBossData = ParseBossData
 
         if _G.SavedFOV == nil then
             pcall(function()
@@ -5175,68 +5206,17 @@ local function CreateModUI()
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end
 
-            _G.Mod_StartKundunTeleNotifyLoop = function()
-                _G.Mod_StartTrackedTimer("KundunTeleNotify", 1.0, -1, function()
+            -- =========================================================================
+            -- [MOD FEATURE]: VÒNG LẶP TỰ ĐỘNG LÀM MỚI DỮ LIỆU BOSS & CẬP NHẬT UI (BOSS AUTO REFRESH LOOP)
+            -- Mô tả: Gửi yêu cầu cập nhật danh sách Boss định kỳ và làm mới giao diện hiển thị.
+            -- =========================================================================
+            _G.Mod_StartBossAutoRefreshLoop = function()
+                _G.Mod_StartTrackedTimer("BossAutoRefresh", 1.0, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                     pcall(function()
-                        if not _G.Mod_IsAdmin or not _G.Mod_TeleNotify_Enabled then return end
-
-                        local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
-                            os.time()
-                        if currentSec - (_G.LastTeleCheckSec or 0) < 5 then return end
-                        _G.LastTeleCheckSec = currentSec
-
-                        local allKunduns = {
-                            { tab = "C7", name = "THÁNH CỐT", bossType = 16, bossId = 20201007, limit = 70, threshold = 5 },
-                            { tab = "C7", name = "PHÙ VĂN", bossType = 17, bossId = 20211007, limit = 300, threshold = 15 },
-                            { tab = "C8", name = "THÁNH CỐT", bossType = 16, bossId = 20201008, limit = 70, threshold = 5 },
-                            { tab = "C8", name = "PHÙ VĂN", bossType = 17, bossId = 20211008, limit = 400, threshold = 15 }
-                        }
-
-                        _G.LastTeleNotifySec_Boss = _G.LastTeleNotifySec_Boss or {}
-
-                        if _G.SceneData and _G.SceneData.GetAncientBossData then
-                            for _, cfg in ipairs(allKunduns) do
-                                local count = 0
-                                local isSatisfy, info = _G.SceneData:GetAncientBossData(cfg.bossType, cfg.bossId)
-
-                                if isSatisfy == true then
-                                    count = cfg.limit
-                                elseif isSatisfy == false and info and info.count then
-                                    count = info.count
-                                end
-
-                                if cfg.limit - count <= cfg.threshold then
-                                    local bossKey = cfg.tab .. "_" .. cfg.name
-                                    local lastNotify = _G.LastTeleNotifySec_Boss[bossKey] or 0
-
-                                    if currentSec - lastNotify >= 180 then
-                                        _G.LastTeleNotifySec_Boss[bossKey] = currentSec
-
-                                        local statusTitle = (count >= cfg.limit) and "Đã Hiện!" or "Sắp Ra!"
-                                        local rCount = (info and info.refreshCount) and info.refreshCount or 0
-                                        local msgText = (count >= cfg.limit) and "Hiện" or tostring(rCount)
-                                        local msg = string.format("\n🔴 KUNDUN %s: %s %s\n- Số lượng: %d / %d (%s)",
-                                            cfg.tab, cfg.name, statusTitle, count, cfg.limit, msgText)
-
-                                        local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
-                                        local chatId = "-5255708823"
-                                        local function SendTeleAsync()
-                                            local url = "https://api.telegram.org/bot" ..
-                                                botToken ..
-                                                "/sendMessage?chat_id=" ..
-                                                chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(msg)
-                                            pcall(function() CS.UnityEngine.WWW(url) end)
-                                        end
-                                        SendTeleAsync()
-                                    end
-                                end
-                            end
-                        end
-
-                        -- Auto PK Guild Logic
+                        -- 1. Auto PK Guild Mode nếu được kích hoạt
                         if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
-                            if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
+                            if _G.RoleManager.me.PKMode ~= 2 then -- 2 là Guild mode
                                 local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
                                 if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
                                     _G.Mod_LastGuildPKReqTime = nowGuildPK
@@ -5245,27 +5225,33 @@ local function CreateModUI()
                             end
                         end
 
-                        if _G.IsAutoRefresh or _G.Mod_TelegramBossAlert then
+                        -- 2. Tự động gửi gói tin lấy dữ liệu Boss từ Server theo chu kỳ AutoRefreshInterval
+                        if _G.IsAutoRefresh or _G.Mod_AutoFarmBoss_Enabled then
                             local currentSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
                             if currentSec - (_G.LastRefreshSec or 0) >= (_G.AutoRefreshInterval or 5) then
                                 _G.LastRefreshSec = currentSec
                                 if _G.NetManager and _G.MapMessage then
-                                    _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                                    if _G.MapMessage.ReqGetBossMapAndCount then
+                                        _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
+                                    end
+                                    if _G.MapMessage.ReqAncientBossInfo then
+                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                                    end
                                 end
                             end
                         end
 
+                        -- 3. Cập nhật Text thời gian đếm ngược và trạng thái trên UI khi menu đang mở
                         if isExpanded then
-                            if UpdateBossWatchUIText then UpdateBossWatchUIText() end
-                            if _G.ModUpdateCountText then _G.ModUpdateCountText() end
-                            if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+                            if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                            if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                            if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
                         end
                     end)
                 end)
             end
-            _G.Mod_StartKundunTeleNotifyLoop()
+            _G.Mod_StartBossAutoRefreshLoop()
 
                     pcall(function()
                         if _G.AutoFightFindTargetManager and not _G.Mod_HookedAutoFightTarget then
