@@ -1,5 +1,8 @@
 -- =========================================================================
--- [TEST SCRIPT]: DEBUG TOÀN DIỆN BẢO HỘ KHI TREO MÁY (QUÉT TẤT CẢ NGƯỜI CHƠI)
+-- [TEST SCRIPT]: TEST ĐI XUYÊN QUÁI & NGƯỜI CHƠI (ROLE COLLISION BYPASS)
+-- Mô tả: Hook Scene.TileCanMoveToByRole, Scene.SetRoleTilesInfor, 
+--        SceneData.orThrough và SceneData.overlap để đi xuyên quái / người chơi.
+-- Cách dùng: Bấm EXECUTE SCRIPT một lần để BẬT, bấm lần nữa để TẮT (Toggle).
 -- =========================================================================
 
 local outputLines = {}
@@ -15,179 +18,123 @@ local function log_msg(msg)
     end)
     pcall(function()
         if _G.WriteLog then
-            _G.WriteLog("[PROTECT_DEBUG] " .. text)
+            _G.WriteLog("[BYPASS_COLLISION] " .. text)
         end
     end)
 end
 
 local ok, err = pcall(function()
+    log_msg("=========================================================================")
+    log_msg("=== TEST ĐI XUYÊN QUÁI & NGƯỜI CHƠI (ROLE COLLISION BYPASS) ===")
+    log_msg("=========================================================================")
+
     local me = _G.RoleManager and _G.RoleManager.me
     if not me then
-        log_msg("LỖI: Không tìm thấy RoleManager.me!")
-        return
+        log_msg("CẢNH BÁO: Chưa tìm thấy RoleManager.me (chưa vào map hoặc chưa login)!")
+    else
+        local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+        local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+        log_msg(string.format("Tọa độ Me hiện tại: (%d, %d) | MapId: %s", meX, meY, tostring(_G.SceneData and _G.SceneData.mapId)))
     end
 
-    local serverTimeMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-    local serverTimeSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or math.floor(serverTimeMs / 1000)
+    -- Khởi tạo biến lưu trạng thái gốc nếu chưa có
+    if _G.Mod_Orig_TileCanMoveToByRole == nil and _G.Scene and _G.Scene.TileCanMoveToByRole then
+        _G.Mod_Orig_TileCanMoveToByRole = _G.Scene.TileCanMoveToByRole
+    end
+    if _G.Mod_Orig_SetRoleTilesInfor == nil and _G.Scene and _G.Scene.SetRoleTilesInfor then
+        _G.Mod_Orig_SetRoleTilesInfor = _G.Scene.SetRoleTilesInfor
+    end
 
-    log_msg("=========================================================================")
-    log_msg(string.format("=== DEBUG BẢO HỘ KHI TREO MÁY (ServerTime: %s ms | %s s) ===", tostring(serverTimeMs), tostring(serverTimeSec)))
-    log_msg("=========================================================================")
+    -- Đảo trạng thái (Toggle)
+    _G.Mod_CollisionBypass_Enabled = not _G.Mod_CollisionBypass_Enabled
 
-    local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
-    local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
-    log_msg(string.format("Vị trí Me: (%d, %d) | ID: %s | PKMode: %s", meX, meY, tostring(me.id), tostring(me.PKMode)))
+    if _G.Mod_CollisionBypass_Enabled then
+        ---------------------------------------------------------------------
+        -- 1. KÍCH HOẠT BẬT BYPASS
+        ---------------------------------------------------------------------
+        log_msg(">>> TRẠNG THÁI: [ BẬT ] ĐI XUYÊN QUÁI & NGƯỜI CHƠI")
 
-    -- Gom tất cả người chơi tìm được từ nhiều nguồn khác nhau
-    local allPlayers = {}
-
-    local function addPlayer(p, sourceTag)
-        if not p or p.id == me.id or p.isMe then return end
-        local pId = p.id or (p.data and p.data.id) or 0
-        if not allPlayers[pId] then
-            allPlayers[pId] = { role = p, sources = { sourceTag } }
-        else
-            table.insert(allPlayers[pId].sources, sourceTag)
+        -- Gán cờ SceneData cho map hiện tại
+        if _G.SceneData then
+            log_msg(string.format("  -> SceneData.orThrough cũ: %s | SceneData.overlap cũ: %s", tostring(_G.SceneData.orThrough), tostring(_G.SceneData.overlap)))
+            _G.SceneData.orThrough = 1
+            _G.SceneData.overlap = 1
+            log_msg("  -> Đã set SceneData.orThrough = 1, SceneData.overlap = 1")
         end
-    end
 
-    -- 1. Mục tiêu đang chọn (TargetAvatar)
-    if me.TargetAvatar then
-        addPlayer(me.TargetAvatar, "TargetAvatar")
-    end
+        -- Hook Scene.TileCanMoveToByRole luôn trả về true
+        if _G.Scene then
+            _G.Scene.TileCanMoveToByRole = function(cell)
+                return true
+            end
+            log_msg("  -> Đã Hook Scene.TileCanMoveToByRole = function() return true end")
 
-    -- 2. Quét qua RoleManager.GetRolesByType(1) (Dictionary [id] = role)
-    if _G.RoleManager and _G.RoleManager.GetRolesByType then
-        local pDict = _G.RoleManager.GetRolesByType(1)
-        if pDict then
-            for id, p in pairs(pDict) do
-                addPlayer(p, "GetRolesByType(1)")
+            -- Hook Scene.SetRoleTilesInfor để vô hiệu hóa việc ghi đè tile cản vào thuật toán tìm đường (A*)
+            _G.Scene.SetRoleTilesInfor = function(val)
+                -- Không ghi đè quái/người thành vật cản
+                return
+            end
+            log_msg("  -> Đã Hook Scene.SetRoleTilesInfor (vô hiệu cản đường A* PathFinder)")
+        end
+
+        -- Duy trì cấu hình tự động mỗi 1s hoặc khi chuyển map
+        if _G.Timer and _G.Timer.StartLoop then
+            if _G.Mod_CollisionBypass_TimerId then
+                pcall(function() _G.Timer.Cancel(_G.Mod_CollisionBypass_TimerId) end)
+            end
+            _G.Mod_CollisionBypass_TimerId = _G.Timer.StartLoop(1, function()
+                if not _G.Mod_CollisionBypass_Enabled then return end
+                if _G.SceneData then
+                    if _G.SceneData.orThrough ~= 1 then _G.SceneData.orThrough = 1 end
+                    if _G.SceneData.overlap ~= 1 then _G.SceneData.overlap = 1 end
+                end
+                if _G.Scene and _G.Scene.TileCanMoveToByRole ~= nil then
+                    -- Đảm bảo hook không bị load map đè lại
+                    if _G.Scene.TileCanMoveToByRole ~= _G.Mod_Bypass_DummyFunc then
+                        _G.Scene.TileCanMoveToByRole = _G.Mod_Bypass_DummyFunc
+                    end
+                end
+            end)
+        end
+        _G.Mod_Bypass_DummyFunc = function(cell) return true end
+
+        log_msg("KẾT QUẢ: ĐÃ KÍCH HOẠT THÀNH CÔNG! Hãy thử chạy qua quái hoặc người chơi.")
+    else
+        ---------------------------------------------------------------------
+        -- 2. TẮT BYPASS & KHÔI PHỤC GỐC
+        ---------------------------------------------------------------------
+        log_msg(">>> TRẠNG THÁI: [ TẮT ] KHÔI PHỤC VẬT CẢN GỐC CỦA GAME")
+
+        -- Hủy Timer duy trì
+        if _G.Mod_CollisionBypass_TimerId and _G.Timer and _G.Timer.Cancel then
+            pcall(function() _G.Timer.Cancel(_G.Mod_CollisionBypass_TimerId) end)
+            _G.Mod_CollisionBypass_TimerId = nil
+        end
+
+        -- Khôi phục hook Scene
+        if _G.Scene and _G.Mod_Orig_TileCanMoveToByRole then
+            _G.Scene.TileCanMoveToByRole = _G.Mod_Orig_TileCanMoveToByRole
+            log_msg("  -> Đã khôi phục Scene.TileCanMoveToByRole gốc")
+        end
+        if _G.Scene and _G.Mod_Orig_SetRoleTilesInfor then
+            _G.Scene.SetRoleTilesInfor = _G.Mod_Orig_SetRoleTilesInfor
+            log_msg("  -> Đã khôi phục Scene.SetRoleTilesInfor gốc")
+        end
+
+        -- Khôi phục SceneData theo config map
+        if _G.SceneData and _G.SceneData.mapId and _G.Table_Map_map then
+            local mapCfg = _G.Table_Map_map[_G.SceneData.mapId]
+            if mapCfg then
+                _G.SceneData.orThrough = tonumber(mapCfg.orThrough)
+                _G.SceneData.overlap = tonumber(mapCfg.overlap)
+                log_msg(string.format("  -> Đã khôi phục SceneData theo mapId %d: orThrough=%s, overlap=%s", 
+                    _G.SceneData.mapId, tostring(_G.SceneData.orThrough), tostring(_G.SceneData.overlap)))
             end
         end
+
+        log_msg("KẾT QUẢ: ĐÃ TẮT BẢN TEST XUYÊN QUÁI! Đã về trạng thái bình thường.")
     end
 
-    -- 3. Quét qua RoleManager.GetRolesByType(ERoleType.Player)
-    if _G.ERoleType and _G.RoleManager and _G.RoleManager.GetRolesByType then
-        local pDict = _G.RoleManager.GetRolesByType(_G.ERoleType.Player)
-        if pDict then
-            for id, p in pairs(pDict) do
-                addPlayer(p, "GetRolesByType(ERoleType.Player)")
-            end
-        end
-    end
-
-    -- 4. Quét qua RoleManager.GetRolesByTypeAndRangeAlive(1, 50)
-    if _G.RoleManager and _G.RoleManager.GetRolesByTypeAndRangeAlive then
-        local aliveList = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 50)
-        if aliveList then
-            for _, p in ipairs(aliveList) do
-                addPlayer(p, "GetRolesByTypeAndRangeAlive")
-            end
-        end
-    end
-
-    -- Đếm số lượng người chơi tìm được
-    local count = 0
-    for _ in pairs(allPlayers) do count = count + 1 end
-
-    if count == 0 then
-        log_msg("-> CẢNH BÁO: Không tìm thấy bất kỳ người chơi nào trong bộ nhớ!")
-        return
-    end
-
-    log_msg(string.format("-> Tìm thấy %d người chơi xung quanh:", count))
-
-    local idx = 0
-    for pId, item in pairs(allPlayers) do
-        idx = idx + 1
-        local r = item.role
-        local sourcesStr = table.concat(item.sources, ", ")
-        local rName = (r.data and r.data.name) or r.name or "N/A"
-        local rPKMode = (r.data and r.data.PKMode) or r.PKMode or "N/A"
-        local rLevel = (r.data and r.data.level) or r.level or "N/A"
-        local rHp = r.hp or (r.data and r.data.hp) or "N/A"
-        local rDead = r.isDead or false
-
-        local rX = r.serverCoord and r.serverCoord.x or (r.cellPos and r.cellPos.x) or (r.data and r.data.x) or 0
-        local rY = r.serverCoord and r.serverCoord.y or (r.cellPos and r.cellPos.y) or (r.data and r.data.y) or 0
-        local dist = math.max(math.abs(meX - rX), math.abs(meY - rY))
-
-        log_msg("")
-        log_msg(string.format("------------------ [%d] %s (ID: %s) ------------------", idx, rName, tostring(pId)))
-        log_msg(string.format("  Nguồn tìm thấy: [%s]", sourcesStr))
-        log_msg(string.format("  Vị trí: (%d, %d) | Khoảng cách: %d ô | Máu: %s | Chết: %s | PKMode: %s", rX, rY, dist, tostring(rHp), tostring(rDead), tostring(rPKMode)))
-
-        -- A. THỜI GIAN BẢO HỘ (hangUpProtectionTime / crossServerHangUpTime / GetProtectTIme)
-        local pTimeMethod = r.GetProtectTIme and r:GetProtectTIme()
-        local hangUpTime = r.hangUpProtectionTime or (r.data and r.data.hangUpProtectionTime)
-        local crossTime = r.crossServerHangUpTime or (r.data and r.data.crossServerHangUpTime)
-
-        log_msg("  [A] THỜI GIAN BẢO HỘ:")
-        log_msg(string.format("      -> r:GetProtectTIme():         %s", tostring(pTimeMethod)))
-        log_msg(string.format("      -> r.hangUpProtectionTime:     %s", tostring(hangUpTime)))
-        log_msg(string.format("      -> r.crossServerHangUpTime:    %s", tostring(crossTime)))
-
-        local checkTime = pTimeMethod or hangUpTime or crossTime or 0
-        if checkTime > 0 then
-            if checkTime > 1000000000000 then
-                local remainSec = math.floor((checkTime - serverTimeMs) / 1000)
-                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Còn %d giây = %.2f giờ)", remainSec, remainSec / 3600))
-            elseif checkTime > 1000000000 then
-                local remainSec = checkTime - serverTimeSec
-                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Còn %d giây = %.2f giờ)", remainSec, remainSec / 3600))
-            else
-                log_msg(string.format("      => KẾT LUẬN: ĐANG BẢO HỘ (Giá trị flag = %s)", tostring(checkTime)))
-            end
-        else
-            log_msg("      => KẾT LUẬN: KHÔNG CÓ BẢO HỘ (Giá trị <= 0)")
-        end
-
-        -- B. HIỆU ỨNG MIỄN DỊCH PK (killMonsterEffect / Eff_PK_mianyi)
-        log_msg("  [B] HIỆU ỨNG MIỄN DỊCH PK (killMonsterEffect):")
-        if r.killMonsterEffect then
-            local isModelActive = r.killMonsterEffect.isModelActive
-            local goActive = false
-            local modelName = r.killMonsterEffect.name or "N/A"
-            if r.killMonsterEffect.model and not _G.IsNil(r.killMonsterEffect.model) then
-                goActive = r.killMonsterEffect.model.activeSelf
-                modelName = r.killMonsterEffect.model.name or modelName
-            end
-            log_msg(string.format("      -> Có killMonsterEffect: isModelActive=%s, goActive=%s, name='%s'", tostring(isModelActive), tostring(goActive), tostring(modelName)))
-        else
-            log_msg("      -> killMonsterEffect: nil (Không có)")
-        end
-
-        -- C. TITLE / ĐẾM NGƯỢC TRÊN ĐẦU (head3DMesh)
-        log_msg("  [C] TITLE / ĐẾM NGƯỢC TRÊN ĐẦU (head3DMesh):")
-        if r.head3DMesh then
-            local cdObj = r.head3DMesh.labelCountDown
-            local cdText = (cdObj and cdObj.text) or "N/A"
-            local cdActive = (cdObj and not _G.IsNil(cdObj.gameObject) and cdObj.gameObject.activeSelf) or false
-            local kmSec = r.head3DMesh.killMonsterSecond or "nil"
-            log_msg(string.format("      -> labelCountDown: activeSelf=%s, text='%s'", tostring(cdActive), tostring(cdText)))
-            log_msg(string.format("      -> killMonsterSecond: %s", tostring(kmSec)))
-        else
-            log_msg("      -> head3DMesh: nil")
-        end
-
-        -- D. HÀM KIỂM TRA MỤC TIÊU CỦA GAME
-        log_msg("  [D] HÀM KIỂM TRA MỤC TIÊU CỦA GAME:")
-        if _G.RoleTargetManager then
-            local isCanAttackP = _G.RoleTargetManager.IsCanAttackPlayer and _G.RoleTargetManager.IsCanAttackPlayer(r)
-            local getCanAttackR = _G.RoleTargetManager.GetCanAttackRole and _G.RoleTargetManager.GetCanAttackRole(r)
-            log_msg(string.format("      -> RoleTargetManager.IsCanAttackPlayer: %s", tostring(isCanAttackP)))
-            log_msg(string.format("      -> RoleTargetManager.GetCanAttackRole:  %s", tostring(getCanAttackR)))
-        end
-
-        if _G.RoleUtility and _G.RoleUtility.TargetIsFitMyPkMode then
-            local fitPK = _G.RoleUtility.TargetIsFitMyPkMode(r)
-            log_msg(string.format("      -> RoleUtility.TargetIsFitMyPkMode:    %s", tostring(fitPK)))
-        end
-    end
-
-    log_msg("")
-    log_msg("=========================================================================")
-    log_msg("=== HOÀN TẤT DEBUG BẢO HỘ KHI TREO MÁY ===")
     log_msg("=========================================================================")
 end)
 

@@ -83,12 +83,16 @@ _G.Mod_StartTrackedTimer = function(name, interval, count, callback)
     _G.Mod_StopTimer(name)
     local timerObj = nil
     if _G.Timer then
-        if count == -1 and _G.Timer.StartLoopForever and interval == 0 then
-            timerObj = _G.Timer.StartLoopForever(interval, callback)
+        if count == -1 then
+            if _G.Timer.StartLoopForever then
+                timerObj = _G.Timer.StartLoopForever(interval, callback)
+            elseif _G.Timer.StartLoop then
+                timerObj = _G.Timer.StartLoop(interval, -1, callback)
+            end
+        elseif count == 1 and _G.Timer.Start then
+            timerObj = _G.Timer.Start(interval, callback)
         elseif _G.Timer.StartLoop then
             timerObj = _G.Timer.StartLoop(interval, count, callback)
-        elseif _G.Timer.Start and count == 1 then
-            timerObj = _G.Timer.Start(interval, callback)
         end
     end
     if timerObj then
@@ -122,11 +126,24 @@ _G.Mod_DoSystemFreshCleanup = function()
         _G.Mod_GoldenChestState = "OPEN"
         _G.Mod_LastResurrectTime = 0
         _G.Mod_LastAutoPKSentTime = 0
+        _G.Mod_LastPKScanTime = 0
+        _G.Mod_LastKundunHPTime = 0
         _G.Mod_LastReturnPosTime = 0
         _G.LastTeleCheckSec = 0
         _G.Mod_ItemDecisionCache = {}
         _G.AutoPick_Count = 0
         _G.Mod_PickedItems = {}
+        _G.Mod_ApproachTowerTargetRole = nil
+        _G.Mod_PendingKcResurrectAutoFight = nil
+        _G.Mod_PendingKcResurrectTime = nil
+
+        -- Reset TargetAvatar nếu mục tiêu Me đã chết hoặc không hợp lệ
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me then
+            if me.TargetAvatar and (me.TargetAvatar.isDead or (me.TargetAvatar.hp and me.TargetAvatar.hp <= 0)) then
+                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+            end
+        end
 
         -- 3. Khởi động lại các vòng lặp nền Mod sạch sẽ
         if _G.Mod_RestartAllBackgroundLoops then
@@ -134,7 +151,6 @@ _G.Mod_DoSystemFreshCleanup = function()
         end
 
         -- 4. Làm tươi tốc độ & Animation của nhân vật Me
-        local me = _G.RoleManager and _G.RoleManager.me
         if me then
             if _G.Mod_LockMyAnimatorsToNormal then
                 pcall(_G.Mod_LockMyAnimatorsToNormal)
@@ -171,6 +187,11 @@ _G.Mod_DoSystemFreshCleanup = function()
             end
         end
         if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+        if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
+        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
 
         -- 8. Thông báo thành công
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -5468,7 +5489,7 @@ local function CreateModUI()
 
                     -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG PK & KHÓA MỤC TIÊU THEO TÊN (AUTO PK & LOCK TARGET)
-                    -- Mô tả: Quét tìm người chơi đối thủ trong phạm vi 15m và xuất chiêu tiêu diệt
+                    -- Mô tả: Quét tìm người chơi đối thủ trong phạm vi 15m (hoặc cài đặt) và xuất chiêu tiêu diệt
                     -- =========================================================================
                     _G.Mod_StartPKScanLoop = function()
                         _G.Mod_StartTrackedTimer("AutoPKScan", 0.25, -1, function()
@@ -5497,6 +5518,8 @@ local function CreateModUI()
                                     if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
                                         _G.Mod_LastPKScanTime = nowTime
 
+                                        local scanRange = (_G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0) and _G.Mod_CustomAttackRange or 15
+
                                         local currentTarget = me.TargetAvatar
                                         local isCurrentTargetValid = false
                                         if currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 1 and not IsPlayerProtected(currentTarget) and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
@@ -5507,7 +5530,7 @@ local function CreateModUI()
                                                 dist = math.max(math.abs(currentTarget.serverCoord.x - me.serverCoord.x), math.abs(currentTarget.serverCoord.y - me.serverCoord.y))
                                             end
 
-                                            if dist <= 15 then
+                                            if dist <= scanRange then
                                                 if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
                                                     if isMatchLockTarget(currentTarget, _G.Mod_LockTarget_Name) then
                                                         isCurrentTargetValid = true
@@ -5538,7 +5561,7 @@ local function CreateModUI()
                                         end
 
                                         local function isMonsterNearby(range)
-                                            range = range or 15
+                                            range = range or scanRange
                                             local me = _G.RoleManager and _G.RoleManager.me
                                             if not me or me.isDead then return false end
                                             local meId = (me.data and me.data.id) or me.id or 0
@@ -5594,7 +5617,7 @@ local function CreateModUI()
                                         end
 
                                         -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
-                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15,
+                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, scanRange,
                                             _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
                                         local target = nil
                                         if players and #players > 0 then
@@ -5629,8 +5652,8 @@ local function CreateModUI()
                                                 _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                             end
                                         else
-                                            -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
-                                            if isMonsterNearby(15) then
+                                            -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange)
+                                            if isMonsterNearby(scanRange) then
                                                 if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                                                     if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                                         _G.RoleManager.me:SetAutoFight("AutoFight")
@@ -11597,48 +11620,46 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Timer giám sát liên tục khi đang TẮT hiệu ứng
-                    if isOff then
-                        if not _G.Mod_VisualMasterTimer then
-                            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.5, -1, function()
-                                if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
-                                    if _G.Mod_VisualMasterTimer then
-                                        _G.Timer.Stop(_G.Mod_VisualMasterTimer)
-                                        _G.Mod_VisualMasterTimer = nil
-                                    end
-                                    return
-                                end
-
-                                -- SkillMgr.ROOT: Ẩn các skill vừa mới spawn trong lúc đang tắt hiệu ứng
-                                if _G.SkillMgr and _G.SkillMgr.ROOT then
-                                    local root = _G.SkillMgr.ROOT
-                                    for i = 0, root.childCount - 1 do
-                                        local child = root:GetChild(i)
-                                        if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
-                                            child.gameObject:SetActive(false)
-                                        end
-                                    end
-                                end
-
-                                -- Footprint
-                                if _G.RoleManager and _G.RoleManager.me then
-                                    local me = _G.RoleManager.me
-                                    if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
-                                        me.footPrintEffect:SetActive(false)
-                                    end
-                                    if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
-                                        me.AvatarEquip.footPrintObj:SetActive(false)
-                                    end
-                                end
-                            end)
-                        end
-                    else
-                        if _G.Mod_VisualMasterTimer then
-                            _G.Timer.Stop(_G.Mod_VisualMasterTimer)
-                            _G.Mod_VisualMasterTimer = nil
-                        end
+                    -- Đồng bộ Tracked Timer giám sát liên tục khi đang TẮT hiệu ứng
+                    if _G.Mod_StartVisualMasterLoop then
+                        _G.Mod_StartVisualMasterLoop()
                     end
                 end)
+            end
+
+            _G.Mod_StartVisualMasterLoop = function()
+                if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
+                    _G.Mod_StartTrackedTimer("VisualMaster", 0.5, -1, function()
+                        if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
+                            _G.Mod_StopTimer("VisualMaster")
+                            return
+                        end
+
+                        -- SkillMgr.ROOT: Ẩn các skill vừa mới spawn trong lúc đang tắt hiệu ứng
+                        if _G.SkillMgr and _G.SkillMgr.ROOT then
+                            local root = _G.SkillMgr.ROOT
+                            for i = 0, root.childCount - 1 do
+                                local child = root:GetChild(i)
+                                if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
+                                    child.gameObject:SetActive(false)
+                                end
+                            end
+                        end
+
+                        -- Footprint
+                        if _G.RoleManager and _G.RoleManager.me then
+                            local me = _G.RoleManager.me
+                            if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
+                                me.footPrintEffect:SetActive(false)
+                            end
+                            if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
+                                me.AvatarEquip.footPrintObj:SetActive(false)
+                            end
+                        end
+                    end)
+                else
+                    _G.Mod_StopTimer("VisualMaster")
+                end
             end
 
             -- Khởi tạo áp dụng ngay trạng thái hiện tại
