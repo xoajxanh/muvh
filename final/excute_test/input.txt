@@ -1,156 +1,130 @@
 -- =========================================================================
--- [TEST SCRIPT]: TEST ĐI XUYÊN QUÁI & NGƯỜI CHƠI (ROLE COLLISION BYPASS)
--- Mô tả: Hook Scene.TileCanMoveToByRole, Scene.SetRoleTilesInfor, 
---        SceneData.orThrough và SceneData.overlap để đi xuyên quái / người chơi.
--- Cách dùng: Bấm EXECUTE SCRIPT một lần để BẬT, bấm lần nữa để TẮT (Toggle).
+-- [PHÂN TÍCH & BẮT CHÍNH XÁC MATCH TEAM ID TRONG SẢNH GHÉP ĐỘI]
 -- =========================================================================
 
-local outputLines = {}
+-- 1. Hook bắt mọi thông điệp Match từ Server
+if not _G.Mod_Hooked_MatchAll then
+    _G.Mod_Hooked_MatchAll = true
+    _G.Mod_LastMatchMsg = _G.Mod_LastMatchMsg or {}
+    _G.Mod_RecentToasts = _G.Mod_RecentToasts or {}
 
-local function log_msg(msg)
-    local text = tostring(msg)
-    table.insert(outputLines, text)
-    print(text)
-    pcall(function()
-        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg(text)
+    -- Hook ResInstanceMatchTeamInfo (Thông tin phòng ghép đội)
+    if TeamUpQuicklyController then
+        local old_ResTeamInfo = TeamUpQuicklyController.ResInstanceMatchTeamInfo
+        TeamUpQuicklyController.ResInstanceMatchTeamInfo = function(id, msg)
+            if msg then
+                _G.Mod_LastMatchTeamId = msg.id
+                _G.Mod_LastMatchMsg.teamInfo = msg
+                print(string.format("[MOD] ĐÃ BẮT ResInstanceMatchTeamInfo: ID = %s | InstanceId = %s", tostring(msg.id), tostring(msg.instanceId)))
+            end
+            if old_ResTeamInfo then old_ResTeamInfo(id, msg) end
         end
-    end)
-    pcall(function()
-        if _G.WriteLog then
-            _G.WriteLog("[BYPASS_COLLISION] " .. text)
+
+        -- Hook ResInstanceMatchInviteFriend (Lời mời từ Đội Trưởng)
+        local old_ResInvite = TeamUpQuicklyController.ResInstanceMatchInviteFriend
+        TeamUpQuicklyController.ResInstanceMatchInviteFriend = function(id, msg)
+            if msg then
+                _G.Mod_LastMatchTeamId = msg.teamId
+                _G.Mod_LastMatchMsg.inviteMsg = msg
+                print(string.format("[MOD] ĐÃ BẮT LỜI MỜI TỪ ĐỘI TRƯỞNG: TeamId = %s | InstanceId = %s", tostring(msg.teamId), tostring(msg.instanceId)))
+            end
+            if old_ResInvite then old_ResInvite(id, msg) end
         end
-    end)
+    end
+
+    -- Hook Toast
+    if FloatingWordUtility then
+        local old_QuickMsg = FloatingWordUtility.QuickMsg
+        FloatingWordUtility.QuickMsg = function(msg)
+            table.insert(_G.Mod_RecentToasts, tostring(msg))
+            if #_G.Mod_RecentToasts > 10 then table.remove(_G.Mod_RecentToasts, 1) end
+            if old_QuickMsg then old_QuickMsg(msg) end
+        end
+    end
 end
 
-local ok, err = pcall(function()
-    log_msg("=========================================================================")
-    log_msg("=== TEST ĐI XUYÊN QUÁI & NGƯỜI CHƠI (ROLE COLLISION BYPASS) ===")
-    log_msg("=========================================================================")
-
-    local me = _G.RoleManager and _G.RoleManager.me
-    if not me then
-        log_msg("CẢNH BÁO: Chưa tìm thấy RoleManager.me (chưa vào map hoặc chưa login)!")
-    else
-        local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
-        local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
-        log_msg(string.format("Tọa độ Me hiện tại: (%d, %d) | MapId: %s", meX, meY, tostring(_G.SceneData and _G.SceneData.mapId)))
-    end
-
-    -- Khởi tạo biến lưu trạng thái gốc nếu chưa có
-    if _G.Mod_Orig_TileCanMoveToByRole == nil and _G.Scene and _G.Scene.TileCanMoveToByRole then
-        _G.Mod_Orig_TileCanMoveToByRole = _G.Scene.TileCanMoveToByRole
-    end
-    if _G.Mod_Orig_SetRoleTilesInfor == nil and _G.Scene and _G.Scene.SetRoleTilesInfor then
-        _G.Mod_Orig_SetRoleTilesInfor = _G.Scene.SetRoleTilesInfor
-    end
-
-    -- Đảo trạng thái (Toggle)
-    _G.Mod_CollisionBypass_Enabled = not _G.Mod_CollisionBypass_Enabled
-
-    if _G.Mod_CollisionBypass_Enabled then
-        ---------------------------------------------------------------------
-        -- 1. KÍCH HOẠT BẬT BYPASS
-        ---------------------------------------------------------------------
-        log_msg(">>> TRẠNG THÁI: [ BẬT ] ĐI XUYÊN QUÁI & NGƯỜI CHƠI")
-
-        -- Gán cờ SceneData cho map hiện tại
-        if _G.SceneData then
-            log_msg(string.format("  -> SceneData.orThrough cũ: %s | SceneData.overlap cũ: %s", tostring(_G.SceneData.orThrough), tostring(_G.SceneData.overlap)))
-            _G.SceneData.orThrough = 1
-            _G.SceneData.overlap = 1
-            log_msg("  -> Đã set SceneData.orThrough = 1, SceneData.overlap = 1")
-        end
-
-        -- Hook Scene.TileCanMoveToByRole luôn trả về true
-        if _G.Scene then
-            _G.Scene.TileCanMoveToByRole = function(cell)
-                return true
-            end
-            log_msg("  -> Đã Hook Scene.TileCanMoveToByRole = function() return true end")
-
-            -- Hook Scene.SetRoleTilesInfor để vô hiệu hóa việc ghi đè tile cản vào thuật toán tìm đường (A*)
-            _G.Scene.SetRoleTilesInfor = function(val)
-                -- Không ghi đè quái/người thành vật cản
-                return
-            end
-            log_msg("  -> Đã Hook Scene.SetRoleTilesInfor (vô hiệu cản đường A* PathFinder)")
-        end
-
-        -- Duy trì cấu hình tự động mỗi 1s hoặc khi chuyển map
-        if _G.Timer and _G.Timer.StartLoop then
-            if _G.Mod_CollisionBypass_TimerId then
-                pcall(function() _G.Timer.Cancel(_G.Mod_CollisionBypass_TimerId) end)
-            end
-            _G.Mod_CollisionBypass_TimerId = _G.Timer.StartLoop(1, function()
-                if not _G.Mod_CollisionBypass_Enabled then return end
-                if _G.SceneData then
-                    if _G.SceneData.orThrough ~= 1 then _G.SceneData.orThrough = 1 end
-                    if _G.SceneData.overlap ~= 1 then _G.SceneData.overlap = 1 end
-                end
-                if _G.Scene and _G.Scene.TileCanMoveToByRole ~= nil then
-                    -- Đảm bảo hook không bị load map đè lại
-                    if _G.Scene.TileCanMoveToByRole ~= _G.Mod_Bypass_DummyFunc then
-                        _G.Scene.TileCanMoveToByRole = _G.Mod_Bypass_DummyFunc
-                    end
-                end
-            end)
-        end
-        _G.Mod_Bypass_DummyFunc = function(cell) return true end
-
-        log_msg("KẾT QUẢ: ĐÃ KÍCH HOẠT THÀNH CÔNG! Hãy thử chạy qua quái hoặc người chơi.")
-    else
-        ---------------------------------------------------------------------
-        -- 2. TẮT BYPASS & KHÔI PHỤC GỐC
-        ---------------------------------------------------------------------
-        log_msg(">>> TRẠNG THÁI: [ TẮT ] KHÔI PHỤC VẬT CẢN GỐC CỦA GAME")
-
-        -- Hủy Timer duy trì
-        if _G.Mod_CollisionBypass_TimerId and _G.Timer and _G.Timer.Cancel then
-            pcall(function() _G.Timer.Cancel(_G.Mod_CollisionBypass_TimerId) end)
-            _G.Mod_CollisionBypass_TimerId = nil
-        end
-
-        -- Khôi phục hook Scene
-        if _G.Scene and _G.Mod_Orig_TileCanMoveToByRole then
-            _G.Scene.TileCanMoveToByRole = _G.Mod_Orig_TileCanMoveToByRole
-            log_msg("  -> Đã khôi phục Scene.TileCanMoveToByRole gốc")
-        end
-        if _G.Scene and _G.Mod_Orig_SetRoleTilesInfor then
-            _G.Scene.SetRoleTilesInfor = _G.Mod_Orig_SetRoleTilesInfor
-            log_msg("  -> Đã khôi phục Scene.SetRoleTilesInfor gốc")
-        end
-
-        -- Khôi phục SceneData theo config map
-        if _G.SceneData and _G.SceneData.mapId and _G.Table_Map_map then
-            local mapCfg = _G.Table_Map_map[_G.SceneData.mapId]
-            if mapCfg then
-                _G.SceneData.orThrough = tonumber(mapCfg.orThrough)
-                _G.SceneData.overlap = tonumber(mapCfg.overlap)
-                log_msg(string.format("  -> Đã khôi phục SceneData theo mapId %d: orThrough=%s, overlap=%s", 
-                    _G.SceneData.mapId, tostring(_G.SceneData.orThrough), tostring(_G.SceneData.overlap)))
-            end
-        end
-
-        log_msg("KẾT QUẢ: ĐÃ TẮT BẢN TEST XUYÊN QUÁI! Đã về trạng thái bình thường.")
-    end
-
-    log_msg("=========================================================================")
-end)
-
-if not ok then
-    log_msg("LỖI RUNTIME TEST: " .. tostring(err))
+local logLines = {}
+local function Log(str)
+    table.insert(logLines, str)
+    print(str)
 end
 
--- Ghi đè vào output.txt trên Android
+Log("=== [KIỂM TRA DỮ LIỆU SẢNH GHÉP ĐỘI (INSTANCE MATCH)] ===")
+Log("Thời gian: " .. os.date("%H:%M:%S"))
+
+local me = RoleManager and RoleManager.me
+local myData = ViewData and ViewData.meData
+local myId = (myData and myData.id) or (me and me.id) or 0
+local myName = (myData and myData.name) or (me and me.name) or "Unknown"
+local curMap = SceneData and SceneData.mapId or 0
+
+Log(string.format("Nhân vật: %s (RID: %s) | Map: %s", tostring(myName), tostring(myId), tostring(curMap)))
+
+-- 1. Thông tin Tổ đội thường (Dã ngoại)
+local isLeader = TeamData and TeamData.isLeader or false
+Log(string.format("\n[1. TỔ ĐỘI THƯỜNG]: TeamID = %s | isLeader = %s", tostring(TeamData and TeamData.teamId or "None"), tostring(isLeader)))
+
+-- 2. Thông tin Sảnh Ghép Đội (TeamUpQuicklyData)
+Log("\n[2. SẢNH GHÉP ĐỘI (TeamUpQuicklyData)]:")
+if TeamUpQuicklyData and TeamUpQuicklyData.TeamInfor then
+    local info = TeamUpQuicklyData.TeamInfor
+    Log(string.format("  -> MATCH TEAM ID THẬT: %s", tostring(info.id)))
+    Log(string.format("  -> Instance ID:        %s", tostring(info.instanceId)))
+    Log(string.format("  -> EndTime:            %s", tostring(info.endTime)))
+    _G.Mod_LastMatchTeamId = info.id
+    pcall(function()
+        CS.UnityEngine.PlayerPrefs.SetString("Mod_SavedMatchTeamId", tostring(info.id))
+        CS.UnityEngine.PlayerPrefs.Save()
+    end)
+else
+    Log("  -> Hiện tại chưa có dữ liệu trong TeamUpQuicklyData.TeamInfor")
+end
+
+-- 3. Thông tin từ Hook đã bắt
+Log(string.format("\n[3. BIẾN HOOK ĐÃ LƯU]: Mod_LastMatchTeamId = %s", tostring(_G.Mod_LastMatchTeamId or "Chưa bắt được")))
+
+-- 4. Hành động thực thi
+if isLeader then
+    Log("\n>>> ĐANG Ở MÁY ĐỘI TRƯỞNG <<<")
+    -- Đội trưởng gửi lời mời tới Su
+    local partnerRid = 5944970060872593508
+    if NetManager and InstanceMatchMessage and InstanceMatchMessage.ReqInstanceMatchInviteFriend then
+        Log(string.format("Gửi ReqInstanceMatchInviteFriend tới Su (RID: %s)...", tostring(partnerRid)))
+        NetManager.Send(InstanceMatchMessage.ReqInstanceMatchInviteFriend, { id = partnerRid })
+    end
+else
+    Log("\n>>> ĐANG Ở MÁY THÀNH VIÊN (SU) <<<")
+    local matchId = _G.Mod_LastMatchTeamId or (TeamUpQuicklyData and TeamUpQuicklyData.TeamInfor and TeamUpQuicklyData.TeamInfor.id)
+    if matchId then
+        Log(string.format("Gửi đồng ý lời mời ReqInstanceMatchInviteOperation (teamId: %s)...", tostring(matchId)))
+        if NetManager and InstanceMatchMessage and InstanceMatchMessage.ReqInstanceMatchInviteOperation then
+            NetManager.Send(InstanceMatchMessage.ReqInstanceMatchInviteOperation, {
+                teamId = matchId,
+                friend = true,
+                agree = true
+            })
+        end
+    else
+        Log("Chưa có Match Team ID của sảnh! Hãy để Đội Trưởng bấm [ Mời Bạn Bè ] trong giao diện Sảnh.")
+    end
+end
+
+-- Liệt kê thông báo gần đây của Server
+if _G.Mod_RecentToasts and #_G.Mod_RecentToasts > 0 then
+    Log("\n[DANH SÁCH THÔNG BÁO TỪ SERVER]:")
+    for idx, toast in ipairs(_G.Mod_RecentToasts) do
+        Log(string.format("  [%d] %s", idx, toast))
+    end
+end
+
+-- Ghi kết quả ra output.txt
 pcall(function()
-    local fullContent = table.concat(outputLines, "\n")
     local outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
     local f = io.open(outPath, "w")
     if f then
-        f:write(fullContent)
+        f:write(table.concat(logLines, "\n"))
         f:close()
     end
 end)
 
-return table.concat(outputLines, "\n")
+return table.concat(logLines, "\n")

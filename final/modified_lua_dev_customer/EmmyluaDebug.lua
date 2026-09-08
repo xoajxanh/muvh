@@ -4185,7 +4185,8 @@ local function CreateModUI()
                                             LogMsg(string.format("Đã tới nơi! Tìm thấy Boss %s - HP: %.2f%%",
                                                 tostring(target.cfg.name or ""), hpPct))
 
-                                            if hpPct >= 90 or isMine or isUnowned then
+                                            local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
+                                            if hpPct >= skipThresh or isMine or isUnowned then
                                                 isHighHp = true
                                             end
                                         else
@@ -4206,7 +4207,8 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                 LogMsg("Đủ điều kiện, Bật Auto Fight")
                             else
-                                LogMsg("Boss bị Ks (HP < 90%). Bỏ qua 6 phút")
+                                local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
+                                LogMsg(string.format("Boss bị Ks (HP < %d%%). Bỏ qua 6 phút", skipThresh))
                                 _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 360
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
@@ -6175,17 +6177,18 @@ local function CreateModUI()
             local UpdateTierTabs
 
             -- =========================================================================
-            -- CỘT TRÁI (2/3 WIDTH): TOP CONTROLS 2x2 & BOSS FARM CONFIG
+            -- [MOD FEATURE]: CẤU HÌNH ĐIỀU KHIỂN AUTO BOSS (LEFT & RIGHT CONTROLS)
+            -- Mô tả: Cột Trái 4 nút compact (Auto Boss, Tự Vào Map Ẩn, Vào Ẩn KC, Nhớ Skill Map Ẩn) - Cột Phải (Tọa Độ Train, % HP Bỏ Boss KS)
             -- =========================================================================
 
-            -- 1. ROW 1 - CỘT 1 (X = 20, Y = -70, Width = 210, Height = 35): AUTO FARM ON/OFF
+            -- CỘT TRÁI - HÀNG 1: Master Toggle AUTO BOSS (y = -66, h = 26)
             local masterToggleGo = GameObject("AutoFarmBossToggle")
             masterToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, masterToggleGo)
             local mtRt = masterToggleGo:AddComponent(typeof(RectTransform))
             mtRt.anchorMin, mtRt.anchorMax, mtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            mtRt.anchoredPosition = Vector2(startX, -70)
-            mtRt.sizeDelta = Vector2(210, 35)
+            mtRt.anchoredPosition = Vector2(startX, -66)
+            mtRt.sizeDelta = Vector2(200, 26)
 
             local mtBg = GameObject("Bg")
             mtBg.transform:SetParent(masterToggleGo.transform, false)
@@ -6201,7 +6204,7 @@ local function CreateModUI()
             mtTxtRt.sizeDelta = Vector2(0, 0)
             local mtTxt = mtTxtGo:AddComponent(typeof(Text))
             mtTxt.raycastTarget = false
-            mtTxt.fontSize = 17
+            mtTxt.fontSize = 14
             mtTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then mtTxt.font = defaultFont end
 
@@ -6241,14 +6244,14 @@ local function CreateModUI()
                 UpdateMasterToggle()
             end)
 
-            -- 2. ROW 1 - CỘT 2 (X = 245, Y = -70, Width = 210, Height = 35): TỰ VÀO MAP ẨN: BẬT/TẮT
+            -- CỘT TRÁI - HÀNG 2: TỰ VÀO MAP ẨN Toggle (y = -96, h = 26)
             local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
             hiddenToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, hiddenToggleGo)
             local htRt = hiddenToggleGo:AddComponent(typeof(RectTransform))
             htRt.anchorMin, htRt.anchorMax, htRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            htRt.anchoredPosition = Vector2(245, -70)
-            htRt.sizeDelta = Vector2(210, 35)
+            htRt.anchoredPosition = Vector2(startX, -96)
+            htRt.sizeDelta = Vector2(200, 26)
 
             local htBg = GameObject("Bg")
             htBg.transform:SetParent(hiddenToggleGo.transform, false)
@@ -6264,7 +6267,7 @@ local function CreateModUI()
             htTxtRt.sizeDelta = Vector2(0, 0)
             local htTxt = htTxtGo:AddComponent(typeof(Text))
             htTxt.raycastTarget = false
-            htTxt.fontSize = 15
+            htTxt.fontSize = 13
             htTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then htTxt.font = defaultFont end
 
@@ -6300,131 +6303,14 @@ local function CreateModUI()
                 UpdateHiddenToggle()
             end)
 
-            -- 3. ROW 2 - CỘT 1 (X = 20, Y = -115): Nút XY HIỆN TẠI (110px) + InputField [ X#Y ] (95px)
-            local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
-            getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, getReturnPosBtnGo)
-            local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
-            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            getReturnPosRt.anchoredPosition = Vector2(startX, -115)
-            getReturnPosRt.sizeDelta = Vector2(110, 35)
-
-            local getReturnPosBg = GameObject("Bg")
-            getReturnPosBg.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosBgRt = getReturnPosBg:AddComponent(typeof(RectTransform))
-            getReturnPosBgRt.anchorMin, getReturnPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosBgRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosBgImg = getReturnPosBg:AddComponent(typeof(Image))
-            getReturnPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
-
-            local getReturnPosTxtGo = GameObject("Text")
-            getReturnPosTxtGo.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosTxtRt = getReturnPosTxtGo:AddComponent(typeof(RectTransform))
-            getReturnPosTxtRt.anchorMin, getReturnPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosTxtRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosTxt = getReturnPosTxtGo:AddComponent(typeof(Text))
-            getReturnPosTxt.raycastTarget = false
-            getReturnPosTxt.text = "XY HIỆN TẠI"
-            getReturnPosTxt.color = Color.white
-            getReturnPosTxt.fontSize = 13
-            getReturnPosTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then getReturnPosTxt.font = defaultFont end
-
-            -- InputField [ X#Y ] (X = 135, Y = -115, width = 95px)
-            local retTgtGo = GameObject("AutoReturnPosInput")
-            retTgtGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, retTgtGo)
-            local retRt = retTgtGo:AddComponent(typeof(RectTransform))
-            retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            retRt.anchoredPosition = Vector2(startX + 115, -115)
-            retRt.sizeDelta = Vector2(95, 35)
-
-            local retBg = GameObject("Bg")
-            retBg.transform:SetParent(retTgtGo.transform, false)
-            local retBgRt = retBg:AddComponent(typeof(RectTransform))
-            retBgRt.anchorMin, retBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retBgRt.sizeDelta = Vector2(0, 0)
-            local retImg = retBg:AddComponent(typeof(Image))
-            retImg.color = Color(0.1, 0.1, 0.1, 1)
-
-            local retTxtGo = GameObject("Text")
-            retTxtGo.transform:SetParent(retTgtGo.transform, false)
-            local retTxtRt = retTxtGo:AddComponent(typeof(RectTransform))
-            retTxtRt.anchorMin, retTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retTxtRt.offsetMin, retTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local retTxt = retTxtGo:AddComponent(typeof(Text))
-
-            if _G.Mod_AutoReturnPos_Coords == nil or _G.Mod_AutoReturnPos_Coords == "" then
-                pcall(function()
-                    _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
-                    if not _G.Mod_AutoReturnPos_Coords or _G.Mod_AutoReturnPos_Coords == "" then
-                        _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_TrainCoord", "")
-                    end
-                end)
-                if _G.Mod_AutoReturnPos_Coords == nil then _G.Mod_AutoReturnPos_Coords = "" end
-            end
-            _G.Mod_TrainCoord = _G.Mod_AutoReturnPos_Coords
-
-            retTxt.text = _G.Mod_AutoReturnPos_Coords
-            retTxt.color, retTxt.fontSize = Color.white, 15
-            retTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then retTxt.font = defaultFont end
-
-            pcall(function()
-                local InputFieldType = InputField or (CS.UnityEngine.UI and CS.UnityEngine.UI.InputField)
-                if InputFieldType then
-                    local retField = retTgtGo:AddComponent(typeof(InputFieldType))
-                    if retField then
-                        retField.textComponent = retTxt
-                        retField.text = _G.Mod_AutoReturnPos_Coords
-                        if retField.onValueChanged then
-                            retField.onValueChanged:AddListener(function(val)
-                                _G.Mod_AutoReturnPos_Coords = val
-                                _G.Mod_TrainCoord = val
-                                pcall(function()
-                                    CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
-                                    CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", val)
-                                    CS.UnityEngine.PlayerPrefs.Save()
-                                end)
-                            end)
-                        end
-                    end
-                end
-            end)
-
-            local getReturnPosBtn = getReturnPosBtnGo:AddComponent(typeof(Button))
-            getReturnPosBtn.onClick:AddListener(function()
-                pcall(function()
-                    if _G.RoleManager and _G.RoleManager.me then
-                        local me = _G.RoleManager.me
-                        local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                        local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                        if curX > 0 and curY > 0 then
-                            local coordStr = string.format("%d#%d", curX, curY)
-                            _G.Mod_AutoReturnPos_Coords = coordStr
-                            _G.Mod_TrainCoord = coordStr
-                            local retField = retTgtGo:GetComponent(typeof(CS.UnityEngine.UI.InputField))
-                            if retField then retField.text = coordStr end
-                            retTxt.text = coordStr
-                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
-                            CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", coordStr)
-                            CS.UnityEngine.PlayerPrefs.Save()
-                            if _G.FloatingWordUtility then
-                                _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí: " .. coordStr)
-                            end
-                        end
-                    end
-                end)
-            end)
-
-            -- 4. ROW 2 - CỘT 2 (X = 245, Y = -115, Width = 210, Height = 35): VÀO ẨN KC: BẬT/TẮT
+            -- CỘT TRÁI - HÀNG 3: VÀO ẨN KC Toggle (y = -126, h = 26)
             local diamondToggleGo = GameObject("AutoHiddenDiamondToggle")
             diamondToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, diamondToggleGo)
             local dtRt = diamondToggleGo:AddComponent(typeof(RectTransform))
             dtRt.anchorMin, dtRt.anchorMax, dtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            dtRt.anchoredPosition = Vector2(245, -115)
-            dtRt.sizeDelta = Vector2(210, 35)
+            dtRt.anchoredPosition = Vector2(startX, -126)
+            dtRt.sizeDelta = Vector2(200, 26)
 
             local dtBg = GameObject("Bg")
             dtBg.transform:SetParent(diamondToggleGo.transform, false)
@@ -6440,7 +6326,7 @@ local function CreateModUI()
             dtTxtRt.sizeDelta = Vector2(0, 0)
             local dtTxt = dtTxtGo:AddComponent(typeof(Text))
             dtTxt.raycastTarget = false
-            dtTxt.fontSize = 15
+            dtTxt.fontSize = 13
             dtTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then dtTxt.font = defaultFont end
 
@@ -6474,6 +6360,283 @@ local function CreateModUI()
                     CS.UnityEngine.PlayerPrefs.Save()
                 end)
                 UpdateDiamondToggle()
+            end)
+
+            -- CỘT TRÁI - HÀNG 4: NÚT NHỚ SKILL MAP ẨN (y = -156, h = 26)
+            local saveSkillBtnGo = GameObject("SaveMapAnSkillBtn")
+            saveSkillBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, saveSkillBtnGo)
+            local ssRt = saveSkillBtnGo:AddComponent(typeof(RectTransform))
+            ssRt.anchorMin, ssRt.anchorMax, ssRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ssRt.anchoredPosition = Vector2(startX, -156)
+            ssRt.sizeDelta = Vector2(200, 26)
+
+            local ssBg = GameObject("Bg")
+            ssBg.transform:SetParent(saveSkillBtnGo.transform, false)
+            local ssBgRt = ssBg:AddComponent(typeof(RectTransform))
+            ssBgRt.anchorMin, ssBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            ssBgRt.sizeDelta = Vector2(0, 0)
+            local ssBgImg = ssBg:AddComponent(typeof(Image))
+            ssBgImg.color = Color(0.18, 0.48, 0.42, 1)
+
+            local ssTxtGo = GameObject("Text")
+            ssTxtGo.transform:SetParent(saveSkillBtnGo.transform, false)
+            local ssTxtRt = ssTxtGo:AddComponent(typeof(RectTransform))
+            ssTxtRt.anchorMin, ssTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            ssTxtRt.sizeDelta = Vector2(0, 0)
+            local ssTxt = ssTxtGo:AddComponent(typeof(Text))
+            ssTxt.raycastTarget = false
+            ssTxt.text = "NHỚ SKILL MAP ẨN"
+            ssTxt.color = Color.white
+            ssTxt.fontSize = 13
+            ssTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then ssTxt.font = defaultFont end
+
+            local ssBtn = saveSkillBtnGo:AddComponent(typeof(Button))
+            ssBtn.onClick:AddListener(function()
+                if _G.Mod_SaveMapAnSkills then
+                    _G.Mod_SaveMapAnSkills()
+                end
+            end)
+
+            -- CỘT PHẢI - HÀNG 1: TỌA ĐỘ TRAIN InputField (x=230, w=105) + Nút XY HIỆN TẠI (x=340, w=110)
+            local labelTrainGo = GameObject("TrainCoordLabel")
+            labelTrainGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, labelTrainGo)
+            local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
+            lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            lblRt.anchoredPosition = Vector2(230, -66)
+            lblRt.sizeDelta = Vector2(220, 16)
+            local lblTxt = labelTrainGo:AddComponent(typeof(Text))
+            lblTxt.raycastTarget = false
+            lblTxt.text = "TỌA ĐỘ TRAIN (x#y):"
+            lblTxt.color = Color(1, 0.85, 0.4, 1)
+            lblTxt.fontSize = 11
+            lblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then lblTxt.font = defaultFont end
+
+            local trainTgtGo = GameObject("TrainCoordInput")
+            trainTgtGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, trainTgtGo)
+            local trainRt = trainTgtGo:AddComponent(typeof(RectTransform))
+            trainRt.anchorMin, trainRt.anchorMax, trainRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            trainRt.anchoredPosition = Vector2(230, -84)
+            trainRt.sizeDelta = Vector2(105, 26)
+
+            local trainBg = GameObject("Bg")
+            trainBg.transform:SetParent(trainTgtGo.transform, false)
+            local trainBgRt = trainBg:AddComponent(typeof(RectTransform))
+            trainBgRt.anchorMin, trainBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            trainBgRt.sizeDelta = Vector2(0, 0)
+            local trainImg = trainBg:AddComponent(typeof(Image))
+            trainImg.color = Color(0.1, 0.1, 0.1, 1)
+
+            local trainTxtGo = GameObject("Text")
+            trainTxtGo.transform:SetParent(trainTgtGo.transform, false)
+            local trainTxtRt = trainTxtGo:AddComponent(typeof(RectTransform))
+            trainTxtRt.anchorMin, trainTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            trainTxtRt.offsetMin, trainTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local trainTxt = trainTxtGo:AddComponent(typeof(Text))
+
+            if _G.Mod_TrainCoord == nil or _G.Mod_TrainCoord == "" then
+                pcall(function()
+                    _G.Mod_TrainCoord = CS.UnityEngine.PlayerPrefs.GetString("Mod_TrainCoord", "")
+                    if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then
+                        _G.Mod_TrainCoord = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
+                    end
+                end)
+                if _G.Mod_TrainCoord == nil then _G.Mod_TrainCoord = "" end
+            end
+            _G.Mod_AutoReturnPos_Coords = _G.Mod_TrainCoord
+
+            trainTxt.text = (_G.Mod_TrainCoord ~= "" and _G.Mod_TrainCoord or "125#340")
+            trainTxt.color = (_G.Mod_TrainCoord ~= "" and Color.white or Color(0.6, 0.6, 0.6, 1))
+            trainTxt.fontSize = 13
+            trainTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then trainTxt.font = defaultFont end
+
+            pcall(function()
+                local InputFieldType = InputField or (CS.UnityEngine.UI and CS.UnityEngine.UI.InputField)
+                if InputFieldType then
+                    local trainField = trainTgtGo:AddComponent(typeof(InputFieldType))
+                    if trainField then
+                        trainField.textComponent = trainTxt
+                        trainField.text = _G.Mod_TrainCoord
+                        if trainField.onValueChanged then
+                            trainField.onValueChanged:AddListener(function(val)
+                                _G.Mod_TrainCoord = val
+                                _G.Mod_AutoReturnPos_Coords = val
+                                pcall(function()
+                                    CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", val)
+                                    CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
+                                    CS.UnityEngine.PlayerPrefs.Save()
+                                end)
+                            end)
+                        end
+                    end
+                end
+            end)
+
+            local getPosBtnGo = GameObject("GetCurPosBtn")
+            getPosBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, getPosBtnGo)
+            local getPosRt = getPosBtnGo:AddComponent(typeof(RectTransform))
+            getPosRt.anchorMin, getPosRt.anchorMax, getPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            getPosRt.anchoredPosition = Vector2(340, -84)
+            getPosRt.sizeDelta = Vector2(110, 26)
+
+            local getPosBg = GameObject("Bg")
+            getPosBg.transform:SetParent(getPosBtnGo.transform, false)
+            local getPosBgRt = getPosBg:AddComponent(typeof(RectTransform))
+            getPosBgRt.anchorMin, getPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            getPosBgRt.sizeDelta = Vector2(0, 0)
+            local getPosBgImg = getPosBg:AddComponent(typeof(Image))
+            getPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+            local getPosTxtGo = GameObject("Text")
+            getPosTxtGo.transform:SetParent(getPosBtnGo.transform, false)
+            local getPosTxtRt = getPosTxtGo:AddComponent(typeof(RectTransform))
+            getPosTxtRt.anchorMin, getPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            getPosTxtRt.sizeDelta = Vector2(0, 0)
+            local getPosTxt = getPosTxtGo:AddComponent(typeof(Text))
+            getPosTxt.raycastTarget = false
+            getPosTxt.text = "XY HIỆN TẠI"
+            getPosTxt.color = Color.white
+            getPosTxt.fontSize = 13
+            getPosTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then getPosTxt.font = defaultFont end
+
+            local getPosBtn = getPosBtnGo:AddComponent(typeof(Button))
+            getPosBtn.onClick:AddListener(function()
+                pcall(function()
+                    if _G.RoleManager and _G.RoleManager.me then
+                        local me = _G.RoleManager.me
+                        local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                        local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                        if curX > 0 and curY > 0 then
+                            local coordStr = string.format("%d#%d", curX, curY)
+                            _G.Mod_TrainCoord = coordStr
+                            _G.Mod_AutoReturnPos_Coords = coordStr
+                            local trainField = trainTgtGo:GetComponent(typeof(CS.UnityEngine.UI.InputField))
+                            if trainField then trainField.text = coordStr end
+                            trainTxt.text = coordStr
+                            trainTxt.color = Color.white
+                            CS.UnityEngine.PlayerPrefs.SetString("Mod_TrainCoord", coordStr)
+                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Đã lưu tọa độ train: " .. coordStr)
+                            end
+                        end
+                    end
+                end)
+            end)
+
+            -- CỘT PHẢI - HÀNG 2: % HP BỎ QUA BOSS (KHI BỊ KS)
+            local skipHpLabelGo = GameObject("SkipHpLabel")
+            skipHpLabelGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, skipHpLabelGo)
+            local skipLblRt = skipHpLabelGo:AddComponent(typeof(RectTransform))
+            skipLblRt.anchorMin, skipLblRt.anchorMax, skipLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            skipLblRt.anchoredPosition = Vector2(230, -116)
+            skipLblRt.sizeDelta = Vector2(220, 16)
+            local skipLblTxt = skipHpLabelGo:AddComponent(typeof(Text))
+            skipLblTxt.raycastTarget = false
+            skipLblTxt.text = "BỎ QUA BOSS KS (% MÁU):"
+            skipLblTxt.color = Color(1, 0.85, 0.4, 1)
+            skipLblTxt.fontSize = 11
+            skipLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then skipLblTxt.font = defaultFont end
+
+            -- Display value box (x=230, w=110, h=26)
+            local skipHpValGo = GameObject("SkipHpVal")
+            skipHpValGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, skipHpValGo)
+            local skipValRt = skipHpValGo:AddComponent(typeof(RectTransform))
+            skipValRt.anchorMin, skipValRt.anchorMax, skipValRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            skipValRt.anchoredPosition = Vector2(230, -134)
+            skipValRt.sizeDelta = Vector2(110, 26)
+
+            local skipValBg = GameObject("Bg")
+            skipValBg.transform:SetParent(skipHpValGo.transform, false)
+            local skipValBgRt = skipValBg:AddComponent(typeof(RectTransform))
+            skipValBgRt.anchorMin, skipValBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            skipValBgRt.sizeDelta = Vector2(0, 0)
+            local skipValBgImg = skipValBg:AddComponent(typeof(Image))
+            skipValBgImg.color = Color(0.1, 0.1, 0.1, 1)
+
+            local skipValTxtGo = GameObject("Text")
+            skipValTxtGo.transform:SetParent(skipHpValGo.transform, false)
+            local skipValTxtRt = skipValTxtGo:AddComponent(typeof(RectTransform))
+            skipValTxtRt.anchorMin, skipValTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            skipValTxtRt.sizeDelta = Vector2(0, 0)
+            local skipValTxt = skipValTxtGo:AddComponent(typeof(Text))
+            skipValTxt.raycastTarget = false
+            skipValTxt.color = Color(0.8, 1, 0.8, 1)
+            skipValTxt.fontSize = 13
+            skipValTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then skipValTxt.font = defaultFont end
+
+            if _G.Mod_AutoBoss_SkipHpPct == nil then
+                pcall(function()
+                    _G.Mod_AutoBoss_SkipHpPct = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_SkipHpPct", 90)
+                end)
+                if not _G.Mod_AutoBoss_SkipHpPct or _G.Mod_AutoBoss_SkipHpPct <= 0 then
+                    _G.Mod_AutoBoss_SkipHpPct = 90
+                end
+            end
+
+            local function UpdateSkipHpLabel()
+                skipValTxt.text = string.format("BỎ KHI < %d%%", _G.Mod_AutoBoss_SkipHpPct or 90)
+            end
+            UpdateSkipHpLabel()
+
+            local function createSkipHpBtn(name, posX, w, btnText, btnColor)
+                local btnGo = GameObject(name)
+                btnGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, btnGo)
+                local bRt = btnGo:AddComponent(typeof(RectTransform))
+                bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                bRt.anchoredPosition = Vector2(posX, -134)
+                bRt.sizeDelta = Vector2(w, 26)
+                local bImg = btnGo:AddComponent(typeof(Image))
+                bImg.color = btnColor
+
+                local bTxtGo = GameObject("Text")
+                bTxtGo.transform:SetParent(btnGo.transform, false)
+                local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
+                bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bTxtRt.sizeDelta = Vector2(0, 0)
+                local bTxt = bTxtGo:AddComponent(typeof(Text))
+                bTxt.raycastTarget = false
+                bTxt.text = btnText
+                bTxt.color = Color.white
+                bTxt.fontSize = 13
+                bTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then bTxt.font = defaultFont end
+
+                return btnGo:AddComponent(typeof(Button))
+            end
+
+            local skipMinusBtn = createSkipHpBtn("SkipHpMinusBtn", 345, 48, "-5%", Color(0.5, 0.2, 0.2, 1))
+            local skipPlusBtn = createSkipHpBtn("SkipHpPlusBtn", 398, 48, "+5%", Color(0.2, 0.5, 0.2, 1))
+
+            skipMinusBtn.onClick:AddListener(function()
+                _G.Mod_AutoBoss_SkipHpPct = math.max(10, (_G.Mod_AutoBoss_SkipHpPct or 90) - 5)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_SkipHpPct", _G.Mod_AutoBoss_SkipHpPct)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateSkipHpLabel()
+            end)
+
+            skipPlusBtn.onClick:AddListener(function()
+                _G.Mod_AutoBoss_SkipHpPct = math.min(100, (_G.Mod_AutoBoss_SkipHpPct or 90) + 5)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_SkipHpPct", _G.Mod_AutoBoss_SkipHpPct)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateSkipHpLabel()
             end)
 
             -- =========================================================================
@@ -6724,7 +6887,7 @@ local function CreateModUI()
             -- =========================================================================
             -- CỘT TRÁI (2/3 WIDTH): BOSS TIER TABS & BOSS BUTTONS GRID & FOOTER STATS
             -- =========================================================================
-            local currentY = -155
+            local currentY = -190
 
             local function CreateTierTab(label, tabName)
                 local btnGo = GameObject("AutoBossTier_" .. tabName)
@@ -6762,7 +6925,7 @@ local function CreateModUI()
                 tierTabBtns[tag] = tBtn
             end
 
-            currentY = currentY - 35
+            currentY = currentY - 30
             local gridStartY = currentY
 
             local configPool = {}
@@ -6893,7 +7056,7 @@ local function CreateModUI()
                         tBtn.img.color = Color(1, 1, 1, 0) -- Không tô màu nền, chỉ đổi màu chữ xanh/trắng
                         local rt = tBtn.go:GetComponent(typeof(CS.UnityEngine.RectTransform))
                         if rt then
-                            rt.anchoredPosition = Vector2(startX + (tIdx - 1) * 120, -155)
+                            rt.anchoredPosition = Vector2(startX + (tIdx - 1) * 120, -190)
                             rt.sizeDelta = Vector2(110, 30)
                         end
 
@@ -7523,7 +7686,7 @@ local function CreateModUI()
                 end
             end)
 
-            currentY = currentY - 45
+            currentY = currentY - 40
             CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", rightColX2, currentY)
             currentY = currentY - 40
 
@@ -7744,44 +7907,6 @@ local function CreateModUI()
                 end)
             end)
 
-            currentY = currentY - 45
-
-            -- Nút NHỚ SKILL MAP ẨN (Dưới LẤY VỊ TRÍ)
-            local saveSkillBtnGo = GameObject("SaveMapAnSkillBtn")
-            saveSkillBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, saveSkillBtnGo)
-            local ssRt = saveSkillBtnGo:AddComponent(typeof(RectTransform))
-            ssRt.anchorMin, ssRt.anchorMax, ssRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ssRt.anchoredPosition = Vector2(rightColX2, currentY)
-            ssRt.sizeDelta = Vector2(280, 32)
-
-            local ssBg = GameObject("Bg")
-            ssBg.transform:SetParent(saveSkillBtnGo.transform, false)
-            local ssBgRt = ssBg:AddComponent(typeof(RectTransform))
-            ssBgRt.anchorMin, ssBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            ssBgRt.sizeDelta = Vector2(0, 0)
-            local ssBgImg = ssBg:AddComponent(typeof(Image))
-            ssBgImg.color = Color(0.18, 0.48, 0.42, 1)
-
-            local ssTxtGo = GameObject("Text")
-            ssTxtGo.transform:SetParent(saveSkillBtnGo.transform, false)
-            local ssTxtRt = ssTxtGo:AddComponent(typeof(RectTransform))
-            ssTxtRt.anchorMin, ssTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            ssTxtRt.sizeDelta = Vector2(0, 0)
-            local ssTxt = ssTxtGo:AddComponent(typeof(Text))
-            ssTxt.raycastTarget = false
-            ssTxt.text = "NHỚ SKILL MAP ẨN"
-            ssTxt.color = Color.white
-            ssTxt.fontSize = 15
-            ssTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then ssTxt.font = defaultFont end
-
-            local ssBtn = saveSkillBtnGo:AddComponent(typeof(Button))
-            ssBtn.onClick:AddListener(function()
-                if _G.Mod_SaveMapAnSkills then
-                    _G.Mod_SaveMapAnSkills()
-                end
-            end)
             currentY = currentY - 45
         end
         CreateAutoBossUI()

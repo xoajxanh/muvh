@@ -3735,6 +3735,11 @@ local function CreateModUI()
                         end
                         _G.Mod_PerformSmeltItems = Mod_PerformSmeltItems
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: BAY SIÊU TỐC VỀ BÃI TRAIN KHI HẾT BOSS (INSTANT TELEPORT TRAIN POS)
+                        -- Mô tả: Sử dụng ReqCallFlag để dịch chuyển tức thì (0ms) về đúng tọa độ bãi train hoang dã
+                        --        thay vì dùng Đá Dịch Chuyển và chạy bộ chậm chạp.
+                        -- =========================================================================
                         local function Mod_PerformAutoTrainAndSmelt()
                             local isStillReturning, isChangingMap = false, false
                             pcall(function()
@@ -3754,43 +3759,69 @@ local function CreateModUI()
                                         local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
                                         if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
-                                        local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
-                                            400216
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
+                                        local pMe = _G.RoleManager and _G.RoleManager.me
+                                        local meX, meY = 0, 0
+                                        if pMe then
+                                            if pMe.cellPos then
+                                                meX, meY = pMe.cellPos.x, pMe.cellPos.y
+                                            elseif pMe.serverCoord then
+                                                meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
+                                            end
+                                        end
+
+                                        local dx = meX - tx
+                                        local dy = meY - ty
+                                        local dist = math.sqrt(dx * dx + dy * dy)
+
+                                        -- Kiểm tra xem đã đến bãi train chưa (cùng map và cách <= 5 ô)
+                                        if curMap == wildMapId and dist <= 5 then
+                                            -- Đã tới bãi train an toàn -> bật auto kỹ năng
+                                            if pMe then
+                                                if pMe.StopMove then pMe:StopMove() end
+                                                if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
+                                            end
+                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                _G.QiJiHelperData.SetAutoFightData(true)
+                                            end
+                                            _G.Mod_IsMovingToTrainPos = false
+                                            _G.Mod_TrainArrivedAtPos = true
+                                            isStillReturning, isChangingMap = false, false
+                                        else
+                                            -- Chưa tới hoặc khác map -> Bay thẳng siêu tốc tới (tx, ty) bãi train bằng ReqCallFlag
+                                            _G.Mod_IsMovingToTrainPos = false
+                                            _G.Mod_TrainArrivedAtPos = false
+                                            local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+                                            if nowRealtime - (_G.Mod_LastTrainTeleportTime or 0) >= 1.0 then
+                                                _G.Mod_LastTrainTeleportTime = nowRealtime
+                                                if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag and wildMapId then
+                                                    -- Gửi lệnh triệu hồi đến map hoang dã bãi train tại tọa độ (tx, ty)
+                                                    _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                                        mapId = wildMapId,
+                                                        line = 1,
+                                                        x = tx,
+                                                        y = ty
+                                                    })
+                                                end
+                                            end
+                                            isStillReturning = true
+                                            isChangingMap = (curMap ~= wildMapId)
+                                        end
+
+                                        --[[ [CODE CŨ DÙNG ĐÁ DỊCH CHUYỂN & CHẠY BỘ - ĐÃ THAY THẾ BẰNG REQCALLFLAG SIÊU TỐC]:
+                                        local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or 400216
                                         if curMap ~= wildMapId then
                                             _G.Mod_IsMovingToTrainPos = false
                                             _G.Mod_TrainArrivedAtPos = false
-                                            --LogMsg(string.format("[TRAIN_ACTION] BẮT ĐẦU CHUYỂN MAP: curMap(%d) ~= wildMapId(%d), transferId=%d", curMap, wildMapId, wildTransferId))
                                             if ExitDungeon() then
-                                                --LogMsg("[TRAIN_ACTION] -> Gọi ExitDungeon() thành công")
                                             elseif wildTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                                --LogMsg(string.format("[TRAIN_ACTION] -> Gọi OnReqTransferTransmitMap(transferId=%d)", wildTransferId))
-                                                _G.SceneController.OnReqTransferTransmitMap(nil,
-                                                    { mapId = wildTransferId, line = 1, changeLine = true })
+                                                _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = wildTransferId, line = 1, changeLine = true })
                                             elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                                                --LogMsg(string.format("[TRAIN_ACTION] -> Gọi MoveToLinePos(wildMapId=%d, transferId=%d) để sang map", wildMapId, wildTransferId))
-                                                _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty },
-                                                    wildTransferId, 1, nil, nil, nil, nil, true)
-                                            else
-                                                --LogMsg("[TRAIN_ACTION] -> LỖI: Không tìm thấy API chuyển map nào khả dụng!")
+                                                _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty }, wildTransferId, 1, nil, nil, nil, nil, true)
                                             end
                                             isStillReturning, isChangingMap = true, true
                                         else
-                                            local pMe = _G.RoleManager and _G.RoleManager.me
-                                            local meX, meY = 0, 0
-                                            if pMe then
-                                                if pMe.cellPos then
-                                                    meX, meY = pMe.cellPos.x, pMe.cellPos.y
-                                                elseif pMe.serverCoord then
-                                                    meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
-                                                end
-                                            end
-
-                                            local dx = meX - tx
-                                            local dy = meY - ty
-                                            local dist = math.sqrt(dx * dx + dy * dy)
-
                                             if dist > 70 then
                                                 _G.Mod_IsMovingToTrainPos = false
                                                 _G.Mod_TrainArrivedAtPos = false
@@ -3801,10 +3832,8 @@ local function CreateModUI()
                                                     if _G.BagInfoData and _G.BagInfoData.TotalItems then
                                                         for _, itemData in pairs(_G.BagInfoData.TotalItems) do
                                                             if itemData then
-                                                                local itemId = itemData.itemId or
-                                                                    (itemData.data and itemData.data.itemId)
-                                                                local instanceId = itemData.id or
-                                                                    (itemData.data and itemData.data.id)
+                                                                local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                                                                local instanceId = itemData.id or (itemData.data and itemData.data.id)
                                                                 if itemId == 20000022 then
                                                                     stoneBagId = instanceId
                                                                     break
@@ -3812,7 +3841,6 @@ local function CreateModUI()
                                                             end
                                                         end
                                                     end
-
                                                     if stoneBagId then
                                                         if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                                             _G.networkRequest.ReqUseItem(1, stoneBagId)
@@ -3820,44 +3848,25 @@ local function CreateModUI()
                                                             _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
                                                         end
                                                     elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                                                        _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty },
-                                                            wildTransferId, 1, nil, nil, nil, nil, true)
+                                                        _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty }, wildTransferId, 1, nil, nil, nil, nil, true)
                                                     end
                                                 end
                                                 isStillReturning, isChangingMap = true, false
                                             else
                                                 local hasArrived = (dist <= 1.5)
-
                                                 if not hasArrived then
-                                                    -- if pMe then
-                                                    --     if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
-                                                    --         if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
-                                                    --     end
-                                                    --     if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
-                                                    --         if pMe.SetAutoFight then pMe:SetAutoFight("None") end
-                                                    --     end
-                                                    -- end
-                                                    -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                                    --     _G.QiJiHelperData.SetAutoFightData(false)
-                                                    -- end
-
                                                     local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
                                                     if not _G.Mod_IsMovingToTrainPos or not isMoving then
                                                         _G.Mod_IsMovingToTrainPos = true
-
                                                         local moved = false
                                                         if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
-                                                            local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
-                                                                (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
-                                                            _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
-                                                                targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1,
-                                                                true)
+                                                            local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
+                                                            _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId, targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1, true)
                                                             moved = true
                                                         elseif pMe and pMe.MoveTo then
                                                             pMe:MoveTo({ x = tx, y = ty }, 0)
                                                             moved = true
                                                         end
-
                                                         if not moved then
                                                             _G.Mod_IsMovingToTrainPos = false
                                                         end
@@ -3878,6 +3887,7 @@ local function CreateModUI()
                                                 end
                                             end
                                         end
+                                        --]]
                                     end
                                 end
                             end)
@@ -4721,9 +4731,11 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Giám sát Máu Kundun
+                    -- Giám sát Máu Kundun (Chỉ quét trong 3 map Kundun: 250001, 270001, 270003 để tối ưu CPU)
+                    local currentMapId = _G.SceneData and _G.SceneData.mapId or 0
+                    local isKundunMap = (currentMapId == 250001 or currentMapId == 270001 or currentMapId == 270003)
                     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
-                    if currentSec > (_G.Mod_LastKundunHPTime or 0) then
+                    if isKundunMap and currentSec > (_G.Mod_LastKundunHPTime or 0) then
                         _G.Mod_LastKundunHPTime = currentSec + 0.5
                         local kundunFound = false
 
@@ -5573,7 +5585,7 @@ local function CreateModUI()
                     -- Mô tả: Quét tìm người chơi đối thủ trong phạm vi 15m (hoặc cài đặt) và xuất chiêu tiêu diệt
                     -- =========================================================================
                     _G.Mod_StartPKScanLoop = function()
-                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.25, -1, function()
+                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.1, -1, function()
                             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                             pcall(function()
                                 if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
