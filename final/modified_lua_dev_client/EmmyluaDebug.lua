@@ -2276,7 +2276,11 @@ local function CreateModUI()
         if not _G.BossHooked then
             _G.BossHooked = true
 
-            -- CAMERA FOLLOW ANCHOR (CHỐNG RUNG LẮC CAMERA KHI CHẠY NHANH DO MODEL QUAY HƯỚNG)
+            -- =========================================================================
+            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (SMOOTH CAMERA & ANCHOR FOLLOW)
+            -- Mô tả: Camera bám theo nhân vật Me mỗi frame (interval = 0) và khóa góc xoay Vector3.zero
+            --        giúp loại bỏ hoàn toàn hiện tượng rung lắc/giật hình khi xoay hướng hoặc đánh chiêu.
+            -- =========================================================================
             pcall(function()
                 local function InitCameraFollowAnchor()
                     local mc = _G.MainCamera
@@ -2319,16 +2323,21 @@ local function CreateModUI()
                     end
 
                     local function SyncAnchorPos()
-                        if not anchorGo or IsNil(anchorGo) then return end
+                        local aGo = _G.Mod_CameraAnchor
+                        if not aGo or IsNil(aGo) then
+                            aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                            if not aGo or IsNil(aGo) then
+                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                            end
+                            _G.Mod_CameraAnchor = aGo
+                        end
                         local role = _G.RoleManager and _G.RoleManager.me
                         if role and role.transform and not IsNil(role.transform) then
                             local p = role.transform.position
-                            if p.x ~= _G.Mod_CamLastX or p.y ~= _G.Mod_CamLastY or p.z ~= _G.Mod_CamLastZ then
-                                _G.Mod_CamLastX = p.x
-                                _G.Mod_CamLastY = p.y
-                                _G.Mod_CamLastZ = p.z
-                                anchorTrans.position = p
-                            end
+                            local aTrans = aGo.transform
+                            aTrans.position = p
+                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
                         end
                     end
 
@@ -2346,8 +2355,11 @@ local function CreateModUI()
                             mc.target = role.transform
                             local aGo = _G.Mod_CameraAnchor
                             if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                                aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                                if not aGo or IsNil(aGo) then
+                                    aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                                    CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                                end
                                 _G.Mod_CameraAnchor = aGo
                             end
                             local aTrans = aGo.transform
@@ -2358,20 +2370,12 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Hook MainCamera.LateUpdate để bám theo nhân vật Me mỗi frame theo chuẩn Unity pipeline
-                    if not _G.Mod_Hooked_MainCamera_LateUpdate and mc.LateUpdate then
-                        _G.Mod_Hooked_MainCamera_LateUpdate = true
-                        local old_Camera_LateUpdate = mc.LateUpdate
-                        mc.LateUpdate = function(...)
-                            if old_Camera_LateUpdate then old_Camera_LateUpdate(...) end
-                            SyncAnchorPos()
-                        end
-                    end
-
                     _G.Mod_StartSmoothCameraLoop = function()
-                        -- Đã chuyển sang LateUpdate chuẩn Unity, hàm này giữ lại cho backward compatibility
-                        SyncAnchorPos()
+                        _G.Mod_StartTrackedTimer("SmoothCamera", 0, -1, function()
+                            pcall(SyncAnchorPos)
+                        end)
                     end
+                    _G.Mod_StartSmoothCameraLoop()
                 end
 
                 InitCameraFollowAnchor()
@@ -2380,42 +2384,29 @@ local function CreateModUI()
             -- =========================================================================
             -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO BODY, CÁNH & DẤU CHÂN ME
             -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không bị giật/bóng ma/2 người
-            -- Tối ưu: Dùng Component Cache trên đối tượng Me, 0 allocation, 0 rò rỉ rác GC.
             -- =========================================================================
             _G.Mod_LockMyAnimatorsToNormal = function()
                 pcall(function()
                     local me = _G.RoleManager and _G.RoleManager.me
                     if not me then return end
 
-                    local modelObj = me.model and me.model.modelObject
-                    local footObj = me.AvatarEquip and me.AvatarEquip.footPrintObj
-                    local wingObj = me.AvatarEquip and me.AvatarEquip.wingObj
-                    local footEffect = me.footPrintEffect
+                    local targets = {}
+                    if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
+                    if me.model and me.model.transform then table.insert(targets, me.model.transform) end
+                    if me.AvatarEquip then
+                        if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
+                        if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
+                    end
+                    if me.footPrintEffect then table.insert(targets, me.footPrintEffect) end
 
-                    -- Kiểm tra nếu đối tượng nhân vật Me bị thay đổi (đổi model, cưỡi thú, tải lại trang bị) thì mới quét lại cache
-                    if me._modCachedModelObj ~= modelObj or me._modCachedFootObj ~= footObj or me._modCachedWingObj ~= wingObj or me._modCachedFootEffect ~= footEffect then
-                        me._modCachedModelObj = modelObj
-                        me._modCachedFootObj = footObj
-                        me._modCachedWingObj = wingObj
-                        me._modCachedFootEffect = footEffect
-
-                        local animList = {}
-                        local particleList = {}
-
-                        local targets = {}
-                        if modelObj and not IsNil(modelObj) then table.insert(targets, modelObj) end
-                        if me.model and me.model.transform and not IsNil(me.model.transform) then table.insert(targets, me.model.transform) end
-                        if footObj and not IsNil(footObj) then table.insert(targets, footObj) end
-                        if wingObj and not IsNil(wingObj) then table.insert(targets, wingObj) end
-                        if footEffect and not IsNil(footEffect) then table.insert(targets, footEffect) end
-
-                        for _, targetGo in ipairs(targets) do
+                    for _, targetGo in ipairs(targets) do
+                        if targetGo and not IsNil(targetGo) then
                             local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
                             if anims then
                                 for i = 0, anims.Length - 1 do
                                     local a = anims[i]
-                                    if a and not IsNil(a) then
-                                        table.insert(animList, a)
+                                    if a and not IsNil(a) and a.speed ~= 1.0 then
+                                        a.speed = 1.0
                                     end
                                 end
                             end
@@ -2424,30 +2415,11 @@ local function CreateModUI()
                                 for i = 0, particles.Length - 1 do
                                     local ps = particles[i]
                                     if ps and not IsNil(ps) then
-                                        table.insert(particleList, ps)
+                                        local main = ps.main
+                                        if main.simulationSpeed ~= 1.0 then
+                                            main.simulationSpeed = 1.0
+                                        end
                                     end
-                                end
-                            end
-                        end
-
-                        me._modCachedAnimList = animList
-                        me._modCachedParticleList = particleList
-                    end
-
-                    -- Duyệt siêu tốc trên danh sách đã cache (0 C# allocation, 0 GC rác)
-                    if me._modCachedAnimList then
-                        for _, a in ipairs(me._modCachedAnimList) do
-                            if a and not IsNil(a) and a.speed ~= 1.0 then
-                                a.speed = 1.0
-                            end
-                        end
-                    end
-                    if me._modCachedParticleList then
-                        for _, ps in ipairs(me._modCachedParticleList) do
-                            if ps and not IsNil(ps) then
-                                local main = ps.main
-                                if main.simulationSpeed ~= 1.0 then
-                                    main.simulationSpeed = 1.0
                                 end
                             end
                         end

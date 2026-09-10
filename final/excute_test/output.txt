@@ -1,13 +1,17 @@
-=== [THÔNG TIN TEAM & PHÒNG GHÉP ĐỘI] ===
-Thời gian: 00:19:29
-Nhân vật: Su (RID: 5944970060872593508) | Map: 1004
+=========================================================================
+=== BÁO CÁO THÔNG SỐ TỌA ĐỘ VỊ TRÍ ĐỘI TRƯỞNG / SẢNH PHÓ BẢN ===
+Thời gian: 2026-09-10 00:19:16
+=========================================================================
+[1] THÔNG TIN NHÂN VẬT & VỊ TRÍ ĐỨNG:
+  -> Tên nhân vật:        LiếmHết
+  -> Role ID (RID):       5944970060856670296
+  -> Map ID:              1010015 (Quảng Trường Quỷ 15)
+  -> Server Line:         1
+  -> Tọa độ thực tế:      (70, 89)
 
-[TỔ ĐỘI THƯỜNG (TeamData)]
-  Team ID:   5944970074211247136
-  isLeader:  false
-  Leader ID: 5944970060856670296
-
-[SẢNH GHÉP ĐỘI (TeamUpQuicklyData)]
-  Chưa có dữ liệu TeamUpQuicklyData.TeamInfor (chưa mở sảnh hoặc sảnh rỗng)
-
--> TEAM ID: 5944970074211247136
+[2] THÔNG TIN TỔ ĐỘI:
+  -> World Team ID:       5944970074295620621
+  -> Leader RID:          5944970060856670296
+  -> Số thành viên:       2
+=========================================================================
+>>> DỮ LIỆU ĐÃ ĐƯỢC GHI RA OUTPUT.TXT! SẴN SÀNG NẠP SANG MÁY SU! <<<

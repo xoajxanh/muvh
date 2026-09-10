@@ -1,0 +1,1850 @@
+diff --git a/final/modified_lua_dev_client/EmmyluaDebug.lua b/final/modified_lua_dev_client/EmmyluaDebug.lua
+index 30c8fc0..a4f1be9 100644
+--- a/final/modified_lua_dev_client/EmmyluaDebug.lua
++++ b/final/modified_lua_dev_client/EmmyluaDebug.lua
+@@ -83,12 +83,16 @@ _G.Mod_StartTrackedTimer = function(name, interval, count, callback)
+     _G.Mod_StopTimer(name)
+     local timerObj = nil
+     if _G.Timer then
+-        if count == -1 and _G.Timer.StartLoopForever and interval == 0 then
+-            timerObj = _G.Timer.StartLoopForever(interval, callback)
++        if count == -1 then
++            if _G.Timer.StartLoopForever then
++                timerObj = _G.Timer.StartLoopForever(interval, callback)
++            elseif _G.Timer.StartLoop then
++                timerObj = _G.Timer.StartLoop(interval, -1, callback)
++            end
++        elseif count == 1 and _G.Timer.Start then
++            timerObj = _G.Timer.Start(interval, callback)
+         elseif _G.Timer.StartLoop then
+             timerObj = _G.Timer.StartLoop(interval, count, callback)
+-        elseif _G.Timer.Start and count == 1 then
+-            timerObj = _G.Timer.Start(interval, callback)
+         end
+     end
+     if timerObj then
+@@ -101,7 +105,7 @@ _G.Mod_RestartAllBackgroundLoops = function()
+     if _G.Mod_StartSmoothCameraLoop then pcall(_G.Mod_StartSmoothCameraLoop) end
+     if _G.Mod_StartSpeedAnimLockLoop then pcall(_G.Mod_StartSpeedAnimLockLoop) end
+     if _G.Mod_StartMainUpdateLoop then pcall(_G.Mod_StartMainUpdateLoop) end
+-    if _G.Mod_StartKundunTeleNotifyLoop then pcall(_G.Mod_StartKundunTeleNotifyLoop) end
++    if _G.Mod_StartBossAutoRefreshLoop then pcall(_G.Mod_StartBossAutoRefreshLoop) end
+     if _G.Mod_StartPKScanLoop then pcall(_G.Mod_StartPKScanLoop) end
+     if _G.Mod_StartReturnPosLoop then pcall(_G.Mod_StartReturnPosLoop) end
+     if _G.Mod_StartVisualMasterLoop then pcall(_G.Mod_StartVisualMasterLoop) end
+@@ -122,11 +126,24 @@ _G.Mod_DoSystemFreshCleanup = function()
+         _G.Mod_GoldenChestState = "OPEN"
+         _G.Mod_LastResurrectTime = 0
+         _G.Mod_LastAutoPKSentTime = 0
++        _G.Mod_LastPKScanTime = 0
++        _G.Mod_LastKundunHPTime = 0
+         _G.Mod_LastReturnPosTime = 0
+         _G.LastTeleCheckSec = 0
+         _G.Mod_ItemDecisionCache = {}
+         _G.AutoPick_Count = 0
+         _G.Mod_PickedItems = {}
++        _G.Mod_ApproachTowerTargetRole = nil
++        _G.Mod_PendingKcResurrectAutoFight = nil
++        _G.Mod_PendingKcResurrectTime = nil
++
++        -- Reset TargetAvatar nếu mục tiêu Me đã chết hoặc không hợp lệ
++        local me = _G.RoleManager and _G.RoleManager.me
++        if me then
++            if me.TargetAvatar and (me.TargetAvatar.isDead or (me.TargetAvatar.hp and me.TargetAvatar.hp <= 0)) then
++                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
++            end
++        end
+ 
+         -- 3. Khởi động lại các vòng lặp nền Mod sạch sẽ
+         if _G.Mod_RestartAllBackgroundLoops then
+@@ -134,7 +151,6 @@ _G.Mod_DoSystemFreshCleanup = function()
+         end
+ 
+         -- 4. Làm tươi tốc độ & Animation của nhân vật Me
+-        local me = _G.RoleManager and _G.RoleManager.me
+         if me then
+             if _G.Mod_LockMyAnimatorsToNormal then
+                 pcall(_G.Mod_LockMyAnimatorsToNormal)
+@@ -171,6 +187,11 @@ _G.Mod_DoSystemFreshCleanup = function()
+             end
+         end
+         if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
++        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
++        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
++        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
++        if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
++        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+ 
+         -- 8. Thông báo thành công
+         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+@@ -392,13 +413,17 @@ local function CreateModUI()
+             _G.Mod_AnStats_Loaded = true
+         end
+ 
+-        -- COMMERCIAL BRANCH BOSS POSITION HELPERS
++        -- =========================================================================
++        -- [MOD FEATURE]: ĐỒNG BỘ TRẠNG THÁI BOSS TỪ SERVER (BOSS STATE EVENT REGISTRY)
++        -- Mô tả: Lắng nghe các sự kiện Server gửi về để cập nhật bảng Mod_BossStateMap và refresh UI.
++        -- =========================================================================
+         _G.Mod_BossStateMap = _G.Mod_BossStateMap or {}
+ 
+         if _G.EventManager and _G.Event then
+             pcall(function()
+-                if _G.Event.Map_MonsterAllState then
+-                    _G.EventManager.AddListener(_G.Event.Map_MonsterAllState, function(_, msg)
++                if _G.Event.Map_MonsterAllState and not _G.Mod_Hooked_MonsterAllState then
++                    _G.Mod_Hooked_MonsterAllState = true
++                    _G.EventManager.Regist(_G.Event.Map_MonsterAllState, function(_, msg)
+                         if msg and msg.list then
+                             for _, mon in ipairs(msg.list) do
+                                 if mon and mon.id then
+@@ -406,14 +431,38 @@ local function CreateModUI()
+                                 end
+                             end
+                         end
+-                    end)
++                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
++                    end, "Mod_MonsterAllState")
+                 end
+-                if _G.Event.Map_MonsterStateChange then
+-                    _G.EventManager.AddListener(_G.Event.Map_MonsterStateChange, function(_, msg)
++                if _G.Event.Map_MonsterStateChange and not _G.Mod_Hooked_MonsterStateChange then
++                    _G.Mod_Hooked_MonsterStateChange = true
++                    _G.EventManager.Regist(_G.Event.Map_MonsterStateChange, function(_, msg)
+                         if msg and msg.id then
+                             _G.Mod_BossStateMap[msg.id] = (msg.state == 0 and 1 or 0)
+                         end
+-                    end)
++                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
++                    end, "Mod_MonsterStateChange")
++                end
++                if _G.Event.Map_BossAndElite and not _G.Mod_Hooked_MapBossAndElite then
++                    _G.Mod_Hooked_MapBossAndElite = true
++                    _G.EventManager.Regist(_G.Event.Map_BossAndElite, function(_, msg)
++                        if msg and msg.list then
++                            for _, mon in ipairs(msg.list) do
++                                if mon and mon.id then
++                                    _G.Mod_BossStateMap[mon.id] = (mon.state == 0 and 1 or 0)
++                                end
++                            end
++                        end
++                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
++                    end, "Mod_MapBossAndElite")
++                end
++                if _G.Event.Scene_SceneBossCount and not _G.Mod_Hooked_SceneBossCount then
++                    _G.Mod_Hooked_SceneBossCount = true
++                    _G.EventManager.Regist(_G.Event.Scene_SceneBossCount, function()
++                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
++                        if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
++                        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
++                    end, "Mod_SceneBossCount")
+                 end
+             end)
+         end
+@@ -2137,9 +2186,12 @@ local function CreateModUI()
+                 mapBosses = tempBosses
+                 _G.Mod_MapBosses = mapBosses
+                 UpdateBossWatchUIText()
++                if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+             end)
+         end
++        _G.UpdateBossWatchUIText = UpdateBossWatchUIText
++        _G.ParseBossData = ParseBossData
+ 
+         if _G.SavedFOV == nil then
+             pcall(function()
+@@ -2224,7 +2276,11 @@ local function CreateModUI()
+         if not _G.BossHooked then
+             _G.BossHooked = true
+ 
+-            -- CAMERA FOLLOW ANCHOR (CHỐNG RUNG LẮC CAMERA KHI CHẠY NHANH DO MODEL QUAY HƯỚNG)
++            -- =========================================================================
++            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (SMOOTH CAMERA & ANCHOR FOLLOW)
++            -- Mô tả: Camera bám theo nhân vật Me mỗi frame (interval = 0) và khóa góc xoay Vector3.zero
++            --        giúp loại bỏ hoàn toàn hiện tượng rung lắc/giật hình khi xoay hướng hoặc đánh chiêu.
++            -- =========================================================================
+             pcall(function()
+                 local function InitCameraFollowAnchor()
+                     local mc = _G.MainCamera
+@@ -2267,12 +2323,21 @@ local function CreateModUI()
+                     end
+ 
+                     local function SyncAnchorPos()
+-                        if not anchorGo or IsNil(anchorGo) then return end
++                        local aGo = _G.Mod_CameraAnchor
++                        if not aGo or IsNil(aGo) then
++                            aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
++                            if not aGo or IsNil(aGo) then
++                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
++                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
++                            end
++                            _G.Mod_CameraAnchor = aGo
++                        end
+                         local role = _G.RoleManager and _G.RoleManager.me
+                         if role and role.transform and not IsNil(role.transform) then
+                             local p = role.transform.position
+-                            anchorTrans.position = p
+-                            anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
++                            local aTrans = aGo.transform
++                            aTrans.position = p
++                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
+                         end
+                     end
+ 
+@@ -2290,8 +2355,11 @@ local function CreateModUI()
+                             mc.target = role.transform
+                             local aGo = _G.Mod_CameraAnchor
+                             if not aGo or IsNil(aGo) then
+-                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+-                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
++                                aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
++                                if not aGo or IsNil(aGo) then
++                                    aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
++                                    CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
++                                end
+                                 _G.Mod_CameraAnchor = aGo
+                             end
+                             local aTrans = aGo.transform
+@@ -3087,6 +3155,98 @@ local function CreateModUI()
+                 end)
+             end
+ 
++            local function Mod_PerformSmeltItems()
++                pcall(function()
++                    if _G.Mod_ExecuteAutoSmelt then
++                        _G.Mod_ExecuteAutoSmelt()
++                    end
++                    if _G.Mod_PerformBagRecycle then
++                        _G.Mod_PerformBagRecycle()
++                    end
++                end)
++            end
++            _G.Mod_PerformSmeltItems = Mod_PerformSmeltItems
++
++            -- =========================================================================
++            -- [MOD FEATURE]: BAY SIÊU TỐC VỀ BÃI TRAIN KHI HẾT BOSS (INSTANT TELEPORT TRAIN POS)
++            -- Mô tả: Sử dụng ReqCallFlag để dịch chuyển tức thì (0ms) về đúng tọa độ bãi train hoang dã
++            --        thay vì dùng Đá Dịch Chuyển và chạy bộ chậm chạp.
++            -- =========================================================================
++            local function Mod_PerformAutoTrainAndSmelt()
++                local isStillReturning, isChangingMap = false, false
++                pcall(function()
++                    Mod_PerformSmeltItems()
++
++                    local coordStr = _G.Mod_TrainCoord or ""
++
++                    if coordStr and string.find(coordStr, "#") then
++                        local parts = {}
++                        for p in string.gmatch(coordStr, "[^#]+") do table.insert(parts, p) end
++                        local tx, ty = tonumber(parts[1]), tonumber(parts[2])
++
++                        if tx and ty then
++                            local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
++                            local primaryTag = "C" .. tostring(primaryTier)
++                            local tab = _G.ModAutoBossConfigTab or primaryTag
++                            local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
++                            if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
++                            local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
++                            local curMap = _G.SceneData and _G.SceneData.mapId or 0
++
++                            local pMe = _G.RoleManager and _G.RoleManager.me
++                            local meX, meY = 0, 0
++                            if pMe then
++                                if pMe.cellPos then
++                                    meX, meY = pMe.cellPos.x, pMe.cellPos.y
++                                elseif pMe.serverCoord then
++                                    meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
++                                end
++                            end
++
++                            local dx = meX - tx
++                            local dy = meY - ty
++                            local dist = math.sqrt(dx * dx + dy * dy)
++
++                            -- Kiểm tra xem đã đến bãi train chưa (cùng map và cách <= 5 ô)
++                            if curMap == wildMapId and dist <= 5 then
++                                -- Đã tới bãi train an toàn -> bật auto kỹ năng
++                                if pMe then
++                                    if pMe.StopMove then pMe:StopMove() end
++                                    if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
++                                end
++                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
++                                    _G.QiJiHelperData.SetAutoFightData(true)
++                                end
++                                _G.Mod_IsMovingToTrainPos = false
++                                _G.Mod_TrainArrivedAtPos = true
++                                isStillReturning, isChangingMap = false, false
++                            else
++                                -- Chưa tới hoặc khác map -> Bay thẳng siêu tốc tới (tx, ty) bãi train bằng ReqCallFlag
++                                _G.Mod_IsMovingToTrainPos = false
++                                _G.Mod_TrainArrivedAtPos = false
++                                local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
++                                if nowRealtime - (_G.Mod_LastTrainTeleportTime or 0) >= 1.0 then
++                                    _G.Mod_LastTrainTeleportTime = nowRealtime
++                                    if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag and wildMapId then
++                                        -- Gửi lệnh triệu hồi đến map hoang dã bãi train tại tọa độ (tx, ty)
++                                        _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
++                                            mapId = wildMapId,
++                                            line = 1,
++                                            x = tx,
++                                            y = ty
++                                        })
++                                    end
++                                end
++                                isStillReturning = true
++                                isChangingMap = (curMap ~= wildMapId)
++                            end
++                        end
++                    end
++                end)
++                return isStillReturning, isChangingMap
++            end
++            _G.Mod_PerformAutoTrainAndSmelt = Mod_PerformAutoTrainAndSmelt
++
+             -- =========================================================================
+             -- [MOD FEATURE]: MÁY TRẠNG THÁI AUTO SĂN BOSS TOÀN DIỆN (AUTO FARM BOSS FSM)
+             -- Mô tả: FSM điều khiển tự đổi map, tìm boss, di chuyển, xả combo, chờ nhặt đồ.
+@@ -3671,168 +3831,6 @@ local function CreateModUI()
+                             end
+                         end
+ 
+-                        local function Mod_PerformSmeltItems()
+-                            pcall(function()
+-                                if _G.Mod_ExecuteAutoSmelt then
+-                                    _G.Mod_ExecuteAutoSmelt()
+-                                end
+-                                if _G.Mod_PerformBagRecycle then
+-                                    _G.Mod_PerformBagRecycle()
+-                                end
+-                            end)
+-                        end
+-                        _G.Mod_PerformSmeltItems = Mod_PerformSmeltItems
+-
+-                        local function Mod_PerformAutoTrainAndSmelt()
+-                            local isStillReturning, isChangingMap = false, false
+-                            pcall(function()
+-                                Mod_PerformSmeltItems()
+-
+-                                local coordStr = _G.Mod_TrainCoord or ""
+-
+-                                if coordStr and string.find(coordStr, "#") then
+-                                    local parts = {}
+-                                    for p in string.gmatch(coordStr, "[^#]+") do table.insert(parts, p) end
+-                                    local tx, ty = tonumber(parts[1]), tonumber(parts[2])
+-
+-                                    if tx and ty then
+-                                        local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
+-                                        local primaryTag = "C" .. tostring(primaryTier)
+-                                        local tab = _G.ModAutoBossConfigTab or primaryTag
+-                                        local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
+-                                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
+-                                        local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
+-                                        local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
+-                                            400216
+-                                        local curMap = _G.SceneData and _G.SceneData.mapId or 0
+-
+-                                        if curMap ~= wildMapId then
+-                                            _G.Mod_IsMovingToTrainPos = false
+-                                            _G.Mod_TrainArrivedAtPos = false
+-                                            --LogMsg(string.format("[TRAIN_ACTION] BẮT ĐẦU CHUYỂN MAP: curMap(%d) ~= wildMapId(%d), transferId=%d", curMap, wildMapId, wildTransferId))
+-                                            if ExitDungeon() then
+-                                                --LogMsg("[TRAIN_ACTION] -> Gọi ExitDungeon() thành công")
+-                                            elseif wildTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+-                                                --LogMsg(string.format("[TRAIN_ACTION] -> Gọi OnReqTransferTransmitMap(transferId=%d)", wildTransferId))
+-                                                _G.SceneController.OnReqTransferTransmitMap(nil,
+-                                                    { mapId = wildTransferId, line = 1, changeLine = true })
+-                                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+-                                                --LogMsg(string.format("[TRAIN_ACTION] -> Gọi MoveToLinePos(wildMapId=%d, transferId=%d) để sang map", wildMapId, wildTransferId))
+-                                                _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty },
+-                                                    wildTransferId, 1, nil, nil, nil, nil, true)
+-                                            else
+-                                                --LogMsg("[TRAIN_ACTION] -> LỖI: Không tìm thấy API chuyển map nào khả dụng!")
+-                                            end
+-                                            isStillReturning, isChangingMap = true, true
+-                                        else
+-                                            local pMe = _G.RoleManager and _G.RoleManager.me
+-                                            local meX, meY = 0, 0
+-                                            if pMe then
+-                                                if pMe.cellPos then
+-                                                    meX, meY = pMe.cellPos.x, pMe.cellPos.y
+-                                                elseif pMe.serverCoord then
+-                                                    meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
+-                                                end
+-                                            end
+-
+-                                            local dx = meX - tx
+-                                            local dy = meY - ty
+-                                            local dist = math.sqrt(dx * dx + dy * dy)
+-
+-                                            if dist > 70 then
+-                                                _G.Mod_IsMovingToTrainPos = false
+-                                                _G.Mod_TrainArrivedAtPos = false
+-                                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+-                                                if nowTime - (_G.Mod_LastStoneTime or 0) >= 0.4 then
+-                                                    _G.Mod_LastStoneTime = nowTime
+-                                                    local stoneBagId = nil
+-                                                    if _G.BagInfoData and _G.BagInfoData.TotalItems then
+-                                                        for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+-                                                            if itemData then
+-                                                                local itemId = itemData.itemId or
+-                                                                    (itemData.data and itemData.data.itemId)
+-                                                                local instanceId = itemData.id or
+-                                                                    (itemData.data and itemData.data.id)
+-                                                                if itemId == 20000022 then
+-                                                                    stoneBagId = instanceId
+-                                                                    break
+-                                                                end
+-                                                            end
+-                                                        end
+-                                                    end
+-
+-                                                    if stoneBagId then
+-                                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
+-                                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
+-                                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+-                                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+-                                                        end
+-                                                    elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+-                                                        _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty },
+-                                                            wildTransferId, 1, nil, nil, nil, nil, true)
+-                                                    end
+-                                                end
+-                                                isStillReturning, isChangingMap = true, false
+-                                            else
+-                                                local hasArrived = (dist <= 1.5)
+-
+-                                                if not hasArrived then
+-                                                    -- if pMe then
+-                                                    --     if pMe.isAutoTaskFight and pMe.isAutoTaskFight ~= "None" then
+-                                                    --         if pMe.SetAutoTaskFight then pMe:SetAutoTaskFight("None") end
+-                                                    --     end
+-                                                    --     if pMe.isAutoFight and pMe.isAutoFight ~= "None" then
+-                                                    --         if pMe.SetAutoFight then pMe:SetAutoFight("None") end
+-                                                    --     end
+-                                                    -- end
+-                                                    -- if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+-                                                    --     _G.QiJiHelperData.SetAutoFightData(false)
+-                                                    -- end
+-
+-                                                    local isMoving = pMe and pMe.IsMoving and pMe:IsMoving()
+-                                                    if not _G.Mod_IsMovingToTrainPos or not isMoving then
+-                                                        _G.Mod_IsMovingToTrainPos = true
+-
+-                                                        local moved = false
+-                                                        if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
+-                                                            local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+-                                                                (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
+-                                                            _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
+-                                                                targetPosData, nil, nil, nil, Purpose.None or 0, nil, 1,
+-                                                                true)
+-                                                            moved = true
+-                                                        elseif pMe and pMe.MoveTo then
+-                                                            pMe:MoveTo({ x = tx, y = ty }, 0)
+-                                                            moved = true
+-                                                        end
+-
+-                                                        if not moved then
+-                                                            _G.Mod_IsMovingToTrainPos = false
+-                                                        end
+-                                                    end
+-                                                    isStillReturning, isChangingMap = true, false
+-                                                else
+-                                                    local me = _G.RoleManager and _G.RoleManager.me
+-                                                    if me then
+-                                                        if me.StopMove then me:StopMove() end
+-                                                        if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+-                                                    end
+-                                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+-                                                        _G.QiJiHelperData.SetAutoFightData(true)
+-                                                    end
+-                                                    _G.Mod_IsMovingToTrainPos = false
+-                                                    _G.Mod_TrainArrivedAtPos = false
+-                                                    isStillReturning, isChangingMap = false, false
+-                                                end
+-                                            end
+-                                        end
+-                                    end
+-                                end
+-                            end)
+-                            return isStillReturning, isChangingMap
+-                        end
+-                        _G.Mod_PerformAutoTrainAndSmelt = Mod_PerformAutoTrainAndSmelt
+-
+                         if bestBoss then
+                             _G.Mod_AutoFarmBoss_Target = bestBoss
+                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
+@@ -4223,6 +4221,395 @@ local function CreateModUI()
+                 return false
+             end
+ 
++            -- =========================================================================
++            -- [MOD FEATURE]: CHUỖI CHUẨN BỊ GOM ĐỒ KUNDUN & ROLLBACK 15S (KUNDUN WEAK PREP & 15S ROLLBACK)
++            -- Mô tả: Tự động lưu snapshot, tắt PK, chuyển Hòa Bình, bật HS KC, đẩy tốc chạy 20x,
++            --        tầm đánh 1, phát hiện địch 5, tắt tự làm mới Boss, tắt quét thông báo máu Kundun,
++            --        tự động bật THIÊN SỨ GIÁNG THẾ khi Kundun < 0.7% máu,
++            --        và tự động rollback sau 15s (tắt Nhặt đồ, tắt cả HS Free lẫn HS KC, bật lại thông báo máu).
++            -- =========================================================================
++            local function TriggerKundunWeakPrep(targetRole, threshold)
++                if _G.Mod_KundunWeakExecuted then return end
++                _G.Mod_KundunWeakExecuted = true
++
++                -- 1. Lưu Snapshot toàn bộ cài đặt hiện tại
++                _G.Mod_PreKundunSettingsSnapshot = {
++                    AutoPK_Enabled = _G.Mod_AutoPK_Enabled,
++                    AutoGuildPK_Enabled = _G.Mod_AutoGuildPK_Enabled,
++                    LockTarget_Enabled = _G.Mod_LockTarget_Enabled,
++                    AutoResurrect_Here = _G.Mod_AutoResurrect_Here_Enabled,
++                    AutoResurrect_Free = _G.Mod_AutoResurrect_Free_Enabled,
++                    AutoReturnPos_Enabled = _G.Mod_AutoReturnPos_Enabled,
++                    RunSpeed = _G.RunSpeedMultiplier or 1.0,
++                    IsAutoRefresh = _G.IsAutoRefresh,
++                    ShowKundunHP = _G.Mod_ShowKundunHP,
++                    AttackRangeMult = _G.Mod_CustomAttackRangeMultiplier or 1.0,
++                    AttackRange = _G.Mod_CustomAttackRange or 0,
++                    PKMode = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.PKMode) or 0,
++                    AutoPick = _G.AutoPick_Enabled
++                }
++
++                -- 2. Tắt Auto PK, Auto Guild PK và Quay về gốc
++                _G.Mod_AutoPK_Enabled = false
++                _G.Mod_AutoGuildPK_Enabled = false
++                _G.Mod_AutoReturnPos_Enabled = false
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_Enabled", 0)
++
++                -- 3. Chuyển PK sang Hòa Bình (param = 0)
++                pcall(function()
++                    if _G.NetManager and _G.RoleMessage then
++                        _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
++                    end
++                    if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
++                        _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
++                    end
++                end)
++
++                -- 4. Tắt Khóa Mục Tiêu & Hủy Mục Tiêu Hiện Tại
++                _G.Mod_LockTarget_Enabled = false
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
++                pcall(function()
++                    local me = _G.RoleManager and _G.RoleManager.me
++                    if me then me.TargetAvatar = nil end
++                    if _G.RoleTargetManager then
++                        if _G.RoleTargetManager.ClearSelectMonsterTarget then _G.RoleTargetManager.ClearSelectMonsterTarget() end
++                        if _G.RoleTargetManager.ClearSelectPlayerTarget then _G.RoleTargetManager.ClearSelectPlayerTarget() end
++                    end
++                end)
++
++                -- 5. Bật Hồi Sinh Kim Cương (tại chỗ), Tắt HS Miễn Phí
++                _G.Mod_AutoResurrect_Here_Enabled = true
++                _G.Mod_AutoResurrect_Free_Enabled = false
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
++
++                -- 6. Bật Tự Động Nhặt (Reset số lượng nhặt & cache item để gom sạch đồ Kundun)
++                _G.AutoPick_Count = 0
++                _G.Mod_PickedItems = {}
++                _G.AutoPick_Enabled = true
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
++                CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
++                if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
++
++                -- 7. (Đã gỡ bỏ đẩy tốc chạy, giữ nguyên tốc hiện tại)
++
++                -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
++                _G.IsAutoRefresh = false
++                _G.Mod_ShowKundunHP = false
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoRefresh", 0)
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_ShowKundunHP", 0)
++
++                -- 9. Chuyển Tầm Đánh về 1.0 và Phát Hiện Địch về 5
++                _G.Mod_CustomAttackRangeMultiplier = 1.0
++                _G.Mod_CustomAttackRange = 5
++                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
++                CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
++                if _G.Mod_ApplyAttackRangeMultiplier then
++                    _G.Mod_ApplyAttackRangeMultiplier(1.0)
++                end
++
++                -- 10. (TÙY CHỌN) TỰ ĐỘNG BẬT THIÊN SỨ GIÁNG THẾ & CHUYỂN AUTO FIGHT VÀO KUNDUN
++                if _G.Mod_KundunAutoCastAngelAndFight == nil then
++                    _G.Mod_KundunAutoCastAngelAndFight = false -- Flag: true = bật Thiên sứ + target + auto fight; false = đứng im chờ gom đồ
++                end
++
++                if _G.Mod_KundunAutoCastAngelAndFight then
++                    pcall(function()
++                        local me = _G.RoleManager and _G.RoleManager.me
++                        if not me then return end
++                        local meData = _G.ViewData and _G.ViewData.meData
++                        local angelSkillId = 10200305
++
++                        if me.skills and me.skills[10200300] then
++                            local sk = me.skills[10200300]
++                            angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
++                        elseif meData and meData.skills and meData.skills[10200300] then
++                            local sk = meData.skills[10200300]
++                            angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
++                        elseif _G.SkillData and _G.SkillData.careerSkillInfos then
++                            for _, sk in pairs(_G.SkillData.careerSkillInfos) do
++                                if sk and sk.groupId == 10200300 then
++                                    angelSkillId = sk.id or angelSkillId
++                                    break
++                                end
++                            end
++                        end
++
++                        local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(angelSkillId)
++
++                        if me.StopMoveImmediate then
++                            me:StopMoveImmediate()
++                        end
++
++                        local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
++                        local myId = (me.data and me.data.id) or me.id or 0
++
++                        if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
++                            _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
++                                skillId = angelSkillId,
++                                targetId = myId,
++                                x = coord.x or 0,
++                                y = coord.y or 0,
++                                position = 0
++                            })
++                        end
++                        if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
++                            _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
++                                skillId = angelSkillId,
++                                targetId = myId,
++                                x = coord.x or 0,
++                                y = coord.y or 0,
++                                position = 0
++                            })
++                        end
++                        if _G.SkillMgr then
++                            if _G.SkillMgr.RequestSkillToMe then
++                                _G.SkillMgr.RequestSkillToMe(angelSkillId)
++                            end
++                            if _G.SkillMgr.RequestSkillTest then
++                                _G.SkillMgr.RequestSkillTest(angelSkillId)
++                            end
++                            local tblAction = nil
++                            if cfg and _G.ConfigManager and _G.ConfigManager.GetConfig then
++                                tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "groupId")
++                                if not tblAction then
++                                    tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "id")
++                                end
++                            end
++                            if tblAction and _G.SkillMgr.SendSkillMessage then
++                                _G.SkillMgr.SendSkillMessage(cfg, tblAction, myId, coord)
++                            elseif _G.SkillMgr.ReqCastSkill then
++                                _G.SkillMgr.ReqCastSkill(angelSkillId, myId, coord, 0)
++                            end
++                        end
++                        if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
++                            _G.QiJiHelperData.SetPressSkill(angelSkillId)
++                        end
++                        if me.StartPressSkillAutoFight then
++                            me:StartPressSkillAutoFight()
++                        end
++                        if _G.UIManager and _G.UIManager.GetUI and _G.UIID and _G.UIID.Main_MainSkillUI then
++                            local skillUI = _G.UIManager.GetUI(_G.UIID.Main_MainSkillUI)
++                            if skillUI and skillUI.ComboBtnSkill and skillUI.Button_OnSkillClick then
++                                skillUI.ComboBtnSkill.skillId = angelSkillId
++                                skillUI:Button_OnSkillClick(skillUI.ComboBtnSkill)
++                            end
++                        end
++                    end)
++
++                    -- Chuyển Auto Fight & Target vào Kundun nếu có targetRole
++                    if targetRole then
++                        pcall(function()
++                            local coord = targetRole.serverCoord or (targetRole.cellPos and { x = targetRole.cellPos.x, y = targetRole.cellPos.y })
++                            if coord and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
++                                _G.RoleManager.me:MoveTo({ x = coord.x, y = coord.y }, 0)
++                            end
++                            if _G.RoleManager and _G.RoleManager.me then
++                                if _G.RoleManager.me.SetTarget then
++                                    _G.RoleManager.me:SetTarget(targetRole)
++                                end
++                                _G.RoleManager.me.TargetAvatar = targetRole
++                                if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
++                                    _G.RoleManager.me:SetAutoFight("AutoFight")
++                                end
++                            end
++                            if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
++                                _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
++                            end
++                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
++                                _G.QiJiHelperData.SetAutoFightData(true)
++                            end
++                        end)
++                    end
++                else
++                    -- MẶC ĐỊNH: ĐỨNG IM CHỜ GOM ĐỒ - HỦY MỌI TARGET, TẮT AUTOFIGHT, DỪNG SKILL
++                    pcall(function()
++                        local me = _G.RoleManager and _G.RoleManager.me
++                        if me then
++                            if me.StopMoveImmediate then me:StopMoveImmediate() end
++                            if me.StopMove then me:StopMove() end
++                            if me.MoveCloseAutoFight then me:MoveCloseAutoFight() end
++                            if me.SetAutoFight then me:SetAutoFight("None") end
++                            if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
++                            me.TargetAvatar = nil
++                            me.usingSkillId = nil
++                        end
++                        if _G.RoleTargetManager then
++                            if _G.RoleTargetManager.ClearSelectMonsterTarget then _G.RoleTargetManager.ClearSelectMonsterTarget() end
++                            if _G.RoleTargetManager.ClearSelectPlayerTarget then _G.RoleTargetManager.ClearSelectPlayerTarget() end
++                        end
++                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
++                            _G.QiJiHelperData.SetAutoFightData(false)
++                        end
++                        if _G.PathFinderManager and _G.PathFinderManager.ResetData then
++                            _G.PathFinderManager.ResetData()
++                        end
++                    end)
++                end
++
++                -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O)
++                pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
++
++                -- Cập nhật tất cả UI
++                if _G.Mod_AllUIUpdaters then
++                    for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
++                end
++                if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
++                if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
++                if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
++                if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
++
++                local tStr = tostring(threshold or 0.7)
++                local modeTag = _G.Mod_KundunAutoCastAngelAndFight and "BẬT THIÊN SỨ, HÒA BÌNH, HS KC" or "HÒA BÌNH, HS KC, ĐỨNG IM CHỜ GOM ĐỒ"
++                if _G.FloatingWordUtility then
++                    _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] %s! (ROLLBACK 20S)", tStr, modeTag))
++                end
++                if _G.WriteLog then
++                    _G.WriteLog(string.format("[KUNDUN <= %s%%] Đã kích hoạt chuỗi chuẩn bị gom đồ siêu tốc (%s | Rollback 20s)", tStr, modeTag))
++                end
++
++                -- 11. Đặt hẹn giờ Rollback tự động sau 20s 
++                _G.Mod_KundunRollbackTime = (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) + 20.0
++            end
++
++            -- =========================================================================
++            -- [MOD FEATURE]: BỘ NHẬN DIỆN & CACHE O(1) THÁNH CỐT, THÁNH HỒN & RUNE
++            -- Mô tả: Tra cứu cực nhanh qua bảng băm Lua không qua C# reflection,
++            --        nhận diện chính xác Thánh Cốt (Boss Đặc Biệt / Thống Lĩnh) & Thánh Hồn (Thường / Công / HP)
++            -- =========================================================================
++            _G.Mod_ItemDecisionCache = _G.Mod_ItemDecisionCache or {}
++
++            local function Mod_GetItemDecision(confId, eType)
++                if not confId then
++                    return {
++                        isBoneCot = (eType == 24),
++                        isBoneHon = (eType == 26),
++                        isRune = (eType == 19 or eType == 28),
++                        runePref = nil,
++                        isFumo = (eType == 30),
++                        fumoPref = nil
++                    }
++                end
++                local cached = _G.Mod_ItemDecisionCache[confId]
++                if cached ~= nil then
++                    return cached
++                end
++
++                local cfg = nil
++                if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
++                    cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
++                end
++                if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
++                    cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
++                end
++
++                local itemType = (cfg and cfg.type) or eType
++                local subType = cfg and cfg.subType
++                local quality = cfg and cfg.quality
++
++                local isBoneCot = false
++                local isBoneHon = false
++                local isRune = (itemType == 19 or itemType == 28)
++                local runePref = nil
++
++                if itemType == 24 then
++                    if subType == 2400 or subType == 2450 or (quality and quality >= 9000) then
++                        isBoneCot = true
++                    elseif subType and subType >= 2401 and subType <= 2406 then
++                        isBoneHon = true
++                    else
++                        isBoneCot = true
++                    end
++                elseif itemType == 26 then
++                    isBoneHon = true
++                end
++
++                if isRune then
++                    local rLevel = confId % 100
++                    if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
++                    local rColor = 0
++                    if subType then
++                        if itemType == 19 then
++                            rColor = math.floor(subType / 1000)
++                        elseif itemType == 28 then
++                            local lastDigit = subType % 10
++                            if lastDigit == 1 then
++                                rColor = 3 -- Đỏ
++                            elseif lastDigit == 2 then
++                                rColor = 2 -- Lam
++                            elseif lastDigit == 3 then
++                                rColor = 1 -- Lục
++                            end
++                        end
++                    end
++
++                    local lvKey = "L5L"
++                    if rLevel == 5 then lvKey = "L5"
++                    elseif rLevel == 6 then lvKey = "L6"
++                    elseif rLevel == 7 then lvKey = "L7"
++                    elseif rLevel == 8 then lvKey = "L8"
++                    elseif rLevel == 9 then lvKey = "L9"
++                    elseif rLevel == 10 then lvKey = "L10"
++                    elseif rLevel > 10 then lvKey = "L10M"
++                    end
++
++                    local clrKey = "Luc"
++                    if rColor == 2 then clrKey = "Lam"
++                    elseif rColor >= 3 then clrKey = "Do"
++                    end
++
++                    runePref = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
++                end
++
++                -- =========================================================================
++                -- [MOD FEATURE]: PHÂN LOẠI KẾT TINH PHỤ MA (FUMO ENCHANTMENT CRYSTAL DECISION)
++                -- Mô tả: Phân loại 7 loại Kết Tinh Phụ Ma theo SubType/ConfigId và Level (LV1-LV7).
++                -- =========================================================================
++                local isFumo = (itemType == 30) or (confId and confId >= 30101001 and confId <= 30107030)
++                local fumoPref = nil
++
++                if isFumo then
++                    local slotKey = nil
++                    if subType == 30301 or (confId and math.floor(confId / 1000) == 30103) then
++                        slotKey = "Mu"
++                    elseif subType == 30601 or (confId and math.floor(confId / 1000) == 30106) then
++                        slotKey = "Quan"
++                    elseif subType == 30401 or (confId and math.floor(confId / 1000) == 30104) then
++                        slotKey = "Ao"
++                    elseif subType == 30501 or (confId and math.floor(confId / 1000) == 30105) then
++                        slotKey = "Tay"
++                    elseif subType == 30701 or (confId and math.floor(confId / 1000) == 30107) then
++                        slotKey = "Giay"
++                    elseif subType == 30101 or (confId and math.floor(confId / 1000) == 30101) then
++                        slotKey = "VKChinh"
++                    elseif subType == 30201 or (confId and math.floor(confId / 1000) == 30102) then
++                        slotKey = "VKPhu"
++                    end
++
++                    local fLevel = (quality and quality > 0 and quality) or (confId and (confId % 100)) or 1
++                    if fLevel > 7 then fLevel = 7 end
++                    if fLevel < 1 then fLevel = 1 end
++
++                    if slotKey then
++                        fumoPref = "AutoPick_Fumo_" .. slotKey .. "_LV" .. fLevel
++                    end
++                end
++
++                local res = {
++                    isBoneCot = isBoneCot,
++                    isBoneHon = isBoneHon,
++                    isRune = isRune,
++                    runePref = runePref,
++                    isFumo = isFumo,
++                    fumoPref = fumoPref
++                }
++                _G.Mod_ItemDecisionCache[confId] = res
++                return res
++            end
++            _G.Mod_GetItemDecision = Mod_GetItemDecision
++
+             _G.Mod_StartMainUpdateLoop = function()
+                 _G.Mod_StartTrackedTimer("MainModUpdate", 0.1, -1, function()
+                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+@@ -4348,259 +4735,6 @@ local function CreateModUI()
+                         end
+                     end
+ 
+-                    -- =========================================================================
+-                    -- [MOD FEATURE]: CHUỖI CHUẨN BỊ GOM ĐỒ KUNDUN & ROLLBACK 15S (KUNDUN WEAK PREP & 15S ROLLBACK)
+-                    -- Mô tả: Tự động lưu snapshot, tắt PK, chuyển Hòa Bình, bật HS KC, đẩy tốc chạy 20x,
+-                    --        tầm đánh 1, phát hiện địch 5, tắt tự làm mới Boss, tắt quét thông báo máu Kundun,
+-                    --        tự động bật THIÊN SỨ GIÁNG THẾ khi Kundun < 0.7% máu,
+-                    --        và tự động rollback sau 15s (tắt Nhặt đồ, tắt cả HS Free lẫn HS KC, bật lại thông báo máu).
+-                    -- =========================================================================
+-                    local function TriggerKundunWeakPrep(targetRole, threshold)
+-                        if _G.Mod_KundunWeakExecuted then return end
+-                        _G.Mod_KundunWeakExecuted = true
+-
+-                        -- 1. Lưu Snapshot toàn bộ cài đặt hiện tại
+-                        _G.Mod_PreKundunSettingsSnapshot = {
+-                            AutoPK_Enabled = _G.Mod_AutoPK_Enabled,
+-                            AutoGuildPK_Enabled = _G.Mod_AutoGuildPK_Enabled,
+-                            LockTarget_Enabled = _G.Mod_LockTarget_Enabled,
+-                            AutoResurrect_Here = _G.Mod_AutoResurrect_Here_Enabled,
+-                            AutoResurrect_Free = _G.Mod_AutoResurrect_Free_Enabled,
+-                            AutoReturnPos_Enabled = _G.Mod_AutoReturnPos_Enabled,
+-                            RunSpeed = _G.RunSpeedMultiplier or 1.0,
+-                            IsAutoRefresh = _G.IsAutoRefresh,
+-                            ShowKundunHP = _G.Mod_ShowKundunHP,
+-                            AttackRangeMult = _G.Mod_CustomAttackRangeMultiplier or 1.0,
+-                            AttackRange = _G.Mod_CustomAttackRange or 0,
+-                            PKMode = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.PKMode) or 0,
+-                            AutoPick = _G.AutoPick_Enabled
+-                        }
+-
+-                        -- 2. Tắt Auto PK, Auto Guild PK và Quay về gốc
+-                        _G.Mod_AutoPK_Enabled = false
+-                        _G.Mod_AutoGuildPK_Enabled = false
+-                        _G.Mod_AutoReturnPos_Enabled = false
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 0)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoGuildPK_Enabled", 0)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_Enabled", 0)
+-
+-                        -- 3. Chuyển PK sang Hòa Bình (param = 0)
+-                        pcall(function()
+-                            if _G.NetManager and _G.RoleMessage then
+-                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
+-                            end
+-                            if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.CloseKillMonsterCard then
+-                                _G.EventManager.Dispatch(_G.Event.CloseKillMonsterCard)
+-                            end
+-                        end)
+-
+-                        -- 4. Tắt Khóa Mục Tiêu & Hủy Mục Tiêu Hiện Tại
+-                        _G.Mod_LockTarget_Enabled = false
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", 0)
+-                        pcall(function()
+-                            local me = _G.RoleManager and _G.RoleManager.me
+-                            if me then me.TargetAvatar = nil end
+-                            if _G.RoleTargetManager then
+-                                if _G.RoleTargetManager.ClearSelectMonsterTarget then _G.RoleTargetManager.ClearSelectMonsterTarget() end
+-                                if _G.RoleTargetManager.ClearSelectPlayerTarget then _G.RoleTargetManager.ClearSelectPlayerTarget() end
+-                            end
+-                        end)
+-
+-                        -- 5. Bật Hồi Sinh Kim Cương (tại chỗ), Tắt HS Miễn Phí
+-                        _G.Mod_AutoResurrect_Here_Enabled = true
+-                        _G.Mod_AutoResurrect_Free_Enabled = false
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled", 1)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled", 0)
+-
+-                        -- 6. Bật Tự Động Nhặt (Reset số lượng nhặt & cache item để gom sạch đồ Kundun)
+-                        _G.AutoPick_Count = 0
+-                        _G.Mod_PickedItems = {}
+-                        _G.AutoPick_Enabled = true
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 1)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 1)
+-                        if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+-
+-                        -- 7. (Đã gỡ bỏ đẩy tốc chạy, giữ nguyên tốc hiện tại)
+-
+-                        -- 8. Tắt Tự Làm Mới Boss & Tắt Quét Thông Báo Máu Kundun (nhường băng thông mạng)
+-                        _G.IsAutoRefresh = false
+-                        _G.Mod_ShowKundunHP = false
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoRefresh", 0)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_ShowKundunHP", 0)
+-
+-                        -- 9. Chuyển Tầm Đánh về 1.0 và Phát Hiện Địch về 5
+-                        _G.Mod_CustomAttackRangeMultiplier = 1.0
+-                        _G.Mod_CustomAttackRange = 5
+-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
+-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
+-                        if _G.Mod_ApplyAttackRangeMultiplier then
+-                            _G.Mod_ApplyAttackRangeMultiplier(1.0)
+-                        end
+-
+-                        -- 10. (TÙY CHỌN) TỰ ĐỘNG BẬT THIÊN SỨ GIÁNG THẾ & CHUYỂN AUTO FIGHT VÀO KUNDUN
+-                        if _G.Mod_KundunAutoCastAngelAndFight == nil then
+-                            _G.Mod_KundunAutoCastAngelAndFight = false -- Flag: true = bật Thiên sứ + target + auto fight; false = đứng im chờ gom đồ
+-                        end
+-
+-                        if _G.Mod_KundunAutoCastAngelAndFight then
+-                            pcall(function()
+-                                local me = _G.RoleManager and _G.RoleManager.me
+-                                if not me then return end
+-                                local meData = _G.ViewData and _G.ViewData.meData
+-                                local angelSkillId = 10200305
+-
+-                                if me.skills and me.skills[10200300] then
+-                                    local sk = me.skills[10200300]
+-                                    angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
+-                                elseif meData and meData.skills and meData.skills[10200300] then
+-                                    local sk = meData.skills[10200300]
+-                                    angelSkillId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk) or angelSkillId
+-                                elseif _G.SkillData and _G.SkillData.careerSkillInfos then
+-                                    for _, sk in pairs(_G.SkillData.careerSkillInfos) do
+-                                        if sk and sk.groupId == 10200300 then
+-                                            angelSkillId = sk.id or angelSkillId
+-                                            break
+-                                        end
+-                                    end
+-                                end
+-
+-                                local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(angelSkillId)
+-
+-                                if me.StopMoveImmediate then
+-                                    me:StopMoveImmediate()
+-                                end
+-
+-                                local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+-                                local myId = (me.data and me.data.id) or me.id or 0
+-
+-                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqPlayerUseSkill then
+-                                    _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
+-                                        skillId = angelSkillId,
+-                                        targetId = myId,
+-                                        x = coord.x or 0,
+-                                        y = coord.y or 0,
+-                                        position = 0
+-                                    })
+-                                end
+-                                if _G.NetManager and _G.FightMessage and _G.FightMessage.ReqBroadcastUseSkill then
+-                                    _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
+-                                        skillId = angelSkillId,
+-                                        targetId = myId,
+-                                        x = coord.x or 0,
+-                                        y = coord.y or 0,
+-                                        position = 0
+-                                    })
+-                                end
+-                                if _G.SkillMgr then
+-                                    if _G.SkillMgr.RequestSkillToMe then
+-                                        _G.SkillMgr.RequestSkillToMe(angelSkillId)
+-                                    end
+-                                    if _G.SkillMgr.RequestSkillTest then
+-                                        _G.SkillMgr.RequestSkillTest(angelSkillId)
+-                                    end
+-                                    local tblAction = nil
+-                                    if cfg and _G.ConfigManager and _G.ConfigManager.GetConfig then
+-                                        tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "groupId")
+-                                        if not tblAction then
+-                                            tblAction = _G.ConfigManager.GetConfig("cfg_actionLogic", cfg.actionId, "id")
+-                                        end
+-                                    end
+-                                    if tblAction and _G.SkillMgr.SendSkillMessage then
+-                                        _G.SkillMgr.SendSkillMessage(cfg, tblAction, myId, coord)
+-                                    elseif _G.SkillMgr.ReqCastSkill then
+-                                        _G.SkillMgr.ReqCastSkill(angelSkillId, myId, coord, 0)
+-                                    end
+-                                end
+-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+-                                    _G.QiJiHelperData.SetPressSkill(angelSkillId)
+-                                end
+-                                if me.StartPressSkillAutoFight then
+-                                    me:StartPressSkillAutoFight()
+-                                end
+-                                if _G.UIManager and _G.UIManager.GetUI and _G.UIID and _G.UIID.Main_MainSkillUI then
+-                                    local skillUI = _G.UIManager.GetUI(_G.UIID.Main_MainSkillUI)
+-                                    if skillUI and skillUI.ComboBtnSkill and skillUI.Button_OnSkillClick then
+-                                        skillUI.ComboBtnSkill.skillId = angelSkillId
+-                                        skillUI:Button_OnSkillClick(skillUI.ComboBtnSkill)
+-                                    end
+-                                end
+-                            end)
+-
+-                            -- Chuyển Auto Fight & Target vào Kundun nếu có targetRole
+-                            if targetRole then
+-                                pcall(function()
+-                                    local coord = targetRole.serverCoord or (targetRole.cellPos and { x = targetRole.cellPos.x, y = targetRole.cellPos.y })
+-                                    if coord and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo then
+-                                        _G.RoleManager.me:MoveTo({ x = coord.x, y = coord.y }, 0)
+-                                    end
+-                                    if _G.RoleManager and _G.RoleManager.me then
+-                                        if _G.RoleManager.me.SetTarget then
+-                                            _G.RoleManager.me:SetTarget(targetRole)
+-                                        end
+-                                        _G.RoleManager.me.TargetAvatar = targetRole
+-                                        if _G.RoleManager.me.SetAutoFight and (_G.RoleManager.me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+-                                            _G.RoleManager.me:SetAutoFight("AutoFight")
+-                                        end
+-                                    end
+-                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate and _G.AutoTaskOperateType then
+-                                        _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+-                                    end
+-                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+-                                        _G.QiJiHelperData.SetAutoFightData(true)
+-                                    end
+-                                end)
+-                            end
+-                        else
+-                            -- MẶC ĐỊNH: ĐỨNG IM CHỜ GOM ĐỒ - HỦY MỌI TARGET, TẮT AUTOFIGHT, DỪNG SKILL
+-                            pcall(function()
+-                                local me = _G.RoleManager and _G.RoleManager.me
+-                                if me then
+-                                    if me.StopMoveImmediate then me:StopMoveImmediate() end
+-                                    if me.StopMove then me:StopMove() end
+-                                    if me.MoveCloseAutoFight then me:MoveCloseAutoFight() end
+-                                    if me.SetAutoFight then me:SetAutoFight("None") end
+-                                    if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+-                                    me.TargetAvatar = nil
+-                                    me.usingSkillId = nil
+-                                end
+-                                if _G.RoleTargetManager then
+-                                    if _G.RoleTargetManager.ClearSelectMonsterTarget then _G.RoleTargetManager.ClearSelectMonsterTarget() end
+-                                    if _G.RoleTargetManager.ClearSelectPlayerTarget then _G.RoleTargetManager.ClearSelectPlayerTarget() end
+-                                end
+-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+-                                    _G.QiJiHelperData.SetAutoFightData(false)
+-                                end
+-                                if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+-                                    _G.PathFinderManager.ResetData()
+-                                end
+-                            end)
+-                        end
+-
+-                        -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O)
+-                        pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
+-
+-                        -- Cập nhật tất cả UI
+-                        if _G.Mod_AllUIUpdaters then
+-                            for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+-                        end
+-                        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+-                        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+-                        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+-                        if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
+-
+-                        local tStr = tostring(threshold or 0.7)
+-                        local modeTag = _G.Mod_KundunAutoCastAngelAndFight and "BẬT THIÊN SỨ, HÒA BÌNH, HS KC" or "HÒA BÌNH, HS KC, ĐỨNG IM CHỜ GOM ĐỒ"
+-                        if _G.FloatingWordUtility then
+-                            _G.FloatingWordUtility.QuickMsg(string.format("[KUNDUN <= %s%%] %s! (ROLLBACK 20S)", tStr, modeTag))
+-                        end
+-                        if _G.WriteLog then
+-                            _G.WriteLog(string.format("[KUNDUN <= %s%%] Đã kích hoạt chuỗi chuẩn bị gom đồ siêu tốc (%s | Rollback 20s)", tStr, modeTag))
+-                        end
+-
+-                        -- 11. Đặt hẹn giờ Rollback tự động sau 20s 
+-                        _G.Mod_KundunRollbackTime = (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) + 20.0
+-                    end
+-
+                     -- Kiểm tra Rollback tự động sau 20s (Hết phiên săn Kundun)
+                     if _G.Mod_KundunRollbackTime and (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) >= _G.Mod_KundunRollbackTime then
+                         _G.Mod_KundunRollbackTime = nil
+@@ -4669,9 +4803,11 @@ local function CreateModUI()
+                         end
+                     end
+ 
+-                    -- Giám sát Máu Kundun
++                    -- Giám sát Máu Kundun (Chỉ quét trong 3 map Kundun: 250001, 270001, 270003 để tối ưu CPU)
++                    local currentMapId = _G.SceneData and _G.SceneData.mapId or 0
++                    local isKundunMap = (currentMapId == 250001 or currentMapId == 270001 or currentMapId == 270003)
+                     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
+-                    if currentSec > (_G.Mod_LastKundunHPTime or 0) then
++                    if isKundunMap and currentSec > (_G.Mod_LastKundunHPTime or 0) then
+                         _G.Mod_LastKundunHPTime = currentSec + 0.5
+                         local kundunFound = false
+ 
+@@ -4749,142 +4885,6 @@ local function CreateModUI()
+                         end
+                     end
+ 
+-                    -- =========================================================================
+-                    -- [MOD FEATURE]: BỘ NHẬN DIỆN & CACHE O(1) THÁNH CỐT, THÁNH HỒN & RUNE
+-                    -- Mô tả: Tra cứu cực nhanh qua bảng băm Lua không qua C# reflection,
+-                    --        nhận diện chính xác Thánh Cốt (Boss Đặc Biệt / Thống Lĩnh) & Thánh Hồn (Thường / Công / HP)
+-                    -- =========================================================================
+-                    _G.Mod_ItemDecisionCache = _G.Mod_ItemDecisionCache or {}
+-
+-                    local function Mod_GetItemDecision(confId, eType)
+-                        if not confId then
+-                            return {
+-                                isBoneCot = (eType == 24),
+-                                isBoneHon = (eType == 26),
+-                                isRune = (eType == 19 or eType == 28),
+-                                runePref = nil,
+-                                isFumo = (eType == 30),
+-                                fumoPref = nil
+-                            }
+-                        end
+-                        local cached = _G.Mod_ItemDecisionCache[confId]
+-                        if cached ~= nil then
+-                            return cached
+-                        end
+-
+-                        local cfg = nil
+-                        if _G.ClientTable and _G.ClientTable.cfg_Item_itemManager then
+-                            cfg = _G.ClientTable.cfg_Item_itemManager:TryGetValue(confId)
+-                        end
+-                        if not cfg and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager then
+-                            cfg = _G.ClientTable.cfg_Item_equipManager:TryGetValue(confId)
+-                        end
+-
+-                        local itemType = (cfg and cfg.type) or eType
+-                        local subType = cfg and cfg.subType
+-                        local quality = cfg and cfg.quality
+-
+-                        local isBoneCot = false
+-                        local isBoneHon = false
+-                        local isRune = (itemType == 19 or itemType == 28)
+-                        local runePref = nil
+-
+-                        if itemType == 24 then
+-                            if subType == 2400 or subType == 2450 or (quality and quality >= 9000) then
+-                                isBoneCot = true
+-                            elseif subType and subType >= 2401 and subType <= 2406 then
+-                                isBoneHon = true
+-                            else
+-                                isBoneCot = true
+-                            end
+-                        elseif itemType == 26 then
+-                            isBoneHon = true
+-                        end
+-
+-                        if isRune then
+-                            local rLevel = confId % 100
+-                            if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
+-                            local rColor = 0
+-                            if subType then
+-                                if itemType == 19 then
+-                                    rColor = math.floor(subType / 1000)
+-                                elseif itemType == 28 then
+-                                    local lastDigit = subType % 10
+-                                    if lastDigit == 1 then
+-                                        rColor = 3 -- Đỏ
+-                                    elseif lastDigit == 2 then
+-                                        rColor = 2 -- Lam
+-                                    elseif lastDigit == 3 then
+-                                        rColor = 1 -- Lục
+-                                    end
+-                                end
+-                            end
+-
+-                            local lvKey = "L5L"
+-                            if rLevel == 5 then lvKey = "L5"
+-                            elseif rLevel == 6 then lvKey = "L6"
+-                            elseif rLevel == 7 then lvKey = "L7"
+-                            elseif rLevel == 8 then lvKey = "L8"
+-                            elseif rLevel == 9 then lvKey = "L9"
+-                            elseif rLevel == 10 then lvKey = "L10"
+-                            elseif rLevel > 10 then lvKey = "L10M"
+-                            end
+-
+-                            local clrKey = "Luc"
+-                            if rColor == 2 then clrKey = "Lam"
+-                            elseif rColor >= 3 then clrKey = "Do"
+-                            end
+-
+-                            runePref = "AutoPick_Rune_" .. lvKey .. "_" .. clrKey
+-                        end
+-
+-                        -- =========================================================================
+-                        -- [MOD FEATURE]: PHÂN LOẠI KẾT TINH PHỤ MA (FUMO ENCHANTMENT CRYSTAL DECISION)
+-                        -- Mô tả: Phân loại 7 loại Kết Tinh Phụ Ma theo SubType/ConfigId và Level (LV1-LV7).
+-                        -- =========================================================================
+-                        local isFumo = (itemType == 30) or (confId and confId >= 30101001 and confId <= 30107030)
+-                        local fumoPref = nil
+-
+-                        if isFumo then
+-                            local slotKey = nil
+-                            if subType == 30301 or (confId and math.floor(confId / 1000) == 30103) then
+-                                slotKey = "Mu"
+-                            elseif subType == 30601 or (confId and math.floor(confId / 1000) == 30106) then
+-                                slotKey = "Quan"
+-                            elseif subType == 30401 or (confId and math.floor(confId / 1000) == 30104) then
+-                                slotKey = "Ao"
+-                            elseif subType == 30501 or (confId and math.floor(confId / 1000) == 30105) then
+-                                slotKey = "Tay"
+-                            elseif subType == 30701 or (confId and math.floor(confId / 1000) == 30107) then
+-                                slotKey = "Giay"
+-                            elseif subType == 30101 or (confId and math.floor(confId / 1000) == 30101) then
+-                                slotKey = "VKChinh"
+-                            elseif subType == 30201 or (confId and math.floor(confId / 1000) == 30102) then
+-                                slotKey = "VKPhu"
+-                            end
+-
+-                            local fLevel = (quality and quality > 0 and quality) or (confId and (confId % 100)) or 1
+-                            if fLevel > 7 then fLevel = 7 end
+-                            if fLevel < 1 then fLevel = 1 end
+-
+-                            if slotKey then
+-                                fumoPref = "AutoPick_Fumo_" .. slotKey .. "_LV" .. fLevel
+-                            end
+-                        end
+-
+-                        local res = {
+-                            isBoneCot = isBoneCot,
+-                            isBoneHon = isBoneHon,
+-                            isRune = isRune,
+-                            runePref = runePref,
+-                            isFumo = isFumo,
+-                            fumoPref = fumoPref
+-                        }
+-                        _G.Mod_ItemDecisionCache[confId] = res
+-                        return res
+-                    end
+-                    _G.Mod_GetItemDecision = Mod_GetItemDecision
+-
+                     -- BATCH LOOT: Quét sạch đồ mặt đất định kỳ 0.05s/lần
+                     if _G.AutoPick_Enabled then
+                         if (tonumber(_G.AutoPick_Count) or 0) < (tonumber(_G.AutoPick_Limit) or 23) then
+@@ -5154,68 +5154,17 @@ local function CreateModUI()
+                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
+             end
+ 
+-            _G.Mod_StartKundunTeleNotifyLoop = function()
+-                _G.Mod_StartTrackedTimer("KundunTeleNotify", 1.0, -1, function()
++            -- =========================================================================
++            -- [MOD FEATURE]: VÒNG LẶP TỰ ĐỘNG LÀM MỚI DỮ LIỆU BOSS & CẬP NHẬT UI (BOSS AUTO REFRESH LOOP)
++            -- Mô tả: Gửi yêu cầu cập nhật danh sách Boss định kỳ và làm mới giao diện hiển thị.
++            -- =========================================================================
++            _G.Mod_StartBossAutoRefreshLoop = function()
++                _G.Mod_StartTrackedTimer("BossAutoRefresh", 1.0, -1, function()
+                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+                     pcall(function()
+-                        if not _G.Mod_IsAdmin or not _G.Mod_TeleNotify_Enabled then return end
+-
+-                        local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
+-                            os.time()
+-                        if currentSec - (_G.LastTeleCheckSec or 0) < 5 then return end
+-                        _G.LastTeleCheckSec = currentSec
+-
+-                        local allKunduns = {
+-                            { tab = "C7", name = "THÁNH CỐT", bossType = 16, bossId = 20201007, limit = 70, threshold = 5 },
+-                            { tab = "C7", name = "PHÙ VĂN", bossType = 17, bossId = 20211007, limit = 300, threshold = 15 },
+-                            { tab = "C8", name = "THÁNH CỐT", bossType = 16, bossId = 20201008, limit = 70, threshold = 5 },
+-                            { tab = "C8", name = "PHÙ VĂN", bossType = 17, bossId = 20211008, limit = 400, threshold = 15 }
+-                        }
+-
+-                        _G.LastTeleNotifySec_Boss = _G.LastTeleNotifySec_Boss or {}
+-
+-                        if _G.SceneData and _G.SceneData.GetAncientBossData then
+-                            for _, cfg in ipairs(allKunduns) do
+-                                local count = 0
+-                                local isSatisfy, info = _G.SceneData:GetAncientBossData(cfg.bossType, cfg.bossId)
+-
+-                                if isSatisfy == true then
+-                                    count = cfg.limit
+-                                elseif isSatisfy == false and info and info.count then
+-                                    count = info.count
+-                                end
+-
+-                                if cfg.limit - count <= cfg.threshold then
+-                                    local bossKey = cfg.tab .. "_" .. cfg.name
+-                                    local lastNotify = _G.LastTeleNotifySec_Boss[bossKey] or 0
+-
+-                                    if currentSec - lastNotify >= 180 then
+-                                        _G.LastTeleNotifySec_Boss[bossKey] = currentSec
+-
+-                                        local statusTitle = (count >= cfg.limit) and "Đã Hiện!" or "Sắp Ra!"
+-                                        local rCount = (info and info.refreshCount) and info.refreshCount or 0
+-                                        local msgText = (count >= cfg.limit) and "Hiện" or tostring(rCount)
+-                                        local msg = string.format("\n🔴 KUNDUN %s: %s %s\n- Số lượng: %d / %d (%s)",
+-                                            cfg.tab, cfg.name, statusTitle, count, cfg.limit, msgText)
+-
+-                                        local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+-                                        local chatId = "-5255708823"
+-                                        local function SendTeleAsync()
+-                                            local url = "https://api.telegram.org/bot" ..
+-                                                botToken ..
+-                                                "/sendMessage?chat_id=" ..
+-                                                chatId .. "&text=" .. CS.UnityEngine.WWW.EscapeURL(msg)
+-                                            pcall(function() CS.UnityEngine.WWW(url) end)
+-                                        end
+-                                        SendTeleAsync()
+-                                    end
+-                                end
+-                            end
+-                        end
+-
+-                        -- Auto PK Guild Logic
++                        -- 1. Auto PK Guild Mode nếu được kích hoạt
+                         if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
+-                            if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
++                            if _G.RoleManager.me.PKMode ~= 2 then -- 2 là Guild mode
+                                 local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
+                                 if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
+                                     _G.Mod_LastGuildPKReqTime = nowGuildPK
+@@ -5224,27 +5173,33 @@ local function CreateModUI()
+                             end
+                         end
+ 
+-                        if _G.IsAutoRefresh or _G.Mod_TelegramBossAlert then
++                        -- 2. Tự động gửi gói tin lấy dữ liệu Boss từ Server theo chu kỳ AutoRefreshInterval
++                        if _G.IsAutoRefresh or _G.Mod_AutoFarmBoss_Enabled then
+                             local currentSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+                             if currentSec - (_G.LastRefreshSec or 0) >= (_G.AutoRefreshInterval or 5) then
+                                 _G.LastRefreshSec = currentSec
+                                 if _G.NetManager and _G.MapMessage then
+-                                    _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
+-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+-                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
++                                    if _G.MapMessage.ReqGetBossMapAndCount then
++                                        _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
++                                    end
++                                    if _G.MapMessage.ReqAncientBossInfo then
++                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
++                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
++                                    end
+                                 end
+                             end
+                         end
+ 
++                        -- 3. Cập nhật Text thời gian đếm ngược và trạng thái trên UI khi menu đang mở
+                         if isExpanded then
+-                            if UpdateBossWatchUIText then UpdateBossWatchUIText() end
+-                            if _G.ModUpdateCountText then _G.ModUpdateCountText() end
+-                            if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
++                            if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
++                            if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
++                            if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+                         end
+                     end)
+                 end)
+             end
+-            _G.Mod_StartKundunTeleNotifyLoop()
++            _G.Mod_StartBossAutoRefreshLoop()
+ 
+                     pcall(function()
+                         if _G.AutoFightFindTargetManager and not _G.Mod_HookedAutoFightTarget then
+@@ -5334,23 +5289,124 @@ local function CreateModUI()
+                     end
+                     _G.Mod_IsPlayerProtected = IsPlayerProtected
+ 
+-                    local function isMatchLockTarget(role, query)
+-                        if not role or not query or query == "" then return true end
+-                        local rName = (role.data and role.data.name) or role.name or ""
+-                        local rZone = (role.data and role.data.zoneName) or role.zoneName or ""
++                    -- =========================================================================
++                    -- [MOD FEATURE]: KHÓA MỤC TIÊU ĐA ĐIỀU KIỆN & SERVER PREFIX (S393., S395., NAME, GUILD)
++                    -- =========================================================================
++                    local function isMatchSingleToken(p, token)
++                        if not token or token == "" or not p then return false end
++                        local cleanToken = string.match(token, "^%s*(.-)%s*$")
++                        if not cleanToken or cleanToken == "" then return false end
++
++                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
++                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
++                            string.match(cleanToken, "^[Ss](%d+)$") or
++                            string.match(cleanToken, "^(%d+)$")
++
++                        local targetNum = sId and tonumber(sId) or nil
++                        if targetNum then
++                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
++                            if not pSid and p.data then
++                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
++                            end
++                            if pSid and tonumber(pSid) == targetNum then
++                                return true
++                            end
++                        end
+ 
+-                        for subQ in string.gmatch(query, "([^;]+)") do
+-                            local qTrimmed = string.match(subQ, "^%s*(.-)%s*$")
+-                            if qTrimmed and qTrimmed ~= "" then
+-                                if (rName ~= "" and string.find(rName, qTrimmed, 1, true)) or
+-                                    (rZone ~= "" and string.find(rZone, qTrimmed, 1, true)) then
++                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
++                        local strList = {}
++                        local pName = ""
++                        if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
++                        if p.GetName then
++                            pcall(function()
++                                local n = p:GetName()
++                                if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
++                            end)
++                        end
++                        if p.GetUnionName then
++                            pcall(function()
++                                local u = p:GetUnionName()
++                                if u then
++                                    table.insert(strList, tostring(u))
++                                    table.insert(strList, "[" .. tostring(u) .. "]")
++                                end
++                            end)
++                        end
++                        if p.data then
++                            if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
++                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
++                            if p.data.unionName then
++                                table.insert(strList, tostring(p.data.unionName))
++                                table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
++                            end
++                            local dataSid = p.data.serverId or p.data.sid
++                            if dataSid then
++                                table.insert(strList, "S" .. tostring(dataSid) .. ".")
++                                table.insert(strList, "S" .. tostring(dataSid))
++                            end
++                        end
++                        if p.serverId then
++                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
++                            table.insert(strList, "S" .. tostring(p.serverId))
++                        end
++                        if p.showName then table.insert(strList, tostring(p.showName)) end
++                        if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
++
++                        -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
++                        local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
++                        if sidVal and pName ~= "" then
++                            local sValStr = tostring(sidVal)
++                            table.insert(strList, "S" .. sValStr .. "." .. pName)
++                            table.insert(strList, "S" .. sValStr .. ". " .. pName)
++                            table.insert(strList, "S" .. sValStr .. "_" .. pName)
++                            table.insert(strList, "S" .. sValStr .. " " .. pName)
++                            table.insert(strList, "[S" .. sValStr .. "]" .. pName)
++                            table.insert(strList, "[S" .. sValStr .. "] " .. pName)
++                        end
++
++                        if sId then
++                            local pattern1 = "s" .. sId .. "%."
++                            local pattern2 = "s" .. sId .. "_"
++                            local pattern3 = "s" .. sId
++                            for _, s in ipairs(strList) do
++                                local sLower = string.lower(s)
++                                if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
++                                    return true
++                                end
++                            end
++                        else
++                            local lowerInput = string.lower(cleanToken)
++                            for _, s in ipairs(strList) do
++                                if string.find(string.lower(s), lowerInput, 1, true) then
+                                     return true
+                                 end
+                             end
+                         end
++
+                         return false
+                     end
+ 
++                    local function isMatchLockTarget(p, lockInput)
++                        if not lockInput or lockInput == "" then return true end
++                        if not p or p.isDead then return false end
++
++                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
++                        if IsPlayerProtected(p) then
++                            return false
++                        end
++
++                        -- Tách chuỗi theo dấu chấm phẩy ';', phẩy ',', gạch '|' (Hỗ trợ đa điều kiện - Logic OR)
++                        for token in string.gmatch(lockInput, "([^;,|\r\n]+)") do
++                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
++                            if cleanToken and cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
++                                return true
++                            end
++                        end
++
++                        return false
++                    end
++                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
++
+                     local function IsSelfBuffOrNoTargetSkill(skillId)
+                         if not skillId then return false end
+                         local noTargetGroupIds = {
+@@ -5374,37 +5430,31 @@ local function CreateModUI()
+                         _G.Mod_HookedRoleTargetManager = true
+                         local original_GetPlayerTarget = _G.RoleTargetManager.GetPlayerTarget
+                         if original_GetPlayerTarget then
+-                            _G.RoleTargetManager.GetPlayerTarget = function(isSelectChange, maxDistance)
+-                                local target = original_GetPlayerTarget(isSelectChange, maxDistance)
++                            _G.RoleTargetManager.GetPlayerTarget = function(isSelectChange, maxDistance, confirmCallback)
++                                local dist = maxDistance or 15
++                                confirmCallback = confirmCallback or (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                 if (_G.Mod_IsActive and _G.Mod_IsActive()) and _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+-                                    if target and not isMatchLockTarget(target, _G.Mod_LockTarget_Name) then
+-                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, maxDistance or 15,
+-                                            _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+-                                        if players and #players > 0 then
+-                                            for _, p in ipairs(players) do
+-                                                if not IsPlayerProtected(p) and isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+-                                                    return p
+-                                                end
+-                                            end
+-                                        end
+-                                        return nil
+-                                    end
+-                                end
+-                                if target and IsPlayerProtected(target) then
+-                                    local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, maxDistance or 15,
+-                                        _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
++                                    local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, dist, confirmCallback)
+                                     if players and #players > 0 then
++                                        local matched = {}
+                                         for _, p in ipairs(players) do
+-                                            if not IsPlayerProtected(p) then
+-                                                if not _G.Mod_LockTarget_Enabled or isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+-                                                    return p
+-                                                end
++                                            if not IsPlayerProtected(p) and isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
++                                                table.insert(matched, p)
+                                             end
+                                         end
++                                        if #matched > 0 then
++                                            local function modSortRole(a, b)
++                                                local distA = a.tempPathFindingDistance or 9999
++                                                local distB = b.tempPathFindingDistance or 9999
++                                                return distA < distB
++                                            end
++                                            table.sort(matched, modSortRole)
++                                            return matched[1]
++                                        end
+                                     end
+                                     return nil
+                                 end
+-                                return target
++                                return original_GetPlayerTarget(isSelectChange, dist, confirmCallback)
+                             end
+                         end
+                     end
+@@ -5468,10 +5518,19 @@ local function CreateModUI()
+ 
+                     -- =========================================================================
+                     -- [MOD FEATURE]: TỰ ĐỘNG PK & KHÓA MỤC TIÊU THEO TÊN (AUTO PK & LOCK TARGET)
+-                    -- Mô tả: Quét tìm người chơi đối thủ trong phạm vi 15m và xuất chiêu tiêu diệt
++                    -- Mô tả: Quét tìm người chơi đối thủ trong phạm vi 15m (hoặc cài đặt) và xuất chiêu tiêu diệt
++                    -- Tối ưu: Zero Allocation, tái sử dụng table, đưa modSortRole ra module scope
+                     -- =========================================================================
++                    local function modSortRole(a, b)
++                        local distA = (a and a.tempPathFindingDistance) or 9999
++                        local distB = (b and b.tempPathFindingDistance) or 9999
++                        return distA < distB
++                    end
++                    _G.Mod_PK_ValidPlayers = _G.Mod_PK_ValidPlayers or {}
++                    _G.Mod_PK_MatchedPlayers = _G.Mod_PK_MatchedPlayers or {}
++
+                     _G.Mod_StartPKScanLoop = function()
+-                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.25, -1, function()
++                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.1, -1, function()
+                             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+                             pcall(function()
+                                 if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
+@@ -5497,6 +5556,8 @@ local function CreateModUI()
+                                     if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
+                                         _G.Mod_LastPKScanTime = nowTime
+ 
++                                        local scanRange = (_G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0) and _G.Mod_CustomAttackRange or 15
++
+                                         local currentTarget = me.TargetAvatar
+                                         local isCurrentTargetValid = false
+                                         if currentTarget and not currentTarget.isDead and currentTarget.hp and currentTarget.hp > 0 and currentTarget.RoleType == 1 and not IsPlayerProtected(currentTarget) and (_G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole(currentTarget)) then
+@@ -5507,7 +5568,7 @@ local function CreateModUI()
+                                                 dist = math.max(math.abs(currentTarget.serverCoord.x - me.serverCoord.x), math.abs(currentTarget.serverCoord.y - me.serverCoord.y))
+                                             end
+ 
+-                                            if dist <= 15 then
++                                            if dist <= scanRange then
+                                                 if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+                                                     if isMatchLockTarget(currentTarget, _G.Mod_LockTarget_Name) then
+                                                         isCurrentTargetValid = true
+@@ -5531,91 +5592,39 @@ local function CreateModUI()
+                                             if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                         end
+ 
+-                                        local function modSortRole(a, b)
+-                                            local distA = a.tempPathFindingDistance or 9999
+-                                            local distB = b.tempPathFindingDistance or 9999
+-                                            return distA < distB
+-                                        end
+-
+-                                        local function isMonsterNearby(range)
+-                                            range = range or 15
+-                                            local me = _G.RoleManager and _G.RoleManager.me
+-                                            if not me or me.isDead then return false end
+-                                            local meId = (me.data and me.data.id) or me.id or 0
+-                                            local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+-                                            local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+-
+-                                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+-                                                local monsterRoles = _G.RoleManager.GetRolesByType(2)
+-                                                if monsterRoles then
+-                                                    for _, role in pairs(monsterRoles) do
+-                                                        if role and not role.isDead and role.hp and role.hp > 0 then
+-                                                            local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+-                                                            local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+-                                                            local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+-
+-                                                            local isSameCamp = false
+-                                                            if role.IsSameCamp then
+-                                                                isSameCamp = role:IsSameCamp()
+-                                                            elseif role.data and role.data.campId and role.data.campId ~= 0 and _G.ViewData and _G.ViewData.meData then
+-                                                                isSameCamp = (role.data.campId == _G.ViewData.meData.unionId or (_G.ViewData.meData.campId ~= nil and role.data.campId == _G.ViewData.meData.campId))
+-                                                            end
+-                                                            if ownerId ~= 0 and not isSameCamp then
+-                                                                if _G.WarAllianceData and _G.WarAllianceData.GetIsSameUnion and _G.WarAllianceData.GetIsSameUnion(ownerId) then
+-                                                                    isSameCamp = true
+-                                                                elseif _G.TeamData and _G.TeamData.IsTeammate and _G.TeamData.IsTeammate(ownerId) then
+-                                                                    isSameCamp = true
+-                                                                end
+-                                                            end
+-
+-                                                            local canAttack = true
+-                                                            if _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole then
+-                                                                canAttack = _G.RoleTargetManager.GetCanAttackRole(role)
+-                                                            end
+-
+-                                                            if canAttack and not isMySummon and not isSummon and (ownerId == 0 or ownerId == nil) and not isSameCamp then
+-                                                                local rX = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x) or 0
+-                                                                local rY = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y) or 0
+-                                                                local dist = 9999
+-                                                                if role.tempPathFindingDistance then
+-                                                                    dist = role.tempPathFindingDistance
+-                                                                elseif meX > 0 and meY > 0 and rX > 0 and rY > 0 then
+-                                                                    dist = math.max(math.abs(meX - rX), math.abs(meY - rY))
+-                                                                end
+-                                                                if dist <= range then
+-                                                                    return true
+-                                                                end
+-                                                            end
+-                                                        end
+-                                                    end
+-                                                end
+-                                            end
+-                                            return false
+-                                        end
+-
+                                         -- Quét các đối thủ theo đúng Chế độ PK hiện tại của game (dùng GetCanAttackRole)
+-                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, 15,
++                                        local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, scanRange,
+                                             _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                         local target = nil
+                                         if players and #players > 0 then
+-                                            if _G.Mod_LockTarget_Enabled then
+-                                                -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập. Không có -> target = nil (đứng im)
+-                                                if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
+-                                                    local matchedPlayers = {}
+-                                                    for _, p in ipairs(players) do
+-                                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+-                                                            table.insert(matchedPlayers, p)
++                                            -- LỌC BỎ TẤT CẢ NGƯỜI CHƠI ĐANG THỦ HỘ / BẢO HỘ KHI TREO MÁY (Tái sử dụng table, 0 GC allocation)
++                                            for k in pairs(_G.Mod_PK_ValidPlayers) do _G.Mod_PK_ValidPlayers[k] = nil end
++                                            for _, p in ipairs(players) do
++                                                if p and not p.isDead and (p.hp and p.hp > 0) and not IsPlayerProtected(p) then
++                                                    table.insert(_G.Mod_PK_ValidPlayers, p)
++                                                end
++                                            end
++
++                                            if #_G.Mod_PK_ValidPlayers > 0 then
++                                                if _G.Mod_LockTarget_Enabled then
++                                                    -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập
++                                                    if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
++                                                        for k in pairs(_G.Mod_PK_MatchedPlayers) do _G.Mod_PK_MatchedPlayers[k] = nil end
++                                                        for _, p in ipairs(_G.Mod_PK_ValidPlayers) do
++                                                            if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
++                                                                table.insert(_G.Mod_PK_MatchedPlayers, p)
++                                                            end
++                                                        end
++                                                        if #_G.Mod_PK_MatchedPlayers > 0 then
++                                                            table.sort(_G.Mod_PK_MatchedPlayers, modSortRole)
++                                                            target = _G.Mod_PK_MatchedPlayers[1]
+                                                         end
+                                                     end
+-                                                    if #matchedPlayers > 0 then
+-                                                        table.sort(matchedPlayers, modSortRole)
+-                                                        target = matchedPlayers[1]
+-                                                    end
++                                                else
++                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch không thủ hộ ở gần theo chế độ PK
++                                                    table.sort(_G.Mod_PK_ValidPlayers, modSortRole)
++                                                    target = _G.Mod_PK_ValidPlayers[1]
+                                                 end
+-                                            else
+-                                                -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch ở gần theo chế độ PK
+-                                                table.sort(players, modSortRole)
+-                                                target = players[1]
+                                             end
+                                         end
+ 
+@@ -5629,8 +5638,8 @@ local function CreateModUI()
+                                                 _G.RoleManager.me:SetAutoFight("ReleaseSkill")
+                                             end
+                                         else
+-                                            -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô)
+-                                            if isMonsterNearby(15) then
++                                            -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange)
++                                            if isMonsterNearby(scanRange) then
+                                                 if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                     if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                                         _G.RoleManager.me:SetAutoFight("AutoFight")
+@@ -11597,48 +11606,46 @@ local function CreateModUI()
+                         end
+                     end
+ 
+-                    -- Timer giám sát liên tục khi đang TẮT hiệu ứng
+-                    if isOff then
+-                        if not _G.Mod_VisualMasterTimer then
+-                            _G.Mod_VisualMasterTimer = _G.Timer.StartLoop(0.5, -1, function()
+-                                if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
+-                                    if _G.Mod_VisualMasterTimer then
+-                                        _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+-                                        _G.Mod_VisualMasterTimer = nil
+-                                    end
+-                                    return
+-                                end
++                    -- Đồng bộ Tracked Timer giám sát liên tục khi đang TẮT hiệu ứng
++                    if _G.Mod_StartVisualMasterLoop then
++                        _G.Mod_StartVisualMasterLoop()
++                    end
++                end)
++            end
+ 
+-                                -- SkillMgr.ROOT: Ẩn các skill vừa mới spawn trong lúc đang tắt hiệu ứng
+-                                if _G.SkillMgr and _G.SkillMgr.ROOT then
+-                                    local root = _G.SkillMgr.ROOT
+-                                    for i = 0, root.childCount - 1 do
+-                                        local child = root:GetChild(i)
+-                                        if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
+-                                            child.gameObject:SetActive(false)
+-                                        end
+-                                    end
+-                                end
++            _G.Mod_StartVisualMasterLoop = function()
++                if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
++                    _G.Mod_StartTrackedTimer("VisualMaster", 0.5, -1, function()
++                        if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
++                            _G.Mod_StopTimer("VisualMaster")
++                            return
++                        end
+ 
+-                                -- Footprint
+-                                if _G.RoleManager and _G.RoleManager.me then
+-                                    local me = _G.RoleManager.me
+-                                    if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
+-                                        me.footPrintEffect:SetActive(false)
+-                                    end
+-                                    if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
+-                                        me.AvatarEquip.footPrintObj:SetActive(false)
+-                                    end
++                        -- SkillMgr.ROOT: Ẩn các skill vừa mới spawn trong lúc đang tắt hiệu ứng
++                        if _G.SkillMgr and _G.SkillMgr.ROOT then
++                            local root = _G.SkillMgr.ROOT
++                            for i = 0, root.childCount - 1 do
++                                local child = root:GetChild(i)
++                                if child and child.gameObject and not _G.IsNil(child.gameObject) and child.gameObject.activeSelf then
++                                    child.gameObject:SetActive(false)
+                                 end
+-                            end)
++                            end
+                         end
+-                    else
+-                        if _G.Mod_VisualMasterTimer then
+-                            _G.Timer.Stop(_G.Mod_VisualMasterTimer)
+-                            _G.Mod_VisualMasterTimer = nil
++
++                        -- Footprint
++                        if _G.RoleManager and _G.RoleManager.me then
++                            local me = _G.RoleManager.me
++                            if me.footPrintEffect and not _G.IsNil(me.footPrintEffect) and me.footPrintEffect.activeSelf then
++                                me.footPrintEffect:SetActive(false)
++                            end
++                            if me.AvatarEquip and me.AvatarEquip.footPrintObj and not _G.IsNil(me.AvatarEquip.footPrintObj) and me.AvatarEquip.footPrintObj.activeSelf then
++                                me.AvatarEquip.footPrintObj:SetActive(false)
++                            end
+                         end
+-                    end
+-                end)
++                    end)
++                else
++                    _G.Mod_StopTimer("VisualMaster")
++                end
+             end
+ 
+             -- Khởi tạo áp dụng ngay trạng thái hiện tại

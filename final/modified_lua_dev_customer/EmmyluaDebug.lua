@@ -1394,7 +1394,7 @@ local function CreateModUI()
         rtRt.anchorMax = Vector2(1, 1)
         rtRt.sizeDelta = Vector2(0, 0)
         local rtTxt = rTxtG:AddComponent(typeof(Text))
-        rtTxt.text = "Kiểm Tra Khôi Phục Active"
+        rtTxt.text = "KÍCH HOẠT"
         rtTxt.font = defaultFont
         rtTxt.fontSize = 17
         rtTxt.color = Color.white
@@ -3516,12 +3516,20 @@ local function CreateModUI()
                                                 if mCfg.mapId == currentMapId and mCfg.bosses then
                                                     for _, cfg in ipairs(mCfg.bosses) do
                                                         if tostring(mId) == tostring(cfg.id) and _G.Mod_AutoFarmBoss_Config[cfg.id] then
-                                                            return {
-                                                                cfg = cfg,
-                                                                mapCfg = mCfg,
-                                                                line = _G.SceneData and
-                                                                    (_G.SceneData.line or _G.SceneData.cline) or 1
-                                                            }
+                                                            -- =========================================================================
+                                                            -- [MOD FEATURE]: KIỂM TRA GIỚI HẠN SỐ LƯỢNG BOSS AUTO FARM
+                                                            -- Mô tả: Bỏ qua boss nếu số lượng đã farm (killedCount) >= maxLimit.
+                                                            -- =========================================================================
+                                                            local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or 0
+                                                            local maxLimit = tonumber(_G.Mod_AutoFarmBoss_Limits and _G.Mod_AutoFarmBoss_Limits[cfg.id])
+                                                            if not (maxLimit and maxLimit > 0 and killedCount >= maxLimit) then
+                                                                return {
+                                                                    cfg = cfg,
+                                                                    mapCfg = mCfg,
+                                                                    line = _G.SceneData and
+                                                                        (_G.SceneData.line or _G.SceneData.cline) or 1
+                                                                }
+                                                            end
                                                         end
                                                     end
                                                 end
@@ -3638,61 +3646,71 @@ local function CreateModUI()
                                             _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
                                         end
                                         if _G.Mod_AutoFarmBoss_Config[cfg.id] then
-                                            local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
-                                            local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
-                                            if currentSec > ignoreUntil then
-                                                -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
-                                                local colVal = cfg.col or 1
-                                                local colPriority = math.min(colVal, 3) * 100
+                                            -- =========================================================================
+                                            -- [MOD FEATURE]: KIỂM TRA GIỚI HẠN SỐ LƯỢNG BOSS AUTO FARM
+                                            -- Mô tả: Bỏ qua boss nếu số lượng đã farm (killedCount) >= maxLimit.
+                                            -- =========================================================================
+                                            local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or 0
+                                            local maxLimit = tonumber(_G.Mod_AutoFarmBoss_Limits and _G.Mod_AutoFarmBoss_Limits[cfg.id])
+                                            local isLimitReached = (maxLimit and maxLimit > 0 and killedCount >= maxLimit)
 
-                                                local bossData = mapBosses[mapCfg.mapId] and
-                                                    mapBosses[mapCfg.mapId][cfg.id]
-                                                if bossData then
-                                                    local bestLine = nil
-                                                    local isAlive = false
-                                                    local respawnWait = 9999
+                                            if not isLimitReached then
+                                                local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
+                                                local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
+                                                if currentSec > ignoreUntil then
+                                                    -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
+                                                    local colVal = cfg.col or 1
+                                                    local colPriority = math.min(colVal, 3) * 100
 
-                                                    for _, lineNum in ipairs(bossData.lineNums) do
-                                                        local totalAlive = bossData.aliveCount[lineNum] or 0
-                                                        if totalAlive > 0 then
-                                                            bestLine = lineNum
-                                                            isAlive = true
-                                                            respawnWait = 0
-                                                            break
-                                                        end
+                                                    local bossData = mapBosses[mapCfg.mapId] and
+                                                        mapBosses[mapCfg.mapId][cfg.id]
+                                                    if bossData then
+                                                        local bestLine = nil
+                                                        local isAlive = false
+                                                        local respawnWait = 9999
 
-                                                        local deadList = bossData.deadTimes[lineNum] or {}
-                                                        if not isAlive and #deadList > 0 then
-                                                            local rt = deadList[1]
-                                                            if rt <= currentSec + 30 then
+                                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                                            local totalAlive = bossData.aliveCount[lineNum] or 0
+                                                            if totalAlive > 0 then
                                                                 bestLine = lineNum
-                                                                respawnWait = math.max(0, rt - currentSec)
+                                                                isAlive = true
+                                                                respawnWait = 0
                                                                 break
                                                             end
-                                                        end
-                                                    end
 
-                                                    if bestLine then
-                                                        local aliveScore = isAlive and 1000000 or 0
-                                                        local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
-                                                        local tierScore = tierIndex * 100000
-
-                                                        local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
-
-                                                        if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
-                                                            finalScore = finalScore + 5000
+                                                            local deadList = bossData.deadTimes[lineNum] or {}
+                                                            if not isAlive and #deadList > 0 then
+                                                                local rt = deadList[1]
+                                                                if rt <= currentSec + 30 then
+                                                                    bestLine = lineNum
+                                                                    respawnWait = math.max(0, rt - currentSec)
+                                                                    break
+                                                                end
+                                                            end
                                                         end
 
-                                                        table.insert(candidates, {
-                                                            name = cfg.name,
-                                                            id = cfg.id,
-                                                            score = finalScore,
-                                                            isAlive = isAlive,
-                                                            wait = respawnWait,
-                                                            mapName = mapCfg.title or GetMapName(mapCfg.mapId),
-                                                            mapId = mapCfg.mapId,
-                                                            obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
-                                                        })
+                                                        if bestLine then
+                                                            local aliveScore = isAlive and 1000000 or 0
+                                                            local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
+                                                            local tierScore = tierIndex * 100000
+
+                                                            local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
+
+                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
+                                                                finalScore = finalScore + 5000
+                                                            end
+
+                                                            table.insert(candidates, {
+                                                                name = cfg.name,
+                                                                id = cfg.id,
+                                                                score = finalScore,
+                                                                isAlive = isAlive,
+                                                                wait = respawnWait,
+                                                                mapName = mapCfg.title or GetMapName(mapCfg.mapId),
+                                                                mapId = mapCfg.mapId,
+                                                                obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
+                                                            })
+                                                        end
                                                     end
                                                 end
                                             end
@@ -3729,25 +3747,31 @@ local function CreateModUI()
                                         for _, cfg in ipairs(mapCfg.bosses) do
                                             if _G.Mod_AutoFarmBoss_Config[cfg.id] then
                                                 countConfig = countConfig + 1
-                                                local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
-                                                local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
-                                                if currentSec <= ignoreUntil then
-                                                    LogMsg(string.format("- Bỏ qua: %s (Map %s) đang bị Block %ds",
-                                                        cfg.name, GetMapName(mapCfg.mapId), ignoreUntil - currentSec))
+                                                local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or 0
+                                                local maxLimit = tonumber(_G.Mod_AutoFarmBoss_Limits and _G.Mod_AutoFarmBoss_Limits[cfg.id])
+                                                if maxLimit and maxLimit > 0 and killedCount >= maxLimit then
+                                                    LogMsg(string.format("- Bỏ qua: %s đã đạt giới hạn farm (%d/%d con)", cfg.name, killedCount, maxLimit))
                                                 else
-                                                    local bossData = mapBosses[mapCfg.mapId] and
-                                                        mapBosses[mapCfg.mapId][cfg.id]
-                                                    if not bossData then
-                                                        countNoData = countNoData + 1
+                                                    local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
+                                                    local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
+                                                    if currentSec <= ignoreUntil then
+                                                        LogMsg(string.format("- Bỏ qua: %s (Map %s) đang bị Block %ds",
+                                                            cfg.name, GetMapName(mapCfg.mapId), ignoreUntil - currentSec))
                                                     else
-                                                        for _, lineNum in ipairs(bossData.lineNums) do
-                                                            local totalAlive = bossData.aliveCount[lineNum] or 0
-                                                            local deadList = bossData.deadTimes[lineNum] or {}
-                                                            if totalAlive == 0 and #deadList > 0 then
-                                                                local rt = deadList[1]
-                                                                LogMsg(string.format(
-                                                                    "- Từ chối: %s (Còn %ds nữa mới hồi sinh)", cfg.name,
-                                                                    rt - currentSec))
+                                                        local bossData = mapBosses[mapCfg.mapId] and
+                                                            mapBosses[mapCfg.mapId][cfg.id]
+                                                        if not bossData then
+                                                            countNoData = countNoData + 1
+                                                        else
+                                                            for _, lineNum in ipairs(bossData.lineNums) do
+                                                                local totalAlive = bossData.aliveCount[lineNum] or 0
+                                                                local deadList = bossData.deadTimes[lineNum] or {}
+                                                                if totalAlive == 0 and #deadList > 0 then
+                                                                    local rt = deadList[1]
+                                                                    LogMsg(string.format(
+                                                                        "- Từ chối: %s (Còn %ds nữa mới hồi sinh)", cfg.name,
+                                                                        rt - currentSec))
+                                                                end
                                                             end
                                                         end
                                                     end
@@ -3795,7 +3819,7 @@ local function CreateModUI()
                                     if tx and ty then
                                         -- =========================================================================
                                         -- [MOD FEATURE]: QUAY LẠI VỊ TRÍ FARM
-                                        -- Mô tả: Lấy mapId theo chuyển chính được cấu hình trong token thay vì tab đang chọn
+                                        -- Mô tả: Lấy mapId theo chuyển chính; gán wildTransferId bằng Id map Hoang Dã
                                         local pLevel = _G.Mod_Config_Reincarnation_Primary or 7
                                         local tab = "C" .. tostring(pLevel)
                                         -- =========================================================================
@@ -3803,8 +3827,7 @@ local function CreateModUI()
                                         if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
                                             101096
-                                        local wildTransferId = (mapsConfig and mapsConfig[1] and mapsConfig[1].bosses and mapsConfig[1].bosses[1] and mapsConfig[1].bosses[1].transferId) or
-                                            400216
+                                        local wildTransferId = wildMapId
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
                                         if curMap ~= wildMapId then
@@ -6171,6 +6194,7 @@ local function CreateModUI()
             if not _G.ModAutoBossConfigTab or _G.ModAutoBossConfigTab == "" then _G.ModAutoBossConfigTab = "C7" end
         end
         _G.Mod_AutoFarmBoss_Config = _G.Mod_AutoFarmBoss_Config or {}
+        _G.Mod_AutoFarmBoss_Limits = _G.Mod_AutoFarmBoss_Limits or {}
 
         local function CreateAutoBossUI()
             local startX = 20
@@ -6951,7 +6975,40 @@ local function CreateModUI()
                 if defaultFont then txt.font = defaultFont end
 
                 local btn = btnGo:AddComponent(typeof(Button))
-                return { go = btnGo, rt = rt, img = img, txt = txt, btn = btn }
+
+                -- =========================================================================
+                -- [MOD FEATURE]: Ô INPUT GIỚI HẠN SỐ LƯỢNG BOSS AUTO FARM (40PX)
+                -- Mô tả: Ô InputField nhập số lượng tối đa muốn farm của boss, lưu vào PlayerPrefs.
+                -- =========================================================================
+                local inGo = GameObject("AutoBossLimit_" .. idx)
+                inGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.AutoBossUIList, inGo)
+                local inRt = inGo:AddComponent(typeof(RectTransform))
+                inRt.anchorMin, inRt.anchorMax, inRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+
+                local inImg = inGo:AddComponent(typeof(Image))
+                inImg.color = Color(0.15, 0.15, 0.15, 0.95)
+
+                local inTxtGo = GameObject("Text")
+                inTxtGo.transform:SetParent(inGo.transform, false)
+                local inTxtRt = inTxtGo:AddComponent(typeof(RectTransform))
+                inTxtRt.anchorMin, inTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                inTxtRt.offsetMin = Vector2(2, 0)
+                inTxtRt.offsetMax = Vector2(-2, 0)
+                local inTxt = inTxtGo:AddComponent(typeof(Text))
+                inTxt.fontSize = 13
+                inTxt.alignment = TextAnchor.MiddleCenter
+                inTxt.color = Color(1, 0.9, 0.4, 1)
+                if defaultFont then inTxt.font = defaultFont end
+
+                local inField = inGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                inField.textComponent = inTxt
+                inField.characterLimit = 4
+
+                return {
+                    go = btnGo, rt = rt, img = img, txt = txt, btn = btn,
+                    inGo = inGo, inRt = inRt, inImg = inImg, inTxt = inTxt, inField = inField
+                }
             end
 
             UpdateTierTabs = function()
@@ -7073,6 +7130,7 @@ local function CreateModUI()
                 -- Hide all config toggles in pool
                 for _, btnData in ipairs(configPool) do
                     btnData.go:SetActive(false)
+                    if btnData.inGo then btnData.inGo:SetActive(false) end
                 end
 
                 -- Render current tier bosses
@@ -7089,6 +7147,7 @@ local function CreateModUI()
                             table.insert(configPool, btnData)
                         end
                         btnData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
+                        if btnData.inGo then btnData.inGo:SetActive(false) end
                         btnData.rt.anchoredPosition = Vector2(startX, py)
                         btnData.rt.sizeDelta = Vector2(430, 24)
 
@@ -7110,7 +7169,7 @@ local function CreateModUI()
                         poolIdx = poolIdx + 1
                         py = py - 28
 
-                        -- Boss buttons in 3 columns (Width: 140px, Height: 38px)
+                        -- Boss buttons in 3 columns (Width: 96px Btn + 40px Input, Height: 38px)
                         local colBosses = { {}, {}, {} }
                         for _, cfg in ipairs(mapCfg.bosses) do
                             local c = cfg.col or 1
@@ -7129,8 +7188,13 @@ local function CreateModUI()
                                         table.insert(configPool, bData)
                                     end
                                     bData.go:SetActive(_G.ModMainTab == "AUTO_BOSS")
+                                    if bData.inGo then bData.inGo:SetActive(_G.ModMainTab == "AUTO_BOSS") end
                                     bData.rt.anchoredPosition = Vector2(px, py)
-                                    bData.rt.sizeDelta = Vector2(140, 38)
+                                    bData.rt.sizeDelta = Vector2(96, 38)
+                                    if bData.inRt then
+                                        bData.inRt.anchoredPosition = Vector2(px + 100, py)
+                                        bData.inRt.sizeDelta = Vector2(40, 38)
+                                    end
                                     bData.txt.alignment = TextAnchor.MiddleCenter
 
                                     if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
@@ -7138,11 +7202,23 @@ local function CreateModUI()
                                             "Mod_AutoBoss_" .. cfg.id, 0) == 1
                                     end
 
+                                    _G.Mod_AutoFarmBoss_Limits = _G.Mod_AutoFarmBoss_Limits or {}
+                                    if _G.Mod_AutoFarmBoss_Limits[cfg.id] == nil then
+                                        local savedLim = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoBoss_Limit_" .. cfg.id, "")
+                                        _G.Mod_AutoFarmBoss_Limits[cfg.id] = savedLim
+                                    end
+
+                                    if bData.inField then
+                                        bData.inField.text = tostring(_G.Mod_AutoFarmBoss_Limits[cfg.id] or "")
+                                    end
+
                                     local function updateBossBtnColor()
                                         local isTarget = _G.Mod_AutoFarmBoss_Target and
                                             _G.Mod_AutoFarmBoss_Target.cfg.id == cfg.id
                                         local killedCount = (_G.Mod_FarmStats and _G.Mod_FarmStats.bosses and _G.Mod_FarmStats.bosses[cfg.id]) or
                                             0
+                                        local maxLimit = tonumber(_G.Mod_AutoFarmBoss_Limits and _G.Mod_AutoFarmBoss_Limits[cfg.id])
+                                        local isLimitReached = (maxLimit and maxLimit > 0 and killedCount >= maxLimit)
 
                                         local nameLabel = cfg.name
                                         if isTarget then
@@ -7150,14 +7226,18 @@ local function CreateModUI()
                                         end
 
                                         if killedCount > 0 then
-                                            if _G.Mod_AutoFarmBoss_Config[cfg.id] then
+                                            if isLimitReached then
+                                                bData.img.color = Color(0.4, 0.35, 0.2, 1)
+                                                bData.txt.text = nameLabel ..
+                                                    "\n<color=#FFCC00>(" .. killedCount .. "/" .. maxLimit .. ")</color>"
+                                            elseif _G.Mod_AutoFarmBoss_Config[cfg.id] then
                                                 bData.img.color = Color(0.2, 0.5, 0.2, 1)
                                                 bData.txt.text = nameLabel ..
-                                                    "\n<color=#FFFFFF>(" .. killedCount .. ")</color>"
+                                                    "\n<color=#FFFFFF>(" .. killedCount .. (maxLimit and maxLimit > 0 and ("/" .. maxLimit) or "") .. ")</color>"
                                             else
                                                 bData.img.color = Color(0.3, 0.3, 0.3, 1)
                                                 bData.txt.text = nameLabel ..
-                                                    "\n<color=#777777>(" .. killedCount .. ")</color>"
+                                                    "\n<color=#777777>(" .. killedCount .. (maxLimit and maxLimit > 0 and ("/" .. maxLimit) or "") .. ")</color>"
                                             end
                                         else
                                             if _G.Mod_AutoFarmBoss_Config[cfg.id] then
@@ -7181,6 +7261,19 @@ local function CreateModUI()
                                         CS.UnityEngine.PlayerPrefs.Save()
                                         updateBossBtnColor()
                                     end)
+
+                                    if bData.inField then
+                                        bData.inField.onEndEdit:RemoveAllListeners()
+                                        bData.inField.onEndEdit:AddListener(function(val)
+                                            local cleanVal = string.gsub(val or "", "%s+", "")
+                                            _G.Mod_AutoFarmBoss_Limits[cfg.id] = cleanVal
+                                            pcall(function()
+                                                CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoBoss_Limit_" .. cfg.id, cleanVal)
+                                                CS.UnityEngine.PlayerPrefs.Save()
+                                            end)
+                                            updateBossBtnColor()
+                                        end)
+                                    end
 
                                     poolIdx = poolIdx + 1
                                 end

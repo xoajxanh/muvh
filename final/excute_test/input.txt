@@ -1,130 +1,67 @@
 -- =========================================================================
--- [PHÂN TÍCH & BẮT CHÍNH XÁC MATCH TEAM ID TRONG SẢNH GHÉP ĐỘI]
+-- [SCRIPT TRIỆU HỒI KÉO SU VÀO QUẢNG TRƯỜNG QUỶ 15 (REQCALLFLAG CHUẨN XÁC)]
 -- =========================================================================
-
--- 1. Hook bắt mọi thông điệp Match từ Server
-if not _G.Mod_Hooked_MatchAll then
-    _G.Mod_Hooked_MatchAll = true
-    _G.Mod_LastMatchMsg = _G.Mod_LastMatchMsg or {}
-    _G.Mod_RecentToasts = _G.Mod_RecentToasts or {}
-
-    -- Hook ResInstanceMatchTeamInfo (Thông tin phòng ghép đội)
-    if TeamUpQuicklyController then
-        local old_ResTeamInfo = TeamUpQuicklyController.ResInstanceMatchTeamInfo
-        TeamUpQuicklyController.ResInstanceMatchTeamInfo = function(id, msg)
-            if msg then
-                _G.Mod_LastMatchTeamId = msg.id
-                _G.Mod_LastMatchMsg.teamInfo = msg
-                print(string.format("[MOD] ĐÃ BẮT ResInstanceMatchTeamInfo: ID = %s | InstanceId = %s", tostring(msg.id), tostring(msg.instanceId)))
-            end
-            if old_ResTeamInfo then old_ResTeamInfo(id, msg) end
-        end
-
-        -- Hook ResInstanceMatchInviteFriend (Lời mời từ Đội Trưởng)
-        local old_ResInvite = TeamUpQuicklyController.ResInstanceMatchInviteFriend
-        TeamUpQuicklyController.ResInstanceMatchInviteFriend = function(id, msg)
-            if msg then
-                _G.Mod_LastMatchTeamId = msg.teamId
-                _G.Mod_LastMatchMsg.inviteMsg = msg
-                print(string.format("[MOD] ĐÃ BẮT LỜI MỜI TỪ ĐỘI TRƯỞNG: TeamId = %s | InstanceId = %s", tostring(msg.teamId), tostring(msg.instanceId)))
-            end
-            if old_ResInvite then old_ResInvite(id, msg) end
-        end
-    end
-
-    -- Hook Toast
-    if FloatingWordUtility then
-        local old_QuickMsg = FloatingWordUtility.QuickMsg
-        FloatingWordUtility.QuickMsg = function(msg)
-            table.insert(_G.Mod_RecentToasts, tostring(msg))
-            if #_G.Mod_RecentToasts > 10 then table.remove(_G.Mod_RecentToasts, 1) end
-            if old_QuickMsg then old_QuickMsg(msg) end
-        end
-    end
-end
 
 local logLines = {}
 local function Log(str)
-    table.insert(logLines, str)
-    print(str)
+    table.insert(logLines, tostring(str))
+    print(tostring(str))
 end
 
-Log("=== [KIỂM TRA DỮ LIỆU SẢNH GHÉP ĐỘI (INSTANCE MATCH)] ===")
-Log("Thời gian: " .. os.date("%H:%M:%S"))
+Log("=========================================================================")
+Log("=== KÍCH HOẠT LỆNH BÀI TRIỆU HỒI VÀO QUẢNG TRƯỜNG QUỶ 15 ===")
+Log("Thời gian: " .. os.date("%Y-%m-%d %H:%M:%S"))
+Log("=========================================================================")
 
-local me = RoleManager and RoleManager.me
-local myData = ViewData and ViewData.meData
-local myId = (myData and myData.id) or (me and me.id) or 0
-local myName = (myData and myData.name) or (me and me.name) or "Unknown"
-local curMap = SceneData and SceneData.mapId or 0
+local meName = (ViewData and ViewData.meData and ViewData.meData.name) or "Unknown"
+local myRid = (ViewData and ViewData.meData and ViewData.meData.id) or 0
+local curMap = (SceneData and SceneData.mapId) or 0
+local curLine = (SceneData and SceneData.line) or 1
 
-Log(string.format("Nhân vật: %s (RID: %s) | Map: %s", tostring(myName), tostring(myId), tostring(curMap)))
+-- THÔNG SỐ CHÍNH XÁC TỪ ĐỘI TRƯỞNG LIẾMHẾT TRONG QTQ 15:
+local targetMapId = 1010015
+local targetLine = 1
+local targetX = 70
+local targetY = 89
+local targetLeaderRid = 5944970060856670296
+local teamId = 5944970074295620621
 
--- 1. Thông tin Tổ đội thường (Dã ngoại)
-local isLeader = TeamData and TeamData.isLeader or false
-Log(string.format("\n[1. TỔ ĐỘI THƯỜNG]: TeamID = %s | isLeader = %s", tostring(TeamData and TeamData.teamId or "None"), tostring(isLeader)))
+Log("Nhân vật thực thi: " .. tostring(meName) .. " (RID: " .. tostring(myRid) .. ")")
+Log("Map hiện tại:     " .. tostring(curMap) .. " (Line " .. tostring(curLine) .. ")")
+Log("-------------------------------------------------------------------------")
+Log("Mục tiêu đến:     Map " .. targetMapId .. " (Quảng Trường Quỷ 15 - Line " .. targetLine .. ")")
+Log("Tọa độ Đích:      (" .. targetX .. ", " .. targetY .. ")")
+Log("Đội trưởng RID:   " .. tostring(targetLeaderRid))
+Log("Team ID:          " .. tostring(teamId))
+Log("-------------------------------------------------------------------------")
 
--- 2. Thông tin Sảnh Ghép Đội (TeamUpQuicklyData)
-Log("\n[2. SẢNH GHÉP ĐỘI (TeamUpQuicklyData)]:")
-if TeamUpQuicklyData and TeamUpQuicklyData.TeamInfor then
-    local info = TeamUpQuicklyData.TeamInfor
-    Log(string.format("  -> MATCH TEAM ID THẬT: %s", tostring(info.id)))
-    Log(string.format("  -> Instance ID:        %s", tostring(info.instanceId)))
-    Log(string.format("  -> EndTime:            %s", tostring(info.endTime)))
-    _G.Mod_LastMatchTeamId = info.id
-    pcall(function()
-        CS.UnityEngine.PlayerPrefs.SetString("Mod_SavedMatchTeamId", tostring(info.id))
-        CS.UnityEngine.PlayerPrefs.Save()
-    end)
-else
-    Log("  -> Hiện tại chưa có dữ liệu trong TeamUpQuicklyData.TeamInfor")
+pcall(function()
+    Log(">>> ĐANG GỬI GÓI TIN MapMessage.ReqCallFlag... <<<")
+    NetManager.Send(MapMessage.ReqCallFlag, {
+        type = 2, -- Call_team (Tổ đội)
+        rid = targetLeaderRid,
+        mapId = targetMapId,
+        line = targetLine,
+        x = targetX,
+        y = targetY,
+        hostId = 0
+    })
+    Log("  [+] ReqCallFlag Sent OK!")
+end)
+
+if FloatingWordUtility and FloatingWordUtility.QuickMsg then
+    FloatingWordUtility.QuickMsg(string.format("[REQCALLFLAG] ĐANG BAY VÀO QUẢNG TRƯỜNG QUỶ 15 (%d, %d)!", targetX, targetY))
 end
 
--- 3. Thông tin từ Hook đã bắt
-Log(string.format("\n[3. BIẾN HOOK ĐÃ LƯU]: Mod_LastMatchTeamId = %s", tostring(_G.Mod_LastMatchTeamId or "Chưa bắt được")))
-
--- 4. Hành động thực thi
-if isLeader then
-    Log("\n>>> ĐANG Ở MÁY ĐỘI TRƯỞNG <<<")
-    -- Đội trưởng gửi lời mời tới Su
-    local partnerRid = 5944970060872593508
-    if NetManager and InstanceMatchMessage and InstanceMatchMessage.ReqInstanceMatchInviteFriend then
-        Log(string.format("Gửi ReqInstanceMatchInviteFriend tới Su (RID: %s)...", tostring(partnerRid)))
-        NetManager.Send(InstanceMatchMessage.ReqInstanceMatchInviteFriend, { id = partnerRid })
-    end
-else
-    Log("\n>>> ĐANG Ở MÁY THÀNH VIÊN (SU) <<<")
-    local matchId = _G.Mod_LastMatchTeamId or (TeamUpQuicklyData and TeamUpQuicklyData.TeamInfor and TeamUpQuicklyData.TeamInfor.id)
-    if matchId then
-        Log(string.format("Gửi đồng ý lời mời ReqInstanceMatchInviteOperation (teamId: %s)...", tostring(matchId)))
-        if NetManager and InstanceMatchMessage and InstanceMatchMessage.ReqInstanceMatchInviteOperation then
-            NetManager.Send(InstanceMatchMessage.ReqInstanceMatchInviteOperation, {
-                teamId = matchId,
-                friend = true,
-                agree = true
-            })
-        end
-    else
-        Log("Chưa có Match Team ID của sảnh! Hãy để Đội Trưởng bấm [ Mời Bạn Bè ] trong giao diện Sảnh.")
-    end
-end
-
--- Liệt kê thông báo gần đây của Server
-if _G.Mod_RecentToasts and #_G.Mod_RecentToasts > 0 then
-    Log("\n[DANH SÁCH THÔNG BÁO TỪ SERVER]:")
-    for idx, toast in ipairs(_G.Mod_RecentToasts) do
-        Log(string.format("  [%d] %s", idx, toast))
-    end
-end
-
--- Ghi kết quả ra output.txt
+-- Ghi kết quả ra file output.txt trên Android
+local resultText = table.concat(logLines, "\n")
 pcall(function()
     local outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
     local f = io.open(outPath, "w")
     if f then
-        f:write(table.concat(logLines, "\n"))
+        f:write(resultText)
         f:close()
     end
 end)
 
-return table.concat(logLines, "\n")
+return resultText
