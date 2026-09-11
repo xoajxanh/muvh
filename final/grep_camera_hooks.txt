@@ -1,0 +1,44 @@
+﻿
+modified_lua_dev_customer\EmmyluaDebug.lua:238:local function SetCameraFOV(fov)
+modified_lua_dev_customer\EmmyluaDebug.lua:246:        local cam = CS.UnityEngine.Camera.main
+modified_lua_dev_customer\EmmyluaDebug.lua:254:_G.SetCameraFOV = SetCameraFOV
+modified_lua_dev_customer\EmmyluaDebug.lua:350:    if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) end
+modified_lua_dev_customer\EmmyluaDebug.lua:1630:                if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) 
+end
+modified_lua_dev_customer\EmmyluaDebug.lua:1688:                if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) 
+end
+modified_lua_dev_customer\EmmyluaDebug.lua:2599:            -- CAMERA FOLLOW ANCHOR (CHỐNG RUNG LẮC CAMERA KHI CHẠY 
+NHANH DO MODEL QUAY HƯỚNG)
+modified_lua_dev_customer\EmmyluaDebug.lua:2601:                local function InitCameraFollowAnchor()
+modified_lua_dev_customer\EmmyluaDebug.lua:2602:                    local mc = _G.MainCamera
+modified_lua_dev_customer\EmmyluaDebug.lua:2608:                    local anchorGo = 
+CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+modified_lua_dev_customer\EmmyluaDebug.lua:2610:                        anchorGo = 
+CS.UnityEngine.GameObject("Mod_CameraAnchor")
+modified_lua_dev_customer\EmmyluaDebug.lua:2615:                    _G.Mod_CameraAnchor = anchorGo
+modified_lua_dev_customer\EmmyluaDebug.lua:2663:                            local aGo = _G.Mod_CameraAnchor
+modified_lua_dev_customer\EmmyluaDebug.lua:2665:                                aGo = 
+CS.UnityEngine.GameObject("Mod_CameraAnchor")
+modified_lua_dev_customer\EmmyluaDebug.lua:2667:                                _G.Mod_CameraAnchor = aGo
+modified_lua_dev_customer\EmmyluaDebug.lua:2677:                    if not _G.Mod_SmoothCamera_Timer and _G.Timer and 
+_G.Timer.StartLoopForever then
+modified_lua_dev_customer\EmmyluaDebug.lua:2678:                        _G.Mod_SmoothCamera_Timer = 
+_G.Timer.StartLoopForever(0, function()
+modified_lua_dev_customer\EmmyluaDebug.lua:2684:                InitCameraFollowAnchor()
+modified_lua_dev_customer\EmmyluaDebug.lua:2797:            if _G.Me and not _G.Mod_Hooked_Me_ChangePos then
+modified_lua_dev_customer\EmmyluaDebug.lua:2798:                _G.Mod_Hooked_Me_ChangePos = true
+modified_lua_dev_customer\EmmyluaDebug.lua:2799:                local old_Me_ChangePos = _G.Me.ChangePos
+modified_lua_dev_customer\EmmyluaDebug.lua:2800:                _G.Me.ChangePos = function(self, moveType, 
+changeReason, reasonParam)
+modified_lua_dev_customer\EmmyluaDebug.lua:2802:                        if _G.ERoleChangePosReason and changeReason == 
+_G.ERoleChangePosReason.MoveFailed then
+modified_lua_dev_customer\EmmyluaDebug.lua:2807:                    return old_Me_ChangePos(self, moveType, 
+changeReason, reasonParam)
+modified_lua_dev_customer\EmmyluaDebug.lua:5000:                        local cam = CS.UnityEngine.Camera.main
+modified_lua_dev_customer\EmmyluaDebug.lua:5141:                local cam = CS.UnityEngine.Camera.main
+modified_lua_dev_customer\EmmyluaDebug.lua:5549:                    if CS and CS.UnityEngine and CS.UnityEngine.Camera 
+and CS.UnityEngine.Camera.main then
+modified_lua_dev_customer\EmmyluaDebug.lua:5551:                            CS.UnityEngine.Camera.main.farClipPlane = 
+1000
+
+

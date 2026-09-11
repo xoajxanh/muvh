@@ -1,17 +1,177 @@
 =========================================================================
-=== BÁO CÁO THÔNG SỐ TỌA ĐỘ VỊ TRÍ ĐỘI TRƯỞNG / SẢNH PHÓ BẢN ===
-Thời gian: 2026-09-10 00:19:16
+=== DANH SÁCH TẤT CẢ NÚT BẤM (BUTTONS) ĐANG ACTIVE TRÊN GIAO DIỆN ===
+Thời gian: 2026-09-10 15:52:13
 =========================================================================
-[1] THÔNG TIN NHÂN VẬT & VỊ TRÍ ĐỨNG:
-  -> Tên nhân vật:        LiếmHết
-  -> Role ID (RID):       5944970060856670296
-  -> Map ID:              1010015 (Quảng Trường Quỷ 15)
-  -> Server Line:         1
-  -> Tọa độ thực tế:      (70, 89)
-
-[2] THÔNG TIN TỔ ĐỘI:
-  -> World Team ID:       5944970074295620621
-  -> Leader RID:          5944970060856670296
-  -> Số thành viên:       2
+Map hiện tại: 270001 (Hành Lang Pháp Trận)
+-------------------------------------------------------------------------
+[1] Button: 'Model' | Text: '' | Sprite: 'ty_num_bg'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/PanelUIs/Instance_GoalUI/RootPanel/AllPanel/panel/subPanel/GoalPanel/YuanGuBOSSInstance/cost/Viewport/materialParent/frame_item/Model
+[2] Button: 'frame_item' | Text: '<color=#1Add1F>31130.017K/20000</color>' | Sprite: 'ty_num_bg'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/PanelUIs/Instance_GoalUI/RootPanel/AllPanel/panel/subPanel/GoalPanel/YuanGuBOSSInstance/cost/Viewport/materialParent/frame_item
+[3] Button: 'btn_goCompose' | Text: '' | Sprite: 'bubble_goCompose'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_DownTipsUI/panel_showTips/btn_goCompose
+[4] Button: 'btn_Exit' | Text: '' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/PanelUIs/Instance_GoalUI/RootPanel/btn_Exit
+[5] Button: 'btn_next' | Text: 'Yêu cầu chi viện' | Sprite: 'ty_btn_short3_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/PanelUIs/Instance_GoalUI/RootPanel/AllPanel/panel/subPanel/GoalPanel/YuanGuBOSSInstance/btn_next
+[6] Button: 'btn_buff' | Text: '26' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_BuffUI/Grid_Buff/btn_buff
+[7] Button: 'btn_buff' | Text: '40' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_BuffUI/Grid_Buff/btn_buff
+[8] Button: 'btn_buff' | Text: '68' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_BuffUI/Grid_Buff/btn_buff
+[9] Button: 'btn_buff' | Text: '30' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_BuffUI/Grid_Buff/btn_buff
+[10] Button: 'btn_buff' | Text: '58' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/Main_BuffUI/Grid_Buff/btn_buff
+[11] Button: 'btn_Team' | Text: 'Tổ Đội' | Sprite: 'btn_team_press'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/Btns/btn_Team
+[12] Button: 'btn_Task' | Text: 'Nhiệm Vụ' | Sprite: 'btn_task_press'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/SubPanel/subPanel/Btns/btn_Task
+[13] Button: 'btn_hide' | Text: '' | Sprite: 'img_btn_new_shrinkIcon'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/LeftTopPanelUI/sumcon/btn_hide
+[14] Button: 'btn_chat' | Text: '' | Sprite: 'Background_1'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left/Main_ChatUI/bg_mainChat/btn_chat
+[15] Button: 'btn_route' | Text: 'Kênh 1' | Sprite: 'btn_route'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/Main_MiniMapUI/btn_route
+[16] Button: 'btn_map' | Text: 'Hành Lang Pháp Trận' | Sprite: 'White'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/Main_MiniMapUI/btn_map
+[17] Button: 'mount_btn' | Text: '' | Sprite: 'img_btn_new_riding'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/mount_btn
+[18] Button: 'BtnSkill7' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill7
+[19] Button: 'BtnSkill6' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill6
+[20] Button: 'BtnSkill5' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill5
+[21] Button: 'BtnSkill4' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill4
+[22] Button: 'BtnSkill3' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill3
+[23] Button: 'BtnSkill2' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill2
+[24] Button: 'BtnSkill1' | Text: '' | Sprite: 'skill_frame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/SkillStruct/BtnSkill1
+[25] Button: 'Img_monster2' | Text: '' | Sprite: 'img_btn_new_monster_1'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/Zone/Img_monster/Img_monster2
+[26] Button: 'Img_monster' | Text: '' | Sprite: 'img_btn_new_monster_1'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/Zone/Img_monster
+[27] Button: 'Img_player1' | Text: '' | Sprite: 'img_btn_new_persona_1'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/Zone/Img_player/Img_player1
+[28] Button: 'Img_player' | Text: '' | Sprite: 'img_btn_new_persona_1'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/Main_MainSkillUI/Zone/Img_player
+[29] Button: 'player_attribute' | Text: 'BC138772CAC220523' | Sprite: 'bg_fight'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_tips/player_attribute
+[30] Button: 'btn_defenseValueright' | Text: '' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_defenseValue/right/btn_defenseValueright
+[31] Button: 'btn_defenseValueleft' | Text: '' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_defenseValue/left/btn_defenseValueleft
+[32] Button: 'btn_useItem4' | Text: '74' | Sprite: 'bg_smallFrame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_fastUseItem/btn_useItem4
+[33] Button: 'btn_useItem3' | Text: '437' | Sprite: 'bg_smallFrame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_fastUseItem/btn_useItem3
+[34] Button: 'btn_useItem2' | Text: '183' | Sprite: 'bg_smallFrame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_fastUseItem/btn_useItem2
+[35] Button: 'btn_useItem1' | Text: '174' | Sprite: 'bg_smallFrame'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_fastUseItem/btn_useItem1
+[36] Button: 'btn_expUpBg' | Text: '0EABCD' | Sprite: 'bg_expbar'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/go_expUp/btn_expUpBg
+[37] Button: 'player_level' | Text: 'Cấp' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/player_level
+[38] Button: 'btn_attackmode' | Text: 'Hòa bình' | Sprite: 'btn_attackmode'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_bottom/btn_attackmode
+[39] Button: 'btn_NewRunes' | Text: '' | Sprite: 'img_new_btn_runes'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_NewRunes
+[40] Button: 'btn_HolySkeleton' | Text: '' | Sprite: 'img_new_btn_holySkeleton'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_HolySkeleton
+[41] Button: 'btn_HolyRing' | Text: '' | Sprite: 'img_new_btn_holyRing'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_HolyRing
+[42] Button: 'btn_Holyspirit' | Text: '' | Sprite: 'Holyspirit'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_Holyspirit
+[43] Button: 'btn_Master' | Text: '' | Sprite: 'img_new_btn_mater'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_Master
+[44] Button: 'btn_BingJian' | Text: '' | Sprite: 'img_new_btn_bingjian'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_BingJian
+[45] Button: 'btn_Combine' | Text: '' | Sprite: 'img_new_btn_combine'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_Combine
+[46] Button: 'btn_guard' | Text: '' | Sprite: 'img_new_btn_guard'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_guard
+[47] Button: 'btn_mount' | Text: '' | Sprite: 'img_new_btn_zuo'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_mount
+[48] Button: 'btn_appearance' | Text: '' | Sprite: 'img_new_btn_wai'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_appearance
+[49] Button: 'btn_warAlliance' | Text: '' | Sprite: 'img_new_btn_meng'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_warAlliance
+[50] Button: 'btn_friends' | Text: '' | Sprite: 'img_new_btn_hao'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_friends
+[51] Button: 'btn_mail' | Text: '' | Sprite: 'img_new_btn_you'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_mail
+[52] Button: 'btn_forgeNav' | Text: '' | Sprite: 'img_new_btn_duan'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_forgeNav
+[53] Button: 'btn_roleInfo' | Text: '' | Sprite: 'img_new_btn_jia'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_roleInfo
+[54] Button: 'btn_skill' | Text: '' | Sprite: 'img_new_btn_ji'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_skill
+[55] Button: 'btn_settings' | Text: '' | Sprite: 'img_new_btn_she'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_bottom/grid_funcBtn/btn_settings
+[56] Button: 'btn_shrink' | Text: '' | Sprite: ''
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/btn_shrink
+[57] Button: 'btn_OtherWelfare' | Text: '' | Sprite: 'Community'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_OtherWelfare
+[58] Button: 'btn_GoldenHunt' | Text: '' | Sprite: 'img_GoldenHunt'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_GoldenHunt
+[59] Button: 'btn_ClimbTower' | Text: '' | Sprite: 'img_climbTower_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_ClimbTower
+[60] Button: 'btn_DemonHuntRank' | Text: '' | Sprite: 'img_DemonHuntRank_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_DemonHuntRank
+[61] Button: 'btn_GameBook' | Text: '' | Sprite: 'img_gamebook_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_GameBook
+[62] Button: 'btn_kuafu' | Text: '' | Sprite: 'img_activity_server'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_kuafu
+[63] Button: 'btn_customer' | Text: '' | Sprite: 'img_activity_customer'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_customer
+[64] Button: 'btn_ActivityShow' | Text: '' | Sprite: 'img_activity_show'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_ActivityShow
+[65] Button: 'btn_shopExp' | Text: '' | Sprite: 'img_efficiency_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_shopExp
+[66] Button: 'btn_Welfare' | Text: '' | Sprite: 'img_welfare_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_Welfare
+[67] Button: 'btn_MonsterOffered' | Text: '' | Sprite: 'img_offerreward_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_MonsterOffered
+[68] Button: 'btn_siege' | Text: '' | Sprite: 'img_siege_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_siege
+[69] Button: 'btn_instanceBoss' | Text: '' | Sprite: 'img_btn_new_bigboss'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_instanceBoss
+[70] Button: 'btn_auctoin' | Text: '' | Sprite: 'img_auction_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_auctoin
+[71] Button: 'btn_shop' | Text: '' | Sprite: 'img_shop_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_shop
+[72] Button: 'btn_rankList' | Text: '' | Sprite: 'img_rankingList_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right_top/go_activity/btn_rankList
+[73] Button: 'btn_newMember' | Text: 'Tăng cấp Kim Cương 8 sao' | Sprite: 'img_miracleCollege_new'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left_top/go_left_topVertical/btn_newMember
+[74] Button: 'btn_autoStart' | Text: '' | Sprite: 'img_btn_new_notclicked'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right/btn_autoStart
+[75] Button: 'btn_bag' | Text: '' | Sprite: 'img_new_btn_bao'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right/btn_bag
+[76] Button: 'btn_func' | Text: '' | Sprite: 'img_new_btn_zhan'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_right/btn_func
+[77] Button: 'FloatingModBtn' | Text: 'VỤT' | Sprite: ''
+    Path: MySuperModCanvas/FloatingModBtn
+[78] Button: 'FloatingExecBtn' | Text: 'EXEC' | Sprite: ''
+    Path: MySuperModCanvas/FloatingExecBtn
+[79] Button: 'FloatingPKBtn' | Text: 'PK OFF' | Sprite: ''
+    Path: MySuperModCanvas/FloatingPKBtn
+[80] Button: 'btn_close1' | Text: '' | Sprite: 'ty_btn_close_small'
+    Path: Main/Canvas/ShopSkill_TIpsUI/Bg/btn_close/btn_close1
+[81] Button: 'btn_close' | Text: '' | Sprite: 'ty_btn_close_small'
+    Path: Main/Canvas/ShopSkill_TIpsUI/Bg/btn_close
+[82] Button: 'btn_goBuy' | Text: 'Đến mua ' | Sprite: 'ty_btn_three_long'
+    Path: Main/Canvas/ShopSkill_TIpsUI/Bg/btn_goBuy
+[83] Button: 'btn_3DItem' | Text: '' | Sprite: 'ty_blackBg_cutting'
+    Path: Main/Canvas/ShopSkill_TIpsUI/Bg/img_Bg/btn_3DItem
+[84] Button: 'JoyStickBtn' | Text: '' | Sprite: 'stick_main'
+    Path: Main/Canvas/Adapter_WindowCanvasUI/Main_MainMenuUI/go_left_bottom/Main_JoyStickUI/Stick/JoyStickBtn
+-------------------------------------------------------------------------
+TỔNG CỘNG TÌM THẤY: 84 NÚT BẤM ĐANG HOẠT ĐỘNG TRÊN MÀN HÌNH.
 =========================================================================
->>> DỮ LIỆU ĐÃ ĐƯỢC GHI RA OUTPUT.TXT! SẴN SÀNG NẠP SANG MÁY SU! <<<

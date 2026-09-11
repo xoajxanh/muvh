@@ -48,9 +48,8 @@ _G.ModInitialized = true
 _G.ModCallbacks = {}
 
 -- =========================================================================
--- [MOD FEATURE]: HỆ THỐNG QUẢN LÝ TIMER & LÀM MƯỢT HỆ THỐNG (TIMER REGISTRY & SYSTEM FRESH)
--- Mô tả: Quản lý tập trung toàn bộ Timer/Loop của Mod, triệt tiêu chồng chéo vòng lặp,
---        xóa sạch cache/runtime state và giải phóng bộ nhớ (GC) khi người dùng bấm Làm Mượt.
+-- [MOD FEATURE]: HỆ THỐNG QUẢN LÝ TIMER & LÀM MƯỢT HỆ THỐNG
+-- Mô tả: Quản lý tập trung toàn bộ Timer/Loop của Mod, hỗ trợ dọn dẹp và khởi động lại sạch sẽ.
 -- =========================================================================
 _G.Mod_ActiveTimers = _G.Mod_ActiveTimers or {}
 
@@ -81,6 +80,7 @@ end
 _G.Mod_StartTrackedTimer = function(name, interval, count, callback)
     if not name or not callback then return nil end
     _G.Mod_StopTimer(name)
+
     local timerObj = nil
     if _G.Timer then
         if count == -1 then
@@ -208,41 +208,41 @@ end
 -- Mô tả: Ghi log thời gian thực vào file MyModLog.txt và CS.UnityEngine.Debug.
 -- =========================================================================
 local function WriteLog(msg)
-    pcall(function()
-        local finalMsg = tostring(msg)
-        pcall(function()
-            if string.find(finalMsg, "%[AutoLoot") then
-                local ms = 0
-                if CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup then
-                    ms = math.floor((CS.UnityEngine.Time.realtimeSinceStartup % 1) * 1000)
-                end
-                local timeStr = string.format("%s.%03d", os.date("%Y-%m-%d %H:%M:%S"), ms)
-                finalMsg = timeStr .. ": " .. finalMsg
-            end
-        end)
+    -- pcall(function()
+    --     local finalMsg = tostring(msg)
+    --     pcall(function()
+    --         if string.find(finalMsg, "%[AutoLoot") then
+    --             local ms = 0
+    --             if CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup then
+    --                 ms = math.floor((CS.UnityEngine.Time.realtimeSinceStartup % 1) * 1000)
+    --             end
+    --             local timeStr = string.format("%s.%03d", os.date("%Y-%m-%d %H:%M:%S"), ms)
+    --             finalMsg = timeStr .. ": " .. finalMsg
+    --         end
+    --     end)
 
-        local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
+    --     local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
 
-        -- Ghi bằng C# System.IO.File (100% an toàn trên Android)
-        pcall(function()
-            if CS.System.IO.File and CS.System.IO.File.AppendAllText then
-                CS.System.IO.File.AppendAllText(logPath, finalMsg .. "\n")
-            end
-        end)
+    --     -- Ghi bằng C# System.IO.File (100% an toàn trên Android)
+    --     pcall(function()
+    --         if CS.System.IO.File and CS.System.IO.File.AppendAllText then
+    --             CS.System.IO.File.AppendAllText(logPath, finalMsg .. "\n")
+    --         end
+    --     end)
 
-        -- Backup bằng Lua io.open
-        pcall(function()
-            local f = io.open(logPath, "a")
-            if f then
-                f:write(finalMsg .. "\n")
-                f:close()
-            end
-        end)
+    --     -- Backup bằng Lua io.open
+    --     pcall(function()
+    --         local f = io.open(logPath, "a")
+    --         if f then
+    --             f:write(finalMsg .. "\n")
+    --             f:close()
+    --         end
+    --     end)
 
-        pcall(function()
-            CS.UnityEngine.Debug.LogError("[MySuperMod] " .. finalMsg)
-        end)
-    end)
+    --     pcall(function()
+    --         CS.UnityEngine.Debug.LogError("[MySuperMod] " .. finalMsg)
+    --     end)
+    -- end)
 end
 _G.WriteLog = WriteLog
 
@@ -2277,151 +2277,52 @@ local function CreateModUI()
             _G.BossHooked = true
 
             -- =========================================================================
-            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (SMOOTH CAMERA & ANCHOR FOLLOW)
-            -- Mô tả: Camera bám theo nhân vật Me mỗi frame (interval = 0) và khóa góc xoay Vector3.zero
-            --        giúp loại bỏ hoàn toàn hiện tượng rung lắc/giật hình khi xoay hướng hoặc đánh chiêu.
+            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (NATIVE CAMERA FOLLOW)
+            -- Mô tả: Khôi phục Camera bám theo Me gốc của game, mượt 100% C++ Engine không rung lắc
             -- =========================================================================
             pcall(function()
-                local function InitCameraFollowAnchor()
-                    local mc = _G.MainCamera
-                    if not mc or not mc.transform or IsNil(mc.transform) then
-                        if mc and mc.Init then mc.Init() end
-                    end
-                    if not mc or not mc.transform or IsNil(mc.transform) then return end
+                -- Dọn dẹp Mod_CameraAnchor cũ nếu có để Camera bám trực tiếp vào Me
+                local oldAnchor = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                if oldAnchor and not IsNil(oldAnchor) then
+                    CS.UnityEngine.Object.Destroy(oldAnchor)
+                end
+                _G.Mod_CameraAnchor = nil
+                _G.Mod_CameraAnchorTrans = nil
 
-                    local anchorGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                    if not anchorGo or IsNil(anchorGo) then
-                        anchorGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                        CS.UnityEngine.Object.DontDestroyOnLoad(anchorGo)
-                    end
-                    local anchorTrans = anchorGo.transform
-                    anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                    _G.Mod_CameraAnchor = anchorGo
-
-                    local function RefreshAnchorCam()
-                        local zoom = mc.zoom or 1
-                        local angle = mc.angle or -45
-                        local distX = 4.0 + (9.7 - 4.0) * zoom
-                        local distY = 2.5 + (8.42 - 2.5) * zoom
-                        local angX = 20.0 + (42.0 - 20.0) * zoom
-
-                        local rad = math.rad(angle)
-                        local x = -distX * math.sin(rad)
-                        local z = -distX * math.cos(rad)
-
-                        if mc.transform.SetLocalEulerAngles then
-                            mc.transform:SetLocalEulerAngles(angX, angle, 0)
-                        else
-                            mc.transform.localEulerAngles = CS.UnityEngine.Vector3(angX, angle, 0)
-                        end
-
-                        if mc.transform.SetLocalPosition then
-                            mc.transform:SetLocalPosition(x, distY, z)
-                        else
-                            mc.transform.localPosition = CS.UnityEngine.Vector3(x, distY, z)
-                        end
-                    end
-
-                    local function SyncAnchorPos()
-                        local aGo = _G.Mod_CameraAnchor
-                        if not aGo or IsNil(aGo) then
-                            aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                            if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
-                            end
-                            _G.Mod_CameraAnchor = aGo
-                        end
-                        local role = _G.RoleManager and _G.RoleManager.me
-                        if role and role.transform and not IsNil(role.transform) then
-                            local p = role.transform.position
-                            local aTrans = aGo.transform
-                            aTrans.position = p
-                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                        end
-                    end
-
-                    if mc.transform.parent ~= anchorTrans then
-                        mc.transform:SetParent(anchorTrans, false)
-                        RefreshAnchorCam()
-                        SyncAnchorPos()
-                    end
-
+                local mc = _G.MainCamera
+                if mc then
                     if not _G.Mod_Hooked_AttachRole and mc.AttachRole then
                         _G.Mod_Hooked_AttachRole = true
                         local old_AttachRole = mc.AttachRole
                         mc.AttachRole = function(role)
                             if not role then return end
-                            mc.target = role.transform
-                            local aGo = _G.Mod_CameraAnchor
-                            if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                                if not aGo or IsNil(aGo) then
-                                    aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                    CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
-                                end
-                                _G.Mod_CameraAnchor = aGo
+                            if old_AttachRole then old_AttachRole(role) end
+                            if role.transform and mc.transform then
+                                mc.transform:SetParent(role.transform, false)
+                                if mc.RefreshPosition then mc.RefreshPosition() end
                             end
-                            local aTrans = aGo.transform
-                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                            mc.transform:SetParent(aTrans, false)
-                            RefreshAnchorCam()
-                            SyncAnchorPos()
                         end
                     end
-
-                    _G.Mod_StartSmoothCameraLoop = function()
-                        _G.Mod_StartTrackedTimer("SmoothCamera", 0, -1, function()
-                            pcall(SyncAnchorPos)
-                        end)
+                    -- Nếu đang trong map và có role me, gán trực tiếp lại
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me and mc.AttachRole then
+                        pcall(function() mc.AttachRole(me) end)
                     end
-                    _G.Mod_StartSmoothCameraLoop()
                 end
-
-                InitCameraFollowAnchor()
             end)
 
             -- =========================================================================
-            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO BODY, CÁNH & DẤU CHÂN ME
-            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không bị giật/bóng ma/2 người
+            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO CÁNH & BODY ME (SIÊU NHẸ)
+            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không tốn CPU/GC
             -- =========================================================================
             _G.Mod_LockMyAnimatorsToNormal = function()
                 pcall(function()
                     local me = _G.RoleManager and _G.RoleManager.me
                     if not me then return end
 
-                    local targets = {}
-                    if me.model and me.model.modelObject then table.insert(targets, me.model.modelObject) end
-                    if me.model and me.model.transform then table.insert(targets, me.model.transform) end
-                    if me.AvatarEquip then
-                        if me.AvatarEquip.footPrintObj then table.insert(targets, me.AvatarEquip.footPrintObj) end
-                        if me.AvatarEquip.wingObj then table.insert(targets, me.AvatarEquip.wingObj) end
-                    end
-                    if me.footPrintEffect then table.insert(targets, me.footPrintEffect) end
-
-                    for _, targetGo in ipairs(targets) do
-                        if targetGo and not IsNil(targetGo) then
-                            local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                            if anims then
-                                for i = 0, anims.Length - 1 do
-                                    local a = anims[i]
-                                    if a and not IsNil(a) and a.speed ~= 1.0 then
-                                        a.speed = 1.0
-                                    end
-                                end
-                            end
-                            local particles = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
-                            if particles then
-                                for i = 0, particles.Length - 1 do
-                                    local ps = particles[i]
-                                    if ps and not IsNil(ps) then
-                                        local main = ps.main
-                                        if main.simulationSpeed ~= 1.0 then
-                                            main.simulationSpeed = 1.0
-                                        end
-                                    end
-                                end
-                            end
+                    if me.wingAnimator and me.wingAnimator.animator and not IsNil(me.wingAnimator.animator) then
+                        if me.wingAnimator.animator.speed ~= 1.0 then
+                            me.wingAnimator.animator.speed = 1.0
                         end
                     end
                 end)
@@ -2433,7 +2334,9 @@ local function CreateModUI()
                 local old_SetAnimatorSpeed = _G.AnimatorCtrl.SetAnimatorSpeed
                 _G.AnimatorCtrl.SetAnimatorSpeed = function(self, speed)
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                        speed = 1.0
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            speed = 1.0
+                        end
                     end
                     return old_SetAnimatorSpeed(self, speed)
                 end
@@ -2444,7 +2347,9 @@ local function CreateModUI()
                 local old_RoleModel_Play = _G.RoleModel.PlayAnimation
                 _G.RoleModel.PlayAnimation = function(self, name, speed, fadeTime, startTime, realTime, callback)
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                        speed = 1.0
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            speed = 1.0
+                        end
                     end
                     return old_RoleModel_Play(self, name, speed, fadeTime, startTime, realTime, callback)
                 end
@@ -2456,7 +2361,7 @@ local function CreateModUI()
                 _G.RoleEquip.SetWingAni = function(self, RoleMoveType, isCurIsSafeZone)
                     old_SetWingAni(self, RoleMoveType, isCurIsSafeZone)
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                        if self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 and self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
                             self.wingAnimator.animator.speed = 1.0
                         end
                     end
@@ -2469,22 +2374,15 @@ local function CreateModUI()
                 local old_SetFoot = _G.RoleEquip.SetFoot
                 _G.RoleEquip.SetFoot = function(self, position, path)
                     old_SetFoot(self, position, path)
-                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.avatar and self.avatar.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
                 end
             end
 
-            -- Hook Me:MoveTo và Player:SetMoving để khóa ngay lập tức khi người chơi click di chuyển
+            -- Hook Me:MoveTo và Player:SetMoving
             if _G.Me and not _G.Mod_Hooked_Me_MoveTo then
                 _G.Mod_Hooked_Me_MoveTo = true
                 local old_Me_MoveTo = _G.Me.MoveTo
                 _G.Me.MoveTo = function(self, cell, stopRange, onEndMove)
-                    local ret = old_Me_MoveTo(self, cell, stopRange, onEndMove)
-                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
-                    return ret
+                    return old_Me_MoveTo(self, cell, stopRange, onEndMove)
                 end
             end
 
@@ -2492,10 +2390,7 @@ local function CreateModUI()
                 _G.Mod_Hooked_Player_SetMoving = true
                 local old_Player_SetMoving = _G.Player.SetMoving
                 _G.Player.SetMoving = function(self, moveType)
-                    old_Player_SetMoving(self, moveType)
-                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
+                    return old_Player_SetMoving(self, moveType)
                 end
             end
 
@@ -2517,15 +2412,12 @@ local function CreateModUI()
                     else
                         original_SetMoveSpeed(self, moveSpeed)
                     end
-                    if (_G.Mod_IsActive and _G.Mod_IsActive()) and self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
                 end
             end
 
-            -- Loop giám sát định kỳ 0.3s khóa chuẩn Animator 1.0x khi chạy tốc độ cao
+            -- Loop giám sát định kỳ 2.0s khóa chuẩn Animator 1.0x khi chạy tốc độ cao
             _G.Mod_StartSpeedAnimLockLoop = function()
-                _G.Mod_StartTrackedTimer("SpeedAnimLock", 0.3, -1, function()
+                _G.Mod_StartTrackedTimer("SpeedAnimLock", 2.0, -1, function()
                     if (_G.Mod_IsActive and _G.Mod_IsActive()) and (_G.RunSpeedMultiplier or 1.0) > 1.0 then
                         if _G.Mod_LockMyAnimatorsToNormal then
                             _G.Mod_LockMyAnimatorsToNormal()
@@ -4866,7 +4758,7 @@ local function CreateModUI()
                                             --     if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(dbgMsg) end
                                             -- end
 
-                                            if _G.Mod_IsAdmin and limitNum >= 16 and rawPct <= triggerThreshold then
+                                            if _G.AutoPick_Enabled and _G.Mod_IsAdmin and limitNum >= 16 and rawPct <= triggerThreshold then
                                                 TriggerKundunWeakPrep(role, triggerThreshold)
                                             elseif rawPct > triggerThreshold + 0.1 then
                                                 _G.Mod_KundunWeakExecuted = false
@@ -5130,8 +5022,12 @@ local function CreateModUI()
                     end
 
                     if _G.SavedFOV then
-                        local cam = CS.UnityEngine.Camera.main
-                        if cam and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
+                        local cam = _G.Mod_CachedMainCam
+                        if not cam or IsNil(cam) then
+                            cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                            _G.Mod_CachedMainCam = cam
+                        end
+                        if cam and not IsNil(cam) and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
                             cam.fieldOfView = _G.SavedFOV
                             if UpdateFOVLabel then UpdateFOVLabel() end
                         end
@@ -5530,7 +5426,7 @@ local function CreateModUI()
                     _G.Mod_PK_MatchedPlayers = _G.Mod_PK_MatchedPlayers or {}
 
                     _G.Mod_StartPKScanLoop = function()
-                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.1, -1, function()
+                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.4, -1, function()
                             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                             pcall(function()
                                 if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
@@ -5660,7 +5556,7 @@ local function CreateModUI()
                 -- Mô tả: Định kỳ giám sát và tự động di chuyển nhân vật về tọa độ X#Y đã cài đặt.
                 -- =========================================================================
                 _G.Mod_StartReturnPosLoop = function()
-                    _G.Mod_StartTrackedTimer("AutoReturnPos", 0.1, -1, function()
+                    _G.Mod_StartTrackedTimer("AutoReturnPos", 0.5, -1, function()
                         if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                         pcall(function()
                             if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
@@ -10900,15 +10796,13 @@ local function CreateModUI()
 
             local original_AddDropSceneCellPos = _G.PickupManager.AddDropSceneCellPos
             _G.PickupManager.AddDropSceneCellPos = function(item)
-                local startTime = CS.UnityEngine.Time.realtimeSinceStartup
-                local interceptTime = os.date("%H:%M:%S")
                 original_AddDropSceneCellPos(item)
 
                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                 if not (item and item.data) then return end
                 local dropItemData = item.data
 
-                -- HÚT ĐỒ BATCH LOOT TỨC THÌ NGAY KHI RỚI KHỎI RƯƠNG VÀNG
+                -- 1. HÚT ĐỒ BATCH LOOT TỨC THÌ NGAY KHI RỚI KHỎI RƯƠNG VÀNG
                 if _G.Mod_AutoOpenGoldenChest_Enabled then
                     pcall(function()
                         local objId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
@@ -10923,30 +10817,29 @@ local function CreateModUI()
                             end
                         end
                     end)
+                    return
                 end
 
-                if _G.Mod_AutoPK_Enabled or _G.Mod_AutoPick_KTD then
-                    local mapId = 0
-                    if _G.SceneData and _G.SceneData.mapId then
-                        mapId = _G.SceneData.mapId
-                    elseif _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId then
-                        mapId = _G.RoleManager.me.mapId
-                    end
+                local curMapId = (_G.SceneData and _G.SceneData.mapId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
 
-                    if mapId == 1077 then
-                        local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
-                        if objId then
-                            _G.Mod_KTD_Chests = _G.Mod_KTD_Chests or {}
-                            _G.Mod_KTD_Chests[objId] = {
-                                id = objId,
-                                x = dropItemData.x,
-                                y = dropItemData.y
-                            }
-                        end
+                -- 2. KHỐN THÚ ĐẤU (Map 1077): Lưu tọa độ rương KTĐ
+                if curMapId == 1077 and (_G.Mod_AutoPK_Enabled or _G.Mod_AutoPick_KTD) then
+                    local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
+                    if objId then
+                        _G.Mod_KTD_Chests = _G.Mod_KTD_Chests or {}
+                        _G.Mod_KTD_Chests[objId] = {
+                            id = objId,
+                            x = dropItemData.x,
+                            y = dropItemData.y
+                        }
                     end
                 end
 
+                -- 3. TỰ ĐỘNG NHẶT ĐỒ: CHỈ XỬ LÝ KHI NGƯỜI CHƠI BẬT NÚT NHẶT ĐỒ
                 if _G.AutoPick_Enabled then
+                    local startTime = CS.UnityEngine.Time.realtimeSinceStartup
+                    local interceptTime = os.date("%H:%M:%S")
+
                     local eType = dropItemData.type
                     local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.configID
                     local decision = (_G.Mod_GetItemDecision and _G.Mod_GetItemDecision(confId, eType)) or {
@@ -10968,11 +10861,8 @@ local function CreateModUI()
                         local pickLimit = _G.AutoPick_Limit or 0
                         
                         if isAdminBurst and pickLimit < 21 then
-                            -- [TỐI ƯU HIỆU NĂNG CỰC ĐẠI] 
-                            -- Admin bão nhặt (limit 16-20): Bỏ qua bộ lọc Rune, nhặt tất cả Rune
                             shouldPick = true
                         else
-                            -- Bình thường (hoặc Admin limit >= 21): Lọc Rune theo Level/Color qua Cache O(1)
                             if decision.runePref and _G[decision.runePref] == true then
                                 shouldPick = true
                             end

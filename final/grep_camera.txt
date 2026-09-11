@@ -1,0 +1,37 @@
+﻿
+modified_lua_dev_customer\EmmyluaDebug.lua:18:_G.Mod_Config_FOV_Min = 30
+modified_lua_dev_customer\EmmyluaDebug.lua:19:_G.Mod_Config_FOV_Max = 50
+modified_lua_dev_customer\EmmyluaDebug.lua:238:local function SetCameraFOV(fov)
+modified_lua_dev_customer\EmmyluaDebug.lua:239:    if not fov then return end
+modified_lua_dev_customer\EmmyluaDebug.lua:240:    local maxFov = _G.Mod_Config_FOV_Max or 50
+modified_lua_dev_customer\EmmyluaDebug.lua:241:    local minFov = _G.Mod_Config_FOV_Min or 35
+modified_lua_dev_customer\EmmyluaDebug.lua:242:    fov = math.max(minFov, math.min(maxFov, fov))
+modified_lua_dev_customer\EmmyluaDebug.lua:243:    _G.currentFOV = fov
+modified_lua_dev_customer\EmmyluaDebug.lua:244:    _G.SavedFOV = fov
+modified_lua_dev_customer\EmmyluaDebug.lua:246:        local cam = CS.UnityEngine.Camera.main
+modified_lua_dev_customer\EmmyluaDebug.lua:248:            cam.fieldOfView = fov
+modified_lua_dev_customer\EmmyluaDebug.lua:250:        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_FOV", fov)
+modified_lua_dev_customer\EmmyluaDebug.lua:254:_G.SetCameraFOV = SetCameraFOV
+modified_lua_dev_customer\EmmyluaDebug.lua:262:            "Mod_AutoPick_Limit", "Mod_FOV", "Mod_AutoRefresh", 
+"Mod_RefreshInterval",
+modified_lua_dev_customer\EmmyluaDebug.lua:278:    if config.fov_min then _G.Mod_Config_FOV_Min = 
+tonumber(config.fov_min) end
+modified_lua_dev_customer\EmmyluaDebug.lua:279:    if config.fov_max then _G.Mod_Config_FOV_Max = 
+tonumber(config.fov_max) end
+modified_lua_dev_customer\EmmyluaDebug.lua:341:    -- Clamping current FOV to new remote config boundaries
+modified_lua_dev_customer\EmmyluaDebug.lua:342:    local maxFov = _G.Mod_Config_FOV_Max or 50
+modified_lua_dev_customer\EmmyluaDebug.lua:343:    local minFov = _G.Mod_Config_FOV_Min or 35
+modified_lua_dev_customer\EmmyluaDebug.lua:344:    _G.currentFOV = _G.currentFOV or maxFov
+modified_lua_dev_customer\EmmyluaDebug.lua:345:    if _G.currentFOV > maxFov then _G.currentFOV = maxFov end
+modified_lua_dev_customer\EmmyluaDebug.lua:346:    if _G.currentFOV < minFov then _G.currentFOV = minFov end
+modified_lua_dev_customer\EmmyluaDebug.lua:347:    if _G.fovValTxt and not _G.fovValTxt:Equals(nil) then
+modified_lua_dev_customer\EmmyluaDebug.lua:348:        _G.fovValTxt.text = "FOV: " .. tostring(_G.currentFOV)
+modified_lua_dev_customer\EmmyluaDebug.lua:350:    if _G.SetCameraFOV then _G.SetCameraFOV(_G.currentFOV) end
+modified_lua_dev_customer\EmmyluaDebug.lua:360:        " | FOV Max: " .. tostring(_G.Mod_Config_FOV_Max) .. " | Tốc 
+đánh: " .. tostring(_G.Mod_Config_MaxAttackSpeed)
+modified_lua_dev_customer\EmmyluaDebug.lua:365:            " | FOV: " ..
+modified_lua_dev_customer\EmmyluaDebug.lua:366:            tostring(_G.Mod_Config_FOV_Min) ..
+modified_lua_dev_customer\EmmyluaDebug.lua:368:            tostring(_G.Mod_Config_FOV_Max) ..
+modified_lua_dev_customer\EmmyluaDebug.lua:1609:        local testBtnGo = GameObject("FOVMinusBtn")
+
+

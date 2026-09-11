@@ -1,0 +1,526 @@
+=========================================================================
+=== KHỞI ĐỘNG CHU TRÌNH BOT FARM (ACC 1/1: accmuvh0001@gmail.com | S490 | ROLE 1/4) ===
+Thời gian: 2026-09-11 01:21:30 | Step Delay: 1.0s
+=========================================================================
+--- THỰC HIỆN ĐĂNG XUẤT RA MÀN HÌNH LOGIN ---
+-> Đang đợi 2.0s để dọn dẹp game và nạp lại Login Scene...
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/1: accmuvh0001@gmail.com | SERVER 490 | ROLE 1/4) ---
+-> [SDK] Login Thành Công! UID: 177572631904821000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:177572631904821000
+   - sign: 831d4c0dd9f8471ac17ac24ea93e9031
+--- [BƯỚC 4] CHỌN S490 & KẾT NỐI MÁY CHỦ (ACC 1/1: accmuvh0001@gmail.com | ROLE 1/4) ---
+1. Đã chọn Server: VĨNH HẰNG 490
+2. Kích hoạt kết nối Server 490...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 0
+Tài khoản hiện có 0 nhân vật. Slot [1] chưa có -> Bắt đầu tạo mới nhân vật!
+=========================================================================
+>>> [TẠO NHÂN VẬT] PHÁT HIỆN SLOT [1/4] CHƯA CÓ NHÂN VẬT! <<<
+>>> ĐANG TẠO MỚI NHÂN VẬT: Tên = Tedv0o | Class = Chiến Binh (DK) <<<
+=========================================================================
+[EVENT] Login_CreateRole -> TẠO NHÂN VẬT THÀNH CÔNG!
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Danh sách nhân vật sau khi tạo: 0 nhân vật. Tiến hành chọn nhân vật 1...
+Tài khoản hiện có 0 nhân vật. Slot [1] chưa có -> Bắt đầu tạo mới nhân vật!
+=========================================================================
+>>> [TẠO NHÂN VẬT] PHÁT HIỆN SLOT [1/4] CHƯA CÓ NHÂN VẬT! <<<
+>>> ĐANG TẠO MỚI NHÂN VẬT: Tên = Kaivk2 | Class = Chiến Binh (DK) <<<
+=========================================================================
+-> Level nhân vật hiện tại: 1
+=========================================================================
+>>> NHÂN VẬT LEVEL 1 (< 200) -> KÍCH HOẠT AUTO NHIỆM VỤ TÂN THỦ! <<<
+=========================================================================
+[EVENT] Login_CreateRole -> TẠO NHÂN VẬT THÀNH CÔNG!
+[EVENT] Login_CreateRole -> TẠO NHÂN VẬT THÀNH CÔNG!
+-> Danh sách nhân vật sau khi tạo: 1 nhân vật. Tiến hành chọn nhân vật 1...
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Kaivk2 (ID: 5945021201683104928 | Level: 1) <<<
+   Cấu hình áp dụng: Map 101094 @ 172#156 | Rương: 3 đợt | Giữ dòng ngon: false
+=========================================================================
+-> Danh sách nhân vật sau khi tạo: 1 nhân vật. Tiến hành chọn nhân vật 1...
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Kaivk2 (ID: 5945021201683104928 | Level: 1) <<<
+   Cấu hình áp dụng: Map 101094 @ 172#156 | Rương: 3 đợt | Giữ dòng ngon: false
+=========================================================================
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> GỬI LỆNH ReqChooseRole: roleId = 5945021201683104928 (Tên: Kaivk2)...
+-> GỬI LỆNH ReqChooseRole: roleId = 5945021201683104928 (Tên: Kaivk2)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 1
+=========================================================================
+>>> NHÂN VẬT LEVEL 1 (< 200) -> KÍCH HOẠT AUTO NHIỆM VỤ TÂN THỦ! <<<
+=========================================================================
+-> Level nhân vật hiện tại: 1
+=========================================================================
+>>> NHÂN VẬT LEVEL 1 (< 200) -> KÍCH HOẠT AUTO NHIỆM VỤ TÂN THỦ! <<<
+=========================================================================
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 2
+   [1] ID: 5945021201683103924 | Tên: Tedv0o | Level: 1
+   [2] ID: 5945021201683104928 | Tên: Kaivk2 | Level: 1
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/2] TRÊN PEDESTAL: Tedv0o (ID: 5945021201683103924 | Level: 1) <<<
+   Cấu hình áp dụng: Map 101094 @ 172#156 | Rương: 3 đợt | Giữ dòng ngon: false
+=========================================================================
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> GỬI LỆNH ReqChooseRole: roleId = 5945021201683103924 (Tên: Tedv0o)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> Level nhân vật hiện tại: 1
+=========================================================================
+>>> NHÂN VẬT LEVEL 1 (< 200) -> KÍCH HOẠT AUTO NHIỆM VỤ TÂN THỦ! <<<
+=========================================================================
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 1/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 2/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 4/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 6/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 8/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 9/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 11/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 12/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 14/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 16/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 16/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 16/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 16/200
+-> [QUEST MONITOR] Đang làm nhiệm vụ tân thủ... Cấp độ: 16/200

@@ -37,5 +37,7 @@ final/modified_lua_client/
 final/modified_lua_customer/
 final/temp_lua/
 final/temp_build/
+jadx_out/
+
 
 

@@ -18,10 +18,11 @@ Write-Host "CHON CHE DO BUILD:" -ForegroundColor Yellow
 Write-Host " [1] CLIENT       : Sync 'modified_lua_dev_client' -> Build MU_admin.apk & MU_client.apk (release_client) [MAC DINH]" -ForegroundColor Cyan
 Write-Host " [2] CUSTOMER     : Sync 'modified_lua_dev_customer' -> Build MU_vut_teams.apk (release_customer)" -ForegroundColor Cyan
 Write-Host " [3] NOTIFICATION : Build 'modified_lua_dev_notification' -> Build MU_notification.apk (release_notification)" -ForegroundColor Cyan
-Write-Host " [4] ALL          : Build TAT CA (CLIENT + CUSTOMER + NOTIFICATION)" -ForegroundColor Cyan
+Write-Host " [4] ALL          : Build TAT CA (CLIENT + CUSTOMER + NOTIFICATION + FARM)" -ForegroundColor Cyan
+Write-Host " [5] FARM         : Build 'modified_lua_dev_farm' -> Build MU_farm.apk (release_farm)" -ForegroundColor Cyan
 Write-Host "----------------------------------------------------------" -ForegroundColor Gray
 
-$modeInput = Read-Host "Nhap lua chon (1/2/3/4) [Nhan Enter = 1 (CLIENT)]"
+$modeInput = Read-Host "Nhap lua chon (1/2/3/4/5) [Nhan Enter = 1 (CLIENT)]"
 
 if ([string]::IsNullOrWhiteSpace($modeInput)) {
     $choice = 1
@@ -72,6 +73,12 @@ function Build-ApkTask {
 
     # A. Compile & Pack Lua
     Write-Host "1. Bien dich LUA cho $Ver..."
+    $compiledDir = "final\compiled_lua"
+    if (Test-Path $compiledDir) {
+        Get-ChildItem -Path $compiledDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    } else {
+        New-Item -ItemType Directory -Force -Path $compiledDir | Out-Null
+    }
     $env:LUA_SRC_DIR = "final\modified_lua_$Ver"
     python compile_lua.py
 
@@ -131,10 +138,18 @@ if ($choice -eq 1 -or $choice -eq 4) {
     # --------------------------------------------------------------------------
     Write-Host ""
     Write-Host "--- DONG BO CODE MOD DEV CLIENT -> ADMIN & CLIENT ---" -ForegroundColor Yellow
-    Copy-Item -Path "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\*" -Destination "d:\MUVH\android\mu-decompiled\final\modified_lua_admin" -Recurse -Force
-    Copy-Item -Path "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\*" -Destination "d:\MUVH\android\mu-decompiled\final\modified_lua_client" -Recurse -Force
+    $adminDir = "D:\MUVH\android\mu-decompiled\final\modified_lua_admin"
+    $clientDir = "D:\MUVH\android\mu-decompiled\final\modified_lua_client"
+    if (Test-Path $adminDir) {
+        Get-ChildItem -Path $adminDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    }
+    if (Test-Path $clientDir) {
+        Get-ChildItem -Path $clientDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    }
+    Copy-Item -Path "D:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\*" -Destination $adminDir -Recurse -Force
+    Copy-Item -Path "D:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\*" -Destination $clientDir -Recurse -Force
 
-    $clientLua = "d:\MUVH\android\mu-decompiled\final\modified_lua_client\EmmyluaDebug.lua"
+    $clientLua = "$clientDir\EmmyluaDebug.lua"
     if (Test-Path $clientLua) {
         $content = [System.IO.File]::ReadAllText($clientLua, $utf8NoBom)
         $content = $content.Replace("_G.Mod_IsAdmin = true", "_G.Mod_IsAdmin = false")
@@ -151,9 +166,14 @@ if ($choice -eq 2 -or $choice -eq 4) {
     # --------------------------------------------------------------------------
     Write-Host ""
     Write-Host "--- DONG BO CODE MOD DEV CUSTOMER -> CUSTOMER ---" -ForegroundColor Yellow
-    Copy-Item -Path "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_customer\*" -Destination "d:\MUVH\android\mu-decompiled\final\modified_lua_customer" -Recurse -Force
+    $customerDir = "D:\MUVH\android\mu-decompiled\final\modified_lua_customer"
+    if (Test-Path $customerDir) {
+        Get-ChildItem -Path $customerDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+    }
+    Copy-Item -Path "D:\MUVH\android\mu-decompiled\final\modified_lua_dev_customer\*" -Destination $customerDir -Recurse -Force
+    Get-ChildItem -Path $customerDir -Filter "*.bak*" -Recurse | Remove-Item -Force -ErrorAction SilentlyContinue
 
-    $customerLua = "d:\MUVH\android\mu-decompiled\final\modified_lua_customer\EmmyluaDebug.lua"
+    $customerLua = "$customerDir\EmmyluaDebug.lua"
     if (Test-Path $customerLua) {
         $content = [System.IO.File]::ReadAllText($customerLua, $utf8NoBom)
         $content = $content.Replace("_G.Mod_IsDev = true", "_G.Mod_IsDev = false")
@@ -173,10 +193,25 @@ if ($choice -eq 3 -or $choice -eq 4) {
     Build-ApkTask -Ver "dev_notification" -OutputApkName "MU_notification.apk" -TargetFolder "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_notification"
 }
 
-# 4. Don dep thu muc temp build
+if ($choice -eq 5 -or $choice -eq 4) {
+    # --------------------------------------------------------------------------
+    # FARM MODE (Direct dev_farm)
+    # --------------------------------------------------------------------------
+    Write-Host ""
+    Write-Host "--- BUILD MOD DEV FARM ---" -ForegroundColor Yellow
+    Build-ApkTask -Ver "dev_farm" -OutputApkName "MU_farm.apk" -TargetFolder "D:\MUVH\android\mu-decompiled\test_apk\v1\release\release_farm"
+}
+
+# 4. Don dep thu muc temp build & compiled lua
 Write-Host ""
 Write-Host "Don dep file tam..." -ForegroundColor Gray
 Remove-Item -Path $tempBuildDir -Recurse -Force -ErrorAction SilentlyContinue
+if (Test-Path "final\compiled_lua") {
+    Get-ChildItem -Path "final\compiled_lua" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
+}
+if (Test-Path "final\new_bundles") {
+    Remove-Item -Path "final\new_bundles" -Recurse -Force -ErrorAction SilentlyContinue
+}
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Green
@@ -184,3 +219,4 @@ Write-Host " SUCCESS! QUY TRINH BUILD & DEPLOY HOAN TAT" -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
 Write-Host ""
 Pause
+

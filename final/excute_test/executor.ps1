@@ -1,5 +1,6 @@
 param (
-    [string]$Target = "$PSScriptRoot\exec_cmd.ps1"
+    [string]$Target = "$PSScriptRoot\exec_cmd.ps1",
+    [string]$Command = ""
 )
 
 # Thiet lap ma hoa UTF-8 cho toan bo output console
@@ -7,22 +8,31 @@ param (
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "==================== [AGENT EXECUTOR] ====================" -ForegroundColor Cyan
-Write-Host "Dang thuc thi: $Target" -ForegroundColor Gray
 Write-Host "Thoi gian: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" -ForegroundColor Gray
+
+if (-not [string]::IsNullOrWhiteSpace($Command)) {
+    Write-Host "Dang thuc thi Command: $Command" -ForegroundColor Yellow
+} else {
+    Write-Host "Dang thuc thi Script Target: $Target" -ForegroundColor Gray
+}
 Write-Host "---------------------------------------------------------" -ForegroundColor DarkGray
 
-if (-not (Test-Path $Target)) {
-    Write-Host "[ERROR] Khong tim thay file kich ban: $Target" -ForegroundColor Red
-    exit 1
-}
-
-$outputFile = "$PSScriptRoot\exec_output.txt"
 $sw = [System.Diagnostics.Stopwatch]::StartNew()
 
 try {
-    # Chay file kich ban duoc chi dinh
-    & $Target
-    $exitCode = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
+    if (-not [string]::IsNullOrWhiteSpace($Command)) {
+        # Thuc thi truc tiep lenh PowerShell / Git / Python truyen vao
+        Invoke-Expression $Command
+        $exitCode = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
+    } else {
+        if (-not (Test-Path $Target)) {
+            Write-Host "[ERROR] Khong tim thay file kich ban: $Target" -ForegroundColor Red
+            exit 1
+        }
+        # Chay file kich ban duoc chi dinh (vd: exec_cmd.ps1)
+        & $Target
+        $exitCode = if ($LASTEXITCODE -ne $null) { $LASTEXITCODE } else { 0 }
+    }
     
     $sw.Stop()
     Write-Host "---------------------------------------------------------" -ForegroundColor DarkGray

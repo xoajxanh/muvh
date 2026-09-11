@@ -127,16 +127,6 @@ local function Mod_GetCharacterUID()
         if _G.LoginData and _G.LoginData.sdk_pid and tostring(_G.LoginData.sdk_pid) ~= "" then
             uid = tostring(_G.LoginData.sdk_pid)
         end
-        if uid == "" and _G.LoginData and _G.LoginData.account and tostring(_G.LoginData.account) ~= "" then
-            uid = tostring(_G.LoginData.account)
-        end
-        if uid == "" and _G.RoleManager and _G.RoleManager.me then
-            if _G.RoleManager.me.roleId then uid = tostring(_G.RoleManager.me.roleId) end
-            if uid == "" and _G.RoleManager.me.id then uid = tostring(_G.RoleManager.me.id) end
-        end
-        if uid == "" and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id then
-            uid = tostring(_G.ViewData.meData.id)
-        end
     end)
     return uid
 end
@@ -183,44 +173,28 @@ local API_BASE_URL = "http://g3events.asia/api/v1/config"
 local function Mod_ValidateConfig(config)
     if not config then return false, "Chưa có cấu hình kích hoạt!" end
     local currentTime = os.time()
-    if _G.WriteLog then
-        _G.WriteLog("[ActiveCheck] [VALIDATE 1] Kiem tra expire_time: config=" ..
-            tostring(config.expire_time) .. ", os.time()=" .. tostring(currentTime))
-    end
     if config.expire_time and currentTime > tonumber(config.expire_time) then
-        if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI HET HAN] Tai khoan / Cau hinh da het han su dung!") end
         return false, "Tài khoản / Cấu hình đã hết hạn sử dụng!"
     end
     local currentSerialMD5 = Mod_GetDeviceSerialMD5()
     local cfgSN = config.device_sn_hash or config.serial_number
-    if _G.WriteLog then
-        _G.WriteLog("[ActiveCheck] [VALIDATE 2] Kiem tra Device Serial: config=" ..
-            tostring(cfgSN) .. ", current=" .. tostring(currentSerialMD5))
-    end
     if cfgSN and tostring(cfgSN) ~= "" then
         local cfgSNStr = tostring(cfgSN)
         local cfgSNMD5 = Mod_CalculateMD5(cfgSNStr)
         if cfgSNStr ~= currentSerialMD5 and cfgSNMD5 ~= currentSerialMD5 then
-            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI SERIAL] Device Serial mismatch!") end
             return false, "Mã thiết bị (Serial MD5) không trùng khớp!"
         end
     end
     local cfgUID = config.character_uid or config.uid
     local currentUID = Mod_GetCharacterUID()
-    if _G.WriteLog then
-        _G.WriteLog("[ActiveCheck] [VALIDATE 3] Kiem tra Character UID: config=" ..
-            tostring(cfgUID) .. ", current=" .. tostring(currentUID))
-    end
     if cfgUID and tostring(cfgUID) ~= "" then
         if currentUID == "" then
             return false, "Vui lòng đăng nhập nhân vật trong game để xác thực UID!"
         end
         if tostring(cfgUID) ~= currentUID then
-            if _G.WriteLog then _G.WriteLog("[ActiveCheck] [LOI UID] Character UID mismatch!") end
             return false, "Mã nhân vật (UID) không trùng khớp!"
         end
     end
-    if _G.WriteLog then _G.WriteLog("[ActiveCheck] [VALIDATE SUCCESS] Tat ca thong so hop le 100%!") end
     return true, "OK"
 end
 
@@ -235,18 +209,53 @@ local function Mod_FormatExpireDate(ts)
     return tostring(ts)
 end
 
-local function Mod_ValidateConfig(config)
-    if not config then return false, "Config rỗng!" end
-    if config.expire_time then
-        local expNum = tonumber(config.expire_time)
-        if expNum and expNum > 0 then
-            local now = os.time()
-            if now > expNum then
-                return false, "Bản quyền đã hết hạn!"
+_G.Mod_ActiveTimers = _G.Mod_ActiveTimers or {}
+
+_G.Mod_StopTimer = function(name)
+    pcall(function()
+        if not name then return end
+        if _G.Mod_ActiveTimers and _G.Mod_ActiveTimers[name] then
+            if _G.Timer and _G.Timer.Stop then
+                _G.Timer.Stop(_G.Mod_ActiveTimers[name])
             end
+            _G.Mod_ActiveTimers[name] = nil
+        end
+    end)
+end
+
+_G.Mod_StopAllTimers = function()
+    pcall(function()
+        if not _G.Mod_ActiveTimers then return end
+        for k, timerObj in pairs(_G.Mod_ActiveTimers) do
+            if timerObj and _G.Timer and _G.Timer.Stop then
+                pcall(function() _G.Timer.Stop(timerObj) end)
+            end
+            _G.Mod_ActiveTimers[k] = nil
+        end
+    end)
+end
+
+_G.Mod_StartTrackedTimer = function(name, interval, count, callback)
+    if not name or not callback then return nil end
+    _G.Mod_StopTimer(name)
+    local timerObj = nil
+    if _G.Timer then
+        if count == -1 then
+            if _G.Timer.StartLoopForever then
+                timerObj = _G.Timer.StartLoopForever(interval, callback)
+            elseif _G.Timer.StartLoop then
+                timerObj = _G.Timer.StartLoop(interval, -1, callback)
+            end
+        elseif count == 1 and _G.Timer.Start then
+            timerObj = _G.Timer.Start(interval, callback)
+        elseif _G.Timer.StartLoop then
+            timerObj = _G.Timer.StartLoop(interval, count, callback)
         end
     end
-    return true, "OK"
+    if timerObj then
+        _G.Mod_ActiveTimers[name] = timerObj
+    end
+    return timerObj
 end
 
 local function SetCameraFOV(fov)
@@ -288,6 +297,7 @@ end
 local function Mod_ApplyConfig(config)
     _G.Mod_ActiveConfig = config
     _G.Mod_IsActive = true
+    _G.Mod_LastVerifiedUID = Mod_GetCharacterUID()
     if config.fov_min then _G.Mod_Config_FOV_Min = tonumber(config.fov_min) end
     if config.fov_max then _G.Mod_Config_FOV_Max = tonumber(config.fov_max) end
     if config.boss_refresh_min then _G.Mod_Config_BossRefresh_Min = tonumber(config.boss_refresh_min) end
@@ -317,9 +327,8 @@ local function Mod_ApplyConfig(config)
         _G.Mod_Config_ActiveAutoFarmTab = config.active_tab_autofarm
     end
 
-    _G.Mod_AutoFarmBoss_Config = {}
-    _G.Mod_SmeltConfig = {}
-    _G.Mod_AutoFarmBoss_Target = nil
+    _G.Mod_AutoFarmBoss_Config = _G.Mod_AutoFarmBoss_Config or {}
+    _G.Mod_SmeltConfig = _G.Mod_SmeltConfig or {}
 
     local reincPrimary = tonumber(config.character_reincarnation_primary)
         or tonumber(config.character_reincarnation)
@@ -506,6 +515,8 @@ local function Mod_UpdatePeriodicCheck(onFinish)
         if onFinish then onFinish(true, _G.Mod_IsActive, _G.Mod_ActiveStatusMsg) end
     end)
 end
+
+_G.Mod_UpdatePeriodicCheck = Mod_UpdatePeriodicCheck
 
 _G.Mod_CheckActiveConfigNow = function(onFinish)
     lastCheckTime = 0
@@ -2607,7 +2618,11 @@ local function CreateModUI()
         if not _G.BossHooked then
             _G.BossHooked = true
 
-            -- CAMERA FOLLOW ANCHOR (CHỐNG RUNG LẮC CAMERA KHI CHẠY NHANH DO MODEL QUAY HƯỚNG)
+            -- =========================================================================
+            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (SMOOTH CAMERA & ANCHOR FOLLOW)
+            -- Mô tả: Camera bám theo nhân vật Me mỗi frame (interval = 0) và khóa góc xoay Vector3.zero
+            --        giúp loại bỏ hoàn toàn hiện tượng rung lắc/giật hình khi xoay hướng hoặc đánh chiêu.
+            -- =========================================================================
             pcall(function()
                 local function InitCameraFollowAnchor()
                     local mc = _G.MainCamera
@@ -2650,12 +2665,21 @@ local function CreateModUI()
                     end
 
                     local function SyncAnchorPos()
-                        if not anchorGo or IsNil(anchorGo) then return end
+                        local aGo = _G.Mod_CameraAnchor
+                        if not aGo or IsNil(aGo) then
+                            aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                            if not aGo or IsNil(aGo) then
+                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                            end
+                            _G.Mod_CameraAnchor = aGo
+                        end
                         local role = _G.RoleManager and _G.RoleManager.me
                         if role and role.transform and not IsNil(role.transform) then
                             local p = role.transform.position
-                            anchorTrans.position = p
-                            anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
+                            local aTrans = aGo.transform
+                            aTrans.position = p
+                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
                         end
                     end
 
@@ -2673,8 +2697,11 @@ local function CreateModUI()
                             mc.target = role.transform
                             local aGo = _G.Mod_CameraAnchor
                             if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                                aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                                if not aGo or IsNil(aGo) then
+                                    aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
+                                    CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
+                                end
                                 _G.Mod_CameraAnchor = aGo
                             end
                             local aTrans = aGo.transform
@@ -2685,15 +2712,35 @@ local function CreateModUI()
                         end
                     end
 
-                    if not _G.Mod_SmoothCamera_Timer and _G.Timer and _G.Timer.StartLoopForever then
-                        _G.Mod_SmoothCamera_Timer = _G.Timer.StartLoopForever(0, function()
+                    _G.Mod_StartSmoothCameraLoop = function()
+                        _G.Mod_StartTrackedTimer("SmoothCamera", 0, -1, function()
                             pcall(SyncAnchorPos)
                         end)
                     end
+                    _G.Mod_StartSmoothCameraLoop()
                 end
 
                 InitCameraFollowAnchor()
             end)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO BODY, CÁNH & DẤU CHÂN ME
+            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không bị giật/bóng ma/2 người
+            -- =========================================================================
+            _G.Mod_LockMyAnimatorsToNormal = function()
+                pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if not me then return end
+
+                    if me.wingAnimator and me.wingAnimator.animator and not IsNil(me.wingAnimator.animator) then
+                        me.wingAnimator.animator.speed = 1.0
+                    end
+                    if me.AvatarEquip and me.AvatarEquip.wingObj and not IsNil(me.AvatarEquip.wingObj) then
+                        local wAnim = me.AvatarEquip.wingObj:GetComponent(typeof(CS.UnityEngine.Animator))
+                        if wAnim and not IsNil(wAnim) and wAnim.speed ~= 1.0 then wAnim.speed = 1.0 end
+                    end
+                end)
+            end
 
             -- Khóa tốc độ Animation (Cánh & Body) về chuẩn 1.0x khi tăng tốc chạy
             if _G.AnimatorCtrl and not _G.Mod_Hooked_AnimatorCtrl then
@@ -2704,6 +2751,17 @@ local function CreateModUI()
                         speed = 1.0
                     end
                     return old_SetAnimatorSpeed(self, speed)
+                end
+            end
+
+            if _G.RoleModel and not _G.Mod_Hooked_RoleModel_PlayAnimation then
+                _G.Mod_Hooked_RoleModel_PlayAnimation = true
+                local old_RoleModel_Play = _G.RoleModel.PlayAnimation
+                _G.RoleModel.PlayAnimation = function(self, name, speed, fadeTime, startTime, realTime, callback)
+                    if self.avatar and self.avatar.isMe then
+                        speed = 1.0
+                    end
+                    return old_RoleModel_Play(self, name, speed, fadeTime, startTime, realTime, callback)
                 end
             end
 
@@ -2727,29 +2785,31 @@ local function CreateModUI()
                 _G.RoleEquip.SetFoot = function(self, position, path)
                     old_SetFoot(self, position, path)
                     if self.avatar and self.avatar.isMe then
-                        pcall(function()
-                            if self.footPrintObj and not IsNil(self.footPrintObj) then
-                                local anims = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                if anims then
-                                    for i = 0, anims.Length - 1 do
-                                        if anims[i] and not IsNil(anims[i]) and anims[i].speed ~= 1.0 then
-                                            anims[i].speed = 1.0
-                                        end
-                                    end
-                                end
-                                local particles = self.footPrintObj:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
-                                if particles then
-                                    for i = 0, particles.Length - 1 do
-                                        if particles[i] and not IsNil(particles[i]) then
-                                            local main = particles[i].main
-                                            if main.simulationSpeed ~= 1.0 then
-                                                main.simulationSpeed = 1.0
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end)
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
+                    end
+                end
+            end
+
+            -- Hook Me:MoveTo và Player:SetMoving để khóa ngay lập tức khi người chơi click di chuyển
+            if _G.Me and not _G.Mod_Hooked_Me_MoveTo then
+                _G.Mod_Hooked_Me_MoveTo = true
+                local old_Me_MoveTo = _G.Me.MoveTo
+                _G.Me.MoveTo = function(self, cell, stopRange, onEndMove)
+                    local ret = old_Me_MoveTo(self, cell, stopRange, onEndMove)
+                    if self.isMe then
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
+                    end
+                    return ret
+                end
+            end
+
+            if _G.Player and not _G.Mod_Hooked_Player_SetMoving then
+                _G.Mod_Hooked_Player_SetMoving = true
+                local old_Player_SetMoving = _G.Player.SetMoving
+                _G.Player.SetMoving = function(self, moveType)
+                    old_Player_SetMoving(self, moveType)
+                    if self.isMe then
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
                     end
                 end
             end
@@ -2758,51 +2818,37 @@ local function CreateModUI()
             local original_SetMoveSpeed = _G.Role.SetMoveSpeed
             if original_SetMoveSpeed and not _G.ModSpeedRunHooked then
                 _G.ModSpeedRunHooked = true
-                _G.Role.SetMoveSpeed = function(self, moveSpeed)
-                    if self.isMe and _G.RunSpeedMultiplier and _G.RunSpeedMultiplier > 1.0 then
-                        moveSpeed = moveSpeed * _G.RunSpeedMultiplier
-                    end
-                    original_SetMoveSpeed(self, moveSpeed)
+                _G.Role.SetMoveSpeed = function(self, moveSpeed, isFromMod)
                     if self.isMe then
-                        pcall(function()
-                            local targets = {}
-                            if self.model and self.model.modelObject then table.insert(targets, self.model.modelObject) end
-                            if self.model and self.model.transform then table.insert(targets, self.model.transform) end
-                            if self.AvatarEquip then
-                                if self.AvatarEquip.footPrintObj then table.insert(targets, self.AvatarEquip.footPrintObj) end
-                                if self.AvatarEquip.wingObj then table.insert(targets, self.AvatarEquip.wingObj) end
-                            end
-                            if self.footPrintEffect then table.insert(targets, self.footPrintEffect) end
-
-                            for _, targetGo in ipairs(targets) do
-                                if targetGo and not IsNil(targetGo) then
-                                    local anims = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.Animator))
-                                    if anims then
-                                        for i = 0, anims.Length - 1 do
-                                            local a = anims[i]
-                                            if a and not IsNil(a) and a.speed ~= 1.0 then
-                                                a.speed = 1.0
-                                            end
-                                        end
-                                    end
-                                    local particles = targetGo:GetComponentsInChildren(typeof(CS.UnityEngine.ParticleSystem))
-                                    if particles then
-                                        for i = 0, particles.Length - 1 do
-                                            local ps = particles[i]
-                                            if ps and not IsNil(ps) then
-                                                local main = ps.main
-                                                if main.simulationSpeed ~= 1.0 then
-                                                    main.simulationSpeed = 1.0
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-                        end)
+                        if not isFromMod then
+                            -- Lưu lại tốc độ gốc chuẩn của game/server, chống bị nhân dồn lũy kế
+                            self._modBaseMoveSpeed = moveSpeed
+                        end
+                        local base = self._modBaseMoveSpeed or moveSpeed or 5.0
+                        local mult = _G.RunSpeedMultiplier or 1.0
+                        if mult < 1.0 then mult = 1.0 end
+                        local finalSpeed = base * mult
+                        original_SetMoveSpeed(self, finalSpeed)
+                    else
+                        original_SetMoveSpeed(self, moveSpeed)
+                    end
+                    if self.isMe then
+                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
                     end
                 end
             end
+
+            -- Loop giám sát định kỳ 1.0s khóa chuẩn Animator 1.0x khi chạy tốc độ cao (nhẹ, 0 GC alloc)
+            _G.Mod_StartSpeedAnimLockLoop = function()
+                _G.Mod_StartTrackedTimer("SpeedAnimLock", 1.0, -1, function()
+                    if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                        if _G.Mod_LockMyAnimatorsToNormal then
+                            _G.Mod_LockMyAnimatorsToNormal()
+                        end
+                    end
+                end)
+            end
+            _G.Mod_StartSpeedAnimLockLoop()
 
             -- Chống Server Rollback (MoveFailed) gây kẹt con lắc khi chạy tốc độ cao
             if _G.Me and not _G.Mod_Hooked_Me_ChangePos then
@@ -2874,6 +2920,8 @@ local function CreateModUI()
             _G.SceneData.MonsterMapDataInit = function(data)
                 if original_MonsterMapDataInit then original_MonsterMapDataInit(data) end
                 ParseBossData()
+                if _G.Mod_StartSmoothCameraLoop then pcall(_G.Mod_StartSmoothCameraLoop) end
+                if _G.Mod_LockMyAnimatorsToNormal then pcall(_G.Mod_LockMyAnimatorsToNormal) end
             end
             -- =========================================================================
             -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
@@ -2976,10 +3024,23 @@ local function CreateModUI()
             end
 
             local function LogMsg(msg)
-                if _G.WriteLog then
-                    _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
+                -- print("[Mod AutoBoss] " .. tostring(msg))
+                -- if _G.WriteLog then
+                --     _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
+                -- end
+                -- if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                --     _G.FloatingWordUtility.QuickMsg("[Auto Boss] " .. tostring(msg))
+                -- end
+            end
+
+            local function SetBossState(newState, reason)
+                local oldState = _G.Mod_AutoFarmBoss_State or 0
+                if oldState ~= newState then
+                    LogMsg(string.format("[FSM] State %s -> %s (%s)", tostring(oldState), tostring(newState), tostring(reason or "")))
+                    _G.Mod_AutoFarmBoss_State = newState
                 end
             end
+            _G.Mod_SetBossState = SetBossState
 
             local function GetMapName(mapId)
                 if not mapId then return "Unknown" end
@@ -3311,14 +3372,14 @@ local function CreateModUI()
 
             _G.Mod_AutoFarmBoss_Update = function()
                 if not _G.Mod_IsActive then
-                    _G.Mod_AutoFarmBoss_State = 0
+                    SetBossState(0, "Mod chưa Active")
                     _G.Mod_AutoFarmBoss_Target = nil
                     return
                 end
 
                 if not _G.Mod_AutoFarmBoss_Enabled then
                     if _G.Mod_AutoFarmBoss_State ~= 0 then
-                        _G.Mod_AutoFarmBoss_State = 0
+                        SetBossState(0, "Tắt Auto Farm")
                         _G.Mod_AutoFarmBoss_Target = nil
                         pcall(function()
                             if _G.PathFinderManager and _G.PathFinderManager.ResetData then
@@ -3364,7 +3425,7 @@ local function CreateModUI()
                                     end
                                     if _G.UIManager.Hide then _G.UIManager.Hide("Tip_MonsterTipUI") end
 
-                                    _G.Mod_AutoFarmBoss_State = 0
+                                    SetBossState(0, "Vào Boss Ẩn")
                                     _G.Mod_AutoFarmBoss_Target = nil
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 else
@@ -3493,7 +3554,7 @@ local function CreateModUI()
                 if nowRealtime < (_G.Mod_AutoFarmBoss_WaitTime or 0) then
                     -- Đột phá WaitTime: Nếu đang đợi về Lorencia mà đã load xong Map 1001, cho đi tiếp luôn!
                     if _G.Mod_AutoFarmBoss_State == 1 and currentMapId == 1001 then
-                        _G.Mod_AutoFarmBoss_State = 2
+                        SetBossState(2, "Đã ở Lorencia -> Lấy Data Boss")
                         _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                     end
                     return
@@ -3552,18 +3613,18 @@ local function CreateModUI()
                         if foundCombatBoss then
                             LogMsg("Đang ở cạnh Boss " .. tostring(foundCombatBoss.cfg.name) .. ", đập luôn!")
                             _G.Mod_AutoFarmBoss_Target = foundCombatBoss
-                            _G.Mod_AutoFarmBoss_State = 5
+                            SetBossState(5, "Đang ở cạnh Boss -> Combat")
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         else
                             LogMsg("Bắt đầu lấy dữ liệu Boss...")
-                            _G.Mod_AutoFarmBoss_State = 2
+                            SetBossState(2, "Khởi động -> Lấy Data Boss")
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         end
 
                         -- STATE 1: IDLE / RETURN HOME (Lorencia)
                     elseif _G.Mod_AutoFarmBoss_State == 1 then
                         if currentMapId == 1001 then
-                            _G.Mod_AutoFarmBoss_State = 2
+                            SetBossState(2, "Đang ở Lorencia -> Lấy Data Boss")
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             return
                         end
@@ -3819,20 +3880,22 @@ local function CreateModUI()
                                     if tx and ty then
                                         -- =========================================================================
                                         -- [MOD FEATURE]: QUAY LẠI VỊ TRÍ FARM
-                                        -- Mô tả: Lấy mapId theo chuyển chính; gán wildTransferId bằng Id map Hoang Dã
+                                        -- Mô tả: Lấy mapId theo chuyển chính; dùng Ấn Dịch Chuyển khi cách > 70m (1 lần duy nhất) và PathFinder di chuyển tới bãi train
+                                        -- =========================================================================
                                         local pLevel = _G.Mod_Config_Reincarnation_Primary or 7
                                         local tab = "C" .. tostring(pLevel)
-                                        -- =========================================================================
                                         local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
                                         if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.Mod_MapsConfig_c7 end
                                         local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId) or
                                             101096
-                                        local wildTransferId = wildMapId
+                                        local wildTransferId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(wildMapId)) or
+                                            wildMapId
                                         local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
                                         if curMap ~= wildMapId then
                                             _G.Mod_IsMovingToTrainPos = false
                                             _G.Mod_TrainArrivedAtPos = false
+                                            _G.Mod_Train_DidUseStone = false
                                             if ExitDungeon() then
                                             elseif wildTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                                 _G.SceneController.OnReqTransferTransmitMap(nil,
@@ -3857,37 +3920,42 @@ local function CreateModUI()
                                             local dy = meY - ty
                                             local dist = math.sqrt(dx * dx + dy * dy)
 
-                                            if dist > 70 then
+                                            if dist > 50 and not _G.Mod_Train_DidUseStone then
+                                                _G.Mod_Train_DidUseStone = true
                                                 _G.Mod_IsMovingToTrainPos = false
                                                 _G.Mod_TrainArrivedAtPos = false
-                                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                                                if nowTime - (_G.Mod_LastStoneTime or 0) >= 0.4 then
-                                                    _G.Mod_LastStoneTime = nowTime
-                                                    local stoneBagId = nil
-                                                    if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                                                        for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                                                            if itemData then
-                                                                local itemId = itemData.itemId or
-                                                                    (itemData.data and itemData.data.itemId)
-                                                                local instanceId = itemData.id or
-                                                                    (itemData.data and itemData.data.id)
-                                                                if itemId == 20000022 then
-                                                                    stoneBagId = instanceId
-                                                                    break
-                                                                end
+                                                local stoneBagId = nil
+                                                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                                                        if itemData then
+                                                            local itemId = itemData.itemId or
+                                                                (itemData.data and itemData.data.itemId)
+                                                            local instanceId = itemData.id or
+                                                                (itemData.data and itemData.data.id)
+                                                            if itemId == 20000022 then
+                                                                stoneBagId = instanceId
+                                                                break
                                                             end
                                                         end
                                                     end
+                                                end
 
-                                                    if stoneBagId then
-                                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
-                                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
-                                                        end
-                                                    elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                                                        _G.PathFinderManager.MoveToLinePos(wildMapId, { x = tx, y = ty },
-                                                            wildTransferId, 1, nil, nil, nil, nil, true)
+                                                if stoneBagId then
+                                                    LogMsg(string.format("Cách bãi train %.1fm (>50m). Dùng Ấn Dịch Chuyển...", dist))
+                                                    if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                                        _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                                    elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                                        _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                                    end
+                                                else
+                                                    LogMsg(string.format("Cách bãi train %.1fm (>50m) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ...", dist))
+                                                    if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
+                                                        local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+                                                            (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
+                                                        _G.PathFinderManager.JumpMapToMoveToPos(_G.SceneData.groupId,
+                                                            targetPosData, nil, nil, nil,
+                                                            (Purpose and Purpose.None) or 0, nil, 1, true)
+                                                        _G.Mod_IsMovingToTrainPos = true
                                                     end
                                                 end
                                                 isStillReturning, isChangingMap = true, false
@@ -3927,7 +3995,8 @@ local function CreateModUI()
                                                         _G.QiJiHelperData.SetAutoFightData(true)
                                                     end
                                                     _G.Mod_IsMovingToTrainPos = false
-                                                    _G.Mod_TrainArrivedAtPos = false
+                                                    _G.Mod_TrainArrivedAtPos = true
+                                                    _G.Mod_Train_DidUseStone = false
                                                     isStillReturning, isChangingMap = false, false
                                                 end
                                             end
@@ -3949,7 +4018,9 @@ local function CreateModUI()
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
                                 _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
-                                _G.Mod_AutoFarmBoss_State = 3
+                                _G.Mod_AutoFarmBoss_DidUseStone = false
+                                _G.Mod_Train_DidUseStone = false
+                                SetBossState(3, string.format("Chọn Boss: %s", bestBoss.cfg.name or ""))
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             else
                                 LogMsg(string.format("Chưa có Boss! Gần nhất: %s còn %ds", bestBoss.cfg.name,
@@ -3962,8 +4033,10 @@ local function CreateModUI()
                                     local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
                                     if isChangingMap then
                                         _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
+                                    elseif _G.Mod_Train_DidUseStone and isStillReturning then
+                                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.2
                                     else
-                                        _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and nowRealtime or
+                                        _G.Mod_AutoFarmBoss_WaitTime = isStillReturning and (nowRealtime + 1.0) or
                                             (nowRealtime + 5.0)
                                     end
                                     return
@@ -3986,7 +4059,6 @@ local function CreateModUI()
                                 return
                             elseif currentMapId == 1001 then
                                 LogMsg("Không có Boss! Chờ ở Lorencia...")
-                                _G.Mod_AutoFarmBoss_State = 2
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 Mod_PerformSmeltItems()
                             else
@@ -3995,7 +4067,7 @@ local function CreateModUI()
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 5.0
                                 else
                                     LogMsg("Hoàn toàn không có Boss! Rút về Lorencia")
-                                    _G.Mod_AutoFarmBoss_State = 1
+                                    SetBossState(1, "Hết Boss -> Rút về Lorencia")
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 end
                             end
@@ -4008,7 +4080,8 @@ local function CreateModUI()
                     elseif _G.Mod_AutoFarmBoss_State == 3 then
                         local target = _G.Mod_AutoFarmBoss_Target
                         if not target then
-                            _G.Mod_AutoFarmBoss_State = 1
+                            LogMsg("[FSM] State 3: Target bị rỗng (nil) -> Chuyển về State 1 (Về thành)")
+                            SetBossState(1, "State 3 Target nil")
                             return
                         end
 
@@ -4072,7 +4145,7 @@ local function CreateModUI()
                             LogMsg(string.format("Minimap xác nhận tất cả điểm của Boss %s đã bị hạ. Trở về State 1...",
                                 target.cfg.name or ""))
                             _G.Mod_AutoFarmBoss_Target = nil
-                            _G.Mod_AutoFarmBoss_State = 1
+                            SetBossState(1, "Minimap xác nhận Boss đã chết")
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             return
                         end
@@ -4083,6 +4156,74 @@ local function CreateModUI()
                         local posLog = target.currentPos and
                             string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG DÙNG ĐÁ DỊCH CHUYỂN MAP HOANG DÃ KHI CÁCH > 50M
+                        -- Mô tả: Nếu ở Map Hoang Dã và cách Boss > 50m thì dùng Ấn Dịch Chuyển (20000022).
+                        --        Chỉ thực hiện chạy bộ khi khoảng cách <= 50m (hoặc ở map phó bản).
+                        -- =========================================================================
+                        local px, py = nil, nil
+                        if _G.RoleManager and _G.RoleManager.me then
+                            local me = _G.RoleManager.me
+                            if me.cellPos then
+                                px, py = me.cellPos.x, me.cellPos.y
+                            elseif me.serverCoord then
+                                px, py = me.serverCoord.x, me.serverCoord.y
+                            elseif me.GetPosition then
+                                local p = me:GetPosition()
+                                if p then px, py = math.floor(p.x), math.floor(p.z) end
+                            elseif me.position then
+                                px, py = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
+                            end
+                        end
+
+                        if px and py and target.currentPos and target.currentPos.x and target.currentPos.y then
+                            local dx = px - target.currentPos.x
+                            local dy = py - target.currentPos.y
+                            local dist = math.sqrt(dx * dx + dy * dy)
+
+                            -- Nhận diện Map Hoang Dã (không phải phó bản/transcript)
+                            local mapTitle = target.mapCfg and target.mapCfg.title or ""
+                            local isWildMap = string.find(mapTitle, "Hoang Dã") ~= nil
+                            local inTranscript = (_G.TranScriptData and (_G.TranScriptData.InTranscript or (_G.TranScriptData.IsInTranscript and _G.TranScriptData.IsInTranscript()))) or false
+                            if inTranscript then isWildMap = false end
+
+                            -- Chỉ áp dụng dùng đá cho Map Hoang Dã khi cách mục tiêu > 50m
+                            if isWildMap and dist > 50 then
+                                local stoneBagId = nil
+                                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                                        if itemData then
+                                            local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                                            local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                                            if itemId == 20000022 then
+                                                stoneBagId = instanceId
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+
+                                if stoneBagId then
+                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m). Dùng Ấn Dịch Chuyển (20000022)...",
+                                        target.cfg.name or "", dist))
+                                    if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                        _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                    elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                        _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                    end
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.2
+                                    return
+                                else
+                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ!",
+                                        target.cfg.name or "", dist))
+                                end
+                            elseif isWildMap and dist <= 50 then
+                                LogMsg(string.format("[Hoang Dã] Đã tiếp cận Boss %s ở cự ly %.1fm (<=50m). Bắt đầu chạy bộ tới mục tiêu!",
+                                    target.cfg.name or "", dist))
+                            end
+                        end
+
+                        -- Bước B4: Chạy bộ tới tọa độ Boss (khi <= 50m hoặc ở map phó bản hoặc hết đá)
                         if alivePos then
                             LogMsg(string.format("Minimap báo Boss %s SỐNG tại %s! Đang chạy bộ tới mục tiêu...",
                                 target.cfg.name or "", posLog))
@@ -4096,7 +4237,6 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_ArrivedAtPos = true
                         end
 
-                        -- Bước B3: Chạy bộ 100% tới tọa độ Boss
                         local moved = false
                         if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo and target.currentPos then
                             local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
@@ -4118,7 +4258,7 @@ local function CreateModUI()
                             end
                         end
 
-                        _G.Mod_AutoFarmBoss_State = 4
+                        SetBossState(4, "Đã gửi lệnh chạy bộ tới Boss")
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_BossWait = 0
                         _G.Mod_AutoFarmBoss_DidJiggle = false
@@ -4128,7 +4268,8 @@ local function CreateModUI()
                     elseif _G.Mod_AutoFarmBoss_State == 4 then
                         local target = _G.Mod_AutoFarmBoss_Target
                         if not target then
-                            _G.Mod_AutoFarmBoss_State = 1
+                            LogMsg("[FSM] State 4: Target bị rỗng (nil) -> Chuyển về State 1 (Về thành)")
+                            SetBossState(1, "State 4 Target nil")
                             return
                         end
 
@@ -4139,7 +4280,7 @@ local function CreateModUI()
                                 LogMsg("Lỗi: Không thể di chuyển tới Map/Line Boss. Bỏ qua điểm này 60s")
                                 _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                _G.Mod_AutoFarmBoss_State = 1
+                                SetBossState(1, "Lỗi chuyển Map/Line > 15s")
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             else
@@ -4172,7 +4313,7 @@ local function CreateModUI()
                             dist = math.sqrt(dx * dx + dy * dy)
                         end
 
-                        local hasArrived = _G.Mod_AutoFarmBoss_ArrivedAtPos or (dist <= 2.5)
+                        local hasArrived = (dist <= 3.5)
 
                         if not hasArrived then
                             -- Nếu chưa áp sát đến bán kính mục tiêu: Tiếp tục duy trì di chuyển!
@@ -4226,7 +4367,7 @@ local function CreateModUI()
                                 if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                     _G.RoleManager.me:SetAutoFight("AutoFight")
                                 end
-                                _G.Mod_AutoFarmBoss_State = 5
+                                SetBossState(5, "Tìm thấy Boss hợp lệ -> Combat")
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                 LogMsg("Đủ điều kiện, Bật Auto Fight")
                             else
@@ -4234,7 +4375,7 @@ local function CreateModUI()
                                 LogMsg(string.format("Boss bị Ks (HP < %d%%). Bỏ qua 6 phút", skipThresh))
                                 _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 360
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                _G.Mod_AutoFarmBoss_State = 1
+                                SetBossState(1, "Boss bị KS")
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
@@ -4254,7 +4395,7 @@ local function CreateModUI()
                                     target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
                                 _G.Mod_AutoFarmBoss_BossWait = 0
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                _G.Mod_AutoFarmBoss_State = 1
+                                SetBossState(1, "Chờ Boss quá 20s không thấy")
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
@@ -4264,7 +4405,8 @@ local function CreateModUI()
                     elseif _G.Mod_AutoFarmBoss_State == 5 then
                         local target = _G.Mod_AutoFarmBoss_Target
                         if not target then
-                            _G.Mod_AutoFarmBoss_State = 1
+                            LogMsg("[FSM] State 5: Target bị rỗng (nil) -> Chuyển về State 1 (Về thành)")
+                            SetBossState(1, "State 5 Target nil")
                             return
                         end
 
@@ -4303,7 +4445,7 @@ local function CreateModUI()
 
                         if not foundBoss then
                             _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
-                            if _G.Mod_AutoFarmBoss_TargetWait >= 2 then
+                            if _G.Mod_AutoFarmBoss_TargetWait >= 6 then
                                 LogMsg("Boss chết hoặc biến mất! Tắt AutoFight & Chờ 7s nhặt đồ...")
 
                                 -- Tắt Auto Fight ngay khi Boss chết
@@ -4321,7 +4463,7 @@ local function CreateModUI()
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_State = 6
+                                SetBossState(6, "Boss chết hoặc biến mất -> Loot đồ")
                                 _G.Mod_AutoFarmBoss_LootStartTime = nowRealtime
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
                             else
@@ -4354,7 +4496,7 @@ local function CreateModUI()
                         LogMsg("Đã xong 7s nhặt đồ! Rút về Lorencia...")
                         _G.Mod_AutoFarmBoss_Target = nil
                         _G.Mod_AutoFarmBoss_LootStartTime = nil
-                        _G.Mod_AutoFarmBoss_State = 1 -- Đổi về 1 để bắt buộc bay về Lorencia
+                        SetBossState(1, "Xong 7s nhặt đồ -> Về Lorencia")
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                     end
@@ -4366,6 +4508,45 @@ local function CreateModUI()
 
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.1, -1, function()
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ ĐỘNG THEO DÕI ĐỔI TÀI KHOẢN/NHÂN VẬT & KIỂM TRA BẢN QUYỀN ĐỊNH KỲ
+                    -- Mô tả: Kiểm tra UID mỗi chu kỳ hoặc khi đổi nhân vật/tài khoản, thu hồi quyền nếu UID không khớp.
+                    -- =========================================================================
+                    local nowReal = CS.UnityEngine.Time.realtimeSinceStartup
+                    if (nowReal - (_G.Mod_LastAuthPeriodicTime or 0)) >= 2.0 then
+                        _G.Mod_LastAuthPeriodicTime = nowReal
+                        local curUID = (Mod_GetCharacterUID and Mod_GetCharacterUID()) or ""
+                        if curUID ~= "" then
+                            if _G.Mod_LastVerifiedUID and _G.Mod_LastVerifiedUID ~= "" and _G.Mod_LastVerifiedUID ~= curUID then
+                                -- Phát hiện người chơi đổi sang tài khoản / nhân vật khác!
+                                _G.Mod_LastVerifiedUID = curUID
+                                _G.Mod_IsActive = false
+                                _G.Mod_ActiveConfig = nil
+                                _G.Mod_HasFetchedConfig = false
+                                if _G.ModMenuPanelGo and not _G.ModMenuPanelGo:Equals(nil) then
+                                    _G.ModMenuPanelGo:SetActive(false)
+                                end
+                                if _G.authPanelGo and not _G.authPanelGo:Equals(nil) then
+                                    _G.authPanelGo:SetActive(true)
+                                    if _G.Mod_RefreshAuthPanelData then _G.Mod_RefreshAuthPanelData() end
+                                end
+                                if _G.Mod_UpdateUI_ActiveState then _G.Mod_UpdateUI_ActiveState() end
+                                -- Tự động request API kiểm tra quyền cho UID mới
+                                if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
+                            elseif not _G.Mod_IsActive and not _G.Mod_HasFetchedConfig then
+                                -- Vừa vào game lần đầu với UID này -> tự động check active
+                                _G.Mod_LastVerifiedUID = curUID
+                                if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
+                            end
+                        end
+
+                        -- Kiểm tra định kỳ 60s với Server API
+                        if (nowReal - (_G.Mod_LastServerSyncTime or 0)) >= 60.0 then
+                            _G.Mod_LastServerSyncTime = nowReal
+                            if _G.Mod_UpdatePeriodicCheck then _G.Mod_UpdatePeriodicCheck() end
+                        end
+                    end
+
                     -- TỰ ĐỘNG HỒI SINH (HS FREE & HS KC - 0s Delay + Dập Popup 3s)
                     local me = _G.RoleManager and _G.RoleManager.me
                     if me then
@@ -4536,26 +4717,56 @@ local function CreateModUI()
                         end
                     end
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: AUTO PICKUP - TỰ ĐỘNG ĐIỀU HƯỚNG VÀ SPAM NHẶT TUẦN TỰ
+                    -- Mô tả: Quét danh sách ActiveSpamItems, sắp xếp theo khoảng cách gần nhất,
+                    --        tự động MoveTo tới item gần nhất và spam ReqPickUpMapItem liên tục.
+                    -- =========================================================================
                     if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        local validItems = {}
+
                         for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
                             if nowTime > itemInfo.expireTime then
                                 _G.Mod_ActiveSpamItems[itemId] = nil
                             else
-                                if _G.PickupManager then
-                                    _G.PickupManager.ReqPickUpMapItem(itemId)
+                                table.insert(validItems, itemInfo)
+                            end
+                        end
 
-                                    -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
-                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
-                                        local meX = _G.RoleManager.me.serverCoord.x or 0
-                                        local meY = _G.RoleManager.me.serverCoord.y or 0
-                                        if itemInfo.x and itemInfo.y then
-                                            local dist = math.max(math.abs(meX - itemInfo.x),
-                                                math.abs(meY - itemInfo.y))
-                                            if dist <= 2 then
-                                                _G.PickupManager.ReqPickUpMapItem(itemId)
-                                            end
-                                        end
+                        if #validItems > 0 then
+                            local meX, meY = 0, 0
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
+                                meX = _G.RoleManager.me.serverCoord.x or 0
+                                meY = _G.RoleManager.me.serverCoord.y or 0
+                            end
+
+                            for _, itemInfo in ipairs(validItems) do
+                                itemInfo.dist = math.max(math.abs(meX - (itemInfo.x or 0)),
+                                    math.abs(meY - (itemInfo.y or 0)))
+                            end
+
+                            table.sort(validItems, function(a, b)
+                                return (a.dist or 999) < (b.dist or 999)
+                            end)
+
+                            local nearestItem = validItems[1]
+
+                            for _, itemInfo in ipairs(validItems) do
+                                -- Chỉ di chuyển (MoveTo) đến 1 món GẦN NHẤT nếu dist > 1 (tránh xoay đầu/đè lệnh)
+                                if itemInfo == nearestItem and itemInfo.dist > 1 then
+                                    if _G.RoleManager and _G.RoleManager.me and itemInfo.x and itemInfo.y then
+                                        pcall(function()
+                                            _G.RoleManager.me:MoveTo({ x = itemInfo.x, y = itemInfo.y })
+                                        end)
+                                    end
+                                end
+
+                                -- Bắn gói tin nhặt
+                                if _G.PickupManager then
+                                    _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+                                    if itemInfo.dist <= 2 then
+                                        _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
                                     end
                                 end
                             end
@@ -8146,9 +8357,10 @@ local function CreateModUI()
                 if original_RemoveDropSceneCellPos then
                     original_RemoveDropSceneCellPos(dropItemData)
                 end
-                if dropItemData and dropItemData.id then
+                local dId = dropItemData and (dropItemData.id or (dropItemData.data and dropItemData.data.id) or (dropItemData.item and dropItemData.item.id))
+                if dId then
                     if _G.Mod_ActiveSpamItems then
-                        _G.Mod_ActiveSpamItems[dropItemData.id] = nil
+                        _G.Mod_ActiveSpamItems[dId] = nil
                     end
                 end
             end
@@ -8194,13 +8406,13 @@ local function CreateModUI()
 
                     local shouldPick = (isRune or isBone)
 
-                    if shouldPick then
-                        if _G.PickupManager and _G.PickupManager.IsCanPickUpDropItem then
-                            if not _G.PickupManager.IsCanPickUpDropItem(dropItemData) then
-                                shouldPick = false
-                            end
-                        end
-                    end
+                    -- if shouldPick then
+                    --     if _G.PickupManager and _G.PickupManager.IsCanPickUpDropItem then
+                    --         if not _G.PickupManager.IsCanPickUpDropItem(dropItemData) then
+                    --             shouldPick = false
+                    --         end
+                    --     end
+                    -- end
 
                     if shouldPick then
                         local isAlreadyPicked = _G.Mod_PickedItems[dropItemData.id]
@@ -8230,7 +8442,7 @@ local function CreateModUI()
                                     id = dropItemData.id,
                                     x = dropItemData.x,
                                     y = dropItemData.y,
-                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 4.0
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 7.0
                                 }
 
                                 local itemId = dropItemData.item and dropItemData.item.itemId or "???"
