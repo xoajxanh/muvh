@@ -1,12 +1,22 @@
 import os
+import sys
 import subprocess
 
-modified_dir = os.environ.get("LUA_SRC_DIR", r"final\modified_lua")
-compiled_dir = r"final\compiled_lua"
-luac_exe = r"lua53\luac53.exe"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+modified_dir = os.environ.get("LUA_SRC_DIR", os.path.join("final", "modified_lua"))
+if not os.path.isabs(modified_dir):
+    modified_dir = os.path.join(script_dir, modified_dir)
+
+compiled_dir = os.path.join(script_dir, "final", "compiled_lua")
+luac_exe = os.path.join(script_dir, "lua53", "luac53.exe")
+convert_py = os.path.join(script_dir, "convert_64_to_32.py")
 
 os.makedirs(compiled_dir, exist_ok=True)
 
+if not os.path.isdir(modified_dir):
+    raise RuntimeError(f"[ERROR] Source Lua directory does not exist or is not a directory: {modified_dir}")
+
+count = 0
 for root, _, files in os.walk(modified_dir):
     for f in files:
         if f.endswith('.lua'):
@@ -18,7 +28,7 @@ for root, _, files in os.walk(modified_dir):
             subprocess.run(cmd, check=True)
             
             # Convert 64-bit size_t to 32-bit size_t
-            subprocess.run(["python", "convert_64_to_32.py", dest_path, dest_path], check=True)
+            subprocess.run([sys.executable, convert_py, dest_path, dest_path], check=True)
             
             # Patch Header
             with open(dest_path, 'rb') as file:
@@ -31,4 +41,11 @@ for root, _, files in os.walk(modified_dir):
                 with open(dest_path, 'wb') as file:
                     file.write(data)
             
-print("Compiled and patched successfully to final/compiled_lua")
+            count += 1
+            print(f"  [OK] Compiled: {f}")
+
+if count == 0:
+    raise RuntimeError(f"[ERROR] No .lua files found in: {modified_dir}")
+
+print(f"-> Successfully compiled {count} Lua file(s) to final/compiled_lua")
+

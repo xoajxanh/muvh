@@ -1,4 +1,7 @@
-$projectDir = "D:\MUVH\android\mu-decompiled"
+$projectDir = (Get-Item "$PSScriptRoot\..\..").FullName
+if (-not (Test-Path "$projectDir\adb.exe")) {
+    $projectDir = "d:\Xoai\muvh"
+}
 $testDir = "$projectDir\final\excute_test"
 $inputFile = "$testDir\input.txt"
 $luacExe = "$projectDir\lua53\luac53.exe"
@@ -6,11 +9,13 @@ $convertScript = "$projectDir\convert_64_to_32.py"
 $tempLuac = "$testDir\input.luac"
 $androidPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
 
-$androidId = "emulator-5566"
+$androidId = "emulator-5554"
 
 # Nếu máy bạn báo lỗi không nhận diện lệnh adb, hãy đổi đường dẫn adb dưới đây thành đường dẫn tuyệt đối
-# Ví dụ: $adbExe = "C:\Program Files\Nox\bin\adb.exe" (Tuỳ thuộc vào giả lập bạn đang xài)
-$adbExe = "$projectDir\adb.exe" 
+$adbExe = "$projectDir\adb.exe"
+if (-not (Test-Path $adbExe)) {
+    $adbExe = "adb"
+} 
 
 Write-Host "1. Đang bien dich input.txt sang Bytecode..."
 if (-not (Test-Path $inputFile)) {

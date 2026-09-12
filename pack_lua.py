@@ -1,22 +1,25 @@
 import os
 import UnityPy
 
-src_bundle = "D:/MUVH/android/mu-decompiled/test_apk/lua.mu2"
-extracted_dir = r"final/extracted_lua"
-dest_bundle = r"final/new_lua/lua.mu2"
+script_dir = os.path.dirname(os.path.abspath(__file__))
+src_bundle = os.path.join(script_dir, "test_apk", "lua.mu2")
+extracted_dir = os.path.join(script_dir, "final", "extracted_lua")
+dest_bundle = os.path.join(script_dir, "final", "new_lua", "lua.mu2")
+compiled_dir = os.path.join(script_dir, "final", "compiled_lua")
 
 os.makedirs(os.path.dirname(dest_bundle), exist_ok=True)
 
 print(f"Loading {src_bundle}...")
 env = UnityPy.load(src_bundle)
 
-compiled_dir = r"final/compiled_lua"
-
 # Build a map of our compiled files
 files = {}
 for root, _, filenames in os.walk(compiled_dir):
     for f in filenames:
         files[f.lower()] = os.path.join(root, f)
+
+if not files:
+    raise RuntimeError(f"[ERROR] No compiled Lua files found in {compiled_dir} to pack!")
 
 replaced = 0
 for obj in env.objects:
@@ -38,8 +41,12 @@ for obj in env.objects:
             data.m_Script = new_bytes.decode('utf-8', 'surrogateescape')
             data.save()
             replaced += 1
-            
-print(f"Replaced {replaced} TextAssets.")
+            print(f"  [OK] Injected into bundle: {name}")
+
+if replaced == 0:
+    raise RuntimeError(f"[ERROR] 0 TextAssets replaced in {src_bundle}! Check compiled file names.")
+
+print(f"-> Successfully replaced {replaced} TextAsset(s) in bundle.")
 
 print("Saving and packing to LZ4...")
 with open(dest_bundle, "wb") as f:
