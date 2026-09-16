@@ -1,6 +1,6 @@
 $projectDir = (Get-Item "$PSScriptRoot\..\..").FullName
 if (-not (Test-Path "$projectDir\adb.exe")) {
-    $projectDir = "d:\Xoai\muvh"
+    $projectDir = "D:\MUVH\android\mu-decompiled"
 }
 $testDir = "$projectDir\final\excute_test"
 $inputFile = "$testDir\input.txt"

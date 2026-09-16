@@ -4627,6 +4627,109 @@ local function CreateModUI()
                         end
                     end
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ ĐỘNG ÉP CHIÊU SÉT ĐÁNH (MA KỴ SỸ AOE INJECTION)
+                    -- Mô tả: Ép Ma Kỵ Sỹ xuất chiêu Sét Đánh (14040100) theo chu kỳ 0.5s/lần khi đang AutoFight có mục tiêu
+                    -- =========================================================================
+                    if _G.Mod_IsAdmin and _G.Mod_MG_ForceAOE_Enabled then
+                        local nowAoETime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowAoETime - (_G.Mod_LastMG_AoETime or 0)) >= 0.5 then
+                            _G.Mod_LastMG_AoETime = nowAoETime
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and not me.isDead and (not me.hp or me.hp > 0) then
+                                    local career = (me.data and me.data.career) or (me.career) or 0
+                                    -- Ma Kỵ Sĩ các chuyển chức: 14, 24, 34, 44... (career % 10 == 4)
+                                    if (career % 10 == 4) then
+                                        local skillGroupId = 14040100
+                                        local sId = nil
+                                        local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+                                        if meSkills and meSkills[skillGroupId] then
+                                            local skObj = meSkills[skillGroupId]
+                                            sId = (type(skObj) == "table" and (skObj.sid or skObj.id)) or (type(skObj) == "number" and skObj)
+                                        end
+                                        if not sId and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.allSkills then
+                                            for _, sk in pairs(_G.ViewData.meData.allSkills) do
+                                                local candId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk)
+                                                if candId then
+                                                    local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(candId)
+                                                    if cfg and cfg.groupId == skillGroupId then
+                                                        sId = candId
+                                                        break
+                                                    end
+                                                end
+                                            end
+                                        end
+                                        if not sId then
+                                            sId = 14040101
+                                        end
+
+                                        -- Kiểm tra Cooldown chiêu thức
+                                        local isOffCd = true
+                                        if me.cd then
+                                            local cdMsg = me.cd[skillGroupId] or me.cd[sId]
+                                            local endTime = (type(cdMsg) == "table" and cdMsg.endTime) or (type(cdMsg) == "number" and cdMsg) or 0
+                                            local curServerTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                                            if endTime > curServerTime then
+                                                isOffCd = false
+                                            end
+                                        end
+
+                                        if isOffCd then
+                                            -- 1. Đặt Press Skill cho Engine AutoFight
+                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                                _G.QiJiHelperData.SetPressSkill(sId)
+                                            end
+
+                                            local targetAvatar = me.TargetAvatar or (me.data and me.data.lockTarget)
+                                            local targetRole = (targetAvatar and not targetAvatar.isDead) and targetAvatar or me
+                                            local targetId = (targetRole and targetRole.data and targetRole.data.id) or (targetRole and targetRole.id) or 0
+                                            local coord = (targetRole and targetRole.serverCoord) or (targetRole and targetRole.cellPos and { x = targetRole.cellPos.x, y = targetRole.cellPos.y }) or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+
+                                            -- 2. Kích hoạt hiệu ứng hình ảnh (VFX Sấm sét), âm thanh và hành động thi triển Client
+                                            local myCell = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                                            local attackSpeed = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute and _G.ViewData.meData:GetAttribute(_G.EAttributeType.attackSpeedCalculateValue)) or 1000
+                                            local skill_struct = _G.SkillUtility and _G.SkillUtility.ConstructSkillFromClientData and _G.SkillUtility.ConstructSkillFromClientData(sId, me.id, myCell, targetId, coord, 0, attackSpeed)
+                                            if skill_struct and _G.SkillController and _G.SkillController.PerformClientSkill then
+                                                _G.SkillController.PerformClientSkill(skill_struct)
+                                            end
+                                            if _G.SkillMgr and _G.SkillMgr.RequestSkillTest then
+                                                _G.SkillMgr.RequestSkillTest(sId)
+                                            end
+
+                                            -- 3. Cập nhật vòng quay Cooldown trên giao diện UI
+                                            if _G.MeController and _G.MeController.UpdateClientSkillCd then
+                                                _G.MeController.UpdateClientSkillCd(sId)
+                                            end
+
+                                            -- 4. Gửi gói tin dùng chiêu Sét Đánh trực tiếp lên Server (ReqPlayerUseSkill / ReqBroadcastUseSkill)
+                                            if _G.NetManager and _G.NetManager.Send and _G.FightMessage then
+                                                if _G.FightMessage.ReqPlayerUseSkill then
+                                                    _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
+                                                        skillId = sId,
+                                                        targetId = targetId,
+                                                        x = coord.x or 0,
+                                                        y = coord.y or 0,
+                                                        position = 0
+                                                    })
+                                                end
+                                                if _G.FightMessage.ReqBroadcastUseSkill then
+                                                    _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
+                                                        skillId = sId,
+                                                        targetId = targetId,
+                                                        x = coord.x or 0,
+                                                        y = coord.y or 0,
+                                                        position = 0
+                                                    })
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end)
+                        end
+                    end
+
                     -- Kiểm tra Rollback tự động sau 20s (Hết phiên săn Kundun)
                     if _G.Mod_KundunRollbackTime and (CS.UnityEngine.Time.realtimeSinceStartup or os.time()) >= _G.Mod_KundunRollbackTime then
                         _G.Mod_KundunRollbackTime = nil
@@ -7092,15 +7195,31 @@ local function CreateModUI()
         -- Mô tả: Giao diện cuộn riêng cho khối Nhặt Đồ Siêu Tốc (Thánh Cốt, Phù Văn, Kết Tinh Phụ Ma, Số Lượng Nhặt).
         -- =========================================================================
         local function CreateAutoLootUI()
-            -- 1. TẠO KHUNG CUỘN SCROLLVIEW CHO KHỐI NHẶT ĐỒ (Top: Y = -50 -> -425, Height = 375px)
+            -- 1. TIÊU ĐỀ CỐ ĐỊNH PHÍA TRÊN (Fixed Title)
+            local titleGo = GameObject("AutoLootTitle")
+            titleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, titleGo)
+            local titleRt = titleGo:AddComponent(typeof(RectTransform))
+            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleRt.anchoredPosition = Vector2(10, -65)
+            titleRt.sizeDelta = Vector2(380, 25)
+            local titleTxt = titleGo:AddComponent(typeof(Text))
+            titleTxt.raycastTarget = false
+            titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
+            titleTxt.color = Color(1, 0.8, 0, 1)
+            titleTxt.fontSize = 17
+            titleTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then titleTxt.font = defaultFont end
+
+            -- 2. TẠO KHUNG CUỘN SCROLLVIEW CHO KHỐI NHẶT ĐỒ (Top: Y = -95 -> -430, Height = 335px)
             local scrollGo = GameObject("AutoLootScrollView")
             scrollGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, scrollGo)
 
             local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
             scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            scrollRt.anchoredPosition = Vector2(10, -50)
-            scrollRt.sizeDelta = Vector2(380, 375)
+            scrollRt.anchoredPosition = Vector2(10, -95)
+            scrollRt.sizeDelta = Vector2(380, 335)
 
             local scrollImg = scrollGo:AddComponent(typeof(Image))
             scrollImg.color = Color(0, 0, 0, 0.01)
@@ -7123,7 +7242,6 @@ local function CreateModUI()
             local contentRt = contentGo:AddComponent(typeof(RectTransform))
             contentRt.anchorMin, contentRt.anchorMax, contentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
             contentRt.anchoredPosition = Vector2(0, 0)
-            contentRt.sizeDelta = Vector2(0, 490)
 
             scrollRect.viewport = vpRt
             scrollRect.content = contentRt
@@ -7319,24 +7437,8 @@ local function CreateModUI()
                 end)
             end
 
-            -- 2. NỘI DUNG CUỘN TRONG CONTENT
-            local curY = -10
-
-            local titleGo = GameObject("AutoLootTitle")
-            titleGo.transform:SetParent(contentGo.transform, false)
-            local titleRt = titleGo:AddComponent(typeof(RectTransform))
-            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(0, curY)
-            titleRt.sizeDelta = Vector2(380, 22)
-            local titleTxt = titleGo:AddComponent(typeof(Text))
-            titleTxt.raycastTarget = false
-            titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
-            titleTxt.color = Color(1, 0.8, 0, 1)
-            titleTxt.fontSize = 16
-            titleTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then titleTxt.font = defaultFont end
-
-            curY = -38
+            -- 3. NỘI DUNG CUỘN TRONG CONTENT
+            local curY = -5
 
             -- TỰ ĐỘNG NHẶT (Trái, Height = 30) & 2 nút PA NHẶT (Phải, Height = 30, Font = 12)
             CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", 10, curY, 175, nil, contentGo, 30)
@@ -7434,7 +7536,7 @@ local function CreateModUI()
             end)
 
             -- SỐ LƯỢNG NHẶT (+/-) (ĐẶT NGAY SAU HÀNG NHẶT ĐỒ SIÊU TỐC)
-            curY = -74
+            curY = curY - 36
             local lValGo = GameObject("LimitValText")
             lValGo.transform:SetParent(contentGo.transform, false)
             local lvRt = lValGo:AddComponent(typeof(RectTransform))
@@ -7510,7 +7612,7 @@ local function CreateModUI()
             end)
 
             -- BẢNG THÁNH CỐT
-            curY = -108
+            curY = curY - 34
             local boneTitleGo = GameObject("BoneTitle")
             boneTitleGo.transform:SetParent(contentGo.transform, false)
             local boneTitleRt = boneTitleGo:AddComponent(typeof(RectTransform))
@@ -7525,12 +7627,12 @@ local function CreateModUI()
             boneTitleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then boneTitleTxt.font = defaultFont end
 
-            curY = -132
+            curY = curY - 24
             CreateBoneToggle("NHẶT HỒN", "AutoPick_Bone_Hon", 10, curY, 175)
             CreateBoneToggle("NHẶT CỐT", "AutoPick_Bone_Cot", 195, curY, 175)
 
             -- BẢNG PHÙ VĂN (2 CỘT x 4 HÀNG)
-            curY = -166
+            curY = curY - 34
             local runeTitleGo = GameObject("RuneTitle")
             runeTitleGo.transform:SetParent(contentGo.transform, false)
             local runeTitleRt = runeTitleGo:AddComponent(typeof(RectTransform))
@@ -7545,7 +7647,7 @@ local function CreateModUI()
             runeTitleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then runeTitleTxt.font = defaultFont end
 
-            curY = -190
+            curY = curY - 24
             local runeGrid = {
                 { left = { label = "< LV5", key = "L5L" }, right = { label = "LV8", key = "L8" } },
                 { left = { label = "LV5",   key = "L5" },  right = { label = "LV9", key = "L9" } },
@@ -7570,7 +7672,7 @@ local function CreateModUI()
             end
 
             -- BẢNG PHỤ MA (7 HÀNG x 7 CỘT)
-            curY = -292
+            curY = curY - 15
             local fumoTitleGo = GameObject("FumoTitle")
             fumoTitleGo.transform:SetParent(contentGo.transform, false)
             local fumoTitleRt = fumoTitleGo:AddComponent(typeof(RectTransform))
@@ -7585,7 +7687,7 @@ local function CreateModUI()
             fumoTitleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then fumoTitleTxt.font = defaultFont end
 
-            curY = -314
+            curY = curY - 22
             local fumoRows = {
                 { label = "Mũ",       key = "Mu" },
                 { label = "Quần",     key = "Quan" },
@@ -7604,6 +7706,9 @@ local function CreateModUI()
                 end
                 curY = curY - 23
             end
+
+            -- Cập nhật tổng chiều cao content
+            contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
 
 
             -- =========================================================================
@@ -8979,14 +9084,11 @@ local function CreateModUI()
         CreateAutoBossUI()
 
         -- =========================================================================
-        -- [MOD FEATURE]: GIAO DIỆN TAB KUNDUN, HỒI SINH & VỀ VỊ TRÍ (KUNDUN & AUTO RESURRECT UI)
-        -- Mô tả: Giao diện tab Kundun, cấu hình tự động hồi sinh (miễn phí/tại chỗ), tự chạy lại bãi cắm.
+        -- [MOD FEATURE]: GIAO DIỆN TAB KUNDUN & CHỨC NĂNG HỖ TRỢ (SCROLLVIEW & MG AOE TOGGLE)
+        -- Mô tả: Cột chức năng hỗ trợ dạng ScrollView cuộn dọc mượt mà, hỗ trợ nút toggle MG DÙNG AOE (chỉ hiện với Admin).
         -- =========================================================================
         local function CreateKundunUI()
-            local currentY = -65
-            local rightColX2 = 440
-
-            -- Vạch dọc phân cách
+            -- 1. Vạch dọc phân cách
             local vLineGo = GameObject("VerticalSeparator")
             vLineGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, vLineGo)
@@ -8997,15 +9099,14 @@ local function CreateModUI()
             local vLineImg = vLineGo:AddComponent(typeof(Image))
             vLineImg.color = Color(0.4, 0.4, 0.4, 0.6)
 
+            -- 2. TIÊU ĐỀ CỐ ĐỊNH PHÍA TRÊN (Fixed Title)
             local ChucNangTitle = GameObject("ChucNangTitle")
             ChucNangTitle.transform:SetParent(panelGo.transform, false)
             table.insert(_G.NangCaoUIList, ChucNangTitle)
             local titleRt = ChucNangTitle:AddComponent(typeof(RectTransform))
-            titleRt.anchorMin = Vector2(0, 1)
-            titleRt.anchorMax = Vector2(0, 1)
-            titleRt.pivot = Vector2(0, 1)
-            titleRt.anchoredPosition = Vector2(rightColX2 + 10, currentY)
-            titleRt.sizeDelta = Vector2(250, 25)
+            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleRt.anchoredPosition = Vector2(430 + 10, -65)
+            titleRt.sizeDelta = Vector2(260, 25)
             local ChucNangTitleTxt = ChucNangTitle:AddComponent(typeof(Text))
             ChucNangTitleTxt.raycastTarget = false
             ChucNangTitleTxt.text = "[ CHỨC NĂNG HỖ TRỢ ]"
@@ -9014,22 +9115,73 @@ local function CreateModUI()
             ChucNangTitleTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then ChucNangTitleTxt.font = defaultFont end
 
-            currentY = currentY - 35
-            CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", rightColX2, currentY)
-            currentY = currentY - 45
+            -- 3. KHUNG CUỘN SCROLLVIEW CHO CHỨC NĂNG HỖ TRỢ (X = 430, Width = 285, Height = 465, Y = -95)
+            local scrollGo = GameObject("ChucNangHoTroScrollView")
+            scrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, scrollGo)
 
-            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", rightColX2, currentY)
-            currentY = currentY - 45
+            local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
+            scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            scrollRt.anchoredPosition = Vector2(430, -95)
+            scrollRt.sizeDelta = Vector2(285, 465)
 
-            CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
-            currentY = currentY - 45
+            local scrollImg = scrollGo:AddComponent(typeof(Image))
+            scrollImg.color = Color(0, 0, 0, 0.01)
 
-            CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
-            currentY = currentY - 45
+            local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            scrollRect.horizontal = false
+            scrollRect.vertical = true
+            scrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            scrollRect.scrollSensitivity = 25
+
+            local viewportGo = GameObject("Viewport")
+            viewportGo.transform:SetParent(scrollGo.transform, false)
+            local vpRt = viewportGo:AddComponent(typeof(RectTransform))
+            vpRt.anchorMin, vpRt.anchorMax, vpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            vpRt.sizeDelta = Vector2(0, 0)
+            viewportGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local contentGo = GameObject("Content")
+            contentGo.transform:SetParent(viewportGo.transform, false)
+            local contentRt = contentGo:AddComponent(typeof(RectTransform))
+            contentRt.anchorMin, contentRt.anchorMax, contentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            contentRt.anchoredPosition = Vector2(0, 0)
+
+            scrollRect.viewport = vpRt
+            scrollRect.content = contentRt
+
+            -- 4. CÁC NÚT VÀ CÀI ĐẶT TRONG CONTENT
+            local btnX = 10
+            local btnW = 260
+            local curY = -5
+
+            CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
+
+            -- Nút MG DÙNG AOE (Chỉ hiển thị với Admin)
+            if _G.Mod_IsAdmin then
+                if _G.Mod_MG_ForceAOE_Enabled == nil then
+                    pcall(function()
+                        _G.Mod_MG_ForceAOE_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_MG_ForceAOE_Enabled", 0) == 1)
+                    end)
+                    if _G.Mod_MG_ForceAOE_Enabled == nil then _G.Mod_MG_ForceAOE_Enabled = false end
+                end
+                CreateToggle("MG DÙNG AOE", "Mod_MG_ForceAOE_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+            end
+
+            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
+
+            CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
+
+            CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
 
             -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
-            local function CreateResurrectRadioGroup(xPos, yPos, btnW)
-                btnW = btnW or 125
+            local function CreateResurrectRadioGroup(xPos, yPos, w)
+                w = w or 125
                 local spacing = 10
 
                 if _G.Mod_AutoResurrect_Free_Enabled == nil then
@@ -9052,12 +9204,11 @@ local function CreateModUI()
 
                 -- 1. NÚT HS FREE
                 local hsFreeGo = GameObject("HS_FREE_RadioToggle")
-                hsFreeGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, hsFreeGo)
+                hsFreeGo.transform:SetParent(contentGo.transform, false)
                 local freeRt = hsFreeGo:AddComponent(typeof(RectTransform))
                 freeRt.anchorMin, freeRt.anchorMax, freeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 freeRt.anchoredPosition = Vector2(xPos, yPos)
-                freeRt.sizeDelta = Vector2(btnW, 35)
+                freeRt.sizeDelta = Vector2(w, 35)
 
                 local freeBg = GameObject("Bg")
                 freeBg.transform:SetParent(hsFreeGo.transform, false)
@@ -9082,12 +9233,11 @@ local function CreateModUI()
 
                 -- 2. NÚT HS KC
                 local hsKcGo = GameObject("HS_KC_RadioToggle")
-                hsKcGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, hsKcGo)
+                hsKcGo.transform:SetParent(contentGo.transform, false)
                 local kcRt = hsKcGo:AddComponent(typeof(RectTransform))
                 kcRt.anchorMin, kcRt.anchorMax, kcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                kcRt.anchoredPosition = Vector2(xPos + btnW + spacing, yPos)
-                kcRt.sizeDelta = Vector2(btnW, 35)
+                kcRt.anchoredPosition = Vector2(xPos + w + spacing, yPos)
+                kcRt.sizeDelta = Vector2(w, 35)
 
                 local kcBg = GameObject("Bg")
                 kcBg.transform:SetParent(hsKcGo.transform, false)
@@ -9167,19 +9317,18 @@ local function CreateModUI()
                 end)
             end
 
-            CreateResurrectRadioGroup(rightColX2, currentY, 125)
-            currentY = currentY - 45
+            CreateResurrectRadioGroup(btnX, curY, 125)
+            curY = curY - 45
 
             -- Cài đặt DELAY QUÉT PK
             local function CreatePKDelayControl(xPos, yPos)
                 local go = GameObject("Mod_PKScanDelay_Control")
-                go.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, go)
+                go.transform:SetParent(contentGo.transform, false)
 
                 local rt = go:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(260, 35)
+                rt.sizeDelta = Vector2(btnW, 35)
 
                 local bg = GameObject("Bg")
                 bg.transform:SetParent(go.transform, false)
@@ -9216,7 +9365,6 @@ local function CreateModUI()
                 local function createBtn(name, offsetX, width, btnText, btnColor)
                     local btnGo = GameObject(name)
                     btnGo.transform:SetParent(go.transform, false)
-                    table.insert(_G.NangCaoUIList, btnGo)
                     local bRt = btnGo:AddComponent(typeof(RectTransform))
                     bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
                     bRt.anchoredPosition = Vector2(offsetX, 0)
@@ -9262,17 +9410,16 @@ local function CreateModUI()
                 end)
             end
 
-            CreatePKDelayControl(rightColX2, currentY)
-            currentY = currentY - 45
+            CreatePKDelayControl(btnX, curY)
+            curY = curY - 45
 
             -- Toggle KHÓA MỤC TIÊU
             local tGoLock = GameObject("Mod_LockTarget_Enabled_Toggle")
-            tGoLock.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, tGoLock)
+            tGoLock.transform:SetParent(contentGo.transform, false)
 
             local tRtLock = tGoLock:AddComponent(typeof(RectTransform))
             tRtLock.anchorMin, tRtLock.anchorMax, tRtLock.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tRtLock.anchoredPosition = Vector2(rightColX2, currentY)
+            tRtLock.anchoredPosition = Vector2(btnX, curY)
             tRtLock.sizeDelta = Vector2(140, 30)
 
             local bgLock = GameObject("Bg")
@@ -9322,11 +9469,10 @@ local function CreateModUI()
 
             -- Text Field cho Khóa mục tiêu
             local lockTgtGo = GameObject("LockTargetInput")
-            lockTgtGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, lockTgtGo)
+            lockTgtGo.transform:SetParent(contentGo.transform, false)
             local lockRt = lockTgtGo:AddComponent(typeof(RectTransform))
             lockRt.anchorMin, lockRt.anchorMax, lockRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lockRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
+            lockRt.anchoredPosition = Vector2(btnX + 145, curY)
             lockRt.sizeDelta = Vector2(115, 30)
 
             local lockBg = GameObject("Bg")
@@ -9365,20 +9511,19 @@ local function CreateModUI()
                 end)
             end)
 
-            currentY = currentY - 40
-            CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", rightColX2, currentY)
-            currentY = currentY - 45
+            curY = curY - 40
+            CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
 
             -- Cài đặt DELAY QUAY LẠI
             local function CreateReturnPosDelayControl(xPos, yPos)
                 local go = GameObject("Mod_ReturnPosDelay_Control")
-                go.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, go)
+                go.transform:SetParent(contentGo.transform, false)
 
                 local rt = go:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(260, 35)
+                rt.sizeDelta = Vector2(btnW, 35)
 
                 local bg = GameObject("Bg")
                 bg.transform:SetParent(go.transform, false)
@@ -9418,7 +9563,6 @@ local function CreateModUI()
                 local function createBtn(name, offsetX, width, btnText, btnColor)
                     local btnGo = GameObject(name)
                     btnGo.transform:SetParent(go.transform, false)
-                    table.insert(_G.NangCaoUIList, btnGo)
                     local bRt = btnGo:AddComponent(typeof(RectTransform))
                     bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
                     bRt.anchoredPosition = Vector2(offsetX, 0)
@@ -9466,17 +9610,16 @@ local function CreateModUI()
                 end)
             end
 
-            CreateReturnPosDelayControl(rightColX2, currentY)
-            currentY = currentY - 45
+            CreateReturnPosDelayControl(btnX, curY)
+            curY = curY - 45
 
             -- Nút LẤY VỊ TRÍ (Đưa lên trước ô nhập tọa độ, width = 140px, ở bên trái)
             local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
-            getReturnPosBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, getReturnPosBtnGo)
+            getReturnPosBtnGo.transform:SetParent(contentGo.transform, false)
             local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
             getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
                 Vector2(0, 1)
-            getReturnPosRt.anchoredPosition = Vector2(rightColX2, currentY)
+            getReturnPosRt.anchoredPosition = Vector2(btnX, curY)
             getReturnPosRt.sizeDelta = Vector2(140, 30)
 
             local getReturnPosBg = GameObject("Bg")
@@ -9502,11 +9645,10 @@ local function CreateModUI()
 
             -- InputField Tọa độ AutoReturnPosInput (width = 115px, ở bên phải)
             local retTgtGo = GameObject("AutoReturnPosInput")
-            retTgtGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, retTgtGo)
+            retTgtGo.transform:SetParent(contentGo.transform, false)
             local retRt = retTgtGo:AddComponent(typeof(RectTransform))
             retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            retRt.anchoredPosition = Vector2(rightColX2 + 145, currentY)
+            retRt.anchoredPosition = Vector2(btnX + 145, curY)
             retRt.sizeDelta = Vector2(115, 30)
 
             local retBg = GameObject("Bg")
@@ -9551,9 +9693,9 @@ local function CreateModUI()
                     if _G.RoleManager and _G.RoleManager.me then
                         local me = _G.RoleManager.me
                         local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                        local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                        if curX > 0 and curY > 0 then
-                            local coordStr = string.format("%d#%d", curX, curY)
+                        local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                        if curX > 0 and curYCoord > 0 then
+                            local coordStr = string.format("%d#%d", curX, curYCoord)
                             _G.Mod_AutoReturnPos_Coords = coordStr
                             retField.text = coordStr
                             retTxt.text = coordStr
@@ -9572,8 +9714,12 @@ local function CreateModUI()
                 end)
             end)
 
-            currentY = currentY - 40
-            CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
+            curY = curY - 40
+            CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
+
+            -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
+            contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
         end
 
         CreateKundunUI()
