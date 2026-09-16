@@ -1384,16 +1384,17 @@ local function CreateModUI()
 
         -- =========================================================================
         -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C3-C12 (BOSS WATCHER & CONFIG)
-        -- Mô tả: Danh mục boss theo từng cấp độ chuyển sinh (c3 -> c12) và bảng theo dõi hồi sinh.
+        -- Mô tả: Cấu hình chuẩn cho Auto Boss và cấu hình chi tiết đa vị trí riêng cho Tab Thông Tin Boss Cơ Bản.
         -- =========================================================================
+        -- 1. Cấu hình Chuẩn (Dành cho Auto Boss & Tab Cấu hình Auto Boss - 1 nút/1 Boss)
         _G.Mod_MapsConfig_c3 = {
             {
                 mapId = 101094,
                 title = "Hoang Dã C3",
                 bosses = {
-                    { id = 10179407, name = "H.Thần Kiêu Ngạo", col = 1, transferId = 400212 },
-                    { id = 10179408, name = "Phẫn Nộ", col = 2, transferId = 400218 },
-                    { id = 10179409, name = "Cuồng Bạo", col = 3, transferId = 400224 },
+                    { id = 10179407, name = "Hung Thần", col = 1, posX = 110, posY = 178, spots = { { x = 110, y = 178 }, { x = 156, y = 122 } }, useCallFlag = true },
+                    { id = 10179408, name = "Phẫn Nộ", col = 2, posX = 136, posY = 117, spots = { { x = 136, y = 117 }, { x = 79, y = 92 } }, useCallFlag = true },
+                    { id = 10179409, name = "Cuồng Bạo", col = 3, posX = 80, posY = 155, spots = { { x = 80, y = 155 } }, useCallFlag = true },
                 }
             },
             {
@@ -1418,8 +1419,8 @@ local function CreateModUI()
                 mapId = 106705,
                 title = "Luyện Ngục C3",
                 bosses = {
-                    { id = 10670501, name = "Nurmus", col = 1, transferId = 106705101 },
-                    { id = 10670502, name = "Ngang Ngược", col = 2, transferId = 106705103 },
+                    { id = 10670501, name = "Nurmus", col = 1, transferId = 106705101, transferIds = { 106705101, 106705102 } },
+                    { id = 10670502, name = "Ngang Ngược", col = 2, transferId = 106705103, transferIds = { 106705103, 106705104 } },
                     { id = 10670503, name = "Tà Ác", col = 3, transferId = 106705105 },
                 }
             },
@@ -1430,9 +1431,9 @@ local function CreateModUI()
                 mapId = 101093,
                 title = "Hoang Dã C4",
                 bosses = {
-                    { id = 10179307, name = "K.Sĩ Địa Ngục", col = 1, transferId = 400213 },
-                    { id = 10179308, name = "Phẫn Nộ", col = 2, transferId = 400219 },
-                    { id = 10179309, name = "Cuồng Bạo", col = 3, transferId = 400225 },
+                    { id = 10179307, name = "Kỵ Sĩ", col = 1, posX = 154, posY = 113, spots = { { x = 154, y = 113 }, { x = 145, y = 84 } }, useCallFlag = true },
+                    { id = 10179308, name = "Phẫn Nộ", col = 2, posX = 85, posY = 78, spots = { { x = 85, y = 78 } }, useCallFlag = true },
+                    { id = 10179309, name = "Cuồng Bạo", col = 3, posX = 97, posY = 133, spots = { { x = 97, y = 133 } }, useCallFlag = true },
                 }
             },
             {
@@ -1457,8 +1458,94 @@ local function CreateModUI()
                 mapId = 106701,
                 title = "Luyện Ngục C4",
                 bosses = {
-                    { id = 10670101, name = "Ma Tinh Phoenix", col = 1, transferId = 106701101 },
-                    { id = 10670102, name = "Ngang Ngược", col = 2, transferId = 106701103 },
+                    { id = 10670101, name = "Phoenix", col = 1, transferId = 106701101, transferIds = { 106701101, 106701102 } },
+                    { id = 10670102, name = "Ngang Ngược", col = 2, transferId = 106701103, transferIds = { 106701103, 106701104 } },
+                    { id = 10670103, name = "Tà Ác", col = 3, transferId = 106701105 },
+                }
+            },
+        }
+
+        -- 2. Cấu hình Chi Tiết Đa Vị Trí (Dành riêng cho Tab Thông Tin Boss Cơ Bản)
+        _G.Mod_BossWatcherConfig_c3 = {
+            {
+                mapId = 101094,
+                title = "Hoang Dã C3",
+                bosses = {
+                    { id = 10179407, name = "Hung Thần (1)", col = 1, subIndex = 1, posX = 110, posY = 178, useCallFlag = true },
+                    { id = 10179407, name = "Hung Thần (2)", col = 1, subIndex = 2, posX = 156, posY = 122, useCallFlag = true },
+                    { id = 10179408, name = "Phẫn Nộ (1)", col = 2, subIndex = 1, posX = 136, posY = 117, useCallFlag = true },
+                    { id = 10179408, name = "Phẫn Nộ (2)", col = 2, subIndex = 2, posX = 79, posY = 92, useCallFlag = true },
+                    { id = 10179409, name = "Cuồng Bạo", col = 3, posX = 80, posY = 155, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105203,
+                title = "Trang Sức C3",
+                bosses = {
+                    { id = 10520301, name = "N.Khổng Lồ Sét", col = 1, transferId = 105203101 },
+                    { id = 10520302, name = "Phẫn Nộ", col = 2, transferId = 105203102 },
+                    { id = 999105203, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
+                }
+            },
+            {
+                mapId = 106402,
+                title = "Thí Luyện Cánh 2",
+                bosses = {
+                    { id = 10640201, name = "N.Cây Totem", col = 1, transferId = 10640201 },
+                    { id = 10640202, name = "Ngang Ngược", col = 2, transferId = 10640202 },
+                    { id = 10640203, name = "Tà Ác", col = 3, transferId = 10640203 },
+                }
+            },
+            {
+                mapId = 106705,
+                title = "Luyện Ngục C3",
+                bosses = {
+                    { id = 10670501, name = "Nurmus (1)", col = 1, subIndex = 1, transferId = 106705101 },
+                    { id = 10670501, name = "Nurmus (2)", col = 1, subIndex = 2, transferId = 106705102 },
+                    { id = 10670502, name = "Ngang Ngược (1)", col = 2, subIndex = 1, transferId = 106705103 },
+                    { id = 10670502, name = "Ngang Ngược (2)", col = 2, subIndex = 2, transferId = 106705104 },
+                    { id = 10670503, name = "Tà Ác", col = 3, transferId = 106705105 },
+                }
+            },
+        }
+
+        _G.Mod_BossWatcherConfig_c4 = {
+            {
+                mapId = 101093,
+                title = "Hoang Dã C4",
+                bosses = {
+                    { id = 10179307, name = "Kỵ Sĩ (1)", col = 1, subIndex = 1, posX = 154, posY = 113, useCallFlag = true },
+                    { id = 10179307, name = "Kỵ Sĩ (2)", col = 1, subIndex = 2, posX = 145, posY = 84, useCallFlag = true },
+                    { id = 10179308, name = "Phẫn Nộ", col = 2, posX = 85, posY = 78, useCallFlag = true },
+                    { id = 10179309, name = "Cuồng Bạo", col = 3, posX = 97, posY = 133, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105204,
+                title = "Trang Sức C4",
+                bosses = {
+                    { id = 10520401, name = "N.Khổng Lồ U Linh", col = 1, transferId = 105204101 },
+                    { id = 10520402, name = "Phẫn Nộ", col = 2, transferId = 105204102 },
+                    { id = 999105204, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
+                }
+            },
+            {
+                mapId = 106403,
+                title = "Thí Luyện Cánh 3",
+                bosses = {
+                    { id = 10640301, name = "O.Chúa Khát Máu", col = 1, transferId = 10640301 },
+                    { id = 10640302, name = "Ngang Ngược", col = 2, transferId = 10640302 },
+                    { id = 10640303, name = "Tà Ác", col = 3, transferId = 10640303 },
+                }
+            },
+            {
+                mapId = 106701,
+                title = "Luyện Ngục C4",
+                bosses = {
+                    { id = 10670101, name = "Phoenix (1)", col = 1, subIndex = 1, transferId = 106701101 },
+                    { id = 10670101, name = "Phoenix (2)", col = 1, subIndex = 2, transferId = 106701102 },
+                    { id = 10670102, name = "Ngang Ngược (1)", col = 2, subIndex = 1, transferId = 106701103 },
+                    { id = 10670102, name = "Ngang Ngược (2)", col = 2, subIndex = 2, transferId = 106701104 },
                     { id = 10670103, name = "Tà Ác", col = 3, transferId = 106701105 },
                 }
             },
@@ -1793,6 +1880,23 @@ local function CreateModUI()
         end
         _G.GetMapsConfigByTier = GetMapsConfigByTier
 
+        local function GetBossWatcherConfigByTier(tierTag)
+            if not tierTag or tierTag == "" then
+                local p = _G.Mod_Config_Reincarnation_Primary
+                if not p then
+                    pcall(function()
+                        local prefP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
+                        if prefP >= 3 and prefP <= 12 then p = prefP end
+                    end)
+                end
+                p = p or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
+                tierTag = "C" .. tostring(p)
+            end
+            local tagLower = string.lower(tierTag)
+            return _G["Mod_BossWatcherConfig_" .. tagLower] or _G["Mod_MapsConfig_" .. tagLower] or _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7 or {}
+        end
+        _G.GetBossWatcherConfigByTier = GetBossWatcherConfigByTier
+
         _G.ModBossTab = _G.ModBossTab or "C7"
 
         local mapBosses = {}
@@ -1907,6 +2011,34 @@ local function CreateModUI()
             return btnUIPool[btnIndex]
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: NGẮT TÌM ĐƯỜNG & DI CHUYỂN NHẸ TẠI CHỖ (BREAK PATHFINDER JIGGLE)
+        -- Mô tả: Dừng di chuyển, xóa dữ liệu PathFinder và nhích nhẹ +-1 ô để chống lag/chạy ngược về điểm cũ.
+        -- =========================================================================
+        local function Mod_PerformStopMoveJiggle()
+            pcall(function()
+                if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                    _G.PathFinderManager.ResetData()
+                end
+                local me = _G.RoleManager and _G.RoleManager.me
+                if me then
+                    if me.StopMove then me:StopMove() end
+                    if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+                    if me.MoveTo then
+                        local meX = (me.serverCoord and me.serverCoord.x) or (me.data and me.data.x) or (me.cellPos and me.cellPos.x) or 0
+                        local meY = (me.serverCoord and me.serverCoord.y) or (me.data and me.data.y) or (me.cellPos and me.cellPos.y) or 0
+                        if meX > 0 and meY > 0 then
+                            local dx = math.random(-1, 1)
+                            local dy = math.random(-1, 1)
+                            if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                            me:MoveTo({ x = meX + dx, y = meY + dy })
+                        end
+                    end
+                end
+            end)
+        end
+        _G.Mod_PerformStopMoveJiggle = Mod_PerformStopMoveJiggle
+
         local function UpdateBossWatchUIText()
             pcall(function()
                 if not isExpanded then return end
@@ -1945,7 +2077,7 @@ local function CreateModUI()
                 end
                 currentPosY = currentPosY - 20
 
-                local mapsConfig = GetMapsConfigByTier(_G.ModBossTab)
+                local mapsConfig = GetBossWatcherConfigByTier(_G.ModBossTab)
                 for i, mapCfg in ipairs(mapsConfig) do
                     local sep = GetDashedLine(sepIdx, currentPosY)
                     sep.go:SetActive(_G.ModMainTab == "CO_BAN")
@@ -1995,7 +2127,40 @@ local function CreateModUI()
                                         if totalAlive > 0 or #deadList > 0 then
                                             bestLine = lineNum
 
-                                            if expectedTotal > 1 then
+                                            -- [MOD FEATURE]: Xử lý hiển thị riêng cho Boss có subIndex (C3, C4 Hoang Dã & Luyện Ngục)
+                                            if cfg.subIndex == 1 then
+                                                if totalAlive >= 1 then
+                                                    statusStr = "<color=#00FF00>xuất hiện</color>"
+                                                elseif #deadList > 0 then
+                                                    local rt = deadList[1]
+                                                    local remain = math.floor(rt - currentSec)
+                                                    if remain <= 0 then
+                                                        statusStr = "<color=#00FF00>xuất hiện</color>"
+                                                    else
+                                                        local m = math.floor((remain % 3600) / 60)
+                                                        local s = remain % 60
+                                                        statusStr = "<color=#AAAAAA>(" ..
+                                                            string.format("%02d:%02d", m, s) .. ")</color>"
+                                                    end
+                                                end
+                                            elseif cfg.subIndex == 2 then
+                                                if totalAlive >= 2 then
+                                                    statusStr = "<color=#00FF00>xuất hiện</color>"
+                                                else
+                                                    local rt = (totalAlive == 1 and deadList[1]) or deadList[2] or deadList[1]
+                                                    if rt then
+                                                        local remain = math.floor(rt - currentSec)
+                                                        if remain <= 0 then
+                                                            statusStr = "<color=#00FF00>xuất hiện</color>"
+                                                        else
+                                                            local m = math.floor((remain % 3600) / 60)
+                                                            local s = remain % 60
+                                                            statusStr = "<color=#AAAAAA>(" ..
+                                                                string.format("%02d:%02d", m, s) .. ")</color>"
+                                                        end
+                                                    end
+                                                end
+                                            elseif expectedTotal > 1 then
                                                 local timeStrs = {}
                                                 for i = 1, #deadList do
                                                     local rt = deadList[i]
@@ -2100,16 +2265,32 @@ local function CreateModUI()
                                             end
                                             return
                                         end
-                                        if cfg.posX and cfg.posY and _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
-                                            _G.PathFinderManager.MoveToLinePos(mapCfg.mapId, {
-                                                x = cfg.posX,
-                                                y = cfg
-                                                    .posY
-                                            }, cfg.transferId, validLineNum, nil, nil, nil, nil, true)
+
+                                        -- 1. Thực hiện lệnh dịch chuyển
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: DỊCH CHUYỂN TỨC THÌ HOANG DÃ C3-C4 BẰNG REQCALLFLAG
+                                        -- =========================================================================
+                                        if (_G.ModBossTab == "C3" or _G.ModBossTab == "C4") and (mapCfg.mapId == 101094 or mapCfg.mapId == 101093) and cfg.posX and cfg.posY then
+                                            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                                _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                                    mapId = mapCfg.mapId,
+                                                    line = validLineNum or 1,
+                                                    x = cfg.posX,
+                                                    y = cfg.posY
+                                                })
+                                                if _G.FloatingWordUtility then
+                                                    _G.FloatingWordUtility.QuickMsg(
+                                                        "Đang bay tới " .. tostring(cfg.name))
+                                                end
+                                            end
                                         elseif _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                             _G.SceneController.OnReqTransferTransmitMap(nil,
                                                 { mapId = cfg.transferId, line = validLineNum, changeLine = true })
                                         end
+
+                                        -- 2. Đặt lịch nhích nhẹ sau khi dịch chuyển đến điểm mới (0.4s & 0.8s) để dập tắt PathFinder chạy ngược về điểm cũ
+                                        local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
+                                        _G.Mod_ManualTeleportJiggleTimes = { nowReal + 0.4, nowReal + 0.8 }
                                     end)
                                 end
 
@@ -3635,7 +3816,6 @@ local function CreateModUI()
                                                         local aliveScore = isAlive and 1000000 or 0
                                                         local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
                                                         local tierScore = tierIndex * 100000
-
                                                         local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
 
                                                         if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
@@ -3732,12 +3912,15 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_Target = bestBoss
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
+                                local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY) or
+                                    ((bestBoss.mapCfg.mapId == 101094 or bestBoss.mapCfg.mapId == 101093) and bestBoss.cfg.posX and bestBoss.cfg.posY)
+
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
-                                if currentMapId == bestBoss.mapCfg.mapId and currentLine == bestBoss.line then
-                                    _G.Mod_AutoFarmBoss_State = 4
+                                if isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
+                                    _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 else
-                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_State = 4
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 end
                             else
@@ -3802,10 +3985,28 @@ local function CreateModUI()
                             return
                         end
 
-                        LogMsg(string.format("Đang bay tới Map Boss: %s...", GetMapName(target.mapCfg.mapId)))
-                        if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                            _G.SceneController.OnReqTransferTransmitMap(nil,
-                                { mapId = target.cfg.transferId, line = target.line, changeLine = true })
+                        LogMsg(string.format("Đang bay tới Map Boss: %s (%s)...", GetMapName(target.mapCfg.mapId), tostring(target.cfg.name)))
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: DỊCH CHUYỂN REQCALLFLAG CHO HOANG DÃ C3-C4 VÀ CỔNG DỊCH CHUYỂN CHO CÁC MAP KHÁC
+                        -- =========================================================================
+                        local isCallFlag = (target.cfg.useCallFlag and target.cfg.posX and target.cfg.posY) or
+                            ((target.mapCfg.mapId == 101094 or target.mapCfg.mapId == 101093) and target.cfg.posX and target.cfg.posY)
+
+                        if isCallFlag then
+                            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                    mapId = target.mapCfg.mapId,
+                                    line = target.line or 1,
+                                    x = target.cfg.posX,
+                                    y = target.cfg.posY
+                                })
+                            end
+                        else
+                            if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                _G.SceneController.OnReqTransferTransmitMap(nil,
+                                    { mapId = target.cfg.transferId, line = target.line, changeLine = true })
+                            end
                         end
                         _G.Mod_AutoFarmBoss_State = 4
                         _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -3920,10 +4121,32 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
                         else
+                            -- Nếu chưa tìm thấy Boss và Boss có vị trí thứ 2 (hoặc cổng thứ 2) chưa thử:
+                            if not target.triedSecondSpot then
+                                if target.cfg.spots and #target.cfg.spots > 1 then
+                                    target.triedSecondSpot = true
+                                    target.cfg.posX = target.cfg.spots[2].x
+                                    target.cfg.posY = target.cfg.spots[2].y
+                                    _G.Mod_AutoFarmBoss_DidJiggle = false
+                                    LogMsg(string.format("Không thấy Boss tại điểm 1, bay tiếp sang điểm 2 (%s: %d, %d)...", target.cfg.name, target.cfg.posX, target.cfg.posY))
+                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                elseif target.cfg.transferIds and #target.cfg.transferIds > 1 then
+                                    target.triedSecondSpot = true
+                                    target.cfg.transferId = target.cfg.transferIds[2]
+                                    _G.Mod_AutoFarmBoss_DidJiggle = false
+                                    LogMsg(string.format("Không thấy Boss tại cổng 1, bay tiếp sang cổng 2 (%s: %s)...", target.cfg.name, tostring(target.cfg.transferId)))
+                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                end
+                            end
+
                             _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_BossWait > 2 then
-                                LogMsg("Không thấy Boss. Rút về Lorencia...")
                                 _G.Mod_AutoFarmBoss_BossWait = 0
+                                LogMsg("Không thấy Boss. Rút về Lorencia...")
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
@@ -5133,6 +5356,19 @@ local function CreateModUI()
                         if cam and not IsNil(cam) and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
                             cam.fieldOfView = _G.SavedFOV
                             if UpdateFOVLabel then UpdateFOVLabel() end
+                        end
+                    end
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: NHÍCH NHẸ SAU KHI DỊCH CHUYỂN TỪ TAB BOSS (CƠ BẢN) ĐỂ TRIỆT TIÊU PATHFINDER CHẠY NGƯỢC
+                    -- =========================================================================
+                    if _G.Mod_ManualTeleportJiggleTimes and #_G.Mod_ManualTeleportJiggleTimes > 0 then
+                        local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
+                        if nowReal >= _G.Mod_ManualTeleportJiggleTimes[1] then
+                            table.remove(_G.Mod_ManualTeleportJiggleTimes, 1)
+                            if _G.Mod_PerformStopMoveJiggle then
+                                _G.Mod_PerformStopMoveJiggle()
+                            end
                         end
                     end
 
