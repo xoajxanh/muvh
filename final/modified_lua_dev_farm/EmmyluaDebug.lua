@@ -1600,6 +1600,55 @@ local function CreateModUI()
             if _G.ModUpdatePanelBotBtn then _G.ModUpdatePanelBotBtn() end
         end)
 
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD (FARM)
+        -- Mô tả: Nút thoát phó bản khẩn cấp khi bị kẹt/lag trong phó bản (QTQ, Huyết Lâu...)
+        -- =========================================================================
+        local exitPbBtnGo = GameObject("ExitDungeonGlobalBtn")
+        exitPbBtnGo.transform:SetParent(panelGo.transform, false)
+        local epbRt = exitPbBtnGo:AddComponent(typeof(RectTransform))
+        epbRt.anchorMin = Vector2(1, 0)
+        epbRt.anchorMax = Vector2(1, 0)
+        epbRt.pivot = Vector2(1, 0)
+        epbRt.anchoredPosition = Vector2(-20, 14)
+        epbRt.sizeDelta = Vector2(140, 44)
+
+        local epbImg = exitPbBtnGo:AddComponent(typeof(Image))
+        epbImg.color = Color(0.8, 0.15, 0.15, 0.95)
+
+        local epbTxtGo = GameObject("Text")
+        epbTxtGo.transform:SetParent(exitPbBtnGo.transform, false)
+        local epbtRt = epbTxtGo:AddComponent(typeof(RectTransform))
+        epbtRt.anchorMin, epbtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        epbtRt.sizeDelta = Vector2(0, 0)
+        local epbTxt = epbTxtGo:AddComponent(typeof(Text))
+        epbTxt.raycastTarget = false
+        epbTxt.text = "<color=#FFFFFF><b>THOÁT PB</b></color>"
+        epbTxt.fontSize = 16
+        epbTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then epbTxt.font = defaultFont end
+
+        local epbBtn = exitPbBtnGo:AddComponent(typeof(Button))
+        epbBtn.targetGraphic = epbImg
+        epbBtn.onClick:AddListener(function()
+            pcall(function()
+                if _G.TranScriptController then
+                    if _G.TranScriptController.ReqExitInstance then _G.TranScriptController.ReqExitInstance() end
+                    if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
+                    if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController.ReqExitUnionMap() end
+                end
+                if _G.NetManager and _G.TranScriptMessage and _G.TranScriptMessage.ReqQuitTranScript then
+                    _G.NetManager.Send(_G.TranScriptMessage.ReqQuitTranScript)
+                end
+                _G.Mod_IsRunningInstance = false
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("Đã gửi lệnh thoát phó bản!")
+                end
+            end)
+        end)
+        exitPbBtnGo:SetActive(true)
+        exitPbBtnGo.transform:SetAsLastSibling()
+
         end)
     if not status then
         WriteLog("LỖI TẠO UI: " .. tostring(err))
@@ -1854,18 +1903,114 @@ _G.Mod_StartGoldenChestLoop()
 -- [MODULE BOT FARM INTEGRATION - LEVEL 1->200 & MULTI-ACCOUNT]
 -- =========================================================================
 
+-- =========================================================================
+-- [MOD FEATURE]: THÔNG BÁO CHỮ VÀNG TOP MIDDLE (OVERLAY BẤT CHẤP MỌI SCENE/UI)
+-- =========================================================================
+_G.Mod_ShowTopNotice = function(msg, duration)
+    pcall(function()
+        if not msg or msg == "" then return end
+        duration = duration or 4.0
+
+        local bannerName = "Mod_TopNoticeBanner"
+        local go = CS.UnityEngine.GameObject.Find(bannerName)
+        if not go or IsNil(go) then
+            go = CS.UnityEngine.GameObject(bannerName)
+            CS.UnityEngine.Object.DontDestroyOnLoad(go)
+
+            local canvas = go:AddComponent(typeof(CS.UnityEngine.Canvas))
+            canvas.renderMode = CS.UnityEngine.RenderMode.ScreenSpaceOverlay
+            canvas.sortingOrder = 32767
+
+            local cs = go:AddComponent(typeof(CS.UnityEngine.UI.CanvasScaler))
+            cs.uiScaleMode = CS.UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
+            cs.referenceResolution = CS.UnityEngine.Vector2(1920, 1080)
+            cs.matchWidthOrHeight = 0.5
+
+            go:AddComponent(typeof(CS.UnityEngine.UI.GraphicRaycaster))
+
+            -- Panel nền tối mờ
+            local bgObj = CS.UnityEngine.GameObject("Bg")
+            bgObj.transform:SetParent(go.transform, false)
+            local bgRt = bgObj:AddComponent(typeof(CS.UnityEngine.RectTransform))
+            bgRt.anchorMin = CS.UnityEngine.Vector2(0.5, 1.0)
+            bgRt.anchorMax = CS.UnityEngine.Vector2(0.5, 1.0)
+            bgRt.pivot = CS.UnityEngine.Vector2(0.5, 1.0)
+            bgRt.anchoredPosition = CS.UnityEngine.Vector2(0, -15)
+            bgRt.sizeDelta = CS.UnityEngine.Vector2(1100, 52)
+
+            local bgImg = bgObj:AddComponent(typeof(CS.UnityEngine.UI.Image))
+            bgImg.color = CS.UnityEngine.Color(0, 0, 0, 0.72)
+
+            -- Text hiển thị chữ vàng
+            local textObj = CS.UnityEngine.GameObject("NoticeText")
+            textObj.transform:SetParent(bgObj.transform, false)
+            local rt = textObj:AddComponent(typeof(CS.UnityEngine.RectTransform))
+            rt.anchorMin = CS.UnityEngine.Vector2(0, 0)
+            rt.anchorMax = CS.UnityEngine.Vector2(1, 1)
+            rt.pivot = CS.UnityEngine.Vector2(0.5, 0.5)
+            rt.sizeDelta = CS.UnityEngine.Vector2(-20, 0)
+            rt.anchoredPosition = CS.UnityEngine.Vector2(0, 0)
+
+            local txt = textObj:AddComponent(typeof(CS.UnityEngine.UI.Text))
+            local font = CS.UnityEngine.Resources.GetBuiltinResource(typeof(CS.UnityEngine.Font), "Arial.ttf")
+            if not font then
+                local anyTxt = CS.UnityEngine.Object.FindObjectOfType(typeof(CS.UnityEngine.UI.Text))
+                if anyTxt and anyTxt.font then font = anyTxt.font end
+            end
+            if font then txt.font = font end
+            txt.fontSize = 24
+            txt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            txt.alignment = CS.UnityEngine.TextAnchor.MiddleCenter
+            txt.color = CS.UnityEngine.Color(1.0, 0.88, 0.1, 1.0) -- Màu vàng kim rực sáng
+
+            -- Viền đen đậm cho chữ
+            local outline = textObj:AddComponent(typeof(CS.UnityEngine.UI.Outline))
+            outline.effectColor = CS.UnityEngine.Color(0, 0, 0, 0.95)
+            outline.effectDistance = CS.UnityEngine.Vector2(2, -2)
+        end
+
+        go:SetActive(true)
+        local txtComp = go:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
+        if txtComp then
+            txtComp.text = tostring(msg)
+        end
+
+        _G.Mod_TopNoticeSeq = (_G.Mod_TopNoticeSeq or 0) + 1
+        local curSeq = _G.Mod_TopNoticeSeq
+        Timer.Start(duration, function()
+            if _G.Mod_TopNoticeSeq == curSeq and go and not IsNil(go) then
+                go:SetActive(false)
+            end
+        end)
+    end)
+
+    -- Đồng thời gọi QuickMsg nếu đang trong game
+    pcall(function()
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(tostring(msg))
+        elseif _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+            _G.FloatingTipUtility.QuickMsg(tostring(msg))
+        end
+    end)
+end
+
 pcall(function()
     local execTime = os.date("%H:%M:%S")
-    if _G.UIManager and _G.UIID and _G.UIID.TipFloatTipUI then
-        pcall(function() _G.UIManager.Show(_G.UIID.TipFloatTipUI) end)
-    end
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg(string.format("[EXECUTE] Nạp Script mới: %s", execTime))
+    if _G.Mod_ShowTopNotice then
+        _G.Mod_ShowTopNotice(string.format("[EXECUTE] ĐÃ NẠP SCRIPT BOT FARM (%s)", execTime), 4.0)
     end
 end)
 
 local function TriggerDungeonSkipWait()
     pcall(function()
+        local cMap = (_G.SceneData and _G.SceneData.mapId) or 0
+        local inBC = (cMap >= 1012000 and cMap <= 1012099)
+        local inDS = (cMap >= 1010000 and cMap <= 1010099)
+        local inTrans = inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript)
+        if not inTrans then
+            return -- Tuyệt đối không gửi gói tin SkipWait nếu không ở trong phó bản
+        end
+
         -- 1. Gửi gói tin mạng SkipWait
         if _G.networkRequest and _G.networkRequest.ReqSkipWait then
             _G.networkRequest.ReqSkipWait()
@@ -1954,37 +2099,44 @@ local function FormatQuickMsg(rawMsg)
     if #msg == 0 or msg:match("^[%s=-]+$") then
         return ""
     end
-    
-    local tag, body = msg:match("^%[([^%]]+)%]%s*[:%-]?%s*(.*)$")
-    if tag and body and #body > 0 then
-        return string.format("[%s] : %s", tag, body)
+
+    -- Bỏ qua các message nội bộ không cần hiển thị lên màn hình
+    if msg:find("DỪNG CƯỜNG HÓA") or msg:find("KHO NGUYÊN LIỆU") or msg:find("HUỲNH THẠCH CHECK") 
+       or msg:find("TIER MỤC TIÊU") or msg:find("ĐẬP ĐỒ") or msg:find("Không có viên nào đủ điều kiện") then
+        return ""
     end
-    
+
+    -- Nếu message đã có format chuẩn >>> [TAG]: Body <<<
+    local preTag, preBody = msg:match("^%[([^%]]+)%]%s*[:%-]?%s*(.*)$")
+    if preTag and preBody and #preBody > 0 then
+        return string.format(">>> [%s]: %s <<<", preTag, preBody)
+    end
+
     if msg:find("Đang trong Game") or msg:find("Đăng nhập") or msg:find("kết nối") then
-        return string.format("[Đăng Nhập] : %s", msg)
+        return string.format(">>> [ĐĂNG NHẬP]: %s <<<", msg)
     elseif msg:find("Nhiệm vụ") or msg:find("Quest") or msg:find("quest") then
-        return string.format("[Nhiệm Vụ] : %s", msg)
+        return string.format(">>> [NHIỆM VỤ]: %s <<<", msg)
     elseif msg:find("mặc đồ") or msg:find("Trang bị") or msg:find("Mặc") then
-        return string.format("[Trang Bị] : %s", msg)
+        return string.format(">>> [TRANG BỊ]: %s <<<", msg)
     elseif msg:find("chuyển cường hóa") or msg:find("kế thừa") or msg:find("Chuyển") then
-        return string.format("[Chuyển Cường Hóa] : %s", msg)
+        return string.format(">>> [CHUYỂN ĐỒ]: %s <<<", msg)
     elseif msg:find("thu hồi") or msg:find("Thu hồi") or msg:find("rác") then
-        return string.format("[Thu Hồi] : %s", msg)
-    elseif msg:find("Cường hóa") or msg:find("cường hóa") or msg:find("ĐẬP ĐỒ") then
-        return string.format("[Cường Hóa] : %s", msg)
+        return string.format(">>> [THU HỒI]: %s <<<", msg)
+    elseif msg:find("Cường hóa") or msg:find("cường hóa") then
+        return string.format(">>> [CƯỜNG HÓA]: %s <<<", msg)
     elseif msg:find("Huỳnh Thạch") or msg:find("huỳnh thạch") or msg:find("ngọc") then
-        return string.format("[Huỳnh Thạch] : %s", msg)
+        return string.format(">>> [HUỲNH THẠCH]: %s <<<", msg)
     elseif msg:find("Phó bản") or msg:find("Huyết Lâu") or msg:find("Quảng Trường Quỷ") or msg:find("phó bản") then
-        return string.format("[Phó Bản] : %s", msg)
+        return string.format(">>> [PHÓ BẢN]: %s <<<", msg)
     elseif msg:find("Rương Vàng") or msg:find("rương vàng") then
-        return string.format("[Rương Vàng] : %s", msg)
+        return string.format(">>> [RƯƠNG VÀNG]: %s <<<", msg)
     elseif msg:find("Bãi farm") or msg:find("quái") or msg:find("luyện cấp") then
-        return string.format("[Luyện Cấp] : %s", msg)
-    elseif msg:find("Mua Máu") or msg:find("bình Máu") then
-        return string.format("[Mua Thuốc] : %s", msg)
+        return string.format(">>> [LUYỆN CẤP]: %s <<<", msg)
+    elseif msg:find("Mua Máu") or msg:find("bình Máu") or msg:find("MANA") or msg:find("Mana") then
+        return string.format(">>> [MUA THUỐC]: %s <<<", msg)
     end
-    
-    return string.format("[Auto BOT] : %s", msg)
+
+    return string.format(">>> [BOT]: %s <<<", msg)
 end
 
 local function Log(str, showOnScreen)
@@ -2001,12 +2153,16 @@ local function Log(str, showOnScreen)
         end
     end)
     
-    if showOnScreen and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+    if showOnScreen then
         local now = os.time()
         if cleanMsg ~= lastScreenMsg or (now - lastScreenMsgTime) >= 3 then
             lastScreenMsg = cleanMsg
             lastScreenMsgTime = now
-            pcall(function() _G.FloatingWordUtility.QuickMsg(cleanMsg) end)
+            if _G.Mod_ShowTopNotice then
+                _G.Mod_ShowTopNotice(cleanMsg, 4.0)
+            elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                pcall(function() _G.FloatingWordUtility.QuickMsg(cleanMsg) end)
+            end
         end
     end
 end
@@ -2070,10 +2226,10 @@ local MAP_TRAVEL_TASKS = {
     [3106] = { name = "Lost Tower Tầng 2", targetMap = 100502, x = 193, y = 30, altMaps = { 100501, 100502, 100503, 100504, 100505, 100506, 100507 } },
     [3107] = { name = "Lost Tower Tầng 2", targetMap = 100502, x = 193, y = 30, altMaps = { 100501, 100502, 100503, 100504, 100505, 100506, 100507 } },
     [3200] = { name = "Atlantis", targetMap = 1008, x = 72, y = 43, altMaps = { 1008, 100801 } },
-    [3224] = { name = "Aida", targetMap = 1010, x = 60, y = 60, altMaps = { 1010 } },
-    [3234] = { name = "Icarus", targetMap = 1011, x = 15, y = 13, altMaps = { 1011 } },
-    [3244] = { name = "Phế Tích Kanturu", targetMap = 1012, x = 50, y = 50, altMaps = { 1012 } },
-    [3254] = { name = "Di Chỉ Kanturu", targetMap = 1013, x = 50, y = 50, altMaps = { 1013 } },
+    [3224] = { name = "Aida", targetMap = 1034, x = 85, y = 8, altMaps = { 1034, 103401 } },
+    [3234] = { name = "Icarus", targetMap = 1011, x = 15, y = 13, altMaps = { 1011, 101101 } },
+    [3244] = { name = "Phế Tích Kanturu", targetMap = 1038, x = 20, y = 217, altMaps = { 1038, 103801 } },
+    [3254] = { name = "Di Chỉ Kanturu", targetMap = 1039, x = 71, y = 106, altMaps = { 1039, 103901 } },
 }
 _G.MAP_TRAVEL_TASKS = MAP_TRAVEL_TASKS
 
@@ -2600,6 +2756,12 @@ DismissBlockers = function()
             if UIID and UIID.Equip_ZhuanyiFastUI then UIManager.Hide(UIID.Equip_ZhuanyiFastUI) end
             if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
             if UIID and UIID.Equip_Transfer then UIManager.Hide(UIID.Equip_Transfer) end
+            if UIID and UIID.LoginRoleUI then UIManager.Hide(UIID.LoginRoleUI) end
+            if UIID and UIID.LoginCreateRoleUI then UIManager.Hide(UIID.LoginCreateRoleUI) end
+            if UIID and UIID.LoginUI then UIManager.Hide(UIID.LoginUI) end
+            UIManager.Hide("Login_LoginRoleUI")
+            UIManager.Hide("Login_LoginCreateRoleUI")
+            UIManager.Hide("Login_LoginUI")
             UIManager.Hide("Attribute_AddTipsUI")
             UIManager.Hide("Role_AttributeUI")
             UIManager.Hide("OnHook_ProfitUI")
@@ -2685,6 +2847,48 @@ DismissBlockers = function()
             TriggerDungeonSkipWait()
         end
 
+        -- Tự động hoàn thành / nhận thưởng / nộp nhiệm vụ tức thì khi mở bảng Task_TaskInfoUI (hội thoại NPC / trả thưởng)
+        local taskInfoUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskInfoUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskInfoUI)))
+        if taskInfoUI and ((taskInfoUI.root and taskInfoUI.root.activeInHierarchy) or (taskInfoUI.btn_submit and taskInfoUI.btn_submit.gameObject and taskInfoUI.btn_submit.gameObject.activeInHierarchy) or (taskInfoUI.btn_accept and taskInfoUI.btn_accept.gameObject and taskInfoUI.btn_accept.gameObject.activeInHierarchy) or (taskInfoUI.btn_reward and taskInfoUI.btn_reward.gameObject and taskInfoUI.btn_reward.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if taskInfoUI.countDownTimer then
+                    Timer.Stop(taskInfoUI.countDownTimer)
+                    taskInfoUI.countDownTimer = nil
+                end
+                if taskInfoUI.btn_reward and taskInfoUI.btn_reward.gameObject and taskInfoUI.btn_reward.gameObject.activeInHierarchy and taskInfoUI.btn_rewardOnClick then
+                    taskInfoUI:btn_rewardOnClick(taskInfoUI.btn_reward)
+                elseif taskInfoUI.btn_submit and taskInfoUI.btn_submit.gameObject and taskInfoUI.btn_submit.gameObject.activeInHierarchy and taskInfoUI.btn_submitOnClick then
+                    taskInfoUI:btn_submitOnClick(taskInfoUI.btn_submit)
+                elseif taskInfoUI.btn_accept and taskInfoUI.btn_accept.gameObject and taskInfoUI.btn_accept.gameObject.activeInHierarchy and taskInfoUI.btn_acceptOnClick then
+                    taskInfoUI:btn_acceptOnClick(taskInfoUI.btn_accept)
+                else
+                    if taskInfoUI.btn_submitOnClick then taskInfoUI:btn_submitOnClick() end
+                end
+            end)
+        end
+
+        local transferTaskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TransferUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Task_TransferUI)))
+        if transferTaskUI and ((transferTaskUI.root and transferTaskUI.root.activeInHierarchy) or (transferTaskUI.btn_submit and transferTaskUI.btn_submit.gameObject and transferTaskUI.btn_submit.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if transferTaskUI.btn_submitOnClick then
+                    transferTaskUI:btn_submitOnClick(transferTaskUI.btn_submit)
+                end
+            end)
+        end
+
+        local transferInfoUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TransferInfoUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Task_TransferInfoUI)))
+        if transferInfoUI and ((transferInfoUI.root and transferInfoUI.root.activeInHierarchy) or (transferInfoUI.btn_close and transferInfoUI.btn_close.gameObject and transferInfoUI.btn_close.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if transferInfoUI.btn_closeOnClick then
+                    transferInfoUI:btn_closeOnClick(transferInfoUI.btn_close)
+                elseif transferInfoUI.btn_closeBgOnClick then
+                    transferInfoUI:btn_closeBgOnClick(transferInfoUI.btn_closeBg)
+                elseif _G.UIManager and _G.UIID and _G.UIID.Task_TransferInfoUI then
+                    _G.UIManager.Hide(_G.UIID.Task_TransferInfoUI)
+                end
+            end)
+        end
+
         if CS and CS.MuInterface and CS.MuInterface.Instance and CS.MuInterface.Instance.HideView then
             CS.MuInterface.Instance:HideView()
         end
@@ -2695,20 +2899,38 @@ DismissBlockers = function()
 end
 
 ForceLogoutToLogin = function()
-    Log("--- THỰC HIỆN ĐĂNG XUẤT RA MÀN HÌNH LOGIN ---")
+    Log("--- [CLEAN LOGOUT] ĐĂNG XUẤT RA MÀN HÌNH LOGIN ---", true)
     _G.Bot_IsInGameWorld = false
     _G.IsRoleCreating = false
     _G.HasCreatedRoleForTarget = false
-    if _G.BotQuestMonitorTimer then
-        pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
-        _G.BotQuestMonitorTimer = nil
-    end
+    
+    -- Dừng toàn bộ các timer đang chạy
+    pcall(function()
+        if _G.BotQuestMonitorTimer then Timer.Stop(_G.BotQuestMonitorTimer); _G.BotQuestMonitorTimer = nil end
+        if _G.Global30sUpgradeTimer then Timer.Stop(_G.Global30sUpgradeTimer); _G.Global30sUpgradeTimer = nil end
+        if _G.Bot_FarmMonitorTimer then Timer.Stop(_G.Bot_FarmMonitorTimer); _G.Bot_FarmMonitorTimer = nil end
+        if _G.Mod_InstanceMonitorTimer then Timer.Stop(_G.Mod_InstanceMonitorTimer); _G.Mod_InstanceMonitorTimer = nil end
+    end)
+    
     DismissBlockers()
+    
+    -- 1. Gửi ReqLogout chính thức lên Server
     pcall(function()
         if NetManager and NetManager.IsConnect and NetManager.IsConnect() then
-            NetManager.Send(UserMessage.ReqLogout, { reason = 5 })
+            local reason = (_G.ELogoutType and _G.ELogoutType.LogOut) or 5
+            NetManager.Send(UserMessage.ReqLogout, { reason = reason })
         end
     end)
+    
+    -- 2. Dọn Avatar
+    pcall(function()
+        if _G.gameMgr and _G.gameMgr.GetAvatarManager then
+            local avMgr = _G.gameMgr:GetAvatarManager()
+            if avMgr and avMgr.RemoveAllAvatar then avMgr:RemoveAllAvatar() end
+        end
+    end)
+
+    -- 3. Thông báo rời game & đóng socket
     pcall(function()
         if EventManager and EventManager.Dispatch then
             EventManager.Dispatch(Event.GamePlay_Leave)
@@ -2719,18 +2941,26 @@ ForceLogoutToLogin = function()
             NetManager.Close()
         end
     end)
+
+    -- 4. Ẩn toàn bộ UI
     pcall(function()
         if UIManager then
             UIManager.HideAll()
             if UIID and UIID.LoginCreateRoleUI then UIManager.Hide(UIID.LoginCreateRoleUI) end
             if UIID and UIID.LoginRoleUI then UIManager.Hide(UIID.LoginRoleUI) end
+            UIManager.Hide("Login_LoginRoleUI")
+            UIManager.Hide("Login_LoginCreateRoleUI")
         end
     end)
+
+    -- 5. Trở về Scene Login
     pcall(function()
         if Scene and Scene.EnterLogin then
             Scene.EnterLogin()
         end
     end)
+
+    -- 6. Reset state
     pcall(function()
         if LoginData then
             LoginData.InGame = false
@@ -3365,11 +3595,40 @@ end
 -- 8. TỰ ĐỘNG CHỌN NHÂN VẬT (SELECT ROLE BY INDEX 1..4) & ĐỔI TÀI KHOẢN
 -- =========================================================================
 SelectRoleByIndex = function(targetIdx)
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    if (_G.LoginData and _G.LoginData.InGame) or (pMe and (pMe.level or (pMe.data and pMe.data.level))) then
+        return
+    end
+
     local roles = LoginData.roleList or {}
     if targetIdx < 1 then targetIdx = 1 end
 
-    -- Nếu slot nhân vật này chưa có
-    if not roles or targetIdx > #roles then
+    -- BẢO VỆ AN TOÀN: Nếu danh sách nhân vật chưa có bất kỳ ai (#roles == 0)
+    -- TUYỆT ĐỐI KHÔNG TỰ TIỆN GỌI CreateRoleAndEnterGame!
+    if not roles or #roles == 0 then
+        Log("-> [CẢNH BÁO]: Danh sách nhân vật (roleList) đang rỗng! Đang yêu cầu lại từ server...", true)
+        pcall(function()
+            if _G.NetManager and _G.UserMessage and _G.UserMessage.ReqGetRoleList then
+                _G.NetManager.Send(_G.UserMessage.ReqGetRoleList)
+            end
+        end)
+        Timer.Start(2.5, function()
+            local rAgain = (LoginData and LoginData.roleList) or {}
+            if #rAgain == 0 then
+                Log("-> Vẫn chưa có danh sách nhân vật -> Tự động kích hoạt Clean Logout & Re-login từ đầu!", true)
+                ForceLogoutToLogin()
+                Timer.Start(2.5, function()
+                    StartFullLoginProcess()
+                end)
+            else
+                SelectRoleByIndex(targetIdx)
+            end
+        end)
+        return
+    end
+
+    -- Nếu slot nhân vật này chưa có (nhưng #roles > 0, ví dụ có 2 nhân vật mà cần chọn slot 3)
+    if targetIdx > #roles then
         if not _G.HasCreatedRoleForTarget then
             Log(string.format("Tài khoản hiện có %d nhân vật. Slot [%d] chưa có -> Bắt đầu tạo mới nhân vật!", #roles, targetIdx))
             CreateRoleAndEnterGame(targetIdx)
@@ -3438,69 +3697,40 @@ _G.SelectRoleByIndex = SelectRoleByIndex
 
 SwitchToNextRoleOrAccount = function()
     local curRole = _G.CurrentRoleIndex or 1
-    local curAcc = _G.CurrentAccountIndex or 1
-    local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
+    local nextRole = curRole + 1
+    if nextRole > 4 then
+        nextRole = 1
+    end
 
-    Log(string.format("[Hoàn Tất Slot %d] : Đã hoàn tất nâng cấp, mở rương và đưa nhân vật ra bãi farm bật Auto!", curRole), true)
+    Log("=========================================================================", true)
+    Log(string.format(">>> [HOÀN TẤT SLOT %d]: Đã xong chu trình farm, trang bị, mở rương! <<<", curRole), true)
+    Log(string.format(">>> [CHUYỂN SANG SLOT %d/4]: Bắt đầu chu trình Logout sạch sẽ > Login lại từ đầu... <<<", nextRole), true)
+    Log("=========================================================================", true)
     SaveOutput()
 
-    -- Dừng tất cả các timer nâng cấp và quest của nhân vật hiện tại
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(string.format("[CHUYỂN SLOT] Xong Slot %d -> Logout & Login vào Slot %d", curRole, nextRole))
+    end
+
+    -- Dừng tất cả các timer hiện tại của slot cũ
     pcall(function()
-        if _G.Global30sUpgradeTimer then
-            Timer.Stop(_G.Global30sUpgradeTimer)
-            _G.Global30sUpgradeTimer = nil
-        end
-        if _G.BotQuestMonitorTimer then
-            Timer.Stop(_G.BotQuestMonitorTimer)
-            _G.BotQuestMonitorTimer = nil
-        end
-        if _G.Bot_FarmMonitorTimer then
-            Timer.Stop(_G.Bot_FarmMonitorTimer)
-            _G.Bot_FarmMonitorTimer = nil
-        end
+        if _G.Global30sUpgradeTimer then Timer.Stop(_G.Global30sUpgradeTimer); _G.Global30sUpgradeTimer = nil end
+        if _G.BotQuestMonitorTimer then Timer.Stop(_G.BotQuestMonitorTimer); _G.BotQuestMonitorTimer = nil end
+        if _G.Bot_FarmMonitorTimer then Timer.Stop(_G.Bot_FarmMonitorTimer); _G.Bot_FarmMonitorTimer = nil end
+        if _G.Mod_InstanceMonitorTimer then Timer.Stop(_G.Mod_InstanceMonitorTimer); _G.Mod_InstanceMonitorTimer = nil end
     end)
 
-    if curRole < 4 then
-        -- Chuyển sang nhân vật tiếp theo trong tài khoản (Slot 1 -> Slot 2 -> Slot 3 -> Slot 4)
-        _G.CurrentRoleIndex = curRole + 1
-        Log(string.format("[Đổi Nhân Vật] : Hoàn tất slot %d. Đang đăng xuất chuyển sang slot %d...", curRole, _G.CurrentRoleIndex), true)
-        SaveOutput()
+    _G.CurrentRoleIndex = nextRole
+    _G.TargetRoleIndex = nextRole
+    _G.HasCreatedRoleForTarget = false
+    _G.IsRoleCreating = false
 
-        Timer.Start(2.0, function()
-            ForceLogoutToLogin()
-            Timer.Start(3.0, function()
-                StartFullLoginProcess()
-            end)
+    Timer.Start(1.5, function()
+        ForceLogoutToLogin()
+        Timer.Start(2.5, function()
+            StartFullLoginProcess()
         end)
-    else
-        -- Đã xong 4 nhân vật của tài khoản hiện tại -> Chuyển sang tài khoản tiếp theo
-        if curAcc < totalAccs then
-            _G.CurrentAccountIndex = curAcc + 1
-            _G.CurrentRoleIndex = 1
-            Log(string.format("[Đổi Tài Khoản] : Đã hoàn tất cả 4 nhân vật. Đăng xuất chuyển sang Tài Khoản %d/%d...", _G.CurrentAccountIndex, totalAccs), true)
-            SaveOutput()
-
-            Timer.Start(2.0, function()
-                ForceLogoutToLogin()
-                Timer.Start(3.0, function()
-                    StartFullLoginProcess()
-                end)
-            end)
-        else
-            -- Đã duyệt hết tất cả tài khoản (hoặc chỉ có 1 tài khoản khi test) -> Quay vòng lại Tài Khoản 1, Slot 1!
-            _G.CurrentAccountIndex = 1
-            _G.CurrentRoleIndex = 1
-            Log(string.format("[Vòng Lặp Bot] : Đã hoàn tất cả %d tài khoản (4 slot/acc). Quay vòng lại Tài Khoản 1, Slot 1 để tiếp tục chu trình!", totalAccs), true)
-            SaveOutput()
-
-            Timer.Start(2.0, function()
-                ForceLogoutToLogin()
-                Timer.Start(3.0, function()
-                    StartFullLoginProcess()
-                end)
-            end)
-        end
-    end
+    end)
 end
 _G.SwitchToNextRoleOrAccount = SwitchToNextRoleOrAccount
 
@@ -3603,10 +3833,10 @@ AutoRecycleBagItems = function()
                 _G.UIManager.Hide("Equip_Transfer")
             end
 
-            Log(string.format("[Thu Hồi] : Đã thu hồi %d món trang bị rác, giải phóng túi đồ", recycledCount), true)
+            Log(string.format(">>> [THU HỒI]: Đã thu hồi %d món trang bị rác <<<", recycledCount), true)
             SaveOutput()
         else
-            Log("[Thu Hồi] : Túi đồ sạch, không có trang bị rác cần thu hồi", false)
+            Log(">>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<", false)
         end
 
         if PerformSmeltEquipments then
@@ -3645,18 +3875,26 @@ TeleportToTrainMapAndFarm = function(onFinished)
     if curMap <= 0 then curMap = 1003 end
 
     -- 1. CHỌN MAP LUYỆN CẤP:
-    -- KHI < 200: TUYỆT ĐỐI KHÔNG TỰ Ý CHUYỂN SANG MAP CAO HƠN (tránh rơi vào map chưa mở khóa).
-    -- Chỉ chọn bãi quái to nhất của MAP HIỆN TẠI!
     local targetMap = curMap
-    if curLvl >= 200 then
+    if curMap >= 1000000 or curMap <= 0 then
+        -- Nếu đang ở trong Phó bản (Map ID >= 1,000,000) hoặc map không hợp lệ:
+        if curLvl >= 180 then targetMap = 1009 -- Tarkan
+        elseif curLvl >= 130 then targetMap = 1008 -- Atlantis
+        elseif curLvl >= 80 then targetMap = 100502 -- Lost Tower 2
+        elseif curLvl >= 40 then targetMap = 100201 -- Dungeon 1
+        else targetMap = 1003 -- Devias
+        end
+    elseif curLvl >= 200 then
         -- Cấp >= 200 (Đã hoàn tất mạch nhiệm vụ tân thủ và mở các map cấp cao):
-        if curMap < 1005 or (curMap >= 1000000) then
-            if curLvl >= 260 then
-                targetMap = 1012 -- Phế Tích Kanturu
+        if curMap < 1005 then
+            if curLvl >= 290 then
+                targetMap = 1039 -- Di Chỉ Kanturu
+            elseif curLvl >= 260 then
+                targetMap = 1038 -- Phế Tích Kanturu
             elseif curLvl >= 220 then
                 targetMap = 1011 -- Icarus
             elseif curLvl >= 180 then
-                targetMap = 1010 -- Aida
+                targetMap = 1034 -- Aida
             elseif curLvl >= 130 then
                 targetMap = 1008 -- Atlantis
             elseif curLvl >= 80 then
@@ -3668,8 +3906,14 @@ TeleportToTrainMapAndFarm = function(onFinished)
             end
         end
     else
-        -- Cấp < 200: Cố định targetMap là MAP HIỆN TẠI của nhân vật
-        targetMap = curMap
+        -- Cấp < 200:
+        -- Nếu nhân vật đang ở Lost Tower 7 (100507) hoặc map cũ mà đã đạt Lv >= 140:
+        -- Hoặc đang ở Tarkan (1009 / 100901): Luôn ưu tiên giữ vững Tarkan!
+        if curMap == 1009 or curMap == 100901 or (curLvl >= 140 and (curMap == 100507 or curMap == 1005 or curMap == 1008)) then
+            targetMap = 1009
+        else
+            targetMap = curMap
+        end
     end
 
     Log(string.format("[Luyện Cấp] : Chọn bãi quái tối ưu tại Map %d (Cấp nhân vật: %d)", targetMap, curLvl), true)
@@ -4318,10 +4562,27 @@ _G.SolveBranchAndRewardsTasks = SolveBranchAndRewardsTasks
 -- 12. [AUTO GIFTCODE & CLAIM MAIL] (NHẬP 34 MÃ VÀ NHẬN HÒM THƯ)
 -- =========================================================================
 local GIFT_CODES = {
-    "iosupdate", "MUVHNEWSV1", "MUVHNEWSV2", "MUVHNEWSV3", "MUVHNEWSV4", "MUVHNEWSV5", "MUVHNEWSV6",
-    "MU1111", "MU2222", "MU3333", "MU4444", "MU5555", "MU6666", "MU7777", "MU8888", "MU9999", "MU6868", "MU2026",
-    "RGM888", "MINN88", "DL8888", "HH8888", "LNP888", "BMT888", "TG8888", "VVG888", "MC8888", "BB8888",
-    "OG8888", "MD8888", "AP8888", "LBY888", "THGT88", "MUVHVIPPRO"
+    -- Nhóm Tân Thủ & Server Mới
+    "MU6868", "MUVHNEWSV1", "MUVHNEWSV2", "MUVHNEWSV3", "MUVHNEWSV4", "MUVHNEWSV5", "MUVHNEWSV6",
+    "MU1111", "MU2222", "MU3333", "MU4444", "MU5555", "MU6666", "MU7777", "MU8888", "MU9999", "FCMUVH",
+    
+    -- Nhóm MUVHFUN (11 - 99)
+    "MUVHFUN11", "MUVHFUN22", "MUVHFUN33", "MUVHFUN44", "MUVHFUN55", "MUVHFUN66", "MUVHFUN77", "MUVHFUN88", "MUVHFUN99",
+    
+    -- Nhóm MUVHVN (01 - 10)
+    "MUVHVN01", "MUVHVN02", "MUVHVN03", "MUVHVN04", "MUVHVN05", "MUVHVN06", "MUVHVN07", "MUVHVN08", "MUVHVN09", "MUVHVN10",
+    
+    -- Nhóm Đối Tác & Sự Kiện VIP
+    "TG8888", "MC8888", "BB8888", "OG8888", "MD8888", "AP8888", "LBY888", "THGT88", "MUVHVIPPRO", "MU2026",
+    
+    -- Nhóm MUVHLOVE (1 - 10)
+    "MUVHLOVE1", "MUVHLOVE2", "MUVHLOVE3", "MUVHLOVE4", "MUVHLOVE5", "MUVHLOVE6", "MUVHLOVE7", "MUVHLOVE8", "MUVHLOVE9", "MUVHLOVE10",
+    
+    -- Nhóm IUMUVH (01 - 10)
+    "IUMUVH01", "IUMUVH02", "IUMUVH03", "IUMUVH04", "IUMUVH05", "IUMUVH06", "IUMUVH07", "IUMUVH08", "IUMUVH09", "IUMUVH10",
+    
+    -- Nhóm FANMUVH (01 - 11)
+    "FANMUVH01", "FANMUVH02", "FANMUVH03", "FANMUVH04", "FANMUVH05", "FANMUVH06", "FANMUVH07", "FANMUVH08", "FANMUVH09", "FANMUVH10", "FANMUVH11"
 }
 
 RunAutoGiftcode = function(onFinished)
@@ -4593,11 +4854,18 @@ local FALLBACK_MAP_SPOTS = {
     [100201] = { x = 109, y = 247, name = "Dungeon 1 (Lv 60)", defenseReq = 80 },
     [100501] = { x = 193, y = 30, name = "Lost Tower 1 (Lv 90)", defenseReq = 140 },
     [100502] = { x = 193, y = 30, name = "Lost Tower 2 (Lv 110)", defenseReq = 180 },
+    [100507] = { x = 193, y = 30, name = "Lost Tower 7 (Lv 140)", defenseReq = 277 },
     [1008] = { x = 74, y = 43, name = "Atlantis (Lv 100)", defenseReq = 176 },
-    [1010] = { x = 60, y = 60, name = "Aida (Lv 200)", defenseReq = 390 },
+    [1009] = { x = 128, y = 57, name = "Tarkan (Lv 160)", defenseReq = 320 },
+    [100901] = { x = 128, y = 57, name = "Tarkan (Lv 160)", defenseReq = 320 },
+    [1034] = { x = 85, y = 8, name = "Aida (Lv 200)", defenseReq = 390 },
+    [103401] = { x = 85, y = 8, name = "Aida (Lv 200)", defenseReq = 390 },
     [1011] = { x = 15, y = 13, name = "Icarus (Lv 250)", defenseReq = 509 },
-    [1012] = { x = 50, y = 50, name = "Phế Tích Kanturu (Lv 260)", defenseReq = 580 },
-    [1013] = { x = 50, y = 50, name = "Di Chỉ Kanturu (Lv 290)", defenseReq = 792 },
+    [101101] = { x = 15, y = 13, name = "Icarus (Lv 250)", defenseReq = 509 },
+    [1038] = { x = 20, y = 217, name = "Phế Tích Kanturu (Lv 260)", defenseReq = 580 },
+    [103801] = { x = 20, y = 217, name = "Phế Tích Kanturu (Lv 260)", defenseReq = 580 },
+    [1039] = { x = 71, y = 106, name = "Di Chỉ Kanturu (Lv 290)", defenseReq = 792 },
+    [103901] = { x = 71, y = 106, name = "Di Chỉ Kanturu (Lv 290)", defenseReq = 792 },
 }
 
 GetBestMonsterFarmPoint = function(curMap)
@@ -4922,28 +5190,21 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
     end
 
     local function DoEnhanceRoutine()
-        _G.Log("=========================================================================")
-        _G.Log(string.format(">>> [CƯỜNG HÓA ĐỀU] BẮT ĐẦU NÂNG CẤP TRANG BỊ (MỤC TIÊU: +5 -> +10 -> +%d) <<<", maxTargetLvl), true)
-        _G.Log("=========================================================================")
-        SaveOutput()
+        _G.Log(string.format(">>> [CƯỜNG HÓA ĐỀU] Bắt đầu nâng cấp trang bị (Mục tiêu: +%d) <<<", maxTargetLvl), false)
 
         if Coroutine and Coroutine.Wait then Coroutine.Wait(0.5) end
 
-        -- Lấy số lượng đá chúc phúc ban đầu
         local blessCount = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000091)) or 0
         local soulCount = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000101)) or 0
-        _G.Log(string.format("-> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: %d viên | Đá Linh Hồn: %d viên", blessCount, soulCount))
-        SaveOutput()
+        _G.Log(string.format("-> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: %d viên | Đá Linh Hồn: %d viên", blessCount, soulCount), false)
+
+        local totalEnhancedCount = 0
 
         for _, currentTier in ipairs(activeTiers) do
-            _G.Log(string.format("-------------------------------------------------------------------------"))
-            _G.Log(string.format(">>> [TIER MỤC TIÊU +%d] Bắt đầu nâng đều toàn bộ trang bị lên +%d...", currentTier, currentTier), true)
-            _G.Log(string.format("-------------------------------------------------------------------------"))
-            SaveOutput()
-
             local tierDone = false
             local loopCount = 0
             local maxTierLoops = 300
+            local enhancedInTier = 0
 
             while not tierDone and loopCount < maxTierLoops do
                 loopCount = loopCount + 1
@@ -4951,7 +5212,6 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                 -- 1. Quét danh sách trang bị đang mặc
                 local equips = GetEquippedItemsForEnhance()
                 if not equips or #equips == 0 then
-                    _G.Log("-> [CƯỜNG HÓA]: Không tìm thấy trang bị nào đang mặc trên người!", true)
                     tierDone = true
                     break
                 end
@@ -4969,8 +5229,10 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
 
                 -- Nếu toàn bộ trang bị đã >= currentTier -> Hoàn thành Tier này
                 if not candidate then
-                    _G.Log(string.format(">>> [TIER +%d HOÀN THÀNH]: Tất cả trang bị đã đạt +%d! <<<", currentTier, currentTier), true)
-                    SaveOutput()
+                    if enhancedInTier > 0 then
+                        _G.Log(string.format(">>> [TIER +%d HOÀN THÀNH]: Tất cả trang bị đã đạt +%d! <<<", currentTier, currentTier), true)
+                        SaveOutput()
+                    end
                     tierDone = true
                     break
                 end
@@ -4978,8 +5240,12 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                 -- 3. Kiểm tra nguyên liệu của candidate
                 local canDo, reason = CanEnhanceItem(candidate.item)
                 if not canDo then
-                    _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s của món %s (+%d)!", reason, candidate.name, candidate.item.intensify or 0), true)
-                    _G.Log(">>> Đã tối ưu hóa và sử dụng toàn bộ nguyên liệu cường hóa hiện có! <<<", true)
+                    _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s của món %s (+%d)!", reason, candidate.name, candidate.item.intensify or 0), false)
+                    if totalEnhancedCount > 0 then
+                        _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
+                    else
+                        _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
+                    end
                     SaveOutput()
                     _G.AutoEvenEnhanceRunning = false
                     _G.Bot_HasDoneEnhanceAfterSnowBug = true
@@ -4990,8 +5256,10 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                 -- 4. Gửi lệnh Cường hóa món đồ candidate
                 local curLvl = candidate.item.intensify or 0
                 local curBless = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000091)) or 0
+                totalEnhancedCount = totalEnhancedCount + 1
+                enhancedInTier = enhancedInTier + 1
                 _G.Log(string.format("-> [ĐẬP ĐỒ]: %s (Slot %d | Cấp: +%d -> +%d | Đá Chúc Phúc còn: %d)...", 
-                    candidate.name, candidate.slot, curLvl, curLvl + 1, curBless), true)
+                    candidate.name, candidate.slot, curLvl, curLvl + 1, curBless), false)
 
                 pcall(function()
                     if _G.MeEquipController and _G.MeEquipController.ReqEquipIntensify then
@@ -5014,9 +5282,11 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
             end
         end
 
-        _G.Log("=========================================================================")
-        _G.Log(string.format(">>> [CƯỜNG HÓA HOÀN TẤT] TOÀN BỘ TRANG BỊ ĐÃ ĐẠT +%d HOẶC ĐÃ NÂNG TỐI ĐA! <<<", maxTargetLvl), true)
-        _G.Log("=========================================================================")
+        if totalEnhancedCount > 0 then
+            _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần (Đạt mốc +%d) <<<", totalEnhancedCount, maxTargetLvl), true)
+        else
+            _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
+        end
         SaveOutput()
 
         _G.AutoEvenEnhanceRunning = false
@@ -5028,16 +5298,19 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         Coroutine.Start(DoEnhanceRoutine)
     else
         -- Fallback dùng Timer nếu môi trường không hỗ trợ Coroutine
-        local blessCount = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000091)) or 0
-        _G.Log(string.format("-> [CƯỜNG HÓA TIMER] Bắt đầu (Đá Chúc Phúc: %d)...", blessCount), true)
         local curTierIdx = 1
+        local totalEnhancedCount = 0
         local enhanceTimer = nil
         enhanceTimer = Timer.StartLoop(0.25, -1, function()
             if curTierIdx > #activeTiers then
                 if enhanceTimer then Timer.Stop(enhanceTimer) end
                 _G.AutoEvenEnhanceRunning = false
                 _G.Bot_HasDoneEnhanceAfterSnowBug = true
-                _G.Log(">>> [CƯỜNG HÓA HOÀN TẤT - TIMER MODE] <<<", true)
+                if totalEnhancedCount > 0 then
+                    _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
+                else
+                    _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
+                end
                 SaveOutput()
                 if onFinished then pcall(onFinished) end
                 return
@@ -5056,7 +5329,6 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
             end
 
             if not candidate then
-                _G.Log(string.format("-> [TIER +%d XONG] Chuyển tier tiếp theo...", currentTier), true)
                 curTierIdx = curTierIdx + 1
                 return
             end
@@ -5066,19 +5338,25 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                 if enhanceTimer then Timer.Stop(enhanceTimer) end
                 _G.AutoEvenEnhanceRunning = false
                 _G.Bot_HasDoneEnhanceAfterSnowBug = true
-                _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s!", reason), true)
+                _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s!", reason), false)
+                if totalEnhancedCount > 0 then
+                    _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
+                else
+                    _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
+                end
                 SaveOutput()
                 if onFinished then pcall(onFinished) end
                 return
             end
 
+            totalEnhancedCount = totalEnhancedCount + 1
             local curLvl = candidate.item.intensify or 0
             pcall(function()
                 if _G.MeEquipController and _G.MeEquipController.ReqEquipIntensify then
                     _G.MeEquipController.ReqEquipIntensify(candidate.id)
                 end
             end)
-            _G.Log(string.format("-> [ĐẬP ĐỒ]: %s (+%d -> +%d)", candidate.name, curLvl, curLvl + 1), true)
+            _G.Log(string.format("-> [ĐẬP ĐỒ]: %s (+%d -> +%d)", candidate.name, curLvl, curLvl + 1), false)
         end)
     end
 end
@@ -5284,6 +5562,14 @@ local function GetAllEquippedGemsList()
 end
 
 AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+    if curLvl <= 60 then
+        -- [QUY TẮC HUỲNH THẠCH]: Chỉ mở khóa và kích hoạt khi nhân vật đạt Level > 60
+        if onFinished then onFinished() end
+        return
+    end
+
     if _G.AutoEvenUpgradeGemsRunning then
         return
     end
@@ -5312,7 +5598,7 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         end
     end)
 
-    Log(string.format("-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = %d | Vàng = %d", shardCount, goldCount), true)
+    Log(string.format("-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = %d | Vàng = %d", shardCount, goldCount), false)
     SaveOutput()
 
     local function DoUpgradeGemsRoutine()
@@ -5326,7 +5612,7 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
 
             local gemList = GetAllEquippedGemsList()
             if #gemList == 0 then
-                Log("-> [HUỲNH THẠCH]: Không tìm thấy danh sách lỗ khảm Huỳnh Thạch nào!")
+                Log("-> [HUỲNH THẠCH]: Không tìm thấy danh sách lỗ khảm Huỳnh Thạch nào!", false)
                 break
             end
 
@@ -5366,7 +5652,7 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
                 if upgradeCount == 0 then
                     local msg = "Không có viên nào đủ điều kiện nâng cấp"
                     if #lackReason > 0 then msg = msg .. " (" .. lackReason .. ")" end
-                    Log("-> [HUỲNH THẠCH]: " .. msg, true)
+                    Log("-> [HUỲNH THẠCH]: " .. msg, false)
                 end
                 break
             end
@@ -5381,7 +5667,7 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
                 end
             end)
             upgradeCount = upgradeCount + 1
-            Log(string.format("-> [NÂNG HUỲNH THẠCH]: %s (Index: %d | Lv.%d -> Lv.%d)", candidate.name, targetIndex, curLvl, curLvl + 1), true)
+            Log(string.format("-> [NÂNG HUỲNH THẠCH]: %s (Index: %d | Lv.%d -> Lv.%d)", candidate.name, targetIndex, curLvl, curLvl + 1), false)
             SaveOutput()
 
             if Coroutine and Coroutine.Wait then
@@ -5390,9 +5676,11 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         end
 
         if upgradeCount > 0 then
-            Log(string.format(">>> [HUỲNH THẠCH HOÀN TẤT] ĐÃ NÂNG CẤP THÀNH CÔNG %d LẦN! <<<", upgradeCount), true)
-            SaveOutput()
+            Log(string.format(">>> [HUỲNH THẠCH]: Đã xử lý nâng cấp %d viên ngọc! <<<", upgradeCount), true)
+        else
+            Log(">>> [HUỲNH THẠCH]: Đã xử lý <<<", false)
         end
+        SaveOutput()
         _G.AutoEvenUpgradeGemsRunning = false
         if onFinished then pcall(onFinished) end
     end
@@ -5446,11 +5734,9 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
                 if upTimer then Timer.Stop(upTimer) end
                 _G.AutoEvenUpgradeGemsRunning = false
                 if count > 0 then
-                    Log(string.format(">>> [HUỲNH THẠCH HOÀN TẤT - TIMER MODE] ĐÃ NÂNG CẤP %d LẦN! <<<", count), true)
+                    Log(string.format(">>> [HUỲNH THẠCH]: Đã xử lý nâng cấp %d viên ngọc! <<<", count), true)
                 else
-                    local msg = "Không có viên nào đủ điều kiện nâng cấp"
-                    if #lackReason > 0 then msg = msg .. " (" .. lackReason .. ")" end
-                    Log("-> [HUỲNH THẠCH]: " .. msg, true)
+                    Log(">>> [HUỲNH THẠCH]: Đã xử lý <<<", false)
                 end
                 SaveOutput()
                 if onFinished then pcall(onFinished) end
@@ -5600,14 +5886,13 @@ AutoBuyPotionsIfLow = function(targetMinCount, targetRefillCount)
 
         local didBuy = false
 
-        if totalHp < targetMinCount and bestHpGood then
+        if totalHp < targetMinCount and totalHp < targetRefillCount and bestHpGood then
             local needed = math.max(0, targetRefillCount - totalHp)
             local packCount = bestHpGood.packCount or 30
             local buyPacks = math.ceil(needed / packCount)
             if buyPacks > 0 then
                 didBuy = true
-                Log(string.format("-> [AUTO MUA MÁU]: Số lượng Máu hiện tại %d < %d -> Mua %d gói (%d bình, goodId: %d)!", 
-                    totalHp, targetMinCount, buyPacks, buyPacks * packCount, bestHpGood.goodId), true)
+                Log(string.format(">>> [MUA THUỐC]: Đã mua %d bình Máu <<<", buyPacks * packCount), true)
                 if _G.networkRequest and _G.networkRequest.ReqBuy then
                     _G.networkRequest.ReqBuy(bestHpGood.goodId, buyPacks)
                 elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
@@ -5616,16 +5901,15 @@ AutoBuyPotionsIfLow = function(targetMinCount, targetRefillCount)
             end
         end
 
-        if totalMp < targetMinCount and bestMpGood then
+        if totalMp < targetMinCount and totalMp < targetRefillCount and bestMpGood then
             local needed = math.max(0, targetRefillCount - totalMp)
             local packCount = bestMpGood.packCount or 30
             local buyPacks = math.ceil(needed / packCount)
             if buyPacks > 0 then
                 didBuy = true
-                Log(string.format("-> [AUTO MUA MANA]: Số lượng Mana hiện tại %d < %d -> Mua %d gói (%d bình, goodId: %d)!", 
-                    totalMp, targetMinCount, buyPacks, buyPacks * packCount, bestMpGood.goodId), true)
+                Log(string.format(">>> [MUA THUỐC]: Đã mua %d bình Mana <<<", buyPacks * packCount), true)
                 if _G.networkRequest and _G.networkRequest.ReqBuy then
-                    _G.networkRequest.ReqBuy(bestHpGood.goodId, buyPacks)
+                    _G.networkRequest.ReqBuy(bestMpGood.goodId, buyPacks)
                 elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
                     _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = bestMpGood.goodId, buyCount = buyPacks })
                 end
@@ -5641,6 +5925,279 @@ AutoBuyPotionsIfLow = function(targetMinCount, targetRefillCount)
     end)
 end
 _G.AutoBuyPotionsIfLow = AutoBuyPotionsIfLow
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG NHẬN THƯỞNG SỰ KIỆN MỞ SERVER (AUTO CLAIM OPENING SERVER REWARDS)
+-- Mô tả: Tự động truy vấn và nhận chuẩn xác 100% các mốc quà mở server (First Drop, First Blood,
+--        Đấu Trường Cấp, Cường Hóa, Trác Việt, Treo Thưởng Boss...) dựa trên dữ liệu thực từ Server.
+--        - CHỈ GỬI LỆNH NHẬN KHI: isCanGet (đã đạt) & roleCount == 0 (chưa nhận) & systemCount < limit (còn suất).
+--        - Đa cơ chế bắt dữ liệu: Hook NetManager, Hook CommercializeData.EquipFirstRed, và quét trực tiếp UI nếu mở.
+--        - Hoàn toàn loại bỏ việc spam ID cứng gây lỗi "Số lần nhận không đủ" hay "Chưa hoàn thành nhiệm vụ".
+-- =========================================================================
+_G.ClaimedOpeningGiftsCache = _G.ClaimedOpeningGiftsCache or {}
+_G.ClaimedSevenDaySignDate = _G.ClaimedSevenDaySignDate or {}
+
+local function ClaimOpeningGiftsFromTaskInfo(taskInfo)
+    if not taskInfo then return end
+    pcall(function()
+        for _, task in pairs(taskInfo) do
+            if task and task.taskId and task.giftInfo and task.giftInfo[1] then
+                local gInfo = task.giftInfo[1]
+                local roleCount = tonumber(gInfo.roleCount) or 0
+                
+                -- 1. Điều kiện tiên quyết: Server xác nhận đã đạt yêu cầu (hỗ trợ cả boolean, number 1, string '1')
+                local canGetVal = gInfo.canGet
+                local isCanGet = (canGetVal == true or canGetVal == 1 or canGetVal == "1" or (type(canGetVal) == "number" and canGetVal > 0))
+                
+                if isCanGet and roleCount == 0 then
+                    local taskIdNum = tonumber(task.taskId)
+                    -- 2. Tra cứu cấu hình cfg_Commerce_1 để lấy giftId
+                    local commerce = _G.ClientTable and _G.ClientTable.cfg_Commerce_1Manager and _G.ClientTable.cfg_Commerce_1Manager:TryGetValue(taskIdNum, "id")
+                    if not commerce and _G.ConfigManager and _G.ConfigManager.FindConfigs then
+                        local cfgs = _G.ConfigManager.FindConfigs("cfg_Commerce_1", "id", taskIdNum)
+                        commerce = cfgs and cfgs[1]
+                    end
+
+                    local giftId = commerce and tonumber(commerce.giftId)
+                    if giftId and giftId > 0 and not _G.ClaimedOpeningGiftsCache[giftId] then
+                        -- 3. Kiểm tra giới hạn toàn Server (nếu có)
+                        local canClaimServer = true
+                        local serCount = tonumber(gInfo.systemCount) or 0
+                        local giftCfg = _G.ClientTable and _G.ClientTable.cfg_Gift_giftManager and _G.ClientTable.cfg_Gift_giftManager:TryGetValue(giftId, "id")
+                        if not giftCfg and _G.ConfigManager and _G.ConfigManager.FindConfigs then
+                            local gcfgs = _G.ConfigManager.FindConfigs("cfg_Gift_gift", "id", giftId)
+                            giftCfg = gcfgs and gcfgs[1]
+                        end
+
+                        if giftCfg and giftCfg.severCountKey and giftCfg.severCountKey ~= 0 then
+                            local countCfg = _G.ClientTable and _G.ClientTable.cfg_Count_countManager and _G.ClientTable.cfg_Count_countManager:TryGetValue(giftCfg.severCountKey, "key")
+                            if not countCfg and _G.ConfigManager and _G.ConfigManager.FindConfigs then
+                                local ccfgs = _G.ConfigManager.FindConfigs("cfg_Count_count", "key", giftCfg.severCountKey)
+                                countCfg = ccfgs and ccfgs[1]
+                            end
+                            if countCfg and countCfg.refreshCountLimit then
+                                local serLimit = tonumber(countCfg.refreshCountLimit) or 0
+                                if serLimit > 0 and serCount >= serLimit then
+                                    canClaimServer = false
+                                end
+                            end
+                        end
+
+                        -- 4. Đủ điều kiện 100% -> Gửi gói tin nhận thưởng
+                        if canClaimServer then
+                            _G.ClaimedOpeningGiftsCache[giftId] = true
+                            Log(string.format(">>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task %s (Gift ID: %s) <<<", tostring(task.taskId), tostring(giftId)), true)
+                            SaveOutput()
+                            if _G.networkRequest and _G.networkRequest.ReqGetGift then
+                                _G.networkRequest.ReqGetGift({ giftId })
+                            elseif _G.NetManager and _G.RechargeMessage and _G.RechargeMessage.ReqGetGift then
+                                _G.NetManager.Send(_G.RechargeMessage.ReqGetGift, { id = { giftId } })
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end
+_G.ClaimOpeningGiftsFromTaskInfo = ClaimOpeningGiftsFromTaskInfo
+
+-- Hook 1: Hook trực tiếp vào CommercializeData.EquipFirstRed (chuyên biệt cho First Drop)
+pcall(function()
+    if _G.CommercializeData and not _G.CommercializeData._Orig_EquipFirstRed then
+        _G.CommercializeData._Orig_EquipFirstRed = _G.CommercializeData.EquipFirstRed
+        _G.CommercializeData.EquipFirstRed = function(data)
+            pcall(function() if _G.CommercializeData._Orig_EquipFirstRed then _G.CommercializeData._Orig_EquipFirstRed(data) end end)
+            pcall(function()
+                if data and data.taskInfo then
+                    ClaimOpeningGiftsFromTaskInfo(data.taskInfo)
+                end
+            end)
+        end
+    end
+end)
+
+-- Hook 2: Đăng ký trực tiếp vào NetManager cho gói ResGetCommercialActivityInfo
+pcall(function()
+    if _G.NetManager and _G.NetManager.Regist and _G.CommerceMessage and _G.CommerceMessage.ResGetCommercialActivityInfo then
+        _G.NetManager.Regist(_G.CommerceMessage.ResGetCommercialActivityInfo, function(_, data)
+            pcall(function()
+                if data and data.taskInfo then
+                    ClaimOpeningGiftsFromTaskInfo(data.taskInfo)
+                end
+            end)
+        end)
+    end
+end)
+
+local AutoClaimNewServerRewards
+AutoClaimNewServerRewards = function(onFinished)
+    pcall(function()
+        -- 1. Nếu UI Commercialization_FirstActivityUI đang mở -> Nhận ngay các mốc sáng & tự động đóng sau 1.5s
+        local ui = _G.UIManager and (_G.UIManager.GetUiByName("Commercialization_FirstActivityUI") or (_G.UIID and _G.UIID.Commercialization_FirstActivityUI and _G.UIManager.GetUiByName(_G.UIID.Commercialization_FirstActivityUI)))
+        if ui then
+            -- Quét nhanh danh sách ShowEquipFirstInfo nếu có sẵn trên UI
+            if ui.ShowEquipFirstInfo then
+                pcall(function()
+                    for _, groupData in pairs(ui.ShowEquipFirstInfo) do
+                        if type(groupData) == "table" then
+                            for _, itemData in pairs(groupData) do
+                                if itemData and itemData.Msg and itemData.Msg.giftInfo and itemData.Msg.giftInfo[1] then
+                                    local gInfo = itemData.Msg.giftInfo[1]
+                                    local isCanGet = (gInfo.canGet == true or gInfo.canGet == 1 or gInfo.canGet == "1")
+                                    local roleCount = tonumber(gInfo.roleCount) or 0
+                                    local giftId = itemData.taskgift and itemData.taskgift.id
+                                    if isCanGet and roleCount == 0 and giftId and not _G.ClaimedOpeningGiftsCache[giftId] then
+                                        _G.ClaimedOpeningGiftsCache[giftId] = true
+                                        Log(string.format(">>> [SỰ KIỆN MỞ SV]: Nhận thưởng First Drop (Gift ID: %s) <<<", tostring(giftId)), true)
+                                        SaveOutput()
+                                        if _G.NetManager and _G.RechargeMessage and _G.RechargeMessage.ReqGetGift then
+                                            _G.NetManager.Send(_G.RechargeMessage.ReqGetGift, { id = { giftId } })
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+
+            Timer.Start(1.5, function()
+                pcall(function()
+                    if _G.UIManager and _G.UIManager.Hide then
+                        _G.UIManager.Hide("Commercialization_FirstActivityUI")
+                        if _G.UIID and _G.UIID.Commercialization_FirstActivityUI then
+                            _G.UIManager.Hide(_G.UIID.Commercialization_FirstActivityUI)
+                        end
+                    end
+                end)
+            end)
+        end
+
+        -- 2. Gửi truy vấn tuần tự các nhóm sự kiện Mở Server để kích hoạt Server trả về taskInfo
+        local OPEN_SERVER_GROUPS = {
+            105, -- First Drop (EquipFirstGet)
+            106, -- First Blood (BossFirstKill)
+            101, -- Đấu Trường Cấp (SportsLevel)
+            103, -- Đấu Trường Cường Hóa (SportsIntensify)
+            107, -- Đấu Trường Trác Việt (SportsExcellenc)
+            248  -- Treo Thưởng Boss (SportsBoss)
+        }
+
+        for idx, grpId in ipairs(OPEN_SERVER_GROUPS) do
+            Timer.Start(0.12 * idx, function()
+                pcall(function()
+                    if _G.NetManager and _G.CommerceMessage and _G.CommerceMessage.ReqGetCommercialActivityInfo then
+                        _G.NetManager.Send(_G.CommerceMessage.ReqGetCommercialActivityInfo, {
+                            icon = _G.CommercializeActivityTab and _G.CommercializeActivityTab.Opening_service or 1,
+                            groupId = grpId
+                        })
+                    end
+                end)
+            end)
+        end
+
+    end)
+
+    if onFinished then
+        Timer.Start(1.5, onFinished)
+    end
+end
+_G.AutoClaimNewServerRewards = AutoClaimNewServerRewards
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG NHẬN PHÚC LỢI NGÀY / CỘNG ĐỒNG (DAILY WELFARE AUTO-CLAIM)
+-- Mô tả: Tự động nhận 2 mốc quà miễn phí hàng ngày (0đ / 0 KC) trong giao diện "Cộng đồng" (Recharge_WelfareUI):
+--        1. Gói Ngày (tog_prizeList): Quà Đăng Nhập (GiftId: 304001, countKey: 4010101)
+--        2. Mua Ngay Mỗi Ngày (tog_DirectPurchaseGift): Quà Đăng Nhập (GiftId: 304002, countKey: 4010102)
+--        - Sử dụng cờ theo ngày: mỗi ngày chỉ nhận 1 lần, không spam mỗi 30s.
+--        - Tự động đóng UI Cộng đồng nếu đang mở để giải phóng màn hình.
+-- =========================================================================
+_G.ClaimedDailyWelfareDate = _G.ClaimedDailyWelfareDate or {}
+
+local AutoClaimDailyWelfare
+AutoClaimDailyWelfare = function(onFinished)
+    pcall(function()
+        local today = os.date("%Y%m%d")
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local roleId = tostring((pMe and pMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or "default")
+        local roleKey = roleId .. "_" .. today
+
+        -- 1. Nếu giao diện Recharge_WelfareUI đang mở trên màn hình -> tự động đóng sau 1.5s
+        local welfareUI = _G.UIManager and (_G.UIManager.GetUiByName("Recharge_WelfareUI") or (_G.UIID and _G.UIID.RechargeWelfareUI and _G.UIManager.GetUiByName(_G.UIID.RechargeWelfareUI)))
+        if welfareUI then
+            Timer.Start(1.5, function()
+                pcall(function()
+                    if _G.UIManager and _G.UIManager.Hide then
+                        _G.UIManager.Hide("Recharge_WelfareUI")
+                        if _G.UIID and _G.UIID.RechargeWelfareUI then
+                            _G.UIManager.Hide(_G.UIID.RechargeWelfareUI)
+                        end
+                    end
+                end)
+            end)
+        end
+
+        -- 2. Kiểm tra nếu hôm nay đã nhận rồi thì bỏ qua ngay (không spam)
+        if _G.ClaimedDailyWelfareDate[roleKey] then
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- 3. Kiểm tra các countKey xem đã nhận chưa (Chỉ nhận các mốc quà 0đ / 0 KC miễn phí 100%)
+        local DAILY_WELFARE_GIFTS = {
+            { id = 304001, countKey = 4010101, name = "Gói Ngày" },
+            { id = 304002, countKey = 4010102, name = "Mua Ngay Mỗi Ngày" }
+        }
+
+        local didSend = false
+        for _, gift in ipairs(DAILY_WELFARE_GIFTS) do
+            local needClaim = true
+            if _G.RefreshData and _G.RefreshData.GetRefreshByKey then
+                local ref = _G.RefreshData.GetRefreshByKey(gift.countKey)
+                if ref and ref.count and ref.count >= 1 then
+                    needClaim = false
+                end
+            end
+
+            if needClaim then
+                didSend = true
+                pcall(function()
+                    if _G.networkRequest and _G.networkRequest.ReqGetGift then
+                        _G.networkRequest.ReqGetGift({ gift.id })
+                    elseif _G.NetManager and _G.RechargeMessage and _G.RechargeMessage.ReqGetGift then
+                        _G.NetManager.Send(_G.RechargeMessage.ReqGetGift, { id = { gift.id } })
+                    end
+                end)
+            end
+        end
+
+        _G.ClaimedDailyWelfareDate[roleKey] = true
+        if didSend then
+            Log(">>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<", true)
+            SaveOutput()
+        end
+    end)
+
+    if onFinished then
+        Timer.Start(1.0, onFinished)
+    end
+end
+_G.AutoClaimDailyWelfare = AutoClaimDailyWelfare
+
+-- Lắng nghe sự kiện Commer_Openingserinfo từ server để tự động claim bất kỳ mốc mới nào
+pcall(function()
+    if _G.EventManager and _G.Event and _G.Event.Commer_Openingserinfo then
+        _G.EventManager.RegistEvent(_G.Event.Commer_Openingserinfo, function()
+            pcall(function()
+                local data = _G.CommercializeData and _G.CommercializeData.OpenSercurTogInfo
+                if data and data.taskInfo and ClaimOpeningGiftsFromTaskInfo then
+                    ClaimOpeningGiftsFromTaskInfo(data.taskInfo)
+                end
+            end)
+        end, nil)
+    end
+end)
 
 -- =========================================================================
 -- [MOD FEATURE]: VÒNG LẶP NÂNG CẤP TỔNG HỢP ĐỊNH KỲ 30S (XUYÊN SUỐT TOÀN DIỆN)
@@ -5664,6 +6221,16 @@ RunPeriodicUpgradeCycle = function()
         -- 0. Tự động mua bù Máu & Mana nếu < 50
         if AutoBuyPotionsIfLow then
             AutoBuyPotionsIfLow(100, 500)
+        end
+
+        -- 0.1. Tự động nhận thưởng Sự kiện mở SV & Phúc lợi
+        if AutoClaimNewServerRewards then
+            AutoClaimNewServerRewards()
+        end
+
+        -- 0.2. Tự động nhận quà Phúc Lợi Ngày / Cộng đồng (mỗi ngày 1 lần)
+        if AutoClaimDailyWelfare then
+            AutoClaimDailyWelfare()
         end
 
         -- 1. Phân bổ điểm tiềm năng
@@ -5694,14 +6261,16 @@ RunPeriodicUpgradeCycle = function()
                     SolveBranchAndRewardsTasks()
                 end
 
-                -- Cường hóa đều trang bị (+15) & Nâng cấp đều Huỳnh Thạch (+15)
+                -- Cường hóa đều trang bị (+15) & Nâng cấp đều Huỳnh Thạch (+15, chỉ chạy khi Lv > 60)
+                local pMe = _G.RoleManager and _G.RoleManager.me
+                local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
                 if not _G.AutoEvenEnhanceRunning and AutoEvenEnhanceEquipments then
                     AutoEvenEnhanceEquipments(15, function()
-                        if not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
+                        if curLvl > 60 and not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
                             AutoEvenUpgradeGems(15)
                         end
                     end)
-                elseif not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
+                elseif curLvl > 60 and not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
                     AutoEvenUpgradeGems(15)
                 end
 
@@ -5802,10 +6371,10 @@ local MAP_TRAVEL_TASKS = {
     [3106] = { name = "Lost Tower", targetMap = 100501, x = 193, y = 30, altMaps = {100501, 1005} },
     [3107] = { name = "Lost Tower Tầng 2", targetMap = 100502, x = 193, y = 30, altMaps = {100502} },
     [3200] = { name = "Atlantis", targetMap = 1008, x = 72, y = 43, altMaps = {1008} },
-    [3224] = { name = "Aida", targetMap = 1010, x = 60, y = 60, altMaps = {1010} },
+    [3224] = { name = "Aida", targetMap = 1034, x = 85, y = 8, altMaps = {1034, 103401} },
     [3234] = { name = "Icarus", targetMap = 1011, x = 15, y = 13, altMaps = {1011, 101101} },
-    [3244] = { name = "Phế Tích Kanturu", targetMap = 1012, x = 50, y = 50, altMaps = {1012} },
-    [3254] = { name = "Di Chỉ Kanturu", targetMap = 1013, x = 50, y = 50, altMaps = {1013} },
+    [3244] = { name = "Phế Tích Kanturu", targetMap = 1038, x = 20, y = 217, altMaps = {1038, 103801} },
+    [3254] = { name = "Di Chỉ Kanturu", targetMap = 1039, x = 71, y = 106, altMaps = {1039, 103901} },
 }
 _G.MAP_TRAVEL_TASKS = MAP_TRAVEL_TASKS
 
@@ -5813,8 +6382,16 @@ _G.MAP_TRAVEL_TASKS = MAP_TRAVEL_TASKS
 -- [BƯỚC 5]: NHẬN THƯ > TRANG BỊ TỐT NHẤT + CHUYỂN CƯỜNG HÓA > THU HỒI RÁC > CƯỜNG HÓA (+15) & HUỲNH THẠCH (+15)
 -- =========================================================================
 local function StartStep5_MailAndUpgrade(onFinished)
-    Log("[Bước 5] : Nhận thư > Mặc đồ tốt > Kế thừa cường hóa > Thu hồi rác > Cường hóa toàn thân", true)
+    Log(">>> [BƯỚC 5]: Nhận thư & Nâng cấp trang bị toàn thân <<<", true)
     SaveOutput()
+
+    if AutoClaimNewServerRewards then
+        AutoClaimNewServerRewards()
+    end
+
+    if AutoClaimDailyWelfare then
+        AutoClaimDailyWelfare()
+    end
 
     pcall(function()
         if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailList then
@@ -5843,13 +6420,21 @@ local function StartStep5_MailAndUpgrade(onFinished)
                     -- 3. Thu hồi trang bị rác (đồ xịn có CanWearUpFight đã được bảo vệ tuyệt đối không bao giờ bị thu hồi)
                     if AutoRecycleBagItems then AutoRecycleBagItems() end
                     
-                    -- 4. Cường hóa toàn thân lên +15 & Huỳnh thạch lên +15
+                    -- 4. Cường hóa toàn thân lên +15 & Huỳnh thạch lên +15 (nếu Lv > 60)
                     AutoEvenEnhanceEquipments(15, function()
-                        AutoEvenUpgradeGems(15, function()
+                        local pMe = _G.RoleManager and _G.RoleManager.me
+                        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+                        if curLvl > 60 and AutoEvenUpgradeGems then
+                            AutoEvenUpgradeGems(15, function()
+                                Log("[Bước 5] : Hoàn tất nâng cấp trang bị toàn thân! -> Chuyển sang Bước 6: Mở rương vàng", true)
+                                SaveOutput()
+                                if onFinished then onFinished() end
+                            end)
+                        else
                             Log("[Bước 5] : Hoàn tất nâng cấp trang bị toàn thân! -> Chuyển sang Bước 6: Mở rương vàng", true)
                             SaveOutput()
                             if onFinished then onFinished() end
-                        end)
+                        end
                     end)
                 end)
             end)
@@ -5916,8 +6501,8 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
         local monitorTicks = 0
         local hasSkippedWait = false
 
-        -- Quét siêu nhanh 0.3s/lần để kích hoạt [Mở Ngay] ngay khi sẵn sàng
-        _G.Mod_InstanceMonitorTimer = Timer.StartLoop(0.3, -1, function()
+        -- Quét 0.5s/lần để kích hoạt [Mở Ngay] và giám sát chiến đấu trong phó bản
+        _G.Mod_InstanceMonitorTimer = Timer.StartLoop(0.5, -1, function()
             if not _G.Bot_Running or _G.Bot_PauseTask then return end
             monitorTicks = monitorTicks + 1
             local cMap = (_G.SceneData and _G.SceneData.mapId) or 0
@@ -5925,7 +6510,8 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
             local inDS = (cMap >= 1010000 and cMap <= 1010099)
             local inTrans = inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript)
 
-            if not inTrans then
+            -- Khoảng ân hạn: Chờ ít nhất 6 tick (~3 giây) để client load xong map phó bản trước khi check thoát
+            if not inTrans and monitorTicks > 6 then
                 if _G.Mod_InstanceMonitorTimer then
                     Timer.Stop(_G.Mod_InstanceMonitorTimer)
                     _G.Mod_InstanceMonitorTimer = nil
@@ -5938,35 +6524,35 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
                 return
             end
 
-            -- 1. TỰ ĐỘNG BẤM [MỞ NGAY] (REQSKIPWAIT) BỎ QUA 30s CHỜ ĐỢI
-            TriggerDungeonSkipWait()
-            if not hasSkippedWait and monitorTicks >= 3 then
-                hasSkippedWait = true
-                Log("[Phó Bản] : Đã bấm [Mở Ngay] bỏ qua 30s chờ đợi!", true)
-            end
-
-            -- 2. Tự động di chuyển tới tâm phó bản & bật Auto Fight
-            pcall(function()
-                local me = _G.RoleManager and _G.RoleManager.me
-                if me then
-                    local mx, my = 0, 0
-                    if me.Position then mx, my = me.Position.x or 0, me.Position.y or 0 end
-                    if inBC then
-                        local dist = math.sqrt((mx - 14)^2 + (my - 33)^2)
-                        if dist > 3 and me.MoveTo then me:MoveTo({ x = 14, y = 33 }, 0) end
-                    elseif inDS then
-                        local cx, cy = 137, 167
-                        if curLvl >= 150 then cx, cy = 135, 97 end
-                        local dist = math.sqrt((mx - cx)^2 + (my - cy)^2)
-                        if dist > 5 and me.MoveTo then me:MoveTo({ x = cx, y = cy }, 0) end
-                    end
-                    if me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
-                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+            -- CHỈ KHI THỰC SỰ Ở TRONG PHÓ BẢN MỚI BẤM SKIPWAIT VÀ DI CHUYỂN AUTO
+            if inTrans then
+                -- 1. TỰ ĐỘNG BẤM [MỞ NGAY] (REQSKIPWAIT) BỎ QUA 30s CHỜ ĐỢI
+                TriggerDungeonSkipWait()
+                if not hasSkippedWait and monitorTicks >= 2 then
+                    hasSkippedWait = true
+                    Log("[Phó Bản] : Đã bấm [Mở Ngay] bỏ qua 30s chờ đợi!", true)
                 end
-            end)
 
-            -- Thu hồi rác định kỳ mỗi 6 giây trong phó bản
-            -- AutoRecycle only in 30s upgrade cycle
+                -- 2. Tự động di chuyển tới tâm phó bản & bật Auto Fight
+                pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me then
+                        local mx, my = 0, 0
+                        if me.Position then mx, my = me.Position.x or 0, me.Position.y or 0 end
+                        if inBC then
+                            local dist = math.sqrt((mx - 14)^2 + (my - 33)^2)
+                            if dist > 3 and me.MoveTo then me:MoveTo({ x = 14, y = 33 }, 0) end
+                        elseif inDS then
+                            local cx, cy = 137, 167
+                            if curLvl >= 150 then cx, cy = 135, 97 end
+                            local dist = math.sqrt((mx - cx)^2 + (my - cy)^2)
+                            if dist > 5 and me.MoveTo then me:MoveTo({ x = cx, y = cy }, 0) end
+                        end
+                        if me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+                    end
+                end)
+            end
         end)
     end
 
@@ -5977,10 +6563,24 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
         return
     end
 
-    local checkList = {
-        { name = "Huyết Lâu", subType = _G.TranScriptData.TranScriptSubType.BloodCastle, condId = 100414, maxNumId = 100404, globalCountId = 60000001 },
-        { name = "Quảng Trường Quỷ", subType = _G.TranScriptData.TranScriptSubType.DemonPlaza, condId = 100408, maxNumId = 100702, globalCountId = 60000002 }
-    }
+    -- Kiểm tra khung giờ mở phó bản: Chỉ mở trong 10 phút đầu mỗi khung giờ (phút 00 -> 09)
+    local curHour = tonumber(os.date("%H")) or 0
+    local curMinute = tonumber(os.date("%M")) or 0
+    if curMinute >= 10 then
+        Log(string.format("[Phó Bản] : Hiện tại là %02d:%02d (Phó bản chỉ mở 10 phút đầu mỗi giờ: 00-09) -> Bỏ qua phó bản!", curHour, curMinute), false)
+        if onFinished then onFinished() end
+        return
+    end
+
+    -- QUY TẮC KHUNG GIỜ:
+    -- - GIỜ LẺ (1h, 3h, 5h, 7h, 9h, 11h, 13h, 15h, 17h, 19h, 21h, 23h): CHỈ MỞ HUYẾT LÂU (Blood Castle)
+    -- - GIỜ CHẴN (0h, 2h, 4h, 6h, 8h, 10h, 12h, 14h, 16h, 18h, 20h, 22h): CHỈ MỞ QUẢNG TRƯỜNG QUỶ (Demon Plaza)
+    local checkList = {}
+    if curHour % 2 == 1 then
+        table.insert(checkList, { name = "Huyết Lâu", subType = _G.TranScriptData.TranScriptSubType.BloodCastle, condId = 100414, maxNumId = 100404, globalCountId = 60000001 })
+    else
+        table.insert(checkList, { name = "Quảng Trường Quỷ", subType = _G.TranScriptData.TranScriptSubType.DemonPlaza, condId = 100408, maxNumId = 100702, globalCountId = 60000002 })
+    end
 
     local targetInst = nil
     local targetEnterData = nil
@@ -6037,6 +6637,9 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
     Log(string.format("[Phó Bản] : Tiến vào %s (MapId: %s)", targetInst.name, tostring(targetEnterData.id)), true)
     SaveOutput()
 
+    -- KHÓA NGAY LẬP TỨC TIẾN TRÌNH NHIỆM VỤ ĐỂ TRÁNH BỊ TASK KHÁC TRUYỀN TỐNG VĂNG RA MAP KHÁC
+    _G.Mod_IsRunningInstance = true
+
     pcall(function()
         if _G.EventManager and _G.Event and _G.Event.Map_ChangeMap then
             _G.EventManager.Dispatch(_G.Event.Map_ChangeMap, { mapId = targetEnterData.id })
@@ -6048,7 +6651,7 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
         end
     end)
 
-    Timer.Start(1.5, function()
+    Timer.Start(2.5, function()
         DismissBlockers()
         TriggerDungeonSkipWait()
         StartInstanceMonitorLoop()
@@ -6089,6 +6692,28 @@ local TASK_CONFIG_BY_ID = {
     [3281] = TASK_BEHAVIOR.LEVEL_UP, -- Cấp đạt 550
     [3288] = TASK_BEHAVIOR.LEVEL_UP, -- Cấp đạt 600
     [3295] = TASK_BEHAVIOR.LEVEL_UP, -- Cấp đạt 650
+
+    -- Nhiệm vụ Chuyển Chức (Chuyển 1, 2, 3 - Farm vật phẩm hiếm / Tarkan Sách Đế Vương 20 cuốn)
+    [21001] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 1 (Đến Tarkan Nhận Sách Đế Vương 0/20)
+    [21002] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Kiếm Sư Chuyển 1
+    [21003] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Ma Pháp Sư Chuyển 1
+    [21004] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Cung Thủ Chuyển 1
+    [21005] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 2-Giai đoạn 1
+    [210051] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 2-Giai đoạn 2
+    [21006] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 3
+    [21007] = TASK_BEHAVIOR.LEVEL_UP,
+    [21008] = TASK_BEHAVIOR.LEVEL_UP,
+    [21009] = TASK_BEHAVIOR.LEVEL_UP,
+    [21010] = TASK_BEHAVIOR.LEVEL_UP,
+    [21011] = TASK_BEHAVIOR.LEVEL_UP,
+    [21012] = TASK_BEHAVIOR.LEVEL_UP,
+    [21013] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 1
+    [21014] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 2
+    [21015] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 3
+    [21016] = TASK_BEHAVIOR.LEVEL_UP,
+    [21017] = TASK_BEHAVIOR.LEVEL_UP,
+    [21023] = TASK_BEHAVIOR.LEVEL_UP, -- Ma Kiếm Sư CS1
+    [21024] = TASK_BEHAVIOR.LEVEL_UP, -- Triệu Hồi Sư CS1
 
     -- 2. MONSTER KILL TASKS -> GoTask 1 lần, đánh đủ số lượng
     [3060] = TASK_BEHAVIOR.MONSTER_KILL, -- Diệt Bọ Tuyết
@@ -6144,23 +6769,8 @@ StartNewbieQuestPipeline = function()
 
     StartGlobal30sUpgradePipeline()
 
-    if currentLevel >= 100 then
-        Log(string.format("-> [TỐT NGHIỆP CẤP ĐỘ %s >= 100] Thực hiện: Đi phó bản > Nâng cấp toàn diện > Mở rương vàng > Cắm bãi farm > Đổi slot tiếp theo!", tostring(currentLevel)), true)
-        SaveOutput()
-        CheckAndRunBloodCastleOrDemonPlaza(function()
-            StartStep5_MailAndUpgrade(function()
-                StartGoldenChestProcess(function()
-                    TeleportToTrainMapAndFarm(function()
-                        SwitchToNextRoleOrAccount()
-                    end)
-                end)
-            end)
-        end)
-        return
-    end
-
     Log("=========================================================================")
-    Log(string.format(">>> [BƯỚC 4: LEVEL %s/100] ƯU TIÊN LÀM QUEST CHÍNH, QUEST NHÁNH & PHÓ BẢN HL/QTQ! <<<", tostring(currentLevel)), true)
+    Log(string.format(">>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL %s] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<", tostring(currentLevel)), true)
     Log("=========================================================================")
     SaveOutput()
 
@@ -6192,32 +6802,6 @@ StartNewbieQuestPipeline = function()
 
             DismissBlockers()
 
-            if lvl >= 100 then
-                if _G.BotQuestMonitorTimer then
-                    Timer.Stop(_G.BotQuestMonitorTimer)
-                    _G.BotQuestMonitorTimer = nil
-                end
-                if _G.Global30sUpgradeTimer then
-                    Timer.Stop(_G.Global30sUpgradeTimer)
-                    _G.Global30sUpgradeTimer = nil
-                end
-                Log(string.format("[Tốt Nghiệp] : Nhân vật đạt cấp %d >= 100! Thực hiện đi phó bản > Nâng cấp > Mở rương > Ra bãi farm > Đổi slot!", lvl), true)
-                SaveOutput()
-                pcall(function()
-                    if _G.AutoTaskManage then _G.AutoTaskManage.SetAutoTask(false) end
-                end)
-                CheckAndRunBloodCastleOrDemonPlaza(function()
-                    StartStep5_MailAndUpgrade(function()
-                        StartGoldenChestProcess(function()
-                            TeleportToTrainMapAndFarm(function()
-                                SwitchToNextRoleOrAccount()
-                            end)
-                        end)
-                    end)
-                end)
-                return
-            end
-
             loopTickCount = loopTickCount + 1
 
             if loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
@@ -6226,18 +6810,59 @@ StartNewbieQuestPipeline = function()
 
             AutoAddAttributePoints()
 
-            if loopTickCount % 30 == 0 then
-                RunPeriodicUpgradeCycle()
-            end
-
-            if _G.AutoEvenEnhanceRunning or _G.AutoEvenUpgradeGemsRunning or _G.Mod_IsRunningInstance then
+            -- Chu trình nâng cấp chạy định kỳ qua Global Timer, không chặn pipeline làm quest
+            if _G.Mod_IsRunningInstance then
                 return
             end
 
             if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
 
+            -- =========================================================================
+            -- [CLAIM TẤT CẢ NHIỆM VỤ ĐÃ HOÀN THÀNH (CHÍNH, NHÁNH, THƯỞNG) 1S/LẦN]
+            -- =========================================================================
+            pcall(function()
+                if _G.TaskData and _G.TaskData.activeTasks then
+                    for tId, task in pairs(_G.TaskData.activeTasks) do
+                        if task then
+                            local s = (task.GetState and task:GetState()) or task.state or 0
+                            if s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or s == 2 or s == 3 then
+                                Log(string.format("-> [CLAIM TỨC THÌ TASK %s]: Đã hoàn thành! Nộp và nhận thưởng ngay...", tostring(tId)), true)
+                                if _G.networkRequest then
+                                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(tId) end
+                                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(tId) end
+                                end
+                                if _G.NetManager and _G.TaskMessage then
+                                    if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = tId, id = tId }) end
+                                    if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = tId, id = tId }) end
+                                end
+                                if _G.EventManager and _G.Event then
+                                    if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, tId) end
+                                    if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, tId) end
+                                end
+                                if _G.TaskManager and _G.TaskManager.TaskGo then
+                                    _G.TaskManager.TaskGo(tId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                end
+                                local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+                                if taskUI and taskUI.TaskItemClick then
+                                    taskUI:TaskItemClick(tId)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+
             if _G.TaskData then
                 local curTask = _G.TaskData.GetOrderMainTask and _G.TaskData.GetOrderMainTask()
+                if not curTask and _G.TaskData.activeTasks then
+                    for _, t in pairs(_G.TaskData.activeTasks) do
+                        if t and t.GetTaskTypeID and t:GetTaskTypeID() == (_G.RoleTaskType and _G.RoleTaskType.MainTask or 1) then
+                            curTask = t
+                            break
+                        end
+                    end
+                end
+
                 if curTask then
                     local taskId = curTask.taskId or (curTask.GetId and curTask:GetId()) or 0
                     local state = (curTask.GetState and curTask:GetState()) or curTask.state or 0
@@ -6247,6 +6872,7 @@ StartNewbieQuestPipeline = function()
                     -- 1. TRẠNG THÁI HOÀN THÀNH (Completed = 2 hoặc 3): Nộp & Nhận thưởng ngay
                     if state == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or state == 2 or state == 3 then
                         _G.Bot_CurrentTaskId = 0
+                        _G.Bot_LastTaskNavTime = 0
                         Log(string.format("-> [TRẢ THƯỞNG TASK %s]: Đã hoàn thành! Nộp và nhận thưởng...", tostring(taskId)), true)
                         pcall(function()
                             if _G.networkRequest then
@@ -6261,15 +6887,28 @@ StartNewbieQuestPipeline = function()
                                 if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, taskId) end
                                 if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, taskId) end
                             end
+                            -- Tìm đường đến NPC nộp nếu cần
+                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                            end
+                            if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                _G.AutoTaskManage.StartCurAutoTask(true)
+                            end
                         end)
                         SaveOutput()
 
-                    -- 2. TRẠNG THÁI CÓ THỂ NHẬN (Acceptable = 0): Gửi gói nhận nhiệm vụ
+                    -- 2. TRẠNG THÁI CÓ THỂ NHẬN (Acceptable = 0): Gửi gói nhận nhiệm vụ & Tìm đường đến NPC nhận nếu cần
                     elseif state == (_G.TaskStateType and _G.TaskStateType.Acceptable or 0) or state == 0 then
                         pcall(function()
                             if _G.networkRequest and _G.networkRequest.ReqAcceptTask then _G.networkRequest.ReqAcceptTask(taskId) end
                             if _G.NetManager and _G.TaskMessage and _G.TaskMessage.ReqAcceptTask then _G.NetManager.Send(_G.TaskMessage.ReqAcceptTask, { taskId = taskId, id = taskId }) end
                             if _G.EventManager and _G.Event and _G.Event.Task_BtnAcceptClick then _G.EventManager.Dispatch(_G.Event.Task_BtnAcceptClick, taskId) end
+                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                            end
+                            if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                _G.AutoTaskManage.StartCurAutoTask(true)
+                            end
                         end)
 
                     -- 3. TRẠNG THÁI ĐANG TIẾN HÀNH (Accept = 1)
@@ -6281,7 +6920,14 @@ StartNewbieQuestPipeline = function()
                             local goal = curTask.GetTaskGola and curTask:GetTaskGola()
                             local gType = (goal and goal.goalTbl and goal.goalTbl.type) or 0
                             local lowName = string.lower(tostring(taskName or ""))
-                            if tType == 15 or gType == 301 or gType == 3101 or lowName:find("cấp") or lowName:find("level") or lowName:find("lv") then
+                            local lowDes = string.lower(tostring(taskDes or ""))
+                            if (taskId >= 21000 and taskId <= 21999) or tType == 15 or gType == 301 or gType == 3101 
+                                or lowName:find("cấp") or lowName:find("level") or lowName:find("lv") 
+                                or lowName:find("tarkan") or lowDes:find("tarkan")
+                                or lowName:find("đế vương") or lowDes:find("đế vương")
+                                or lowName:find("sách đế vương") or lowDes:find("sách đế vương")
+                                or lowName:find("chuyển chức") or lowName:find("chuyển 1") or lowName:find("chuyển 2") or lowName:find("chuyển 3")
+                                or lowName:find("mở chuyển") or lowName:find("chuyển sinh") or lowName:find("giai đoạn") then
                                 behavior = TASK_BEHAVIOR.LEVEL_UP
                             elseif gType == 101 or gType == 103 or gType == 113 or lowName:find("diệt") or lowName:find("đánh") then
                                 behavior = TASK_BEHAVIOR.MONSTER_KILL
@@ -6297,27 +6943,85 @@ StartNewbieQuestPipeline = function()
                             local travelCfg = MAP_TRAVEL_TASKS and MAP_TRAVEL_TASKS[taskId]
                             if travelCfg then
                                 local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
-                                if tonumber(curMap) ~= tonumber(travelCfg.targetMap) then
+                                local isAlreadyInMap = (tonumber(curMap) == tonumber(travelCfg.targetMap))
+                                if not isAlreadyInMap and travelCfg.altMaps then
+                                    for _, am in ipairs(travelCfg.altMaps) do
+                                        if tonumber(curMap) == tonumber(am) then
+                                            isAlreadyInMap = true
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if not isAlreadyInMap then
                                     _G.Bot_LastMapTravelTime = _G.Bot_LastMapTravelTime or 0
                                     local nowSec = os.time()
                                     if nowSec - _G.Bot_LastMapTravelTime >= 3 then
                                         _G.Bot_LastMapTravelTime = nowSec
-                                        Log(string.format("-> [CHUYỂN MAP TASK %d]: Truyền tống sang %s (Tọa độ: %d#%d)...", taskId, travelCfg.name, travelCfg.x, travelCfg.y), true)
+                                        Log(string.format("-> [CHUYỂN MAP TASK %d]: Truyền tống sang %s (MapId: %s | Tọa độ: %d#%d)...", taskId, travelCfg.name, tostring(travelCfg.targetMap), travelCfg.x, travelCfg.y), true)
                                         pcall(function()
                                             if _G.networkRequest and _G.networkRequest.ReqTransmit then _G.networkRequest.ReqTransmit(travelCfg.targetMap, 1, travelCfg.x, travelCfg.y) end
                                             if _G.networkRequest and _G.networkRequest.ReqCallFlag then _G.networkRequest.ReqCallFlag(1, 0, travelCfg.targetMap, 1, travelCfg.x, travelCfg.y, 0) end
+                                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                            end
                                         end)
                                     end
                                 else
                                     pcall(function()
                                         if _G.networkRequest and _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
                                         if _G.networkRequest and _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
+                                        if _G.TaskManager and _G.TaskManager.TaskGo then
+                                            _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                        end
                                     end)
                                 end
                             end
 
-                        -- B. NHIỆM VỤ CẤP ĐẠT / LUYỆN CẤP -> Tự động di chuyển bãi farm tối ưu & Bật AutoFight
+                        -- =========================================================================
+                        -- [MOD FEATURE]: CHIẾN LƯỢC CÀY CẤP OFFLINE CHO LEVEL >= 100
+                        -- Mô tả: Khi gặp nhiệm vụ yêu cầu cày cấp (LEVEL_UP) mà nhân vật đã Lv >= 100,
+                        -- bot sẽ không tốn thời gian farm chay online mà vét phó bản, nâng cấp, mở rương,
+                        -- ra bãi farm tối ưu rồi đảo slot/acc để nhân vật tự treo offline lên level!
+                        -- =========================================================================
                         elseif behavior == TASK_BEHAVIOR.LEVEL_UP then
+                            -- Nếu nhân vật đã ngoài Lv 100 (Lv >= 100) gặp nhiệm vụ bắt cày cấp hoặc farm dài hạn:
+                            -- Tối ưu: Vét phó bản > Nâng cấp đồ > Cắm bãi farm > Đảo slot/acc để treo offline!
+                            if lvl >= 100 then
+                                if _G.BotQuestMonitorTimer then
+                                    pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
+                                    _G.BotQuestMonitorTimer = nil
+                                end
+                                pcall(function()
+                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
+                                        _G.AutoTaskManage.SetAutoTask(false)
+                                    end
+                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetCurAutoTaskState then
+                                        _G.AutoTaskManage.SetCurAutoTaskState(false)
+                                    end
+                                    local me = _G.RoleManager and _G.RoleManager.me
+                                    if me and me.StopMove then me:StopMove() end
+                                end)
+                                Log("=========================================================================", true)
+                                Log(string.format(">>> [CHIẾN LƯỢC CÀY CẤP OFFLINE: LEVEL %d >= 100] <<<", lvl), true)
+                                Log(string.format(">>> Nhiệm vụ [%d] \"%s\" yêu cầu tăng cấp / farm dài hạn -> Bot không farm chay online!", taskId, tostring(taskName)), true)
+                                Log(">>> Tiến hành: Vét phó bản > Nâng cấp đồ > Mở rương > Cắm bãi farm > Đổi Slot/Acc treo offline! <<<", true)
+                                Log("=========================================================================", true)
+                                SaveOutput()
+
+                                CheckAndRunBloodCastleOrDemonPlaza(function()
+                                    StartStep5_MailAndUpgrade(function()
+                                        StartGoldenChestProcess(function()
+                                            TeleportToTrainMapAndFarm(function()
+                                                SwitchToNextRoleOrAccount()
+                                            end)
+                                        end)
+                                    end)
+                                end)
+                                return
+                            end
+
+                            -- Nếu nhân vật Level < 100: Cày trực tiếp online vì tân thủ lên cấp cực nhanh
                             local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
                             
                             local isMoving = false
@@ -6355,21 +7059,34 @@ StartNewbieQuestPipeline = function()
                         -- [MOD FEATURE]: TỰ ĐỘNG MUA & HỌC KỸ NĂNG SHOP (ĐÁ TÊN ĐA TRÙNG, SÁCH...)
                         -- =========================================================================
                         elseif behavior == TASK_BEHAVIOR.SKILL_SHOP then
-                            local shopUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Shop_ShopUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Shop)))
-                            local isShopOpen = shopUI and ((shopUI.root and shopUI.root.activeInHierarchy) or (shopUI.gameObject and shopUI.gameObject.activeInHierarchy))
+                            local isShopOpen = false
+                            local shopUI = nil
+                            pcall(function()
+                                if _G.UIManager then
+                                    if _G.UIManager.IsVisible then
+                                        isShopOpen = _G.UIManager.IsVisible("Shop_ShopUI") or (_G.UIID and _G.UIID.Shop and _G.UIManager.IsVisible(_G.UIID.Shop))
+                                    end
+                                    shopUI = _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Shop_ShopUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Shop)))
+                                    if not isShopOpen and shopUI then
+                                        isShopOpen = (shopUI.visible == true) or (shopUI.transform and shopUI.transform.gameObject and shopUI.transform.gameObject.activeInHierarchy)
+                                    end
+                                end
+                            end)
 
                             -- 1. Nếu Shop đang mở -> Quét tìm vật phẩm đề cử và mua ngay
                             if isShopOpen then
                                 local targetGoodId = nil
-                                if shopUI.args and shopUI.args.subPosition and shopUI.args.subPosition > 0 then
+                                if shopUI and shopUI.args and shopUI.args.subPosition and shopUI.args.subPosition > 0 then
                                     targetGoodId = shopUI.args.subPosition
                                 end
-                                if not targetGoodId and shopUI.shopCtrTbl and shopUI.shopCtrTbl.items then
+                                if not targetGoodId and shopUI and shopUI.shopCtrTbl and shopUI.shopCtrTbl.items then
                                     for _, itemCtr in pairs(shopUI.shopCtrTbl.items) do
                                         if itemCtr and itemCtr.buyCtr and itemCtr.buyCtr.shop then
                                             local sData = itemCtr.buyCtr.shop
                                             local hasEff = (itemCtr.eff_UI_annuikuang and itemCtr.eff_UI_annuikuang.gameObject and itemCtr.eff_UI_annuikuang.gameObject.activeSelf)
-                                            if hasEff or itemCtr.buyCtr.taskType then
+                                            local isRecommend = (itemCtr.img_is_recommend and itemCtr.img_is_recommend.gameObject and itemCtr.img_is_recommend.gameObject.activeSelf)
+                                            local itemName = tostring((itemCtr.itemModelData and itemCtr.itemModelData.itemData and itemCtr.itemModelData.itemData.tblItem and itemCtr.itemModelData.itemData.tblItem.name) or "")
+                                            if hasEff or itemCtr.buyCtr.taskType or (isRecommend and (string.find(itemName, "Đa Trùng") or string.find(itemName, "Kỹ Năng") or taskId == 3030)) then
                                                 targetGoodId = sData.id
                                                 break
                                             end
@@ -6377,33 +7094,43 @@ StartNewbieQuestPipeline = function()
                                     end
                                 end
                                 if not targetGoodId then
-                                    if taskId == 3030 then targetGoodId = 20409
-                                    elseif taskId == 3020 then targetGoodId = 20401
+                                    if taskId == 3030 then targetGoodId = 20409 -- Đá Tên Đa Trùng (Cung Thủ)
+                                    elseif taskId == 3020 then targetGoodId = 20401 -- Kỹ Năng Chiến Binh
                                     elseif taskId == 3040 then targetGoodId = 20410
                                     elseif taskId == 3041 then targetGoodId = 20411
                                     end
                                 end
 
                                 if targetGoodId then
-                                    Log(string.format("-> [MUA KỸ NĂNG TASK %d]: Đang gửi lệnh mua vật phẩm (GoodId: %s)...", taskId, tostring(targetGoodId)), true)
-                                    pcall(function()
-                                        if _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
-                                            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
-                                                goodId = targetGoodId,
-                                                buyCount = 1
-                                            })
-                                        end
-                                    end)
-                                end
+                                    local nowSec = os.time()
+                                    _G.Bot_LastShopBuyTime = _G.Bot_LastShopBuyTime or 0
+                                    if nowSec - _G.Bot_LastShopBuyTime >= 2 then
+                                        _G.Bot_LastShopBuyTime = nowSec
+                                        Log(string.format("-> [MUA KỸ NĂNG TASK %d]: Đang gửi lệnh mua vật phẩm (GoodId: %s)...", taskId, tostring(targetGoodId)), true)
+                                        pcall(function()
+                                            if _G.networkRequest and _G.networkRequest.ReqBuy then
+                                                _G.networkRequest.ReqBuy(targetGoodId, 1)
+                                            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                                                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                                                    goodId = targetGoodId,
+                                                    buyCount = 1
+                                                })
+                                            end
+                                        end)
 
-                                pcall(function()
-                                    if _G.UIManager then
-                                        if _G.UIID and _G.UIID.Shop then _G.UIManager.Hide(_G.UIID.Shop) end
-                                        if _G.UIID and _G.UIID.ItemTipUI then _G.UIManager.Hide(_G.UIID.ItemTipUI) end
-                                        _G.UIManager.Hide("Shop_ShopUI")
-                                        _G.UIManager.Hide("ItemTipUI")
+                                        -- Đợi 1.5s sau khi mua mới đóng Shop
+                                        Timer.Start(1.5, function()
+                                            pcall(function()
+                                                if _G.UIManager then
+                                                    if _G.UIID and _G.UIID.Shop then _G.UIManager.Hide(_G.UIID.Shop) end
+                                                    if _G.UIID and _G.UIID.ItemTipUI then _G.UIManager.Hide(_G.UIID.ItemTipUI) end
+                                                    _G.UIManager.Hide("Shop_ShopUI")
+                                                    _G.UIManager.Hide("ItemTipUI")
+                                                end
+                                            end)
+                                        end)
                                     end
-                                end)
+                                end
                             else
                                 -- Chưa mở Shop -> Điều hướng mở Shop
                                 local nowSec = os.time()
@@ -6424,15 +7151,17 @@ StartNewbieQuestPipeline = function()
                                 end
                             end
 
-                            -- 2. Tự động dùng sách / đá kỹ năng trong túi để học skill
+                            -- 2. Tự động dùng sách / đá kỹ năng trong túi để học skill (CHỈ DÙNG ĐÚNG ITEM KỸ NĂNG, KHÔNG DÙNG BỪA ĐÁ)
                             pcall(function()
                                 if _G.BagInfoData and _G.BagInfoData.TotalItems then
                                     for _, item in pairs(_G.BagInfoData.TotalItems) do
                                         if item and item.id and item.tblItem then
                                             local name = tostring(item.tblItem.name or "")
-                                            local isSkillItem = (item.tblItem.type == 2 and item.tblItem.subType == 2) 
-                                                             or (item.tblItem.type == 2 and item.tblItem.subType == 21)
-                                                             or string.find(name, "Đá") or string.find(name, "Sách") or string.find(name, "Kỹ Năng")
+                                            -- Type 3 SubType 302: Đá kỹ năng học skill (như Đá Tên Đa Trùng 4001000)
+                                            -- Type 2 SubType 2/21: Sách kỹ năng học skill
+                                            local isSkillItem = (item.tblItem.type == 3 and item.tblItem.subType == 302)
+                                                             or (item.tblItem.type == 2 and (item.tblItem.subType == 2 or item.tblItem.subType == 21))
+                                                             or (item.tblItem.rightOperate == 2 and (string.find(name, "Đa Trùng") or string.find(name, "Triệu Hồi") or string.find(name, "Kỹ Năng")))
                                             if isSkillItem and item.tblItem.type ~= 1 then
                                                 if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                                     _G.networkRequest.ReqUseItem(1, item.id)
@@ -6453,14 +7182,14 @@ StartNewbieQuestPipeline = function()
                                 end
                             end)
 
-                        -- C. NHIỆM VỤ DIỆT QUÁI (Bọ Tuyết...) & ĐỐI THOẠI NPC: GoTask 1 lần, KHÔNG spam khi đang đánh
+                        -- C. NHIỆM VỤ DIỆT QUÁI (Bọ Tuyết...) & ĐỐI THOẠI NPC: GoTask ngay khi idle, KHÔNG spam khi đang đánh quái
                         else
                             local nowSec = os.time()
                             _G.Bot_CurrentTaskId = _G.Bot_CurrentTaskId or 0
                             _G.Bot_LastTaskNavTime = _G.Bot_LastTaskNavTime or 0
 
                             local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
-                            local isIdleTooLong = (nowSec - _G.Bot_LastTaskNavTime >= 12)
+                            local isIdleTooLong = (nowSec - _G.Bot_LastTaskNavTime >= 2)
 
                             local isMoving = false
                             local isFighting = false
@@ -6711,6 +7440,15 @@ ConnectToTargetServer = function()
         _G.TestEventContainer:Regist(Event.Login_ConnectSuccess, function()
             Log("[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!")
             SaveOutput()
+            -- BẮT BUỘC gửi yêu cầu lấy danh sách nhân vật
+            Timer.Start(0.5, function()
+                Log("-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...")
+                pcall(function()
+                    if _G.NetManager and _G.UserMessage and _G.UserMessage.ReqGetRoleList then
+                        _G.NetManager.Send(_G.UserMessage.ReqGetRoleList)
+                    end
+                end)
+            end)
         end)
 
         _G.TestEventContainer:Regist(Event.Login_ResGetRoleList, function()
@@ -6735,6 +7473,17 @@ ConnectToTargetServer = function()
 
         _G.TestEventContainer:Regist(Event.GamePlay_Enter, function()
             Log("[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!")
+            if _G.LoginData then _G.LoginData.InGame = true end
+            pcall(function()
+                if _G.UIManager then
+                    if _G.UIID and _G.UIID.LoginRoleUI then _G.UIManager.Hide(_G.UIID.LoginRoleUI) end
+                    if _G.UIID and _G.UIID.LoginCreateRoleUI then _G.UIManager.Hide(_G.UIID.LoginCreateRoleUI) end
+                    if _G.UIID and _G.UIID.LoginUI then _G.UIManager.Hide(_G.UIID.LoginUI) end
+                    _G.UIManager.Hide("Login_LoginRoleUI")
+                    _G.UIManager.Hide("Login_LoginCreateRoleUI")
+                    _G.UIManager.Hide("Login_LoginUI")
+                end
+            end)
             if _G.Bot_IsInGameWorld then
                 ApplyFovAndSpeed()
                 return
@@ -6765,26 +7514,12 @@ ConnectToTargetServer = function()
                 -- ĐIỀU HƯỚNG THEO CẤP ĐỘ NHÂN VẬT KHI BOT ĐANG CHẠY:
                 StartGlobal30sUpgradePipeline()
 
-                if currentLevel >= 100 then
-                    Log("=========================================================================")
-                    Log(string.format(">>> NHÂN VẬT LEVEL %s >= 100 -> TỐT NGHIỆP: ĐI PHÓ BẢN > NÂNG CẤP > MỞ RƯƠNG > BAY BÃI FARM > ĐỔI SLOT! <<<", tostring(currentLevel)), true)
-                    Log("=========================================================================")
-                    SaveOutput()
-                    StartGlobal30sUpgradePipeline()
-                    CheckAndRunBloodCastleOrDemonPlaza(function()
-                        StartStep5_MailAndUpgrade(function()
-                            StartGoldenChestProcess(function()
-                                TeleportToTrainMapAndFarm(function()
-                                    SwitchToNextRoleOrAccount()
-                                end)
-                            end)
-                        end)
-                    end)
-                else
-                    Log("=========================================================================")
-                    Log(string.format(">>> NHÂN VẬT LEVEL %s (< 100) -> TIẾN HÀNH CHU TRÌNH CÀY TÂN THỦ! <<<", tostring(currentLevel)), true)
-                    Log("=========================================================================")
-                    SaveOutput()
+                -- BỎ hoàn toàn điều kiện currentLevel >= 100 gây dừng sớm
+                -- LUÔN LUÔN cho nhân vật chạy vòng lặp làm và claim nhiệm vụ liên tục!
+                Log("=========================================================================")
+                Log(string.format(">>> NHÂN VẬT LEVEL %s -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<", tostring(currentLevel)), true)
+                Log("=========================================================================")
+                SaveOutput()
 
                     -- Chỉ nhập code nếu Level <= 3 (tài khoản mới tạo), nếu > 3 thì bỏ qua vì đã nhập trước đó
                     if currentLevel <= 3 and _G.RunAutoGiftcode then
@@ -6806,13 +7541,29 @@ ConnectToTargetServer = function()
                         end
                         StartNewbieQuestPipeline()
                     end
-                end
             end)
         end)
 
         Log("2. Kích hoạt kết nối Server " .. serverName .. " (ID: " .. tostring(serverId) .. ")...")
         ReconnectManager.OnConnect()
         SaveOutput()
+
+        -- Timer Fallback kiểm tra sau 3.5s nếu chưa vào game mà đã có roleList -> tự chọn role vào game
+        Timer.Start(3.5, function()
+            if not _G.Bot_IsInGameWorld then
+                local roles = LoginData and LoginData.roleList
+                if roles and #roles > 0 then
+                    Log("-> [FALLBACK] Phát hiện danh sách nhân vật đã sẵn sàng -> Vào game ngay!", true)
+                    SelectRoleByIndex(_G.CurrentRoleIndex or 1)
+                else
+                    pcall(function()
+                        if _G.NetManager and _G.UserMessage and _G.UserMessage.ReqGetRoleList then
+                            _G.NetManager.Send(_G.UserMessage.ReqGetRoleList)
+                        end
+                    end)
+                end
+            end
+        end)
     end)
 end
 
@@ -7056,19 +7807,59 @@ _G.StartAutoFarmBot = function()
     _G.Bot_Running = true
     _G.Bot_PauseTask = false
 
-    local pMe = _G.RoleManager and _G.RoleManager.me
-    local isInGame = (_G.LoginData and _G.LoginData.InGame) or (pMe ~= nil and (pMe.level or (pMe.data and pMe.data.level)))
+    local isInGame = false
+    pcall(function()
+        if _G.LoginData and _G.LoginData.InGame then
+            isInGame = true
+        end
+        if _G.SceneData and _G.SceneData.mapId and tonumber(_G.SceneData.mapId) > 0 then
+            isInGame = true
+        end
+        if _G.RoleManager and _G.RoleManager.me ~= nil then
+            isInGame = true
+        end
+        if _G.ViewData and _G.ViewData.meData ~= nil then
+            isInGame = true
+        end
+        if _G.UIManager and _G.UIManager.IsVisible and _G.UIManager.IsVisible("Main_MainMenuUI") then
+            isInGame = true
+        end
+    end)
 
     if isInGame then
-        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1)
-        local curRoleName = tostring((pMe and pMe.name) or (pMe and pMe.data and pMe.data.name) or "Me")
-        local curServerId, curServerName = nil, "S491"
+        if _G.LoginData then _G.LoginData.InGame = true end
+        pcall(function()
+            if _G.UIManager then
+                if _G.UIID and _G.UIID.LoginRoleUI then _G.UIManager.Hide(_G.UIID.LoginRoleUI) end
+                if _G.UIID and _G.UIID.LoginCreateRoleUI then _G.UIManager.Hide(_G.UIID.LoginCreateRoleUI) end
+                if _G.UIID and _G.UIID.LoginUI then _G.UIManager.Hide(_G.UIID.LoginUI) end
+                _G.UIManager.Hide("Login_LoginRoleUI")
+                _G.UIManager.Hide("Login_LoginCreateRoleUI")
+                _G.UIManager.Hide("Login_LoginUI")
+            end
+        end)
+
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = 1
+        pcall(function()
+            if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level then
+                curLvl = tonumber(_G.ViewData.meData.level) or curLvl
+            elseif pMe and pMe.data and pMe.data.level then
+                curLvl = tonumber(pMe.data.level) or curLvl
+            elseif pMe and pMe.level then
+                curLvl = tonumber(pMe.level) or curLvl
+            elseif _G.LoginData and _G.LoginData.roleLevel then
+                curLvl = tonumber(_G.LoginData.roleLevel) or curLvl
+            end
+        end)
+        local curRoleName = tostring((pMe and pMe.name) or (pMe and pMe.data and pMe.data.name) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.name) or "Me")
+        local curServerId, curServerName = nil, "S492"
         pcall(function()
             if _G.GetActualCurrentServerInfo then
                 curServerId, curServerName = _G.GetActualCurrentServerInfo()
             end
         end)
-        curServerName = curServerName or "VĨNH HẰNG 491"
+        curServerName = curServerName or "VĨNH HẰNG 492"
 
         local execTime = os.date("%H:%M:%S")
         Log("=========================================================================")
@@ -7082,37 +7873,72 @@ _G.StartAutoFarmBot = function()
             AutoBuyPotionsIfLow(50, 100)
         end
 
-        if curLvl >= 100 then
-            Log(string.format(">>> [CẤP ĐỘ %d >= 100] TỐT NGHIỆP: ĐI PHÓ BẢN > NÂNG CẤP > MỞ RƯƠNG > BAY BÃI FARM > ĐỔI SLOT! <<<", curLvl), true)
-            SaveOutput()
-            StartGlobal30sUpgradePipeline()
-            CheckAndRunBloodCastleOrDemonPlaza(function()
-                StartStep5_MailAndUpgrade(function()
-                    StartGoldenChestProcess(function()
-                        TeleportToTrainMapAndFarm(function()
-                            SwitchToNextRoleOrAccount()
-                        end)
-                    end)
-                end)
+        if AutoClaimNewServerRewards then
+            AutoClaimNewServerRewards()
+        end
+
+        if AutoClaimDailyWelfare then
+            AutoClaimDailyWelfare()
+        end
+
+        -- BỎ hoàn toàn điều kiện curLvl >= 100 gây nhảy ra bãi farm dừng sớm
+        -- LUÔN LUÔN kích hoạt StartNewbieQuestPipeline để chạy vòng lặp quét và claim nhiệm vụ 1s/lần!
+        Log(string.format(">>> [CẤP ĐỘ %d] KHỞI CHẠY VÒNG LẶP CHÍNH QUÉT VÀ CLAIM NHIỆM VỤ (1s/LẦN)! <<<", curLvl), true)
+        SaveOutput()
+        if curLvl <= 3 and _G.RunAutoGiftcode then
+            _G.RunAutoGiftcode(function()
+                StartNewbieQuestPipeline()
             end)
         else
-            Log(string.format(">>> [CẤP ĐỘ %d < 100] BƯỚC 4: LÀM QUEST CHÍNH, NHÁNH & TÂN THỦ! <<<", curLvl), true)
-            SaveOutput()
-            if curLvl <= 3 and _G.RunAutoGiftcode then
-                _G.RunAutoGiftcode(function()
-                    StartNewbieQuestPipeline()
-                end)
-            else
-                StartNewbieQuestPipeline()
-            end
+            StartNewbieQuestPipeline()
         end
     else
-        ForceLogoutToLogin()
-        Log("-> Đang nạp lại Login Scene để đăng nhập tự động...")
-        Timer.Start(DELAY * 2, function()
-            DismissBlockers()
-            StartFullLoginProcess()
+        -- Kiểm tra xem có đang ở màn hình Chọn Nhân Vật không
+        local isAtSelectRole = false
+        local curRoleCount = 0
+        pcall(function()
+            if _G.LoginData and _G.LoginData.roleList then
+                curRoleCount = #_G.LoginData.roleList
+                if curRoleCount > 0 then
+                    isAtSelectRole = true
+                end
+            end
+            if _G.UIManager and _G.UIManager.IsVisible then
+                if _G.UIManager.IsVisible("Login_LoginRoleUI") or (_G.UIID and _G.UIID.LoginRoleUI and _G.UIManager.IsVisible(_G.UIID.LoginRoleUI)) then
+                    isAtSelectRole = true
+                end
+            end
+            local curRoleUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Login_LoginRoleUI")
+            if curRoleUI and curRoleUI.go_NameList and not IsNil(curRoleUI.go_NameList) and curRoleUI.go_NameList.activeInHierarchy then
+                isAtSelectRole = true
+            end
         end)
+
+        if isAtSelectRole then
+            if curRoleCount > 0 then
+                local targetIdx = _G.CurrentRoleIndex or 1
+                Log(string.format(">>> [CHỌN NHÂN VẬT]: Phát hiện đang ở màn hình Chọn Nhân Vật (%d NV) -> Tự động chọn Slot %d để vào game! <<<", curRoleCount, targetIdx), true)
+                SaveOutput()
+                SelectRoleByIndex(targetIdx)
+                return
+            else
+                -- BỊ KẸT BỆ ĐÁ TRỐNG (roleList == 0 như trong ảnh): Tự động Logout và Login lại từ đầu!
+                Log(">>> [PHÁT HIỆN BỆ ĐÁ TRỐNG / CHƯA CÓ DANH SÁCH NHÂN VẬT] -> Tự động Clean Logout & Login lại từ đầu để nạp đầy đủ danh sách! <<<", true)
+                SaveOutput()
+                ForceLogoutToLogin()
+                Timer.Start(2.5, function()
+                    DismissBlockers()
+                    StartFullLoginProcess()
+                end)
+                return
+            end
+        end
+
+        -- ĐANG Ở MÀN HÌNH SPLASH / TITLE / LOGIN (chưa vào game, chưa ở SelectRole)
+        Log(">>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<", true)
+        SaveOutput()
+        DismissBlockers()
+        StartFullLoginProcess()
     end
 end
 _G.Bot_Start = _G.StartAutoFarmBot
@@ -7147,5 +7973,9 @@ _G.ToggleAutoFarmBot = function()
 end
 _G.Bot_Toggle = _G.ToggleAutoFarmBot
 
--- Khi người dùng bấm nút EXEC Admin trên màn hình -> Chạy ngay hàm StartAutoFarmBot()
--- Library loaded. Ready for manual trigger.
+-- =========================================================================
+-- TỰ ĐỘNG KÍCH HOẠT CHU TRÌNH BOT NGAY KHI NẠP SCRIPT (EXECUTE ADMIN)
+-- =========================================================================
+_G.Mod_ShowTopNotice(">>> [EXEC ADMIN] KHỞI ĐỘNG CHU TRÌNH BOT FARM! <<<", 4.0)
+_G.StartAutoFarmBot()
+

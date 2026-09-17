@@ -7003,7 +7003,7 @@ local function CreateModUI()
 
             local function UpdateLabel()
                 local extra = ""
-                if varName == "AutoPick_Enabled" then
+                if varName == "AutoPick_Enabled" and _G.Mod_IsAdmin then
                     extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
                 elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
                     local totalOddCount = 0
