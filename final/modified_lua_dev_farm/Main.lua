@@ -203,3 +203,4 @@ function Main.FpsCheck()
 end
 
 Main.Start()
+ModMenuUI = {}

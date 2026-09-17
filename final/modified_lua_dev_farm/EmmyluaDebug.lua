@@ -1,3 +1,1859 @@
+---@diagnostic disable: undefined-global
+---@diagnostic disable: lowercase-global
+---@diagnostic disable: duplicate-set-field
+-- EmmyluaDebug.lua
+-- Bắt buộc phải có để Main.lua gọi không bị lỗi
+EmmyluaDebug = {}
+_G.Mod_IsAdmin = true
+_G.Mod_IsDev = true
+_G.Mod_ExecBtn_Visible = true
+
+-- =========================================================================
+-- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
+-- Mô tả: Khởi tạo biến toàn cục mod, phân quyền Admin/Debug, dọn dẹp file bundle cũ.
+-- =========================================================================
+function EmmyluaDebug.InitEmmyluaDebug(obj)
+    _G.Mod_IsAdmin = true
+    _G.Mod_IsDev = true
+    _G.Mod_ExecBtn_Visible = true
+
+    _G.Mod_IsDebug = true
+    _G.Mod_DebugMsg = function(msg)
+        if _G.Mod_IsDebug then
+            if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+            if _G.WriteLog then _G.WriteLog("[AutoFarm] " .. msg) end
+        end
+    end
+
+    -- Xóa file update cũ và tạo thư mục giả để chặn game tải lại lua.mu2
+    pcall(function()
+        local Application = CS.UnityEngine.Application
+        local Directory = CS.System.IO.Directory
+        local File = CS.System.IO.File
+
+        -- Xóa sạch rác
+        local function DeleteDummyDir(path)
+            if Directory.Exists(path) then Directory.Delete(path, true) end
+            if File.Exists(path) then File.Delete(path) end
+        end
+        local rootDir = Application.persistentDataPath
+        DeleteDummyDir(rootDir .. "/lua.mu2")
+        DeleteDummyDir(rootDir .. "/bundles.txt")
+        DeleteDummyDir(rootDir .. "/Bundles/lua.mu2")
+        DeleteDummyDir(rootDir .. "/Bundles/bundles.txt")
+        DeleteDummyDir(rootDir .. "/bundles/lua.mu2")
+        DeleteDummyDir(rootDir .. "/bundles/bundles.txt")
+
+        -- (Đã xóa Directory Blocker theo yêu cầu của user để không làm hỏng tiến trình tải Bundles.v158)
+    end)
+end
+
+if _G.ModInitialized then return true end
+_G.ModInitialized = true
+
+_G.ModCallbacks = {}
+
+-- =========================================================================
+-- [MOD FEATURE]: HỆ THỐNG QUẢN LÝ TIMER & LÀM MƯỢT HỆ THỐNG
+-- Mô tả: Quản lý tập trung toàn bộ Timer/Loop của Mod, hỗ trợ dọn dẹp và khởi động lại sạch sẽ.
+-- =========================================================================
+_G.Mod_ActiveTimers = _G.Mod_ActiveTimers or {}
+
+_G.Mod_StopTimer = function(name)
+    if not name then return end
+    pcall(function()
+        if _G.Mod_ActiveTimers and _G.Mod_ActiveTimers[name] then
+            if _G.Timer and _G.Timer.Stop then
+                _G.Timer.Stop(_G.Mod_ActiveTimers[name])
+            end
+            _G.Mod_ActiveTimers[name] = nil
+        end
+    end)
+end
+
+_G.Mod_StopAllTimers = function()
+    pcall(function()
+        if not _G.Mod_ActiveTimers then return end
+        for k, timerObj in pairs(_G.Mod_ActiveTimers) do
+            if timerObj and _G.Timer and _G.Timer.Stop then
+                pcall(function() _G.Timer.Stop(timerObj) end)
+            end
+            _G.Mod_ActiveTimers[k] = nil
+        end
+    end)
+end
+
+_G.Mod_StartTrackedTimer = function(name, interval, count, callback)
+    if not name or not callback then return nil end
+    _G.Mod_StopTimer(name)
+
+    local timerObj = nil
+    if _G.Timer then
+        if count == -1 then
+            if _G.Timer.StartLoopForever then
+                timerObj = _G.Timer.StartLoopForever(interval, callback)
+            elseif _G.Timer.StartLoop then
+                timerObj = _G.Timer.StartLoop(interval, -1, callback)
+            end
+        elseif count == 1 and _G.Timer.Start then
+            timerObj = _G.Timer.Start(interval, callback)
+        elseif _G.Timer.StartLoop then
+            timerObj = _G.Timer.StartLoop(interval, count, callback)
+        end
+    end
+    if timerObj then
+        _G.Mod_ActiveTimers[name] = timerObj
+    end
+    return timerObj
+end
+
+_G.Mod_RestartAllBackgroundLoops = function()
+    if _G.Mod_StartSmoothCameraLoop then pcall(_G.Mod_StartSmoothCameraLoop) end
+    if _G.Mod_StartSpeedAnimLockLoop then pcall(_G.Mod_StartSpeedAnimLockLoop) end
+    if _G.Mod_StartMainUpdateLoop then pcall(_G.Mod_StartMainUpdateLoop) end
+    if _G.Mod_StartBossAutoRefreshLoop then pcall(_G.Mod_StartBossAutoRefreshLoop) end
+    if _G.Mod_StartPKScanLoop then pcall(_G.Mod_StartPKScanLoop) end
+    if _G.Mod_StartReturnPosLoop then pcall(_G.Mod_StartReturnPosLoop) end
+    if _G.Mod_StartVisualMasterLoop then pcall(_G.Mod_StartVisualMasterLoop) end
+    if _G.Mod_StartGoldenChestLoop then pcall(_G.Mod_StartGoldenChestLoop) end
+end
+
+_G.Mod_DoSystemFreshCleanup = function()
+    pcall(function()
+        -- 1. Dừng triệt để tất cả Timers đang chạy
+        _G.Mod_StopAllTimers()
+
+        -- 2. Xóa sạch các Cache & Trạng thái runtime của Mod
+        _G.LastTeleNotifySec_Boss = {}
+        _G.Mod_BossDeadState = {}
+        _G.Mod_LastFoundTarget = nil
+        _G.Mod_PK_TargetRole = nil
+        _G.Mod_GoldenChestBatchIds = {}
+        _G.Mod_GoldenChestState = "OPEN"
+        _G.Mod_LastResurrectTime = 0
+        _G.Mod_LastAutoPKSentTime = 0
+        _G.Mod_LastPKScanTime = 0
+        _G.Mod_LastKundunHPTime = 0
+        _G.Mod_LastReturnPosTime = 0
+        _G.LastTeleCheckSec = 0
+        _G.Mod_ItemDecisionCache = {}
+        _G.AutoPick_Count = 0
+        _G.Mod_PickedItems = {}
+        _G.Mod_ApproachTowerTargetRole = nil
+        _G.Mod_PendingKcResurrectAutoFight = nil
+        _G.Mod_PendingKcResurrectTime = nil
+
+        -- Reset TargetAvatar nếu mục tiêu Me đã chết hoặc không hợp lệ
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me then
+            if me.TargetAvatar and (me.TargetAvatar.isDead or (me.TargetAvatar.hp and me.TargetAvatar.hp <= 0)) then
+                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+            end
+        end
+
+        -- 3. Khởi động lại các vòng lặp nền Mod sạch sẽ
+        if _G.Mod_RestartAllBackgroundLoops then
+            _G.Mod_RestartAllBackgroundLoops()
+        end
+
+        -- 4. Làm tươi tốc độ & Animation của nhân vật Me
+        if me then
+            if _G.Mod_LockMyAnimatorsToNormal then
+                pcall(_G.Mod_LockMyAnimatorsToNormal)
+            end
+            if me.SetMoveSpeed then
+                local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 350
+                pcall(function() me:SetMoveSpeed(base, true) end)
+            end
+        end
+
+        -- 5. Áp dụng lại trạng thái ẩn hiệu ứng nếu đang kích hoạt
+        if _G.Mod_ApplyDisableVisualsState then
+            pcall(_G.Mod_ApplyDisableVisualsState)
+        end
+
+        -- 6. Thu gom rác bộ nhớ Lua VM & Unity GC
+        pcall(function() collectgarbage("collect") end)
+        pcall(function() collectgarbage("collect") end)
+        pcall(function()
+            if CS and CS.UnityEngine and CS.UnityEngine.Resources and CS.UnityEngine.Resources.UnloadUnusedAssets then
+                CS.UnityEngine.Resources.UnloadUnusedAssets()
+            end
+        end)
+        pcall(function()
+            if CS and CS.System and CS.System.GC and CS.System.GC.Collect then
+                CS.System.GC.Collect()
+            end
+        end)
+
+        -- 7. Cập nhật lại toàn bộ UI
+        if _G.Mod_AllUIUpdaters then
+            for _, upd in ipairs(_G.Mod_AllUIUpdaters) do
+                pcall(upd)
+            end
+        end
+        if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+        if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
+        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+
+        -- 8. Thông báo thành công
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg("[LÀM MƯỢT] Đã dọn Cache, Reset Timers & Thu gom rác hệ thống thành công!")
+        end
+        if _G.WriteLog then
+            _G.WriteLog("[Mod System] Thực hiện Làm Mượt & Dọn dẹp hệ thống thành công.")
+        end
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: HỆ THỐNG GHI LOG FILE & DEBUG (LOGGER SYSTEM)
+-- Mô tả: Ghi log thời gian thực vào file MyModLog.txt và CS.UnityEngine.Debug.
+-- =========================================================================
+local function WriteLog(msg)
+    -- pcall(function()
+    --     local finalMsg = tostring(msg)
+    --     pcall(function()
+    --         if string.find(finalMsg, "%[AutoLoot") then
+    --             local ms = 0
+    --             if CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup then
+    --                 ms = math.floor((CS.UnityEngine.Time.realtimeSinceStartup % 1) * 1000)
+    --             end
+    --             local timeStr = string.format("%s.%03d", os.date("%Y-%m-%d %H:%M:%S"), ms)
+    --             finalMsg = timeStr .. ": " .. finalMsg
+    --         end
+    --     end)
+
+    --     local logPath = CS.UnityEngine.Application.persistentDataPath .. "/MyModLog.txt"
+
+    --     -- Ghi bằng C# System.IO.File (100% an toàn trên Android)
+    --     pcall(function()
+    --         if CS.System.IO.File and CS.System.IO.File.AppendAllText then
+    --             CS.System.IO.File.AppendAllText(logPath, finalMsg .. "\n")
+    --         end
+    --     end)
+
+    --     -- Backup bằng Lua io.open
+    --     pcall(function()
+    --         local f = io.open(logPath, "a")
+    --         if f then
+    --             f:write(finalMsg .. "\n")
+    --             f:close()
+    --         end
+    --     end)
+
+    --     pcall(function()
+    --         CS.UnityEngine.Debug.LogError("[MySuperMod] " .. finalMsg)
+    --     end)
+    -- end)
+end
+_G.WriteLog = WriteLog
+
+-- WriteLog("--- BẮT ĐẦU KHỞI TẠO HOOK MOD MENU ---")
+
+-- =========================================================================
+-- [MOD FEATURE]: KHỞI TẠO CẤU HÌNH & TRẠNG THÁI MOD (MOD CONFIG & STATE INITIALIZATION)
+-- Mô tả: Đọc và gán giá trị mặc định từ PlayerPrefs cho các toggle/setting của Mod.
+-- =========================================================================
+local function CreateModUI()
+    local status, err = pcall(function()
+        if _G.Mod_AutoPK_Enabled == nil then
+            _G.Mod_AutoPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoPK_Enabled", 0) == 1
+        end
+        if _G.Mod_AutoApproachTowerBoss == nil then
+            _G.Mod_AutoApproachTowerBoss = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoApproachTowerBoss", 0) == 1
+        end
+        if _G.Mod_DisableVisuals == nil then
+            pcall(function()
+                _G.Mod_DisableVisuals = CS.UnityEngine.PlayerPrefs.GetInt("Mod_DisableVisuals", 0) == 1
+            end)
+            if _G.Mod_DisableVisuals == nil then _G.Mod_DisableVisuals = false end
+        end
+        _G.Mod_IsDisableVisualsActive = function()
+            return (_G.Mod_DisableVisuals == true) or (_G.AutoPick_Enabled == true)
+        end
+        if _G.Mod_InfiniteInstance == nil then
+            _G.Mod_InfiniteInstance = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_InfiniteInstance", 0) == 1
+        end
+        if _G.Mod_AutoUseAngel == nil then
+            _G.Mod_AutoUseAngel = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoUseAngel", 0) ==
+                1
+        end
+        if _G.Mod_AutoGuildPK_Enabled == nil then
+            _G.Mod_AutoGuildPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoGuildPK_Enabled", 0) == 1
+        end
+        if _G.Mod_AutoPick_KTD == nil then
+            _G.Mod_AutoPick_KTD = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_KTD", 0) ==
+                1
+        end
+        if _G.Mod_AutoRevive_KTD == nil then
+            _G.Mod_AutoRevive_KTD = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_AutoRevive_KTD", 0) == 1
+        end
+        if _G.Mod_ShowKundunHP == nil then
+            pcall(function() _G.Mod_ShowKundunHP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ShowKundunHP", 0) == 1 end)
+        end
+        if _G.Mod_AutoResurrect_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoResurrect_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Enabled", 0) == 1
+            end)
+        end
+        if _G.Mod_AutoResurrect_Free_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoResurrect_Free_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Free_Enabled", _G.Mod_AutoResurrect_Enabled and 1 or 0) == 1
+            end)
+        end
+        if _G.Mod_AutoResurrect_Here_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoResurrect_Here_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoResurrect_Here_Enabled", 0) == 1
+            end)
+        end
+        if _G.Mod_PKScanDelay == nil then
+            pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
+        end
+        if _G.Mod_AutoReturnPos_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPos_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
+                    "Mod_AutoReturnPos_Enabled", 0) == 1
+            end)
+        end
+        if _G.Mod_AutoReturnPos_Coords == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString(
+                    "Mod_AutoReturnPos_Coords", "")
+            end)
+        end
+        if _G.Mod_AutoReturnPosDelay == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPosDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_AutoReturnPosDelay",
+                    1.0)
+            end)
+        end
+        if _G.Mod_AutoReturnPos_MapId == nil then
+            pcall(function()
+                _G.Mod_AutoReturnPos_MapId = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoReturnPos_MapId", 0)
+            end)
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: THỐNG KÊ SĂN BOSS & ĐI MAP ẨN (FARM STATS & PERSISTENCE)
+        -- Mô tả: Lưu trữ/tải số lần đi map ẩn và số lượng boss đã tiêu diệt vào PlayerPrefs.
+        -- =========================================================================
+        _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
+            if not _G.Mod_FarmStats then return end
+            local str = "hidden:" .. tostring(_G.Mod_FarmStats.hidden or 0)
+            if _G.Mod_FarmStats.bosses then
+                for k, v in pairs(_G.Mod_FarmStats.bosses) do
+                    str = str .. ";" .. tostring(k) .. ":" .. tostring(v)
+                end
+            end
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_FarmStatsData", str)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
+
+        if not _G.Mod_FarmStats_Loaded then
+            _G.Mod_FarmStats = { hidden = 0, bosses = {} }
+            local str = CS.UnityEngine.PlayerPrefs.GetString("Mod_FarmStatsData", "")
+            if str ~= "" then
+                for p in string.gmatch(str, "([^;]+)") do
+                    local kStr, vStr = string.match(p, "([^:]+):(%d+)")
+                    if kStr and vStr then
+                        if kStr == "hidden" then
+                            _G.Mod_FarmStats.hidden = tonumber(vStr) or 0
+                        else
+                            local bossId = tonumber(kStr)
+                            if bossId then _G.Mod_FarmStats.bosses[bossId] = tonumber(vStr) end
+                        end
+                    end
+                end
+            end
+            _G.Mod_FarmStats_Loaded = true
+        end
+
+        _G.Mod_SaveAnStats = function()
+            if not _G.Mod_AnStats then return end
+            local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsDate", todayStr)
+
+            local pairsList = {}
+            for name, count in pairs(_G.Mod_AnStats) do
+                table.insert(pairsList, tostring(name) .. ":" .. tostring(count))
+            end
+            local dataStr = table.concat(pairsList, ";")
+            CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsData", dataStr)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
+
+        _G.Mod_LoadAnStats = function()
+            local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+            local savedDate = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsDate", "")
+
+            _G.Mod_AnStats = {}
+            _G.Mod_AnStatsDate = todayStr
+
+            if savedDate == todayStr then
+                local dataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsData", "")
+                if dataStr ~= "" then
+                    for p in string.gmatch(dataStr, "([^;]+)") do
+                        local kStr, vStr = string.match(p, "([^:]+):(%d+)")
+                        if kStr and vStr then
+                            _G.Mod_AnStats[kStr] = tonumber(vStr) or 0
+                        end
+                    end
+                end
+            end
+        end
+
+        if not _G.Mod_AnStats_Loaded then
+            _G.Mod_LoadAnStats()
+            _G.Mod_AnStats_Loaded = true
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: ĐỒNG BỘ TRẠNG THÁI BOSS TỪ SERVER (BOSS STATE EVENT REGISTRY)
+        -- Mô tả: Lắng nghe các sự kiện Server gửi về để cập nhật bảng Mod_BossStateMap và refresh UI.
+        -- =========================================================================
+        _G.Mod_BossStateMap = _G.Mod_BossStateMap or {}
+
+        if _G.EventManager and _G.Event then
+            pcall(function()
+                if _G.Event.Map_MonsterAllState and not _G.Mod_Hooked_MonsterAllState then
+                    _G.Mod_Hooked_MonsterAllState = true
+                    _G.EventManager.Regist(_G.Event.Map_MonsterAllState, function(_, msg)
+                        if msg and msg.list then
+                            for _, mon in ipairs(msg.list) do
+                                if mon and mon.id then
+                                    _G.Mod_BossStateMap[mon.id] = (mon.state == 0 and 1 or 0)
+                                end
+                            end
+                        end
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MonsterAllState")
+                end
+                if _G.Event.Map_MonsterStateChange and not _G.Mod_Hooked_MonsterStateChange then
+                    _G.Mod_Hooked_MonsterStateChange = true
+                    _G.EventManager.Regist(_G.Event.Map_MonsterStateChange, function(_, msg)
+                        if msg and msg.id then
+                            _G.Mod_BossStateMap[msg.id] = (msg.state == 0 and 1 or 0)
+                        end
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MonsterStateChange")
+                end
+                if _G.Event.Map_BossAndElite and not _G.Mod_Hooked_MapBossAndElite then
+                    _G.Mod_Hooked_MapBossAndElite = true
+                    _G.EventManager.Regist(_G.Event.Map_BossAndElite, function(_, msg)
+                        if msg and msg.list then
+                            for _, mon in ipairs(msg.list) do
+                                if mon and mon.id then
+                                    _G.Mod_BossStateMap[mon.id] = (mon.state == 0 and 1 or 0)
+                                end
+                            end
+                        end
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                    end, "Mod_MapBossAndElite")
+                end
+                if _G.Event.Scene_SceneBossCount and not _G.Mod_Hooked_SceneBossCount then
+                    _G.Mod_Hooked_SceneBossCount = true
+                    _G.EventManager.Regist(_G.Event.Scene_SceneBossCount, function()
+                        if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                        if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                        if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+                    end, "Mod_SceneBossCount")
+                end
+            end)
+        end
+
+        if _G.PathFinderManager and not _G.Mod_Hooked_JumpMapToMoveToPos then
+            _G.Mod_Hooked_JumpMapToMoveToPos = true
+            local old_JumpMapToMoveToPos = _G.PathFinderManager.JumpMapToMoveToPos
+            _G.PathFinderManager.JumpMapToMoveToPos = function(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+                pcall(function()
+                    if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+                        _G.PathFinderManager.ResetData()
+                    end
+                end)
+                return old_JumpMapToMoveToPos(groupId, pos, transferId, line, param, purpose, OnArrive, range, isStopTask)
+            end
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: TỌA ĐỘ SPAWN & VỊ TRÍ BOSS (BOSS SPAWN POSITIONS)
+        -- Mô tả: Tra cứu danh sách tọa độ boss theo ID và ID bản đồ từ cấu hình game.
+        -- =========================================================================
+        _G.GetAllBossPositions = function(bossId, mapId)
+            if not bossId then return {} end
+            local positions = {}
+            local addedMap = {}
+            local function AddPos(px, py)
+                if px and py then
+                    local key = math.floor(px) .. "_" .. math.floor(py)
+                    if not addedMap[key] then
+                        addedMap[key] = true
+                        table.insert(positions, { x = px, y = py })
+                    end
+                end
+            end
+
+            pcall(function()
+                if _G.SceneData and _G.SceneData.bossPosDataList then
+                    for _, v in pairs(_G.SceneData.bossPosDataList) do
+                        if (v.Param == bossId or tonumber(v.Param) == tonumber(bossId)) and v.position then
+                            local parts = string.split(v.position, "#")
+                            if #parts >= 2 then
+                                AddPos(tonumber(parts[1]), tonumber(parts[2]))
+                            end
+                        end
+                    end
+                end
+                if #positions == 0 and _G.ConfigManager and _G.ConfigManager.FindConfigs and mapId then
+                    local list = _G.ConfigManager.FindConfigs("cfg_Map_minimap", "mid", mapId)
+                    if list then
+                        for _, v in pairs(list) do
+                            if (v.Param == bossId or tonumber(v.Param) == tonumber(bossId)) and v.position then
+                                local parts = string.split(v.position, "#")
+                                if #parts >= 2 then
+                                    AddPos(tonumber(parts[1]), tonumber(parts[2]))
+                                end
+                            end
+                        end
+                    end
+                end
+                if #positions == 0 and _G.ClientTable and _G.ClientTable.cfg_Monster_bossManager then
+                    local cfg = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(bossId)
+                    if cfg and cfg.position then
+                        local posGroups = string.split(cfg.position, "|")
+                        for _, g in ipairs(posGroups) do
+                            local cleanPos = string.gsub(g, "&", "")
+                            local parts = string.split(cleanPos, "#")
+                            if #parts >= 2 then
+                                AddPos(math.abs(tonumber(parts[1]) or 0), math.abs(tonumber(parts[2]) or 0))
+                            end
+                        end
+                    end
+                end
+            end)
+            return positions
+        end
+
+        _G.GetAliveBossPosition = function(bossId, mapId)
+            if not bossId then return nil, 0, 0 end
+            local candidatePositions = {}
+            local alivePositions = {}
+
+            pcall(function()
+                if _G.SceneData and _G.SceneData.bossPosDataList then
+                    for _, v in pairs(_G.SceneData.bossPosDataList) do
+                        if (v.Param == bossId or tonumber(v.Param) == tonumber(bossId)) and v.position then
+                            local parts = string.split(v.position, "#")
+                            if #parts >= 2 then
+                                local px, py = tonumber(parts[1]), tonumber(parts[2])
+                                if px and py then
+                                    local posObj = { x = px, y = py, id = v.id }
+                                    table.insert(candidatePositions, posObj)
+                                    local st = _G.Mod_BossStateMap[v.id]
+                                    if st == 1 then
+                                        table.insert(alivePositions, posObj)
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if #alivePositions > 0 then
+                if #alivePositions > 1 then
+                    local meX, meY = nil, nil
+                    if _G.RoleManager and _G.RoleManager.me then
+                        local me = _G.RoleManager.me
+                        if me.cellPos then
+                            meX, meY = me.cellPos.x, me.cellPos.y
+                        elseif me.serverCoord then
+                            meX, meY = me.serverCoord.x, me.serverCoord.y
+                        elseif me.GetPosition then
+                            local p = me:GetPosition()
+                            if p then meX, meY = math.floor(p.x), math.floor(p.z) end
+                        elseif me.position then
+                            meX, meY = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
+                        end
+                    end
+                    if meX and meY then
+                        table.sort(alivePositions, function(a, b)
+                            local dA = (a.x - meX) * (a.x - meX) + (a.y - meY) * (a.y - meY)
+                            local dB = (b.x - meX) * (b.x - meX) + (b.y - meY) * (b.y - meY)
+                            return dA < dB
+                        end)
+                    end
+                end
+                return alivePositions[1], #alivePositions, #candidatePositions
+            end
+
+            if #candidatePositions > 0 then
+                return nil, 0, #candidatePositions
+            end
+
+            local all = _G.GetAllBossPositions(bossId, mapId)
+            if all and #all > 0 then
+                return all[1], 1, 1
+            end
+
+            return nil, 0, 0
+        end
+
+        _G.GetBossPosition = function(bossId, mapId)
+            local all = _G.GetAllBossPositions(bossId, mapId)
+            if all and #all > 0 then
+                return all[1]
+            end
+            return nil
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: QUÉT DANH SÁCH BOSS CÒN SỐNG (ALIVE BOSS SCANNER)
+        -- Mô tả: Lọc và trả về danh sách Boss Huyết Lâu / Hỗn Nguyên đang xuất hiện trên map.
+        -- =========================================================================
+        _G.Mod_GetAliveHHBossList = function()
+            local hhBosses = {}
+            pcall(function()
+                local mapMgr = _G.gameMgr and _G.gameMgr:GetMapManager()
+                local sMonPoint = mapMgr and mapMgr:GetMapServerMonsterPoint()
+                if not sMonPoint then return {} end
+
+                local myDefense = 0
+                if _G.QuickFind and _G.QuickFind.LuaMainPlayerData and _G.EAttributeType then
+                    local playerAttr = _G.QuickFind.LuaMainPlayerData()
+                    if playerAttr and playerAttr.TryGetAttrValue then
+                        myDefense = playerAttr:TryGetAttrValue(_G.EAttributeType.monsterDamageAbsorptionShow) or 0
+                    end
+                end
+
+                local list = nil
+                if sMonPoint.GetMonsterPointList then
+                    list = sMonPoint:GetMonsterPointList()
+                end
+                if (not list or #list == 0) and _G.ClientTable and _G.ClientTable.cfg_Global_globalManager then
+                    local typeList = _G.ClientTable.cfg_Global_globalManager:GetMapShowMonsterTypeList()
+                    if sMonPoint.GetMonsterPointListByMonsterTypeList then
+                        list = sMonPoint:GetMonsterPointListByMonsterTypeList(typeList)
+                    end
+                end
+                if not list and sMonPoint.m_monsterPointList then
+                    list = sMonPoint.m_monsterPointList
+                end
+
+                if list then
+                    for _, mon in pairs(list) do
+                        local isHH = false
+                        local hhLevel = 0
+                        local hhName = ""
+                        if mon.mapBuffConfigList then
+                            for _, bCfg in ipairs(mon.mapBuffConfigList) do
+                                if bCfg.name and string.find(bCfg.name, "Hồn Thú") then
+                                    isHH = true
+                                    hhLevel = tonumber(bCfg.id) or 1
+                                    hhName = tostring(bCfg.name)
+                                    break
+                                end
+                            end
+                        end
+
+                        if isHH then
+                            local cfgId = mon.monsterConfigTbl and mon.monsterConfigTbl.id or mon.configId
+
+                            local bossDefend = 0
+                            if mon.monsterConfigTbl and mon.monsterConfigTbl.defend then
+                                bossDefend = tonumber(mon.monsterConfigTbl.defend) or 0
+                            elseif cfgId and _G.ClientTable and _G.ClientTable.cfg_Monster_bossManager then
+                                local bTable = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(cfgId, "id")
+                                if bTable and bTable.defend then
+                                    bossDefend = tonumber(bTable.defend) or 0
+                                end
+                            end
+
+                            -- Filter out boss if player defense is lower than boss required defense
+                            if myDefense <= 0 or myDefense >= bossDefend then
+                                local name = mon.showName or (mon.monsterConfigTbl and mon.monsterConfigTbl.name) or
+                                    "Unknown"
+                                local posX = mon.position and mon.position.x or 0
+                                local posY = mon.position and mon.position.y or 0
+                                local lid = mon.lid or mon.id
+
+                                local transferId = nil
+                                local allMaps = {}
+                                if GetAvailableTiers then
+                                    for _, tTag in ipairs(GetAvailableTiers()) do
+                                        table.insert(allMaps, GetMapsConfigByTier(tTag))
+                                    end
+                                end
+                                for _, mapsConfig in ipairs(allMaps) do
+                                    if mapsConfig then
+                                        for _, mapCfg in ipairs(mapsConfig) do
+                                            if mapCfg.bosses then
+                                                for _, bCfgItem in ipairs(mapCfg.bosses) do
+                                                    if bCfgItem.id and (bCfgItem.id == cfgId or tonumber(bCfgItem.id) == tonumber(cfgId)) then
+                                                        transferId = bCfgItem.transferId
+                                                        break
+                                                    end
+                                                end
+                                            end
+                                            if transferId then break end
+                                        end
+                                    end
+                                    if transferId then break end
+                                end
+
+                                table.insert(hhBosses, {
+                                    name = name,
+                                    configId = cfgId,
+                                    lid = lid,
+                                    x = posX,
+                                    y = posY,
+                                    hhLevel = hhLevel,
+                                    hhName = hhName,
+                                    bossDefend = bossDefend,
+                                    myDefense = myDefense,
+                                    transferId = transferId
+                                })
+                            end
+                        end
+                    end
+                end
+            end)
+
+            table.sort(hhBosses, function(a, b)
+                return a.hhLevel > b.hhLevel
+            end)
+
+            return hhBosses
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: BÁO CÁO THỐNG KÊ QUA TELEGRAM BOT (TELEGRAM NOTIFICATION)
+        -- Mô tả: Gửi dữ liệu thống kê farm boss / map ẩn qua Telegram Webhook Bot API.
+        -- =========================================================================
+        _G.Mod_SendAnStatsTelegram = function()
+            pcall(function()
+                if _G.Mod_AnStats_Enabled == false then return end
+
+                local botToken = "8585747708:AAF_633qF-8JzWCDUWsNnqPTrvf9DbXEJa0"
+                local chatId = "-5126116516"
+                local messageId = 1231
+
+                local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                if _G.Mod_AnStatsDate ~= todayStr then
+                    _G.Mod_AnStatsDate = todayStr
+                    _G.Mod_AnStats = {}
+                    if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                end
+
+                local nowStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd HH:mm:ss")
+
+                local total = 0
+                for k, v in pairs(_G.Mod_AnStats or {}) do
+                    total = total + v
+                end
+
+                local msgLines = {}
+                table.insert(msgLines, string.format("\nTHỐNG KÊ MỞ BẢN ĐỒ ẨN: <b>%d</b>", total))
+
+                for playerName, count in pairs(_G.Mod_AnStats or {}) do
+                    table.insert(msgLines, string.format("%s: %d", tostring(playerName), count))
+                end
+
+                table.insert(msgLines, string.format("\n<i>Cập nhật lúc: %s</i>", nowStr))
+
+                local fullMsg = table.concat(msgLines, "\n")
+
+                local url = string.format(
+                    "https://api.telegram.org/bot%s/editMessageText?chat_id=%s&message_id=%s&text=%s&parse_mode=HTML",
+                    botToken,
+                    chatId,
+                    tostring(messageId),
+                    CS.UnityEngine.WWW.EscapeURL(fullMsg)
+                )
+
+                CS.UnityEngine.WWW(url)
+
+                -- if _G.WriteLog then
+                --     _G.WriteLog("[Telegram AnStats]: " .. fullMsg)
+                -- end
+            end)
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: CẤU HÌNH SKILL MAP ẨN (MAP ẨN SKILL MEMORY & AUTO TOGGLE)
+        -- Mô tả: Ghi nhớ cấu hình skill tùy chọn cho Map Ẩn, tự động áp dụng khi vào Map Ẩn và rollback khi rời map.
+        -- =========================================================================
+        _G.Mod_SaveMapAnSkills = function()
+            local saved = {}
+            local onSkills = {}
+            local offSkills = {}
+            pcall(function()
+                local skills = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.skills) or
+                               (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+                if skills and _G.ClientTable and _G.QiJiHelperData then
+                    for _, v in pairs(skills) do
+                        local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
+                        if skillData and skillData.groupId and skillData.autoSkillType then
+                            local aType = skillData.autoSkillType
+                            local isBuff = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5))
+                            local isGroup = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelGroupSkill or 9))
+                            local isInd = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelIndSkill or 8))
+                            local isCommon = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.CommonSkill or 4))
+
+                            if isBuff or isGroup or isInd or isCommon then
+                                local isOpen = false
+                                if isBuff then
+                                    local buffSkill = _G.QiJiHelperData.GetBuffSkill and _G.QiJiHelperData.GetBuffSkill(skillData.groupId)
+                                    isOpen = buffSkill and buffSkill.isOpen or false
+                                else
+                                    local selSkill = _G.QiJiHelperData.GetSelfSelSkill and _G.QiJiHelperData.GetSelfSelSkill(skillData.groupId)
+                                    isOpen = selSkill and selSkill.isOpen or false
+                                end
+
+                                local sName = skillData.name or tostring(v.sid)
+                                local isOnNum = isOpen and 1 or 0
+                                local typeFlag = isBuff and "BUFF" or "SKILL"
+                                table.insert(saved, tostring(v.sid) .. "=" .. tostring(isOnNum) .. ":" .. typeFlag)
+                                if isOpen then
+                                    table.insert(onSkills, sName)
+                                else
+                                    table.insert(offSkills, sName)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if #saved > 0 then
+                local dataStr = table.concat(saved, ";")
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_MapAn_SavedSkills", dataStr)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                local msg = string.format("Đã nhớ %d Skill Map Ẩn (%d Bật, %d Tắt)", #saved, #onSkills, #offSkills)
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg(msg)
+                end
+                if LogMsg then LogMsg(string.format("[MAP ẨN] %s (Bật: %s | Tắt: %s)", msg, table.concat(onSkills, ", "), table.concat(offSkills, ", "))) end
+                return true
+            else
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("Không tìm thấy dữ liệu Skill để lưu!")
+                end
+                return false
+            end
+        end
+
+        _G.Mod_ApplyMapAnSkills = function()
+            local dataStr = ""
+            pcall(function()
+                dataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_MapAn_SavedSkills", "")
+            end)
+            if not dataStr or dataStr == "" then
+                return
+            end
+
+            if not _G.Mod_MapAn_OriginalSkillsSnapshot then
+                _G.Mod_MapAn_OriginalSkillsSnapshot = {}
+                pcall(function()
+                    local skills = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.skills) or
+                                   (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+                    if skills and _G.ClientTable and _G.QiJiHelperData then
+                        for _, v in pairs(skills) do
+                            local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(v.sid)
+                            if skillData and skillData.groupId and skillData.autoSkillType then
+                                local aType = skillData.autoSkillType
+                                local isBuff = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5))
+                                local isGroup = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelGroupSkill or 9))
+                                local isInd = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.SelfSelIndSkill or 8))
+                                local isCommon = (aType == (_G.AutoSkillEnum and _G.AutoSkillEnum.CommonSkill or 4))
+
+                                if isBuff or isGroup or isInd or isCommon then
+                                    local isOpen = false
+                                    if isBuff then
+                                        local buffSkill = _G.QiJiHelperData.GetBuffSkill and _G.QiJiHelperData.GetBuffSkill(skillData.groupId)
+                                        isOpen = buffSkill and buffSkill.isOpen or false
+                                    else
+                                        local selSkill = _G.QiJiHelperData.GetSelfSelSkill and _G.QiJiHelperData.GetSelfSelSkill(skillData.groupId)
+                                        isOpen = selSkill and selSkill.isOpen or false
+                                    end
+                                    _G.Mod_MapAn_OriginalSkillsSnapshot[v.sid] = {
+                                        isOpen = isOpen,
+                                        isBuff = isBuff
+                                    }
+                                end
+                            end
+                        end
+                    end
+                end)
+            end
+
+            local toggledAny = false
+            pcall(function()
+                local pairsList = string.split(dataStr, ";")
+                for _, pair in ipairs(pairsList) do
+                    if pair and pair ~= "" then
+                        local parts = string.split(pair, "=")
+                        if #parts == 2 then
+                            local sId = tonumber(parts[1])
+                            local subParts = string.split(parts[2], ":")
+                            local isOn = (tonumber(subParts[1]) == 1)
+                            local isBuff = (subParts[2] == "BUFF")
+
+                            if subParts[2] == nil and _G.ClientTable then
+                                local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(sId)
+                                if skillData and skillData.autoSkillType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5) then
+                                    isBuff = true
+                                end
+                            end
+
+                            if sId and _G.QiJiHelperController then
+                                if isBuff and _G.QiJiHelperController.SetMeBuffSkill then
+                                    _G.QiJiHelperController.SetMeBuffSkill(sId, isOn)
+                                    toggledAny = true
+                                elseif _G.QiJiHelperController.SetSelfSelSkill then
+                                    _G.QiJiHelperController.SetSelfSelSkill(sId, isOn)
+                                    toggledAny = true
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if toggledAny then
+                if _G.QiJiHelperController and _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+                if _G.UIManager and _G.UIManager.GetUiByName then
+                    local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+                    if ui and ui.Refresh then ui:Refresh() end
+                end
+                if LogMsg then LogMsg("[MAP ẨN] Đã chuyển sang cấu hình Skill Map Ẩn đã lưu!") end
+            end
+        end
+
+        _G.Mod_RestoreMapAnSkills = function()
+            if not _G.Mod_MapAn_OriginalSkillsSnapshot then return end
+
+            local toggledAny = false
+            pcall(function()
+                if _G.QiJiHelperController then
+                    for skillId, snapData in pairs(_G.Mod_MapAn_OriginalSkillsSnapshot) do
+                        local isOpen = snapData
+                        local isBuff = false
+                        if type(snapData) == "table" then
+                            isOpen = snapData.isOpen
+                            isBuff = snapData.isBuff
+                        else
+                            if _G.ClientTable then
+                                local skillData = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(skillId)
+                                if skillData and skillData.autoSkillType == (_G.AutoSkillEnum and _G.AutoSkillEnum.BuffSkill or 5) then
+                                    isBuff = true
+                                end
+                            end
+                        end
+
+                        if isBuff and _G.QiJiHelperController.SetMeBuffSkill then
+                            _G.QiJiHelperController.SetMeBuffSkill(skillId, isOpen)
+                            toggledAny = true
+                        elseif _G.QiJiHelperController.SetSelfSelSkill then
+                            _G.QiJiHelperController.SetSelfSelSkill(skillId, isOpen)
+                            toggledAny = true
+                        end
+                    end
+                end
+            end)
+
+            _G.Mod_MapAn_OriginalSkillsSnapshot = nil
+
+            if toggledAny then
+                if _G.QiJiHelperController and _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+                if _G.UIManager and _G.UIManager.GetUiByName then
+                    local ui = _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+                    if ui and ui.Refresh then ui:Refresh() end
+                end
+                if LogMsg then LogMsg("[MAP ẨN] Đã khôi phục cấu hình Skill ban đầu!") end
+            end
+        end
+
+        
+        local GameObject = CS.UnityEngine.GameObject
+        local RectTransform = CS.UnityEngine.RectTransform
+        local Canvas = CS.UnityEngine.Canvas
+        local CanvasScaler = CS.UnityEngine.UI.CanvasScaler
+        local GraphicRaycaster = CS.UnityEngine.UI.GraphicRaycaster
+        local Vector2 = CS.UnityEngine.Vector2
+        local Color = CS.UnityEngine.Color
+        local Image = CS.UnityEngine.UI.Image
+        local Text = CS.UnityEngine.UI.Text
+        local Button = CS.UnityEngine.UI.Button
+        local InputField = CS.UnityEngine.UI.InputField
+        local Font = CS.UnityEngine.Font
+        local Resources = CS.UnityEngine.Resources
+        local TextAnchor = CS.UnityEngine.TextAnchor
+        local RenderMode = CS.UnityEngine.RenderMode
+
+        local defaultFont = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf")
+
+        local modRoot = GameObject("MySuperModCanvas")
+        CS.UnityEngine.Object.DontDestroyOnLoad(modRoot)
+
+        local canvas = modRoot:AddComponent(typeof(Canvas))
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay
+        canvas.sortingOrder = 9999
+
+        local scaler = modRoot:AddComponent(typeof(CanvasScaler))
+        scaler.uiScaleMode = CS.UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
+        scaler.referenceResolution = Vector2(1920, 1080)
+
+        modRoot:AddComponent(typeof(GraphicRaycaster))
+
+        -- =========================================================================
+        -- [MOD FEATURE]: BỐ CỤC NÚT NỔI NGOÀI HUD (HUD FLOATING ACTION BUTTONS)
+        -- EXEC ở trên (Y=140), VỤT ở dưới (Y=60)
+        -- =========================================================================
+
+        -- 1. Floating Execute Script Button (Chỉ hiện cho Admin / Dev)
+        if _G.Mod_ExecBtn_Visible == nil then
+            pcall(function()
+                _G.Mod_ExecBtn_Visible = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ExecBtn_Visible", 1) == 1
+            end)
+            if _G.Mod_ExecBtn_Visible == nil then _G.Mod_ExecBtn_Visible = true end
+        end
+
+        local execBtnGo = GameObject("FloatingExecBtn")
+        _G.Mod_FloatingExecBtnGo = execBtnGo
+        execBtnGo.transform:SetParent(modRoot.transform, false)
+        local execRt = execBtnGo:AddComponent(typeof(RectTransform))
+        execRt.anchorMin = Vector2(0, 0)
+        execRt.anchorMax = Vector2(0, 0)
+        execRt.pivot = Vector2(0, 0)
+        execRt.anchoredPosition = Vector2(1, 140)
+        execRt.sizeDelta = Vector2(60, 60)
+
+        local execImg = execBtnGo:AddComponent(typeof(Image))
+        execImg.color = Color(0.8, 0.2, 0.2, 1)
+
+        local execTxtGo = GameObject("ExecTxt")
+        execTxtGo.transform:SetParent(execBtnGo.transform, false)
+        local execTxtRt = execTxtGo:AddComponent(typeof(RectTransform))
+        execTxtRt.anchorMin = Vector2(0, 0)
+        execTxtRt.anchorMax = Vector2(1, 1)
+        execTxtRt.sizeDelta = Vector2(0, 0)
+        local execTxt = execTxtGo:AddComponent(typeof(Text))
+        execTxt.text = "EXEC"
+        execTxt.color = Color.white
+        execTxt.fontSize = 16
+        execTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then execTxt.font = defaultFont end
+        execBtnGo:SetActive(_G.Mod_ExecBtn_Visible ~= false)
+
+        local execBtnComp = execBtnGo:AddComponent(typeof(Button))
+        execBtnComp.onClick:AddListener(function()
+            if RunExecuteScript then
+                RunExecuteScript()
+            else
+                local path = CS.UnityEngine.Application.persistentDataPath .. "/input.luac"
+                if not CS.System.IO.File.Exists(path) then
+                    path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
+                end
+                if CS.System.IO.File.Exists(path) then
+                    local bytes = CS.System.IO.File.ReadAllBytes(path)
+                    local func, err = load(bytes)
+                    if func then
+                        local ok, res = pcall(func)
+                        if ok then
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Thực thi input.luac thành công!")
+                            end
+                        else
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg("Lỗi script: " .. tostring(res))
+                            end
+                        end
+                    else
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg("Lỗi load bytecode: " .. tostring(err))
+                        end
+                    end
+                else
+                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Chưa tìm thấy file input.luac!") end
+                end
+            end
+        end)
+
+        -- 2. Floating VỤT Button (Mở Mod Menu Panel)
+        local btnGo = GameObject("FloatingModBtn")
+        btnGo.transform:SetParent(modRoot.transform, false)
+        local rt = btnGo:AddComponent(typeof(RectTransform))
+        rt.anchorMin = Vector2(0, 0)
+        rt.anchorMax = Vector2(0, 0)
+        rt.pivot = Vector2(0, 0)
+        rt.anchoredPosition = Vector2(1, 60)
+        rt.sizeDelta = Vector2(60, 60)
+
+        local img = btnGo:AddComponent(typeof(Image))
+        img.color = Color(0.215, 0.490, 0.133, 1.0)
+
+        local txtGo = GameObject("ModText")
+        txtGo.transform:SetParent(btnGo.transform, false)
+        local txtRt = txtGo:AddComponent(typeof(RectTransform))
+        txtRt.anchorMin = Vector2(0, 0)
+        txtRt.anchorMax = Vector2(1, 1)
+        txtRt.sizeDelta = Vector2(0, 0)
+        local txt = txtGo:AddComponent(typeof(Text))
+        txt.text = "VỤT"
+        txt.color = Color.white
+        txt.fontSize = 20
+        txt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then txt.font = defaultFont end
+
+        -- 3. Mod Menu Panel ("VỤT" Panel - Cấu hình Server & Bot Controller)
+        local panelGo = GameObject("ModMenuPanel")
+        panelGo.transform:SetParent(modRoot.transform, false)
+        local panelRt = panelGo:AddComponent(typeof(RectTransform))
+        panelRt.anchorMin = Vector2(0, 0)
+        panelRt.anchorMax = Vector2(0, 0)
+        panelRt.pivot = Vector2(0, 0)
+        panelRt.anchoredPosition = Vector2(75, 50)
+        panelRt.sizeDelta = Vector2(740, 580)
+
+        local panelImg = panelGo:AddComponent(typeof(Image))
+        panelImg.color = Color(0.08, 0.08, 0.08, 0.94)
+        panelGo:SetActive(false)
+
+        local isExpanded = false
+        local btnComp = btnGo:AddComponent(typeof(Button))
+        btnComp.onClick:AddListener(function()
+            isExpanded = not isExpanded
+            panelGo:SetActive(isExpanded)
+            if isExpanded and _G.ModUpdatePanelBotBtn then
+                _G.ModUpdatePanelBotBtn()
+            end
+        end)
+
+        -- =========================================================================
+        -- [MOD FEATURE]: GIAO DIỆN CẤU HÌNH SERVER AUTO FARM (SERVER GRID & CONTROLLER)
+        -- =========================================================================
+
+        -- Tiêu đề Panel
+        local titleGo = GameObject("ServerPanelTitle")
+        titleGo.transform:SetParent(panelGo.transform, false)
+        local titleRt = titleGo:AddComponent(typeof(RectTransform))
+        titleRt.anchorMin = Vector2(0.5, 1)
+        titleRt.anchorMax = Vector2(0.5, 1)
+        titleRt.pivot = Vector2(0.5, 1)
+        titleRt.anchoredPosition = Vector2(0, -15)
+        titleRt.sizeDelta = Vector2(600, 30)
+        local titleTxt = titleGo:AddComponent(typeof(Text))
+        titleTxt.text = "=== CẤU HÌNH SERVER DUYỆT TÀI KHOẢN ==="
+        titleTxt.color = Color.yellow
+        titleTxt.fontSize = 20
+        titleTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then titleTxt.font = defaultFont end
+
+        -- Top Control Bar (Nhập dải Server)
+        local topBarGo = GameObject("TopBar")
+        topBarGo.transform:SetParent(panelGo.transform, false)
+        local topBarRt = topBarGo:AddComponent(typeof(RectTransform))
+        topBarRt.anchorMin = Vector2(0, 1)
+        topBarRt.anchorMax = Vector2(1, 1)
+        topBarRt.pivot = Vector2(0.5, 1)
+        topBarRt.anchoredPosition = Vector2(0, -50)
+        topBarRt.sizeDelta = Vector2(-30, 40)
+
+        -- Label: Dải Server:
+        local lblRangeGo = GameObject("LblRange")
+        lblRangeGo.transform:SetParent(topBarGo.transform, false)
+        local lrRt = lblRangeGo:AddComponent(typeof(RectTransform))
+        lrRt.anchorMin = Vector2(0, 0.5)
+        lrRt.anchorMax = Vector2(0, 0.5)
+        lrRt.pivot = Vector2(0, 0.5)
+        lrRt.anchoredPosition = Vector2(5, 0)
+        lrRt.sizeDelta = Vector2(85, 30)
+        local lrTxt = lblRangeGo:AddComponent(typeof(Text))
+        lrTxt.text = "Dải Server:"
+        lrTxt.color = Color.white
+        lrTxt.fontSize = 15
+        lrTxt.alignment = TextAnchor.MiddleLeft
+        if defaultFont then lrTxt.font = defaultFont end
+
+        -- Input Start Server
+        local inStartGo = GameObject("InputStart")
+        inStartGo.transform:SetParent(topBarGo.transform, false)
+        local isRt = inStartGo:AddComponent(typeof(RectTransform))
+        isRt.anchorMin = Vector2(0, 0.5)
+        isRt.anchorMax = Vector2(0, 0.5)
+        isRt.pivot = Vector2(0, 0.5)
+        isRt.anchoredPosition = Vector2(95, 0)
+        isRt.sizeDelta = Vector2(65, 30)
+        local isImg = inStartGo:AddComponent(typeof(Image))
+        isImg.color = Color(1, 1, 1, 1)
+
+        local isTxtGo = GameObject("Text")
+        isTxtGo.transform:SetParent(inStartGo.transform, false)
+        local istRt = isTxtGo:AddComponent(typeof(RectTransform))
+        istRt.anchorMin = Vector2(0, 0)
+        istRt.anchorMax = Vector2(1, 1)
+        istRt.offsetMin = Vector2(4, 0)
+        istRt.offsetMax = Vector2(-4, 0)
+        local isTxt = isTxtGo:AddComponent(typeof(Text))
+        local savedStart = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerStart", 450)
+        isTxt.text = tostring(savedStart)
+        isTxt.color = Color.black
+        isTxt.fontSize = 15
+        isTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then isTxt.font = defaultFont end
+
+        local inputFieldStart = inStartGo:AddComponent(typeof(InputField))
+        inputFieldStart.textComponent = isTxt
+        inputFieldStart.text = tostring(savedStart)
+
+        -- Label: đến
+        local lblToGo = GameObject("LblTo")
+        lblToGo.transform:SetParent(topBarGo.transform, false)
+        local ltRt = lblToGo:AddComponent(typeof(RectTransform))
+        ltRt.anchorMin = Vector2(0, 0.5)
+        ltRt.anchorMax = Vector2(0, 0.5)
+        ltRt.pivot = Vector2(0, 0.5)
+        ltRt.anchoredPosition = Vector2(165, 0)
+        ltRt.sizeDelta = Vector2(30, 30)
+        local ltTxt = lblToGo:AddComponent(typeof(Text))
+        ltTxt.text = "đến"
+        ltTxt.color = Color.white
+        ltTxt.fontSize = 15
+        ltTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then ltTxt.font = defaultFont end
+
+        -- Input End Server
+        local inEndGo = GameObject("InputEnd")
+        inEndGo.transform:SetParent(topBarGo.transform, false)
+        local ieRt = inEndGo:AddComponent(typeof(RectTransform))
+        ieRt.anchorMin = Vector2(0, 0.5)
+        ieRt.anchorMax = Vector2(0, 0.5)
+        ieRt.pivot = Vector2(0, 0.5)
+        ieRt.anchoredPosition = Vector2(200, 0)
+        ieRt.sizeDelta = Vector2(65, 30)
+        local ieImg = inEndGo:AddComponent(typeof(Image))
+        ieImg.color = Color(1, 1, 1, 1)
+
+        local ieTxtGo = GameObject("Text")
+        ieTxtGo.transform:SetParent(inEndGo.transform, false)
+        local ietRt = ieTxtGo:AddComponent(typeof(RectTransform))
+        ietRt.anchorMin = Vector2(0, 0)
+        ietRt.anchorMax = Vector2(1, 1)
+        ietRt.offsetMin = Vector2(4, 0)
+        ietRt.offsetMax = Vector2(-4, 0)
+        local ieTxt = ieTxtGo:AddComponent(typeof(Text))
+        local savedEnd = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerEnd", 492)
+        ieTxt.text = tostring(savedEnd)
+        ieTxt.color = Color.black
+        ieTxt.fontSize = 15
+        ieTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then ieTxt.font = defaultFont end
+
+        local inputFieldEnd = inEndGo:AddComponent(typeof(InputField))
+        inputFieldEnd.textComponent = ieTxt
+        inputFieldEnd.text = tostring(savedEnd)
+
+        -- Nút UPDATE (Màu cam)
+        local btnUpdateGo = GameObject("BtnUpdate")
+        btnUpdateGo.transform:SetParent(topBarGo.transform, false)
+        local buRt = btnUpdateGo:AddComponent(typeof(RectTransform))
+        buRt.anchorMin = Vector2(0, 0.5)
+        buRt.anchorMax = Vector2(0, 0.5)
+        buRt.pivot = Vector2(0, 0.5)
+        buRt.anchoredPosition = Vector2(275, 0)
+        buRt.sizeDelta = Vector2(95, 32)
+        local buImg = btnUpdateGo:AddComponent(typeof(Image))
+        buImg.color = Color(0.85, 0.45, 0.1, 1)
+        local buBtn = btnUpdateGo:AddComponent(typeof(Button))
+
+        local buTxtGo = GameObject("Text")
+        buTxtGo.transform:SetParent(btnUpdateGo.transform, false)
+        local butRt = buTxtGo:AddComponent(typeof(RectTransform))
+        butRt.anchorMin = Vector2(0, 0)
+        butRt.anchorMax = Vector2(1, 1)
+        local buTxt = buTxtGo:AddComponent(typeof(Text))
+        buTxt.text = "UPDATE"
+        buTxt.color = Color.white
+        buTxt.fontSize = 15
+        buTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        buTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then buTxt.font = defaultFont end
+
+        -- Nút CHỌN HẾT (Màu xanh)
+        local btnAllGo = GameObject("BtnSelectAll")
+        btnAllGo.transform:SetParent(topBarGo.transform, false)
+        local baRt = btnAllGo:AddComponent(typeof(RectTransform))
+        baRt.anchorMin = Vector2(0, 0.5)
+        baRt.anchorMax = Vector2(0, 0.5)
+        baRt.pivot = Vector2(0, 0.5)
+        baRt.anchoredPosition = Vector2(380, 0)
+        baRt.sizeDelta = Vector2(95, 32)
+        local baImg = btnAllGo:AddComponent(typeof(Image))
+        baImg.color = Color(0.2, 0.55, 0.2, 1)
+        local baBtn = btnAllGo:AddComponent(typeof(Button))
+
+        local baTxtGo = GameObject("Text")
+        baTxtGo.transform:SetParent(btnAllGo.transform, false)
+        local batRt = baTxtGo:AddComponent(typeof(RectTransform))
+        batRt.anchorMin = Vector2(0, 0)
+        batRt.anchorMax = Vector2(1, 1)
+        local baTxt = baTxtGo:AddComponent(typeof(Text))
+        baTxt.text = "CHỌN HẾT"
+        baTxt.color = Color.white
+        baTxt.fontSize = 14
+        baTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then baTxt.font = defaultFont end
+
+        -- Nút BỎ CHỌN (Màu xám)
+        local btnNoneGo = GameObject("BtnDeselectAll")
+        btnNoneGo.transform:SetParent(topBarGo.transform, false)
+        local bnRt = btnNoneGo:AddComponent(typeof(RectTransform))
+        bnRt.anchorMin = Vector2(0, 0.5)
+        bnRt.anchorMax = Vector2(0, 0.5)
+        bnRt.pivot = Vector2(0, 0.5)
+        bnRt.anchoredPosition = Vector2(485, 0)
+        bnRt.sizeDelta = Vector2(95, 32)
+        local bnImg = btnNoneGo:AddComponent(typeof(Image))
+        bnImg.color = Color(0.4, 0.4, 0.4, 1)
+        local bnBtn = btnNoneGo:AddComponent(typeof(Button))
+
+        local bnTxtGo = GameObject("Text")
+        bnTxtGo.transform:SetParent(btnNoneGo.transform, false)
+        local bntRt = bnTxtGo:AddComponent(typeof(RectTransform))
+        bntRt.anchorMin = Vector2(0, 0)
+        bntRt.anchorMax = Vector2(1, 1)
+        local bnTxt = bnTxtGo:AddComponent(typeof(Text))
+        bnTxt.text = "BỎ CHỌN"
+        bnTxt.color = Color.white
+        bnTxt.fontSize = 14
+        bnTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then bnTxt.font = defaultFont end
+
+        -- Dòng thống kê số server đã chọn
+        local statusGo = GameObject("ServerStatusTxt")
+        statusGo.transform:SetParent(panelGo.transform, false)
+        local stRt = statusGo:AddComponent(typeof(RectTransform))
+        stRt.anchorMin = Vector2(0, 1)
+        stRt.anchorMax = Vector2(1, 1)
+        stRt.pivot = Vector2(0, 1)
+        stRt.anchoredPosition = Vector2(20, -92)
+        stRt.sizeDelta = Vector2(-40, 22)
+        local statusTxt = statusGo:AddComponent(typeof(Text))
+        statusTxt.text = "Đang tải danh sách server..."
+        statusTxt.color = Color(0.2, 0.9, 0.9, 1)
+        statusTxt.fontSize = 14
+        statusTxt.alignment = TextAnchor.MiddleLeft
+        if defaultFont then statusTxt.font = defaultFont end
+
+        -- Đường kẻ phân cách
+        local sepGo = GameObject("SepLine")
+        sepGo.transform:SetParent(panelGo.transform, false)
+        local sepRt = sepGo:AddComponent(typeof(RectTransform))
+        sepRt.anchorMin = Vector2(0, 1)
+        sepRt.anchorMax = Vector2(1, 1)
+        sepRt.pivot = Vector2(0.5, 1)
+        sepRt.anchoredPosition = Vector2(0, -116)
+        sepRt.sizeDelta = Vector2(-30, 2)
+        local sepImg = sepGo:AddComponent(typeof(Image))
+        sepImg.color = Color(0.35, 0.35, 0.35, 0.8)
+
+        -- ScrollView Chứa Danh Sách Nút Server
+        local scrollGo = GameObject("ServerScrollView")
+        scrollGo.transform:SetParent(panelGo.transform, false)
+        local sRt = scrollGo:AddComponent(typeof(RectTransform))
+        sRt.anchorMin = Vector2(0, 1)
+        sRt.anchorMax = Vector2(1, 1)
+        sRt.pivot = Vector2(0.5, 1)
+        sRt.anchoredPosition = Vector2(0, -122)
+        sRt.sizeDelta = Vector2(-30, 380)
+
+        local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+        scrollRect.horizontal = false
+        scrollRect.vertical = true
+        scrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+        scrollRect.scrollSensitivity = 30
+
+        local viewportGo = GameObject("Viewport")
+        viewportGo.transform:SetParent(scrollGo.transform, false)
+        local vpRt = viewportGo:AddComponent(typeof(RectTransform))
+        vpRt.anchorMin = Vector2(0, 0)
+        vpRt.anchorMax = Vector2(1, 1)
+        vpRt.pivot = Vector2(0, 1)
+        vpRt.sizeDelta = Vector2(0, 0)
+        viewportGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+        local contentGo = GameObject("Content")
+        contentGo.transform:SetParent(viewportGo.transform, false)
+        local contentRt = contentGo:AddComponent(typeof(RectTransform))
+        contentRt.anchorMin = Vector2(0, 1)
+        contentRt.anchorMax = Vector2(1, 1)
+        contentRt.pivot = Vector2(0, 1)
+        contentRt.anchoredPosition = Vector2(0, 0)
+        contentRt.sizeDelta = Vector2(0, 0)
+
+        scrollRect.viewport = vpRt
+        scrollRect.content = contentRt
+
+        -- Quản lý các nút tile server
+        local serverTiles = {}
+
+        local function UpdateServerStatusText(startId, endId)
+            local total = (endId >= startId) and (endId - startId + 1) or 0
+            local selectedCount = 0
+            for sId = startId, endId do
+                if CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Server_" .. sId, 1) == 1 then
+                    selectedCount = selectedCount + 1
+                end
+            end
+            if statusTxt and not statusTxt:Equals(nil) then
+                statusTxt.text = string.format("Đã chọn: <color=#00ff88>%d / %d</color> server trong dải S%d -> S%d", selectedCount, total, startId, endId)
+            end
+        end
+
+        local function RenderServerGrid(startId, endId)
+            startId = tonumber(startId) or 450
+            endId = tonumber(endId) or 492
+            if endId < startId then endId = startId end
+
+            -- Lưu vào PlayerPrefs
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_ServerStart", startId)
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_ServerEnd", endId)
+            CS.UnityEngine.PlayerPrefs.Save()
+
+            -- Xóa các nút cũ trong Content
+            pcall(function()
+                for i = contentGo.transform.childCount - 1, 0, -1 do
+                    local child = contentGo.transform:GetChild(i)
+                    if child and child.gameObject then
+                        CS.UnityEngine.Object.DestroyImmediate(child.gameObject)
+                    end
+                end
+            end)
+
+            serverTiles = {}
+            local btnW, btnH = 63, 32
+            local gapX, gapY = 6, 6
+            local startX, startY = 6, -6
+
+            local totalCount = endId - startId + 1
+            local totalRows = math.ceil(totalCount / 10)
+            local contentHeight = math.max(380, totalRows * (btnH + gapY) + 20)
+            contentRt.sizeDelta = Vector2(0, contentHeight)
+
+            for sId = startId, endId do
+                local idx = sId - startId
+                local col = idx % 10
+                local row = math.floor(idx / 10)
+
+                local posX = startX + col * (btnW + gapX)
+                local posY = startY - row * (btnH + gapY)
+
+                local tileGo = GameObject("S_" .. sId)
+                tileGo.transform:SetParent(contentGo.transform, false)
+                local tRt = tileGo:AddComponent(typeof(RectTransform))
+                tRt.anchorMin = Vector2(0, 1)
+                tRt.anchorMax = Vector2(0, 1)
+                tRt.pivot = Vector2(0, 1)
+                tRt.anchoredPosition = Vector2(posX, posY)
+                tRt.sizeDelta = Vector2(btnW, btnH)
+
+                local tImg = tileGo:AddComponent(typeof(Image))
+                local prefKey = "Mod_Farm_Server_" .. sId
+                local isEnabled = CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 1) == 1
+                tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
+
+                local tTxtGo = GameObject("Text")
+                tTxtGo.transform:SetParent(tileGo.transform, false)
+                local ttRt = tTxtGo:AddComponent(typeof(RectTransform))
+                ttRt.anchorMin = Vector2(0, 0)
+                ttRt.anchorMax = Vector2(1, 1)
+                local tTxt = tTxtGo:AddComponent(typeof(Text))
+                tTxt.text = "S" .. sId
+                tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
+                tTxt.fontSize = 13
+                tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                tTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then tTxt.font = defaultFont end
+
+                local tBtn = tileGo:AddComponent(typeof(Button))
+                tBtn.onClick:AddListener(function()
+                    isEnabled = not isEnabled
+                    CS.UnityEngine.PlayerPrefs.SetInt(prefKey, isEnabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
+                    tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
+                    tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                    UpdateServerStatusText(startId, endId)
+                end)
+
+                table.insert(serverTiles, {
+                    sId = sId,
+                    prefKey = prefKey,
+                    img = tImg,
+                    txt = tTxt,
+                    setEnabled = function(enable)
+                        isEnabled = enable
+                        CS.UnityEngine.PlayerPrefs.SetInt(prefKey, isEnabled and 1 or 0)
+                        tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
+                        tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
+                        tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                    end
+                })
+            end
+
+            UpdateServerStatusText(startId, endId)
+        end
+
+        buBtn.onClick:AddListener(function()
+            local s = tonumber(inputFieldStart.text) or 450
+            local e = tonumber(inputFieldEnd.text) or 492
+            RenderServerGrid(s, e)
+            if _G.FloatingWordUtility then
+                _G.FloatingWordUtility.QuickMsg(string.format("Đã cập nhật danh sách S%d -> S%d!", s, e))
+            end
+        end)
+
+        baBtn.onClick:AddListener(function()
+            for _, tile in ipairs(serverTiles) do
+                tile.setEnabled(true)
+            end
+            CS.UnityEngine.PlayerPrefs.Save()
+            local s = tonumber(inputFieldStart.text) or 450
+            local e = tonumber(inputFieldEnd.text) or 492
+            UpdateServerStatusText(s, e)
+        end)
+
+        bnBtn.onClick:AddListener(function()
+            for _, tile in ipairs(serverTiles) do
+                tile.setEnabled(false)
+            end
+            CS.UnityEngine.PlayerPrefs.Save()
+            local s = tonumber(inputFieldStart.text) or 450
+            local e = tonumber(inputFieldEnd.text) or 492
+            UpdateServerStatusText(s, e)
+        end)
+
+        -- Khởi tạo render lần đầu
+        RenderServerGrid(savedStart, savedEnd)
+
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT THỰC THI CHÍNH Ở ĐÁY PANEL (BOTTOM BOT CONTROLLER)
+        -- =========================================================================
+        local btmBotBtnGo = GameObject("BottomBotActionBtn")
+        btmBotBtnGo.transform:SetParent(panelGo.transform, false)
+        local bbbRt = btmBotBtnGo:AddComponent(typeof(RectTransform))
+        bbbRt.anchorMin = Vector2(0.5, 0)
+        bbbRt.anchorMax = Vector2(0.5, 0)
+        bbbRt.pivot = Vector2(0.5, 0)
+        bbbRt.anchoredPosition = Vector2(0, 14)
+        bbbRt.sizeDelta = Vector2(360, 44)
+
+        local bbbImg = btmBotBtnGo:AddComponent(typeof(Image))
+        bbbImg.color = Color(0.18, 0.62, 0.18, 1)
+
+        local bbbTxtGo = GameObject("Text")
+        bbbTxtGo.transform:SetParent(btmBotBtnGo.transform, false)
+        local bbbtRt = bbbTxtGo:AddComponent(typeof(RectTransform))
+        bbbtRt.anchorMin = Vector2(0, 0)
+        bbbtRt.anchorMax = Vector2(1, 1)
+        local bbbTxt = bbbTxtGo:AddComponent(typeof(Text))
+        bbbTxt.text = "▶ BẮT ĐẦU CHẠY FARM BOT (START)"
+        bbbTxt.color = Color.white
+        bbbTxt.fontSize = 17
+        bbbTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        bbbTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then bbbTxt.font = defaultFont end
+
+        _G.ModUpdatePanelBotBtn = function()
+            if bbbTxt and not bbbTxt:Equals(nil) and bbbImg and not bbbImg:Equals(nil) then
+                if _G.Bot_Running then
+                    bbbTxt.text = "⏸ TẠM DỪNG FARM BOT (PAUSE)"
+                    bbbImg.color = Color(0.85, 0.2, 0.2, 1)
+                else
+                    bbbTxt.text = "▶ BẮT ĐẦU CHẠY FARM BOT (START)"
+                    bbbImg.color = Color(0.18, 0.62, 0.18, 1)
+                end
+            end
+        end
+
+        local bbbBtn = btmBotBtnGo:AddComponent(typeof(Button))
+        bbbBtn.onClick:AddListener(function()
+            if _G.ToggleAutoFarmBot then
+                _G.ToggleAutoFarmBot()
+            elseif _G.StartAutoFarmBot then
+                _G.StartAutoFarmBot()
+            end
+            if _G.ModUpdatePanelBotBtn then _G.ModUpdatePanelBotBtn() end
+        end)
+
+        end)
+    if not status then
+        WriteLog("LỖI TẠO UI: " .. tostring(err))
+    end
+end
+
+
+-- =========================================================================
+-- [MOD FEATURE]: HÀM LẤY DANH SÁCH SERVER ĐƯỢC CHỌN (SELECTED SERVER LIST)
+-- =========================================================================
+_G.GetSelectedServerList = function()
+    local sStart = 450
+    local sEnd = 492
+    pcall(function()
+        sStart = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerStart", 450)
+        sEnd = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerEnd", 492)
+    end)
+    if sEnd < sStart then sEnd = sStart end
+
+    local selected = {}
+    for sId = sStart, sEnd do
+        local isEnabled = true
+        pcall(function()
+            isEnabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Server_" .. sId, 1) == 1
+        end)
+        if isEnabled then
+            table.insert(selected, sId)
+        end
+    end
+
+    if #selected == 0 then
+        table.insert(selected, 491)
+    end
+    return selected
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: TẠO MOD UI NGAY TỪ MÀN HÌNH ĐĂNG NHẬP (LOGIN SCENE & IN-GAME)
+-- =========================================================================
+pcall(function()
+    if _G.LoginData then _G.LoginData.isSdk = false end
+end)
+
+_G.Mod_CreateUIImmediately = function()
+    if not _G.MyModCreated then
+        pcall(function()
+            _G.MyModCreated = true
+            CreateModUI()
+        end)
+    end
+end
+
+-- Tạo ngay khi nạp script
+_G.Mod_CreateUIImmediately()
+
+if not _G.ModUIHeartbeat_Started then
+    _G.ModUIHeartbeat_Started = true
+    if _G.Timer and _G.Timer.StartLoopForever then
+        _G.Timer.StartLoopForever(0.5, function()
+            if not _G.MyModCreated then
+                _G.Mod_CreateUIImmediately()
+            end
+        end)
+    elseif _G.Timer and _G.Timer.StartLoop then
+        _G.Timer.StartLoop(0.5, -1, function()
+            if not _G.MyModCreated then
+                _G.Mod_CreateUIImmediately()
+            end
+        end)
+    end
+end
+
+if _G.RoleManager and not _G.Mod_HookedRoleManager_Monster then
+    _G.Mod_HookedRoleManager_Monster = true
+    -- Removed faulty CreateMonster hook. Boss logic moved to Timer.
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: BYPASS KIỂM TRA PHỤ BẢN (INSTANCE ENTRY BYPASS)
+-- Mô tả: Can thiệp hàm điều hướng vào các phụ bản phó bản.
+-- =========================================================================
+_G.Mod_BypassInstanceEnter = function(self, control, originalFunc, uiid)
+    if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
+        if originalFunc then originalFunc(self, control) end
+        return
+    end
+    if _G.Mod_InfiniteInstance then
+        if _G.TeamUpQuicklyData then
+            _G.TeamUpQuicklyData.SetInstanceUI(self.name)
+        end
+        if _G.UIManager then _G.UIManager.Hide(uiid) end
+
+        if _G.NetManager and _G.InstanceMatchMessage then
+            local mapId = self.ContentData and self.ContentData.mapId or 0
+            _G.NetManager.Send(_G.InstanceMatchMessage.ReqInstanceMatchCreateTeam, {
+                instanceId = mapId
+            })
+        end
+    else
+        if originalFunc then originalFunc(self, control) end
+    end
+end
+
+
+
+local status, err = pcall(function()
+    if _G.UIManager and not _G.MyModHooked then
+        _G.MyModHooked = true
+        -- WriteLog("Hooked UIManager trực tiếp!")
+
+        local original_Show = _G.UIManager.Show
+        _G.UIManager.Show = function(name, args, animation)
+            local ret = nil
+            if original_Show then ret = original_Show(name, args, animation) end
+
+            if name == "Tip_MonsterTipUI" then
+                if _G.Mod_StopBossDeathRushAndJiggle then
+                    _G.Mod_StopBossDeathRushAndJiggle("UIManager.Show Tip_MonsterTipUI")
+                end
+            end
+
+            if name == "Main_MainMenuUI" then
+                if not _G.MyModCreated then
+                    _G.MyModCreated = true
+                    CreateModUI()
+                end
+            end
+
+            return ret
+        end
+    else
+        WriteLog("LỖI: UIManager chưa được tải! ")
+    end
+end)
+if not status then
+    WriteLog("LỖI HOOK UIManager: " .. tostring(err))
+end
+
+
+-- ============================================================================
+-- CHỨC NĂNG TỰ ĐỘNG MỞ RƯƠNG VÀNG SỐ LẺ, HÚT ĐỒ BATCH LOOT & THU HỒI ĐỒ RÁC
+-- Máy Trạng Thái (State Machine Loop 0.1s): 
+-- OPEN ➔ WAIT_DROP (chờ 1.0s hút đồ vào túi) ➔ RECYCLE (thu hồi) ➔ WAIT_SYNC (chờ 0.6s sync ô trống) ➔ OPEN
+-- ============================================================================
+_G.Mod_GoldenChestState = "OPEN"
+_G.Mod_GoldenChestWaitTime = 0
+_G.Mod_GoldenChestBatchIds = {}
+
+-- PerformVacuumItems và PerformBagRecycle được định nghĩa tại _G.Mod_PerformVacuumItems / _G.Mod_PerformBagRecycle
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MỞ & PHÂN LOẠI RƯƠNG VÀNG (GOLDEN CHEST AUTOMATION)
+-- Mô tả: Tự động mở số lượng lớn Rương Vàng theo đợt và tự nấu trang bị rác.
+-- =========================================================================
+_G.Mod_ExecuteGoldenChestAutoProcess = function()
+    _G.Mod_GoldenChestState = "OPEN"
+    _G.Mod_GoldenChestWaitTime = 0
+    _G.Mod_GoldenChestBatchIds = {}
+end
+
+_G.Mod_StartGoldenChestLoop = function()
+    _G.Mod_StartTrackedTimer("GoldenChest", 0.1, -1, function()
+        if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+        if not _G.Mod_AutoOpenGoldenChest_Enabled then
+            _G.Mod_GoldenChestState = "OPEN"
+            return
+        end
+
+        pcall(function()
+            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+
+            if _G.Mod_GoldenChestState == "OPEN" then
+                local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                    pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+                end
+                if not items then return end
+
+                local targetChestId = nil
+                local targetChestStackCount = 0
+                local totalOddCount = 0
+
+                for k, item in pairs(items) do
+                    if item then
+                        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                        local name = tblItem.name or item.name or ""
+                        local itemCount = item.count or (item.data and item.data.count) or 1
+                        local itemType = tblItem.type or 0
+
+                        if itemType == 5 and string.find(name, "Rương Vàng") then
+                            local tierNum = tonumber(string.match(name, "%+(%d+)"))
+                            if tierNum and (tierNum % 2 ~= 0) then
+                                if not targetChestId then
+                                    targetChestId = item.id or (item.data and item.data.id)
+                                    targetChestStackCount = itemCount
+                                end
+                                totalOddCount = totalOddCount + itemCount
+                            end
+                        end
+                    end
+                end
+
+                if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+
+                if not targetChestId or totalOddCount == 0 or targetChestStackCount == 0 then
+                    _G.Mod_AutoOpenGoldenChest_Enabled = false
+                    if CS.UnityEngine.PlayerPrefs then
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoOpenGoldenChest_Enabled", 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                    _G.Mod_GoldenChestState = "OPEN"
+                    return
+                end
+
+                _G.Mod_GoldenChestBatchIds = {}
+
+                -- Mở tối đa 20 rương
+                local openCount = math.min(20, targetChestStackCount)
+                if openCount > 0 and _G.networkRequest and _G.networkRequest.ReqUseItem then
+                    _G.networkRequest.ReqUseItem(openCount, targetChestId)
+                end
+
+                -- Chờ 1.0s cho đồ rớt & hút sạch vào túi
+                _G.Mod_GoldenChestWaitTime = nowTime + 1.0
+                _G.Mod_GoldenChestState = "WAIT_DROP"
+
+            elseif _G.Mod_GoldenChestState == "WAIT_DROP" then
+                if _G.Mod_PerformVacuumItems then _G.Mod_PerformVacuumItems() end
+                if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                    _G.Mod_GoldenChestState = "RECYCLE"
+                end
+
+            elseif _G.Mod_GoldenChestState == "RECYCLE" then
+                if _G.Mod_PerformBagRecycle then _G.Mod_PerformBagRecycle() end
+                _G.Mod_GoldenChestWaitTime = nowTime + 0.6
+                _G.Mod_GoldenChestState = "WAIT_SYNC"
+
+            elseif _G.Mod_GoldenChestState == "WAIT_SYNC" then
+                if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                    _G.Mod_GoldenChestState = "OPEN"
+                end
+            end
+        end)
+    end)
+end
+_G.Mod_StartGoldenChestLoop()
+
+
+-- =========================================================================
+-- [MODULE BOT FARM INTEGRATION - LEVEL 1->200 & MULTI-ACCOUNT]
+-- =========================================================================
+
 pcall(function()
     local execTime = os.date("%H:%M:%S")
     if _G.UIManager and _G.UIID and _G.UIID.TipFloatTipUI then
@@ -741,27 +2597,62 @@ DismissBlockers = function()
             if UIID and UIID.OnHookProfitUI then UIManager.Hide(UIID.OnHookProfitUI) end
             if UIID and UIID.AttributeAddTipsUI then UIManager.Hide(UIID.AttributeAddTipsUI) end
             if UIID and UIID.Role_AttributeUI then UIManager.Hide(UIID.Role_AttributeUI) end
+            if UIID and UIID.Equip_ZhuanyiFastUI then UIManager.Hide(UIID.Equip_ZhuanyiFastUI) end
+            if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
+            if UIID and UIID.Equip_Transfer then UIManager.Hide(UIID.Equip_Transfer) end
             UIManager.Hide("Attribute_AddTipsUI")
             UIManager.Hide("Role_AttributeUI")
             UIManager.Hide("OnHook_ProfitUI")
             UIManager.Hide("AutoPopUIManager")
             UIManager.Hide("DailySignUI")
             UIManager.Hide("Welfare_WelfareUI")
+            UIManager.Hide("Equip_ZhuanyiFastUI")
+            UIManager.Hide("Equip_ForgeNavUi")
+            UIManager.Hide("Equip_Transfer")
         end
         
-        -- Tự động bấm Chuyển nhanh khi bảng Chuyển Trang Bị xuất hiện
+        -- Tự động bấm Chuyển nhanh khi bảng Chuyển Trang Bị xuất hiện (Kế Thừa Cường Hóa)
         local transferUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)))
-        if transferUI and transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy then
+        if transferUI and ((transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
             pcall(function()
                 if _G.RoleManager and _G.RoleManager.me then
                     _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
+                    _G.PlayerPrefs.Save()
+                end
+                local oldItem = transferUI.oldItem or (_G.ForgeData and _G.ForgeData.EquipTransferMain)
+                local newItem = transferUI.newItem or (_G.ForgeData and _G.ForgeData.EquipTransferSecond)
+                if oldItem and newItem and oldItem.id and newItem.id and _G.NetManager and _G.EquipMessage then
+                    local intensifyMaxLevel, addMaxLevel = 15, 15
+                    pcall(function()
+                        if _G.MeEquipController and _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel then
+                            intensifyMaxLevel, addMaxLevel = _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel(newItem)
+                        end
+                    end)
+                    _G.NetManager.Send(_G.EquipMessage.ReqEquipTransfer, {
+                        equipId = newItem.id,
+                        traEquipId = oldItem.id,
+                        type = { 1, 2, 3 },
+                        maxIntensify = intensifyMaxLevel or 15,
+                        maxAdditional = addMaxLevel or 15
+                    })
+                    if transferUI.args and transferUI.args.position then
+                        _G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
+                            position = transferUI.args.position,
+                            equipId = newItem.id
+                        })
+                    end
                 end
                 if transferUI.btn_confirmOnClick then
                     transferUI:btn_confirmOnClick(transferUI.btn_confirm)
-                elseif transferUI.btn_confirm.OnClick then
-                    transferUI.btn_confirm:OnClick()
                 end
-                Log("[Chuyển Cường Hóa] : Đã tự động bấm Chuyển Nhanh thuộc tính sang đồ mới", true)
+                if _G.UIManager then
+                    if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
+                    if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
+                    _G.UIManager.Hide("Equip_ZhuanyiFastUI")
+                    _G.UIManager.Hide("Equip_ForgeNavUi")
+                end
+                Log("[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới", true)
+                SaveOutput()
             end)
         end
         
@@ -960,7 +2851,14 @@ local function IsRecyclableEquipment(item)
     local itemType = tblItem.type or 0
     local subType = tblItem.subType or 0
     local itemName = tostring(tblItem.name or item.name or "")
-    
+    -- 0. TUYỆT ĐỐI KHÔNG THU HỒI TRANG BỊ CÓ THỂ MẶC TĂNG LỰC CHIẾN (CAN WEAR UP FIGHT)
+    if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
+        local upState = _G.RoleEquipUtility.CanUpFight(item)
+        if upState == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
+            return false
+        end
+    end
+
     -- 1. Phải là Trang bị (type == 2 hoặc có cấu hình trong cfg_Item_equip)
     local isEquipType = (itemType == 2) or (item.tblEquip ~= nil)
     if not isEquipType and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager and itemId > 0 then
@@ -1589,8 +3487,18 @@ SwitchToNextRoleOrAccount = function()
                 end)
             end)
         else
-            Log("[Hoàn Tất] : ĐÃ HOÀN TẤT TOÀN BỘ QUY TRÌNH CHO TẤT CẢ TÀI KHOẢN VÀ NHÂN VẬT! TẤT CẢ ĐỀU ĐANG CẮM FARM TỰ ĐỘNG!", true)
+            -- Đã duyệt hết tất cả tài khoản (hoặc chỉ có 1 tài khoản khi test) -> Quay vòng lại Tài Khoản 1, Slot 1!
+            _G.CurrentAccountIndex = 1
+            _G.CurrentRoleIndex = 1
+            Log(string.format("[Vòng Lặp Bot] : Đã hoàn tất cả %d tài khoản (4 slot/acc). Quay vòng lại Tài Khoản 1, Slot 1 để tiếp tục chu trình!", totalAccs), true)
             SaveOutput()
+
+            Timer.Start(2.0, function()
+                ForceLogoutToLogin()
+                Timer.Start(3.0, function()
+                    StartFullLoginProcess()
+                end)
+            end)
         end
     end
 end
@@ -1682,6 +3590,17 @@ AutoRecycleBagItems = function()
             end
             if _G.UIID and _G.UIID.PromptTipUI and _G.UIManager and _G.UIManager.IsVisible(_G.UIID.PromptTipUI) then
                 _G.UIManager.Hide(_G.UIID.PromptTipUI)
+            end
+            -- =========================================================================
+            -- [MOD FEATURE]: ẨN TOÀN BỘ GIAO DIỆN YÊU CẦU CHUYỂN CẤP CƯỜNG HÓA KHI THU HỒI
+            -- =========================================================================
+            if _G.UIManager then
+                if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
+                if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
+                if _G.UIID and _G.UIID.Equip_Transfer then _G.UIManager.Hide(_G.UIID.Equip_Transfer) end
+                _G.UIManager.Hide("Equip_ZhuanyiFastUI")
+                _G.UIManager.Hide("Equip_ForgeNavUi")
+                _G.UIManager.Hide("Equip_Transfer")
             end
 
             Log(string.format("[Thu Hồi] : Đã thu hồi %d món trang bị rác, giải phóng túi đồ", recycledCount), true)
@@ -2562,6 +4481,111 @@ _G.GetPlayerActualDefense = GetPlayerActualDefense
 _G.GetPlayerMonsterDefense = GetPlayerActualDefense
 
 -- =========================================================================
+-- =========================================================================
+-- [MOD FEATURE]: TÍNH TOÁN CHỈ SỐ PHÒNG THỦ THỰC TẾ CỦA NHÂN VẬT (BASE DEFENSE)
+-- =========================================================================
+local function GetPlayerActualDefense()
+    local myDef = 0
+    pcall(function()
+        if _G.QuickFind and _G.QuickFind.LuaMainPlayerData then
+            local pData = _G.QuickFind.LuaMainPlayerData()
+            if pData and pData.TryGetAttrValue then
+                if _G.EAttributeType and _G.EAttributeType.monsterDamageAbsorptionShow then
+                    myDef = pData:TryGetAttrValue(_G.EAttributeType.monsterDamageAbsorptionShow) or 0
+                end
+                if (not myDef or myDef <= 0) and _G.EAttributeType and _G.EAttributeType.monsterDamageAbsorption then
+                    myDef = pData:TryGetAttrValue(_G.EAttributeType.monsterDamageAbsorption) or 0
+                end
+                if (not myDef or myDef <= 0) and _G.EAttributeType and _G.EAttributeType.defenseBase then
+                    myDef = pData:TryGetAttrValue(_G.EAttributeType.defenseBase) or 0
+                end
+            end
+        end
+        if (not myDef or myDef <= 0) and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute then
+            if _G.EAttributeType and _G.EAttributeType.monsterDamageAbsorptionShow then
+                myDef = _G.ViewData.meData:GetAttribute(_G.EAttributeType.monsterDamageAbsorptionShow) or 0
+            end
+            if (not myDef or myDef <= 0) and _G.EAttributeType and _G.EAttributeType.defenseBase then
+                myDef = _G.ViewData.meData:GetAttribute(_G.EAttributeType.defenseBase) or 0
+            end
+        end
+        if (not myDef or myDef <= 0) and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data then
+            local rData = _G.RoleManager.me.data
+            if rData.GetAttribute and _G.EAttributeType and _G.EAttributeType.monsterDamageAbsorptionShow then
+                myDef = rData:GetAttribute(_G.EAttributeType.monsterDamageAbsorptionShow) or 0
+            elseif rData.GetAttribute and _G.EAttributeType and _G.EAttributeType.defenseBase then
+                myDef = rData:GetAttribute(_G.EAttributeType.defenseBase) or 0
+            elseif rData.attrData and rData.attrData.GetAttribute and _G.EAttributeType and _G.EAttributeType.defenseBase then
+                myDef = rData.attrData:GetAttribute(_G.EAttributeType.defenseBase) or 0
+            end
+        end
+        -- Fallback nếu defenseBase = 0 thì thử defenseShow
+        if (not myDef or myDef <= 0) and _G.EAttributeType and _G.EAttributeType.defenseShow then
+            if _G.QuickFind and _G.QuickFind.LuaMainPlayerData then
+                local pData = _G.QuickFind.LuaMainPlayerData()
+                if pData and pData.TryGetAttrValue then
+                    myDef = pData:TryGetAttrValue(_G.EAttributeType.defenseShow) or 0
+                end
+            end
+        end
+    end)
+    return tonumber(myDef) or 0
+end
+_G.GetPlayerActualDefense = GetPlayerActualDefense
+_G.GetPlayerMonsterDefense = GetPlayerActualDefense
+
+-- =========================================================================
+-- [MOD FEATURE]: BẢNG THỦ ĐỀ CỬ CHUẨN CỦA GAME (CFG_ONHOOK_POINT_LIST)
+-- =========================================================================
+local MONSTER_LVL_TO_DEF_REQ = {
+    [40] = 40, [45] = 55, [50] = 75, [60] = 80, [75] = 90, [90] = 105,
+    [100] = 176, [110] = 201, [120] = 226, [130] = 252, [140] = 277, [145] = 302, [150] = 302,
+    [160] = 320, [170] = 337, [180] = 355, [190] = 372, [195] = 390, [200] = 390,
+    [210] = 414, [220] = 438, [230] = 461, [240] = 485, [245] = 509, [250] = 509,
+    [260] = 580, [270] = 651, [280] = 721, [290] = 792, [295] = 863, [300] = 863,
+    [310] = 1035, [320] = 1206, [330] = 1378, [340] = 1549, [345] = 1721, [350] = 1721,
+    [360] = 2008, [370] = 2295, [380] = 2582, [390] = 2869, [395] = 3156, [400] = 2887,
+    [450] = 4993, [500] = 7099, [550] = 9205, [600] = 11311, [700] = 12910, [800] = 13417,
+    [850] = 16561, [900] = 19706, [950] = 22850, [1000] = 25995, [1100] = 29319, [1200] = 29139,
+    [1250] = 36479, [1300] = 43820, [1350] = 51160, [1400] = 58501, [1500] = 63333, [1600] = 65841,
+    [1650] = 81402, [1700] = 96963, [1750] = 112524, [1800] = 128085, [1900] = 139818, [2000] = 143646,
+    [2050] = 175002, [2100] = 206358, [2150] = 237715, [2200] = 269071, [2300] = 303430, [2400] = 300427,
+    [2450] = 365735, [2500] = 431042, [2550] = 496350, [2600] = 561657, [2700] = 637502, [2800] = 626965,
+    [2850] = 749398, [2900] = 871832, [2950] = 994265, [3000] = 1116699, [3100] = 1366096, [3200] = 1239132,
+    [3250] = 1378142, [3300] = 1515889, [3350] = 1653637, [3400] = 1791384, [3500] = 2198730, [3600] = 1929132,
+    [3650] = 2162202, [3700] = 2395272, [3750] = 3065436, [3800] = 3717371, [3900] = 4531187, [4000] = 4369307,
+    [4050] = 4973181, [4100] = 5589021, [4150] = 6045811, [4200] = 6495791, [4300] = 7454469, [4400] = 6890977,
+    [4450] = 7629191, [4500] = 7980304, [4550] = 8470965, [4600] = 9106907, [4700] = 10740725, [4800] = 9626162,
+    [4850] = 10587034, [4900] = 10981732, [4950] = 11747760, [5000] = 12356210, [5100] = 14028735, [5200] = 13192650,
+    [5250] = 13663528, [5300] = 14113435, [5350] = 15044541, [5400] = 15760099, [5500] = 17942105, [5600] = 16775952,
+    [5650] = 17327942, [5700] = 17872504, [5750] = 19010429, [5800] = 21145602, [5900] = 22690536, [6000] = 22125009,
+    [6050] = 23004016, [6100] = 23420504, [6150] = 24233175, [6200] = 25315188, [6300] = 26555439
+}
+
+local function GetDefenseRequirementForMonster(monsterName, monsterLvl)
+    if monsterLvl and monsterLvl > 0 and MONSTER_LVL_TO_DEF_REQ[monsterLvl] then
+        return MONSTER_LVL_TO_DEF_REQ[monsterLvl]
+    end
+    if monsterName and type(monsterName) == "string" then
+        local lvStr = monsterName:match("[Ll][Vv]%.?%s*(%d+)")
+        if lvStr then
+            local lvl = tonumber(lvStr)
+            if lvl and MONSTER_LVL_TO_DEF_REQ[lvl] then
+                return MONSTER_LVL_TO_DEF_REQ[lvl]
+            end
+        end
+    end
+    if monsterLvl and monsterLvl > 0 then
+        if monsterLvl <= 100 then return math.floor(monsterLvl * 1.76)
+        elseif monsterLvl <= 200 then return math.floor(176 + (monsterLvl - 100) * 2.14)
+        elseif monsterLvl <= 300 then return math.floor(390 + (monsterLvl - 200) * 4.73)
+        else return math.floor(monsterLvl * 15)
+        end
+    end
+    return 0
+end
+
+-- =========================================================================
 -- [MOD FEATURE]: CHỌN BÃI FARM QUÁI TỐT NHẤT DỰA TRÊN PHÒNG THỦ NHÂN VẬT
 -- =========================================================================
 local FALLBACK_MAP_SPOTS = {
@@ -2569,11 +4593,11 @@ local FALLBACK_MAP_SPOTS = {
     [100201] = { x = 109, y = 247, name = "Dungeon 1 (Lv 60)", defenseReq = 80 },
     [100501] = { x = 193, y = 30, name = "Lost Tower 1 (Lv 90)", defenseReq = 140 },
     [100502] = { x = 193, y = 30, name = "Lost Tower 2 (Lv 110)", defenseReq = 180 },
-    [1008] = { x = 74, y = 43, name = "Atlantis (Lv 180)", defenseReq = 300 },
+    [1008] = { x = 74, y = 43, name = "Atlantis (Lv 100)", defenseReq = 176 },
     [1010] = { x = 60, y = 60, name = "Aida (Lv 200)", defenseReq = 390 },
-    [1011] = { x = 15, y = 13, name = "Icarus (Lv 230)", defenseReq = 520 },
-    [1012] = { x = 50, y = 50, name = "Phế Tích Kanturu (Lv 260)", defenseReq = 680 },
-    [1013] = { x = 50, y = 50, name = "Di Chỉ Kanturu (Lv 290)", defenseReq = 850 },
+    [1011] = { x = 15, y = 13, name = "Icarus (Lv 250)", defenseReq = 509 },
+    [1012] = { x = 50, y = 50, name = "Phế Tích Kanturu (Lv 260)", defenseReq = 580 },
+    [1013] = { x = 50, y = 50, name = "Di Chỉ Kanturu (Lv 290)", defenseReq = 792 },
 }
 
 GetBestMonsterFarmPoint = function(curMap)
@@ -2593,7 +4617,7 @@ GetBestMonsterFarmPoint = function(curMap)
         local myDef = GetPlayerMonsterDefense()
         local validPoints = {}
         local lowestDefPoint = nil
-        local minDefVal = 999999
+        local minDefVal = 999999999
 
         if pointList and type(pointList) == "table" and #pointList > 0 then
             for _, pt in ipairs(pointList) do
@@ -2604,12 +4628,11 @@ GetBestMonsterFarmPoint = function(curMap)
                     local py = tonumber(coords[2]) or (pt.y and tonumber(pt.y)) or 0
 
                     local mId = pt.Param or pt.monsterId or 0
-                    local defReq = tonumber(pt.referToDefense or pt.defenseBase or 0) or 0
                     local mName = pt.name or ""
                     local mLvl = 0
                     local mEff = 0
 
-                    -- 1. Trích xuất cấp độ quái từ tên bãi (ví dụ "Quái Lv195" -> 195)
+                    -- 1. Trích xuất cấp độ quái từ tên bãi (ví dụ "Quái Lv110" -> 110)
                     local lvStr = mName:match("[Ll][Vv]%.?%s*(%d+)")
                     if lvStr then
                         mLvl = tonumber(lvStr) or 0
@@ -2622,19 +4645,10 @@ GetBestMonsterFarmPoint = function(curMap)
                         mEff = tonumber(effStr) or 0
                     end
 
-                    -- 3. Lấy chỉ số chính xác từ cfg_Monster_monsterManager
+                    -- 3. Lấy tên quái từ cfg_Monster_monsterManager nếu có
                     if mId > 0 and _G.ClientTable and _G.ClientTable.cfg_Monster_monsterManager then
                         local mCfg = _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(mId)
                         if mCfg then
-                            if defReq <= 0 then
-                                if mCfg.damageAbsorption and tonumber(mCfg.damageAbsorption) > 0 then
-                                    defReq = tonumber(mCfg.damageAbsorption)
-                                elseif mCfg.defense and tonumber(mCfg.defense) > 0 then
-                                    defReq = tonumber(mCfg.defense)
-                                elseif mCfg.level and tonumber(mCfg.level) > 0 then
-                                    defReq = tonumber(mCfg.level) * 1.2
-                                end
-                            end
                             if mLvl <= 0 and mCfg.level and tonumber(mCfg.level) > 0 then
                                 mLvl = tonumber(mCfg.level)
                             end
@@ -2645,6 +4659,9 @@ GetBestMonsterFarmPoint = function(curMap)
                             end
                         end
                     end
+
+                    -- 4. Tính Thủ đề cử chuẩn xác (từ bảng cfg_OnHook_Point_List chuẩn)
+                    local defReq = GetDefenseRequirementForMonster(mName, mLvl)
 
                     if px > 0 and py > 0 and (mLvl > 0 or defReq > 0 or mEff > 0) then
                         local ptEntry = {
@@ -2658,13 +4675,13 @@ GetBestMonsterFarmPoint = function(curMap)
                             monsterId = mId
                         }
 
-                        if defReq < minDefVal then
+                        if defReq > 0 and defReq < minDefVal then
                             minDefVal = defReq
                             lowestDefPoint = ptEntry
                         end
 
-                        -- Kiểm tra nếu phòng thủ nhân vật đủ đáp ứng thủ yêu cầu của bãi
-                        if myDef >= defReq then
+                        -- Kiểm tra phòng thủ nhân vật đủ đáp ứng thủ yêu cầu của bãi
+                        if myDef >= defReq and defReq > 0 then
                             table.insert(validPoints, ptEntry)
                         end
                     end
@@ -2672,8 +4689,8 @@ GetBestMonsterFarmPoint = function(curMap)
             end
         end
 
-        -- SẮP XẾP BÃI QUÁI THEO THỨ TỰ ƯU TIÊN TỐI ĐA:
-        -- 1. Cấp độ quái cao nhất (monsterLvl DESC)
+        -- SẮP XẾP BÃI QUÁI THEO THỨ TỰ ƯU TIÊN:
+        -- 1. Cấp độ quái cao nhất (monsterLvl DESC) mà myDef >= defReq
         -- 2. Hiệu suất mật độ quái cao nhất (efficiency DESC)
         -- 3. Phòng thủ yêu cầu cao nhất (defenseReq DESC)
         if #validPoints > 0 then
@@ -3074,6 +5091,7 @@ AutoEquipBetterItems = function()
     pcall(function()
         if _G.RoleManager and _G.RoleManager.me then
             _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
+            _G.PlayerPrefs.Save()
         end
         
         -- 1. Bấm Trang bị ngay nếu popup đang mở
@@ -3086,6 +5104,7 @@ AutoEquipBetterItems = function()
         if _G.BagInfoData and _G.BagInfoData.GetTotalBag and _G.RoleEquipUtility then
             local bag = _G.BagInfoData.GetTotalBag()
             if bag then
+                local equipsData = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.equipsData and _G.RoleManager.me.data.equipsData.Data
                 for _, item in pairs(bag) do
                     if item and item.id and item.tblEquip then
                         local canWear = false
@@ -3095,10 +5114,54 @@ AutoEquipBetterItems = function()
                                 canWear = true
                             end
                         end
-                        if canWear and _G.RoleEquipUtility.OnWearEquip then
+                        if canWear then
                             local iName = tostring(item.tblItem and item.tblItem.name or item.name or item.id)
-                            Log(string.format("[Trang Bị] : Đang mặc món đồ xịn [%s]...", iName), true)
-                            _G.RoleEquipUtility.OnWearEquip(item)
+                            local canPos = nil
+                            if _G.RoleEquipUtility.WearEquipIndex then
+                                canPos = _G.RoleEquipUtility.WearEquipIndex(item)
+                            end
+                            
+                            local oldEquip = equipsData and canPos and equipsData[canPos]
+                            local isNeedTransfer = false
+                            if oldEquip and _G.MeEquipController and _G.MeEquipController.IsCanTransfer then
+                                isNeedTransfer = _G.MeEquipController.IsCanTransfer(oldEquip, item, canPos)
+                            end
+
+                            if isNeedTransfer and oldEquip and _G.NetManager and _G.EquipMessage then
+                                local intensifyMaxLevel, addMaxLevel = 15, 15
+                                pcall(function()
+                                    if _G.MeEquipController and _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel then
+                                        intensifyMaxLevel, addMaxLevel = _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel(item)
+                                    end
+                                end)
+                                Log(string.format("[Trang Bị] : Kế thừa cường hóa (%s +%d -> %s) & Mặc lên người!", 
+                                    tostring(oldEquip.name or "Đồ cũ"), oldEquip.intensify or 0, iName), true)
+                                _G.NetManager.Send(_G.EquipMessage.ReqEquipTransfer, {
+                                    equipId = item.id,
+                                    traEquipId = oldEquip.id,
+                                    type = { 1, 2, 3 },
+                                    maxIntensify = intensifyMaxLevel or 15,
+                                    maxAdditional = addMaxLevel or 15
+                                })
+                                if canPos then
+                                    _G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
+                                        position = canPos,
+                                        equipId = item.id
+                                    })
+                                end
+                            else
+                                Log(string.format("[Trang Bị] : Đang mặc món đồ xịn [%s]...", iName), true)
+                                if canPos and _G.NetManager and _G.EquipMessage then
+                                    _G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
+                                        position = canPos,
+                                        equipId = item.id
+                                    })
+                                end
+                            end
+
+                            if _G.RoleEquipUtility.OnWearEquip then
+                                pcall(function() _G.RoleEquipUtility.OnWearEquip(item) end)
+                            end
                             SaveOutput()
                         end
                     end
@@ -3106,15 +5169,42 @@ AutoEquipBetterItems = function()
             end
         end
         
-        -- 3. Xử lý popup Chuyển Trang Bị nếu có
+        -- 3. Xử lý popup Chuyển Trang Bị nếu còn mở
         local transferUI = _G.UIManager and _G.UIID and _G.UIID.Equip_ZhuanyiFastUI and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)
-        if transferUI and transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy then
-            if transferUI.btn_confirmOnClick then
-                transferUI:btn_confirmOnClick(transferUI.btn_confirm)
-            elseif transferUI.btn_confirm.OnClick then
-                transferUI.btn_confirm:OnClick()
-            end
-            Log("[Chuyển Cường Hóa] : Đã chuyển cấp cường hóa sang trang bị mới", true)
+        if transferUI and ((transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
+            pcall(function()
+                local oldItem = transferUI.oldItem or (_G.ForgeData and _G.ForgeData.EquipTransferMain)
+                local newItem = transferUI.newItem or (_G.ForgeData and _G.ForgeData.EquipTransferSecond)
+                if oldItem and newItem and oldItem.id and newItem.id and _G.NetManager and _G.EquipMessage then
+                    local intensifyMaxLevel, addMaxLevel = 15, 15
+                    pcall(function()
+                        if _G.MeEquipController and _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel then
+                            intensifyMaxLevel, addMaxLevel = _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel(newItem)
+                        end
+                    end)
+                    _G.NetManager.Send(_G.EquipMessage.ReqEquipTransfer, {
+                        equipId = newItem.id,
+                        traEquipId = oldItem.id,
+                        type = { 1, 2, 3 },
+                        maxIntensify = intensifyMaxLevel or 15,
+                        maxAdditional = addMaxLevel or 15
+                    })
+                    if transferUI.args and transferUI.args.position then
+                        _G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
+                            position = transferUI.args.position,
+                            equipId = newItem.id
+                        })
+                    end
+                end
+                if transferUI.btn_confirmOnClick then transferUI:btn_confirmOnClick(transferUI.btn_confirm) end
+                if _G.UIManager then
+                    if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
+                    if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
+                    _G.UIManager.Hide("Equip_ZhuanyiFastUI")
+                    _G.UIManager.Hide("Equip_ForgeNavUi")
+                end
+                Log("[Chuyển Cường Hóa] : Đã chuyển cấp cường hóa sang trang bị mới", true)
+            end)
         end
     end)
 end
@@ -3567,6 +5657,7 @@ _G.AutoBuyPotionsIfLow = AutoBuyPotionsIfLow
 _G.Global30sUpgradeTimer = _G.Global30sUpgradeTimer or nil
 
 RunPeriodicUpgradeCycle = function()
+    if not _G.Bot_Running or _G.Bot_PauseTask then return end
     pcall(function()
         Log("[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", false)
 
@@ -3628,6 +5719,7 @@ StartGlobal30sUpgradePipeline = function()
     end
 
     _G.Global30sUpgradeTimer = Timer.StartLoop(30.0, -1, function()
+        if not _G.Bot_Running or _G.Bot_PauseTask then return end
         RunPeriodicUpgradeCycle()
     end)
     Log("-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!", true)
@@ -3721,7 +5813,7 @@ _G.MAP_TRAVEL_TASKS = MAP_TRAVEL_TASKS
 -- [BƯỚC 5]: NHẬN THƯ > TRANG BỊ TỐT NHẤT + CHUYỂN CƯỜNG HÓA > THU HỒI RÁC > CƯỜNG HÓA (+15) & HUỲNH THẠCH (+15)
 -- =========================================================================
 local function StartStep5_MailAndUpgrade(onFinished)
-    Log("[Bước 5] : Nhận thư > Mặc đồ tốt > Chuyển cường hóa > Chờ 5s > Thu hồi rác > Cường hóa toàn thân", true)
+    Log("[Bước 5] : Nhận thư > Mặc đồ tốt > Kế thừa cường hóa > Thu hồi rác > Cường hóa toàn thân", true)
     SaveOutput()
 
     pcall(function()
@@ -3736,25 +5828,28 @@ local function StartStep5_MailAndUpgrade(onFinished)
             end
         end)
         Timer.Start(1.2, function()
-            -- 1. Mặc đồ tốt nhất & Kế thừa thuộc tính cường hóa
+            -- 1. Mặc đồ tốt nhất & Kế thừa thuộc tính cường hóa (Pass 1)
             if AutoEquipBetterItems then AutoEquipBetterItems() end
             DismissBlockers()
 
-            Log("[Trang Bị] : Đã mặc trang bị tốt nhất. Đang chờ 5s để server đồng bộ chuyển cường hóa...", true)
+            Log("[Trang Bị] : Đang chờ 3s để hoàn tất kế thừa và mặc trang bị tốt nhất...", true)
 
-            -- 2. CHỜ 5 GIÂY ĐẢM BẢO CHUYỂN CƯỜNG HÓA HOÀN TẤT TRƯỚC KHI THU HỒI
-            Timer.Start(5.0, function()
+            -- 2. CHỜ 3 GIÂY, QUÉT LẠI LẦN 2 ĐẢM BẢO ĐỒ XỊN ĐÃ MẶC HẾT
+            Timer.Start(3.0, function()
+                if AutoEquipBetterItems then AutoEquipBetterItems() end
                 DismissBlockers()
-                
-                -- 3. Thu hồi trang bị rác sau 5 giây
-                if AutoRecycleBagItems then AutoRecycleBagItems() end
-                
-                -- 4. Cường hóa toàn thân lên +15 & Huỳnh thạch lên +15
-                AutoEvenEnhanceEquipments(15, function()
-                    AutoEvenUpgradeGems(15, function()
-                        Log("[Bước 5] : Hoàn tất nâng cấp trang bị toàn thân! -> Chuyển sang Bước 6: Mở rương vàng", true)
-                        SaveOutput()
-                        if onFinished then onFinished() end
+
+                Timer.Start(1.0, function()
+                    -- 3. Thu hồi trang bị rác (đồ xịn có CanWearUpFight đã được bảo vệ tuyệt đối không bao giờ bị thu hồi)
+                    if AutoRecycleBagItems then AutoRecycleBagItems() end
+                    
+                    -- 4. Cường hóa toàn thân lên +15 & Huỳnh thạch lên +15
+                    AutoEvenEnhanceEquipments(15, function()
+                        AutoEvenUpgradeGems(15, function()
+                            Log("[Bước 5] : Hoàn tất nâng cấp trang bị toàn thân! -> Chuyển sang Bước 6: Mở rương vàng", true)
+                            SaveOutput()
+                            if onFinished then onFinished() end
+                        end)
                     end)
                 end)
             end)
@@ -3773,6 +5868,7 @@ _G.Mod_IsRunningInstance = _G.Mod_IsRunningInstance or false
 pcall(function()
     if _G.EventManager and _G.Event and _G.Event.UpdateCopyDataInfo then
         _G.EventManager.RegistEvent(_G.Event.UpdateCopyDataInfo, function(id, msg)
+            if not _G.Bot_Running or _G.Bot_PauseTask then return end
             pcall(function()
                 if _G.networkRequest and _G.networkRequest.ReqSkipWait then
                     _G.networkRequest.ReqSkipWait()
@@ -3789,10 +5885,15 @@ pcall(function()
 end)
 
 CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
+    if not _G.Bot_Running or _G.Bot_PauseTask then
+        if onFinished then onFinished() end
+        return
+    end
+
     local pMe = _G.RoleManager and _G.RoleManager.me
     local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
 
-    if curLvl < 110 or curLvl >= 200 then
+    if curLvl < 100 then
         if onFinished then onFinished() end
         return
     end
@@ -3817,6 +5918,7 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 
         -- Quét siêu nhanh 0.3s/lần để kích hoạt [Mở Ngay] ngay khi sẵn sàng
         _G.Mod_InstanceMonitorTimer = Timer.StartLoop(0.3, -1, function()
+            if not _G.Bot_Running or _G.Bot_PauseTask then return end
             monitorTicks = monitorTicks + 1
             local cMap = (_G.SceneData and _G.SceneData.mapId) or 0
             local inBC = (cMap >= 1012000 and cMap <= 1012099)
@@ -4033,24 +6135,32 @@ local TASK_CONFIG_BY_ID = {
 }
 
 StartNewbieQuestPipeline = function()
+    if not _G.Bot_Running or _G.Bot_PauseTask then
+        return
+    end
+
     local pMe = _G.RoleManager and _G.RoleManager.me
     local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
 
     StartGlobal30sUpgradePipeline()
 
-    if currentLevel >= 200 then
-        Log(string.format("-> [TỐT NGHIỆP CẤP ĐỘ] Nhân vật đã Level %s (>= 200) -> Chuyển sang Bước 5: Nhận thư & Nâng cấp toàn thân!", tostring(currentLevel)), true)
+    if currentLevel >= 100 then
+        Log(string.format("-> [TỐT NGHIỆP CẤP ĐỘ %s >= 100] Thực hiện: Đi phó bản > Nâng cấp toàn diện > Mở rương vàng > Cắm bãi farm > Đổi slot tiếp theo!", tostring(currentLevel)), true)
         SaveOutput()
-        StartStep5_MailAndUpgrade(function()
-            StartGoldenChestProcess(function()
-                TeleportToTrainMapAndFarm()
+        CheckAndRunBloodCastleOrDemonPlaza(function()
+            StartStep5_MailAndUpgrade(function()
+                StartGoldenChestProcess(function()
+                    TeleportToTrainMapAndFarm(function()
+                        SwitchToNextRoleOrAccount()
+                    end)
+                end)
             end)
         end)
         return
     end
 
     Log("=========================================================================")
-    Log(string.format(">>> [BƯỚC 4: LEVEL %s/200] ƯU TIÊN LÀM QUEST CHÍNH, QUEST NHÁNH & PHÓ BẢN HL/QTQ! <<<", tostring(currentLevel)), true)
+    Log(string.format(">>> [BƯỚC 4: LEVEL %s/100] ƯU TIÊN LÀM QUEST CHÍNH, QUEST NHÁNH & PHÓ BẢN HL/QTQ! <<<", tostring(currentLevel)), true)
     Log("=========================================================================")
     SaveOutput()
 
@@ -4073,7 +6183,7 @@ StartNewbieQuestPipeline = function()
 
     _G.BotQuestMonitorTimer = Timer.StartLoop(1.0, -1, function()
         pcall(function()
-            if _G.Bot_PauseTask or _G.Mod_IsRunningInstance then
+            if not _G.Bot_Running or _G.Bot_PauseTask or _G.Mod_IsRunningInstance then
                 return
             end
 
@@ -4082,7 +6192,7 @@ StartNewbieQuestPipeline = function()
 
             DismissBlockers()
 
-            if lvl >= 200 then
+            if lvl >= 100 then
                 if _G.BotQuestMonitorTimer then
                     Timer.Stop(_G.BotQuestMonitorTimer)
                     _G.BotQuestMonitorTimer = nil
@@ -4091,15 +6201,17 @@ StartNewbieQuestPipeline = function()
                     Timer.Stop(_G.Global30sUpgradeTimer)
                     _G.Global30sUpgradeTimer = nil
                 end
-                Log(string.format("[Tốt Nghiệp] : Nhân vật đạt cấp %d >= 200! Thực hiện nâng cấp cuối > Mở rương > Ra bãi farm > Đổi acc!", lvl), true)
+                Log(string.format("[Tốt Nghiệp] : Nhân vật đạt cấp %d >= 100! Thực hiện đi phó bản > Nâng cấp > Mở rương > Ra bãi farm > Đổi slot!", lvl), true)
                 SaveOutput()
                 pcall(function()
                     if _G.AutoTaskManage then _G.AutoTaskManage.SetAutoTask(false) end
                 end)
-                StartStep5_MailAndUpgrade(function()
-                    StartGoldenChestProcess(function()
-                        TeleportToTrainMapAndFarm(function()
-                            SwitchToNextRoleOrAccount()
+                CheckAndRunBloodCastleOrDemonPlaza(function()
+                    StartStep5_MailAndUpgrade(function()
+                        StartGoldenChestProcess(function()
+                            TeleportToTrainMapAndFarm(function()
+                                SwitchToNextRoleOrAccount()
+                            end)
                         end)
                     end)
                 end)
@@ -4108,7 +6220,7 @@ StartNewbieQuestPipeline = function()
 
             loopTickCount = loopTickCount + 1
 
-            if lvl >= 110 and loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
+            if loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
                 CheckAndRunBloodCastleOrDemonPlaza()
             end
 
@@ -4239,6 +6351,108 @@ StartNewbieQuestPipeline = function()
                                 if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
                             end)
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG MUA & HỌC KỸ NĂNG SHOP (ĐÁ TÊN ĐA TRÙNG, SÁCH...)
+                        -- =========================================================================
+                        elseif behavior == TASK_BEHAVIOR.SKILL_SHOP then
+                            local shopUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Shop_ShopUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Shop)))
+                            local isShopOpen = shopUI and ((shopUI.root and shopUI.root.activeInHierarchy) or (shopUI.gameObject and shopUI.gameObject.activeInHierarchy))
+
+                            -- 1. Nếu Shop đang mở -> Quét tìm vật phẩm đề cử và mua ngay
+                            if isShopOpen then
+                                local targetGoodId = nil
+                                if shopUI.args and shopUI.args.subPosition and shopUI.args.subPosition > 0 then
+                                    targetGoodId = shopUI.args.subPosition
+                                end
+                                if not targetGoodId and shopUI.shopCtrTbl and shopUI.shopCtrTbl.items then
+                                    for _, itemCtr in pairs(shopUI.shopCtrTbl.items) do
+                                        if itemCtr and itemCtr.buyCtr and itemCtr.buyCtr.shop then
+                                            local sData = itemCtr.buyCtr.shop
+                                            local hasEff = (itemCtr.eff_UI_annuikuang and itemCtr.eff_UI_annuikuang.gameObject and itemCtr.eff_UI_annuikuang.gameObject.activeSelf)
+                                            if hasEff or itemCtr.buyCtr.taskType then
+                                                targetGoodId = sData.id
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                                if not targetGoodId then
+                                    if taskId == 3030 then targetGoodId = 20409
+                                    elseif taskId == 3020 then targetGoodId = 20401
+                                    elseif taskId == 3040 then targetGoodId = 20410
+                                    elseif taskId == 3041 then targetGoodId = 20411
+                                    end
+                                end
+
+                                if targetGoodId then
+                                    Log(string.format("-> [MUA KỸ NĂNG TASK %d]: Đang gửi lệnh mua vật phẩm (GoodId: %s)...", taskId, tostring(targetGoodId)), true)
+                                    pcall(function()
+                                        if _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                                            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                                                goodId = targetGoodId,
+                                                buyCount = 1
+                                            })
+                                        end
+                                    end)
+                                end
+
+                                pcall(function()
+                                    if _G.UIManager then
+                                        if _G.UIID and _G.UIID.Shop then _G.UIManager.Hide(_G.UIID.Shop) end
+                                        if _G.UIID and _G.UIID.ItemTipUI then _G.UIManager.Hide(_G.UIID.ItemTipUI) end
+                                        _G.UIManager.Hide("Shop_ShopUI")
+                                        _G.UIManager.Hide("ItemTipUI")
+                                    end
+                                end)
+                            else
+                                -- Chưa mở Shop -> Điều hướng mở Shop
+                                local nowSec = os.time()
+                                _G.Bot_LastShopNavTime = _G.Bot_LastShopNavTime or 0
+                                if nowSec - _G.Bot_LastShopNavTime >= 4 then
+                                    _G.Bot_LastShopNavTime = nowSec
+                                    Log(string.format("-> [ĐIỀU HƯỚNG TASK %s]: Mở Shop để mua \"%s\"...", tostring(taskId), tostring(taskName)), true)
+                                    pcall(function()
+                                        if _G.DirectTask and _G.DirectTask.OpenNav then
+                                            _G.DirectTask.OpenNav(curTask)
+                                        elseif curTask.GetNavi and not string.isNullOrEmpty(curTask:GetNavi()) and _G.NavigationUtility and _G.NavigationUtility.ClickNavigation then
+                                            _G.NavigationUtility.ClickNavigation(curTask:GetNavi())
+                                        end
+                                        if _G.TaskManager and _G.TaskManager.TaskGo then
+                                            _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                        end
+                                    end)
+                                end
+                            end
+
+                            -- 2. Tự động dùng sách / đá kỹ năng trong túi để học skill
+                            pcall(function()
+                                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                    for _, item in pairs(_G.BagInfoData.TotalItems) do
+                                        if item and item.id and item.tblItem then
+                                            local name = tostring(item.tblItem.name or "")
+                                            local isSkillItem = (item.tblItem.type == 2 and item.tblItem.subType == 2) 
+                                                             or (item.tblItem.type == 2 and item.tblItem.subType == 21)
+                                                             or string.find(name, "Đá") or string.find(name, "Sách") or string.find(name, "Kỹ Năng")
+                                            if isSkillItem and item.tblItem.type ~= 1 then
+                                                if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                                    _G.networkRequest.ReqUseItem(1, item.id)
+                                                elseif _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                                                    _G.NetManager.Send(_G.BagMessage.ReqUseItem, { itemId = item.id, count = 1, clientParams = {} })
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end)
+
+                            -- 3. Nộp / Trả nhiệm vụ
+                            pcall(function()
+                                if _G.networkRequest then
+                                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
+                                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
+                                end
+                            end)
+
                         -- C. NHIỆM VỤ DIỆT QUÁI (Bọ Tuyết...) & ĐỐI THOẠI NPC: GoTask 1 lần, KHÔNG spam khi đang đánh
                         else
                             local nowSec = os.time()
@@ -4337,7 +6551,18 @@ _G.StartNewbieQuestPipeline = StartNewbieQuestPipeline
 -- =========================================================================
 local function GetActualCurrentServerInfo()
     local curAcc = (_G.BotAccounts and _G.BotAccounts[_G.CurrentAccountIndex or 1]) or (GetCurrentAccount and GetCurrentAccount())
-    local targetSid = _G.TARGET_SERVER_ID or (curAcc and curAcc.targetServer) or 491
+    local targetSid = _G.TARGET_SERVER_ID
+    if not targetSid and _G.GetSelectedServerList then
+        local selList = _G.GetSelectedServerList()
+        if selList and #selList > 0 then
+            _G.CurrentServerListIndex = _G.CurrentServerListIndex or 1
+            if _G.CurrentServerListIndex > #selList then _G.CurrentServerListIndex = 1 end
+            targetSid = selList[_G.CurrentServerListIndex]
+        end
+    end
+    if not targetSid then
+        targetSid = (curAcc and curAcc.targetServer) or 491
+    end
     targetSid = tonumber(targetSid) or 491
 
     local targetSName = _G.TARGET_SERVER_NAME or ("S" .. tostring(targetSid))
@@ -4530,40 +6755,34 @@ ConnectToTargetServer = function()
                 Log(string.format("-> Level nhân vật hiện tại: %s", tostring(currentLevel)), true)
                 SaveOutput()
 
-                -- ĐIỀU HƯỚNG THEO CẤP ĐỘ NHÂN VẬT:
+                -- NẾU BOT CHƯA ĐƯỢC BẬT (CHƯA BẤM START / BOT_RUNNING = FALSE) -> DỪNG TOÀN BỘ TIẾN TRÌNH TỰ ĐỘNG
+                if not _G.Bot_Running then
+                    Log("-> [FARM BOT]: Bot đang ở trạng thái TẠM DỪNG (PAUSED / IDLE). Chờ bấm [START] trên Mod Menu để bắt đầu!", true)
+                    SaveOutput()
+                    return
+                end
+
+                -- ĐIỀU HƯỚNG THEO CẤP ĐỘ NHÂN VẬT KHI BOT ĐANG CHẠY:
                 StartGlobal30sUpgradePipeline()
 
-                if currentLevel >= 200 then
+                if currentLevel >= 100 then
                     Log("=========================================================================")
-                    Log(string.format(">>> NHÂN VẬT ĐÃ ĐẠT LEVEL %s >= 200 -> ĐÃ TỐT NGHIỆP HOÀN TOÀN! <<<", tostring(currentLevel)), true)
-                    Log("=========================================================================")
-                    SaveOutput()
-                    RunPeriodicUpgradeCycle()
-                    Timer.Start(DELAY, function()
-                        StartGoldenChestProcess(function()
-                            Timer.Start(DELAY, function()
-                                TeleportToTrainMapAndFarm()
-                            end)
-                        end)
-                    end)
-                elseif currentLevel >= 110 then
-                    Log("=========================================================================")
-                    Log(string.format(">>> NHÂN VẬT LEVEL %s (110 - 199) -> KIỂM TRA PHÓ BẢN HUYẾT LÂU / QUẢNG TRƯỜNG QUỶ! <<<", tostring(currentLevel)), true)
+                    Log(string.format(">>> NHÂN VẬT LEVEL %s >= 100 -> TỐT NGHIỆP: ĐI PHÓ BẢN > NÂNG CẤP > MỞ RƯƠNG > BAY BÃI FARM > ĐỔI SLOT! <<<", tostring(currentLevel)), true)
                     Log("=========================================================================")
                     SaveOutput()
-                    RunPeriodicUpgradeCycle()
-                    Timer.Start(DELAY, function()
-                        CheckAndRunBloodCastleOrDemonPlaza(function()
+                    StartGlobal30sUpgradePipeline()
+                    CheckAndRunBloodCastleOrDemonPlaza(function()
+                        StartStep5_MailAndUpgrade(function()
                             StartGoldenChestProcess(function()
-                                Timer.Start(DELAY, function()
-                                    TeleportToTrainMapAndFarm()
+                                TeleportToTrainMapAndFarm(function()
+                                    SwitchToNextRoleOrAccount()
                                 end)
                             end)
                         end)
                     end)
                 else
                     Log("=========================================================================")
-                    Log(string.format(">>> NHÂN VẬT LEVEL %s (< 110) -> TIẾN HÀNH CHU TRÌNH CÀY TÂN THỦ! <<<", tostring(currentLevel)), true)
+                    Log(string.format(">>> NHÂN VẬT LEVEL %s (< 100) -> TIẾN HÀNH CHU TRÌNH CÀY TÂN THỦ! <<<", tostring(currentLevel)), true)
                     Log("=========================================================================")
                     SaveOutput()
 
@@ -4828,56 +7047,105 @@ StartFullLoginProcess = function()
 end
 
 -- =========================================================================
--- KHỞI ĐỘNG CHU TRÌNH: TỰ ĐỘNG PHÁT HIỆN ĐANG TRONG GAME HAY PHẢI ĐĂNG NHẬP
+-- [MOD FEATURE]: BỘ ĐIỀU KHIỂN TRUNG TÂM BOT FARM & TEST TRIGGER (EXECUTE ADMIN)
 -- =========================================================================
-local pMe = _G.RoleManager and _G.RoleManager.me
-local isInGame = (_G.LoginData and _G.LoginData.InGame) or (pMe ~= nil and (pMe.level or (pMe.data and pMe.data.level)))
+_G.Bot_Running = false
+_G.Bot_PauseTask = false
 
-if isInGame then
-    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1)
-    local curRoleName = tostring((pMe and pMe.name) or (pMe and pMe.data and pMe.data.name) or "Me")
-    local curServerId, curServerName = nil, "S491"
-    pcall(function()
-        if _G.GetActualCurrentServerInfo then
-            curServerId, curServerName = _G.GetActualCurrentServerInfo()
-        end
-    end)
-    curServerName = curServerName or "VĨNH HẰNG 491"
+_G.StartAutoFarmBot = function()
+    _G.Bot_Running = true
+    _G.Bot_PauseTask = false
 
-    local execTime = os.date("%H:%M:%S")
-    Log("=========================================================================")
-    Log(string.format(">>> [NẠP SCRIPT %s] NV: %s (Lv %d) <<<", execTime, curRoleName, curLvl), true)
-    Log("=========================================================================")
-    SaveOutput()
-    ApplyFovAndSpeed()
-    DismissBlockers()
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    local isInGame = (_G.LoginData and _G.LoginData.InGame) or (pMe ~= nil and (pMe.level or (pMe.data and pMe.data.level)))
 
-    if AutoBuyPotionsIfLow then
-        AutoBuyPotionsIfLow(50, 100)
-    end
+    if isInGame then
+        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1)
+        local curRoleName = tostring((pMe and pMe.name) or (pMe and pMe.data and pMe.data.name) or "Me")
+        local curServerId, curServerName = nil, "S491"
+        pcall(function()
+            if _G.GetActualCurrentServerInfo then
+                curServerId, curServerName = _G.GetActualCurrentServerInfo()
+            end
+        end)
+        curServerName = curServerName or "VĨNH HẰNG 491"
 
-    if curLvl >= 200 then
-        Log(string.format("[Cấp Độc %d >= 200] : Thực hiện chu trình nâng cấp 1 lần > Mở rương > Ra bãi farm > Đổi nhân vật / acc!", curLvl), true)
+        local execTime = os.date("%H:%M:%S")
+        Log("=========================================================================")
+        Log(string.format(">>> [EXEC ADMIN %s] NV: %s (Lv %d) - %s <<<", execTime, curRoleName, curLvl, curServerName), true)
+        Log("=========================================================================")
         SaveOutput()
-        StartStep5_MailAndUpgrade(function()
-            StartGoldenChestProcess(function()
-                TeleportToTrainMapAndFarm(function()
-                    SwitchToNextRoleOrAccount()
+        ApplyFovAndSpeed()
+        DismissBlockers()
+
+        if AutoBuyPotionsIfLow then
+            AutoBuyPotionsIfLow(50, 100)
+        end
+
+        if curLvl >= 100 then
+            Log(string.format(">>> [CẤP ĐỘ %d >= 100] TỐT NGHIỆP: ĐI PHÓ BẢN > NÂNG CẤP > MỞ RƯƠNG > BAY BÃI FARM > ĐỔI SLOT! <<<", curLvl), true)
+            SaveOutput()
+            StartGlobal30sUpgradePipeline()
+            CheckAndRunBloodCastleOrDemonPlaza(function()
+                StartStep5_MailAndUpgrade(function()
+                    StartGoldenChestProcess(function()
+                        TeleportToTrainMapAndFarm(function()
+                            SwitchToNextRoleOrAccount()
+                        end)
+                    end)
                 end)
             end)
-        end)
+        else
+            Log(string.format(">>> [CẤP ĐỘ %d < 100] BƯỚC 4: LÀM QUEST CHÍNH, NHÁNH & TÂN THỦ! <<<", curLvl), true)
+            SaveOutput()
+            if curLvl <= 3 and _G.RunAutoGiftcode then
+                _G.RunAutoGiftcode(function()
+                    StartNewbieQuestPipeline()
+                end)
+            else
+                StartNewbieQuestPipeline()
+            end
+        end
     else
-        Log(string.format(">>> [CẤP ĐỘ %d < 200] BƯỚC 4: ƯU TIÊN LÀM QUEST CHÍNH, QUEST NHÁNH & PHÓ BẢN HL/QTQ! <<<", curLvl), true)
-        SaveOutput()
-        StartNewbieQuestPipeline()
+        ForceLogoutToLogin()
+        Log("-> Đang nạp lại Login Scene để đăng nhập tự động...")
+        Timer.Start(DELAY * 2, function()
+            DismissBlockers()
+            StartFullLoginProcess()
+        end)
     end
-else
-    ForceLogoutToLogin()
-    Log("-> Đang đợi " .. tostring(DELAY * 2) .. "s để dọn dẹp game và nạp lại Login Scene...")
-    Timer.Start(DELAY * 2, function()
-        DismissBlockers()
-        StartFullLoginProcess()
-    end)
 end
+_G.Bot_Start = _G.StartAutoFarmBot
 
-SaveOutput()
+_G.StopAutoFarmBot = function()
+    _G.Bot_Running = false
+    _G.Bot_PauseTask = true
+    if _G.BotQuestMonitorTimer then
+        pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
+        _G.BotQuestMonitorTimer = nil
+    end
+    if _G.Global30sUpgradeTimer then
+        pcall(function() Timer.Stop(_G.Global30sUpgradeTimer) end)
+        _G.Global30sUpgradeTimer = nil
+    end
+    if _G.Mod_InstanceMonitorTimer then
+        pcall(function() Timer.Stop(_G.Mod_InstanceMonitorTimer) end)
+        _G.Mod_InstanceMonitorTimer = nil
+    end
+    Log(">>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<", true)
+    SaveOutput()
+end
+_G.Bot_Pause = _G.StopAutoFarmBot
+_G.Bot_Stop = _G.StopAutoFarmBot
+
+_G.ToggleAutoFarmBot = function()
+    if _G.Bot_Running then
+        _G.StopAutoFarmBot()
+    else
+        _G.StartAutoFarmBot()
+    end
+end
+_G.Bot_Toggle = _G.ToggleAutoFarmBot
+
+-- Khi người dùng bấm nút EXEC Admin trên màn hình -> Chạy ngay hàm StartAutoFarmBot()
+-- Library loaded. Ready for manual trigger.

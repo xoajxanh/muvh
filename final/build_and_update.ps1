@@ -7,7 +7,7 @@ $ErrorActionPreference = "Continue"
 $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Refresh PATH tu Registry de tu dong nhan dien Python/Java vua moi cai dat ma khong can mo lai console
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
 # Tu dong xac dinh thu muc goc (Git Root Directory)
 $rootDir = Split-Path -Parent $PSScriptRoot
@@ -95,7 +95,8 @@ function Build-ApkTask {
     $compiledDir = Join-Path $rootDir "final\compiled_lua"
     if (Test-Path $compiledDir) {
         Get-ChildItem -Path $compiledDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-    } else {
+    }
+    else {
         New-Item -ItemType Directory -Force -Path $compiledDir | Out-Null
     }
     $luaSrc = Join-Path $rootDir "final\modified_lua_$Ver"
@@ -145,7 +146,7 @@ with open('$bundlesSrc', 'r', encoding='utf-8') as f:
 with open('$bundlesDst', 'w', encoding='utf-8') as f:
     for line in lines:
         if line.startswith('lua.mu2|'):
-            f.write(f'lua.mu2|0|$hash|$size|185\n')
+            f.write(f'lua.mu2|0|$hash|$size|186\n')
         else:
             f.write(line)
 "
@@ -213,7 +214,8 @@ if ($choice -eq 1 -or $choice -eq 4) {
         $content = $content.Replace("_G.Mod_IsAdmin = true", "_G.Mod_IsAdmin = false")
         [System.IO.File]::WriteAllText($clientLua, $content, $utf8NoBom)
         Write-Host "-> Da set _G.Mod_IsAdmin = false cho Client" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "[CANH BAO] Khong tim thay EmmyluaDebug.lua trong $clientDir de sua isAdmin!" -ForegroundColor Red
     }
 
@@ -246,7 +248,8 @@ if ($choice -eq 2 -or $choice -eq 4) {
         $content = $content.Replace("_G.Mod_IsAdmin = true", "_G.Mod_IsAdmin = false")
         [System.IO.File]::WriteAllText($customerLua, $content, $utf8NoBom)
         Write-Host "-> Da set _G.Mod_IsDev = false va _G.Mod_IsAdmin = false cho Customer" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "[CANH BAO] Khong tim thay EmmyluaDebug.lua trong $customerDir de sua config!" -ForegroundColor Red
     }
 

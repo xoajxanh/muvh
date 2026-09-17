@@ -110,6 +110,7 @@ _G.Mod_RestartAllBackgroundLoops = function()
     if _G.Mod_StartReturnPosLoop then pcall(_G.Mod_StartReturnPosLoop) end
     if _G.Mod_StartVisualMasterLoop then pcall(_G.Mod_StartVisualMasterLoop) end
     if _G.Mod_StartGoldenChestLoop then pcall(_G.Mod_StartGoldenChestLoop) end
+    if _G.Mod_FindHoaLong_Enabled and _G.Mod_StartFindHoaLongLoop then pcall(_G.Mod_StartFindHoaLongLoop) end
 end
 
 _G.Mod_DoSystemFreshCleanup = function()
@@ -124,6 +125,8 @@ _G.Mod_DoSystemFreshCleanup = function()
         _G.Mod_PK_TargetRole = nil
         _G.Mod_GoldenChestBatchIds = {}
         _G.Mod_GoldenChestState = "OPEN"
+        _G.Mod_FindHoaLong_Enabled = false
+        if _G.ModUpdateFindHoaLongLabel then pcall(_G.ModUpdateFindHoaLongLabel) end
         _G.Mod_LastResurrectTime = 0
         _G.Mod_LastAutoPKSentTime = 0
         _G.Mod_LastPKScanTime = 0
@@ -254,6 +257,9 @@ _G.WriteLog = WriteLog
 -- =========================================================================
 local function CreateModUI()
     local status, err = pcall(function()
+        if _G.Mod_FindHoaLong_Enabled == nil then
+            _G.Mod_FindHoaLong_Enabled = false
+        end
         if _G.Mod_AutoPK_Enabled == nil then
             _G.Mod_AutoPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoPK_Enabled", 0) == 1
@@ -1386,7 +1392,7 @@ local function CreateModUI()
         -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C3-C12 (BOSS WATCHER & CONFIG)
         -- Mô tả: Cấu hình chuẩn cho Auto Boss và cấu hình chi tiết đa vị trí riêng cho Tab Thông Tin Boss Cơ Bản.
         -- =========================================================================
-        -- 1. Cấu hình Chuẩn (Dành cho Auto Boss & Tab Cấu hình Auto Boss - 1 nút/1 Boss)
+        -- 1. Cấu hình Chuẩn & Đa Vị Trí (Dành cho Auto Boss & Tab Thông Tin Boss C3-C12)
         _G.Mod_MapsConfig_c3 = {
             {
                 mapId = 101094,
@@ -1465,100 +1471,14 @@ local function CreateModUI()
             },
         }
 
-        -- 2. Cấu hình Chi Tiết Đa Vị Trí (Dành riêng cho Tab Thông Tin Boss Cơ Bản)
-        _G.Mod_BossWatcherConfig_c3 = {
-            {
-                mapId = 101094,
-                title = "Hoang Dã C3",
-                bosses = {
-                    { id = 10179407, name = "Hung Thần (1)", col = 1, subIndex = 1, posX = 110, posY = 178, useCallFlag = true },
-                    { id = 10179407, name = "Hung Thần (2)", col = 1, subIndex = 2, posX = 156, posY = 122, useCallFlag = true },
-                    { id = 10179408, name = "Phẫn Nộ (1)", col = 2, subIndex = 1, posX = 136, posY = 117, useCallFlag = true },
-                    { id = 10179408, name = "Phẫn Nộ (2)", col = 2, subIndex = 2, posX = 79, posY = 92, useCallFlag = true },
-                    { id = 10179409, name = "Cuồng Bạo", col = 3, posX = 80, posY = 155, useCallFlag = true },
-                }
-            },
-            {
-                mapId = 105203,
-                title = "Trang Sức C3",
-                bosses = {
-                    { id = 10520301, name = "N.Khổng Lồ Sét", col = 1, transferId = 105203101 },
-                    { id = 10520302, name = "Phẫn Nộ", col = 2, transferId = 105203102 },
-                    { id = 999105203, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
-                }
-            },
-            {
-                mapId = 106402,
-                title = "Thí Luyện Cánh 2",
-                bosses = {
-                    { id = 10640201, name = "N.Cây Totem", col = 1, transferId = 10640201 },
-                    { id = 10640202, name = "Ngang Ngược", col = 2, transferId = 10640202 },
-                    { id = 10640203, name = "Tà Ác", col = 3, transferId = 10640203 },
-                }
-            },
-            {
-                mapId = 106705,
-                title = "Luyện Ngục C3",
-                bosses = {
-                    { id = 10670501, name = "Nurmus (1)", col = 1, subIndex = 1, transferId = 106705101 },
-                    { id = 10670501, name = "Nurmus (2)", col = 1, subIndex = 2, transferId = 106705102 },
-                    { id = 10670502, name = "Ngang Ngược (1)", col = 2, subIndex = 1, transferId = 106705103 },
-                    { id = 10670502, name = "Ngang Ngược (2)", col = 2, subIndex = 2, transferId = 106705104 },
-                    { id = 10670503, name = "Tà Ác", col = 3, transferId = 106705105 },
-                }
-            },
-        }
-
-        _G.Mod_BossWatcherConfig_c4 = {
-            {
-                mapId = 101093,
-                title = "Hoang Dã C4",
-                bosses = {
-                    { id = 10179307, name = "Kỵ Sĩ (1)", col = 1, subIndex = 1, posX = 154, posY = 113, useCallFlag = true },
-                    { id = 10179307, name = "Kỵ Sĩ (2)", col = 1, subIndex = 2, posX = 145, posY = 84, useCallFlag = true },
-                    { id = 10179308, name = "Phẫn Nộ", col = 2, posX = 85, posY = 78, useCallFlag = true },
-                    { id = 10179309, name = "Cuồng Bạo", col = 3, posX = 97, posY = 133, useCallFlag = true },
-                }
-            },
-            {
-                mapId = 105204,
-                title = "Trang Sức C4",
-                bosses = {
-                    { id = 10520401, name = "N.Khổng Lồ U Linh", col = 1, transferId = 105204101 },
-                    { id = 10520402, name = "Phẫn Nộ", col = 2, transferId = 105204102 },
-                    { id = 999105204, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
-                }
-            },
-            {
-                mapId = 106403,
-                title = "Thí Luyện Cánh 3",
-                bosses = {
-                    { id = 10640301, name = "O.Chúa Khát Máu", col = 1, transferId = 10640301 },
-                    { id = 10640302, name = "Ngang Ngược", col = 2, transferId = 10640302 },
-                    { id = 10640303, name = "Tà Ác", col = 3, transferId = 10640303 },
-                }
-            },
-            {
-                mapId = 106701,
-                title = "Luyện Ngục C4",
-                bosses = {
-                    { id = 10670101, name = "Phoenix (1)", col = 1, subIndex = 1, transferId = 106701101 },
-                    { id = 10670101, name = "Phoenix (2)", col = 1, subIndex = 2, transferId = 106701102 },
-                    { id = 10670102, name = "Ngang Ngược (1)", col = 2, subIndex = 1, transferId = 106701103 },
-                    { id = 10670102, name = "Ngang Ngược (2)", col = 2, subIndex = 2, transferId = 106701104 },
-                    { id = 10670103, name = "Tà Ác", col = 3, transferId = 106701105 },
-                }
-            },
-        }
-
         _G.Mod_MapsConfig_c5 = {
             {
                 mapId = 101095,
                 title = "Hoang Dã C5",
                 bosses = {
-                    { id = 10179507, name = "Giác Ma Đ.Ngục", col = 1, transferId = 400214 },
-                    { id = 10179508, name = "Phẫn Nộ", col = 2, transferId = 400220 },
-                    { id = 10179509, name = "Cuồng Bạo", col = 3, transferId = 400226 },
+                    { id = 10179507, name = "Giác Ma Đ.Ngục", col = 1, posX = 128, posY = 166, spots = { { x = 128, y = 166 }, { x = 153, y = 229 } }, useCallFlag = true },
+                    { id = 10179508, name = "Phẫn Nộ", col = 2, posX = 87, posY = 234, spots = { { x = 87, y = 234 }, { x = 87, y = 187 } }, useCallFlag = true },
+                    { id = 10179509, name = "Cuồng Bạo", col = 3, posX = 56, posY = 234, spots = { { x = 56, y = 234 }, { x = 43, y = 182 } }, useCallFlag = true },
                 }
             },
             {
@@ -1583,8 +1503,8 @@ local function CreateModUI()
                 mapId = 106702,
                 title = "Luyện Ngục C5",
                 bosses = {
-                    { id = 10670201, name = "Nars", col = 1, transferId = 106702101 },
-                    { id = 10670202, name = "Ngang Ngược", col = 2, transferId = 106702103 },
+                    { id = 10670201, name = "Nars", col = 1, transferId = 106702101, transferIds = { 106702101, 106702102 } },
+                    { id = 10670202, name = "Ngang Ngược", col = 2, transferId = 106702103, transferIds = { 106702103, 106702104 } },
                     { id = 10670203, name = "Tà Ác", col = 3, transferId = 106702105 },
                 }
             },
@@ -1595,9 +1515,9 @@ local function CreateModUI()
                 mapId = 101092,
                 title = "Hoang Dã C6",
                 bosses = {
-                    { id = 10179207, name = "V.Sĩ Khiên Kiếm", col = 1, transferId = 400215 },
-                    { id = 10179208, name = "Phẫn Nộ", col = 2, transferId = 400221 },
-                    { id = 10179209, name = "Cuồng Bạo", col = 3, transferId = 400227 },
+                    { id = 10179207, name = "V.Sĩ Khiên Kiếm", col = 1, posX = 107, posY = 92, spots = { { x = 107, y = 92 }, { x = 82, y = 140 } }, useCallFlag = true },
+                    { id = 10179208, name = "Phẫn Nộ", col = 2, posX = 151, posY = 121, spots = { { x = 151, y = 121 }, { x = 107, y = 175 } }, useCallFlag = true },
+                    { id = 10179209, name = "Cuồng Bạo", col = 3, posX = 181, posY = 121, spots = { { x = 181, y = 121 }, { x = 182, y = 174 } }, useCallFlag = true },
                 }
             },
             {
@@ -1634,9 +1554,9 @@ local function CreateModUI()
                 mapId = 101096,
                 title = "Hoang Dã C7",
                 bosses = {
-                    { id = 10179607, name = "Tektus", col = 1, transferId = 400216 },
-                    { id = 10179608, name = "Phẫn Nộ", col = 2, transferId = 400222 },
-                    { id = 10179609, name = "Cuồng Bạo", col = 3, transferId = 400228 },
+                    { id = 10179607, name = "Tektus", col = 1, posX = 101, posY = 108, spots = { { x = 101, y = 108 }, { x = 15, y = 87 } }, useCallFlag = true },
+                    { id = 10179608, name = "Phẫn Nộ", col = 2, posX = 36, posY = 148, spots = { { x = 36, y = 148 }, { x = 141, y = 164 } }, useCallFlag = true },
+                    { id = 10179609, name = "Cuồng Bạo", col = 3, posX = 142, posY = 241, spots = { { x = 142, y = 241 }, { x = 99, y = 241 } }, useCallFlag = true },
                 }
             },
             {
@@ -1673,9 +1593,9 @@ local function CreateModUI()
                 mapId = 1074,
                 title = "Hoang Dã C8",
                 bosses = {
-                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, transferId = 400229 },
-                    { id = 107408, name = "Phẫn Nộ", col = 2, transferId = 400230 },
-                    { id = 107409, name = "Cuồng Bạo", col = 3, transferId = 400231 },
+                    { id = 107407, name = "K.Sĩ Tử Vong", col = 1, posX = 236, posY = 219, spots = { { x = 236, y = 219 }, { x = 127, y = 217 } }, useCallFlag = true },
+                    { id = 107408, name = "Phẫn Nộ", col = 2, posX = 210, posY = 113, spots = { { x = 210, y = 113 }, { x = 188, y = 73 } }, useCallFlag = true },
+                    { id = 107409, name = "Cuồng Bạo", col = 3, posX = 123, posY = 13, spots = { { x = 123, y = 13 }, { x = 60, y = 55 } }, useCallFlag = true },
                 }
             },
             {
@@ -1712,9 +1632,9 @@ local function CreateModUI()
                 mapId = 1075,
                 title = "Hoang Dã C9",
                 bosses = {
-                    { id = 107507, name = "S.Giả Ác Ma", col = 1, transferId = 400232 },
-                    { id = 107508, name = "Phẫn Nộ", col = 2, transferId = 400233 },
-                    { id = 107509, name = "Cuồng Bạo", col = 3, transferId = 400234 },
+                    { id = 107507, name = "S.Giả Ác Ma", col = 1, posX = 157, posY = 179, spots = { { x = 157, y = 179 }, { x = 188, y = 169 } }, useCallFlag = true },
+                    { id = 107508, name = "Phẫn Nộ", col = 2, posX = 64, posY = 86, spots = { { x = 64, y = 86 }, { x = 32, y = 61 } }, useCallFlag = true },
+                    { id = 107509, name = "Cuồng Bạo", col = 3, posX = 15, posY = 45, spots = { { x = 15, y = 45 }, { x = 189, y = 68 } }, useCallFlag = true },
                 }
             },
             {
@@ -1751,9 +1671,9 @@ local function CreateModUI()
                 mapId = 1076,
                 title = "Hoang Dã C10",
                 bosses = {
-                    { id = 107607, name = "C.Sĩ Cuồng Nộ", col = 1, transferId = 400235 },
-                    { id = 107608, name = "Phẫn Nộ", col = 2, transferId = 400236 },
-                    { id = 107609, name = "Cuồng Bạo", col = 3, transferId = 400237 },
+                    { id = 107607, name = "C.Sĩ Cuồng Nộ", col = 1, posX = 31, posY = 224, spots = { { x = 31, y = 224 }, { x = 195, y = 180 } }, useCallFlag = true },
+                    { id = 107608, name = "Phẫn Nộ", col = 2, posX = 216, posY = 192, spots = { { x = 216, y = 192 }, { x = 160, y = 76 } }, useCallFlag = true },
+                    { id = 107609, name = "Cuồng Bạo", col = 3, posX = 129, posY = 26, spots = { { x = 129, y = 26 }, { x = 63, y = 72 } }, useCallFlag = true },
                 }
             },
             {
@@ -1790,9 +1710,9 @@ local function CreateModUI()
                 mapId = 10123,
                 title = "Hoang Dã C11",
                 bosses = {
-                    { id = 1012307, name = "Thủy Ma Navos", col = 1, transferId = 400238 },
-                    { id = 1012308, name = "Phẫn Nộ", col = 2, transferId = 400239 },
-                    { id = 1012309, name = "Cuồng Bạo", col = 3, transferId = 400240 },
+                    { id = 1012307, name = "Thủy Ma Navos", col = 1, posX = 124, posY = 224, spots = { { x = 124, y = 224 }, { x = 48, y = 221 } }, useCallFlag = true },
+                    { id = 1012308, name = "Phẫn Nộ", col = 2, posX = 218, posY = 222, spots = { { x = 218, y = 222 }, { x = 223, y = 52 } }, useCallFlag = true },
+                    { id = 1012309, name = "Cuồng Bạo", col = 3, posX = 25, posY = 10, spots = { { x = 25, y = 10 }, { x = 127, y = 16 } }, useCallFlag = true },
                 }
             },
             {
@@ -1829,9 +1749,9 @@ local function CreateModUI()
                 mapId = 1012301,
                 title = "Hoang Dã C12",
                 bosses = {
-                    { id = 101230107, name = "Thần Hắc Ám", col = 1, transferId = 400241 },
-                    { id = 101230108, name = "Phẫn Nộ", col = 2, transferId = 400242 },
-                    { id = 101230109, name = "Cuồng Bạo", col = 3, transferId = 400243 },
+                    { id = 101230107, name = "Thần Hắc Ám", col = 1, posX = 124, posY = 224, spots = { { x = 124, y = 224 }, { x = 48, y = 221 } }, useCallFlag = true },
+                    { id = 101230108, name = "Phẫn Nộ", col = 2, posX = 218, posY = 222, spots = { { x = 218, y = 222 }, { x = 223, y = 52 } }, useCallFlag = true },
+                    { id = 101230109, name = "Cuồng Bạo", col = 3, posX = 25, posY = 10, spots = { { x = 25, y = 10 }, { x = 127, y = 16 } }, useCallFlag = true },
                 }
             },
             {
@@ -1881,19 +1801,7 @@ local function CreateModUI()
         _G.GetMapsConfigByTier = GetMapsConfigByTier
 
         local function GetBossWatcherConfigByTier(tierTag)
-            if not tierTag or tierTag == "" then
-                local p = _G.Mod_Config_Reincarnation_Primary
-                if not p then
-                    pcall(function()
-                        local prefP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
-                        if prefP >= 3 and prefP <= 12 then p = prefP end
-                    end)
-                end
-                p = p or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
-                tierTag = "C" .. tostring(p)
-            end
-            local tagLower = string.lower(tierTag)
-            return _G["Mod_BossWatcherConfig_" .. tagLower] or _G["Mod_MapsConfig_" .. tagLower] or _G.Mod_MapsConfig_c8 or _G.Mod_MapsConfig_c7 or {}
+            return GetMapsConfigByTier(tierTag)
         end
         _G.GetBossWatcherConfigByTier = GetBossWatcherConfigByTier
 
@@ -1974,7 +1882,8 @@ local function CreateModUI()
             return rowUIPool[rowIndex]
         end
 
-        local function GetLineButton(btnIndex, posX, posY, width)
+        local function GetLineButton(btnIndex, posX, posY, width, height)
+            height = height or 30
             if not btnUIPool[btnIndex] then
                 local btnGo = GameObject("BossBtn_" .. btnIndex)
                 btnGo.transform:SetParent(panelGo.transform, false)
@@ -1982,7 +1891,7 @@ local function CreateModUI()
                 rt.anchorMin = Vector2(0, 1)
                 rt.anchorMax = Vector2(0, 1)
                 rt.pivot = Vector2(0, 1)
-                rt.sizeDelta = Vector2(width, 30)
+                rt.sizeDelta = Vector2(width, height)
 
                 local img = btnGo:AddComponent(typeof(CS.UnityEngine.UI.Image))
                 img.color = CS.UnityEngine.Color(1, 1, 1, 0) -- Invisible graphic for raycasting
@@ -2005,8 +1914,9 @@ local function CreateModUI()
                 table.insert(_G.CoBanUIList, btnGo)
             end
             btnUIPool[btnIndex].rt.anchoredPosition = Vector2(posX, posY)
-            btnUIPool[btnIndex].rt.sizeDelta = Vector2(width, 30)
+            btnUIPool[btnIndex].rt.sizeDelta = Vector2(width, height)
             btnUIPool[btnIndex].img.color = CS.UnityEngine.Color(1, 1, 1, 0)
+            btnUIPool[btnIndex].img.raycastTarget = true
             btnUIPool[btnIndex].txt.alignment = TextAnchor.MiddleLeft
             return btnUIPool[btnIndex]
         end
@@ -2077,19 +1987,74 @@ local function CreateModUI()
                 end
                 currentPosY = currentPosY - 20
 
+                local function TeleportToBossSpot(mapCfg, cfg, spotIndex, validLineNum)
+                    if not _G.SceneController.TransferStateJudge() then
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("HP không đủ để dịch chuyển") end
+                        return
+                    end
+                    if _G.TranScriptData and _G.TranScriptData.InTranscript then
+                        if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Vui lòng thoát phó bản trước!") end
+                        return
+                    end
+
+                    local spotIdx = spotIndex or 1
+                    local targetX, targetY = nil, nil
+                    if cfg.spots and cfg.spots[spotIdx] then
+                        targetX = cfg.spots[spotIdx].x
+                        targetY = cfg.spots[spotIdx].y
+                    elseif cfg.posX and cfg.posY then
+                        targetX = cfg.posX
+                        targetY = cfg.posY
+                    end
+
+                    local targetTransferId = nil
+                    if cfg.transferIds and cfg.transferIds[spotIdx] then
+                        targetTransferId = cfg.transferIds[spotIdx]
+                    elseif cfg.transferId then
+                        targetTransferId = cfg.transferId
+                    end
+
+                    if cfg.useCallFlag and targetX and targetY then
+                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                mapId = mapCfg.mapId,
+                                line = validLineNum or 1,
+                                x = targetX,
+                                y = targetY
+                            })
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg(string.format("Đang bay tới %s (Boss %d: %d, %d)", tostring(cfg.name), spotIdx, targetX, targetY))
+                            end
+                        end
+                    elseif targetTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                        _G.SceneController.OnReqTransferTransmitMap(nil, {
+                            mapId = targetTransferId,
+                            line = validLineNum or 1,
+                            changeLine = true
+                        })
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg(string.format("Đang chuyển map tới %s (Boss %d)", tostring(cfg.name), spotIdx))
+                        end
+                    end
+
+                    -- Jiggle chống chạy ngược
+                    local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
+                    _G.Mod_ManualTeleportJiggleTimes = { nowReal + 0.4, nowReal + 0.8 }
+                end
+
                 local mapsConfig = GetBossWatcherConfigByTier(_G.ModBossTab)
                 for i, mapCfg in ipairs(mapsConfig) do
                     local sep = GetDashedLine(sepIdx, currentPosY)
                     sep.go:SetActive(_G.ModMainTab == "CO_BAN")
                     sepIdx = sepIdx + 1
-                    currentPosY = currentPosY - 20
+                    currentPosY = currentPosY - 14
 
                     local title = GetTitleLabel(titleIdx, currentPosY)
                     title.go:SetActive(_G.ModMainTab == "CO_BAN")
                     title.txt.text = mapCfg.title
 
                     titleIdx = titleIdx + 1
-                    currentPosY = currentPosY - 20
+                    currentPosY = currentPosY - 24
 
                     local colBosses = { {}, {}, {} }
                     for _, cfg in ipairs(mapCfg.bosses) do
@@ -2101,92 +2066,63 @@ local function CreateModUI()
                     local maxRows = math.max(#colBosses[1], #colBosses[2], #colBosses[3])
 
                     for r = 1, maxRows do
+                        local rowHasSubButtons = false
+                        for c = 1, 3 do
+                            local cfg = colBosses[c][r]
+                            if cfg and not cfg.isExitBtn then
+                                local numSub = math.max(#(cfg.spots or {}), #(cfg.transferIds or {}))
+                                if numSub >= 2 then
+                                    rowHasSubButtons = true
+                                end
+                            end
+                        end
+
                         for c = 1, 3 do
                             local cfg = colBosses[c][r]
                             if cfg then
                                 local startX = 40 + (c - 1) * 220
-                                local yPos = currentPosY - (r - 1) * 20
+                                local yPos = currentPosY
 
-                                local bw = cfg.isExitBtn and 155 or 215
-                                local bx = startX
-                                local uiBtn = GetLineButton(btnIdx, bx, yPos, bw)
-                                uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
+                                if cfg.isExitBtn then
+                                    local bw = 155
+                                    local uiBtn = GetLineButton(btnIdx, startX, yPos, bw, 26)
+                                    uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
+                                    uiBtn.img.color = CS.UnityEngine.Color(0.8, 0.15, 0.15, 0.95)
+                                    uiBtn.txt.text = "<color=#FFFFFF>THOÁT PB</color>"
+                                    uiBtn.txt.alignment = TextAnchor.MiddleCenter
+                                    uiBtn.txt.fontSize = 16
+                                    uiBtn.btn.onClick:RemoveAllListeners()
+                                    uiBtn.btn.onClick:AddListener(function()
+                                        pcall(function()
+                                            if _G.TranScriptController then
+                                                if _G.TranScriptController.ReqExitInstance then _G.TranScriptController.ReqExitInstance() end
+                                                if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
+                                                if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController.ReqExitUnionMap() end
+                                            end
+                                            if _G.NetManager and _G.TranScriptMessage and _G.TranScriptMessage.ReqQuitTranScript then
+                                                _G.NetManager.Send(_G.TranScriptMessage.ReqQuitTranScript)
+                                            end
+                                            if _G.FloatingWordUtility then
+                                                _G.FloatingWordUtility.QuickMsg("Đã gửi lệnh thoát phó bản!")
+                                            end
+                                        end)
+                                    end)
+                                    btnIdx = btnIdx + 1
+                                else
+                                    local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
+                                    local statusStr = "--:--"
+                                    local prefix = ""
+                                    local validLineNum = 1
 
-                                local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
-                                local statusStr = "--:--"
-                                local prefix = ""
-                                local validLineNum = 1
+                                    if bossData then
+                                        local bestLine = nil
+                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                            local totalAlive = bossData.aliveCount[lineNum] or 0
+                                            local deadList = bossData.deadTimes[lineNum] or {}
+                                            local expectedTotal = cfg.total or 1
 
-                                if bossData then
-                                    local bestLine = nil
-                                    for _, lineNum in ipairs(bossData.lineNums) do
-                                        local totalAlive = bossData.aliveCount[lineNum] or 0
-                                        local deadList = bossData.deadTimes[lineNum] or {}
-                                        local expectedTotal = cfg.total or 1
-
-                                        if totalAlive > 0 or #deadList > 0 then
-                                            bestLine = lineNum
-
-                                            -- [MOD FEATURE]: Xử lý hiển thị riêng cho Boss có subIndex (C3, C4 Hoang Dã & Luyện Ngục)
-                                            if cfg.subIndex == 1 then
-                                                if totalAlive >= 1 then
-                                                    statusStr = "<color=#00FF00>xuất hiện</color>"
-                                                elseif #deadList > 0 then
-                                                    local rt = deadList[1]
-                                                    local remain = math.floor(rt - currentSec)
-                                                    if remain <= 0 then
-                                                        statusStr = "<color=#00FF00>xuất hiện</color>"
-                                                    else
-                                                        local m = math.floor((remain % 3600) / 60)
-                                                        local s = remain % 60
-                                                        statusStr = "<color=#AAAAAA>(" ..
-                                                            string.format("%02d:%02d", m, s) .. ")</color>"
-                                                    end
-                                                end
-                                            elseif cfg.subIndex == 2 then
-                                                if totalAlive >= 2 then
-                                                    statusStr = "<color=#00FF00>xuất hiện</color>"
-                                                else
-                                                    local rt = (totalAlive == 1 and deadList[1]) or deadList[2] or deadList[1]
-                                                    if rt then
-                                                        local remain = math.floor(rt - currentSec)
-                                                        if remain <= 0 then
-                                                            statusStr = "<color=#00FF00>xuất hiện</color>"
-                                                        else
-                                                            local m = math.floor((remain % 3600) / 60)
-                                                            local s = remain % 60
-                                                            statusStr = "<color=#AAAAAA>(" ..
-                                                                string.format("%02d:%02d", m, s) .. ")</color>"
-                                                        end
-                                                    end
-                                                end
-                                            elseif expectedTotal > 1 then
-                                                local timeStrs = {}
-                                                for i = 1, #deadList do
-                                                    local rt = deadList[i]
-                                                    local remain = math.floor(rt - currentSec)
-                                                    if remain <= 0 then
-                                                        totalAlive = totalAlive + 1
-                                                    else
-                                                        local m = math.floor((remain % 3600) / 60)
-                                                        local s = remain % 60
-                                                        table.insert(timeStrs, string.format("%02d:%02d", m, s))
-                                                    end
-                                                end
-
-                                                if totalAlive >= expectedTotal then
-                                                    statusStr = "<color=#00FF00>xuất hiện</color>"
-                                                else
-                                                    local countStr = "<color=#FFFFFF>" ..
-                                                        totalAlive .. "/" .. expectedTotal .. "</color>"
-                                                    local tStr = ""
-                                                    if #timeStrs > 0 then
-                                                        tStr = " <color=#AAAAAA>(" ..
-                                                            table.concat(timeStrs, ", ") .. ")</color>"
-                                                    end
-                                                    statusStr = countStr .. tStr
-                                                end
-                                            else
+                                            if totalAlive > 0 or #deadList > 0 then
+                                                bestLine = lineNum
                                                 if totalAlive > 0 then
                                                     statusStr = "<color=#00FF00>xuất hiện</color>"
                                                 elseif #deadList > 0 then
@@ -2197,114 +2133,80 @@ local function CreateModUI()
                                                     else
                                                         local m = math.floor((remain % 3600) / 60)
                                                         local s = remain % 60
-                                                        statusStr = "<color=#AAAAAA>(" ..
-                                                            string.format("%02d:%02d", m, s) .. ")</color>"
+                                                        statusStr = "<color=#AAAAAA>(" .. string.format("%02d:%02d", m, s) .. ")</color>"
                                                     end
                                                 end
+                                                break
                                             end
-                                            break
+                                        end
+
+                                        if bestLine then
+                                            validLineNum = bestLine
+                                            if #bossData.lineNums > 1 then
+                                                prefix = "L" .. bestLine .. " "
+                                            end
                                         end
                                     end
 
-                                    if bestLine then
-                                        validLineNum = bestLine
-                                        if #bossData.lineNums > 1 then
-                                            prefix = "L" .. bestLine .. " "
-                                        end
-                                    end
-                                end
+                                    local numSub = math.max(#(cfg.spots or {}), #(cfg.transferIds or {}))
 
-                                if cfg.isExitBtn then
-                                    uiBtn.img.color = CS.UnityEngine.Color(0.8, 0.15, 0.15, 0.95)
-                                    uiBtn.txt.text = "<color=#FFFFFF>THOÁT PB</color>"
-                                    uiBtn.txt.alignment = TextAnchor.MiddleCenter
-                                    uiBtn.txt.fontSize = 16
-                                    uiBtn.btn.onClick:RemoveAllListeners()
-                                    uiBtn.btn.onClick:AddListener(function()
-                                        pcall(function()
-                                            if _G.TranScriptController then
-                                                if _G.TranScriptController.ReqExitInstance then
-                                                    _G.TranScriptController
-                                                        .ReqExitInstance()
-                                                end
-                                                if _G.TranScriptController.ReqExitAllGods then
-                                                    _G.TranScriptController
-                                                        .ReqExitAllGods()
-                                                end
-                                                if _G.TranScriptController.ReqExitUnionMap then
-                                                    _G.TranScriptController
-                                                        .ReqExitUnionMap()
-                                                end
-                                            end
-                                            if _G.NetManager and _G.TranScriptMessage and _G.TranScriptMessage.ReqQuitTranScript then
-                                                _G.NetManager.Send(_G.TranScriptMessage.ReqQuitTranScript)
-                                            end
-                                            if _G.FloatingWordUtility then
-                                                _G.FloatingWordUtility.QuickMsg(
-                                                    "Đã gửi lệnh thoát phó bản!")
-                                            end
-                                        end)
-                                    end)
-                                else
+                                    -- Dòng 1: Tên Boss + Trạng thái (Nếu boss có >= 2 vị trí thì không click dòng này)
+                                    local uiBtn = GetLineButton(btnIdx, startX, yPos, 215, 22)
+                                    uiBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
+                                    uiBtn.img.color = CS.UnityEngine.Color(1, 1, 1, 0)
                                     uiBtn.txt.text = cfg.name .. ": " .. prefix .. statusStr
-                                    uiBtn.txt.fontSize = 17
-
+                                    uiBtn.txt.fontSize = 16
+                                    uiBtn.txt.alignment = TextAnchor.MiddleLeft
                                     uiBtn.btn.onClick:RemoveAllListeners()
-                                    uiBtn.btn.onClick:AddListener(function()
-                                        if not _G.SceneController.TransferStateJudge() then
-                                            if _G.FloatingWordUtility then
-                                                _G.FloatingWordUtility.QuickMsg(
-                                                    "HP không đủ để dịch chuyển")
-                                            end
-                                            return
-                                        end
-                                        if _G.TranScriptData and _G.TranScriptData.InTranscript then
-                                            if _G.FloatingWordUtility then
-                                                _G.FloatingWordUtility.QuickMsg(
-                                                    "Vui lòng thoát phó bản trước!")
-                                            end
-                                            return
-                                        end
 
-                                        -- 1. Thực hiện lệnh dịch chuyển
-                                        -- =========================================================================
-                                        -- [MOD FEATURE]: DỊCH CHUYỂN TỨC THÌ HOANG DÃ C3-C4 BẰNG REQCALLFLAG
-                                        -- =========================================================================
-                                        if (_G.ModBossTab == "C3" or _G.ModBossTab == "C4") and (mapCfg.mapId == 101094 or mapCfg.mapId == 101093) and cfg.posX and cfg.posY then
-                                            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
-                                                _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
-                                                    mapId = mapCfg.mapId,
-                                                    line = validLineNum or 1,
-                                                    x = cfg.posX,
-                                                    y = cfg.posY
-                                                })
-                                                if _G.FloatingWordUtility then
-                                                    _G.FloatingWordUtility.QuickMsg(
-                                                        "Đang bay tới " .. tostring(cfg.name))
-                                                end
-                                            end
-                                        elseif _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                            _G.SceneController.OnReqTransferTransmitMap(nil,
-                                                { mapId = cfg.transferId, line = validLineNum, changeLine = true })
-                                        end
+                                    if numSub >= 2 then
+                                        uiBtn.img.raycastTarget = false
+                                    else
+                                        uiBtn.img.raycastTarget = true
+                                        local thisCfg = cfg
+                                        local thisMapCfg = mapCfg
+                                        local thisLine = validLineNum
+                                        uiBtn.btn.onClick:AddListener(function()
+                                            TeleportToBossSpot(thisMapCfg, thisCfg, 1, thisLine)
+                                        end)
+                                    end
+                                    btnIdx = btnIdx + 1
 
-                                        -- 2. Đặt lịch nhích nhẹ sau khi dịch chuyển đến điểm mới (0.4s & 0.8s) để dập tắt PathFinder chạy ngược về điểm cũ
-                                        local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
-                                        _G.Mod_ManualTeleportJiggleTimes = { nowReal + 0.4, nowReal + 0.8 }
-                                    end)
+                                    -- Dòng 2: Cụm nút [ Boss 1 ] [ Boss 2 ] không nền, khoảng cách chuẩn
+                                    if numSub >= 2 then
+                                        local subBtnW = 75
+                                        local subSpacing = 10
+                                        for sIdx = 1, numSub do
+                                            local subX = startX + (sIdx - 1) * (subBtnW + subSpacing)
+                                            local subBtn = GetLineButton(btnIdx, subX, yPos - 22, subBtnW, 20)
+                                            subBtn.go:SetActive(_G.ModMainTab == "CO_BAN")
+                                            subBtn.img.color = CS.UnityEngine.Color(1, 1, 1, 0) -- Bỏ nền xám
+                                            subBtn.img.raycastTarget = true
+                                            subBtn.txt.text = string.format("<color=#FFCC00>[ Boss %d ]</color>", sIdx)
+                                            subBtn.txt.fontSize = 15
+                                            subBtn.txt.alignment = TextAnchor.MiddleLeft
+                                            subBtn.btn.onClick:RemoveAllListeners()
+                                            local thisSpotIdx = sIdx
+                                            local thisCfg = cfg
+                                            local thisMapCfg = mapCfg
+                                            local thisLine = validLineNum
+                                            subBtn.btn.onClick:AddListener(function()
+                                                TeleportToBossSpot(thisMapCfg, thisCfg, thisSpotIdx, thisLine)
+                                            end)
+                                            btnIdx = btnIdx + 1
+                                        end
+                                    end
                                 end
-
-                                rowIdx = rowIdx + 1
-                                btnIdx = btnIdx + 1
                             end
                         end
-                    end
 
-                    if maxRows > 0 then
-                        currentPosY = currentPosY - (maxRows * 28) - 5
-                    else
-                        currentPosY = currentPosY - 5
+                        if rowHasSubButtons then
+                            currentPosY = currentPosY - 46
+                        else
+                            currentPosY = currentPosY - 24
+                        end
                     end
+                    currentPosY = currentPosY - 2
                 end
 
                 for i = titleIdx, #titleUIPool do
@@ -3912,8 +3814,16 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_Target = bestBoss
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
-                                local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY) or
-                                    ((bestBoss.mapCfg.mapId == 101094 or bestBoss.mapCfg.mapId == 101093) and bestBoss.cfg.posX and bestBoss.cfg.posY)
+                                if bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 then
+                                    bestBoss.cfg.posX = bestBoss.cfg.spots[1].x
+                                    bestBoss.cfg.posY = bestBoss.cfg.spots[1].y
+                                end
+                                if bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 then
+                                    bestBoss.cfg.transferId = bestBoss.cfg.transferIds[1]
+                                end
+                                bestBoss.triedSecondSpot = false
+
+                                local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY)
 
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
                                 if isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
@@ -3988,10 +3898,9 @@ local function CreateModUI()
                         LogMsg(string.format("Đang bay tới Map Boss: %s (%s)...", GetMapName(target.mapCfg.mapId), tostring(target.cfg.name)))
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: DỊCH CHUYỂN REQCALLFLAG CHO HOANG DÃ C3-C4 VÀ CỔNG DỊCH CHUYỂN CHO CÁC MAP KHÁC
+                        -- [MOD FEATURE]: DỊCH CHUYỂN REQCALLFLAG CHO HOANG DÃ C3-C12 VÀ CỔNG DỊCH CHUYỂN CHO CÁC MAP KHÁC
                         -- =========================================================================
-                        local isCallFlag = (target.cfg.useCallFlag and target.cfg.posX and target.cfg.posY) or
-                            ((target.mapCfg.mapId == 101094 or target.mapCfg.mapId == 101093) and target.cfg.posX and target.cfg.posY)
+                        local isCallFlag = (target.cfg.useCallFlag and target.cfg.posX and target.cfg.posY)
 
                         if isCallFlag then
                             if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
@@ -4128,7 +4037,7 @@ local function CreateModUI()
                                     target.cfg.posX = target.cfg.spots[2].x
                                     target.cfg.posY = target.cfg.spots[2].y
                                     _G.Mod_AutoFarmBoss_DidJiggle = false
-                                    LogMsg(string.format("Không thấy Boss tại điểm 1, bay tiếp sang điểm 2 (%s: %d, %d)...", target.cfg.name, target.cfg.posX, target.cfg.posY))
+                                    LogMsg(string.format("Không thấy Boss tại Boss 1, bay tiếp sang Boss 2 (%s: %d, %d)...", target.cfg.name, target.cfg.posX, target.cfg.posY))
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                     return
@@ -4136,7 +4045,7 @@ local function CreateModUI()
                                     target.triedSecondSpot = true
                                     target.cfg.transferId = target.cfg.transferIds[2]
                                     _G.Mod_AutoFarmBoss_DidJiggle = false
-                                    LogMsg(string.format("Không thấy Boss tại cổng 1, bay tiếp sang cổng 2 (%s: %s)...", target.cfg.name, tostring(target.cfg.transferId)))
+                                    LogMsg(string.format("Không thấy Boss tại Boss 1, bay tiếp sang Boss 2 (%s: %s)...", target.cfg.name, tostring(target.cfg.transferId)))
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                     return
@@ -7088,6 +6997,10 @@ local function CreateModUI()
                 _G.ModUpdateDisableVisualsLabel = function()
                     pcall(UpdateLabel)
                 end
+            elseif varName == "Mod_FindHoaLong_Enabled" then
+                _G.ModUpdateFindHoaLongLabel = function()
+                    pcall(UpdateLabel)
+                end
             end
 
             btn.onClick:AddListener(function()
@@ -7103,6 +7016,24 @@ local function CreateModUI()
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
                     if _G[varName] and _G.Mod_ExecuteGoldenChestAutoProcess then
                         pcall(_G.Mod_ExecuteGoldenChestAutoProcess)
+                    end
+                end
+
+                if varName == "Mod_FindHoaLong_Enabled" then
+                    if _G[varName] then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("BẮT ĐẦU TÌM HỎA LONG (DÙNG ĐÁ DỊCH CHUYỂN 0.5s/LẦN)...")
+                        end
+                        if _G.Mod_StartFindHoaLongLoop then
+                            pcall(_G.Mod_StartFindHoaLongLoop)
+                        end
+                    else
+                        if _G.Mod_StopTimer then
+                            _G.Mod_StopTimer("Mod_FindHoaLongLoop")
+                        end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("ĐÃ DỪNG TÌM HỎA LONG!")
+                        end
                     end
                 end
 
@@ -7438,7 +7369,7 @@ local function CreateModUI()
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             titleRt.anchoredPosition = Vector2(10, -65)
-            titleRt.sizeDelta = Vector2(380, 25)
+            titleRt.sizeDelta = Vector2(400, 25)
             local titleTxt = titleGo:AddComponent(typeof(Text))
             titleTxt.raycastTarget = false
             titleTxt.text = "[ NHẶT ĐỒ SIÊU TỐC ]"
@@ -7455,7 +7386,7 @@ local function CreateModUI()
             local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
             scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             scrollRt.anchoredPosition = Vector2(10, -95)
-            scrollRt.sizeDelta = Vector2(380, 335)
+            scrollRt.sizeDelta = Vector2(400, 335)
 
             local scrollImg = scrollGo:AddComponent(typeof(Image))
             scrollImg.color = Color(0, 0, 0, 0.01)
@@ -7613,7 +7544,7 @@ local function CreateModUI()
                 local rt = lbl:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(52, 20)
+                rt.sizeDelta = Vector2(56, 20)
                 local txt = lbl:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.text = text
@@ -7677,7 +7608,7 @@ local function CreateModUI()
             local curY = -5
 
             -- TỰ ĐỘNG NHẶT (Trái, Height = 30) & 2 nút PA NHẶT (Phải, Height = 30, Font = 12)
-            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", 10, curY, 175, nil, contentGo, 30)
+            CreateToggle("TỰ ĐỘNG NHẶT", "AutoPick_Enabled", 10, curY, 180, nil, contentGo, 30)
 
             if _G.AutoPick_Mode == nil then
                 _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
@@ -7690,8 +7621,8 @@ local function CreateModUI()
             btnPa1Go.transform:SetParent(contentGo.transform, false)
             local rtPa1 = btnPa1Go:AddComponent(typeof(RectTransform))
             rtPa1.anchorMin, rtPa1.anchorMax, rtPa1.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            rtPa1.anchoredPosition = Vector2(195, curY)
-            rtPa1.sizeDelta = Vector2(83, 30)
+            rtPa1.anchoredPosition = Vector2(200, curY)
+            rtPa1.sizeDelta = Vector2(90, 30)
 
             local bgPa1 = GameObject("Bg")
             bgPa1.transform:SetParent(btnPa1Go.transform, false)
@@ -7718,8 +7649,8 @@ local function CreateModUI()
             btnPa2Go.transform:SetParent(contentGo.transform, false)
             local rtPa2 = btnPa2Go:AddComponent(typeof(RectTransform))
             rtPa2.anchorMin, rtPa2.anchorMax, rtPa2.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            rtPa2.anchoredPosition = Vector2(287, curY)
-            rtPa2.sizeDelta = Vector2(83, 30)
+            rtPa2.anchoredPosition = Vector2(300, curY)
+            rtPa2.sizeDelta = Vector2(90, 30)
 
             local bgPa2 = GameObject("Bg")
             bgPa2.transform:SetParent(btnPa2Go.transform, false)
@@ -7777,7 +7708,7 @@ local function CreateModUI()
             lValGo.transform:SetParent(contentGo.transform, false)
             local lvRt = lValGo:AddComponent(typeof(RectTransform))
             lvRt.anchorMin, lvRt.anchorMax, lvRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lvRt.anchoredPosition = Vector2(15, curY)
+            lvRt.anchoredPosition = Vector2(10, curY)
             lvRt.sizeDelta = Vector2(200, 26)
             local lvTxt = lValGo:AddComponent(typeof(Text))
             lvTxt.raycastTarget = false
@@ -7791,8 +7722,8 @@ local function CreateModUI()
             lMinusGo.transform:SetParent(contentGo.transform, false)
             local lmRt = lMinusGo:AddComponent(typeof(RectTransform))
             lmRt.anchorMin, lmRt.anchorMax, lmRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lmRt.anchoredPosition = Vector2(230, curY)
-            lmRt.sizeDelta = Vector2(65, 26)
+            lmRt.anchoredPosition = Vector2(225, curY)
+            lmRt.sizeDelta = Vector2(78, 26)
             local lmImg = lMinusGo:AddComponent(typeof(Image))
             lmImg.color = Color(0.4, 0.4, 0.4, 1)
             local lmTxtGo = GameObject("LimitMinusText")
@@ -7812,8 +7743,8 @@ local function CreateModUI()
             lPlusGo.transform:SetParent(contentGo.transform, false)
             local lpRt = lPlusGo:AddComponent(typeof(RectTransform))
             lpRt.anchorMin, lpRt.anchorMax, lpRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lpRt.anchoredPosition = Vector2(305, curY)
-            lpRt.sizeDelta = Vector2(65, 26)
+            lpRt.anchoredPosition = Vector2(312, curY)
+            lpRt.sizeDelta = Vector2(78, 26)
             local lpImg = lPlusGo:AddComponent(typeof(Image))
             lpImg.color = Color(0.4, 0.4, 0.4, 1)
             local lpTxtGo = GameObject("LimitPlusText")
@@ -7854,7 +7785,7 @@ local function CreateModUI()
             local boneTitleRt = boneTitleGo:AddComponent(typeof(RectTransform))
             boneTitleRt.anchorMin, boneTitleRt.anchorMax, boneTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             boneTitleRt.anchoredPosition = Vector2(0, curY)
-            boneTitleRt.sizeDelta = Vector2(380, 20)
+            boneTitleRt.sizeDelta = Vector2(400, 20)
             local boneTitleTxt = boneTitleGo:AddComponent(typeof(Text))
             boneTitleTxt.raycastTarget = false
             boneTitleTxt.text = "[ LỰA CHỌN NHẶT THÁNH CỐT ]"
@@ -7864,8 +7795,8 @@ local function CreateModUI()
             if defaultFont then boneTitleTxt.font = defaultFont end
 
             curY = curY - 24
-            CreateBoneToggle("NHẶT HỒN", "AutoPick_Bone_Hon", 10, curY, 175)
-            CreateBoneToggle("NHẶT CỐT", "AutoPick_Bone_Cot", 195, curY, 175)
+            CreateBoneToggle("NHẶT HỒN", "AutoPick_Bone_Hon", 10, curY, 185)
+            CreateBoneToggle("NHẶT CỐT", "AutoPick_Bone_Cot", 205, curY, 185)
 
             -- BẢNG PHÙ VĂN (2 CỘT x 4 HÀNG)
             curY = curY - 34
@@ -7874,7 +7805,7 @@ local function CreateModUI()
             local runeTitleRt = runeTitleGo:AddComponent(typeof(RectTransform))
             runeTitleRt.anchorMin, runeTitleRt.anchorMax, runeTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             runeTitleRt.anchoredPosition = Vector2(0, curY)
-            runeTitleRt.sizeDelta = Vector2(380, 20)
+            runeTitleRt.sizeDelta = Vector2(400, 20)
             local runeTitleTxt = runeTitleGo:AddComponent(typeof(Text))
             runeTitleTxt.raycastTarget = false
             runeTitleTxt.text = "[ LỰA CHỌN NHẶT PHÙ VĂN ]"
@@ -7892,17 +7823,17 @@ local function CreateModUI()
             }
 
             for _, row in ipairs(runeGrid) do
-                -- Cột 1 (Bên trái: X = 10 -> 180)
+                -- Cột 1 (Bên trái: X = 10 -> 190)
                 CreateRuneLabel(row.left.label, 10, curY)
-                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.left.key .. "_Luc", 58, curY, 38)
-                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.left.key .. "_Lam", 100, curY, 38)
-                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.left.key .. "_Do", 142, curY, 38)
+                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.left.key .. "_Luc", 60, curY, 40)
+                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.left.key .. "_Lam", 105, curY, 40)
+                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.left.key .. "_Do", 150, curY, 40)
 
-                -- Cột 2 (Bên phải: X = 200 -> 370)
-                CreateRuneLabel(row.right.label, 200, curY)
-                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.right.key .. "_Luc", 248, curY, 38)
-                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.right.key .. "_Lam", 290, curY, 38)
-                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.right.key .. "_Do", 332, curY, 38)
+                -- Cột 2 (Bên phải: X = 210 -> 390)
+                CreateRuneLabel(row.right.label, 210, curY)
+                CreateSmallToggle("Lục", "AutoPick_Rune_" .. row.right.key .. "_Luc", 260, curY, 40)
+                CreateSmallToggle("Lam", "AutoPick_Rune_" .. row.right.key .. "_Lam", 305, curY, 40)
+                CreateSmallToggle("Đỏ", "AutoPick_Rune_" .. row.right.key .. "_Do", 350, curY, 40)
 
                 curY = curY - 24
             end
@@ -7914,7 +7845,7 @@ local function CreateModUI()
             local fumoTitleRt = fumoTitleGo:AddComponent(typeof(RectTransform))
             fumoTitleRt.anchorMin, fumoTitleRt.anchorMax, fumoTitleRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             fumoTitleRt.anchoredPosition = Vector2(0, curY)
-            fumoTitleRt.sizeDelta = Vector2(380, 20)
+            fumoTitleRt.sizeDelta = Vector2(400, 20)
             local fumoTitleTxt = fumoTitleGo:AddComponent(typeof(Text))
             fumoTitleTxt.raycastTarget = false
             fumoTitleTxt.text = "[ LỰA CHỌN NHẶT PHỤ MA ]"
@@ -7937,15 +7868,14 @@ local function CreateModUI()
             for _, row in ipairs(fumoRows) do
                 CreateFumoLabel(row.label, 10, curY)
                 for lv = 1, 7 do
-                    local btnX = 65 + (lv - 1) * 44
-                    CreateFumoToggle("LV" .. lv, "AutoPick_Fumo_" .. row.key .. "_LV" .. lv, btnX, curY, 40)
+                    local btnX = 68 + (lv - 1) * 46
+                    CreateFumoToggle("LV" .. lv, "AutoPick_Fumo_" .. row.key .. "_LV" .. lv, btnX, curY, 42)
                 end
                 curY = curY - 23
             end
 
             -- Cập nhật tổng chiều cao content
             contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
-
 
             -- =========================================================================
             -- [MOD FEATURE]: KHỐI INFO KUNDUN BOSS CỐ ĐỊNH (FIXED AT BOTTOM OF LEFT COLUMN)
@@ -9952,6 +9882,9 @@ local function CreateModUI()
 
             curY = curY - 40
             CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+            curY = curY - 45
+
+            CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
 
             -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
@@ -12109,3 +12042,164 @@ _G.Mod_StartGoldenChestLoop = function()
     end)
 end
 _G.Mod_StartGoldenChestLoop()
+
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG TÌM HỎA LONG BẰNG ĐÁ DỊCH CHUYỂN (AUTO FIND HOA LONG)
+-- Mô tả: Timer tần suất 0.5s/lần sử dụng Đá Dịch Chuyển (20000022) nhảy ngẫu nhiên trên bản đồ.
+--        Mỗi lần quét phạm vi 15 ô xung quanh, nếu phát hiện Hỏa Long / Vua Hỏa Long (100112, 500301)
+--        thì dừng nhảy, khóa mục tiêu và in QuickMsg tọa độ ra màn hình.
+-- =========================================================================
+_G.Mod_FindHoaLong_Enabled = false
+
+local function Mod_UseTeleportStone()
+    local stoneBagId = nil
+    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+    if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+        pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+    end
+    if items then
+        for _, itemData in pairs(items) do
+            if itemData then
+                local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                if itemId == 20000022 and instanceId then
+                    stoneBagId = instanceId
+                    break
+                end
+            end
+        end
+    end
+    if stoneBagId then
+        local used = false
+        if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+            pcall(function()
+                _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                used = true
+            end)
+        end
+        if not used and _G.networkRequest and _G.networkRequest.ReqUseItem then
+            pcall(function()
+                _G.networkRequest.ReqUseItem(1, stoneBagId)
+                used = true
+            end)
+        end
+        return used
+    end
+    return false
+end
+
+local function Mod_CheckHoaLongAround(radius)
+    radius = radius or 15
+    local me = _G.RoleManager and _G.RoleManager.me
+    if not me then return nil end
+    local meX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or (me.data and me.data.x) or 0
+    local meY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
+    if meX == 0 and meY == 0 then return nil end
+
+    local monsterRoles = _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if not monsterRoles then return nil end
+
+    local meId = me.data and me.data.id or 0
+
+    for lid, role in pairs(monsterRoles) do
+        if role and not role.isDead and (not role.hp or role.hp > 0) then
+            local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+            local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or 0
+            local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+
+            if not isMySummon then
+                local cfgId = (role.GetConfigId and role:GetConfigId()) or role.configId or (role.data and role.data.configId)
+                local roleName = role.name or (role.data and role.data.name) or ""
+                local model = role.model or (role.data and role.data.model) or ""
+
+                local isHoaLong = false
+                if cfgId == 500301 or cfgId == 100112 then
+                    isHoaLong = true
+                elseif string.find(roleName, "Hỏa Long") or string.find(roleName, "Hoa Long") or string.find(roleName, "Vua H") then
+                    isHoaLong = true
+                elseif model == "Monster32" then
+                    isHoaLong = true
+                end
+
+                if isHoaLong then
+                    local targetX = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                    local targetY = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
+                    if targetX and targetY then
+                        local dx = tonumber(targetX) - meX
+                        local dy = tonumber(targetY) - meY
+                        local dist = math.max(math.abs(dx), math.abs(dy))
+                        if dist <= radius then
+                            return role, tonumber(targetX), tonumber(targetY), dist, roleName
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+_G.Mod_StartFindHoaLongLoop = function()
+    if not _G.Mod_FindHoaLong_Enabled then
+        _G.Mod_StopTimer("Mod_FindHoaLongLoop")
+        return
+    end
+
+    _G.Mod_StartTrackedTimer("Mod_FindHoaLongLoop", 0.5, -1, function()
+        if not _G.Mod_FindHoaLong_Enabled then
+            _G.Mod_StopTimer("Mod_FindHoaLongLoop")
+            return
+        end
+
+        local me = _G.RoleManager and _G.RoleManager.me
+        if not me or me.isDead then return end
+
+        -- 1. Quét tìm Hỏa Long trong vòng 15 ô
+        local foundRole, fx, fy, fDist, fName = Mod_CheckHoaLongAround(15)
+        if foundRole and fx and fy then
+            _G.Mod_FindHoaLong_Enabled = false
+            _G.Mod_StopTimer("Mod_FindHoaLongLoop")
+            if CS.UnityEngine.PlayerPrefs then
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_FindHoaLong_Enabled", 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end
+            if _G.ModUpdateFindHoaLongLabel then
+                _G.ModUpdateFindHoaLongLabel()
+            end
+
+            -- Khóa mục tiêu vào Hỏa Long
+            pcall(function()
+                if me.SetTarget then
+                    me:SetTarget(foundRole)
+                elseif me.SetTargetAvatar then
+                    me:SetTargetAvatar(foundRole)
+                end
+            end)
+
+            local bossName = (fName and fName ~= "") and fName or "HỎA LONG"
+            local msg = string.format("🔥 [TÌM THẤY BOSS] %s tại tọa độ (%d, %d) - Cách %d ô!", bossName, fx, fy, math.floor(fDist))
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(msg)
+            end
+            return
+        end
+
+        -- 2. Chưa thấy Hỏa Long trong 15 ô -> Sử dụng Đá Dịch Chuyển để nhảy vị trí khác
+        local used = Mod_UseTeleportStone()
+        if not used then
+            _G.Mod_FindHoaLong_Enabled = false
+            _G.Mod_StopTimer("Mod_FindHoaLongLoop")
+            if CS.UnityEngine.PlayerPrefs then
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_FindHoaLong_Enabled", 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end
+            if _G.ModUpdateFindHoaLongLabel then
+                _G.ModUpdateFindHoaLongLabel()
+            end
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg("⚠️ Không có Đá Dịch Chuyển (20000022) trong túi đồ!")
+            end
+        end
+    end)
+end

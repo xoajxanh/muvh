@@ -1394,7 +1394,7 @@ end
 function Login_LoginUI:OnRefresh()
   if LoginData.panelState == PanelStateEnum.InputLogin then
     self.go_selectServer:SetActive(false)
-    self.go_LoginInput:SetActive(not LoginData.isSdk)
+    self.go_LoginInput:SetActive(false)
     self.go_ConnectServer:SetActive(false)
     self.btn_bindAccount:SetActive(false)
     self.btn_changeChannel_apple:SetActive(false)

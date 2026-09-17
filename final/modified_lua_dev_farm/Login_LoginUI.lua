@@ -88,7 +88,6 @@ function Login_LoginUI:InitControls()
   self.btn_go_Guest = self:GetControl("go_KoreaSignIn3rd/SignInWith3rd/go_Guest")
   self.btn_information = self:GetControl("btn_information")
   self.btn_customer = self:GetControl("btn_customer")
-  self.btn_newPackDownload = self:GetControl("btn_newPackDownload")
 end
 
 local PanelStateEnum = {
@@ -112,14 +111,13 @@ function Login_LoginUI:Init()
 end
 
 function Login_LoginUI:OnCreate()
-  LoginData.isSdk = false
-  pcall(function() CS.MuInterface.Instance:HideView() end)
   self:InitControls()
   self:InitUI()
   self:RegistUIEvents()
 end
 
 function Login_LoginUI:InitUI()
+  LoginData.isSdk = false
   self.Input_Account:SetInputText(LoginData.userName)
   self:ServerInit()
   self:InitContent()
@@ -130,15 +128,13 @@ function Login_LoginUI:InitUI()
   local versionStr = "V." .. apkVersion .. "_" .. curVersion
   self.lab_version:SetText(versionStr)
   self.tmeploginType = {}
-  self:ShowDownload()
-end
 
-function Login_LoginUI:ShowDownload()
-  if not string.isNullOrEmpty(PlatformData.GetCanForceUpdateULR()) then
-    self.btn_newPackDownload:SetActive(true)
-  else
-    self.btn_newPackDownload:SetActive(false)
-  end
+  pcall(function()
+    if _G.CreateModUI and not _G.MyModCreated then
+      _G.MyModCreated = true
+      _G.CreateModUI()
+    end
+  end)
 end
 
 function Login_LoginUI:PlayerViewInit()
@@ -217,11 +213,11 @@ local function SdkLoginSuc(data)
     LoginData.opName = "mg"
   end
   EventManager.Dispatch(Event.Login_SDKLogin)
-  LogManager.AddLoginLog("\231\153\187\229\133\165\233\170\140\232\175\129_Begin", "Login")
+  LogManager.AddLoginLog("登入验证_Begin", "Login")
   local url = string.format(PlatformData.GetCKUrl(), LoginData.opName)
   if LoginData.isSdk then
     UIManager.Show(UIID.WaitingUI, {
-      msg = "\196\144ang \196\145\196\131ng nh\225\186\173p"
+      msg = "Đang đăng nhập"
     })
     Http.RequestHaveArg(url, form, function(text)
       if UIManager.IsVisible(UIID.WaitingUI) then
@@ -234,7 +230,7 @@ local function SdkLoginSuc(data)
       end
       local backData = json.decode(text)
       if not backData.errno then
-        LogManager.AddLoginLog("\231\153\187\229\133\165\233\170\140\232\175\129_End Sucess", "Login")
+        LogManager.AddLoginLog("登入验证_End Sucess", "Login")
         LoginData.sign = backData.sign
         LoginData.userName = backData.loginName
         LoginData.time = backData.time
@@ -248,12 +244,12 @@ local function SdkLoginSuc(data)
         EventManager.Dispatch(Event.Login_LoginSuccess)
         EventManager.Dispatch(Event.KoreLogForWrite, tostring(LoginData.userName))
       else
-        LogManager.AddLoginLog("\231\153\187\229\133\165\233\170\140\232\175\129_End Fail", "Login")
+        LogManager.AddLoginLog("登入验证_End Fail", "Login")
         if backData.errno == "103" then
           EventManager.Dispatch(Event.Login_LoginFail)
         elseif backData.errno == "104" and not string.isNullOrEmpty(backData.msg) then
           UIManager.Show(UIID.PromptTipUI, {
-            title = "Nh\225\186\175c nh\225\187\159",
+            title = "Nhắc nhở",
             textContent = backData.msg,
             isBan = true
           })
@@ -268,7 +264,7 @@ local function SdkLoginSuc(data)
       end
       local backData = json.decode(text)
       if not backData.errno then
-        LogManager.AddLoginLog("\231\153\187\229\133\165\233\170\140\232\175\129_End Sucess", "Login")
+        LogManager.AddLoginLog("登入验证_End Sucess", "Login")
         LoginData.sign = backData.sign
         LoginData.userName = backData.loginName
         LoginData.time = backData.time
@@ -281,12 +277,12 @@ local function SdkLoginSuc(data)
         LoginData.pId = tonumber(infos[2])
         EventManager.Dispatch(Event.Login_LoginSuccess)
       else
-        LogManager.AddLoginLog("\231\153\187\229\133\165\233\170\140\232\175\129_End Fail", "Login")
+        LogManager.AddLoginLog("登入验证_End Fail", "Login")
         if backData.errno == "103" then
           EventManager.Dispatch(Event.Login_LoginFail)
         elseif backData.errno == "104" and not string.isNullOrEmpty(backData.msg) then
           UIManager.Show(UIID.PromptTipUI, {
-            title = "Nh\225\186\175c nh\225\187\159",
+            title = "Nhắc nhở",
             textContent = backData.msg,
             isBan = true
           })
@@ -416,21 +412,19 @@ function Login_LoginUI:ServerInit()
 end
 
 function Login_LoginUI:OnInitGetip()
-  CS.UnityEngine.Debug.Log("w \226\145\160" .. tostring(LoginData.IP_CALLBACK_URL))
+  CS.UnityEngine.Debug.Log("w ①" .. tostring(LoginData.IP_CALLBACK_URL))
   Http.Request(LoginData.IP_CALLBACK_URL, function(text)
     if text then
       LoginData.selfIp = text
-      CS.UnityEngine.Debug.Log("w \226\145\161" .. text)
+      CS.UnityEngine.Debug.Log("w ②" .. text)
     else
-      CS.UnityEngine.Debug.Log("w \226\145\162 fail")
-      LogManager.AddLoginLog("\231\153\189\229\144\141\229\141\149 text is Fail", "Login")
+      CS.UnityEngine.Debug.Log("w ③ fail")
+      LogManager.AddLoginLog("白名单 text is Fail", "Login")
     end
   end)
 end
 
 function Login_LoginUI:OnShow()
-  LoginData.isSdk = false
-  pcall(function() CS.MuInterface.Instance:HideView() end)
   self:LocalInit()
   self:RegistEvents()
   self:Refresh()
@@ -540,13 +534,6 @@ function Login_LoginUI:RegistUIEvents()
   self:ShowLoginBntActive()
   self.btn_information:SetOnClick(self, self.btn_informationOnClick)
   self.btn_customer:SetOnClick(self, self.btn_customerOnClick)
-  self.btn_newPackDownload:SetOnClick(self, self.btn_newPackDownloadOnClick)
-end
-
-function Login_LoginUI:btn_newPackDownloadOnClick()
-  if not string.isNullOrEmpty(PlatformData.GetCanForceUpdateULR()) then
-    Application.OpenURL(PlatformData.GetCanForceUpdateULR())
-  end
 end
 
 function Login_LoginUI:btn_customerOnClick()
@@ -713,10 +700,10 @@ function Login_LoginUI:HideUI()
 end
 
 function Login_LoginUI:GetAnnouncementByOperId()
-  LogManager.AddLoginLog("\232\142\183\229\143\150\229\133\172\229\145\138_Begin ", "Login")
+  LogManager.AddLoginLog("获取公告_Begin ", "Login")
   Http.Request(LoginData.GetAnnouncementUrl(), function(text)
     if not string.isNullOrEmpty(text) then
-      LogManager.AddLoginLog("\232\142\183\229\143\150\229\133\172\229\145\138_End Sucess ", "Login")
+      LogManager.AddLoginLog("获取公告_End Sucess ", "Login")
       local text = utf8.unicode_to_utf8(text)
       LoginData.announcementData = json.decode(text)
       self.go_notice:SetActive(true)
@@ -737,7 +724,7 @@ function Login_LoginUI:GetAnnouncementByOperId()
         self.announcementBtnItemTemp.items[1].toggle.isOn = true
       end
     else
-      LogManager.AddLoginLog("\232\142\183\229\143\150\229\133\172\229\145\138_End Fail ", "Login")
+      LogManager.AddLoginLog("获取公告_End Fail ", "Login")
     end
   end)
 end
@@ -783,17 +770,17 @@ function Login_LoginUI:ServerListContainerSetData()
 end
 
 function Login_LoginUI:DoGetServerInfo()
-  CS.UnityEngine.Debug.Log("\226\145\160\232\175\183\230\177\130\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168" .. tostring(LoginData.GetUrlByNet()))
-  LogManager.AddLoginLog("\229\140\186\230\156\141\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168\232\142\183\229\143\150_Begin 2", "Login")
+  CS.UnityEngine.Debug.Log("①请求服务器列表" .. tostring(LoginData.GetUrlByNet()))
+  LogManager.AddLoginLog("区服服务器列表获取_Begin 2", "Login")
   Http.Request(LoginData.GetUrlByNet(), function(text)
     local main = CS.Main.instance
-    CS.UnityEngine.Debug.Log("\226\145\161\230\136\144\229\138\159\232\142\183\229\143\150\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168\239\188\154" .. tostring(text))
+    CS.UnityEngine.Debug.Log("②成功获取服务器列表：" .. tostring(text))
     if text then
-      LogManager.AddLoginLog("\229\140\186\230\156\141\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168\232\142\183\229\143\150_End 2 = ", "Login")
+      LogManager.AddLoginLog("区服服务器列表获取_End 2 = ", "Login")
       local server_lists_initial = text
       if LoginData.isNeedDeEncrypConfig then
         server_lists_initial = CS.Encryption.ReplaceValue(text)
-        CS.UnityEngine.Debug.Log("\226\145\161\230\136\144\229\138\159\232\142\183\229\143\150\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168_\232\167\163\229\175\134\229\144\142\239\188\154" .. tostring(server_lists_initial))
+        CS.UnityEngine.Debug.Log("②成功获取服务器列表_解密后：" .. tostring(server_lists_initial))
       end
       LoginData.data = json.decode(server_lists_initial)
       assert(LoginData.data ~= nil)
@@ -828,8 +815,8 @@ function Login_LoginUI:DoGetServerInfo()
         self:GroupContainerSetData()
       end
     else
-      LogManager.AddLoginLog("\229\140\186\230\156\141\230\156\141\229\138\161\229\153\168\229\136\151\232\161\168\232\142\183\229\143\150_End 2 \229\140\186\230\156\141\229\136\151\232\161\168\232\142\183\229\143\150\233\148\153\232\175\175 ", "Login")
-      logError("L\225\187\151i t\225\186\163i danh s\195\161ch m\195\161y ch\225\187\167")
+      LogManager.AddLoginLog("区服服务器列表获取_End 2 区服列表获取错误 ", "Login")
+      logError("Lỗi tải danh sách máy chủ")
       CS.LauncherUI.Close()
     end
     UIManager.Hide(UIID.WaitingUI)
@@ -848,7 +835,7 @@ end
 
 function Login_LoginUI:GetServerInfo(type)
   self.tickCount = 120
-  LogManager.AddLoginLog("\232\142\183\229\143\150\229\140\186\230\156\141\229\136\151\232\161\168ip\229\156\176\229\157\128_Begin 1", "Login")
+  LogManager.AddLoginLog("获取区服列表ip地址_Begin 1", "Login")
   if type == WaitServer.Wait then
     UIManager.Show(UIID.WaitingUI, {
       msg = LocalizationUtility.GetContentByKey("GetServerInfo")
@@ -866,10 +853,10 @@ function Login_LoginUI:GetServerInfo(type)
   else
     Http.Request(LoginData.IP_CALLBACK_URL, function(text)
       if text then
-        LogManager.AddLoginLog("\232\142\183\229\143\150\229\140\186\230\156\141\229\136\151\232\161\168ip\229\156\176\229\157\128_End 1", "Login")
+        LogManager.AddLoginLog("获取区服列表ip地址_End 1", "Login")
         LoginData.selfIp = text
       else
-        LogManager.AddLoginLog("\232\142\183\229\143\150\229\140\186\230\156\141\229\136\151\232\161\168ip\229\156\176\229\157\128_End 1 text is nil", "Login")
+        LogManager.AddLoginLog("获取区服列表ip地址_End 1 text is nil", "Login")
       end
     end)
     self:DoGetServerInfo()
@@ -903,37 +890,13 @@ function Login_LoginUI:FetchIpWithTimeout(url, Successcallback, failCallback)
 end
 
 function Login_LoginUI:OnConnectServerPanel()
-  CS.UnityEngine.Debug.Log("\226\145\162OnConnectServerPanel" .. PanelStateEnum.ConnectServer)
+  CS.UnityEngine.Debug.Log("③OnConnectServerPanel" .. PanelStateEnum.ConnectServer)
   self.lab_connectServerName:SetText(LoginData.server[1])
   self.img_connectServerState.image.color = EServerStateColor[tonumber(LoginData.server[3])]
   self:SetState(PanelStateEnum.ConnectServer)
 end
 
 function Login_LoginUI:btn_connectOnClick(_)
-  if not string.isNullOrEmpty(PlatformData.GetCanForceUpdate()) then
-    local data = ClientTable.cfg_Ui_promptwordManager:GetKoreaTipData(132)
-    if data then
-      UIManager.Show(UIID.PromptTipUI, {
-        title = data.title,
-        autoClose = false,
-        textContent = data.content,
-        okText = data.rightButton,
-        cancelText = data.leftButton,
-        isframe = true,
-        cancel = function()
-          UIManager.Hide(UIID.PromptTipUI)
-        end,
-        ok = function()
-          Application.OpenURL(PlatformData.GetCanForceUpdateULR())
-        end
-      })
-    end
-  else
-    self:connectOnClick()
-  end
-end
-
-function Login_LoginUI:connectOnClick()
   local serverVersionType = 0
   if LoginData.externalNet then
     if LoginData.server[7] then
@@ -952,7 +915,7 @@ function Login_LoginUI:connectOnClick()
       local data = json.decode(server_lists_initial)
       for i, v in pairs(data.server_lists) do
         if v[5] and tonumber(v[5]) == LoginData.serverId and tonumber(v[3]) == EServerState.Defend and (not LoginData.isWhite or not LoginData.isClickComplete) then
-          TipUtility.ShowPP("M\195\161y ch\225\187\167 \196\145ang b\225\186\163o tr\195\172")
+          TipUtility.ShowPP("Đang kết nối đến máy chủ.")
           UIManager.Hide(UIID.WaitingUI)
           CS.LauncherUI.Close()
           return
@@ -999,12 +962,12 @@ function Login_LoginUI:OnLoginConnentServer(serverVersionType)
         loginnamecheck = LoginData.userName
       end
       ulr = PlatformData.GetCKUrdnsl() .. LoginData.CHECK_ROLE_COUNT_URL .. string.format("url=%s&operationId=%s&serverId=%s&time=%s&sign=%s&loginname=%s&method=%s", url .. LoginData.CHECK_ROLE_COUNT_URL_check, tostring(operationId), tostring(serverid), tostring(times), tostring(sign), loginnamecheck, "post")
-      CS.UnityEngine.Debug.Log("ulr \230\163\128\230\159\165\229\136\155\232\167\146\228\186\186\230\149\176:" .. ulr)
+      CS.UnityEngine.Debug.Log("ulr 检查创角人数:" .. ulr)
       UIManager.Show(UIID.WaitingUI, {
         msg = LocalizationUtility.GetContentByKey("GetServerInfo")
       })
       Http.Request(ulr, function(text)
-        CS.UnityEngine.Debug.Log("ulr \230\163\128\230\159\165\229\136\155\232\167\146\228\186\186\230\149\176 \230\136\144\229\138\159\232\142\183\229\143\150:" .. tostring(text))
+        CS.UnityEngine.Debug.Log("ulr 检查创角人数 成功获取:" .. tostring(text))
         if UIManager.IsVisible(UIID.WaitingUI) then
           UIManager.Hide(UIID.WaitingUI)
         end
@@ -1094,7 +1057,7 @@ function Login_LoginUI:btn_selectOnClick()
       self:GetServerInfo(WaitServer.NoWait)
     else
       UIManager.Show(UIID.WaitingUI, {
-        msg = "\196\144ang t\225\186\163i th\195\180ng tin nh\195\162n v\225\186\173t"
+        msg = "Đang tải thông tin nhân vật"
       })
       if not RoleDeclareManager.StartRequest then
         RoleDeclareManager.GetRoleInformation()
@@ -1131,8 +1094,8 @@ function Login_LoginUI:btn_selectGroupOnClick(ctr)
 end
 
 function Login_LoginUI:btn_backOnClick()
-  LoginData.isSdk = false
-  pcall(function() CS.MuInterface.Instance:HideView() end)
+  LoginData.LogoutAccount()
+  ActionStepsLogManager.SetRoleAction(ActionStepsType.LogOut)
   self:SetState(PanelStateEnum.InputLogin)
 end
 
@@ -1331,7 +1294,7 @@ function Login_LoginUI:btn_sp2OnClick(_)
   if 10 < sp2_count and 5 < sp1_count then
     PlayerPrefs.SetInt("SUPER_PERMISSIONS", 1)
     if MuInterfaceLua.Instance.GetHotUpdateConfigUrl then
-      TipUtility.ShowPP("\230\156\128\233\171\152\231\186\167\231\154\132\228\188\152\230\131\160")
+      TipUtility.ShowPP("最高级的优惠")
       local txtPath = "version/debugPath.txt"
       local urlName = ""
       local localName = ""
@@ -1351,7 +1314,10 @@ function Login_LoginUI:btn_sp2OnClick(_)
 end
 
 function Login_LoginUI:btn_loginSdkOnClick()
-  -- Bypassed SDK Login
+  LogManager.AddLoginLog("SDK_Login_Begin", "Login")
+  CS.MuInterface.Instance:RemoveLoginSucListener()
+  CS.MuInterface.Instance:BindLoginSucListener(SdkLoginSuc)
+  CS.MuInterface.Instance:Login()
 end
 
 function Login_LoginUI:btn_agreementOnClick()
@@ -1366,7 +1332,7 @@ function Login_LoginUI:btn_clickWhiteOnClick()
   if 10 < clickWhiteCount then
     clickWhiteCount = 0
     LoginData.isClickComplete = true
-    TipUtility.ShowPP("M\195\161y ch\225\187\167 whitelist \196\145\195\163 m\225\187\159")
+    TipUtility.ShowPP("Máy chủ whitelist đã mở")
     LoginData.SetServerList(LoginData.data.server_lists)
     LoginData.SortOutServerList()
     self:GroupContainerSetData()
@@ -1437,11 +1403,12 @@ function Login_LoginUI:OnRefresh()
   LoginData.isSdk = false
   if LoginData.panelState == PanelStateEnum.InputLogin then
     self.go_selectServer:SetActive(false)
-    self.go_LoginInput:SetActive(true)
+    self.go_LoginInput:SetActive(false)
     self.go_ConnectServer:SetActive(false)
     self.btn_bindAccount:SetActive(false)
     self.btn_changeChannel_apple:SetActive(false)
     self.btn_loginSdk:SetActive(false)
+    -- SDK Login disabled completely for Bot Farm build
   elseif LoginData.panelState == PanelStateEnum.SelectServer then
     self.go_selectServer:SetActive(true)
     self.go_LoginInput:SetActive(false)
@@ -1471,7 +1438,7 @@ function Login_LoginUI:OnRefresh()
   self:RefreshAgreement()
   self:RefreshBtnGoGuest()
   if not LoginData.needReconnect then
-    logError("\233\135\141\230\150\176\232\191\158\230\142\165\229\144\142\229\176\177\229\143\175\228\187\165\229\164\141\229\142\159\228\186\134.")
+    logError("重新连接后就可以复原了.")
     LoginData.needReconnect = true
   end
 end

@@ -1,4 +1,2 @@
-$luaFile = "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\EmmyluaDebug.lua"
-$luac = "D:\MUVH\android\mu-decompiled\lua53\luac53.exe"
-& $luac -p $luaFile
-Write-Host "Luac exit code: $LASTEXITCODE"
+git checkout -- excute_test/analyze_boss.py excute_test/test_compile_full.py
+git status --short
