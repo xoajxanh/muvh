@@ -4954,12 +4954,16 @@ local function CreateModUI()
                                             local rawPct = (role.hp / maxHp) * 100
                                             local hpPct = math.max(0.01, rawPct)
 
+                                            local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
+                                            local isFov75 = (fovVal == 75)
+                                            local isFov80 = (fovVal == 80)
+                                            local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+
                                             if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
                                                 local msg
-                                                local limit = tonumber(_G.AutoPick_Limit) or 0
-                                                if _G.Mod_IsAdmin and limit >= 21 then
+                                                if _G.Mod_IsAdmin and isFov80 then
                                                     msg = string.format("[ %s ] (2) HP: %.2f%%", tostring(d.name), hpPct)
-                                                elseif _G.Mod_IsAdmin and limit >= 16 then
+                                                elseif _G.Mod_IsAdmin and isFov75 then
                                                     msg = string.format("[ %s ] (1) HP: %.2f%%", tostring(d.name), hpPct)
                                                 else
                                                     msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
@@ -4974,11 +4978,11 @@ local function CreateModUI()
                                             local kLevel = tonumber(d.level) or tonumber(role.level) or 0
                                             local triggerThreshold = 0.69
                                             if kLevel >= 3800 then
-                                                triggerThreshold = 0.7
+                                                triggerThreshold = 0.6
                                             elseif kLevel >= 3400 then
-                                                triggerThreshold = 1.5
+                                                triggerThreshold = 1
                                             elseif kLevel >= 3000 then
-                                                triggerThreshold = 3
+                                                triggerThreshold = 2
                                             elseif kLevel >= 2600 then
                                                 triggerThreshold = 5.0
                                             elseif kLevel >= 2200 then
@@ -4987,17 +4991,8 @@ local function CreateModUI()
                                                 triggerThreshold = 20.0
                                             end
 
-                                            -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & Limit >= 16)
-                                            local limitNum = tonumber(_G.AutoPick_Limit) or 0
-                                            
-                                            -- if rawPct <= 30.0 and rawPct >= 15.0 then
-                                            --     local dbgMsg = string.format("[KUNDUN DEBUG] Admin=%s, Limit=%s, kLevel=%s, Thresh=%s, rawPct=%.2f", 
-                                            --         tostring(_G.Mod_IsAdmin), tostring(limitNum), tostring(kLevel), tostring(triggerThreshold), rawPct)
-                                            --     print(dbgMsg)
-                                            --     if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(dbgMsg) end
-                                            -- end
-
-                                            if _G.AutoPick_Enabled and _G.Mod_IsAdmin and limitNum >= 16 and rawPct <= triggerThreshold then
+                                            -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & FOV == 75 hoặc 80)
+                                            if _G.AutoPick_Enabled and isAdminBurst and rawPct <= triggerThreshold then
                                                 TriggerKundunWeakPrep(role, triggerThreshold)
                                             elseif rawPct > triggerThreshold + 0.1 then
                                                 _G.Mod_KundunWeakExecuted = false
@@ -10969,7 +10964,7 @@ local function CreateModUI()
                     -- =========================================================================
                     -- [MOD FEATURE]: BÃO NHẶT SIÊU TỐC ADMIN (HYPER-BURST 3-PRE + MOVE + 5-POST + SPAM QUEUE)
                     -- =========================================================================
-                    if _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16 and logPrefix ~= "KTĐ" then
+                    if isAdminBurst and logPrefix ~= "KTĐ" then
                         local objId = dropItemData.id or "???"
                         local itemTypeId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or "???"
                         local itemX = dropItemData.x or 0
