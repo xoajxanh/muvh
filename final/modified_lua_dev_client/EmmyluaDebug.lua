@@ -4550,8 +4550,9 @@ local function CreateModUI()
                     isBoneHon = true
                 end
 
+                local rLevel = 0
                 if isRune then
-                    local rLevel = confId % 100
+                    rLevel = confId % 100
                     if rLevel > 20 or rLevel == 0 then rLevel = confId % 10 end
                     local rColor = 0
                     if subType then
@@ -4593,6 +4594,7 @@ local function CreateModUI()
                 -- =========================================================================
                 local isFumo = (itemType == 30) or (confId and confId >= 30101001 and confId <= 30107030)
                 local fumoPref = nil
+                local fLevel = 0
 
                 if isFumo then
                     local slotKey = nil
@@ -4612,7 +4614,7 @@ local function CreateModUI()
                         slotKey = "VKPhu"
                     end
 
-                    local fLevel = (quality and quality > 0 and quality) or (confId and (confId % 100)) or 1
+                    fLevel = (quality and quality > 0 and quality) or (confId and (confId % 100)) or 1
                     if fLevel > 7 then fLevel = 7 end
                     if fLevel < 1 then fLevel = 1 end
 
@@ -4625,8 +4627,10 @@ local function CreateModUI()
                     isBoneCot = isBoneCot,
                     isBoneHon = isBoneHon,
                     isRune = isRune,
+                    runeLevel = rLevel,
                     runePref = runePref,
                     isFumo = isFumo,
+                    fumoLevel = fLevel,
                     fumoPref = fumoPref
                 }
                 _G.Mod_ItemDecisionCache[confId] = res
@@ -5037,19 +5041,20 @@ local function CreateModUI()
                                                 local isBone = isBoneHon or isBoneCot
                                                 local shouldPick = false
 
+                                                local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
+                                                local isFov75 = (fovVal == 75)
+                                                local isFov80 = (fovVal == 80)
+                                                local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+
                                                 if decision.isRune then
-                                                    local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
-                                                    local pickLimit = _G.AutoPick_Limit or 0
-                                                    if isAdminBurst and pickLimit < 21 then
+                                                    if isAdminBurst and isFov75 then
                                                         shouldPick = true
                                                     elseif decision.runePref and _G[decision.runePref] == true then
                                                         shouldPick = true
                                                     end
                                                 end
                                                 if decision.isFumo then
-                                                    local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
-                                                    local pickLimit = _G.AutoPick_Limit or 0
-                                                    if isAdminBurst and pickLimit < 21 then
+                                                    if isAdminBurst and isFov75 then
                                                         shouldPick = true
                                                     elseif decision.fumoPref and _G[decision.fumoPref] == true then
                                                         shouldPick = true
@@ -5094,41 +5099,93 @@ local function CreateModUI()
                         end
 
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
+                        local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
+                        local isFov75 = (fovVal == 75)
+                        local isFov80 = (fovVal == 80)
+                        local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: HÀM TÍNH ĐIỂM ƯU TIÊN SẮP XẾP NHẶT ĐỒ CHO ADMIN
+                        -- Thứ tự ưu tiên:
+                        -- 1. Thánh Cốt: Cốt (1000đ) > Hồn (500đ)
+                        -- 2. Phù Văn: Level cao > thấp (Lv10 > Lv9 > ... > Lv5)
+                        -- 3. Phụ Ma: Level cao > thấp (LV7 > LV6 > ... > LV1)
+                        -- 4. Nếu cùng điểm: Khoảng cách gần > xa
+                        -- =========================================================================
+                        local function GetItemPriorityScore(itemInfo)
+                            if itemInfo.isBoneCot then
+                                return 1000
+                            elseif itemInfo.isBoneHon then
+                                return 500
+                            elseif itemInfo.isRune then
+                                return (itemInfo.runeLevel or 1)
+                            elseif itemInfo.isFumo then
+                                return (itemInfo.fumoLevel or 1)
+                            end
+                            return 0
+                        end
 
                         if _G.AutoPick_Mode == 1 or isAdminBurst then
                             -- PA NHẶT 1 / ADMIN HYPER BURST: Spam siêu tốc mỗi frame
-                            local nearestDist = 9999
-                            local nearestItem = nil
                             local meX, meY = 0, 0
                             if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.serverCoord then
                                 meX = _G.RoleManager.me.serverCoord.x or 0
                                 meY = _G.RoleManager.me.serverCoord.y or 0
                             end
 
+                            local itemsToSpam = {}
                             for itemId, itemInfo in pairs(_G.Mod_ActiveSpamItems) do
                                 if nowTime > itemInfo.expireTime then
                                     _G.Mod_ActiveSpamItems[itemId] = nil
                                 else
-                                    if _G.PickupManager then
-                                        _G.PickupManager.ReqPickUpMapItem(itemId)
+                                    if itemInfo.x and itemInfo.y then
+                                        itemInfo.dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
+                                    else
+                                        itemInfo.dist = 9999
+                                    end
+                                    table.insert(itemsToSpam, itemInfo)
+                                end
+                            end
 
-                                        -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
-                                        if itemInfo.x and itemInfo.y then
-                                            local dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
-                                            if dist <= 2 then
-                                                _G.PickupManager.ReqPickUpMapItem(itemId)
-                                            end
-                                            if dist < nearestDist then
-                                                nearestDist = dist
-                                                nearestItem = itemInfo
-                                            end
+                            -- Sắp xếp danh sách nhặt ưu tiên cho Admin
+                            if _G.Mod_IsAdmin and #itemsToSpam > 1 then
+                                table.sort(itemsToSpam, function(a, b)
+                                    local scoreA = GetItemPriorityScore(a)
+                                    local scoreB = GetItemPriorityScore(b)
+                                    if scoreA ~= scoreB then
+                                        return scoreA > scoreB
+                                    end
+                                    return (a.dist or 9999) < (b.dist or 9999)
+                                end)
+                            end
+
+                            local nearestDist = 9999
+                            local nearestItem = nil
+
+                            for _, itemInfo in ipairs(itemsToSpam) do
+                                if _G.PickupManager then
+                                    _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+
+                                    -- Khi chạy tới sát vị trí item (cự ly <= 2 ô), bắn bồi thêm gói kép
+                                    if itemInfo.dist and itemInfo.dist <= 2 then
+                                        _G.PickupManager.ReqPickUpMapItem(itemInfo.id)
+                                    end
+
+                                    if (itemInfo.dist or 9999) < nearestDist then
+                                        nearestDist = itemInfo.dist or 9999
+                                        if not _G.Mod_IsAdmin then
+                                            nearestItem = itemInfo
                                         end
                                     end
                                 end
                             end
 
-                            -- Với Admin Bão Nhặt: Tự động điều hướng MoveTo mượt mà về phía item gần nhất chưa nhặt
+                            -- Với Admin: item đầu tiên trong danh sách đã sort là item có độ ưu tiên cao nhất!
+                            if _G.Mod_IsAdmin and #itemsToSpam > 0 then
+                                nearestItem = itemsToSpam[1]
+                            end
+
+                            -- Với Admin Bão Nhặt: Tự động điều hướng MoveTo mượt mà về phía item ưu tiên nhất
                             if isAdminBurst and nearestItem and _G.RoleManager and _G.RoleManager.me then
                                 if nearestItem.id ~= _G.Mod_AdminLastTargetMove or (nowTime - (_G.Mod_AdminLastMoveTime or 0)) > 0.3 then
                                     _G.Mod_AdminLastTargetMove = nearestItem.id
@@ -5175,9 +5232,20 @@ local function CreateModUI()
                                         math.abs(meY - (itemInfo.y or 0)))
                                 end
 
-                                table.sort(validItems, function(a, b)
-                                    return a.dist < b.dist
-                                end)
+                                if _G.Mod_IsAdmin and #validItems > 1 then
+                                    table.sort(validItems, function(a, b)
+                                        local scoreA = GetItemPriorityScore(a)
+                                        local scoreB = GetItemPriorityScore(b)
+                                        if scoreA ~= scoreB then
+                                            return scoreA > scoreB
+                                        end
+                                        return a.dist < b.dist
+                                    end)
+                                else
+                                    table.sort(validItems, function(a, b)
+                                        return a.dist < b.dist
+                                    end)
+                                end
 
                                 local nearestItem = validItems[1]
 
@@ -10824,7 +10892,11 @@ local function CreateModUI()
                     end
                     local pickLimit = tonumber(_G.AutoPick_Limit) or 0
                     local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                    local isFov65 = (math.floor(fovVal + 0.5) == 65)
+                    local curFov = math.floor(fovVal + 0.5)
+                    local isFov65 = (curFov == 65)
+                    local isFov75 = (curFov == 75)
+                    local isFov80 = (curFov == 80)
+                    local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
                     local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
 
                     local eType = dropItemData.type
@@ -10833,7 +10905,9 @@ local function CreateModUI()
                         isBoneCot = (eType == 24),
                         isBoneHon = (eType == 26),
                         isRune = (eType == 19 or eType == 28),
-                        isFumo = (eType == 30)
+                        runeLevel = 0,
+                        isFumo = (eType == 30),
+                        fumoLevel = 0
                     }
                     local isRune = decision.isRune
                     local isFumo = decision.isFumo
@@ -10841,23 +10915,35 @@ local function CreateModUI()
                     local isBoneCot = decision.isBoneCot and (_G.AutoPick_Bone_Cot == true)
                     local isBone = isBoneHon or isBoneCot
 
-                    local targetUID = _G.Mod_TargetAdminUID or "177557978677775000"
+                    -- =========================================================================
+                    -- [MOD FEATURE]: NHẬN DIỆN ADMIN THEO ROLEID DINO & TÊN NHÂN VẬT
+                    -- Mô tả: Nếu là Admin Dino thì nhặt tốc độ 0ms; nếu là Clone thì hoãn 800-1500ms nhường Admin.
+                    -- =========================================================================
+                    local targetAdminRoleId = _G.Mod_TargetAdminRoleId or "5944968961162558483"
+                    local targetAdminName = _G.Mod_TargetAdminName or "Dino"
                     local hasTargetNearby = false
-                    if not _G.Mod_IsAdmin then
-                        local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or
-                            (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id)
 
-                        if myId and tostring(myId) ~= targetUID then
-                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
-                                local players = _G.RoleManager.GetRolesByType(1)
-                                if players then
-                                    for _, p in pairs(players) do
-                                        if p and not p.isDead then
-                                            local pId = p.id or (p.data and (p.data.id or p.data.roleId)) or p.roleId
-                                            if pId and tostring(pId) == targetUID then
-                                                hasTargetNearby = true
-                                                break
-                                            end
+                    local myRoleId = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or
+                            (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id)
+                    local myName = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.name) or
+                            (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.name)
+
+                    local isMeAdmin = (_G.Mod_IsAdmin == true) or
+                            (myRoleId and tostring(myRoleId) == tostring(targetAdminRoleId)) or
+                            (myName and tostring(myName) == tostring(targetAdminName))
+
+                    if not isMeAdmin then
+                        if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                            local players = _G.RoleManager.GetRolesByType(1)
+                            if players then
+                                for _, p in pairs(players) do
+                                    if p and not p.isDead then
+                                        local pId = (p.data and p.data.id) or p.id
+                                        local pName = p.name or (p.data and p.data.name)
+                                        if (pId and tostring(pId) == tostring(targetAdminRoleId)) or
+                                           (pName and tostring(pName) == tostring(targetAdminName)) then
+                                            hasTargetNearby = true
+                                            break
                                         end
                                     end
                                 end
@@ -10868,7 +10954,7 @@ local function CreateModUI()
                     local delayMs = 0
                     if hasTargetNearby then
                         if isBone or isRune or isFumo then
-                            delayMs = math.random(800, 1500)
+                            delayMs = math.random(500, 1500)
                         else
                             delayMs = 0
                         end
@@ -10938,7 +11024,13 @@ local function CreateModUI()
                                 x = itemX,
                                 y = itemY,
                                 startTime = nowTime,
-                                expireTime = nowTime + 2.5
+                                expireTime = nowTime + 2.5,
+                                isBoneCot = isBoneCot,
+                                isBoneHon = isBoneHon,
+                                isRune = isRune,
+                                runeLevel = decision.runeLevel or (confId and (confId % 100)) or 0,
+                                isFumo = isFumo,
+                                fumoLevel = decision.fumoLevel or 0
                             }
                         end
 
@@ -10999,7 +11091,13 @@ local function CreateModUI()
                                     id = dropItemData.id,
                                     x = dropItemData.x,
                                     y = dropItemData.y,
-                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 2
+                                    expireTime = CS.UnityEngine.Time.realtimeSinceStartup + 2,
+                                    isBoneCot = isBoneCot,
+                                    isBoneHon = isBoneHon,
+                                    isRune = isRune,
+                                    runeLevel = decision.runeLevel or (confId and (confId % 100)) or 0,
+                                    isFumo = isFumo,
+                                    fumoLevel = decision.fumoLevel or 0
                                 }
                             end
 
@@ -11063,7 +11161,13 @@ local function CreateModUI()
                                 startTime = scheduledTime,
                                 expireTime = expireTime,
                                 lastSpamTime = 0,
-                                isTrick = isSecretTrickActive
+                                isTrick = isSecretTrickActive,
+                                isBoneCot = isBoneCot,
+                                isBoneHon = isBoneHon,
+                                isRune = isRune,
+                                runeLevel = decision.runeLevel or (confId and (confId % 100)) or 0,
+                                isFumo = isFumo,
+                                fumoLevel = decision.fumoLevel or 0
                             }
                         end
 
@@ -11171,11 +11275,12 @@ local function CreateModUI()
 
                     if isBone then
                         shouldPick = true
+                    -- =========================================================================
+                    -- [MOD FEATURE]: ĐIỀU KIỆN BÃO NHẶT & LỌC ĐỒ THEO FOV (CHÍNH XÁC FOV 75 VÀ 80)
+                    -- Mô tả: FOV == 75 nhặt vét toàn bộ Phù Văn & Phụ Ma; FOV == 80 áp dụng bộ lọc; mốc khác tắt bão nhặt.
+                    -- =========================================================================
                     elseif decision.isRune then
-                        local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
-                        local pickLimit = _G.AutoPick_Limit or 0
-                        
-                        if isAdminBurst and pickLimit < 21 then
+                        if isAdminBurst and isFov75 then
                             shouldPick = true
                         else
                             if decision.runePref and _G[decision.runePref] == true then
@@ -11183,10 +11288,7 @@ local function CreateModUI()
                             end
                         end
                     elseif decision.isFumo then
-                        local isAdminBurst = _G.Mod_IsAdmin and (_G.AutoPick_Limit or 0) >= 16
-                        local pickLimit = _G.AutoPick_Limit or 0
-                        
-                        if isAdminBurst and pickLimit < 21 then
+                        if isAdminBurst and isFov75 then
                             shouldPick = true
                         else
                             if decision.fumoPref and _G[decision.fumoPref] == true then

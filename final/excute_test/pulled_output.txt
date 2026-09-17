@@ -1,0 +1,28 @@
+=================================================
+>>> BẮT ĐẦU KIỂM TRA UID & NGƯỜI CHƠI XUNG QUANH <<<
+=================================================
+[1. CẤU HÌNH] Target Admin UID = '177557978677775000' (type: string)
+--- [2. THÔNG TIN BẢN THÂN] ---
+-> myId (theo code hiện tại): 5944968961162558483 (type: number)
+   ViewData.meData.name = Dino
+   ViewData.meData.id = 5944968961162558483 (type: number)
+   ViewData.meData.roleId = nil (type: nil)
+   RoleManager.me.name = Dino
+   RoleManager.me.id = 5944968961162558483 (type: number)
+   RoleManager.me.roleId = nil (type: nil)
+   RoleManager.me.data.name = Dino
+   RoleManager.me.data.id = 5944968961162558483 (type: number)
+   RoleManager.me.data.roleId = nil (type: nil)
+   Mod_GetCharacterUID() = 177557978677775000
+=> Bản thân có trùng Target Admin UID không? KHÔNG (LÀ CLONE/CLIENT)
+--- [3. QUÉT NGƯỜI XUNG QUANH] ---
+RoleManager.GetRolesByType(1) kiểu: table
+[1] [NGƯỜI KHÁC] Sâu (Dead: false)
+     evalId lấy được: 5944967861449923651 (type: number)
+     p.id: 5944967861449923651 (type: number) | p.roleId: nil (type: nil)
+     data.id: 5944967861449923651 (type: number) | data.roleId: nil (type: nil)
+-> Tổng số player phát hiện trong tầm: 1 người
+--- [4. KẾT QUẢ ĐOẠN CODE NGUYÊN BẢN] ---
+=> hasTargetNearby (kết quả đoạn code): false
+--- [5. TỔNG KẾT & ĐÁNH GIÁ] ---
+• Xung quanh có 1 người chơi, nhưng KHÔNG CÓ ai trùng UID Admin '177557978677775000'.
