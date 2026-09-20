@@ -2703,10 +2703,31 @@ local function CreateModUI()
                 return tostring(mapId)
             end
             -- =========================================================================
-            -- [MOD FEATURE]: LỌC TRANG BỊ & TỰ ĐỘNG NẤU / LUYỆN ĐỒ (ITEM FILTER & AUTO SMELT / RECYCLE)
-            -- Mô tả: Phân loại đồ Trác Việt theo option/bậc và tự động phân giải trang bị rác.
+            -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG (CHỐNG TÁCH & CHỐNG THU HỒI)
+            -- Mô tả: Kiểm tra cấp cường hóa (intensify > 0) hoặc gia cường (additional > 0) từ mọi tầng dữ liệu
             -- =========================================================================
+            local function IsEnhancedEquip(item)
+                if not item then return false end
+                local sInfo = item.serverInfo or item.serverData or {}
+                local d = item.data or {}
+                local dSInfo = d.serverInfo or d.serverData or {}
+
+                local intensify = tonumber(item.intensify) or tonumber(d.intensify) or tonumber(sInfo.intensify) or tonumber(dSInfo.intensify) or 0
+                if intensify > 0 then return true end
+
+                local additional = tonumber(item.additional) or tonumber(d.additional) or tonumber(sInfo.additional) or tonumber(dSInfo.additional) or 0
+                if additional > 0 then return true end
+
+                return false
+            end
+            _G.Mod_IsEnhancedEquip = IsEnhancedEquip
+
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                -- 0.0. Ưu tiên giữ lại Trang Bị Đã Cường Hóa / Gia Cường (intensify > 0 hoặc additional > 0)
+                if IsEnhancedEquip(item) then
+                    return true -- Đã cường hóa/gia cường -> Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH
+                end
+
                 -- 0. Ưu tiên giữ lại Đồ Dung (canSmelt = true) đối với đồ từ Chuyển 8 trở lên
                 if tier >= 8 then
                     local sInfo = item.serverInfo or item.serverData or {}
@@ -2899,17 +2920,23 @@ local function CreateModUI()
                                     local isSmeltOrJewelry = (subType >= 100) or (subType == 18 or subType == 19 or subType == 20 or subType == 21 or subType == 22 or subType == 26 or (subType >= 34 and subType <= 38))
 
                                     local isGood = false
-                                    if isSmeltOrJewelry or not isExcellenceItem then
+                                    -- =========================================================================
+                                    -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG KHỎI THU HỒI TÚI ĐỒ
+                                    -- =========================================================================
+                                    if IsEnhancedEquip(item) then
+                                        isGood = true -- Đã cường hóa -> Tuyệt đối giữ lại, không thu hồi
+                                    elseif isSmeltOrJewelry or not isExcellenceItem then
                                         isGood = true
                                     elseif isArmor then
-                                        local hasHP, hasReflect = false, false
+                                        local hasHP, hasReflect, hasDefRate = false, false, false
                                         for _, str in ipairs(excDesList) do
                                             if str then
                                                 if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
                                                 if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
+                                                if string.find(str, "Tỉ lệ Phòng Ngự", 1, true) ~= nil then hasDefRate = true end
                                             end
                                         end
-                                        if hasHP and hasReflect then isGood = true end
+                                        if hasHP and (hasReflect or hasDefRate) then isGood = true end
                                     elseif isWeapon then
                                         local hasSpeed, hasAtk = false, false
                                         for _, str in ipairs(excDesList) do
@@ -3059,6 +3086,11 @@ local function CreateModUI()
                                         end
                                     end
                                 end
+                            end
+
+                            -- Bảo vệ tuyệt đối: Đồ đã cường hóa/gia cường không bao giờ bị tách
+                            if IsEnhancedEquip(item) then
+                                shouldSmelt = false
                             end
 
                             if shouldSmelt and item.id then
