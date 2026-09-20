@@ -2124,6 +2124,34 @@ local function CreateModUI()
                                             local deadList = bossData.deadTimes[lineNum] or {}
                                             local expectedTotal = cfg.total or 1
 
+                                            -- =========================================================================
+                                            -- [MOD FEATURE]: TÍNH TOÁN SỐ LƯỢNG BOSS CÒN SỐNG CHO BOSS ĐA CỔNG (TRANSFERIDS > 1)
+                                            -- Mô tả: Chỉ áp dụng riêng cho Boss có nhiều transferIds (như Luyện Ngục).
+                                            --        Đếm số Cổng có thời gian hồi sinh; nếu số Cổng chết < tổng số Cổng thì Cổng còn lại vẫn SỐNG!
+                                            -- =========================================================================
+                                            if cfg.transferIds and #cfg.transferIds > 1 then
+                                                local bStates = (bossData.bossStates and bossData.bossStates[lineNum]) or {}
+                                                local deadCount = 0
+                                                for _, tId in ipairs(cfg.transferIds) do
+                                                    for _, s in ipairs(bStates) do
+                                                        if s.transferId and s.transferId == tId and s.reliveTime and s.reliveTime > currentSec then
+                                                            deadCount = deadCount + 1
+                                                            break
+                                                        end
+                                                    end
+                                                end
+                                                if deadCount == 0 and #bStates > 0 then
+                                                    for _, rt in ipairs(deadList) do
+                                                        if rt > currentSec then deadCount = deadCount + 1 end
+                                                    end
+                                                end
+                                                if deadCount < #cfg.transferIds then
+                                                    totalAlive = math.max(totalAlive, #cfg.transferIds - deadCount)
+                                                else
+                                                    totalAlive = 0
+                                                end
+                                            end
+
                                             if totalAlive > 0 or #deadList > 0 then
                                                 bestLine = lineNum
                                                 if totalAlive > 0 then
@@ -2256,7 +2284,7 @@ local function CreateModUI()
 
                             local lineNum = v.line or 1
                             if not tempBosses[mapId][md.bossId] then
-                                tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {} }
+                                tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {}, bossStates = {} }
                             end
                             local bData = tempBosses[mapId][md.bossId]
                             if not bData.lines[lineNum] then
@@ -2265,6 +2293,8 @@ local function CreateModUI()
                             end
                             bData.aliveCount[lineNum] = v.count or 0
                             bData.deadTimes[lineNum] = deadTimes
+                            bData.bossStates = bData.bossStates or {}
+                            bData.bossStates[lineNum] = v.bossState or {}
                         end
                     end
                 end
@@ -3572,10 +3602,25 @@ local function CreateModUI()
                 -- end
 
                 if nowRealtime < (_G.Mod_AutoFarmBoss_WaitTime or 0) then
-                    -- Đột phá WaitTime: Nếu đang đợi về Lorencia mà đã load xong Map 1001, cho đi tiếp luôn!
+                    -- =========================================================================
+                    -- [MOD FEATURE]: ĐỘT PHÁ THỜI GIAN CHỜ KHI ĐÃ VỀ LORENCIA (LORENCIA ARRIVAL SHORTCUT)
+                    -- Mô tả: Nếu đang đợi về Lorencia mà đã load xong Map 1001:
+                    --        - Nếu là Boss đa cổng đang trong tiến trình sang Cổng 2 (triedSecondSpot),
+                    --          chuyển sang State 3 để bay sang Cổng 2 ngay!
+                    --        - Ngược lại mới sang State 2 để quét chọn Boss mới.
+                    -- =========================================================================
                     if _G.Mod_AutoFarmBoss_State == 1 and currentMapId == 1001 then
-                        _G.Mod_AutoFarmBoss_State = 2
-                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                        local tgt = _G.Mod_AutoFarmBoss_Target
+                        if tgt and tgt.triedSecondSpot and tgt.cfg.transferIds and #tgt.cfg.transferIds > 1 then
+                            LogMsg(string.format("Đã về Lorencia, chuẩn bị bay sang Cổng 2 của %s (%s)...",
+                                tostring(tgt.cfg.name),
+                                tostring(tgt.currentTransferId or tgt.cfg.transferId)))
+                            _G.Mod_AutoFarmBoss_State = 3
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                        else
+                            _G.Mod_AutoFarmBoss_State = 2
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                        end
                     end
                     return
                 end
@@ -3744,6 +3789,37 @@ local function CreateModUI()
 
                                                     for _, lineNum in ipairs(bossData.lineNums) do
                                                         local totalAlive = bossData.aliveCount[lineNum] or 0
+                                                        local deadList = bossData.deadTimes[lineNum] or {}
+
+                                                        -- =========================================================================
+                                                        -- [MOD FEATURE]: TÍNH TOÁN totalAlive CHO BOSS ĐA CỔNG (TRANSFERIDS > 1)
+                                                        -- Mô tả: Chỉ áp dụng riêng cho Boss có nhiều transferIds (như Luyện Ngục).
+                                                        --        So sánh số Cổng (transferIds) với số Cổng đang có thời gian hồi sinh.
+                                                        --        Nếu số Cổng chết < tổng Cổng, tức là vẫn còn Cổng sống (totalAlive > 0).
+                                                        -- =========================================================================
+                                                        if cfg.transferIds and #cfg.transferIds > 1 then
+                                                            local bStates = (bossData.bossStates and bossData.bossStates[lineNum]) or {}
+                                                            local deadCount = 0
+                                                            for _, tId in ipairs(cfg.transferIds) do
+                                                                for _, s in ipairs(bStates) do
+                                                                    if s.transferId and s.transferId == tId and s.reliveTime and s.reliveTime > currentSec then
+                                                                        deadCount = deadCount + 1
+                                                                        break
+                                                                    end
+                                                                end
+                                                            end
+                                                            if deadCount == 0 and #bStates > 0 then
+                                                                for _, rt in ipairs(deadList) do
+                                                                    if rt > currentSec then deadCount = deadCount + 1 end
+                                                                end
+                                                            end
+                                                            if deadCount < #cfg.transferIds then
+                                                                totalAlive = math.max(totalAlive, #cfg.transferIds - deadCount)
+                                                            else
+                                                                totalAlive = 0
+                                                            end
+                                                        end
+
                                                         if totalAlive > 0 then
                                                             bestLine = lineNum
                                                             isAlive = true
@@ -3751,7 +3827,6 @@ local function CreateModUI()
                                                             break
                                                         end
 
-                                                        local deadList = bossData.deadTimes[lineNum] or {}
                                                         if not isAlive and #deadList > 0 then
                                                             local rt = deadList[1]
                                                             if rt <= currentSec + 30 then
@@ -3832,6 +3907,28 @@ local function CreateModUI()
                                                         for _, lineNum in ipairs(bossData.lineNums) do
                                                             local totalAlive = bossData.aliveCount[lineNum] or 0
                                                             local deadList = bossData.deadTimes[lineNum] or {}
+                                                            if cfg.transferIds and #cfg.transferIds > 1 then
+                                                                local bStates = (bossData.bossStates and bossData.bossStates[lineNum]) or {}
+                                                                local deadCount = 0
+                                                                for _, tId in ipairs(cfg.transferIds) do
+                                                                    for _, s in ipairs(bStates) do
+                                                                        if s.transferId and s.transferId == tId and s.reliveTime and s.reliveTime > currentSec then
+                                                                            deadCount = deadCount + 1
+                                                                            break
+                                                                        end
+                                                                    end
+                                                                end
+                                                                if deadCount == 0 and #bStates > 0 then
+                                                                    for _, rt in ipairs(deadList) do
+                                                                        if rt > currentSec then deadCount = deadCount + 1 end
+                                                                    end
+                                                                end
+                                                                if deadCount < #cfg.transferIds then
+                                                                    totalAlive = math.max(totalAlive, #cfg.transferIds - deadCount)
+                                                                else
+                                                                    totalAlive = 0
+                                                                end
+                                                            end
                                                             if totalAlive == 0 and #deadList > 0 then
                                                                 local rt = deadList[1]
                                                                 LogMsg(string.format(
