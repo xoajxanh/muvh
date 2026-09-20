@@ -1604,6 +1604,17 @@ local function CreateModUI()
                         _G.Mod_Config_ActiveAdvancedTab ~= false)
                 end
             end
+            -- [MOD FEATURE]: PHÂN QUYỀN HIỂN THỊ NÚT MỞ RƯƠNG VÀNG THEO TOKEN AUTO BOSS
+            if _G.Mod_GoldenChestToggleGo and not _G.Mod_GoldenChestToggleGo:Equals(nil) then
+                local shouldShowChest = (_G.ModMainTab == "NANG_CAO") and
+                    (_G.Mod_Config_ActiveAdvancedTab ~= false) and
+                    (_G.Mod_Config_ActiveAutoFarmTab ~= false)
+                _G.Mod_GoldenChestToggleGo:SetActive(shouldShowChest)
+                if not shouldShowChest and _G.Mod_AutoOpenGoldenChest_Enabled then
+                    _G.Mod_AutoOpenGoldenChest_Enabled = false
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                end
+            end
             for _, go in ipairs(_G.AutoBossUIList) do
                 if go and not go:Equals(nil) then
                     go:SetActive(_G.ModMainTab == "AUTO_BOSS" and
@@ -3049,7 +3060,32 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+            -- =========================================================================
+            -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG (CHỐNG TÁCH & CHỐNG THU HỒI)
+            -- Mô tả: Kiểm tra cấp cường hóa (intensify > 0) hoặc gia cường (additional > 0) từ mọi tầng dữ liệu
+            -- =========================================================================
+            local function IsEnhancedEquip(item)
+                if not item then return false end
+                local sInfo = item.serverInfo or item.serverData or {}
+                local d = item.data or {}
+                local dSInfo = d.serverInfo or d.serverData or {}
+
+                local intensify = tonumber(item.intensify) or tonumber(d.intensify) or tonumber(sInfo.intensify) or tonumber(dSInfo.intensify) or 0
+                if intensify > 0 then return true end
+
+                local additional = tonumber(item.additional) or tonumber(d.additional) or tonumber(sInfo.additional) or tonumber(dSInfo.additional) or 0
+                if additional > 0 then return true end
+
+                return false
+            end
+            _G.Mod_IsEnhancedEquip = IsEnhancedEquip
+
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
+                -- 0. Ưu tiên giữ lại Trang Bị Đã Cường Hóa / Gia Cường (intensify > 0 hoặc additional > 0)
+                if IsEnhancedEquip(item) then
+                    return true -- Đã cường hóa/gia cường -> Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH
+                end
+
                 -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
                 if subType >= 34 and subType <= 38 then
                     local sInfo = item.serverInfo or item.serverData or {}
@@ -3130,9 +3166,25 @@ local function CreateModUI()
                 return false
             end
 
-            -- 1. Hàm lọc & Thu hồi đồ rác Trác Việt (Quần Áo / Vũ Khí rác không đạt 2 dòng VIP)
+            -- 1. Hàm phát gói mạng hút sạch vật phẩm
+            local function PerformVacuumItems()
+                pcall(function()
+                    if _G.Mod_GoldenChestBatchIds and #_G.Mod_GoldenChestBatchIds > 0 then
+                        if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                            _G.PickupManager.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                        elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                            _G.networkRequest.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                        end
+                    end
+                end)
+            end
+            _G.Mod_PerformVacuumItems = PerformVacuumItems
+
+            -- 2. Hàm lọc & Thu hồi đồ rác Trác Việt (Quần Áo / Vũ Khí rác không đạt 2 dòng VIP)
             local function PerformBagRecycle()
                 pcall(function()
+                    PerformVacuumItems()
+
                     local updatedItems = _G.BagInfoData and _G.BagInfoData.TotalItems
                     if not updatedItems and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
                         pcall(function() updatedItems = _G.BagInfoData:GetTotalItems() end)
@@ -3182,17 +3234,23 @@ local function CreateModUI()
                                     local isSmeltOrJewelry = (subType >= 100) or (subType == 18 or subType == 19 or subType == 20 or subType == 21 or subType == 22 or subType == 26 or (subType >= 34 and subType <= 38))
 
                                     local isGood = false
-                                    if isSmeltOrJewelry or not isExcellenceItem then
+                                    -- =========================================================================
+                                    -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG KHỎI THU HỒI TÚI ĐỒ
+                                    -- =========================================================================
+                                    if IsEnhancedEquip(item) then
+                                        isGood = true -- Đã cường hóa -> Tuyệt đối giữ lại, không thu hồi
+                                    elseif isSmeltOrJewelry or not isExcellenceItem then
                                         isGood = true
                                     elseif isArmor then
-                                        local hasHP, hasReflect = false, false
+                                        local hasHP, hasReflect, hasDefRate = false, false, false
                                         for _, str in ipairs(excDesList) do
                                             if str then
                                                 if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
                                                 if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
+                                                if string.find(str, "Tỉ lệ Phòng Ngự", 1, true) ~= nil then hasDefRate = true end
                                             end
                                         end
-                                        if hasHP and hasReflect then isGood = true end
+                                        if hasHP and (hasReflect or hasDefRate) then isGood = true end
                                     elseif isWeapon then
                                         local hasSpeed, hasAtk = false, false
                                         for _, str in ipairs(excDesList) do
@@ -3343,6 +3401,11 @@ local function CreateModUI()
                                         end
                                     end
                                 end
+                            end
+
+                            -- Bảo vệ tuyệt đối: Đồ đã cường hóa/gia cường không bao giờ bị tách
+                            if IsEnhancedEquip(item) then
+                                shouldSmelt = false
                             end
 
                             if shouldSmelt and item.id then
@@ -5200,6 +5263,7 @@ local function CreateModUI()
                     if isExpanded then
                         UpdateBossWatchUIText()
                         if _G.ModUpdateCountText then _G.ModUpdateCountText() end
+                        if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
                         if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
 
                         if _G.IsAutoRefresh then
@@ -5963,18 +6027,48 @@ local function CreateModUI()
 
             local btn = tGo:AddComponent(typeof(Button))
 
-            local function UpdateLabel()
+            local function UpdateLabel(overrideCount)
                 local extra = ""
                 if varName == "AutoPick_Enabled" then
                     extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
+                elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                    local totalOddCount = overrideCount
+                    if not totalOddCount then
+                        pcall(function()
+                            local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                            if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                                pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+                            end
+                            if items then
+                                totalOddCount = 0
+                                for k, item in pairs(items) do
+                                    if item then
+                                        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                                        local name = tblItem.name or item.name or ""
+                                        local itemCount = item.count or (item.data and item.data.count) or 1
+                                        local itemType = tblItem.type or 0
+                                        if itemType == 5 and string.find(name, "Rương Vàng") then
+                                            local tierNum = tonumber(string.match(name, "%+(%d+)"))
+                                            if tierNum and (tierNum % 2 ~= 0) then
+                                                totalOddCount = totalOddCount + itemCount
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end)
+                    end
+                    if totalOddCount and totalOddCount > 0 then
+                        extra = " (" .. tostring(totalOddCount) .. ")"
+                    end
                 end
+                local newTxt = label .. extra
+                if txt.text ~= newTxt then txt.text = newTxt end
                 if _G[varName] then
                     bgImg.color = Color(0.2, 0.5, 0.2, 1)
-                    txt.text = label .. extra
                     txt.color = Color.white
                 else
                     bgImg.color = Color(0.3, 0.3, 0.3, 1)
-                    txt.text = label .. extra
                     txt.color = Color(0.7, 0.7, 0.7, 1)
                 end
             end
@@ -5983,6 +6077,10 @@ local function CreateModUI()
             if varName == "AutoPick_Enabled" then
                 _G.ModUpdateCountText = function()
                     pcall(UpdateLabel)
+                end
+            elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                _G.ModUpdateGoldenChestLabel = function(optCount)
+                    pcall(function() UpdateLabel(optCount) end)
                 end
             end
 
@@ -5996,6 +6094,12 @@ local function CreateModUI()
                     _G.Mod_PickedItems = {}
                 end
 
+                if varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                    if _G[varName] and _G.Mod_ExecuteGoldenChestAutoProcess then
+                        pcall(_G.Mod_ExecuteGoldenChestAutoProcess)
+                    end
+                end
+
                 local prefKey = string.sub(varName, 1, 4) == "Mod_" and varName or ("Mod_" .. varName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[varName] and 1 or 0)
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -6006,6 +6110,11 @@ local function CreateModUI()
                     end
                 end)
             end)
+
+            if varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                _G.Mod_GoldenChestToggleGo = tGo
+            end
+            return tGo
         end
 
         local function CreateSmallToggle(label, varName, xPos, yPos, width)
@@ -8216,6 +8325,8 @@ local function CreateModUI()
             end)
 
             currentY = currentY - 45
+            CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", rightColX2, currentY)
+            currentY = currentY - 45
         end
         CreateAutoBossUI()
         CreateKundunUI()
@@ -8376,6 +8487,24 @@ local function CreateModUI()
                 if not (item and item.data) then return end
                 local dropItemData = item.data
 
+                -- 1. HÚT ĐỒ BATCH LOOT TỨC THÌ NGAY KHI RỚI KHỎI RƯƠNG VÀNG
+                if _G.Mod_AutoOpenGoldenChest_Enabled and (_G.Mod_Config_ActiveAutoFarmTab ~= false) then
+                    pcall(function()
+                        local objId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
+                        if objId then
+                            _G.Mod_GoldenChestBatchIds = _G.Mod_GoldenChestBatchIds or {}
+                            table.insert(_G.Mod_GoldenChestBatchIds, objId)
+
+                            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                                _G.PickupManager.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                                _G.networkRequest.ReqPickUpMapItems(_G.Mod_GoldenChestBatchIds)
+                            end
+                        end
+                    end)
+                    return
+                end
+
                 if _G.Mod_AutoPick_KTD then
                     local mapId = 0
                     if _G.SceneData and _G.SceneData.mapId then
@@ -8485,7 +8614,8 @@ local function CreateModUI()
         if _G.ConditionalMgr then
             local original_CanAutoPickUpDropItem = _G.ConditionalMgr.CanAutoPickUpDropItem
             _G.ConditionalMgr.CanAutoPickUpDropItem = function(self, itemInfo)
-                if _G.AutoPick_Enabled then
+                local isGoldenChest = _G.Mod_AutoOpenGoldenChest_Enabled and (_G.Mod_Config_ActiveAutoFarmTab ~= false)
+                if _G.AutoPick_Enabled or isGoldenChest then
                     return false
                 end
                 return original_CanAutoPickUpDropItem(self, itemInfo)
@@ -8493,14 +8623,29 @@ local function CreateModUI()
 
             local original_CanPickUpDropItem = _G.ConditionalMgr.CanPickUpDropItem
             _G.ConditionalMgr.CanPickUpDropItem = function(self, itemInfo)
-                if _G.AutoPick_Enabled then
+                local isGoldenChest = _G.Mod_AutoOpenGoldenChest_Enabled and (_G.Mod_Config_ActiveAutoFarmTab ~= false)
+                if _G.AutoPick_Enabled or isGoldenChest then
                     return false
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
             end
         end
 
-        _G.ModCallbacks = _G.ModCallbacks or {}
+        if _G.PickupItemNode and not _G.Mod_HookedPickupNode then
+            _G.Mod_HookedPickupNode = true
+            local orig_Visit = _G.PickupItemNode.Visit
+            _G.PickupItemNode.Visit = function(self)
+                local isActive = (_G.Mod_IsActive == true) or (type(_G.Mod_IsActive) == "function" and _G.Mod_IsActive())
+                if not isActive then
+                    if orig_Visit then return orig_Visit(self) end
+                end
+                if _G.Mod_AutoOpenGoldenChest_Enabled and (_G.Mod_Config_ActiveAutoFarmTab ~= false) then
+                    self.status = (_G.BehaviorStatusEnum and _G.BehaviorStatusEnum.FAILED) or 3
+                    return
+                end
+                if orig_Visit then return orig_Visit(self) end
+            end
+        end
         _G.ModCallbacks.OnToggleMenu = function()
             local ok, err = pcall(function()
                 local mainPanel = _G.ModMenuPanelGo or panelGo
@@ -8675,5 +8820,120 @@ end)
 if not status then
     WriteLog("LỖI HOOK UIManager: " .. tostring(err))
 end
+
+-- ============================================================================
+-- CHỨC NĂNG TỰ ĐỘNG MỞ RƯƠNG VÀNG SỐ LẺ, HÚT ĐỒ BATCH LOOT & THU HỒI ĐỒ RÁC
+-- Máy Trạng Thái (State Machine Loop 0.1s): 
+-- OPEN ➔ WAIT_DROP (chờ 1.0s hút đồ vào túi) ➔ RECYCLE (thu hồi) ➔ WAIT_SYNC (chờ 0.6s sync ô trống) ➔ OPEN
+-- Điều kiện chạy: _G.Mod_Config_ActiveAutoFarmTab ~= false (Token cấp quyền Auto Boss)
+-- ============================================================================
+_G.Mod_GoldenChestState = "OPEN"
+_G.Mod_GoldenChestWaitTime = 0
+_G.Mod_GoldenChestBatchIds = {}
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MỞ & PHÂN LOẠI RƯƠNG VÀNG (GOLDEN CHEST AUTOMATION)
+-- Mô tả: Tự động mở số lượng lớn Rương Vàng theo đợt và tự nấu trang bị rác.
+-- =========================================================================
+_G.Mod_ExecuteGoldenChestAutoProcess = function()
+    _G.Mod_GoldenChestState = "OPEN"
+    _G.Mod_GoldenChestWaitTime = 0
+    _G.Mod_GoldenChestBatchIds = {}
+end
+
+_G.Mod_StartGoldenChestLoop = function()
+    _G.Mod_StartTrackedTimer("GoldenChest", 0.1, -1, function()
+        local isActive = (_G.Mod_IsActive == true) or (type(_G.Mod_IsActive) == "function" and _G.Mod_IsActive())
+        if not isActive then return end
+        if _G.Mod_Config_ActiveAutoFarmTab == false then
+            _G.Mod_AutoOpenGoldenChest_Enabled = false
+            _G.Mod_GoldenChestState = "OPEN"
+            return
+        end
+        if not _G.Mod_AutoOpenGoldenChest_Enabled then
+            _G.Mod_GoldenChestState = "OPEN"
+            return
+        end
+
+        pcall(function()
+            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+
+            if _G.Mod_GoldenChestState == "OPEN" then
+                local items = _G.BagInfoData and _G.BagInfoData.TotalItems
+                if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
+                    pcall(function() items = _G.BagInfoData:GetTotalItems() end)
+                end
+                if not items then return end
+
+                local targetChestId = nil
+                local targetChestStackCount = 0
+                local totalOddCount = 0
+
+                for k, item in pairs(items) do
+                    if item then
+                        local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
+                        local name = tblItem.name or item.name or ""
+                        local itemCount = item.count or (item.data and item.data.count) or 1
+                        local itemType = tblItem.type or 0
+
+                        if itemType == 5 and string.find(name, "Rương Vàng") then
+                            local tierNum = tonumber(string.match(name, "%+(%d+)"))
+                            if tierNum and (tierNum % 2 ~= 0) then
+                                if not targetChestId then
+                                    targetChestId = item.id or (item.data and item.data.id)
+                                    targetChestStackCount = itemCount
+                                end
+                                totalOddCount = totalOddCount + itemCount
+                            end
+                        end
+                    end
+                end
+
+                if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+
+                if not targetChestId or totalOddCount == 0 or targetChestStackCount == 0 then
+                    _G.Mod_AutoOpenGoldenChest_Enabled = false
+                    if CS.UnityEngine.PlayerPrefs then
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoOpenGoldenChest_Enabled", 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                    _G.Mod_GoldenChestState = "OPEN"
+                    return
+                end
+
+                _G.Mod_GoldenChestBatchIds = {}
+
+                -- Mở tối đa 20 rương
+                local openCount = math.min(20, targetChestStackCount)
+                if openCount > 0 and _G.networkRequest and _G.networkRequest.ReqUseItem then
+                    _G.networkRequest.ReqUseItem(openCount, targetChestId)
+                end
+
+                -- Chờ 1.0s cho đồ rớt & hút sạch vào túi
+                _G.Mod_GoldenChestWaitTime = nowTime + 1.0
+                _G.Mod_GoldenChestState = "WAIT_DROP"
+
+            elseif _G.Mod_GoldenChestState == "WAIT_DROP" then
+                if _G.Mod_PerformVacuumItems then _G.Mod_PerformVacuumItems() end
+                if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                    _G.Mod_GoldenChestState = "RECYCLE"
+                end
+
+            elseif _G.Mod_GoldenChestState == "RECYCLE" then
+                if _G.Mod_PerformBagRecycle then _G.Mod_PerformBagRecycle() end
+                _G.Mod_GoldenChestWaitTime = nowTime + 0.6
+                _G.Mod_GoldenChestState = "WAIT_SYNC"
+
+            elseif _G.Mod_GoldenChestState == "WAIT_SYNC" then
+                if nowTime >= (_G.Mod_GoldenChestWaitTime or 0) then
+                    if _G.ModUpdateGoldenChestLabel then _G.ModUpdateGoldenChestLabel() end
+                    _G.Mod_GoldenChestState = "OPEN"
+                end
+            end
+        end)
+    end)
+end
+_G.Mod_StartGoldenChestLoop()
 
 return true
