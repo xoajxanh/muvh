@@ -3144,8 +3144,8 @@ local function CreateModUI()
 
             -- =========================================================================
             -- [MOD FEATURE]: BAY SIÊU TỐC VỀ BÃI TRAIN KHI HẾT BOSS (INSTANT TELEPORT TRAIN POS)
-            -- Mô tả: Sử dụng ReqCallFlag để dịch chuyển tức thì (0ms) về đúng tọa độ bãi train hoang dã
-            --        thay vì dùng Đá Dịch Chuyển và chạy bộ chậm chạp.
+            -- Mô tả: Sử dụng ReqCallFlag để dịch chuyển tức thì (0ms) về đúng tọa độ bãi train hoang dã;
+            --        kích hoạt AutoFight liên tục không trễ nhịp quái, không spam StopMove làm khựng đánh.
             -- =========================================================================
             local function Mod_PerformAutoTrainAndSmelt()
                 local isStillReturning, isChangingMap = false, false
@@ -3184,16 +3184,18 @@ local function CreateModUI()
 
                             -- Kiểm tra xem đã đến bãi train chưa (cùng map và cách <= 5 ô)
                             if curMap == wildMapId and dist <= 5 then
-                                -- Đã tới bãi train an toàn -> bật auto kỹ năng
-                                if pMe then
-                                    if pMe.StopMove then pMe:StopMove() end
-                                    if pMe.SetAutoFight then pMe:SetAutoFight("ReleaseSkill") end
+                                -- Đã tới bãi train an toàn -> bật auto kỹ năng liên tục (dùng AutoFight chuẩn, không ngắt StopMove lặp lại)
+                                if not _G.Mod_TrainArrivedAtPos then
+                                    if pMe and pMe.StopMove then pMe:StopMove() end
+                                    _G.Mod_TrainArrivedAtPos = true
                                 end
-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                if pMe and pMe.SetAutoFight and (pMe.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                    pMe:SetAutoFight("AutoFight")
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData and not _G.QiJiHelperData.isAutoFight then
                                     _G.QiJiHelperData.SetAutoFightData(true)
                                 end
                                 _G.Mod_IsMovingToTrainPos = false
-                                _G.Mod_TrainArrivedAtPos = true
                                 isStillReturning, isChangingMap = false, false
                             else
                                 -- Chưa tới hoặc khác map -> Bay thẳng siêu tốc tới (tx, ty) bãi train bằng ReqCallFlag
@@ -3656,7 +3658,7 @@ local function CreateModUI()
                         local dataFresh = (_G.Mod_MapBosses_UpdateTime and _G.Mod_MapBosses_UpdateTime >= (_G.Mod_AutoFarmBoss_ReqSentTime or 0))
 
                         if not dataFresh and timeSinceReq < 10 then
-                            _G.Mod_AutoFarmBoss_WaitTime = currentSec + 1
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             return
                         elseif not dataFresh then
                             LogMsg("Server phản hồi chậm. Bắt buộc dùng Data cũ...")
@@ -3826,6 +3828,7 @@ local function CreateModUI()
                                 local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY)
 
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
+                                _G.Mod_TrainArrivedAtPos = false
                                 if isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0

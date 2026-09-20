@@ -3880,7 +3880,8 @@ local function CreateModUI()
                                     if tx and ty then
                                         -- =========================================================================
                                         -- [MOD FEATURE]: QUAY LẠI VỊ TRÍ FARM
-                                        -- Mô tả: Lấy mapId theo chuyển chính; dùng Ấn Dịch Chuyển khi cách > 70m (1 lần duy nhất) và PathFinder di chuyển tới bãi train
+                                        -- Mô tả: Lấy mapId theo chuyển chính; dùng Ấn Dịch Chuyển khi cách > 70m (1 lần duy nhất) và PathFinder di chuyển tới bãi train;
+                                        --        bật AutoFight chuẩn không trễ nhịp quái, tránh spam StopMove làm khựng đánh.
                                         -- =========================================================================
                                         local pLevel = _G.Mod_Config_Reincarnation_Primary or 7
                                         local tab = "C" .. tostring(pLevel)
@@ -3987,15 +3988,17 @@ local function CreateModUI()
                                                     isStillReturning, isChangingMap = true, false
                                                 else
                                                     local me = _G.RoleManager and _G.RoleManager.me
-                                                    if me then
-                                                        if me.StopMove then me:StopMove() end
-                                                        if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                                    if not _G.Mod_TrainArrivedAtPos then
+                                                        if me and me.StopMove then me:StopMove() end
+                                                        _G.Mod_TrainArrivedAtPos = true
                                                     end
-                                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                    if me and me.SetAutoFight and (me.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                                        me:SetAutoFight("AutoFight")
+                                                    end
+                                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData and not _G.QiJiHelperData.isAutoFight then
                                                         _G.QiJiHelperData.SetAutoFightData(true)
                                                     end
                                                     _G.Mod_IsMovingToTrainPos = false
-                                                    _G.Mod_TrainArrivedAtPos = true
                                                     _G.Mod_Train_DidUseStone = false
                                                     isStillReturning, isChangingMap = false, false
                                                 end
@@ -4020,6 +4023,7 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
                                 _G.Mod_AutoFarmBoss_DidUseStone = false
                                 _G.Mod_Train_DidUseStone = false
+                                _G.Mod_TrainArrivedAtPos = false
                                 SetBossState(3, string.format("Chọn Boss: %s", bestBoss.cfg.name or ""))
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             else

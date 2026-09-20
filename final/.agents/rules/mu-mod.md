@@ -26,9 +26,10 @@ Tài liệu này dùng để dán vào prompt hoặc làm Custom Instructions kh
 
 2. **Quy trình tạo Script Test / Debug nhanh**:
    - Khi USER yêu cầu viết script thử nghiệm / test / debug một logic mới (đi xuyên vật thể, hút đồ, test target, hook tạm thời...):
-     * Agent CHỈ CẦN viết nội dung mã nguồn Lua vào file:
+     * Agent CHỈ ĐƯỢC PHÉP chỉnh sửa/ghi mã nguồn Lua vào file text:
        `d:\MUVH\android\mu-decompiled\final\excute_test\input.txt`
-     * USER sẽ tự build và đẩy vào thiết bị Android để chạy test bằng tính năng Execute Admin.
+     * Agent TUYỆT ĐỐI KHÔNG tự ý chạy build ra file `.luac` hay chạy lệnh ADB đẩy vào thiết bị.
+     * Toàn bộ quy trình build ra `.luac` và đẩy vào thiết bị Android nào sẽ do USER tự thực hiện.
 
 3. **Môi trường code chính thức**:
    - Chỉ chỉnh sửa code chính thức trực tiếp trên `final\modified_lua_dev_client`.
