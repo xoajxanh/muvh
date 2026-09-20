@@ -2027,10 +2027,13 @@ local function CreateModUI()
                             end
                         end
                     elseif targetTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                        local curLine = _G.SceneData and _G.SceneData.lineIndex or 1
+                        local tgtLine = validLineNum or 1
+                        local needChangeLine = (curLine ~= tgtLine)
                         _G.SceneController.OnReqTransferTransmitMap(nil, {
                             mapId = targetTransferId,
-                            line = validLineNum or 1,
-                            changeLine = true
+                            line = tgtLine,
+                            changeLine = needChangeLine
                         })
                         if _G.FloatingWordUtility then
                             _G.FloatingWordUtility.QuickMsg(string.format("Đang chuyển map tới %s (Boss %d)", tostring(cfg.name), spotIdx))
@@ -3599,6 +3602,17 @@ local function CreateModUI()
                         -- STATE 1: IDLE / RETURN HOME (Lorencia)
                     elseif _G.Mod_AutoFarmBoss_State == 1 then
                         if currentMapId == 1001 then
+                            -- Nếu là Boss đa cổng đang trong tiến trình chuyển sang Cổng 2 từ Lorencia
+                            local tgt = _G.Mod_AutoFarmBoss_Target
+                            if tgt and tgt.triedSecondSpot and tgt.cfg.transferIds and #tgt.cfg.transferIds > 1 then
+                                LogMsg(string.format("Đã về Lorencia, chuẩn bị bay sang Cổng 2 của %s (%s)...",
+                                    tostring(tgt.cfg.name),
+                                    tostring(tgt.currentTransferId or tgt.cfg.transferId)))
+                                _G.Mod_AutoFarmBoss_State = 3
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                return
+                            end
+
                             _G.Mod_AutoFarmBoss_State = 2
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             return
@@ -3816,20 +3830,25 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_Target = bestBoss
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
-                                if bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 then
-                                    bestBoss.cfg.posX = bestBoss.cfg.spots[1].x
-                                    bestBoss.cfg.posY = bestBoss.cfg.spots[1].y
-                                end
-                                if bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 then
-                                    bestBoss.cfg.transferId = bestBoss.cfg.transferIds[1]
-                                end
+                                -- =========================================================================
+                                -- [MOD FEATURE]: KHỞI TẠO VỊ TRÍ/CỔNG BAN ĐẦU CHO BOSS (BOSS 1 ĐẦU TIÊN)
+                                -- Mô tả: Chọn vị trí 1 / cổng 1 ban đầu, luôn chuyển sang State 3 để bay đến mục tiêu
+                                -- =========================================================================
+                                bestBoss.currentPosX = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].x) or bestBoss.cfg.posX
+                                bestBoss.currentPosY = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].y) or bestBoss.cfg.posY
+                                bestBoss.currentTransferId = (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 and bestBoss.cfg.transferIds[1]) or bestBoss.cfg.transferId
+
+                                bestBoss.cfg.posX = bestBoss.currentPosX
+                                bestBoss.cfg.posY = bestBoss.currentPosY
+                                bestBoss.cfg.transferId = bestBoss.currentTransferId
                                 bestBoss.triedSecondSpot = false
 
                                 local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY)
-
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
                                 _G.Mod_TrainArrivedAtPos = false
-                                if isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
+
+                                local hasMultiple = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 1) or (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 1)
+                                if hasMultiple or isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                                 else
@@ -3902,22 +3921,32 @@ local function CreateModUI()
 
                         -- =========================================================================
                         -- [MOD FEATURE]: DỊCH CHUYỂN REQCALLFLAG CHO HOANG DÃ C3-C12 VÀ CỔNG DỊCH CHUYỂN CHO CÁC MAP KHÁC
+                        -- Mô tả: Xử lý chuẩn cờ changeLine khi chuyển cổng trong cùng map (LN C3-C5 đa cổng) để tránh bị server hủy packet
                         -- =========================================================================
-                        local isCallFlag = (target.cfg.useCallFlag and target.cfg.posX and target.cfg.posY)
+                        local targetX = target.currentPosX or target.cfg.posX
+                        local targetY = target.currentPosY or target.cfg.posY
+                        local isCallFlag = (target.cfg.useCallFlag and targetX and targetY)
 
                         if isCallFlag then
                             if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
                                 _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
                                     mapId = target.mapCfg.mapId,
                                     line = target.line or 1,
-                                    x = target.cfg.posX,
-                                    y = target.cfg.posY
+                                    x = targetX,
+                                    y = targetY
                                 })
                             end
                         else
-                            if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                _G.SceneController.OnReqTransferTransmitMap(nil,
-                                    { mapId = target.cfg.transferId, line = target.line, changeLine = true })
+                            local transId = target.currentTransferId or target.cfg.transferId
+                            if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                local curLine = _G.SceneData and _G.SceneData.lineIndex or 1
+                                local tgtLine = target.line or 1
+                                local needChangeLine = (curLine ~= tgtLine)
+                                _G.SceneController.OnReqTransferTransmitMap(nil, {
+                                    mapId = transId,
+                                    line = tgtLine,
+                                    changeLine = needChangeLine
+                                })
                             end
                         end
                         _G.Mod_AutoFarmBoss_State = 4
@@ -4033,23 +4062,35 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
                         else
-                            -- Nếu chưa tìm thấy Boss và Boss có vị trí thứ 2 (hoặc cổng thứ 2) chưa thử:
-                            if not target.triedSecondSpot then
-                                if target.cfg.spots and #target.cfg.spots > 1 then
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TÁCH BIỆT ĐA CỔNG / ĐA VỊ TRÍ & TỰ ĐỘNG IGNORE KHI KHÔNG HỢP LỆ
+                            -- Mô tả: Chỉ áp dụng khi Boss có 2 vị trí/cổng (transferIds > 1 hoặc spots > 1).
+                            --        Với Luyện Ngục đa cổng (transferIds > 1): thoát về Lorencia rồi bay sang Cổng 2 an toàn.
+                            --        Với Boss 1 cổng thông thường: xử lý nguyên bản, không đổi luồng.
+                            -- =========================================================================
+                            local hasMultipleSpots = (target.cfg.spots and #target.cfg.spots > 1)
+                            local hasMultipleTransfers = (target.cfg.transferIds and #target.cfg.transferIds > 1)
+
+                            if (hasMultipleSpots or hasMultipleTransfers) and not target.triedSecondSpot then
+                                if hasMultipleSpots then
                                     target.triedSecondSpot = true
-                                    target.cfg.posX = target.cfg.spots[2].x
-                                    target.cfg.posY = target.cfg.spots[2].y
+                                    target.currentPosX = target.cfg.spots[2].x
+                                    target.currentPosY = target.cfg.spots[2].y
+                                    target.cfg.posX = target.currentPosX
+                                    target.cfg.posY = target.currentPosY
                                     _G.Mod_AutoFarmBoss_DidJiggle = false
-                                    LogMsg(string.format("Không thấy Boss tại Boss 1, bay tiếp sang Boss 2 (%s: %d, %d)...", target.cfg.name, target.cfg.posX, target.cfg.posY))
+                                    LogMsg(string.format("Không thấy Boss tại Vị trí 1, bay tiếp sang Vị trí 2 (%s: %d, %d)...", target.cfg.name, target.currentPosX, target.currentPosY))
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                     return
-                                elseif target.cfg.transferIds and #target.cfg.transferIds > 1 then
+                                elseif hasMultipleTransfers then
                                     target.triedSecondSpot = true
-                                    target.cfg.transferId = target.cfg.transferIds[2]
+                                    target.currentTransferId = target.cfg.transferIds[2]
+                                    target.cfg.transferId = target.currentTransferId
                                     _G.Mod_AutoFarmBoss_DidJiggle = false
-                                    LogMsg(string.format("Không thấy Boss tại Boss 1, bay tiếp sang Boss 2 (%s: %s)...", target.cfg.name, tostring(target.cfg.transferId)))
-                                    _G.Mod_AutoFarmBoss_State = 3
+                                    LogMsg(string.format("Không thấy Boss tại Cổng 1, thoát phó bản về Lorencia để bay tiếp sang Cổng 2 (%s: %s)...", target.cfg.name, tostring(target.currentTransferId)))
+                                    -- Rút về Lorencia trước vì LN là phó bản, không thể dịch chuyển trực tiếp trong phó bản
+                                    _G.Mod_AutoFarmBoss_State = 1
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                     return
                                 end
@@ -4058,7 +4099,9 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_BossWait > 2 then
                                 _G.Mod_AutoFarmBoss_BossWait = 0
-                                LogMsg("Không thấy Boss. Rút về Lorencia...")
+                                local ignoreSec = 120
+                                _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + ignoreSec
+                                LogMsg(string.format("Boss %s không tồn tại ở các cổng (hoặc đã bị diệt). Bỏ qua %ds. Rút về Lorencia...", target.cfg.name, ignoreSec))
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 _G.Mod_AutoFarmBoss_State = 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
