@@ -268,6 +268,14 @@ local function CreateModUI()
             _G.Mod_AutoApproachTowerBoss = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoApproachTowerBoss", 0) == 1
         end
+        if _G.Mod_AutoChallengeTower_Enabled == nil then
+            _G.Mod_AutoChallengeTower_Enabled = false
+        end
+        if _G.Mod_AutoTower_CheckSkill_Enabled == nil then
+            _G.Mod_AutoTower_CheckSkill_Enabled = false
+        end
+        _G.Mod_AutoChallengeTower_Count = 0
+        _G.Mod_LastTowerJoinReqTime = 0
         if _G.Mod_DisableVisuals == nil then
             pcall(function()
                 _G.Mod_DisableVisuals = CS.UnityEngine.PlayerPrefs.GetInt("Mod_DisableVisuals", 0) == 1
@@ -4939,6 +4947,111 @@ local function CreateModUI()
                     end
 
                     -- =========================================================================
+                    -- [MOD FEATURE]: TỰ ĐỘNG KHIÊU CHIẾN PHONG MA THÁP THEO ĐIỀU KIỆN BUFF & SKILL CỰC HẠN
+                    -- Mô tả: Tự động vào Phong Ma Tháp khi về Lorencia; nếu CHECK SKILL bật thì kiểm tra thêm Skill Cực Hạn và 2 Buff Elf
+                    -- =========================================================================
+                    if _G.Mod_IsAdmin and _G.Mod_AutoChallengeTower_Enabled then
+                        local nowTowerTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowTowerTime - (_G.Mod_LastTowerJoinReqTime or 0)) >= 3.0 then
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local mapId = _G.SceneData and _G.SceneData.mapId
+                            local inCopy = _G.TranScriptData and _G.TranScriptData.InTranscript
+
+                            -- 1. Phải ở Lorencia (1001) và không ở trong phó bản
+                            if me and not me.isDead and (not me.hp or me.hp > 0) and (mapId == 1001 or (_G.SceneData and _G.SceneData.groupId == 1001)) and not inCopy then
+                                local canEnter = true
+
+                                -- 2. Nếu nút CHECK SKILL bật (ON) thì mới kiểm tra Skill Cực Hạn và 2 Buff Elf
+                                if _G.Mod_AutoTower_CheckSkill_Enabled then
+                                    local cdData = me.cd and me.cd[410700]
+                                    local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                                    local isLimitReady = (not cdData) or (not cdData.endTime) or (cdData.endTime <= serverTime)
+
+                                    if not isLimitReady then
+                                        canEnter = false
+                                    else
+                                        local meId = me.id or (me.data and me.data.id) or 0
+                                        local hasDefBuff = false
+                                        local hasAtkBuff = false
+
+                                        local allBuffs = {}
+                                        if _G.BuffData and _G.BuffData.GetBuffs then
+                                            allBuffs = _G.BuffData.GetBuffs(meId) or {}
+                                        elseif _G.BuffData and _G.BuffData.BuffDic then
+                                            allBuffs = _G.BuffData.BuffDic[meId] or {}
+                                        end
+
+                                        for _, b in pairs(allBuffs) do
+                                            if b then
+                                                local cfg = b.buffConfig or {}
+                                                local gId = cfg.buffGroup or 0
+                                                local icon = cfg.icon or ""
+                                                local name = cfg.name or ""
+                                                local timeRemain = tonumber(b.time) or 0
+
+                                                if timeRemain > 0 then
+                                                    if gId == 31000070 or icon == "buff_Defend" or string.find(tostring(name), "Ánh Sáng Thủ Hộ") then
+                                                        hasDefBuff = true
+                                                    elseif gId == 31000080 or icon == "buff_Attack" or string.find(tostring(name), "Sức Mạnh Chiến Thần") then
+                                                        hasAtkBuff = true
+                                                    end
+                                                end
+                                            end
+                                        end
+
+                                        if not hasDefBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+                                            hasDefBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, 31000070) == true)
+                                        end
+                                        if not hasAtkBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+                                            hasAtkBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, 31000080) == true)
+                                        end
+
+                                        if not (hasDefBuff and hasAtkBuff) then
+                                            canEnter = false
+                                        end
+                                    end
+                                end
+
+                                -- 3. Thỏa mãn điều kiện -> Gửi lệnh vào Tháp
+                                if canEnter then
+                                    _G.Mod_LastTowerJoinReqTime = nowTowerTime
+
+                                    -- Đóng UI Tháp nếu đang mở
+                                    pcall(function()
+                                        if _G.UIManager and _G.UIID then
+                                            if _G.UIID.Instance_ClimbTowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_ClimbTowerUI) then
+                                                _G.UIManager.Hide(_G.UIID.Instance_ClimbTowerUI)
+                                            end
+                                            if _G.UIID.Instance_TowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_TowerUI) then
+                                                _G.UIManager.Hide(_G.UIID.Instance_TowerUI)
+                                            end
+                                        end
+                                    end)
+
+                                    local sent = false
+                                    if _G.networkRequest and _G.networkRequest.ReqJoinToTower then
+                                        _G.networkRequest.ReqJoinToTower()
+                                        sent = true
+                                    elseif _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqJoinToTower then
+                                        _G.NetManager.Send(_G.MapMessage.ReqJoinToTower)
+                                        sent = true
+                                    end
+
+                                    if sent then
+                                        _G.Mod_AutoChallengeTower_Count = (_G.Mod_AutoChallengeTower_Count or 0) + 1
+                                        if _G.ModUpdateAutoChallengeTowerLabel then
+                                            _G.ModUpdateAutoChallengeTowerLabel()
+                                        end
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg(string.format("[AUTO THÁP] Lần thứ %d thành công!", _G.Mod_AutoChallengeTower_Count))
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG ÉP CHIÊU SÉT ĐÁNH (MA KỴ SỸ AOE INJECTION)
                     -- Mô tả: Ép Ma Kỵ Sỹ xuất chiêu Sét Đánh (14040100) theo chu kỳ 0.5s/lần khi đang AutoFight có mục tiêu
                     -- =========================================================================
@@ -6247,6 +6360,9 @@ local function CreateModUI()
                 _cachedAuthResult = false
                 _G.Mod_AutoPK_Enabled = false
                 _G.Mod_AutoApproachTowerBoss = false
+                _G.Mod_AutoChallengeTower_Enabled = false
+                _G.Mod_AutoTower_CheckSkill_Enabled = false
+                _G.Mod_AutoChallengeTower_Count = 0
                 _G.Mod_DisableVisuals = false
                 _G.Mod_InfiniteInstance = false
                 _G.Mod_AutoUseAngel = false
@@ -7147,7 +7263,7 @@ local function CreateModUI()
             end)
         end
 
-        local function CreateToggle(label, varName, xPos, yPos, customWidth, targetList, customParent, customHeight)
+        local function CreateToggle(label, varName, xPos, yPos, customWidth, targetList, customParent, customHeight, customFontSize)
             local tGo = GameObject(varName .. "_Toggle")
             tGo.transform:SetParent((customParent or panelGo).transform, false)
             if not customParent then
@@ -7170,7 +7286,7 @@ local function CreateModUI()
             txtRt.sizeDelta = Vector2(0, 0)
             local txt = txtGo:AddComponent(typeof(Text))
             txt.raycastTarget = false
-            txt.fontSize = 16
+            txt.fontSize = customFontSize or 16
             txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then txt.font = defaultFont end
 
@@ -7180,6 +7296,8 @@ local function CreateModUI()
                 local extra = ""
                 if varName == "AutoPick_Enabled" and _G.Mod_IsAdmin then
                     extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
+                elseif varName == "Mod_AutoChallengeTower_Enabled" then
+                    extra = " (" .. tostring(_G.Mod_AutoChallengeTower_Count or 0) .. ")"
                 elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
                     local totalOddCount = 0
                     pcall(function()
@@ -7239,10 +7357,22 @@ local function CreateModUI()
                 _G.ModUpdateFindHoaLongLabel = function()
                     pcall(UpdateLabel)
                 end
+            elseif varName == "Mod_AutoChallengeTower_Enabled" then
+                _G.ModUpdateAutoChallengeTowerLabel = function()
+                    pcall(UpdateLabel)
+                end
             end
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
+                if varName == "Mod_AutoChallengeTower_Enabled" then
+                    if not _G[varName] then
+                        _G.Mod_AutoChallengeTower_Count = 0
+                    end
+                    if _G.ModUpdateAutoChallengeTowerLabel then
+                        _G.ModUpdateAutoChallengeTowerLabel()
+                    end
+                end
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
                     _G.LastPickupTime = 0
@@ -9561,6 +9691,16 @@ local function CreateModUI()
 
             CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
+
+            -- Nút AUTO THÁP & CHECK SKILL chung 1 dòng (Chỉ hiển thị với Admin)
+            if _G.Mod_IsAdmin then
+                local wAuto = 145
+                local wCheck = 105
+                local gap = 10
+                CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, wAuto, nil, contentGo, 35, 13)
+                CreateToggle("CHECK SKILL", "Mod_AutoTower_CheckSkill_Enabled", btnX + wAuto + gap, curY, wCheck, nil, contentGo, 35, 13)
+                curY = curY - 45
+            end
 
             -- Nút MG DÙNG AOE (Chỉ hiển thị với Admin)
             if _G.Mod_IsAdmin then

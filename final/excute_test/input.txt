@@ -1,6 +1,6 @@
 -- =========================================================================
--- [DEBUG SCRIPT]: QUÉT CHI TIẾT TÚI ĐỒ (BAG SCAN & EQUIP ATTRIBUTES DUMP)
--- Mục đích: Lấy chính xác cấu trúc dữ liệu của đồ đã cường hóa (+xxx), đồ Dung, đồ Bộ
+-- [DEBUG SCRIPT]: KIỂM TRA ĐIỀU KIỆN (DETECT SKILL CỰC HẠN, 2 BUFF ELF & MAP)
+-- Mục đích: Kiểm tra chính xác trạng thái Skill Cực Hạn, 2 Buff Elf, Map hiện tại
 -- Ghi kết quả ra: output.txt (tại persistentDataPath để push_test.ps1 kéo về)
 -- =========================================================================
 
@@ -9,109 +9,169 @@ pcall(function()
     local function AddLog(line)
         table.insert(logLines, line)
         if CS.UnityEngine.Debug and CS.UnityEngine.Debug.Log then
-            CS.UnityEngine.Debug.Log("[EQUIP_DUMP] " .. tostring(line))
+            CS.UnityEngine.Debug.Log("[DETECT_DEBUG] " .. tostring(line))
         end
     end
 
     AddLog("==================================================================")
-    AddLog("                 BẮT ĐẦU QUÉT TRANG BỊ TRONG TÚI ĐỒ               ")
+    AddLog("         BẮT ĐẦU DETECT: SKILL CỰC HẠN, BUFF ELF & BẢN ĐỒ         ")
     AddLog("                 Thời gian: " .. os.date("%Y-%m-%d %H:%M:%S"))
     AddLog("==================================================================")
 
-    local items = _G.BagInfoData and _G.BagInfoData.TotalItems
-    if not items and _G.BagInfoData and _G.BagInfoData.GetTotalItems then
-        pcall(function() items = _G.BagInfoData:GetTotalItems() end)
-    end
-
-    if not items then
-        AddLog("[LỖI] Không tìm thấy BagInfoData.TotalItems!")
+    local me = _G.RoleManager and _G.RoleManager.me
+    if not me then
+        AddLog("[LỖI] Không tìm thấy RoleManager.me (Chưa vào game hoặc nhân vật chưa sẵn sàng)!")
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg("LỖI: Không đọc được túi đồ!")
+            _G.FloatingWordUtility.QuickMsg("LỖI: Chưa tải xong nhân vật!")
         end
         return
     end
 
-    local totalCount = 0
-    local equipCount = 0
+    local meId = me.id or (me.data and me.data.id) or 0
+    local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
 
-    for k, item in pairs(items) do
-        if item then
-            totalCount = totalCount + 1
-            local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
-            local tblEquip = item.tblEquip or (item.data and item.data.tblEquip) or {}
-            local itemType = tblItem.type or 0
-            local itemId = tblItem.id or item.itemId or (item.data and item.data.itemId) or 0
-            local name = tblItem.name or item.name or (item.data and item.data.name) or "Unknown"
+    -- =========================================================================
+    -- 1. KIỂM TRA BẢN ĐỒ (MAP DETECTION)
+    -- =========================================================================
+    local mapId = (_G.SceneData and _G.SceneData.mapId) or 0
+    local groupId = (_G.SceneData and _G.SceneData.groupId) or 0
+    local inCopy = (_G.TranScriptData and _G.TranScriptData.InTranscript) or false
+    local isLorencia = (mapId == 1001 or groupId == 1001) and not inCopy
 
-            -- Lấy toàn bộ thông tin cường hóa và thuộc tính từ mọi tầng dữ liệu
-            local sInfo = item.serverInfo or item.serverData or {}
-            local d = item.data or {}
-            local dSInfo = d.serverInfo or d.serverData or {}
+    AddLog(string.format("1. BẢN ĐỒ: mapId=%s | groupId=%s | InTranscript=%s", tostring(mapId), tostring(groupId), tostring(inCopy)))
+    local mapStatusStr = ""
+    if isLorencia then
+        mapStatusStr = "Lorencia (1001) [HỢP LỆ]"
+        AddLog("   -> KẾT QUẢ MAP: Đang ở Lorencia [OK]")
+    else
+        mapStatusStr = string.format("MapID %s%s [KHÔNG PHẢI LOREN]", tostring(mapId), inCopy and " (Trong PB)" or "")
+        AddLog("   -> KẾT QUẢ MAP: " .. mapStatusStr)
+    end
 
-            local intensify = item.intensify or d.intensify or sInfo.intensify or dSInfo.intensify
-            local additional = item.additional or d.additional or sInfo.additional or dSInfo.additional
-            local level = item.level or d.level or sInfo.level or dSInfo.level
-            local breach = item.breach or d.breach or sInfo.breach or dSInfo.breach
-            local canSmelt = sInfo.canSmelt or dSInfo.canSmelt
-            local suitId = (tblEquip and tblEquip.suitId) or sInfo.suitId
+    -- =========================================================================
+    -- 2. KIỂM TRA SKILL CỰC HẠN (SKILL GROUP 410700)
+    -- =========================================================================
+    local limitSkillGroup = 410700
+    local cdTable = me.cd or {}
+    local cdData = cdTable[limitSkillGroup]
+    local isLimitReady = true
+    local limitCdRemain = 0
 
-            -- Thu thập các dòng Trác Việt nếu có
-            local excDesList = {}
-            if _G.RoleEquipUtility then
-                local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or sInfo.excellentAttrs
-                if rawExc and _G.RoleEquipUtility.GetEquipExcellence then
-                    pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellence(rawExc, tblEquip) end)
-                end
-                if (#excDesList == 0) and _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo then
-                    pcall(function() excDesList = _G.RoleEquipUtility.GetEquipExcellenceDesByServerInfo(sInfo) end)
-                end
+    if cdData and cdData.endTime and cdData.endTime > serverTime then
+        isLimitReady = false
+        limitCdRemain = math.max(0, math.floor((cdData.endTime - serverTime) / 1000))
+    end
+
+    AddLog(string.format("2. SKILL CỰC HẠN (Group %d):", limitSkillGroup))
+    if cdData then
+        AddLog(string.format("   - Có thông tin CD: endTime=%s | serverTime=%s | Còn lại=%ss", tostring(cdData.endTime), tostring(serverTime), tostring(limitCdRemain)))
+    else
+        AddLog("   - Không có thông tin CD (Chưa dùng hoặc đã hồi xong hoàn toàn)")
+    end
+
+    local limitStatusStr = ""
+    if isLimitReady then
+        limitStatusStr = "SẴN SÀNG [OK]"
+        AddLog("   -> KẾT QUẢ CỰC HẠN: Sẵn sàng sử dụng [OK]")
+    else
+        limitStatusStr = string.format("Đang hồi (%ds) [CHƯA XONG]", limitCdRemain)
+        AddLog("   -> KẾT QUẢ CỰC HẠN: " .. limitStatusStr)
+    end
+
+    -- =========================================================================
+    -- 3. KIỂM TRA 2 BUFF CỦA ELF (CHUẨN XÁC: ÁNH SÁNG THỦ HỘ & SỨC MẠNH CHIẾN THẦN)
+    -- =========================================================================
+    local defBuffGroup = 31000070 -- Ánh Sáng Thủ Hộ (Elf)
+    local atkBuffGroup = 31000080 -- Sức Mạnh Chiến Thần (Elf)
+
+    local hasDefBuff = false
+    local hasAtkBuff = false
+    local defBuffRemain = 0
+    local atkBuffRemain = 0
+    local defBuffName = ""
+    local atkBuffName = ""
+
+    AddLog("3. QUÉT TOÀN BỘ BUFF ĐANG CÓ TRÊN NHÂN VẬT:")
+    local allBuffs = {}
+    if _G.BuffData and _G.BuffData.GetBuffs then
+        allBuffs = _G.BuffData.GetBuffs(meId) or {}
+    elseif _G.BuffData and _G.BuffData.BuffDic then
+        allBuffs = _G.BuffData.BuffDic[meId] or {}
+    end
+
+    local buffCount = 0
+    for idx, b in pairs(allBuffs) do
+        if b then
+            buffCount = buffCount + 1
+            local cfg = b.buffConfig or {}
+            local bCId = b.buffCId or cfg.id or 0
+            local gId = cfg.buffGroup or 0
+            local icon = cfg.icon or ""
+            local name = cfg.name or "Unknown"
+            local timeRemain = b.time or 0
+
+            AddLog(string.format("   [%d] Buff: %s | buffCId=%s | buffGroup=%s | icon=%s | time=%.1fs",
+                buffCount, tostring(name), tostring(bCId), tostring(gId), tostring(icon), tonumber(timeRemain) or 0))
+
+            -- KIỂM TRA CHÍNH XÁC Ánh Sáng Thủ Hộ:
+            -- Phải là Group 31000070 hoặc icon buff_Defend hoặc tên chứa chính xác "Ánh Sáng Thủ Hộ"
+            -- (Tuyệt đối KHÔNG kiểm tra chữ "Thủ Hộ" chung vì sẽ bị dính Ma Hồn Thủ Hộ của MG/Soul)
+            local isElfDefBuff = (gId == defBuffGroup) or (icon == "buff_Defend") or string.find(tostring(name), "Ánh Sáng Thủ Hộ")
+            if isElfDefBuff and (tonumber(timeRemain) or 0) > 0 then
+                hasDefBuff = true
+                defBuffRemain = math.floor(tonumber(timeRemain) or 0)
+                defBuffName = tostring(name)
             end
-            if (#excDesList == 0) and item.GetEquipExcellenceDesList then
-                pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
-            end
 
-            -- Nếu là trang bị hoặc có level cường hóa > 0
-            local isEquip = (itemType == 2) or (tblEquip and tblEquip.id) or (intensify and tonumber(intensify) and tonumber(intensify) > 0)
-            if isEquip then
-                equipCount = equipCount + 1
-                AddLog("------------------------------------------------------------------")
-                AddLog(string.format("[%d] Trang Bị: %s (ItemID: %s, GUID: %s)", equipCount, tostring(name), tostring(itemId), tostring(item.id or d.id)))
-                AddLog(string.format("    - Type: %s | SubType: %s | Quality: %s", tostring(itemType), tostring(tblItem.subType), tostring(tblItem.quality)))
-                AddLog(string.format("    - Cường hóa (intensify) : %s", tostring(intensify)))
-                AddLog(string.format("    - Gia cường (additional): %s", tostring(additional)))
-                AddLog(string.format("    - Cấp bậc   (level)     : %s", tostring(level)))
-                AddLog(string.format("    - Đột phá   (breach)    : %s", tostring(breach)))
-                AddLog(string.format("    - Đồ Dung   (canSmelt)  : %s", tostring(canSmelt)))
-                AddLog(string.format("    - Đồ Bộ     (suitId)    : %s", tostring(suitId)))
-
-                if excDesList and #excDesList > 0 then
-                    AddLog("    - Dòng Trác Việt (" .. #excDesList .. " dòng):")
-                    for idx, des in ipairs(excDesList) do
-                        AddLog(string.format("        * [%d] %s", idx, tostring(des)))
-                    end
-                else
-                    AddLog("    - Dòng Trác Việt: (Không có)")
-                end
-
-                -- Dump tất cả key trong sInfo để tìm các trường ẩn
-                if sInfo and type(sInfo) == "table" then
-                    local sKeys = {}
-                    for sk, sv in pairs(sInfo) do
-                        table.insert(sKeys, string.format("%s=%s", tostring(sk), tostring(sv)))
-                    end
-                    if #sKeys > 0 then
-                        AddLog("    - serverInfo keys: " .. table.concat(sKeys, ", "))
-                    end
-                end
+            -- KIỂM TRA CHÍNH XÁC Sức Mạnh Chiến Thần:
+            -- Phải là Group 31000080 hoặc icon buff_Attack hoặc tên chứa chính xác "Sức Mạnh Chiến Thần"
+            local isElfAtkBuff = (gId == atkBuffGroup) or (icon == "buff_Attack") or string.find(tostring(name), "Sức Mạnh Chiến Thần")
+            if isElfAtkBuff and (tonumber(timeRemain) or 0) > 0 then
+                hasAtkBuff = true
+                atkBuffRemain = math.floor(tonumber(timeRemain) or 0)
+                atkBuffName = tostring(name)
             end
         end
     end
 
+    if buffCount == 0 then
+        AddLog("   -> Hiện tại nhân vật KHÔNG CÓ buff nào!")
+    end
+
+    -- Thử kiểm tra bổ sung trực tiếp qua Group ID chuẩn của game
+    if not hasDefBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+        hasDefBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, defBuffGroup) == true)
+    end
+    if not hasAtkBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+        hasAtkBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, atkBuffGroup) == true)
+    end
+
+    local defStatusStr = hasDefBuff and string.format("CÓ (%ds - %s) [OK]", defBuffRemain, defBuffName) or "THIẾU [X]"
+    local atkStatusStr = hasAtkBuff and string.format("CÓ (%ds - %s) [OK]", atkBuffRemain, atkBuffName) or "THIẾU [X]"
+
+    AddLog("------------------------------------------------------------------")
+    AddLog("KẾT QUẢ BUFF ELF:")
+    AddLog("   * Ánh Sáng Thủ Hộ   : " .. defStatusStr)
+    AddLog("   * Sức Mạnh Chiến Thần: " .. atkStatusStr)
+
+    -- =========================================================================
+    -- 4. TỔNG HỢP ĐIỀU KIỆN
+    -- =========================================================================
+    local allConditionsMet = isLorencia and isLimitReady and hasDefBuff and hasAtkBuff
+
     AddLog("==================================================================")
-    AddLog(string.format("TỔNG KẾT: Tìm thấy %d vật phẩm, trong đó có %d trang bị.", totalCount, equipCount))
+    if allConditionsMet then
+        AddLog(">>> KẾT LUẬN: ĐỦ TẤT CẢ ĐIỀU KIỆN ĐỂ TỰ VÀO THÁP! <<<")
+    else
+        AddLog(">>> KẾT LUẬN: CHƯA ĐỦ ĐIỀU KIỆN! Chi tiết thiếu:")
+        if not isLorencia then AddLog("   - Chưa ở map Lorencia") end
+        if not isLimitReady then AddLog("   - Skill Cực Hạn đang hồi chiêu") end
+        if not hasDefBuff then AddLog("   - Thiếu buff Ánh Sáng Thủ Hộ (Elf)") end
+        if not hasAtkBuff then AddLog("   - Thiếu buff Sức Mạnh Chiến Thần (Elf)") end
+    end
     AddLog("==================================================================")
 
-    -- Ghi file kết quả vào output.txt theo đúng quy chuẩn pull của push_test.ps1
+    -- Ghi kết quả vào output.txt theo đúng quy chuẩn pull của push_test.ps1
     pcall(function()
         local fullContent = table.concat(logLines, "\n")
         local outPaths = {
@@ -132,10 +192,17 @@ pcall(function()
         end
     end)
 
-    local msg = string.format("Đã quét %d trang bị! Xuất file output.txt thành công.", equipCount)
+    -- Hiển thị thông báo nổi lên màn hình game (FloatingWord)
+    local msgLoren = isLorencia and "Map: Loren [OK]" or string.format("Map: %s [SAI]", tostring(mapId))
+    local msgLimit = isLimitReady and "Cực Hạn: OK" or string.format("Cực Hạn: CD %ds", limitCdRemain)
+    local msgBuff = (hasDefBuff and hasAtkBuff) and "2 Buff: ĐỦ" or string.format("Buff: %s|%s", hasDefBuff and "ThủHộ" or "MấtThủHộ", hasAtkBuff and "CT" or "MấtCT")
+    local msgFinal = allConditionsMet and "=> ĐỦ ĐIỀU KIỆN!" or "=> CHƯA ĐỦ!"
+
+    local screenMsg = string.format("[%s] | [%s] | [%s] %s", msgLoren, msgLimit, msgBuff, msgFinal)
+
     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg(msg)
+        _G.FloatingWordUtility.QuickMsg(screenMsg)
     elseif _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
-        _G.FloatingTipUtility.QuickMsg(msg)
+        _G.FloatingTipUtility.QuickMsg(screenMsg)
     end
 end)
