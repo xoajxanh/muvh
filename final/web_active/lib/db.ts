@@ -117,6 +117,54 @@ export async function ensureInitialSeed() {
 
       console.log('Database initial seed complete!');
     }
+
+    // Seed default message templates if empty
+    try {
+      const templateCount = await (prisma as any).messageTemplate.count();
+      if (templateCount === 0) {
+        const firstUser = await prisma.user.findFirst();
+        if (firstUser) {
+          console.log('Seeding default message templates...');
+          await (prisma as any).messageTemplate.createMany({
+            data: [
+              {
+                title: 'Bảng Giá Tool MU Vĩnh Hằng',
+                shortcut: 'bg',
+                category: 'BÁO GIÁ',
+                imageUrl: '/uploads/templates/bang_gia_vutmod.png',
+                content: 'Mình gửi b bảng giá tham khảo Tool MU Vĩnh Hằng bên mình:\n\n⚙️ BẢN THƯỜNG (400k/tháng): Chạy nhanh, Đánh xa, Zoom gần xa, Auto PK (Tự khóa mục tiêu, chọn mục tiêu pk), Nhặt KUN + PV 80%.\n\n👑 BẢN VIP (600k/tháng): Bao gồm toàn bộ tính năng Bản Thường + AUTO SĂN BOSS (Tự chuyển kênh/map, tự vào ấn Vàng/KC, tự hồi sinh khi bị PK và tiếp tục săn boss).\n\nBác cần cài đặt bản nào báo em hỗ trợ ngay nhé!',
+                isGlobal: true,
+                sortOrder: 1,
+                createdById: firstUser.id,
+              },
+              {
+                title: 'Thông Tin Chuyển Khoản & Thanh Toán',
+                shortcut: 'stk',
+                category: 'THANH TOÁN',
+                imageUrl: null,
+                content: 'Dạ em gửi bác thông tin tài khoản thanh toán kích hoạt Tool ạ:\n\n🏦 Ngân hàng: MB Bank (Quân Đội)\n💳 Số tài khoản: 0988888888\n👤 Chủ tài khoản: VUT MOD TEAM\n📝 Nội dung CK: [Tên Zalo/Telegram] - [Gói Tool]\n\nBác chuyển khoản xong chụp lại biên lai gửi em để em kích hoạt token ngay cho bác nhé!',
+                isGlobal: true,
+                sortOrder: 2,
+                createdById: firstUser.id,
+              },
+              {
+                title: 'Hướng Dẫn Lấy Mã Thiết Bị & UID',
+                shortcut: 'hd',
+                category: 'HƯỚNG DẪN',
+                imageUrl: null,
+                content: 'Dạ để kích hoạt bản quyền Tool, bác làm giúp em 2 bước này nhé:\n\n1️⃣ Tải và cài đặt file APK Mod theo link em gửi.\n2️⃣ Đăng nhập vào game, bấm vào icon Mod ở góc màn hình để copy "Mã Thiết Bị" và "UID Nhân Vật" gửi qua đây cho em.\n\nEm kích hoạt Token bản quyền trong vòng 1 phút là bác vào chiến được luôn ạ!',
+                isGlobal: true,
+                sortOrder: 3,
+                createdById: firstUser.id,
+              }
+            ]
+          });
+          console.log('Seeded 3 default message templates!');
+        }
+      }
+    } catch (tplErr) {
+      console.error('Error seeding message templates:', tplErr);
+    }
   } catch (err) {
     console.error('Error during initial seed:', err);
   }

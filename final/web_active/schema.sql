@@ -88,3 +88,21 @@ BEGIN
         CONSTRAINT [FK_TokenNote_User] FOREIGN KEY ([createdById]) REFERENCES [dbo].[User]([id])
     );
 END;
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'MessageTemplate')
+BEGIN
+    CREATE TABLE [dbo].[MessageTemplate] (
+        [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [title] NVARCHAR(255) NOT NULL,
+        [shortcut] NVARCHAR(50) NULL,
+        [category] NVARCHAR(100) NOT NULL DEFAULT 'BÁO GIÁ',
+        [content] NVARCHAR(MAX) NOT NULL,
+        [imageUrl] NVARCHAR(MAX) NULL,
+        [isGlobal] BIT NOT NULL DEFAULT 1,
+        [sortOrder] INT NOT NULL DEFAULT 0,
+        [createdById] NVARCHAR(100) NOT NULL,
+        [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        CONSTRAINT [FK_MessageTemplate_User] FOREIGN KEY ([createdById]) REFERENCES [dbo].[User]([id])
+    );
+END;

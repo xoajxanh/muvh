@@ -17,6 +17,7 @@ model User {
   updatedAt    DateTime    @updatedAt
   tokens       Token[]     @relation("UserTokens")
   tokenNotes   TokenNote[] @relation("UserTokenNotes")
+  messageTemplates MessageTemplate[] @relation("UserMessageTemplates")
 }
 
 model VipPackage {
@@ -99,4 +100,19 @@ model TelegramContact {
   name      String
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
+}
+
+model MessageTemplate {
+  id          String   @id @default(uuid())
+  title       String
+  shortcut    String?
+  category    String   @default("BÁO GIÁ")
+  content     String   @db.NVarChar(Max)
+  imageUrl    String?  @db.NVarChar(Max)
+  isGlobal    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdById String
+  createdBy   User     @relation("UserMessageTemplates", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

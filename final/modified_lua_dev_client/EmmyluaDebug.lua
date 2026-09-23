@@ -1412,6 +1412,9 @@ local function CreateModUI()
 
             local tiers = {}
             if _G.Mod_IsAdmin then
+                if s >= 4 and s < (p - 3) then
+                    table.insert(tiers, "C" .. tostring(s))
+                end
                 for i = p - 3, p do
                     if i >= 3 then
                         table.insert(tiers, "C" .. tostring(i))
@@ -2004,10 +2007,9 @@ local function CreateModUI()
                 local btnIdx = 1
                 local sepIdx = 1
 
-                local validTags = (_G.ModMainTab == "NANG_CAO") and (GetKundunTiers and GetKundunTiers() or {}) or (GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" })
                 local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
                 local isTabValid = false
-                for _, tag in ipairs(validTags) do
+                for _, tag in ipairs(tierTags) do
                     if _G.ModBossTab == tag then
                         isTabValid = true; break
                     end
@@ -8347,13 +8349,13 @@ local function CreateModUI()
 
                 local btn = btnGo:AddComponent(typeof(Button))
                 btn.onClick:AddListener(function()
-                    _G.ModBossTab = tabName
-                    if _G.UpdateBossWatchUIText then _G.UpdateBossWatchUIText() end
+                    _G.ModKundunBossTab = tabName
                     if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
                 end)
                 return { go = btnGo, txt = txt, btn = btn }
             end
 
+            _G.ModKundunBossTab = _G.ModKundunBossTab or "C8"
             _G.NangCaoTabBtns = {}
             for t = 3, 12 do
                 local tag = "C" .. t
@@ -8406,6 +8408,8 @@ local function CreateModUI()
 
             _G.ModUpdateKundunUI = function()
                 pcall(function()
+                    if _G.ModMainTab ~= "NANG_CAO" then return end
+
                     if _G.KundunTitleGo then
                         _G.KundunTitleGo:SetActive(_G.ModMainTab == "NANG_CAO")
                     end
@@ -8417,13 +8421,13 @@ local function CreateModUI()
 
                     local isKundunTabValid = false
                     for _, tag in ipairs(kundunTiers) do
-                        if _G.ModBossTab == tag then
+                        if _G.ModKundunBossTab == tag then
                             isKundunTabValid = true
                             break
                         end
                     end
                     if not isKundunTabValid and #kundunTiers > 0 then
-                        _G.ModBossTab = kundunTiers[#kundunTiers]
+                        _G.ModKundunBossTab = kundunTiers[#kundunTiers]
                     end
 
                     if _G.NangCaoTabBtns then
@@ -8444,7 +8448,7 @@ local function CreateModUI()
                                         rt.anchoredPosition = Vector2(10 + activeIdx * 92, kundunTabY)
                                         rt.sizeDelta = Vector2(88, 26)
                                     end
-                                    local isSel = (_G.ModBossTab == tag)
+                                    local isSel = (_G.ModKundunBossTab == tag)
                                     tBtn.txt.text = "<color=" ..
                                         (isSel and "#00FF00" or "#FFFFFF") ..
                                         ">[ BOSS " .. tag .. " ]</color>"
@@ -8464,9 +8468,7 @@ local function CreateModUI()
                         end
                     end
 
-                    if _G.ModMainTab ~= "NANG_CAO" then return end
-
-                    local tierNum = tonumber(string.match(_G.ModBossTab or "C8", "%d+")) or 8
+                    local tierNum = tonumber(string.match(_G.ModKundunBossTab or "C8", "%d+")) or 8
                     local kundunConfigs = {}
                     if tierNum >= 4 then
                         table.insert(kundunConfigs,
