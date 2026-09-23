@@ -276,6 +276,35 @@ local function CreateModUI()
         end
         _G.Mod_AutoChallengeTower_Count = 0
         _G.Mod_LastTowerJoinReqTime = 0
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HỆ THỐNG LỆNH BÍ MẬT (SECRET COMMAND ENGINE)
+        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /aoemg, /sieutoc)
+        -- =========================================================================
+        if _G.Mod_SecretCommands == nil then
+            pcall(function()
+                _G.Mod_SecretCommands = CS.UnityEngine.PlayerPrefs.GetString("Mod_SecretCommands", "")
+            end)
+            if _G.Mod_SecretCommands == nil then _G.Mod_SecretCommands = "" end
+        end
+
+        _G.Mod_ParseSecretCommands = function(cmdStr)
+            local tbl = {}
+            if cmdStr and cmdStr ~= "" then
+                for cmd in string.gmatch(cmdStr, "%S+") do
+                    tbl[string.lower(cmd)] = true
+                end
+            end
+            _G.Mod_ActiveCommands = tbl
+        end
+
+        _G.Mod_HasSecretCommand = function(cmd)
+            if not _G.Mod_ActiveCommands then return false end
+            return _G.Mod_ActiveCommands[string.lower(cmd)] == true
+        end
+
+        _G.Mod_ParseSecretCommands(_G.Mod_SecretCommands)
+
         if _G.Mod_DisableVisuals == nil then
             pcall(function()
                 _G.Mod_DisableVisuals = CS.UnityEngine.PlayerPrefs.GetInt("Mod_DisableVisuals", 0) == 1
@@ -1196,6 +1225,14 @@ local function CreateModUI()
         panelRt.pivot = Vector2(0, 0)
         panelRt.anchoredPosition = Vector2(71, 60)
         panelRt.sizeDelta = Vector2(720, 580)
+
+        if _G.Mod_MenuScale == nil then
+            pcall(function()
+                _G.Mod_MenuScale = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_MenuScale", 1.0)
+            end)
+            if not _G.Mod_MenuScale or _G.Mod_MenuScale < 0.5 then _G.Mod_MenuScale = 1.0 end
+        end
+        panelGo.transform.localScale = CS.UnityEngine.Vector3(_G.Mod_MenuScale, _G.Mod_MenuScale, 1)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0, 0, 0, 0.8)
@@ -4948,9 +4985,9 @@ local function CreateModUI()
 
                     -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG KHIÊU CHIẾN PHONG MA THÁP THEO ĐIỀU KIỆN BUFF & SKILL CỰC HẠN
-                    -- Mô tả: Tự động vào Phong Ma Tháp khi về Lorencia; nếu CHECK SKILL bật thì kiểm tra thêm Skill Cực Hạn và 2 Buff Elf
+                    -- Mô tả: Tự động vào Phong Ma Tháp khi có lệnh bí mật /autothap và bật toggle AUTO THÁP
                     -- =========================================================================
-                    if _G.Mod_IsAdmin and _G.Mod_AutoChallengeTower_Enabled then
+                    if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                         local nowTowerTime = CS.UnityEngine.Time.realtimeSinceStartup
                         if (nowTowerTime - (_G.Mod_LastTowerJoinReqTime or 0)) >= 3.0 then
                             local me = _G.RoleManager and _G.RoleManager.me
@@ -5053,9 +5090,9 @@ local function CreateModUI()
 
                     -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG ÉP CHIÊU SÉT ĐÁNH (MA KỴ SỸ AOE INJECTION)
-                    -- Mô tả: Ép Ma Kỵ Sỹ xuất chiêu Sét Đánh (14040100) theo chu kỳ 0.5s/lần khi đang AutoFight có mục tiêu
+                    -- Mô tả: Ép Ma Kỵ Sỹ xuất chiêu Sét Đánh (14040100) theo chu kỳ 0.5s/lần nếu có lệnh bí mật /aoemg và bật toggle
                     -- =========================================================================
-                    if _G.Mod_IsAdmin and _G.Mod_MG_ForceAOE_Enabled then
+                    if _G.Mod_MG_ForceAOE_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/aoemg") then
                         local nowAoETime = CS.UnityEngine.Time.realtimeSinceStartup
                         if (nowAoETime - (_G.Mod_LastMG_AoETime or 0)) >= 0.5 then
                             _G.Mod_LastMG_AoETime = nowAoETime
@@ -5242,16 +5279,15 @@ local function CreateModUI()
                                             local rawPct = (role.hp / maxHp) * 100
                                             local hpPct = math.max(0.01, rawPct)
 
-                                            local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
-                                            local isFov75 = (fovVal == 75)
-                                            local isFov80 = (fovVal == 80)
-                                            local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+                                            local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
+                                            local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                                            local isAdminBurst = isAdminBurst1 or isAdminBurst2
 
                                             if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
                                                 local msg
-                                                if _G.Mod_IsAdmin and isFov80 then
+                                                if isAdminBurst2 then
                                                     msg = string.format("[ %s ] (2) HP: %.2f%%", tostring(d.name), hpPct)
-                                                elseif _G.Mod_IsAdmin and isFov75 then
+                                                elseif isAdminBurst1 then
                                                     msg = string.format("[ %s ] (1) HP: %.2f%%", tostring(d.name), hpPct)
                                                 else
                                                     msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
@@ -5324,20 +5360,19 @@ local function CreateModUI()
                                                 local isBone = isBoneHon or isBoneCot
                                                 local shouldPick = false
 
-                                                local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
-                                                local isFov75 = (fovVal == 75)
-                                                local isFov80 = (fovVal == 80)
-                                                local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+                                                local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
+                                                local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                                                local isAdminBurst = isAdminBurst1 or isAdminBurst2
 
                                                 if decision.isRune then
-                                                    if isAdminBurst and isFov75 then
+                                                    if isAdminBurst1 then
                                                         shouldPick = true
                                                     elseif decision.runePref and _G[decision.runePref] == true then
                                                         shouldPick = true
                                                     end
                                                 end
                                                 if decision.isFumo then
-                                                    if isAdminBurst and isFov75 then
+                                                    if isAdminBurst1 then
                                                         shouldPick = true
                                                     elseif decision.fumoPref and _G[decision.fumoPref] == true then
                                                         shouldPick = true
@@ -5382,10 +5417,9 @@ local function CreateModUI()
                         end
 
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        local fovVal = math.floor((tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35) + 0.5)
-                        local isFov75 = (fovVal == 75)
-                        local isFov80 = (fovVal == 80)
-                        local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
+                        local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
+                        local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                        local isAdminBurst = isAdminBurst1 or isAdminBurst2
 
                         -- =========================================================================
                         -- [MOD FEATURE]: HÀM TÍNH ĐIỂM ƯU TIÊN SẮP XẾP NHẶT ĐỒ CHO ADMIN
@@ -9657,7 +9691,7 @@ local function CreateModUI()
             local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
             scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             scrollRt.anchoredPosition = Vector2(430, -95)
-            scrollRt.sizeDelta = Vector2(285, 465)
+            scrollRt.sizeDelta = Vector2(285, 420)
 
             local scrollImg = scrollGo:AddComponent(typeof(Image))
             scrollImg.color = Color(0, 0, 0, 0.01)
@@ -9684,35 +9718,46 @@ local function CreateModUI()
             scrollRect.viewport = vpRt
             scrollRect.content = contentRt
 
-            -- 4. CÁC NÚT VÀ CÀI ĐẶT TRONG CONTENT
-            local btnX = 10
-            local btnW = 260
-            local curY = -5
-
-            CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            -- Nút AUTO THÁP & CHECK SKILL chung 1 dòng (Chỉ hiển thị với Admin)
-            if _G.Mod_IsAdmin then
-                local wAuto = 145
-                local wCheck = 105
-                local gap = 10
-                CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, wAuto, nil, contentGo, 35, 13)
-                CreateToggle("CHECK SKILL", "Mod_AutoTower_CheckSkill_Enabled", btnX + wAuto + gap, curY, wCheck, nil, contentGo, 35, 13)
-                curY = curY - 45
-            end
-
-            -- Nút MG DÙNG AOE (Chỉ hiển thị với Admin)
-            if _G.Mod_IsAdmin then
-                if _G.Mod_MG_ForceAOE_Enabled == nil then
-                    pcall(function()
-                        _G.Mod_MG_ForceAOE_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_MG_ForceAOE_Enabled", 0) == 1)
-                    end)
-                    if _G.Mod_MG_ForceAOE_Enabled == nil then _G.Mod_MG_ForceAOE_Enabled = false end
+            -- 4. CÁC NÚT VÀ CÀI ĐẶT TRONG CONTENT (TỰ ĐỘNG VẼ LẠI KHI BẤM NÚT LOAD)
+            local function RebuildKundunHoTroContent()
+                if not contentGo or contentGo:Equals(nil) then return end
+                for i = contentGo.transform.childCount - 1, 0, -1 do
+                    local child = contentGo.transform:GetChild(i)
+                    if child then
+                        local go = child.gameObject
+                        child:SetParent(nil)
+                        if go then CS.UnityEngine.Object.Destroy(go) end
+                    end
                 end
-                CreateToggle("MG DÙNG AOE", "Mod_MG_ForceAOE_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+
+                local btnX = 10
+                local btnW = 260
+                local curY = -5
+
+                CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
                 curY = curY - 45
-            end
+
+                -- Nút AUTO THÁP & CHECK SKILL chung 1 dòng (Chỉ hiển thị khi có lệnh bí mật /autothap)
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                    local wAuto = 145
+                    local wCheck = 105
+                    local gap = 10
+                    CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, wAuto, nil, contentGo, 35, 13)
+                    CreateToggle("CHECK SKILL", "Mod_AutoTower_CheckSkill_Enabled", btnX + wAuto + gap, curY, wCheck, nil, contentGo, 35, 13)
+                    curY = curY - 45
+                end
+
+                -- Nút MG DÙNG AOE (Chỉ hiển thị khi có lệnh bí mật /aoemg)
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/aoemg") then
+                    if _G.Mod_MG_ForceAOE_Enabled == nil then
+                        pcall(function()
+                            _G.Mod_MG_ForceAOE_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_MG_ForceAOE_Enabled", 0) == 1)
+                        end)
+                        if _G.Mod_MG_ForceAOE_Enabled == nil then _G.Mod_MG_ForceAOE_Enabled = false end
+                    end
+                    CreateToggle("MG DÙNG AOE", "Mod_MG_ForceAOE_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                    curY = curY - 45
+                end
 
             CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
@@ -10265,8 +10310,109 @@ local function CreateModUI()
             CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
 
-            -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
-            contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
+                -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
+                contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
+            end
+
+            _G.ModRebuildKundunHoTroContent = RebuildKundunHoTroContent
+            RebuildKundunHoTroContent()
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG NHẬP LỆNH BÍ MẬT & NÚT LOAD ĐÁY CỘT HỖ TRỢ
+            -- Mô tả: Ô nhập lệnh bí mật (210px) và nút LOAD (70px) ở đáy cột hỗ trợ (Y = -525).
+            -- Bấm nút LOAD để lưu PlayerPrefs và cập nhật hiển thị nút ẩn mà không phát thông báo.
+            -- =========================================================================
+            local secretInputGo = GameObject("SecretCommandsInput")
+            secretInputGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, secretInputGo)
+
+            local secretInputRt = secretInputGo:AddComponent(typeof(RectTransform))
+            secretInputRt.anchorMin, secretInputRt.anchorMax, secretInputRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            secretInputRt.anchoredPosition = Vector2(430, -525)
+            secretInputRt.sizeDelta = Vector2(210, 32)
+
+            local sBg = GameObject("Bg")
+            sBg.transform:SetParent(secretInputGo.transform, false)
+            local sBgRt = sBg:AddComponent(typeof(RectTransform))
+            sBgRt.anchorMin, sBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            sBgRt.sizeDelta = Vector2(0, 0)
+            local sBgImg = sBg:AddComponent(typeof(Image))
+            sBgImg.color = Color(0.12, 0.12, 0.14, 0.95)
+
+            local sTxtGo = GameObject("Text")
+            sTxtGo.transform:SetParent(secretInputGo.transform, false)
+            local sTxtRt = sTxtGo:AddComponent(typeof(RectTransform))
+            sTxtRt.anchorMin, sTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            sTxtRt.offsetMin, sTxtRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
+            local sTxt = sTxtGo:AddComponent(typeof(Text))
+            sTxt.raycastTarget = false
+            sTxt.fontSize = 13
+            sTxt.color = Color(1, 0.85, 0.2, 1)
+            sTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sTxt.font = defaultFont end
+
+            -- Placeholder text
+            local phGo = GameObject("Placeholder")
+            phGo.transform:SetParent(secretInputGo.transform, false)
+            local phRt = phGo:AddComponent(typeof(RectTransform))
+            phRt.anchorMin, phRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            phRt.offsetMin, phRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
+            local phTxt = phGo:AddComponent(typeof(Text))
+            phTxt.raycastTarget = false
+            phTxt.text = "Nhập lệnh bí mật..."
+            phTxt.fontSize = 12
+            phTxt.fontStyle = CS.UnityEngine.FontStyle.Italic
+            phTxt.color = Color(0.5, 0.5, 0.5, 0.6)
+            phTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then phTxt.font = defaultFont end
+
+            local secretField = secretInputGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            secretField.textComponent = sTxt
+            secretField.placeholder = phTxt
+            secretField.text = _G.Mod_SecretCommands or ""
+
+            -- Nút [LOAD]
+            local loadBtnGo = GameObject("SecretCommandsLoadBtn")
+            loadBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, loadBtnGo)
+
+            local loadBtnRt = loadBtnGo:AddComponent(typeof(RectTransform))
+            loadBtnRt.anchorMin, loadBtnRt.anchorMax, loadBtnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            loadBtnRt.anchoredPosition = Vector2(645, -525)
+            loadBtnRt.sizeDelta = Vector2(70, 32)
+
+            local loadBtnImg = loadBtnGo:AddComponent(typeof(Image))
+            loadBtnImg.color = Color(0.15, 0.45, 0.65, 1)
+
+            local loadTxtGo = GameObject("Text")
+            loadTxtGo.transform:SetParent(loadBtnGo.transform, false)
+            local loadTxtRt = loadTxtGo:AddComponent(typeof(RectTransform))
+            loadTxtRt.anchorMin, loadTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            loadTxtRt.sizeDelta = Vector2(0, 0)
+            local loadTxt = loadTxtGo:AddComponent(typeof(Text))
+            loadTxt.raycastTarget = false
+            loadTxt.text = "LOAD"
+            loadTxt.fontSize = 14
+            loadTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            loadTxt.color = Color.white
+            loadTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then loadTxt.font = defaultFont end
+
+            local loadBtn = loadBtnGo:AddComponent(typeof(Button))
+            loadBtn.onClick:AddListener(function()
+                local val = secretField.text or ""
+                _G.Mod_SecretCommands = val
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_SecretCommands", val)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                if _G.Mod_ParseSecretCommands then
+                    _G.Mod_ParseSecretCommands(val)
+                end
+                if _G.ModRebuildKundunHoTroContent then
+                    _G.ModRebuildKundunHoTroContent()
+                end
+            end)
         end
 
         CreateKundunUI()
@@ -11165,6 +11311,72 @@ local function CreateModUI()
         watermarkGo:SetActive(_G.ModMainTab == "CO_BAN")
         watermarkGo.transform:SetAsLastSibling()
 
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT ZOOM DỌC BÁM MÉP PHẢI PANEL (TAB CƠ BẢN)
+        -- Mô tả: Thu phóng kích thước menu theo chu kỳ: x1.0 -> x1.2 -> x1.5 -> x1.0
+        -- =========================================================================
+        local zoomBtnGo = GameObject("ZoomVerticalBtn")
+        zoomBtnGo.transform:SetParent(panelGo.transform, false)
+        table.insert(_G.CoBanUIList, zoomBtnGo)
+
+        local zoomRt = zoomBtnGo:AddComponent(typeof(RectTransform))
+        zoomRt.anchorMin, zoomRt.anchorMax, zoomRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+        zoomRt.anchoredPosition = Vector2(0, 0)
+        zoomRt.sizeDelta = Vector2(28, 120)
+
+        local zoomImg = zoomBtnGo:AddComponent(typeof(Image))
+
+        local zoomTxtGo = GameObject("Text")
+        zoomTxtGo.transform:SetParent(zoomBtnGo.transform, false)
+        local zoomTxtRt = zoomTxtGo:AddComponent(typeof(RectTransform))
+        zoomTxtRt.anchorMin, zoomTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        zoomTxtRt.sizeDelta = Vector2(0, 0)
+        local zoomTxt = zoomTxtGo:AddComponent(typeof(Text))
+        zoomTxt.raycastTarget = false
+        zoomTxt.fontSize = 12
+        zoomTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then zoomTxt.font = defaultFont end
+
+        local function UpdateZoomVisuals()
+            local cur = _G.Mod_MenuScale or 1.0
+            if math.abs(cur - 1.2) < 0.05 then
+                zoomImg.color = Color(0.15, 0.45, 0.65, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.2"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            elseif math.abs(cur - 1.5) < 0.05 then
+                zoomImg.color = Color(0.75, 0.45, 0.1, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.5"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            else
+                zoomImg.color = Color(0.2, 0.2, 0.2, 0.9)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.0"
+                zoomTxt.color = Color(0.8, 0.8, 0.8, 1)
+            end
+            panelGo.transform.localScale = CS.UnityEngine.Vector3(cur, cur, 1)
+        end
+        UpdateZoomVisuals()
+
+        local zoomBtn = zoomBtnGo:AddComponent(typeof(Button))
+        zoomBtn.onClick:AddListener(function()
+            local cur = _G.Mod_MenuScale or 1.0
+            local nextScale = 1.0
+            if math.abs(cur - 1.0) < 0.05 then
+                nextScale = 1.2
+            elseif math.abs(cur - 1.2) < 0.05 then
+                nextScale = 1.5
+            else
+                nextScale = 1.0
+            end
+            _G.Mod_MenuScale = nextScale
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_MenuScale", nextScale)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            UpdateZoomVisuals()
+        end)
+        zoomBtnGo:SetActive(_G.ModMainTab == "CO_BAN")
+        zoomBtnGo.transform:SetAsLastSibling()
+
         -- Auto-Loot DropItem Hook
         _G.LastPickupTime = _G.LastPickupTime or 0
         _G.Mod_AllDropItems = _G.Mod_AllDropItems or {}
@@ -11201,13 +11413,14 @@ local function CreateModUI()
                         scopeVal = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope) or 0
                     end
                     local pickLimit = tonumber(_G.AutoPick_Limit) or 0
-                    local fovVal = tonumber(_G.SavedFOV) or (CS.UnityEngine.Camera.main and CS.UnityEngine.Camera.main.fieldOfView) or 35
-                    local curFov = math.floor(fovVal + 0.5)
-                    local isFov65 = (curFov == 65)
-                    local isFov75 = (curFov == 75)
-                    local isFov80 = (curFov == 80)
-                    local isAdminBurst = _G.Mod_IsAdmin and (isFov75 or isFov80)
-                    local isSecretTrickActive = (scopeVal == pickLimit) and (scopeVal % 2 == 1) and isFov65
+                    -- =========================================================================
+                    -- [MOD FEATURE]: KIỂM TRA LỆNH BÍ MẬT BÃO NHẶT ADMIN & NHẶT SIÊU TỐC
+                    -- Mô tả: Thay thế hoàn toàn điều kiện FOV 75 (/adminburst1), FOV 80 (/adminburst2) và FOV 65 + scopeVal (/sieutoc).
+                    -- =========================================================================
+                    local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
+                    local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                    local isAdminBurst = isAdminBurst1 or isAdminBurst2
+                    local isSecretTrickActive = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
 
                     local eType = dropItemData.type
                     local confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or dropItemData.configID

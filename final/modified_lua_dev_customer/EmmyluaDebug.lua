@@ -1177,6 +1177,14 @@ local function CreateModUI()
         panelRt.anchoredPosition = Vector2(90, 50)
         panelRt.sizeDelta = Vector2(720, 580)
 
+        if _G.Mod_MenuScale == nil then
+            pcall(function()
+                _G.Mod_MenuScale = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_MenuScale", 1.0)
+            end)
+            if not _G.Mod_MenuScale or _G.Mod_MenuScale < 0.5 then _G.Mod_MenuScale = 1.0 end
+        end
+        panelGo.transform.localScale = CS.UnityEngine.Vector3(_G.Mod_MenuScale, _G.Mod_MenuScale, 1)
+
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0, 0, 0, 0.8)
         panelGo:SetActive(false)
@@ -8447,6 +8455,7 @@ local function CreateModUI()
         -- Watermark
         local watermarkGo = GameObject("WatermarkText")
         watermarkGo.transform:SetParent(panelGo.transform, false)
+        table.insert(_G.CoBanUIList, watermarkGo)
         local wmRt = watermarkGo:AddComponent(typeof(RectTransform))
         wmRt.anchorMin = Vector2(1, 0)
         wmRt.anchorMax = Vector2(1, 0)
@@ -8460,6 +8469,72 @@ local function CreateModUI()
         wmTxt.fontSize = 16
         wmTxt.alignment = TextAnchor.LowerRight
         if defaultFont then wmTxt.font = defaultFont end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT ZOOM DỌC BÁM MÉP PHẢI PANEL (TAB CƠ BẢN)
+        -- Mô tả: Thu phóng kích thước menu theo chu kỳ: x1.0 -> x1.2 -> x1.5 -> x1.0
+        -- =========================================================================
+        local zoomBtnGo = GameObject("ZoomVerticalBtn")
+        zoomBtnGo.transform:SetParent(panelGo.transform, false)
+        table.insert(_G.CoBanUIList, zoomBtnGo)
+
+        local zoomRt = zoomBtnGo:AddComponent(typeof(RectTransform))
+        zoomRt.anchorMin, zoomRt.anchorMax, zoomRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+        zoomRt.anchoredPosition = Vector2(0, 0)
+        zoomRt.sizeDelta = Vector2(28, 120)
+
+        local zoomImg = zoomBtnGo:AddComponent(typeof(Image))
+
+        local zoomTxtGo = GameObject("Text")
+        zoomTxtGo.transform:SetParent(zoomBtnGo.transform, false)
+        local zoomTxtRt = zoomTxtGo:AddComponent(typeof(RectTransform))
+        zoomTxtRt.anchorMin, zoomTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        zoomTxtRt.sizeDelta = Vector2(0, 0)
+        local zoomTxt = zoomTxtGo:AddComponent(typeof(Text))
+        zoomTxt.raycastTarget = false
+        zoomTxt.fontSize = 12
+        zoomTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then zoomTxt.font = defaultFont end
+
+        local function UpdateZoomVisuals()
+            local cur = _G.Mod_MenuScale or 1.0
+            if math.abs(cur - 1.2) < 0.05 then
+                zoomImg.color = Color(0.15, 0.45, 0.65, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.2"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            elseif math.abs(cur - 1.5) < 0.05 then
+                zoomImg.color = Color(0.75, 0.45, 0.1, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.5"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            else
+                zoomImg.color = Color(0.2, 0.2, 0.2, 0.9)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.0"
+                zoomTxt.color = Color(0.8, 0.8, 0.8, 1)
+            end
+            panelGo.transform.localScale = CS.UnityEngine.Vector3(cur, cur, 1)
+        end
+        UpdateZoomVisuals()
+
+        local zoomBtn = zoomBtnGo:AddComponent(typeof(Button))
+        zoomBtn.onClick:AddListener(function()
+            local cur = _G.Mod_MenuScale or 1.0
+            local nextScale = 1.0
+            if math.abs(cur - 1.0) < 0.05 then
+                nextScale = 1.2
+            elseif math.abs(cur - 1.2) < 0.05 then
+                nextScale = 1.5
+            else
+                nextScale = 1.0
+            end
+            _G.Mod_MenuScale = nextScale
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_MenuScale", nextScale)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            UpdateZoomVisuals()
+        end)
+        zoomBtnGo:SetActive(_G.ModMainTab == "CO_BAN")
+        zoomBtnGo.transform:SetAsLastSibling()
 
         -- Auto-Loot DropItem Hook
         _G.LastPickupTime = _G.LastPickupTime or 0
