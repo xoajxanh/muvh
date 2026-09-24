@@ -8,7 +8,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Refresh PATH tu Registry de tu dong nhan dien Python/Java vua moi cai dat ma khong can mo lai console
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-
+$version = "189"
 # Tu dong xac dinh thu muc goc (Git Root Directory)
 $rootDir = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path "$rootDir\.git")) {
@@ -146,7 +146,7 @@ with open('$bundlesSrc', 'r', encoding='utf-8') as f:
 with open('$bundlesDst', 'w', encoding='utf-8') as f:
     for line in lines:
         if line.startswith('lua.mu2|'):
-            f.write(f'lua.mu2|0|$hash|$size|186\n')
+            f.write(f'lua.mu2|0|$hash|$size|$version\n')
         else:
             f.write(line)
 "
