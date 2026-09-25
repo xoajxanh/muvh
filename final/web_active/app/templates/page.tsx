@@ -346,7 +346,7 @@ export default function MessageTemplatesPage() {
       setCategory('BÁO GIÁ');
       setContent('');
       setImageUrl('');
-      setIsGlobal(user?.role === 'ADMIN');
+      setIsGlobal(true);
       setSortOrder(templates.length + 1);
     }
     setShowModal(true);
@@ -398,7 +398,7 @@ export default function MessageTemplatesPage() {
         category: category.trim(),
         content: content.trim(),
         imageUrl: imageUrl.trim() || null,
-        isGlobal: user?.role === 'ADMIN' ? isGlobal : false,
+        isGlobal: Boolean(isGlobal),
         sortOrder: Number(sortOrder) || 0,
       };
 
@@ -563,7 +563,7 @@ export default function MessageTemplatesPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {templates.map((tpl) => {
-                const canManage = user.role === 'ADMIN' || tpl.createdById === user.userId;
+                const canManage = user.role === 'ADMIN' || user.role === 'SALE';
                 const isCopiedText = copiedTextId === tpl.id;
                 const isCopiedImage = copiedImageId === tpl.id;
 
@@ -868,21 +868,19 @@ export default function MessageTemplatesPage() {
                     ></textarea>
                   </div>
 
-                  {/* Global Checkbox for Admin */}
-                  {user.role === 'ADMIN' && (
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
-                      <input
-                        type="checkbox"
-                        id="isGlobalCheckbox"
-                        checked={isGlobal}
-                        onChange={(e) => setIsGlobal(e.target.checked)}
-                        className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-900 border-slate-700 cursor-pointer"
-                      />
-                      <label htmlFor="isGlobalCheckbox" className="text-xs text-indigo-200 cursor-pointer">
-                        <strong className="text-white">Đặt làm mẫu chung cho toàn Team Sale:</strong> Tất cả nhân viên Sale đều có thể thấy và sử dụng mẫu này.
-                      </label>
-                    </div>
-                  )}
+                  {/* Global Checkbox */}
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+                    <input
+                      type="checkbox"
+                      id="isGlobalCheckbox"
+                      checked={isGlobal}
+                      onChange={(e) => setIsGlobal(e.target.checked)}
+                      className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-900 border-slate-700 cursor-pointer"
+                    />
+                    <label htmlFor="isGlobalCheckbox" className="text-xs text-indigo-200 cursor-pointer">
+                      <strong className="text-white">Đặt làm mẫu chung cho toàn Team Sale:</strong> Tất cả nhân viên Sale đều có thể thấy và sử dụng mẫu này.
+                    </label>
+                  </div>
 
                   <div className="flex justify-end gap-3 pt-2">
                     <button

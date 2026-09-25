@@ -17,13 +17,8 @@ export async function GET(req: NextRequest) {
 
   const whereClause: any = {};
 
-  // Phân quyền: Sale thấy mẫu Global và mẫu do chính mình tạo
-  if (session.role !== 'ADMIN') {
-    whereClause.OR = [
-      { isGlobal: true },
-      { createdById: session.userId },
-    ];
-  }
+  // Phân quyền: Cả Admin và Sale đều thấy toàn bộ kịch bản chung của team
+
 
   if (category && category !== 'ALL') {
     if (category === 'MINE') {
@@ -83,8 +78,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Vui lòng nhập Nội dung tin nhắn' }, { status: 400 });
     }
 
-    // Chỉ Admin mới được tạo mẫu Global cho toàn team
-    const templateIsGlobal = session.role === 'ADMIN' ? Boolean(isGlobal) : false;
+    // Cả Admin và Sale đều có thể tạo mẫu Global cho toàn team (mặc định true nếu không chỉ định)
+    const templateIsGlobal = isGlobal !== undefined ? Boolean(isGlobal) : true;
 
     const newTemplate = await prisma.messageTemplate.create({
       data: {

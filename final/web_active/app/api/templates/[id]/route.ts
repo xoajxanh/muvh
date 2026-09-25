@@ -22,8 +22,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ error: 'Mẫu tin nhắn không tồn tại' }, { status: 404 });
     }
 
-    // Kiểm tra quyền sửa: Admin sửa được tất cả, Sale chỉ sửa được mẫu do mình tạo
-    if (session.role !== 'ADMIN' && existing.createdById !== session.userId) {
+    // Kiểm tra quyền sửa: Cả Admin và Sale đều có quyền chỉnh sửa mẫu tin nhắn
+    if (session.role !== 'ADMIN' && session.role !== 'SALE') {
       return NextResponse.json({ error: 'Bạn không có quyền chỉnh sửa mẫu tin nhắn này' }, { status: 403 });
     }
 
@@ -38,8 +38,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     if (imageUrl !== undefined) updateData.imageUrl = imageUrl ? imageUrl.trim() : null;
     if (sortOrder !== undefined) updateData.sortOrder = Number(sortOrder) || 0;
 
-    // Chỉ Admin mới được đổi quyền isGlobal
-    if (session.role === 'ADMIN' && isGlobal !== undefined) {
+    // Cả Admin và Sale đều có thể cấu hình isGlobal
+    if (isGlobal !== undefined) {
       updateData.isGlobal = Boolean(isGlobal);
     }
 
@@ -83,8 +83,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Mẫu tin nhắn không tồn tại' }, { status: 404 });
     }
 
-    // Kiểm tra quyền xóa: Admin xóa được tất cả, Sale chỉ xóa được mẫu do mình tạo
-    if (session.role !== 'ADMIN' && existing.createdById !== session.userId) {
+    // Kiểm tra quyền xóa: Cả Admin và Sale đều có quyền xóa mẫu tin nhắn
+    if (session.role !== 'ADMIN' && session.role !== 'SALE') {
       return NextResponse.json({ error: 'Bạn không có quyền xóa mẫu tin nhắn này' }, { status: 403 });
     }
 
