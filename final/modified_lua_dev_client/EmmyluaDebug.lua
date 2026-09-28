@@ -2801,14 +2801,7 @@ local function CreateModUI()
                         end)
                     end
 
-                    -- 1. QiJiHelper SetPressSkill (Không dùng cho kỹ năng buff đồng đội để tránh bị coi là đòn đánh)
-                    if not isBuffSkill then
-                        pcall(function()
-                            if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
-                                _G.QiJiHelperData.SetPressSkill(sId)
-                            end
-                        end)
-                    end
+                    -- 1. QiJiHelper SetPressSkill: BỎ HOÀN TOÀN để không kẹt AutoFight của game
 
                     -- 2. Gửi gói tin Server (ReqPlayerUseSkill & ReqBroadcastUseSkill)
                     pcall(function()
@@ -2952,37 +2945,61 @@ local function CreateModUI()
             -- =========================================================================
             local function Mod_GetTowerRemainSeconds()
                 local remainSec = nil
+                local rawText = nil
 
                 -- 1. Ưu tiên đọc trực tiếp từ UI Instance_GoalUI (label hiển thị dưới nút Thoát)
                 pcall(function()
-                    local goalUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIID and _G.UIID.Instance_GoalUI and _G.UIManager.GetUiByName(_G.UIID.Instance_GoalUI)
-                    if goalUI and goalUI.lab_fightTimeValue and goalUI.lab_fightTimeValue.GetText then
-                        local txt = goalUI.lab_fightTimeValue:GetText()
+                    local goalUI = (_G.UIManager and _G.UIManager.GetUiByName and _G.UIID and _G.UIManager.GetUiByName(_G.UIID.Instance_GoalUI))
+                    if not goalUI and _G.UIManager and _G.UIManager.GetUiByName then
+                        goalUI = _G.UIManager.GetUiByName("Instance_GoalUI")
+                    end
+                    if goalUI and goalUI.lab_fightTimeValue then
+                        local txt = nil
+                        if goalUI.lab_fightTimeValue.GetText then
+                            txt = goalUI.lab_fightTimeValue:GetText()
+                        elseif goalUI.lab_fightTimeValue.text then
+                            txt = goalUI.lab_fightTimeValue.text
+                        end
                         if txt and txt ~= "" then
-                            local m, s = string.match(txt, "(%d+):(%d+)")
+                            rawText = tostring(txt)
+                            -- Loại bỏ các thẻ màu HTML của Unity: <color=...>, </color>, v.v.
+                            local cleanTxt = string.gsub(rawText, "<[^>]+>", "")
+                            local m, s = string.match(cleanTxt, "(%d+):(%d+)")
                             if m and s then
                                 remainSec = tonumber(m) * 60 + tonumber(s)
+                            else
+                                local onlySec = string.match(cleanTxt, "(%d+)")
+                                if onlySec then
+                                    remainSec = tonumber(onlySec)
+                                end
                             end
                         end
                     end
                 end)
 
-                if remainSec ~= nil then return remainSec end
+                if remainSec ~= nil then return remainSec, rawText end
 
                 -- 2. Fallback: Đọc từ TranScriptData.InTranscriptData.endTime
                 pcall(function()
                     if _G.TranScriptData and _G.TranScriptData.InTranscriptData and _G.TranScriptData.InTranscriptData.endTime then
-                        if _G.Time and _G.Time.GetServerTime then
-                            local serverTime = _G.Time.GetServerTime()
-                            local diff = _G.TranScriptData.InTranscriptData.endTime - serverTime
-                            if diff > 0 then
-                                remainSec = math.floor(diff / 1000)
+                        local endT = _G.TranScriptData.InTranscriptData.endTime
+                        if endT and type(endT) == "number" and endT > 0 then
+                            local curMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                            local curSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or math.floor(curMs / 1000)
+                            if endT > 1000000000000 then
+                                local diff = math.floor((endT - curMs) / 1000)
+                                if diff >= 0 and diff < 3600 then remainSec = diff end
+                            elseif endT > 1000000000 then
+                                local diff = math.floor(endT - curSec)
+                                if diff >= 0 and diff < 3600 then remainSec = diff end
+                            elseif endT > 0 and endT < 3600 then
+                                remainSec = math.floor(endT)
                             end
                         end
                     end
                 end)
 
-                if remainSec ~= nil then return remainSec end
+                if remainSec ~= nil then return remainSec, rawText end
 
                 -- 3. Fallback: Đọc từ TranScriptData.ServerRoleCountDownTimeData
                 pcall(function()
@@ -2994,13 +3011,13 @@ local function CreateModUI()
                     end
                 end)
 
-                return remainSec
+                return remainSec, rawText
             end
             _G.Mod_GetTowerRemainSeconds = Mod_GetTowerRemainSeconds
 
             -- =========================================================================
             -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
-            -- Mô tả: Tự tìm đường đến boss trong Tháp và tự động rời phụ bản khi hoàn thành.
+            -- Mô tả: Tự tìm đường áp sát boss trong Tháp (cự ly <= 1.5m) mượt mà, không giật khựng
             -- =========================================================================
             _G.Mod_ApproachTowerBoss = function()
                 local success, result = pcall(function()
@@ -3046,109 +3063,52 @@ local function CreateModUI()
 
                     if myX == 0 or myY == 0 then return false end
 
-                    -- =========================================================================
-                    -- [MOD FEATURE]: CHỜ DÙNG XONG CÁC SKILL ĐƯỢC CHỌN TRƯỚC KHI MOVETO
-                    -- Mô tả: Khi phát hiện Boss tháp, dùng Cực Hạn (nếu chọn) & Thánh Hồn Gai (nếu chọn) xong mới MoveTo
-                    -- =========================================================================
-                    if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
-                        if not _G.Mod_TowerSkillsCastDone then
-                            local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
-                            local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
-
-                            if not needLimit and not needAngel then
-                                _G.Mod_TowerSkillsCastDone = true
-                            else
-                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                                if not _G.Mod_TowerCastStartTime or _G.Mod_TowerCastStartTime == 0 then
-                                    _G.Mod_TowerCastStartTime = nowTime
-                                end
-                                local elapsed = nowTime - _G.Mod_TowerCastStartTime
-
-                                if needLimit and not _G.Mod_TowerCastLimitDone then
-                                    _G.Mod_TowerCastLimitDone = true
-                                    Mod_CastSkillByGroup(410700, 410702)
-                                end
-
-                                local angelDelay = needLimit and 0.7 or 0.0
-                                if needAngel and not _G.Mod_TowerCastAngelDone and elapsed >= angelDelay then
-                                    _G.Mod_TowerCastAngelDone = true
-                                    Mod_CastSkillByGroup(34011800, 34011801)
-                                end
-
-                                local totalWait = (needLimit and needAngel and 1.0) or 0.6
-                                if elapsed >= totalWait then
-                                    _G.Mod_TowerSkillsCastDone = true
-                                else
-                                    return false -- Đang đứng yên dùng chiêu, chưa gọi MoveTo
-                                end
-                            end
-                        end
-                    end
-
                     local dx = myX - targetX
                     local dy = myY - targetY
                     local dist = math.sqrt(dx * dx + dy * dy)
 
                     if dist <= 1.5 then
-                        -- Đã tới cách Boss tháp <= 1.5m: Dừng di chuyển & Bật Auto Fight đập Boss
+                        -- Đã tới sát Boss tháp <= 1.5m: Dừng di chuyển & Bật Auto Fight đập Boss
                         pcall(function()
                             if me.StopMove then me:StopMove() end
                             if targetRole and me.SetTarget then
                                 me:SetTarget(targetRole)
                             end
-                            if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                            if me.SetAutoFight then me:SetAutoFight("AutoFight") end
                             if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
                                 _G.QiJiHelperData.SetAutoFightData(true)
                             end
                         end)
                         _G.Mod_TowerMovingTargetX = nil
                         _G.Mod_TowerMovingTargetY = nil
-                        _G.Mod_TowerLastMoveTime = 0
-                        LogMsg(string.format("[TOWER_BOSS] Đã tiếp cận Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
+                        _G.Mod_TowerLastMoveCallTime = 0
+                        LogMsg(string.format("[TOWER_BOSS] Đã áp sát Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
                         return true -- Đã hoàn thành tiếp cận
                     else
-                        -- Chưa tới vị trí Boss (cách > 1.5m): Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
-                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        local isMoving = false
-                        if me.IsMoving then
-                            isMoving = me:IsMoving()
-                        end
-
-                        local isSameTarget = (_G.Mod_TowerMovingTargetX == targetX and _G.Mod_TowerMovingTargetY == targetY)
-                        local elapsedMove = nowTime - (_G.Mod_TowerLastMoveTime or 0)
-
-                        -- Chống spam MoveTo: Nếu nhân vật đang chạy mượt mà đến đúng Boss và chưa quá 2s thì không spam lệnh mới
-                        if isMoving and isSameTarget and elapsedMove < 2.0 then
-                            return false -- Để nhân vật chạy một mạch êm ru đến Boss, không gọi lại MoveTo gây giật khựng
-                        end
-
-                        _G.Mod_TowerMovingTargetX = targetX
-                        _G.Mod_TowerMovingTargetY = targetY
-                        _G.Mod_TowerLastMoveTime = nowTime
-
+                        -- Đang ở xa Boss (> 1.5m):
+                        -- Tạm dừng AutoFight để game không đứng yên xả skill tầm xa, tập trung chạy áp sát Boss
                         pcall(function()
-                            local function OnArriveAtBoss()
-                                pcall(function()
-                                    if me.StopMove then me:StopMove() end
-                                    if targetRole and me.SetTarget then
-                                        me:SetTarget(targetRole)
-                                    end
-                                    if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
-                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                        _G.QiJiHelperData.SetAutoFightData(true)
-                                    end
-                                end)
-                                _G.Mod_ApproachTowerBoss_Done = true
-                                _G.Mod_TowerMovingTargetX = nil
-                                _G.Mod_TowerMovingTargetY = nil
-                            end
-
-                            if me.MoveTo then
-                                me:MoveTo({ x = targetX, y = targetY }, 1.2, OnArriveAtBoss)
-                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
-                                _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
+                            if me.isAutoFight == "AutoFight" and me.SetAutoFight then
+                                me:SetAutoFight("None")
                             end
                         end)
+
+                        -- Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
+                        -- Dùng stopRange = 0 chuẩn game, debounce 0.5s để nhân vật chạy mượt mà một mạch đến Boss không giật khựng
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowTime - (_G.Mod_TowerLastMoveCallTime or 0)) >= 0.5 then
+                            _G.Mod_TowerLastMoveCallTime = nowTime
+                            _G.Mod_TowerMovingTargetX = targetX
+                            _G.Mod_TowerMovingTargetY = targetY
+
+                            pcall(function()
+                                if me.MoveTo then
+                                    me:MoveTo({ x = targetX, y = targetY }, 0)
+                                elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
+                                    _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
+                                end
+                            end)
+                        end
                         return false -- Đang di chuyển, tick sau kiểm tra lại cự ly
                     end
                 end)
@@ -5399,20 +5359,49 @@ local function CreateModUI()
                             _G.Mod_TowerCastLimitDone = false
                             _G.Mod_TowerCastAngelDone = false
                             _G.Mod_TowerCastStartTime = 0
+                            _G.Mod_TowerAutoFightStarted = false
                             _G.Mod_TowerMovingTargetX = nil
                             _G.Mod_TowerMovingTargetY = nil
-                            _G.Mod_TowerLastMoveTime = 0
+                            _G.Mod_TowerLastMoveCallTime = 0
                         end
 
-                        -- 1. TỰ ĐỘNG DÙNG CỰC HẠN & THÁNH HỒN GAI TẠI GIÂY 31 ĐẾM NGƯỢC (HOẶC KHI QUÁI XUẤT HIỆN)
+                        local remainSec, rawTimeTxt = nil, nil
+                        if Mod_GetTowerRemainSeconds then
+                            remainSec, rawTimeTxt = Mod_GetTowerRemainSeconds()
+                        end
+
+                        -- QuickMsg thời gian đếm ngược lên màn hình mỗi 1 giây (để anh USER kiểm tra chuẩn xác)
+                        local nowUiSec = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowUiSec - (_G.Mod_LastTowerCountdownQuickMsgTime or 0)) >= 1.0 then
+                            _G.Mod_LastTowerCountdownQuickMsgTime = nowUiSec
+                            if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+                                if remainSec then
+                                    _G.FloatingTipUtility.QuickMsg(string.format("[THÁP] Đếm ngược: %ds", remainSec))
+                                elseif rawTimeTxt then
+                                    _G.FloatingTipUtility.QuickMsg(string.format("[THÁP] Thời gian: %s", rawTimeTxt))
+                                end
+                            end
+                        end
+
+                        -- 1. TỰ ĐỘNG DÙNG CỰC HẠN & THÁNH HỒN GAI TẠI GIÂY 31 ĐẾM NGƯỢC (KÈM BẬT AUTOFIGHT ĐỂ BUFF BẢN THÂN TRƯỚC)
                         if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                             if not _G.Mod_TowerSkillsCastDone then
                                 local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
                                 local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
                                 if not needLimit and not needAngel then
                                     _G.Mod_TowerSkillsCastDone = true
+                                    -- Bật AutoFight ngay
+                                    if not _G.Mod_TowerAutoFightStarted then
+                                        _G.Mod_TowerAutoFightStarted = true
+                                        pcall(function()
+                                            local me = _G.RoleManager and _G.RoleManager.me
+                                            if me and me.SetAutoFight then me:SetAutoFight("AutoFight") end
+                                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                _G.QiJiHelperData.SetAutoFightData(true)
+                                            end
+                                        end)
+                                    end
                                 else
-                                    local remainSec = Mod_GetTowerRemainSeconds and Mod_GetTowerRemainSeconds()
                                     local hasMonster = false
                                     local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
                                     if monsterRoles then
@@ -5430,7 +5419,7 @@ local function CreateModUI()
                                         end
                                     end
 
-                                    -- Kích hoạt khi đếm ngược còn <= 31 giây (chuẩn bị trước khi quái ra ở giây 30) HOẶC quái đã ra (fallback)
+                                    -- Kích hoạt tại giây 31 đếm ngược (hoặc khi quái đã ra)
                                     local shouldCast = (remainSec and remainSec <= 31) or hasMonster
                                     if shouldCast then
                                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
@@ -5439,16 +5428,32 @@ local function CreateModUI()
                                         end
                                         local elapsed = nowTime - _G.Mod_TowerCastStartTime
 
+                                        -- 1. Ra chiêu Cực Hạn (nếu chọn)
                                         if needLimit and not _G.Mod_TowerCastLimitDone then
                                             _G.Mod_TowerCastLimitDone = true
-                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(410700, 410702) end
+                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(410700, 410702, nil, true) end
                                         end
-                                        local angelDelay = needLimit and 0.7 or 0.0
+
+                                        -- 2. Ra chiêu Thánh Hồn Gai (delay 0.35s nếu đã dùng Cực Hạn)
+                                        local angelDelay = needLimit and 0.35 or 0.0
                                         if needAngel and not _G.Mod_TowerCastAngelDone and elapsed >= angelDelay then
                                             _G.Mod_TowerCastAngelDone = true
-                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(34011800, 34011801) end
+                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(34011800, 34011801, nil, true) end
                                         end
-                                        local totalWait = (needLimit and needAngel and 1.0) or 0.6
+
+                                        -- 3. BẬT AUTOFIGHT NGAY TẠI GIÂY 31 (Để game tự kích hoạt toàn bộ buff bản thân trước khi quái ra)
+                                        if not _G.Mod_TowerAutoFightStarted then
+                                            _G.Mod_TowerAutoFightStarted = true
+                                            pcall(function()
+                                                local me = _G.RoleManager and _G.RoleManager.me
+                                                if me and me.SetAutoFight then me:SetAutoFight("AutoFight") end
+                                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                                    _G.QiJiHelperData.SetAutoFightData(true)
+                                                end
+                                            end)
+                                        end
+
+                                        local totalWait = (needLimit and needAngel and 0.7) or 0.4
                                         if elapsed >= totalWait then
                                             _G.Mod_TowerSkillsCastDone = true
                                         end
@@ -5464,16 +5469,31 @@ local function CreateModUI()
                             end
                         end
                     else
-                        _G.LastTowerMapId = nil
-                        _G.LastTowerEndTime = nil
-                        _G.Mod_ApproachTowerBoss_Done = false
-                        _G.Mod_TowerSkillsCastDone = false
-                        _G.Mod_TowerCastLimitDone = false
-                        _G.Mod_TowerCastAngelDone = false
-                        _G.Mod_TowerCastStartTime = 0
-                        _G.Mod_TowerMovingTargetX = nil
-                        _G.Mod_TowerMovingTargetY = nil
-                        _G.Mod_TowerLastMoveTime = 0
+                        -- Rời khỏi Tháp: Ngắt hoàn toàn AutoFight, xóa target và pressSkillId
+                        if _G.LastTowerMapId ~= nil then
+                            _G.LastTowerMapId = nil
+                            _G.LastTowerEndTime = nil
+                            _G.Mod_ApproachTowerBoss_Done = false
+                            _G.Mod_TowerSkillsCastDone = false
+                            _G.Mod_TowerCastLimitDone = false
+                            _G.Mod_TowerCastAngelDone = false
+                            _G.Mod_TowerCastStartTime = 0
+                            _G.Mod_TowerAutoFightStarted = false
+                            _G.Mod_TowerMovingTargetX = nil
+                            _G.Mod_TowerMovingTargetY = nil
+                            _G.Mod_TowerLastMoveCallTime = 0
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.SetAutoFight then me:SetAutoFight("None") end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                    _G.QiJiHelperData.SetAutoFightData(false)
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                    _G.QiJiHelperData.SetPressSkill()
+                                end
+                                if me and me.SetTarget then me:SetTarget(nil) end
+                            end)
+                        end
                     end
 
                     -- Cập nhật Real-Time text trên 4 nút Check Skill Tháp (Cooldown Cực Hạn, Gai & Thời gian Buff Công, Buff Thủ)
@@ -6077,82 +6097,158 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Giám sát Máu Kundun (Chỉ quét trong 3 map Kundun: 250001, 270001, 270003 để tối ưu CPU)
-                    local currentMapId = _G.SceneData and _G.SceneData.mapId or 0
-                    local isKundunMap = (currentMapId == 250001 or currentMapId == 270001 or currentMapId == 270003)
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BÁO MÁU KUNDUN KÈM LEVEL & ƯU TIÊN KUNDUN GẦN NHẤT (KUNDUN HP & NEAREST FILTER)
+                    -- Mô tả: Quét tìm Kundun gần tọa độ nhân vật nhất (tránh loạn khi có 2 Kundun),
+                    --        hiển thị thông báo máu kèm LV (ví dụ: "Thánh cốt Kundun - LV3000 HP: 95.50%"),
+                    --        lưu giữ thông tin Kundun gần nhất vào _G.Mod_NearestKundun.
+                    -- =========================================================================
+                    local currentMapId = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                    local isKundunMap = (currentMapId == 250001 or currentMapId == 270001 or currentMapId == 270002 or currentMapId == 270003 or string.match(tostring(currentMapId), "^270"))
                     local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
                     if isKundunMap and currentSec > (_G.Mod_LastKundunHPTime or 0) then
                         _G.Mod_LastKundunHPTime = currentSec + 0.5
                         local kundunFound = false
+
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        local meX = (me and me.serverCoord and me.serverCoord.x) or (me and me.cellPos and me.cellPos.x) or (me and me.data and me.data.x) or 0
+                        local meY = (me and me.serverCoord and me.serverCoord.y) or (me and me.cellPos and me.cellPos.y) or (me and me.data and me.data.y) or 0
+
+                        local nearestKundun = nil
+                        local nearestRoleData = nil
+                        local minDistance = 999999999
+                        local nearestX, nearestY = 0, 0
 
                         if _G.RoleManager and _G.RoleManager.GetRolesByType then
                             local monsterRoles = _G.RoleManager.GetRolesByType(2)
                             if monsterRoles then
                                 for lid, role in pairs(monsterRoles) do
                                     local d = role.data
-                                    if d and d.name and string.find(string.lower(d.name), "kundun") then
-                                        if role.hp and role.hp > 0 then
-                                            kundunFound = true
-                                            local maxHp = role.maxHp or role.maxHP or role.hp or 1
-                                            local rawPct = (role.hp / maxHp) * 100
-                                            local hpPct = math.max(0.01, rawPct)
-
-                                            local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
-                                            local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
-                                            local isSieuToc = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
-                                            local isAdminBurst = isAdminBurst1 or isAdminBurst2
-
-                                            if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
-                                                local msg
-                                                if isAdminBurst2 then
-                                                    msg = string.format("[ %s ] (2) HP: %.2f%%", tostring(d.name), hpPct)
-                                                elseif isAdminBurst1 then
-                                                    msg = string.format("[ %s ] (1) HP: %.2f%%", tostring(d.name), hpPct)
-                                                elseif isSieuToc then
-                                                    msg = string.format("%s (st) HP: %.2f%%", tostring(d.name), hpPct)
-                                                else
-                                                    msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
-                                                end
-                                                
-                                                if not _G.AutoPick_Enabled then
-                                                    msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
-                                                end
-                                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+                                    if d and d.name and string.find(string.lower(tostring(d.name)), "kundun") then
+                                        if role.hp and role.hp > 0 and not role.isDead then
+                                            local kX = (role.serverCoord and role.serverCoord.x) or (role.cellPos and role.cellPos.x) or (d and (d.x or d.posX)) or 0
+                                            local kY = (role.serverCoord and role.serverCoord.y) or (role.cellPos and role.cellPos.y) or (d and (d.y or d.posY)) or 0
+                                            
+                                            local dist = 999999
+                                            if role.tempPathFindingDistance and role.tempPathFindingDistance > 0 then
+                                                dist = role.tempPathFindingDistance
+                                            elseif meX > 0 and meY > 0 and kX > 0 and kY > 0 then
+                                                dist = math.sqrt((meX - kX) * (meX - kX) + (meY - kY) * (meY - kY))
+                                            elseif not nearestKundun then
+                                                dist = 0
                                             end
 
-                                            local kLevel = tonumber(d.level) or tonumber(role.level) or 0
-                                            local triggerThreshold = 0.69
-                                            if kLevel >= 3800 then
-                                                triggerThreshold = 0.6
-                                            elseif kLevel >= 3400 then
-                                                triggerThreshold = 1
-                                            elseif kLevel >= 3000 then
-                                                triggerThreshold = 2
-                                            elseif kLevel >= 2600 then
-                                                triggerThreshold = 5.0
-                                            elseif kLevel >= 2200 then
-                                                triggerThreshold = 15.0
-                                            else
-                                                triggerThreshold = 20.0
+                                            if dist < minDistance then
+                                                minDistance = dist
+                                                nearestKundun = role
+                                                nearestRoleData = d
+                                                nearestX = kX
+                                                nearestY = kY
                                             end
-
-                                            -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & FOV == 75 hoặc 80)
-                                            if _G.AutoPick_Enabled and isAdminBurst and rawPct <= triggerThreshold then
-                                                TriggerKundunWeakPrep(role, triggerThreshold)
-                                            elseif rawPct > triggerThreshold + 0.1 then
-                                                _G.Mod_KundunWeakExecuted = false
-                                            end
-                                            break
-                                        else
-                                            _G.Mod_KundunWeakExecuted = false
                                         end
                                     end
                                 end
                             end
                         end
 
+                        if nearestKundun and nearestRoleData then
+                            kundunFound = true
+                            _G.Mod_NearestKundun = nearestKundun
+                            _G.Mod_NearestKundunData = nearestRoleData
+                            _G.Mod_NearestKundunId = nearestKundun.id or nearestRoleData.id
+                            _G.Mod_NearestKundunCoord = { x = nearestX, y = nearestY }
+                            _G.Mod_NearestKundunDist = minDistance
+
+                            local maxHp = nearestKundun.maxHp or nearestKundun.maxHP or nearestKundun.hp or 1
+                            local rawPct = (nearestKundun.hp / maxHp) * 100
+                            local hpPct = math.max(0.01, rawPct)
+
+                            -- Trích xuất Level của Kundun
+                            local kLevel = tonumber(nearestRoleData.level) or tonumber(nearestKundun.level) or 0
+                            if kLevel == 0 and nearestRoleData.monsterConfigTbl and nearestRoleData.monsterConfigTbl.level then
+                                kLevel = tonumber(nearestRoleData.monsterConfigTbl.level) or 0
+                            end
+                            if kLevel == 0 and nearestKundun.monsterConfigTbl and nearestKundun.monsterConfigTbl.level then
+                                kLevel = tonumber(nearestKundun.monsterConfigTbl.level) or 0
+                            end
+                            if kLevel == 0 then
+                                local cfgId = (nearestRoleData and (nearestRoleData.configId or nearestRoleData.monsterId or nearestRoleData.cid or nearestRoleData.id)) or (nearestKundun and (nearestKundun.configId or nearestKundun.monsterId or nearestKundun.cid))
+                                if cfgId and _G.ClientTable then
+                                    if _G.ClientTable.cfg_Monster_bossManager then
+                                        local bCfg = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(cfgId, "id") or _G.ClientTable.cfg_Monster_bossManager:TryGetValue(cfgId)
+                                        if bCfg and bCfg.level then kLevel = tonumber(bCfg.level) or 0 end
+                                    end
+                                    if kLevel == 0 and _G.ClientTable.cfg_Monster_monsterManager then
+                                        local mCfg = _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId, "id") or _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId)
+                                        if mCfg and mCfg.level then kLevel = tonumber(mCfg.level) or 0 end
+                                    end
+                                end
+                            end
+                            _G.Mod_NearestKundunLevel = kLevel
+
+                            -- Định dạng tên hiển thị kèm Level (ví dụ: "Thánh cốt Kundun - LV3000")
+                            local rawName = tostring(nearestRoleData.name or "Kundun")
+                            local displayName = rawName
+                            if kLevel > 0 and not string.find(string.upper(rawName), "LV") then
+                                displayName = string.format("%s - LV%d", rawName, kLevel)
+                            end
+                            _G.Mod_NearestKundunName = displayName
+
+                            local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
+                            local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                            local isSieuToc = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
+                            local isAdminBurst = isAdminBurst1 or isAdminBurst2
+
+                            if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
+                                local msg
+                                if isAdminBurst2 then
+                                    msg = string.format("[ %s ] (2) HP: %.2f%%", displayName, hpPct)
+                                elseif isAdminBurst1 then
+                                    msg = string.format("[ %s ] (1) HP: %.2f%%", displayName, hpPct)
+                                elseif isSieuToc then
+                                    msg = string.format("%s (st) HP: %.2f%%", displayName, hpPct)
+                                else
+                                    msg = string.format("%s HP: %.2f%%", displayName, hpPct)
+                                end
+                                
+                                if not _G.AutoPick_Enabled then
+                                    msg = msg .. " - BẠN CHƯA BẬT NHẶT NHANH"
+                                end
+                                if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg(msg) end
+                            end
+
+                            local triggerThreshold = 0.69
+                            if kLevel >= 3800 then
+                                triggerThreshold = 0.6
+                            elseif kLevel >= 3400 then
+                                triggerThreshold = 1
+                            elseif kLevel >= 3000 then
+                                triggerThreshold = 2
+                            elseif kLevel >= 2600 then
+                                triggerThreshold = 5.0
+                            elseif kLevel >= 2200 then
+                                triggerThreshold = 15.0
+                            else
+                                triggerThreshold = 20.0
+                            end
+
+                            -- Kích hoạt chuẩn bị khi Kundun yếu (Cho Admin & FOV == 75 hoặc 80)
+                            if _G.AutoPick_Enabled and isAdminBurst and rawPct <= triggerThreshold then
+                                TriggerKundunWeakPrep(nearestKundun, triggerThreshold)
+                            elseif rawPct > triggerThreshold + 0.1 then
+                                _G.Mod_KundunWeakExecuted = false
+                            end
+                        end
+
                         if not kundunFound then
                             _G.Mod_KundunWeakExecuted = false
+                            _G.Mod_NearestKundun = nil
+                            _G.Mod_NearestKundunData = nil
+                            _G.Mod_NearestKundunId = nil
+                            _G.Mod_NearestKundunLevel = nil
+                            _G.Mod_NearestKundunName = nil
+                            _G.Mod_NearestKundunCoord = nil
+                            _G.Mod_NearestKundunDist = nil
                         end
                     end
 
@@ -8246,9 +8342,22 @@ local function CreateModUI()
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
-                if varName == "Mod_AutoChallengeTower_Enabled" then
+                if varName == "Mod_AutoChallengeTower_Enabled" or varName == "Mod_AutoApproachTowerBoss" then
                     if not _G[varName] then
-                        _G.Mod_AutoChallengeTower_Count = 0
+                        if varName == "Mod_AutoChallengeTower_Enabled" then
+                            _G.Mod_AutoChallengeTower_Count = 0
+                        end
+                        pcall(function()
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            if me and me.SetAutoFight then me:SetAutoFight("None") end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                _G.QiJiHelperData.SetAutoFightData(false)
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                _G.QiJiHelperData.SetPressSkill()
+                            end
+                            if me and me.SetTarget then me:SetTarget(nil) end
+                        end)
                     end
                     if _G.ModUpdateAutoChallengeTowerLabel then
                         _G.ModUpdateAutoChallengeTowerLabel()
