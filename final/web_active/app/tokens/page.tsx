@@ -20,6 +20,8 @@ import {
   Ban,
   ChevronLeft,
   ChevronRight,
+  Link2,
+  GitFork,
 } from 'lucide-react';
 
 export default function TokensPage() {
@@ -172,6 +174,28 @@ export default function TokensPage() {
           <Ban className="w-3 h-3 text-rose-400" /> ĐÃ XÓA (SALE)
         </span>
       );
+    } else if (tok.parentId || tok.parent) {
+      // =======================================================================
+      // [MOD FEATURE]: HIỂN THỊ CỜ TOKEN PHỤ
+      // =======================================================================
+      const parentActive = tok.parent && !tok.parent.isDeleted && new Date(tok.parent.expireAt) >= now;
+      mainBadge = (
+        <div className="flex flex-col gap-1">
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 w-max shadow-sm shadow-indigo-500/10">
+            <Link2 className="w-3 h-3 text-indigo-400" /> TOKEN PHỤ
+          </span>
+          {tok.parent?.characterUid && (
+            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+              UID Cha: <span className="text-cyan-300 font-bold">{tok.parent.characterUid}</span>
+              {parentActive ? (
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" title="Token cha đang Active" />
+              ) : (
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" title="Token cha đã hết hạn" />
+              )}
+            </span>
+          )}
+        </div>
+      );
     } else {
       const exp = new Date(tok.expireAt);
       if (exp < now) {
@@ -201,6 +225,11 @@ export default function TokensPage() {
         {tok.isTest && (
           <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-purple-500/20 text-purple-300 border border-purple-500/40 tracking-wider">
             [TEST]
+          </span>
+        )}
+        {tok._count?.children > 0 && (
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center gap-1">
+            <GitFork className="w-2.5 h-2.5" /> +{tok._count.children} Phụ
           </span>
         )}
       </div>
@@ -327,7 +356,18 @@ export default function TokensPage() {
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-medium text-slate-200 whitespace-nowrap">
-                            {new Date(tok.expireAt).toLocaleDateString('vi-VN')} ({tok.durationDays}d)
+                            {tok.parent ? (
+                              <div className="flex flex-col">
+                                <span className="text-indigo-300 font-semibold flex items-center gap-1">
+                                  <Link2 className="w-3 h-3" /> Theo Token Cha
+                                </span>
+                                <span className="text-[10px] text-slate-400">
+                                  Hết hạn: {new Date(tok.parent.expireAt).toLocaleDateString('vi-VN')}
+                                </span>
+                              </div>
+                            ) : (
+                              <span>{new Date(tok.expireAt).toLocaleDateString('vi-VN')} ({tok.durationDays}d)</span>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-emerald-400">
                             {tok.price.toLocaleString('vi-VN')} đ

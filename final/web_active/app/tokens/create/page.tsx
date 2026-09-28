@@ -34,6 +34,8 @@ export default function TokenCreatePage() {
   const [durationDays, setDurationDays] = useState(30);
   const [price, setPrice] = useState(300000);
   const [isCustom, setIsCustom] = useState(false);
+  const [isSubToken, setIsSubToken] = useState(false);
+  const [parentCharacterUid, setParentCharacterUid] = useState('');
 
   // Detailed Config Parameters
   const [fovMin, setFovMin] = useState(20);
@@ -56,6 +58,29 @@ export default function TokenCreatePage() {
 
   // Selected Telegram Contacts (up to 2)
   const [selectedTelegrams, setSelectedTelegrams] = useState<string[]>(['@xoajxanh', '@legend92vn']);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const pUid = params.get('parentUid');
+      const sn = params.get('sn');
+      const cust = params.get('cust');
+      if (pUid) {
+        setIsSubToken(true);
+        setParentCharacterUid(pUid);
+      }
+      if (sn) {
+        setDeviceSnMd5(sn);
+      }
+      if (cust) {
+        try {
+          setCustomerName(decodeURIComponent(cust));
+        } catch {
+          setCustomerName(cust);
+        }
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -162,6 +187,11 @@ export default function TokenCreatePage() {
       return;
     }
 
+    if (isSubToken && !parentCharacterUid.trim()) {
+      setToast({ message: 'Vui lòng nhập UID Token Cha cho Token phụ!', type: 'error' });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const payload = {
@@ -188,6 +218,7 @@ export default function TokenCreatePage() {
         adminTelegrams: selectedTelegrams,
         price: Number(price),
         isCustom,
+        parentCharacterUid: isSubToken ? parentCharacterUid.trim() : null,
       };
 
       const res = await fetch('/api/tokens', {
@@ -358,6 +389,62 @@ export default function TokenCreatePage() {
                       Đánh dấu Token Test (Không tính vào thống kê Doanh thu & Token Dashboard)
                     </span>
                   </label>
+                </div>
+
+                {/* Sub-Token (Token Phụ) Option */}
+                <div className="pt-3 border-t border-slate-800/80 space-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer w-max">
+                    <input
+                      type="checkbox"
+                      checked={isSubToken}
+                      onChange={(e) => {
+                        setIsSubToken(e.target.checked);
+                        if (!e.target.checked) setParentCharacterUid('');
+                      }}
+                      className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
+                    />
+                    <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                        TOKEN PHỤ
+                      </span>
+                      Gắn làm Token Phụ (Kế thừa hạn dùng & trạng thái vĩnh viễn theo Token Cha)
+                    </span>
+                  </label>
+
+                  {isSubToken && (
+                    <div className="p-3.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-2.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
+                          UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
+                        </label>
+                        <span className="text-[11px] text-slate-400">
+                          Phải dùng chung Mã thiết bị MD5 ở trên
+                        </span>
+                      </div>
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          value={parentCharacterUid}
+                          onChange={(e) => setParentCharacterUid(e.target.value)}
+                          placeholder="Dán UID của Token Cha vào đây (Ví dụ: 1008592)..."
+                          className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
+                          required={isSubToken}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
+                          className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                          title="Dán nhanh từ Clipboard"
+                        >
+                          <ClipboardPaste className="w-3.5 h-3.5" />
+                          <span className="hidden sm:inline">Paste</span>
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
+                        💡 Token phụ sẽ tự động Active khi Token cha còn hạn và tự hết hạn khi Token cha hết hạn (không cần nạp ngày cho token phụ).
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -700,6 +787,19 @@ export default function TokenCreatePage() {
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
                     <span className="text-slate-400">UID Nhân vật:</span>
                     <span className="font-mono text-slate-200 font-bold">{characterUid || 'Chưa nhập'}</span>
+                  </div>
+
+                  <div className="flex justify-between py-1.5 border-b border-slate-800">
+                    <span className="text-slate-400">Loại Token:</span>
+                    <span className="font-semibold text-xs">
+                      {isSubToken ? (
+                        <span className="text-indigo-400 font-bold">
+                          Token Phụ (UID Cha: {parentCharacterUid || '...'})
+                        </span>
+                      ) : (
+                        <span className="text-cyan-400 font-bold">Token Chính / Độc Lập</span>
+                      )}
+                    </span>
                   </div>
 
                   <div className="flex justify-between py-1.5 border-b border-slate-800">

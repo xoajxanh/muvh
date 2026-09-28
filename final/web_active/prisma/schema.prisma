@@ -80,6 +80,10 @@ model Token {
   updatedAt               DateTime    @updatedAt
   notes                   TokenNote[]
 
+  parentId                String?
+  parent                  Token?      @relation("ParentChildTokens", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children                Token[]     @relation("ParentChildTokens")
+
   @@index([deviceSnMd5, characterUid])
 }
 

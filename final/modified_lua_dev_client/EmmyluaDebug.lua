@@ -2947,6 +2947,58 @@ local function CreateModUI()
             _G.Mod_UseTownPortalScroll = Mod_UseTownPortalScroll
 
             -- =========================================================================
+            -- [MOD FEATURE]: LẤY THỜI GIAN ĐẾM NGƯỢC CỦA PHÓ BẢN THÁP (TOWER COUNTDOWN)
+            -- Mô tả: Lấy số giây còn lại từ UI Instance_GoalUI (lab_fightTimeValue) hoặc TranScriptData
+            -- =========================================================================
+            local function Mod_GetTowerRemainSeconds()
+                local remainSec = nil
+
+                -- 1. Ưu tiên đọc trực tiếp từ UI Instance_GoalUI (label hiển thị dưới nút Thoát)
+                pcall(function()
+                    local goalUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIID and _G.UIID.Instance_GoalUI and _G.UIManager.GetUiByName(_G.UIID.Instance_GoalUI)
+                    if goalUI and goalUI.lab_fightTimeValue and goalUI.lab_fightTimeValue.GetText then
+                        local txt = goalUI.lab_fightTimeValue:GetText()
+                        if txt and txt ~= "" then
+                            local m, s = string.match(txt, "(%d+):(%d+)")
+                            if m and s then
+                                remainSec = tonumber(m) * 60 + tonumber(s)
+                            end
+                        end
+                    end
+                end)
+
+                if remainSec ~= nil then return remainSec end
+
+                -- 2. Fallback: Đọc từ TranScriptData.InTranscriptData.endTime
+                pcall(function()
+                    if _G.TranScriptData and _G.TranScriptData.InTranscriptData and _G.TranScriptData.InTranscriptData.endTime then
+                        if _G.Time and _G.Time.GetServerTime then
+                            local serverTime = _G.Time.GetServerTime()
+                            local diff = _G.TranScriptData.InTranscriptData.endTime - serverTime
+                            if diff > 0 then
+                                remainSec = math.floor(diff / 1000)
+                            end
+                        end
+                    end
+                end)
+
+                if remainSec ~= nil then return remainSec end
+
+                -- 3. Fallback: Đọc từ TranScriptData.ServerRoleCountDownTimeData
+                pcall(function()
+                    if _G.TranScriptData and _G.TranScriptData.ServerRoleCountDownTimeData and _G.TranScriptData.ServerRoleCountDownTimeData.countDownTime then
+                        local cd = _G.TranScriptData.ServerRoleCountDownTimeData.countDownTime
+                        if cd and cd > 0 then
+                            remainSec = math.floor(cd / 1000)
+                        end
+                    end
+                end)
+
+                return remainSec
+            end
+            _G.Mod_GetTowerRemainSeconds = Mod_GetTowerRemainSeconds
+
+            -- =========================================================================
             -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
             -- Mô tả: Tự tìm đường đến boss trong Tháp và tự động rời phụ bản khi hoàn thành.
             -- =========================================================================
@@ -3037,17 +3089,7 @@ local function CreateModUI()
                     local dy = myY - targetY
                     local dist = math.sqrt(dx * dx + dy * dy)
 
-                    if dist > 1.5 then
-                        -- Chưa tới vị trí Boss (cách > 1.5m): Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
-                        pcall(function()
-                            if me.MoveTo then
-                                me:MoveTo({ x = targetX, y = targetY }, 0)
-                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
-                                _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
-                            end
-                        end)
-                        return false -- Trả về false để tiếp tục di chuyển ở tick sau
-                    else
+                    if dist <= 1.5 then
                         -- Đã tới cách Boss tháp <= 1.5m: Dừng di chuyển & Bật Auto Fight đập Boss
                         pcall(function()
                             if me.StopMove then me:StopMove() end
@@ -3059,8 +3101,55 @@ local function CreateModUI()
                                 _G.QiJiHelperData.SetAutoFightData(true)
                             end
                         end)
+                        _G.Mod_TowerMovingTargetX = nil
+                        _G.Mod_TowerMovingTargetY = nil
+                        _G.Mod_TowerLastMoveTime = 0
                         LogMsg(string.format("[TOWER_BOSS] Đã tiếp cận Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
                         return true -- Đã hoàn thành tiếp cận
+                    else
+                        -- Chưa tới vị trí Boss (cách > 1.5m): Di chuyển đến đúng vị trí Boss tháp (targetX, targetY)
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        local isMoving = false
+                        if me.IsMoving then
+                            isMoving = me:IsMoving()
+                        end
+
+                        local isSameTarget = (_G.Mod_TowerMovingTargetX == targetX and _G.Mod_TowerMovingTargetY == targetY)
+                        local elapsedMove = nowTime - (_G.Mod_TowerLastMoveTime or 0)
+
+                        -- Chống spam MoveTo: Nếu nhân vật đang chạy mượt mà đến đúng Boss và chưa quá 2s thì không spam lệnh mới
+                        if isMoving and isSameTarget and elapsedMove < 2.0 then
+                            return false -- Để nhân vật chạy một mạch êm ru đến Boss, không gọi lại MoveTo gây giật khựng
+                        end
+
+                        _G.Mod_TowerMovingTargetX = targetX
+                        _G.Mod_TowerMovingTargetY = targetY
+                        _G.Mod_TowerLastMoveTime = nowTime
+
+                        pcall(function()
+                            local function OnArriveAtBoss()
+                                pcall(function()
+                                    if me.StopMove then me:StopMove() end
+                                    if targetRole and me.SetTarget then
+                                        me:SetTarget(targetRole)
+                                    end
+                                    if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                        _G.QiJiHelperData.SetAutoFightData(true)
+                                    end
+                                end)
+                                _G.Mod_ApproachTowerBoss_Done = true
+                                _G.Mod_TowerMovingTargetX = nil
+                                _G.Mod_TowerMovingTargetY = nil
+                            end
+
+                            if me.MoveTo then
+                                me:MoveTo({ x = targetX, y = targetY }, 1.2, OnArriveAtBoss)
+                            elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos and _G.SceneData and _G.SceneData.mapId then
+                                _G.PathFinderManager.MoveToLinePos(_G.SceneData.mapId, { x = targetX, y = targetY }, nil, 1, nil, nil, nil, nil, true)
+                            end
+                        end)
+                        return false -- Đang di chuyển, tick sau kiểm tra lại cự ly
                     end
                 end)
                 if success then return result else return false end
@@ -5291,8 +5380,9 @@ local function CreateModUI()
                     end
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: TIẾP CẬN BOSS THÁP & DÙNG CỰC HẠN + THÁNH HỒN GAI KHI ĐỊCH XUẤT HIỆN
-                    -- Mô tả: Tiếp cận Boss tháp. Khi phát hiện địch, dùng xong Cực Hạn & Thánh Hồn Gai mới MoveTo.
+                    -- [MOD FEATURE]: TIẾP CẬN BOSS THÁP & DÙNG CỰC HẠN + THÁNH HỒN GAI Ở GIÂY 31 ĐẾM NGƯỢC
+                    -- Mô tả: Tự kích hoạt Cực Hạn & Thánh Hồn Gai khi đếm ngược còn <= 31s (hoặc khi địch xuất hiện).
+                    --        Khi quái ra ở giây 30 thì chỉ việc MoveTo áp sát đánh ngay.
                     -- =========================================================================
                     local towerGroupId = _G.SceneData and _G.SceneData.groupId
                     local towerMapId = _G.SceneData and _G.SceneData.mapId
@@ -5300,32 +5390,31 @@ local function CreateModUI()
 
                     if isTowerMap then
                         local curTowerId = towerGroupId or towerMapId
-                        if _G.LastTowerMapId ~= curTowerId then
+                        local curTowerEndTime = _G.TranScriptData and _G.TranScriptData.InTranscriptData and _G.TranScriptData.InTranscriptData.endTime
+                        if _G.LastTowerMapId ~= curTowerId or (_G.LastTowerEndTime and curTowerEndTime and _G.LastTowerEndTime ~= curTowerEndTime) then
                             _G.LastTowerMapId = curTowerId
+                            _G.LastTowerEndTime = curTowerEndTime
                             _G.Mod_ApproachTowerBoss_Done = false
                             _G.Mod_TowerSkillsCastDone = false
                             _G.Mod_TowerCastLimitDone = false
                             _G.Mod_TowerCastAngelDone = false
                             _G.Mod_TowerCastStartTime = 0
+                            _G.Mod_TowerMovingTargetX = nil
+                            _G.Mod_TowerMovingTargetY = nil
+                            _G.Mod_TowerLastMoveTime = 0
                         end
 
-                        -- 1. Tiếp cận Boss tháp (nếu bật toggle TIẾP CẬN BOSS THÁP)
-                        if _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
-                            if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
-                                _G.Mod_ApproachTowerBoss_Done = true
-                            end
-                        end
-
-                        -- 2. Nếu tắt TIẾP CẬN BOSS THÁP nhưng bật CHECK SKILL thì vẫn tự dùng các chiêu được chọn khi địch xuất hiện:
-                        if not _G.Mod_AutoApproachTowerBoss and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                        -- 1. TỰ ĐỘNG DÙNG CỰC HẠN & THÁNH HỒN GAI TẠI GIÂY 31 ĐẾM NGƯỢC (HOẶC KHI QUÁI XUẤT HIỆN)
+                        if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                             if not _G.Mod_TowerSkillsCastDone then
                                 local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
                                 local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
                                 if not needLimit and not needAngel then
                                     _G.Mod_TowerSkillsCastDone = true
                                 else
-                                    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+                                    local remainSec = Mod_GetTowerRemainSeconds and Mod_GetTowerRemainSeconds()
                                     local hasMonster = false
+                                    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
                                     if monsterRoles then
                                         local meId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.id or 0
                                         for _, r in pairs(monsterRoles) do
@@ -5340,7 +5429,10 @@ local function CreateModUI()
                                             end
                                         end
                                     end
-                                    if hasMonster then
+
+                                    -- Kích hoạt khi đếm ngược còn <= 31 giây (chuẩn bị trước khi quái ra ở giây 30) HOẶC quái đã ra (fallback)
+                                    local shouldCast = (remainSec and remainSec <= 31) or hasMonster
+                                    if shouldCast then
                                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                         if not _G.Mod_TowerCastStartTime or _G.Mod_TowerCastStartTime == 0 then
                                             _G.Mod_TowerCastStartTime = nowTime
@@ -5364,13 +5456,24 @@ local function CreateModUI()
                                 end
                             end
                         end
+
+                        -- 2. Tiếp cận Boss tháp (nếu bật toggle TIẾP CẬN BOSS THÁP)
+                        if _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
+                            if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
+                                _G.Mod_ApproachTowerBoss_Done = true
+                            end
+                        end
                     else
                         _G.LastTowerMapId = nil
+                        _G.LastTowerEndTime = nil
                         _G.Mod_ApproachTowerBoss_Done = false
                         _G.Mod_TowerSkillsCastDone = false
                         _G.Mod_TowerCastLimitDone = false
                         _G.Mod_TowerCastAngelDone = false
                         _G.Mod_TowerCastStartTime = 0
+                        _G.Mod_TowerMovingTargetX = nil
+                        _G.Mod_TowerMovingTargetY = nil
+                        _G.Mod_TowerLastMoveTime = 0
                     end
 
                     -- Cập nhật Real-Time text trên 4 nút Check Skill Tháp (Cooldown Cực Hạn, Gai & Thời gian Buff Công, Buff Thủ)

@@ -15,6 +15,30 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     include: {
       vipPackage: true,
       createdBy: { select: { id: true, username: true, displayName: true, role: true } },
+      parent: {
+        select: {
+          id: true,
+          characterUid: true,
+          customerName: true,
+          deviceSnMd5: true,
+          expireAt: true,
+          isDeleted: true,
+          durationDays: true,
+        },
+      },
+      children: {
+        select: {
+          id: true,
+          characterUid: true,
+          customerName: true,
+          deviceSnMd5: true,
+          expireAt: true,
+          isDeleted: true,
+          createdAt: true,
+          isTest: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      },
       notes: {
         include: {
           createdBy: { select: { id: true, username: true, displayName: true } },
@@ -29,10 +53,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 
   const now = new Date();
-  const isExpired = new Date(token.expireAt) < now;
+  let effectiveExpireAt = token.expireAt;
+  let isExpired = new Date(token.expireAt) < now;
+  let isDeleted = token.isDeleted;
+
+  // Nếu là Token Phụ, kế thừa trạng thái từ Token Cha
+  if (token.parent) {
+    effectiveExpireAt = token.parent.expireAt;
+    isExpired = new Date(token.parent.expireAt) < now;
+    if (token.parent.isDeleted) {
+      isDeleted = true;
+    }
+  }
+
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
-  const isExpiringSoon = !isExpired && new Date(token.expireAt) <= threeDaysLater;
-  const status = token.isDeleted ? 'DELETED' : isExpired ? 'EXPIRED' : isExpiringSoon ? 'EXPIRING_SOON' : 'ACTIVE';
+  const isExpiringSoon = !isExpired && new Date(effectiveExpireAt) <= threeDaysLater;
+  const status = isDeleted ? 'DELETED' : isExpired ? 'EXPIRED' : isExpiringSoon ? 'EXPIRING_SOON' : 'ACTIVE';
 
   return NextResponse.json({
     token: {
@@ -40,6 +76,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       isExpired,
       isExpiringSoon,
       status,
+      effectiveExpireAt,
     },
   });
 }
@@ -125,7 +162,44 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       price,
       isCustom,
       noteDetail,
+      parentCharacterUid,
     } = body;
+
+    // =========================================================================
+    // [MOD FEATURE]: CẬP NHẬT LIÊN KẾT TOKEN CHA (PARENT TOKEN)
+    // =========================================================================
+    let newParentId: string | null | undefined = undefined;
+    if (parentCharacterUid !== undefined) {
+      if (!parentCharacterUid || String(parentCharacterUid).trim() === '') {
+        newParentId = null;
+      } else {
+        const cleanParentUid = String(parentCharacterUid).trim();
+        const targetSn = (deviceSnMd5 !== undefined ? deviceSnMd5 : existingToken.deviceSnMd5).trim();
+        const targetUid = (characterUid !== undefined ? characterUid : existingToken.characterUid).trim();
+        if (cleanParentUid === targetUid) {
+          return NextResponse.json({ error: 'Token không thể tự nhận chính mình làm Token cha!' }, { status: 400 });
+        }
+
+        const foundParent = await prisma.token.findFirst({
+          where: {
+            characterUid: cleanParentUid,
+            deviceSnMd5: targetSn,
+            isDeleted: false,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (!foundParent) {
+          return NextResponse.json({
+            error: `Không tìm thấy Token cha với UID [${cleanParentUid}] trên thiết bị này! Vui lòng kiểm tra lại.`,
+          }, { status: 400 });
+        }
+        if (foundParent.id === id) {
+          return NextResponse.json({ error: 'Token không thể tự nhận chính mình làm Token cha!' }, { status: 400 });
+        }
+        newParentId = foundParent.id;
+      }
+    }
 
     const newDuration = durationDays !== undefined ? Number(durationDays) : existingToken.durationDays;
     // Tính hạn sử dụng luôn căn cứ từ thời điểm khởi tạo Token (createdAt) thay vì thời điểm sửa
@@ -207,7 +281,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         price: price !== undefined ? Number(price) : existingToken.price,
         isCustom: isCustom !== undefined ? Boolean(isCustom) : existingToken.isCustom,
         encryptedToken,
+        parentId: newParentId !== undefined ? newParentId : existingToken.parentId,
       },
+    });
+
+    // Đồng bộ thời hạn cho tất cả các Token Con nếu Token Cha được gia hạn/cập nhật hạn
+    await prisma.token.updateMany({
+      where: { parentId: id },
+      data: { expireAt },
     });
 
     const auditDetail = noteDetail

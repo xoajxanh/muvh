@@ -20,6 +20,9 @@ import {
   Ban,
   Clock,
   AlertTriangle,
+  Link2,
+  GitFork,
+  PlusCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -44,6 +47,8 @@ export default function TokenDetailPage() {
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
+  const [isSubToken, setIsSubToken] = useState(false);
+  const [parentCharacterUid, setParentCharacterUid] = useState('');
   const [fovMin, setFovMin] = useState(20);
   const [fovMax, setFovMax] = useState(90);
   const [bossRefreshMin, setBossRefreshMin] = useState(1);
@@ -124,6 +129,13 @@ export default function TokenDetailPage() {
           setSelectedPackageId(tok.packageId || null);
           setIsCustom(tok.isCustom);
           setDurationDays(tok.durationDays);
+          if (tok.parent) {
+            setIsSubToken(true);
+            setParentCharacterUid(tok.parent.characterUid);
+          } else {
+            setIsSubToken(false);
+            setParentCharacterUid('');
+          }
           setFovMin(tok.fovMin);
           setFovMax(tok.fovMax);
           setBossRefreshMin(tok.bossRefreshMin);
@@ -220,6 +232,11 @@ export default function TokenDetailPage() {
       return;
     }
 
+    if (isSubToken && !parentCharacterUid.trim()) {
+      setToast({ message: 'Vui lòng nhập UID Token Cha cho Token phụ!', type: 'error' });
+      return;
+    }
+
     const isExp = token?.expireAt ? new Date(token.expireAt) < new Date() : false;
     const isDel = Boolean(token?.isDeleted);
     const userCanEdit = user?.role === 'ADMIN' ? !isDel : (!isExp && !isDel);
@@ -257,6 +274,7 @@ export default function TokenDetailPage() {
         price: Number(price),
         isCustom,
         noteDetail: noteDetail.trim() || 'Cập nhật thông số token',
+        parentCharacterUid: isSubToken ? parentCharacterUid.trim() : '',
       };
 
       const res = await fetch(`/api/tokens/${tokenId}`, {
@@ -378,6 +396,34 @@ export default function TokenDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Sub-Token Indicator Banner */}
+          {token.parent && (
+            <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-indigo-200 text-xs shadow-lg shadow-indigo-950/20">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 shrink-0 text-indigo-300">
+                  <Link2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="font-bold text-white text-sm flex items-center gap-2">
+                    TOKEN PHỤ (LIÊN KẾT THEO TOKEN CHA)
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                      VĨNH VIỄN
+                    </span>
+                  </div>
+                  <p className="text-slate-300 mt-0.5">
+                    Token này kế thừa trạng thái & hạn dùng từ Token Cha (UID: <span className="font-mono text-cyan-300 font-bold">{token.parent.characterUid}</span> - Hết hạn: <span className="text-amber-300 font-semibold">{new Date(token.parent.expireAt).toLocaleDateString('vi-VN')}</span>). Khi Token cha gia hạn, token phụ này sẽ tự động được sử dụng tiếp.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={`/tokens/${token.parent.id}`}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition shadow-sm whitespace-nowrap"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Xem Token Cha
+              </Link>
+            </div>
+          )}
 
           {/* Expiration Alert Banner */}
           {isExpired && !isDeleted && (
@@ -551,6 +597,56 @@ export default function TokenDetailPage() {
                         Đánh dấu Token Test [TEST] (Không tính vào thống kê Doanh thu & Token Dashboard)
                       </span>
                     </label>
+                  </div>
+
+                  {/* Sub-Token (Token Phụ) Toggle & Parent UID */}
+                  <div className="p-3.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-3">
+                    <label className="flex items-center gap-2 cursor-pointer w-max">
+                      <input
+                        type="checkbox"
+                        checked={isSubToken}
+                        onChange={(e) => {
+                          setIsSubToken(e.target.checked);
+                          if (!e.target.checked) setParentCharacterUid('');
+                        }}
+                        className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                          TOKEN PHỤ
+                        </span>
+                        Gắn làm Token Phụ (Kế thừa trạng thái vĩnh viễn theo Token Cha)
+                      </span>
+                    </label>
+
+                    {isSubToken && (
+                      <div className="pt-2 border-t border-indigo-500/20 space-y-2">
+                        <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
+                          UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
+                        </label>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={parentCharacterUid}
+                            onChange={(e) => setParentCharacterUid(e.target.value)}
+                            placeholder="Dán UID của Token Cha vào đây..."
+                            className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
+                            className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                            title="Dán nhanh từ Clipboard"
+                          >
+                            <ClipboardPaste className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Paste</span>
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
+                          💡 Token phụ sẽ hưởng theo ngày hết hạn của Token cha và tự mở lại khi cha được gia hạn.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Change VIP Package Template Selector */}
@@ -868,6 +964,23 @@ export default function TokenDetailPage() {
                     </div>
 
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
+                      <span className="text-slate-400 block text-[10px]">Loại Token</span>
+                      <span className="font-bold">
+                        {token.parent ? (
+                          <span className="text-indigo-400 flex items-center gap-1 font-mono text-[11px]">
+                            <Link2 className="w-3 h-3 text-indigo-400" /> Token Phụ (Cha: {token.parent.characterUid})
+                          </span>
+                        ) : token.children?.length > 0 ? (
+                          <span className="text-cyan-400 flex items-center gap-1 font-semibold text-[11px]">
+                            <GitFork className="w-3 h-3 text-cyan-400" /> Token Cha ({token.children.length} Phụ)
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 font-semibold text-[11px]">Token Độc Lập</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Gói VIP Đang Dùng</span>
                       <span className="font-bold text-indigo-300">
                         {packageName}
@@ -877,7 +990,13 @@ export default function TokenDetailPage() {
                     <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800">
                       <span className="text-slate-400 block text-[10px]">Hạn Sử Dụng</span>
                       <span className="font-bold text-slate-200">
-                        {new Date(token.expireAt).toLocaleDateString('vi-VN')} ({token.durationDays}d)
+                        {token.parent ? (
+                          <span className="text-indigo-300">
+                            Theo Cha ({new Date(token.parent.expireAt).toLocaleDateString('vi-VN')})
+                          </span>
+                        ) : (
+                          `${new Date(token.expireAt).toLocaleDateString('vi-VN')} (${token.durationDays}d)`
+                        )}
                       </span>
                     </div>
 
@@ -974,6 +1093,112 @@ export default function TokenDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ========================================================================= */}
+          {/* [MOD FEATURE]: DANH SÁCH TOKEN PHỤ LIÊN KẾT (CHILD SUB-TOKENS) */}
+          {/* ========================================================================= */}
+          {!token.parent && (
+            <div className="glass-card p-6 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                <div>
+                  <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                    <GitFork className="w-4 h-4" /> Danh Sách Token Phụ Liên Kết ({token.children?.length || 0})
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Các tài khoản clone / phụ chạy trên cùng thiết bị này và hưởng thời hạn vĩnh viễn theo Token này
+                  </p>
+                </div>
+
+                <Link
+                  href={`/tokens/create?parentUid=${token.characterUid}&sn=${token.deviceSnMd5}&cust=${encodeURIComponent(token.customerName || '')}`}
+                  className="px-3.5 py-1.5 gradient-button text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto hover:opacity-95 transition shadow-sm"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" /> + Thêm Token Phụ Mới
+                </Link>
+              </div>
+
+              {token.children && token.children.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs text-slate-300">
+                    <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
+                      <tr>
+                        <th className="py-3 px-4">Trạng Thái</th>
+                        <th className="py-3 px-4">UID Nhân Vật Phụ</th>
+                        <th className="py-3 px-4">Khách Hàng</th>
+                        <th className="py-3 px-4">Ngày Tạo</th>
+                        <th className="py-3 px-4 text-right">Chi Tiết</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {token.children.map((child: any) => {
+                        const childActive = !child.isDeleted && !isExpired;
+                        return (
+                          <tr
+                            key={child.id}
+                            onClick={() => router.push(`/tokens/${child.id}`)}
+                            className="hover:bg-slate-800/50 cursor-pointer transition"
+                          >
+                            <td className="py-3 px-4 whitespace-nowrap">
+                              {child.isDeleted ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
+                                  ĐÃ XÓA
+                                </span>
+                              ) : childActive ? (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  HOẠT ĐỘNG
+                                </span>
+                              ) : (
+                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                  HẾT HẠN (THEO CHA)
+                                </span>
+                              )}
+                              {child.isTest && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                  TEST
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 font-mono font-bold text-cyan-300">
+                              {child.characterUid}
+                            </td>
+                            <td className="py-3 px-4 text-slate-200">
+                              {child.customerName || <span className="text-slate-500 italic">Chưa nhập</span>}
+                            </td>
+                            <td className="py-3 px-4 text-slate-400">
+                              {new Date(child.createdAt).toLocaleDateString('vi-VN')}
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  router.push(`/tokens/${child.id}`);
+                                }}
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-cyan-500/40 transition inline-flex items-center gap-1.5"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" /> Xem Chi Tiết
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 px-4 text-center space-y-3 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl">
+                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
+                    <GitFork className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-slate-200">Chưa có Token Phụ nào được liên kết với Token này</p>
+                    <p className="text-[11px] text-slate-500 mt-1 max-w-md mx-auto">
+                      Khi khách hàng muốn chơi thêm tài khoản clone/phụ trên cùng máy này, hãy bấm nút &quot;Thêm Token Phụ Mới&quot; bên trên để cấp token vĩnh viễn ăn theo token chính này.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>

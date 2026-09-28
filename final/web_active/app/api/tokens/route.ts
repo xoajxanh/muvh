@@ -60,7 +60,9 @@ export async function GET(req: NextRequest) {
       include: {
         vipPackage: { select: { id: true, name: true } },
         createdBy: { select: { id: true, username: true, displayName: true } },
-        _count: { select: { notes: true } },
+        parent: { select: { id: true, characterUid: true, customerName: true, expireAt: true, isDeleted: true } },
+        children: { select: { id: true, characterUid: true, customerName: true, expireAt: true, isDeleted: true } },
+        _count: { select: { notes: true, children: true } },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -114,15 +116,45 @@ export async function POST(req: NextRequest) {
       adminTelegrams,
       price,
       isCustom,
+      parentCharacterUid,
     } = body;
 
     if (!deviceSnMd5 || !characterUid || !durationDays) {
       return NextResponse.json({ error: 'Mã thiết bị MD5, Character UID và Thời hạn là bắt buộc' }, { status: 400 });
     }
 
-    const duration = Number(durationDays);
+    // =========================================================================
+    // [MOD FEATURE]: XỬ LÝ LIÊN KẾT TOKEN CHA (PARENT TOKEN)
+    // =========================================================================
+    let parentId: string | null = null;
+    let parentToken: any = null;
+    if (parentCharacterUid && String(parentCharacterUid).trim() !== '') {
+      const cleanParentUid = String(parentCharacterUid).trim();
+      if (cleanParentUid === characterUid.trim()) {
+        return NextResponse.json({ error: 'Token không thể tự chọn chính mình làm Token cha!' }, { status: 400 });
+      }
+
+      parentToken = await prisma.token.findFirst({
+        where: {
+          characterUid: cleanParentUid,
+          deviceSnMd5: deviceSnMd5.trim(),
+          isDeleted: false,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!parentToken) {
+        return NextResponse.json({
+          error: `Không tìm thấy Token cha với UID [${cleanParentUid}] trên thiết bị này! Vui lòng kiểm tra lại.`,
+        }, { status: 400 });
+      }
+
+      parentId = parentToken.id;
+    }
+
+    const duration = parentToken ? parentToken.durationDays : Number(durationDays);
     const now = new Date();
-    const expireAt = new Date(now.getTime() + duration * 86400 * 1000);
+    const expireAt = parentToken ? new Date(parentToken.expireAt) : new Date(now.getTime() + duration * 86400 * 1000);
     const expireAtUnix = Math.floor(expireAt.getTime() / 1000);
 
     const telegramsList = Array.isArray(adminTelegrams)
@@ -188,12 +220,14 @@ export async function POST(req: NextRequest) {
         isCustom: Boolean(isCustom ?? false),
         encryptedToken,
         createdById: session.userId,
+        parentId,
       },
     });
 
     // Create Audit Log Note
     const testTag = Boolean(isTest) ? ' [TEST]' : '';
-    const initialNoteDetail = `Khởi tạo Token${testTag} mới cho Khách hàng [${customerName ? customerName.trim() : 'Chưa nhập'}], thiết bị [${tokenParams.deviceSnMd5}], UID nhân vật [${tokenParams.characterUid}], thời hạn ${duration} ngày, giá ${Number(price || 0).toLocaleString('vi-VN')} VNĐ.`;
+    const subTokenTag = parentToken ? ` [TOKEN PHỤ của UID: ${parentToken.characterUid}]` : '';
+    const initialNoteDetail = `Khởi tạo Token${testTag}${subTokenTag} mới cho Khách hàng [${customerName ? customerName.trim() : 'Chưa nhập'}], thiết bị [${tokenParams.deviceSnMd5}], UID nhân vật [${tokenParams.characterUid}], thời hạn ${duration} ngày, giá ${Number(price || 0).toLocaleString('vi-VN')} VNĐ.`;
     await prisma.tokenNote.create({
       data: {
         tokenId: tokenRecord.id,
