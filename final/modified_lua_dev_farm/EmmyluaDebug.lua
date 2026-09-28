@@ -1997,7 +1997,7 @@ end
 pcall(function()
     local execTime = os.date("%H:%M:%S")
     if _G.Mod_ShowTopNotice then
-        _G.Mod_ShowTopNotice(string.format("[EXECUTE] ĐÃ NẠP SCRIPT BOT FARM (%s)", execTime), 4.0)
+        _G.Mod_ShowTopNotice(string.format(">>> [BOT FARM SẴN SÀNG (%s)] MỞ MENU 'VỤT' ĐỂ CẤU HÌNH & CHẠY BOT <<<", execTime), 3.5)
     end
 end)
 
@@ -7806,6 +7806,7 @@ _G.Bot_PauseTask = false
 _G.StartAutoFarmBot = function()
     _G.Bot_Running = true
     _G.Bot_PauseTask = false
+    if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
 
     local isInGame = false
     pcall(function()
@@ -7946,6 +7947,7 @@ _G.Bot_Start = _G.StartAutoFarmBot
 _G.StopAutoFarmBot = function()
     _G.Bot_Running = false
     _G.Bot_PauseTask = true
+    if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
     if _G.BotQuestMonitorTimer then
         pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
         _G.BotQuestMonitorTimer = nil
@@ -7974,8 +7976,10 @@ end
 _G.Bot_Toggle = _G.ToggleAutoFarmBot
 
 -- =========================================================================
--- TỰ ĐỘNG KÍCH HOẠT CHU TRÌNH BOT NGAY KHI NẠP SCRIPT (EXECUTE ADMIN)
+-- [MOD FEATURE]: TRẠNG THÁI CHỜ KÍCH HOẠT BOT FARM TỪ MENU VỤT
+-- Mô tả: Mặc định không tự chạy khi vào game, chỉ khởi động khi người dùng bấm START trong Menu Mod.
 -- =========================================================================
-_G.Mod_ShowTopNotice(">>> [EXEC ADMIN] KHỞI ĐỘNG CHU TRÌNH BOT FARM! <<<", 4.0)
-_G.StartAutoFarmBot()
+_G.Bot_Running = false
+_G.Bot_PauseTask = true
+if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
 

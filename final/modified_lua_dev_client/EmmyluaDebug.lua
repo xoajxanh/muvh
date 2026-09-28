@@ -274,12 +274,67 @@ local function CreateModUI()
         if _G.Mod_AutoTower_CheckSkill_Enabled == nil then
             _G.Mod_AutoTower_CheckSkill_Enabled = false
         end
+        if _G.Mod_TowerCheck_Limit_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_Limit_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_Limit_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_Limit_Enabled == nil then _G.Mod_TowerCheck_Limit_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_AngelSpike_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_AngelSpike_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_AngelSpike_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_AngelSpike_Enabled == nil then _G.Mod_TowerCheck_AngelSpike_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_ElfAtkBuff_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_ElfAtkBuff_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_ElfAtkBuff_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_ElfAtkBuff_Enabled == nil then _G.Mod_TowerCheck_ElfAtkBuff_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_ElfDefBuff_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_ElfDefBuff_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_ElfDefBuff_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_ElfDefBuff_Enabled == nil then _G.Mod_TowerCheck_ElfDefBuff_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_DkHpBuff_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_DkHpBuff_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_DkHpBuff_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_DkHpBuff_Enabled == nil then _G.Mod_TowerCheck_DkHpBuff_Enabled = true end
+        end
+        if _G.Mod_AutoBuff_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoBuff_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBuff_Enabled", 0) == 1)
+            end)
+            if _G.Mod_AutoBuff_Enabled == nil then _G.Mod_AutoBuff_Enabled = false end
+        end
+        if _G.Mod_AutoBuff_Targets == nil then
+            pcall(function()
+                _G.Mod_AutoBuff_Targets = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoBuff_Targets", "")
+            end)
+            if _G.Mod_AutoBuff_Targets == nil then _G.Mod_AutoBuff_Targets = "" end
+        end
         _G.Mod_AutoChallengeTower_Count = 0
         _G.Mod_LastTowerJoinReqTime = 0
+        _G.Mod_LastTowerSkillMapId = nil
+        _G.Mod_TowerSkillsCastDone = false
+        _G.Mod_TowerCastLimitDone = false
+        _G.Mod_TowerCastAngelDone = false
+        _G.Mod_TowerCastStartTime = 0
+
+        if _G.Mod_AutoAOE_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoAOE_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoAOE_Enabled", 0) == 1)
+            end)
+            if _G.Mod_AutoAOE_Enabled == nil then _G.Mod_AutoAOE_Enabled = false end
+        end
+        _G.Mod_LastAutoAOETime = 0
 
         -- =========================================================================
         -- [MOD FEATURE]: HỆ THỐNG LỆNH BÍ MẬT (SECRET COMMAND ENGINE)
-        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /aoemg, /sieutoc)
+        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /autoaoe, /sieutoc)
         -- =========================================================================
         if _G.Mod_SecretCommands == nil then
             pcall(function()
@@ -1269,6 +1324,7 @@ local function CreateModUI()
             end
             if _G.ModMainTab == "CO_BAN" then
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
+                if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
             end
             if _G.ModMainTab == "NANG_CAO" then
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
@@ -1853,6 +1909,12 @@ local function CreateModUI()
         end
         _G.GetBossWatcherConfigByTier = GetBossWatcherConfigByTier
 
+        if _G.ModBossTab == nil then
+            pcall(function()
+                local savedTab = CS.UnityEngine.PlayerPrefs.GetString("ModBossTab", "")
+                if savedTab and savedTab ~= "" then _G.ModBossTab = savedTab end
+            end)
+        end
         _G.ModBossTab = _G.ModBossTab or "C7"
 
         local mapBosses = {}
@@ -2007,7 +2069,11 @@ local function CreateModUI()
                 local btnIdx = 1
                 local sepIdx = 1
 
-                local tierTags = GetAvailableTiers and GetAvailableTiers() or { "C7", "C8" }
+                -- =========================================================================
+                -- [MOD FEATURE]: HIỂN THỊ ĐA TAB BOSS CƠ BẢN CHO ADMIN (ADMIN MULTI-TIER BOSS TABS)
+                -- Mô tả: Quyền Admin load 4 tab tương tự Kundun Info (GetKundunTiers), User thường load 2 tab (GetAvailableTiers).
+                -- =========================================================================
+                local tierTags = (_G.Mod_IsAdmin and GetKundunTiers and GetKundunTiers()) or (GetAvailableTiers and GetAvailableTiers()) or { "C7", "C8" }
                 local isTabValid = false
                 for _, tag in ipairs(tierTags) do
                     if _G.ModBossTab == tag then
@@ -2028,6 +2094,7 @@ local function CreateModUI()
                     local thisTag = tag
                     tBtn.btn.onClick:AddListener(function()
                         _G.ModBossTab = thisTag
+                        pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModBossTab", thisTag) end)
                         UpdateBossWatchUIText()
                     end)
                     btnIdx = btnIdx + 1
@@ -2663,6 +2730,223 @@ local function CreateModUI()
             end
 
             -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG THI TRIỂN SKILL THEO GROUP ID (CỰC HẠN, GAI, BUFF ĐỒNG ĐỘI)
+            -- Mô tả: Tìm ID chiêu thức chính xác của nhân vật và gửi lệnh thi triển client & server
+            --        Hỗ trợ target bản thân hoặc đồng đội nhận buff
+            -- =========================================================================
+            local function Mod_CastSkillByGroup(skillGroupId, defaultSid, targetRoleOrId, isBuffSkill)
+                pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if not me or me.isDead or (me.hp and me.hp <= 0) then return end
+
+                    local sId = nil
+                    local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+                    if meSkills and meSkills[skillGroupId] then
+                        local sk = meSkills[skillGroupId]
+                        sId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk)
+                    end
+
+                    if not sId and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.allSkills then
+                        for _, sk in pairs(_G.ViewData.meData.allSkills) do
+                            local candId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk)
+                            if candId then
+                                local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(candId)
+                                if cfg and cfg.groupId == skillGroupId then
+                                    sId = candId
+                                    break
+                                end
+                            end
+                        end
+                    end
+
+                    if not sId then
+                        sId = defaultSid or (skillGroupId * 100 + 1)
+                    end
+
+                    local myCell = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                    local myId = (me.data and me.data.id) or me.id or 0
+
+                    local tgtId = myId
+                    local tgtCell = myCell
+                    local tgtRole = nil
+                    if targetRoleOrId then
+                        if type(targetRoleOrId) == "number" then
+                            tgtId = targetRoleOrId
+                            if _G.RoleManager then
+                                tgtRole = (_G.RoleManager.GetRole and _G.RoleManager.GetRole(tgtId)) or (_G.RoleManager.GetRoleById and _G.RoleManager.GetRoleById(tgtId))
+                            end
+                            if tgtRole then
+                                tgtCell = tgtRole.serverCoord or (tgtRole.cellPos and { x = tgtRole.cellPos.x, y = tgtRole.cellPos.y }) or myCell
+                            end
+                        elseif type(targetRoleOrId) == "table" then
+                            tgtRole = targetRoleOrId
+                            tgtId = (targetRoleOrId.data and targetRoleOrId.data.id) or targetRoleOrId.id or myId
+                            tgtCell = targetRoleOrId.serverCoord or (targetRoleOrId.cellPos and { x = targetRoleOrId.cellPos.x, y = targetRoleOrId.cellPos.y }) or myCell
+                        end
+                    end
+
+                    -- BẮT MỤC TIÊU CHUẨN XÁC TRÊN NHÂN VẬT (TARGET AVATAR & CLIENT FOCUS)
+                    if tgtRole then
+                        pcall(function()
+                            if me.SetTarget then
+                                me:SetTarget(tgtRole)
+                            end
+                            me.TargetAvatar = tgtRole
+                            if me.data then
+                                me.data.lockTarget = tgtRole
+                            end
+                            if _G.RoleTargetManager and _G.RoleTargetManager.ClearSelectMonsterTarget then
+                                _G.RoleTargetManager.ClearSelectMonsterTarget()
+                            end
+                        end)
+                    end
+
+                    -- 1. QiJiHelper SetPressSkill (Không dùng cho kỹ năng buff đồng đội để tránh bị coi là đòn đánh)
+                    if not isBuffSkill then
+                        pcall(function()
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
+                                _G.QiJiHelperData.SetPressSkill(sId)
+                            end
+                        end)
+                    end
+
+                    -- 2. Gửi gói tin Server (ReqPlayerUseSkill & ReqBroadcastUseSkill)
+                    pcall(function()
+                        if _G.NetManager and _G.NetManager.Send and _G.FightMessage then
+                            if _G.FightMessage.ReqPlayerUseSkill then
+                                _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
+                                    skillId = sId,
+                                    targetId = tgtId,
+                                    x = tgtCell.x or 0,
+                                    y = tgtCell.y or 0,
+                                    position = 0
+                                })
+                            end
+                            if _G.FightMessage.ReqBroadcastUseSkill then
+                                _G.NetManager.Send(_G.FightMessage.ReqBroadcastUseSkill, {
+                                    skillId = sId,
+                                    targetId = tgtId,
+                                    x = tgtCell.x or 0,
+                                    y = tgtCell.y or 0,
+                                    position = 0
+                                })
+                            end
+                        end
+                    end)
+
+                    -- 3. SkillMgr client (Ưu tiên gọi RequestSkillToOthersRole nếu target người khác)
+                    pcall(function()
+                        if _G.SkillMgr then
+                            if tgtId == myId and _G.SkillMgr.RequestSkillToMe then
+                                _G.SkillMgr.RequestSkillToMe(sId)
+                            elseif tgtId ~= myId and _G.SkillMgr.RequestSkillToOthersRole then
+                                _G.SkillMgr.RequestSkillToOthersRole(sId, tgtId)
+                            elseif _G.SkillMgr.RequestSkillTest then
+                                _G.SkillMgr.RequestSkillTest(sId)
+                            end
+                        end
+                    end)
+
+                    -- 4. PerformClientSkill & Update CD UI
+                    pcall(function()
+                        local attackSpeed = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute and _G.ViewData.meData:GetAttribute(_G.EAttributeType.attackSpeedCalculateValue)) or 1000
+                        local skill_struct = _G.SkillUtility and _G.SkillUtility.ConstructSkillFromClientData and _G.SkillUtility.ConstructSkillFromClientData(sId, myId, myCell, tgtId, tgtCell, 0, attackSpeed)
+                        if skill_struct and _G.SkillController and _G.SkillController.PerformClientSkill then
+                            _G.SkillController.PerformClientSkill(skill_struct)
+                        end
+                        if _G.MeController and _G.MeController.UpdateClientSkillCd then
+                            _G.MeController.UpdateClientSkillCd(sId)
+                        end
+                    end)
+                end)
+            end
+            _G.Mod_CastSkillByGroup = Mod_CastSkillByGroup
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀM KIỂM TRA TRẠNG THÁI & THỜI LƯỢNG BUFF (BUFF HELPER)
+            -- Mô tả: Kiểm tra độc lập Buff Công (Elf), Buff Thủ (Elf) và Buff Máu (DK) của role
+            -- =========================================================================
+            local function Mod_CheckPlayerBuffs(roleId)
+                local hasAtk = false
+                local hasDef = false
+                local hasHp = false
+                local atkRemain = 0
+                local defRemain = 0
+                local hpRemain = 0
+
+                local allBuffs = {}
+                if _G.BuffData and _G.BuffData.GetBuffs then
+                    allBuffs = _G.BuffData.GetBuffs(roleId) or {}
+                elseif _G.BuffData and _G.BuffData.BuffDic then
+                    allBuffs = _G.BuffData.BuffDic[roleId] or {}
+                end
+
+                for _, b in pairs(allBuffs) do
+                    if b then
+                        local cfg = b.buffConfig or {}
+                        local gId = cfg.buffGroup or 0
+                        local icon = cfg.icon or ""
+                        local name = cfg.name or ""
+                        local timeRemain = tonumber(b.time) or 0
+                        if timeRemain > 0 then
+                            if gId == 31000080 or icon == "buff_Attack" or string.find(tostring(name), "Sức Mạnh Chiến Thần") then
+                                hasAtk = true
+                                if timeRemain > atkRemain then atkRemain = math.ceil(timeRemain) end
+                            elseif gId == 31000070 or icon == "buff_Defend" or string.find(tostring(name), "Ánh Sáng Thủ Hộ") then
+                                hasDef = true
+                                if timeRemain > defRemain then defRemain = math.ceil(timeRemain) end
+                            elseif gId == 31000020 or icon == "buff_ZengJiaMaxShengMing" or string.find(tostring(name), "Ánh Sinh Mệnh") then
+                                hasHp = true
+                                if timeRemain > hpRemain then hpRemain = math.ceil(timeRemain) end
+                            end
+                        end
+                    end
+                end
+
+                if not hasDef and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+                    hasDef = (_G.BuffData.IsHasBuffStateByGroupId(roleId, 31000070) == true)
+                end
+                if not hasAtk and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+                    hasAtk = (_G.BuffData.IsHasBuffStateByGroupId(roleId, 31000080) == true)
+                end
+                if not hasHp and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
+                    hasHp = (_G.BuffData.IsHasBuffStateByGroupId(roleId, 31000020) == true)
+                end
+
+                return hasAtk, hasDef, hasHp, atkRemain, defRemain, hpRemain
+            end
+            _G.Mod_CheckPlayerBuffs = Mod_CheckPlayerBuffs
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀM SỬ DỤNG BÙA VỀ THÀNH (TOWN PORTAL SCROLL HELPER)
+            -- Mô tả: Dùng item Bùa Về Thành (20000021) quay về Lorencia; nếu không có bùa thì dùng ReqCallFlag
+            -- =========================================================================
+            local function Mod_UseTownPortalScroll()
+                local foundScroll = false
+                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                        if itemData and itemData.itemId == 20000021 then
+                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                _G.networkRequest.ReqUseItem(1, itemData.id)
+                                foundScroll = true
+                            elseif _G.NetManager and _G.NetManager.Send and _G.ItemMessage and _G.ItemMessage.ReqUseItem then
+                                _G.NetManager.Send(_G.ItemMessage.ReqUseItem, { id = itemData.id, count = 1 })
+                                foundScroll = true
+                            end
+                            break
+                        end
+                    end
+                end
+                if not foundScroll then
+                    if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                        _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 1001, line = 1, x = 54, y = 63 })
+                    end
+                end
+                return foundScroll
+            end
+            _G.Mod_UseTownPortalScroll = Mod_UseTownPortalScroll
+
+            -- =========================================================================
             -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
             -- Mô tả: Tự tìm đường đến boss trong Tháp và tự động rời phụ bản khi hoàn thành.
             -- =========================================================================
@@ -2709,6 +2993,45 @@ local function CreateModUI()
                     local myY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or (me.data and me.data.y) or 0
 
                     if myX == 0 or myY == 0 then return false end
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: CHỜ DÙNG XONG CÁC SKILL ĐƯỢC CHỌN TRƯỚC KHI MOVETO
+                    -- Mô tả: Khi phát hiện Boss tháp, dùng Cực Hạn (nếu chọn) & Thánh Hồn Gai (nếu chọn) xong mới MoveTo
+                    -- =========================================================================
+                    if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                        if not _G.Mod_TowerSkillsCastDone then
+                            local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
+                            local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
+
+                            if not needLimit and not needAngel then
+                                _G.Mod_TowerSkillsCastDone = true
+                            else
+                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                if not _G.Mod_TowerCastStartTime or _G.Mod_TowerCastStartTime == 0 then
+                                    _G.Mod_TowerCastStartTime = nowTime
+                                end
+                                local elapsed = nowTime - _G.Mod_TowerCastStartTime
+
+                                if needLimit and not _G.Mod_TowerCastLimitDone then
+                                    _G.Mod_TowerCastLimitDone = true
+                                    Mod_CastSkillByGroup(410700, 410702)
+                                end
+
+                                local angelDelay = needLimit and 0.7 or 0.0
+                                if needAngel and not _G.Mod_TowerCastAngelDone and elapsed >= angelDelay then
+                                    _G.Mod_TowerCastAngelDone = true
+                                    Mod_CastSkillByGroup(34011800, 34011801)
+                                end
+
+                                local totalWait = (needLimit and needAngel and 1.0) or 0.6
+                                if elapsed >= totalWait then
+                                    _G.Mod_TowerSkillsCastDone = true
+                                else
+                                    return false -- Đang đứng yên dùng chiêu, chưa gọi MoveTo
+                                end
+                            end
+                        end
+                    end
 
                     local dx = myX - targetX
                     local dy = myY - targetY
@@ -4967,170 +5290,560 @@ local function CreateModUI()
                         end
                     end
 
-                    if _G.Mod_AutoApproachTowerBoss then
-                        local groupId = _G.SceneData and _G.SceneData.groupId
-                        if groupId and string.match(tostring(groupId), "^1059") then
-                            if _G.LastTowerMapId ~= groupId then
-                                _G.LastTowerMapId = groupId
-                                _G.Mod_ApproachTowerBoss_Done = false
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TIẾP CẬN BOSS THÁP & DÙNG CỰC HẠN + THÁNH HỒN GAI KHI ĐỊCH XUẤT HIỆN
+                    -- Mô tả: Tiếp cận Boss tháp. Khi phát hiện địch, dùng xong Cực Hạn & Thánh Hồn Gai mới MoveTo.
+                    -- =========================================================================
+                    local towerGroupId = _G.SceneData and _G.SceneData.groupId
+                    local towerMapId = _G.SceneData and _G.SceneData.mapId
+                    local isTowerMap = (towerGroupId and string.match(tostring(towerGroupId), "^1059")) or (towerMapId and string.match(tostring(towerMapId), "^1059"))
+
+                    if isTowerMap then
+                        local curTowerId = towerGroupId or towerMapId
+                        if _G.LastTowerMapId ~= curTowerId then
+                            _G.LastTowerMapId = curTowerId
+                            _G.Mod_ApproachTowerBoss_Done = false
+                            _G.Mod_TowerSkillsCastDone = false
+                            _G.Mod_TowerCastLimitDone = false
+                            _G.Mod_TowerCastAngelDone = false
+                            _G.Mod_TowerCastStartTime = 0
+                        end
+
+                        -- 1. Tiếp cận Boss tháp (nếu bật toggle TIẾP CẬN BOSS THÁP)
+                        if _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
+                            if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
+                                _G.Mod_ApproachTowerBoss_Done = true
                             end
-                            if not _G.Mod_ApproachTowerBoss_Done then
-                                if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
-                                    _G.Mod_ApproachTowerBoss_Done = true
+                        end
+
+                        -- 2. Nếu tắt TIẾP CẬN BOSS THÁP nhưng bật CHECK SKILL thì vẫn tự dùng các chiêu được chọn khi địch xuất hiện:
+                        if not _G.Mod_AutoApproachTowerBoss and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                            if not _G.Mod_TowerSkillsCastDone then
+                                local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
+                                local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
+                                if not needLimit and not needAngel then
+                                    _G.Mod_TowerSkillsCastDone = true
+                                else
+                                    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+                                    local hasMonster = false
+                                    if monsterRoles then
+                                        local meId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.id or 0
+                                        for _, r in pairs(monsterRoles) do
+                                            if r and not r.isDead and r.hp and r.hp > 0 then
+                                                local isSummon = r.isSummon or (r.data and r.data.isSummon) or false
+                                                local ownerId = r.ownerId or (r.data and r.data.ownerId) or r.masterId or 0
+                                                local isMySummon = (isSummon == true) or (ownerId ~= 0 and tostring(ownerId) == tostring(meId))
+                                                if not isMySummon then
+                                                    hasMonster = true
+                                                    break
+                                                end
+                                            end
+                                        end
+                                    end
+                                    if hasMonster then
+                                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                        if not _G.Mod_TowerCastStartTime or _G.Mod_TowerCastStartTime == 0 then
+                                            _G.Mod_TowerCastStartTime = nowTime
+                                        end
+                                        local elapsed = nowTime - _G.Mod_TowerCastStartTime
+
+                                        if needLimit and not _G.Mod_TowerCastLimitDone then
+                                            _G.Mod_TowerCastLimitDone = true
+                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(410700, 410702) end
+                                        end
+                                        local angelDelay = needLimit and 0.7 or 0.0
+                                        if needAngel and not _G.Mod_TowerCastAngelDone and elapsed >= angelDelay then
+                                            _G.Mod_TowerCastAngelDone = true
+                                            if _G.Mod_CastSkillByGroup then _G.Mod_CastSkillByGroup(34011800, 34011801) end
+                                        end
+                                        local totalWait = (needLimit and needAngel and 1.0) or 0.6
+                                        if elapsed >= totalWait then
+                                            _G.Mod_TowerSkillsCastDone = true
+                                        end
+                                    end
                                 end
                             end
-                        else
-                            _G.LastTowerMapId = nil
-                            _G.Mod_ApproachTowerBoss_Done = false
+                        end
+                    else
+                        _G.LastTowerMapId = nil
+                        _G.Mod_ApproachTowerBoss_Done = false
+                        _G.Mod_TowerSkillsCastDone = false
+                        _G.Mod_TowerCastLimitDone = false
+                        _G.Mod_TowerCastAngelDone = false
+                        _G.Mod_TowerCastStartTime = 0
+                    end
+
+                    -- Cập nhật Real-Time text trên 4 nút Check Skill Tháp (Cooldown Cực Hạn, Gai & Thời gian Buff Công, Buff Thủ)
+                    if _G.Mod_UpdateTowerSkillButtons then
+                        local nowUiTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowUiTime - (_G.Mod_LastTowerSkillUIUpdateTime or 0)) >= 0.25 then
+                            _G.Mod_LastTowerSkillUIUpdateTime = nowUiTime
+                            pcall(_G.Mod_UpdateTowerSkillButtons)
                         end
                     end
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: TỰ ĐỘNG KHIÊU CHIẾN PHONG MA THÁP THEO ĐIỀU KIỆN BUFF & SKILL CỰC HẠN
-                    -- Mô tả: Tự động vào Phong Ma Tháp khi có lệnh bí mật /autothap và bật toggle AUTO THÁP
+                    -- [MOD FEATURE]: TỰ ĐỘNG KHIÊU CHIẾN PHONG MA THÁP LIÊN HOÀN VỚI BÃI BUFF
+                    -- Mô tả: Tự động kiểm tra Buff Công/Thủ/Máu & Cực Hạn, Gai.
+                    --        - Nếu thiếu buff: Tự bay sang bãi buff (101096: 20, 207).
+                    --        - Khi nhận đủ buff: Dùng Bùa Về Thành quay về Lorencia (Map 1001: 54, 63).
+                    --        - Tại Lorencia: Nếu đủ điều kiện (buff + Cực Hạn + Gai) -> Tự vào Tháp!
+                    --        - Nếu chưa đủ điều kiện: Báo QuickMsg chi tiết lý do (throttle 4s).
                     -- =========================================================================
                     if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
-                        local nowTowerTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (nowTowerTime - (_G.Mod_LastTowerJoinReqTime or 0)) >= 3.0 then
-                            local me = _G.RoleManager and _G.RoleManager.me
-                            local mapId = _G.SceneData and _G.SceneData.mapId
-                            local inCopy = _G.TranScriptData and _G.TranScriptData.InTranscript
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        local inCopy = _G.TranScriptData and _G.TranScriptData.InTranscript
+                        local mapId = _G.SceneData and _G.SceneData.mapId
+                        local groupId = _G.SceneData and _G.SceneData.groupId
 
-                            -- 1. Phải ở Lorencia (1001) và không ở trong phó bản
-                            if me and not me.isDead and (not me.hp or me.hp > 0) and (mapId == 1001 or (_G.SceneData and _G.SceneData.groupId == 1001)) and not inCopy then
-                                local canEnter = true
+                        if me and not me.isDead and (not me.hp or me.hp > 0) and not inCopy then
+                            local checkSkill = (_G.Mod_AutoTower_CheckSkill_Enabled == true)
+                            local needLimit = checkSkill and (_G.Mod_TowerCheck_Limit_Enabled == true)
+                            local needAngel = checkSkill and (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
+                            local needAtk   = checkSkill and (_G.Mod_TowerCheck_ElfAtkBuff_Enabled == true)
+                            local needDef   = checkSkill and (_G.Mod_TowerCheck_ElfDefBuff_Enabled == true)
+                            local needHp    = checkSkill and (_G.Mod_TowerCheck_DkHpBuff_Enabled == true)
+                            local needAnyBuff = needAtk or needDef or needHp
 
-                                -- 2. Nếu nút CHECK SKILL bật (ON) thì mới kiểm tra Skill Cực Hạn và 2 Buff Elf
-                                if _G.Mod_AutoTower_CheckSkill_Enabled then
-                                    local cdData = me.cd and me.cd[410700]
-                                    local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-                                    local isLimitReady = (not cdData) or (not cdData.endTime) or (cdData.endTime <= serverTime)
+                            local meId = me.id or (me.data and me.data.id) or 0
+                            local hasAtk, hasDef, hasHp, atkRem, defRem, hpRem = false, false, false, 0, 0, 0
+                            if _G.Mod_CheckPlayerBuffs then
+                                hasAtk, hasDef, hasHp, atkRem, defRem, hpRem = _G.Mod_CheckPlayerBuffs(meId)
+                            end
 
-                                    if not isLimitReady then
-                                        canEnter = false
-                                    else
-                                        local meId = me.id or (me.data and me.data.id) or 0
-                                        local hasDefBuff = false
-                                        local hasAtkBuff = false
+                            local missingBuffs = {}
+                            if needAtk and not hasAtk then table.insert(missingBuffs, "Buff Công") end
+                            if needDef and not hasDef then table.insert(missingBuffs, "Buff Thủ") end
+                            if needHp  and not hasHp  then table.insert(missingBuffs, "Buff Máu") end
+                            local isMissingAnyBuff = (#missingBuffs > 0)
 
-                                        local allBuffs = {}
-                                        if _G.BuffData and _G.BuffData.GetBuffs then
-                                            allBuffs = _G.BuffData.GetBuffs(meId) or {}
-                                        elseif _G.BuffData and _G.BuffData.BuffDic then
-                                            allBuffs = _G.BuffData.BuffDic[meId] or {}
+                            local isAtLoren = (mapId == 1001 or groupId == 1001)
+                            local isAtBuffMap = (mapId == 101096 or groupId == 101096)
+                            local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+
+                            -- TRƯỜNG HỢP 1: ĐANG Ở LORENCIA (MAP 1001)
+                            if isAtLoren then
+                                -- 1.1. Nếu có yêu cầu buff và đang thiếu buff -> Tự bay sang bãi buff 101096 (20, 207)
+                                if needAnyBuff and isMissingAnyBuff then
+                                    if (nowRealtime - (_G.Mod_LastTowerFlyBuffTime or 0)) >= 4.0 then
+                                        _G.Mod_LastTowerFlyBuffTime = nowRealtime
+                                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 101096, line = 1, x = 20, y = 207 })
                                         end
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang thiếu " .. table.concat(missingBuffs, ", ") .. " -> Bay sang bãi buff...")
+                                        end
+                                    end
+                                else
+                                    -- 1.2. Đã đủ buff (hoặc không yêu cầu buff). Kiểm tra Cực Hạn & Gai
+                                    local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                                    local missingSkills = {}
 
-                                        for _, b in pairs(allBuffs) do
-                                            if b then
-                                                local cfg = b.buffConfig or {}
-                                                local gId = cfg.buffGroup or 0
-                                                local icon = cfg.icon or ""
-                                                local name = cfg.name or ""
-                                                local timeRemain = tonumber(b.time) or 0
+                                    if needLimit then
+                                        local cdData = me.cd and (me.cd[410700] or me.cd[410702])
+                                        local isLimitReady = (not cdData) or (not cdData.endTime) or (cdData.endTime <= serverTime)
+                                        if not isLimitReady then
+                                            local cdSec = 0
+                                            if cdData and cdData.endTime and cdData.endTime > serverTime then
+                                                cdSec = math.ceil((cdData.endTime - serverTime) / 1000)
+                                            end
+                                            if cdSec <= 0 then cdSec = 1 end
+                                            table.insert(missingSkills, string.format("Cực Hạn (%ds)", cdSec))
+                                        end
+                                    end
 
-                                                if timeRemain > 0 then
-                                                    if gId == 31000070 or icon == "buff_Defend" or string.find(tostring(name), "Ánh Sáng Thủ Hộ") then
-                                                        hasDefBuff = true
-                                                    elseif gId == 31000080 or icon == "buff_Attack" or string.find(tostring(name), "Sức Mạnh Chiến Thần") then
-                                                        hasAtkBuff = true
+                                    if needAngel then
+                                        local angelCd = me.cd and (me.cd[34011800] or me.cd[34011801])
+                                        local isAngelReady = (not angelCd) or (not angelCd.endTime) or (angelCd.endTime <= serverTime)
+                                        if not isAngelReady then
+                                            local cdSec = 0
+                                            if angelCd and angelCd.endTime and angelCd.endTime > serverTime then
+                                                cdSec = math.ceil((angelCd.endTime - serverTime) / 1000)
+                                            end
+                                            if cdSec <= 0 then cdSec = 1 end
+                                            table.insert(missingSkills, string.format("Gai (%ds)", cdSec))
+                                        end
+                                    end
+
+                                    if #missingSkills > 0 then
+                                        -- Chưa sẵn sàng: thông báo lý do (throttle 4.0s)
+                                        if (nowRealtime - (_G.Mod_LastTowerWaitingMsgTime or 0)) >= 4.0 then
+                                            _G.Mod_LastTowerWaitingMsgTime = nowRealtime
+                                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang chờ: " .. table.concat(missingSkills, ", "))
+                                            end
+                                        end
+                                    else
+                                        -- TẤT CẢ ĐIỀU KIỆN ĐÃ ĐẦY ĐỦ -> VÀO THÁP!
+                                        if (nowRealtime - (_G.Mod_LastTowerJoinReqTime or 0)) >= 3.0 then
+                                            _G.Mod_LastTowerJoinReqTime = nowRealtime
+
+                                            -- Đóng UI Tháp nếu đang mở
+                                            pcall(function()
+                                                if _G.UIManager and _G.UIID then
+                                                    if _G.UIID.Instance_ClimbTowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_ClimbTowerUI) then
+                                                        _G.UIManager.Hide(_G.UIID.Instance_ClimbTowerUI)
+                                                    end
+                                                    if _G.UIID.Instance_TowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_TowerUI) then
+                                                        _G.UIManager.Hide(_G.UIID.Instance_TowerUI)
+                                                    end
+                                                end
+                                            end)
+
+                                            local sent = false
+                                            if _G.networkRequest and _G.networkRequest.ReqJoinToTower then
+                                                _G.networkRequest.ReqJoinToTower()
+                                                sent = true
+                                            elseif _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqJoinToTower then
+                                                _G.NetManager.Send(_G.MapMessage.ReqJoinToTower)
+                                                sent = true
+                                            end
+
+                                            if sent then
+                                                _G.Mod_AutoChallengeTower_Count = (_G.Mod_AutoChallengeTower_Count or 0) + 1
+                                                if _G.ModUpdateAutoChallengeTowerLabel then
+                                                    _G.ModUpdateAutoChallengeTowerLabel()
+                                                end
+                                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                    _G.FloatingWordUtility.QuickMsg(string.format("[AUTO THÁP] Lần thứ %d thành công!", _G.Mod_AutoChallengeTower_Count))
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+
+                            -- TRƯỜNG HỢP 2: ĐANG Ở BÃI BUFF (MAP 101096)
+                            elseif isAtBuffMap and needAnyBuff then
+                                if not isMissingAnyBuff then
+                                    -- BƯỚC 3: ĐÃ NHẬN ĐỦ TẤT CẢ CÁC BUFF ĐƯỢC YÊU CẦU -> DÙNG BÙA VỀ THÀNH
+                                    if (nowRealtime - (_G.Mod_LastTowerUseScrollTime or 0)) >= 3.0 then
+                                        _G.Mod_LastTowerUseScrollTime = nowRealtime
+                                        local used = false
+                                        if _G.Mod_UseTownPortalScroll then
+                                            used = _G.Mod_UseTownPortalScroll()
+                                        end
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            if used then
+                                                _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đã đủ buff! Dùng Bùa Về Thành về Lorencia...")
+                                            else
+                                                _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đã đủ buff! Bay về Lorencia (Map 1001)...")
+                                            end
+                                        end
+                                    end
+                                else
+                                    -- Đang đứng đợi nhận buff tại bãi
+                                    if (nowRealtime - (_G.Mod_LastTowerWaitingBuffMsgTime or 0)) >= 4.0 then
+                                        _G.Mod_LastTowerWaitingBuffMsgTime = nowRealtime
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang đợi nhận: " .. table.concat(missingBuffs, ", "))
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ ĐỘNG BUFF ĐỒNG ĐỘI (AUTO BUFF ENGINE)
+                    -- Mô tả: Khi có lệnh bí mật /autobuff và toggle AUTO BUFF bật:
+                    --        - BẮT BUỘC: TextField (Mod_AutoBuff_Targets) phải có tên mục tiêu chỉ định.
+                    --        - NẾU TEXTFIELD ĐỂ TRỐNG: Không làm gì cả (coi như auto buff không hoạt động).
+                    --        1. Kiểm tra vị trí: Nếu chưa ở map 101096 (20, 207) -> Dùng ReqCallFlag bay tới.
+                    --        2. Tắt Auto PK & chuyển PK Mode sang Hòa Bình (0).
+                    --        3. Quét người chơi khớp danh sách Mod_AutoBuff_Targets (Dùng chuẩn thuật toán lọc tên Auto PK):
+                    --           - DK: Thi triển Ánh Sinh Mệnh (Group 11100100)
+                    --           - Elf: Thi triển Ánh Sáng Thủ Hộ (13110100) & Sức Mạnh Chiến Thần (13120100)
+                    --        4. Chỉ bắt mục tiêu client (TargetAvatar) & tự gọi skill buff trực tiếp (KHÔNG ReleaseSkill để tránh bị coi là tấn công).
+                    -- =========================================================================
+                    if _G.Mod_AutoBuff_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autobuff") then
+                        -- Khi TextField để trống: Không làm gì cả, coi như auto buff không hoạt động
+                        if (not _G.Mod_AutoBuff_Targets) or (_G.Mod_AutoBuff_Targets == "") then
+                            return
+                        end
+                        local nowBuffTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowBuffTime - (_G.Mod_LastAutoBuffActionTime or 0)) >= 1.0 then
+                            _G.Mod_LastAutoBuffActionTime = nowBuffTime
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if not me or me.isDead or (me.hp and me.hp <= 0) then return end
+
+                                local curMapId = _G.SceneData and _G.SceneData.mapId
+                                local curGroupId = _G.SceneData and _G.SceneData.groupId
+                                local isAtBuffMap = (curMapId == 101096 or curGroupId == 101096)
+                                local myCell = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+
+                                -- 1. Kiểm tra vị trí bãi buff (101096, 20, 207)
+                                local distToBuffSpot = math.max(math.abs((myCell.x or 0) - 20), math.abs((myCell.y or 0) - 207))
+                                if not isAtBuffMap or distToBuffSpot > 5 then
+                                    if (nowBuffTime - (_G.Mod_LastAutoBuffMoveTime or 0)) >= 5.0 then
+                                        _G.Mod_LastAutoBuffMoveTime = nowBuffTime
+                                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 101096, line = 1, x = 20, y = 207 })
+                                        end
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO BUFF] Di chuyển tới bãi buff (101096: 20, 207)...")
+                                        end
+                                    end
+                                    return
+                                end
+
+                                -- 2. Tắt Auto PK và chuyển sang PK Hòa Bình
+                                if _G.Mod_AutoPK_Enabled then
+                                    _G.Mod_AutoPK_Enabled = false
+                                end
+                                if _G.Mod_AutoGuildPK_Enabled then
+                                    _G.Mod_AutoGuildPK_Enabled = false
+                                end
+                                if (nowBuffTime - (_G.Mod_LastAutoBuffSetPkTime or 0)) >= 3.0 then
+                                    _G.Mod_LastAutoBuffSetPkTime = nowBuffTime
+                                    if _G.NetManager and _G.RoleMessage and _G.RoleMessage.ReqSetPKMode then
+                                        _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 0 })
+                                    end
+                                end
+
+                                -- 3. Nhận diện Class & Kỹ năng của bản thân
+                                local career = (me.data and me.data.career) or (me.career) or 0
+                                local cls = career % 10
+                                local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+
+                                local isDK = (cls == 1) or (meSkills and meSkills[11100100] ~= nil)
+                                local isElf = (cls == 3) or (meSkills and (meSkills[13110100] ~= nil or meSkills[13120100] ~= nil or meSkills[13100100] ~= nil))
+                                if not isDK and not isElf then return end
+
+                                -- 4. Thu thập và lọc danh sách Player trong phạm vi (Chuẩn cơ chế lọc target theo Name của Auto PK)
+                                local meId = (me.data and me.data.id) or me.id or 0
+                                local teamTargets = {}
+                                local hasFilter = (_G.Mod_AutoBuff_Targets and _G.Mod_AutoBuff_Targets ~= "")
+
+                                local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
+                                if allPlayers then
+                                    for _, p in pairs(allPlayers) do
+                                        if p and not p.isDead and (not p.hp or p.hp > 0) then
+                                            local pId = (p.data and p.data.id) or p.id or 0
+                                            if pId ~= meId then
+                                                local pCell = p.serverCoord or (p.cellPos and { x = p.cellPos.x, y = p.cellPos.y }) or { x = 0, y = 0 }
+                                                local dist = math.max(math.abs((pCell.x or 0) - (myCell.x or 0)), math.abs((pCell.y or 0) - (myCell.y or 0)))
+                                                if dist <= 12 then
+                                                    p.tempPathFindingDistance = dist
+                                                    local isMatch = false
+                                                    if hasFilter then
+                                                        -- Trích xuất tên người chơi đa thuộc tính chuẩn xác
+                                                        local pName = (p.data and (p.data.name or p.data.Name or p.data.roleName)) or p.name or p.Name or p.showName or ""
+                                                        local pLower = string.lower(pName)
+                                                        for token in string.gmatch(_G.Mod_AutoBuff_Targets, "([^;,|\r\n]+)") do
+                                                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                                                            if cleanToken and cleanToken ~= "" then
+                                                                if string.find(pLower, string.lower(cleanToken), 1, true) then
+                                                                    isMatch = true
+                                                                    break
+                                                                end
+                                                            end
+                                                        end
+                                                        if not isMatch and _G.Mod_IsMatchBuffTarget then
+                                                            isMatch = _G.Mod_IsMatchBuffTarget(p, _G.Mod_AutoBuff_Targets)
+                                                        end
+                                                    else
+                                                        isMatch = true
+                                                    end
+
+                                                    if isMatch then
+                                                        table.insert(teamTargets, p)
                                                     end
                                                 end
                                             end
                                         end
-
-                                        if not hasDefBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
-                                            hasDefBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, 31000070) == true)
-                                        end
-                                        if not hasAtkBuff and _G.BuffData and _G.BuffData.IsHasBuffStateByGroupId then
-                                            hasAtkBuff = (_G.BuffData.IsHasBuffStateByGroupId(meId, 31000080) == true)
-                                        end
-
-                                        if not (hasDefBuff and hasAtkBuff) then
-                                            canEnter = false
-                                        end
                                     end
                                 end
 
-                                -- 3. Thỏa mãn điều kiện -> Gửi lệnh vào Tháp
-                                if canEnter then
-                                    _G.Mod_LastTowerJoinReqTime = nowTowerTime
-
-                                    -- Đóng UI Tháp nếu đang mở
-                                    pcall(function()
-                                        if _G.UIManager and _G.UIID then
-                                            if _G.UIID.Instance_ClimbTowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_ClimbTowerUI) then
-                                                _G.UIManager.Hide(_G.UIID.Instance_ClimbTowerUI)
-                                            end
-                                            if _G.UIID.Instance_TowerUI and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.Instance_TowerUI) then
-                                                _G.UIManager.Hide(_G.UIID.Instance_TowerUI)
-                                            end
-                                        end
+                                -- Sắp xếp theo cự ly gần nhất (chuẩn modSortRole của Auto PK)
+                                if #teamTargets > 1 then
+                                    table.sort(teamTargets, function(a, b)
+                                        local dA = (a and a.tempPathFindingDistance) or 9999
+                                        local dB = (b and b.tempPathFindingDistance) or 9999
+                                        return dA < dB
                                     end)
+                                end
 
-                                    local sent = false
-                                    if _G.networkRequest and _G.networkRequest.ReqJoinToTower then
-                                        _G.networkRequest.ReqJoinToTower()
-                                        sent = true
-                                    elseif _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqJoinToTower then
-                                        _G.NetManager.Send(_G.MapMessage.ReqJoinToTower)
-                                        sent = true
+                                -- Danh sách ứng viên: CHỈ BUFF CHO MỤC TIÊU KHỚP TÊN THEO TEXTFIELD!
+                                local candidateRoles = {}
+                                for _, p in ipairs(teamTargets) do
+                                    table.insert(candidateRoles, p)
+                                end
+
+                                -- Nếu chưa thấy mục tiêu chỉ định xung quanh -> Thông báo chờ, đứng đợi và không làm gì khác
+                                if #candidateRoles == 0 then
+                                    if (nowBuffTime - (_G.Mod_LastBuffWaitMsgTime or 0)) >= 4.0 then
+                                        _G.Mod_LastBuffWaitMsgTime = nowBuffTime
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg(string.format("[AUTO BUFF] Đang đợi mục tiêu: %s", _G.Mod_AutoBuff_Targets))
+                                        end
+                                    end
+                                    return
+                                end
+
+                                local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+
+                                -- Helper: Bắt mục tiêu trên client & tự ra skill buff của mình (KHÔNG gọi ReleaseSkill để không bị coi là Attack)
+                                local function ApplyBuffToTarget(targetRole, skillGroupId, defaultSid, buffName)
+                                    if not targetRole then return end
+
+                                    -- 1. Bắt mục tiêu trên client (chuẩn pattern Auto PK, chỉ set target avatar & lock target)
+                                    if me.SetTarget then
+                                        me:SetTarget(targetRole)
+                                    else
+                                        me.TargetAvatar = targetRole
+                                    end
+                                    me.TargetAvatar = targetRole
+                                    if me.data then
+                                        me.data.lockTarget = targetRole
+                                    end
+                                    if _G.RoleTargetManager and _G.RoleTargetManager.ClearSelectMonsterTarget then
+                                        _G.RoleTargetManager.ClearSelectMonsterTarget()
                                     end
 
-                                    if sent then
-                                        _G.Mod_AutoChallengeTower_Count = (_G.Mod_AutoChallengeTower_Count or 0) + 1
-                                        if _G.ModUpdateAutoChallengeTowerLabel then
-                                            _G.ModUpdateAutoChallengeTowerLabel()
-                                        end
-                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                            _G.FloatingWordUtility.QuickMsg(string.format("[AUTO THÁP] Lần thứ %d thành công!", _G.Mod_AutoChallengeTower_Count))
+                                    -- 2. Tự ra skill buff của mình (truyền isBuffSkill = true để bỏ qua SetPressSkill)
+                                    if _G.Mod_CastSkillByGroup then
+                                        _G.Mod_CastSkillByGroup(skillGroupId, defaultSid, targetRole, true)
+                                    end
+
+                                    -- 3. Thông báo QuickMsg
+                                    local tName = (targetRole.data and (targetRole.data.name or targetRole.data.Name)) or targetRole.name or targetRole.showName or (targetRole == me and "Bản Thân") or "Mục Tiêu"
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg(string.format("[AUTO BUFF] Target [%s] -> Buff %s", tName, buffName))
+                                    end
+                                end
+
+                                -- 6. Thi triển kỹ năng buff
+                                -- 6.1. DK: Ánh Sinh Mệnh (Group 11100100)
+                                if isDK then
+                                    local dkCd = me.cd and me.cd[11100100]
+                                    local isDkReady = (not dkCd) or (not dkCd.endTime) or (dkCd.endTime <= serverTime)
+                                    if isDkReady then
+                                        for _, targetRole in ipairs(candidateRoles) do
+                                            local tId = (targetRole.data and targetRole.data.id) or targetRole.id or 0
+                                            local _, _, hasHp, _, _, hpRem = false, false, false, 0, 0, 0
+                                            if _G.Mod_CheckPlayerBuffs then
+                                                _, _, hasHp, _, _, hpRem = _G.Mod_CheckPlayerBuffs(tId)
+                                            end
+                                            if not hasHp or hpRem <= 5 then
+                                                ApplyBuffToTarget(targetRole, 11100100, 11100101, "Máu")
+                                                break
+                                            end
                                         end
                                     end
                                 end
-                            end
+
+                                -- 6.2. Elf: Ánh Sáng Thủ Hộ (13110100) & Sức Mạnh Chiến Thần (13120100)
+                                if isElf then
+                                    -- Check Buff Thủ: Ánh Sáng Thủ Hộ (13110100)
+                                    local defCd = me.cd and me.cd[13110100]
+                                    local isDefReady = (not defCd) or (not defCd.endTime) or (defCd.endTime <= serverTime)
+                                    if isDefReady then
+                                        for _, targetRole in ipairs(candidateRoles) do
+                                            local tId = (targetRole.data and targetRole.data.id) or targetRole.id or 0
+                                            local _, hasDef, _, _, defRem, _ = false, false, false, 0, 0, 0
+                                            if _G.Mod_CheckPlayerBuffs then
+                                                _, hasDef, _, _, defRem, _ = _G.Mod_CheckPlayerBuffs(tId)
+                                            end
+                                            if not hasDef or defRem <= 5 then
+                                                ApplyBuffToTarget(targetRole, 13110100, 13110101, "Thủ")
+                                                break
+                                            end
+                                        end
+                                    end
+
+                                    -- Check Buff Công: Sức Mạnh Chiến Thần (13120100)
+                                    local atkCd = me.cd and me.cd[13120100]
+                                    local isAtkReady = (not atkCd) or (not atkCd.endTime) or (atkCd.endTime <= serverTime)
+                                    if isAtkReady then
+                                        for _, targetRole in ipairs(candidateRoles) do
+                                            local tId = (targetRole.data and targetRole.data.id) or targetRole.id or 0
+                                            local hasAtk, _, _, atkRem, _, _ = false, false, false, 0, 0, 0
+                                            if _G.Mod_CheckPlayerBuffs then
+                                                hasAtk, _, _, atkRem, _, _ = _G.Mod_CheckPlayerBuffs(tId)
+                                            end
+                                            if not hasAtk or atkRem <= 5 then
+                                                ApplyBuffToTarget(targetRole, 13120100, 13120101, "Công")
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                            end)
                         end
                     end
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: TỰ ĐỘNG ÉP CHIÊU SÉT ĐÁNH (MA KỴ SỸ AOE INJECTION)
-                    -- Mô tả: Ép Ma Kỵ Sỹ xuất chiêu Sét Đánh (14040100) theo chu kỳ 0.5s/lần nếu có lệnh bí mật /aoemg và bật toggle
+                    -- [MOD FEATURE]: TỰ ĐỘNG ÉP CHIÊU AOE ĐA HỆ (ALL-CLASS AOE INJECTION)
+                    -- Mô tả: Tự nhận diện Class (DK, DW, Elf, MG, Summoner) và tự ép xuất chiêu AOE theo chu kỳ 0.5s/lần nếu có lệnh /autoaoe
                     -- =========================================================================
-                    if _G.Mod_MG_ForceAOE_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/aoemg") then
+                    if _G.Mod_AutoAOE_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autoaoe") then
                         local nowAoETime = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (nowAoETime - (_G.Mod_LastMG_AoETime or 0)) >= 0.5 then
-                            _G.Mod_LastMG_AoETime = nowAoETime
+                        if (nowAoETime - (_G.Mod_LastAutoAOETime or 0)) >= 0.5 then
+                            _G.Mod_LastAutoAOETime = nowAoETime
                             pcall(function()
                                 local me = _G.RoleManager and _G.RoleManager.me
                                 if me and not me.isDead and (not me.hp or me.hp > 0) then
                                     local career = (me.data and me.data.career) or (me.career) or 0
-                                    -- Ma Kỵ Sĩ các chuyển chức: 14, 24, 34, 44... (career % 10 == 4)
-                                    if (career % 10 == 4) then
-                                        local skillGroupId = 14040100
+                                    local cls = career % 10
+
+                                    -- Danh sách nhóm kỹ năng AOE ưu tiên theo từng Class
+                                    local classAoeGroups = {
+                                        [1] = { 11070100, 11070200, 11030100, 11140100 }, -- DK: Chém Xoáy Chấn Động, CS, Toàn Phong Trảm, Bán Nguyệt Trảm
+                                        [2] = { 12120100, 12100100, 12160100, 12190100 }, -- DW: Sóng Rồng Đen, Hỏa Long, Nổ Lửa, Bão Tuyết
+                                        [3] = { 13010100, 13010300, 13160100, 13130100 }, -- Elf: Tên Đa Trùng, CS, Tên Ngũ Trùng, Tên Xuyên Thấu
+                                        [4] = { 14040100, 12120100, 14010100, 14020100 }, -- MG: Sét Đánh, Sóng Rồng Đen, Thiên Lôi Thiểm, Huyền Nguyệt Trảm
+                                        [6] = { 16080100, 16070100, 16010100, 16040100 }, -- Summoner: Triệu Hồi Ác Linh, Liệt Quang Thiểm, Liên Lôi Chú, Liệt Tập
+                                    }
+
+                                    local priorityList = classAoeGroups[cls]
+                                    if priorityList then
+                                        local selectedGroupId = nil
                                         local sId = nil
+
                                         local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
-                                        if meSkills and meSkills[skillGroupId] then
-                                            local skObj = meSkills[skillGroupId]
-                                            sId = (type(skObj) == "table" and (skObj.sid or skObj.id)) or (type(skObj) == "number" and skObj)
-                                        end
-                                        if not sId and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.allSkills then
-                                            for _, sk in pairs(_G.ViewData.meData.allSkills) do
-                                                local candId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk)
-                                                if candId then
-                                                    local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(candId)
-                                                    if cfg and cfg.groupId == skillGroupId then
-                                                        sId = candId
-                                                        break
-                                                    end
+                                        local allSkills = _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.allSkills
+
+                                        -- 1. Tìm trong meSkills theo thứ tự ưu tiên
+                                        for _, gId in ipairs(priorityList) do
+                                            if meSkills and meSkills[gId] then
+                                                local skObj = meSkills[gId]
+                                                sId = (type(skObj) == "table" and (skObj.sid or skObj.id)) or (type(skObj) == "number" and skObj)
+                                                if sId then
+                                                    selectedGroupId = gId
+                                                    break
                                                 end
                                             end
                                         end
-                                        if not sId then
-                                            sId = 14040101
+
+                                        -- 2. Nếu chưa thấy, tìm trong allSkills
+                                        if not sId and allSkills then
+                                            for _, gId in ipairs(priorityList) do
+                                                for _, sk in pairs(allSkills) do
+                                                    local candId = (type(sk) == "table" and (sk.sid or sk.id)) or (type(sk) == "number" and sk)
+                                                    if candId then
+                                                        local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(candId)
+                                                        if cfg and cfg.groupId == gId then
+                                                            sId = candId
+                                                            selectedGroupId = gId
+                                                            break
+                                                        end
+                                                    end
+                                                end
+                                                if sId then break end
+                                            end
                                         end
 
-                                        -- Kiểm tra Cooldown chiêu thức
+                                        -- 3. Fallback mặc định
+                                        if not sId then
+                                            selectedGroupId = priorityList[1]
+                                            sId = selectedGroupId * 100 + 1
+                                        end
+
+                                        -- 4. Kiểm tra Cooldown chiêu thức
                                         local isOffCd = true
                                         if me.cd then
-                                            local cdMsg = me.cd[skillGroupId] or me.cd[sId]
+                                            local cdMsg = me.cd[selectedGroupId] or me.cd[sId]
                                             local endTime = (type(cdMsg) == "table" and cdMsg.endTime) or (type(cdMsg) == "number" and cdMsg) or 0
                                             local curServerTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
                                             if endTime > curServerTime then
@@ -5139,7 +5852,7 @@ local function CreateModUI()
                                         end
 
                                         if isOffCd then
-                                            -- 1. Đặt Press Skill cho Engine AutoFight
+                                            -- 1. Đặt Press Skill cho AutoFight Engine
                                             if _G.QiJiHelperData and _G.QiJiHelperData.SetPressSkill then
                                                 _G.QiJiHelperData.SetPressSkill(sId)
                                             end
@@ -5149,7 +5862,7 @@ local function CreateModUI()
                                             local targetId = (targetRole and targetRole.data and targetRole.data.id) or (targetRole and targetRole.id) or 0
                                             local coord = (targetRole and targetRole.serverCoord) or (targetRole and targetRole.cellPos and { x = targetRole.cellPos.x, y = targetRole.cellPos.y }) or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
 
-                                            -- 2. Kích hoạt hiệu ứng hình ảnh (VFX Sấm sét), âm thanh và hành động thi triển Client
+                                            -- 2. Kích hoạt hiệu ứng hình ảnh (VFX), âm thanh và hành động thi triển Client
                                             local myCell = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
                                             local attackSpeed = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute and _G.ViewData.meData:GetAttribute(_G.EAttributeType.attackSpeedCalculateValue)) or 1000
                                             local skill_struct = _G.SkillUtility and _G.SkillUtility.ConstructSkillFromClientData and _G.SkillUtility.ConstructSkillFromClientData(sId, me.id, myCell, targetId, coord, 0, attackSpeed)
@@ -5165,8 +5878,8 @@ local function CreateModUI()
                                                 _G.MeController.UpdateClientSkillCd(sId)
                                             end
 
-                                            -- 4. Gửi gói tin dùng chiêu Sét Đánh trực tiếp lên Server (ReqPlayerUseSkill / ReqBroadcastUseSkill)
-                                            if _G.NetManager and _G.NetManager.Send and _G.FightMessage then
+                                            -- 4. Gửi gói tin dùng chiêu AOE trực tiếp lên Server (ReqPlayerUseSkill / ReqBroadcastUseSkill)
+                                            if _G.NetManager and _G.FightMessage then
                                                 if _G.FightMessage.ReqPlayerUseSkill then
                                                     _G.NetManager.Send(_G.FightMessage.ReqPlayerUseSkill, {
                                                         skillId = sId,
@@ -5283,6 +5996,7 @@ local function CreateModUI()
 
                                             local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
                                             local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                                            local isSieuToc = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
                                             local isAdminBurst = isAdminBurst1 or isAdminBurst2
 
                                             if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
@@ -5291,6 +6005,8 @@ local function CreateModUI()
                                                     msg = string.format("[ %s ] (2) HP: %.2f%%", tostring(d.name), hpPct)
                                                 elseif isAdminBurst1 then
                                                     msg = string.format("[ %s ] (1) HP: %.2f%%", tostring(d.name), hpPct)
+                                                elseif isSieuToc then
+                                                    msg = string.format("%s (st) HP: %.2f%%", tostring(d.name), hpPct)
                                                 else
                                                     msg = string.format("%s HP: %.2f%%", tostring(d.name), hpPct)
                                                 end
@@ -5938,6 +6654,19 @@ local function CreateModUI()
                     end
                     _G.Mod_IsMatchLockTarget = isMatchLockTarget
 
+                    local function isMatchBuffTarget(p, buffInput)
+                        if not buffInput or buffInput == "" then return true end
+                        if not p or p.isDead then return false end
+                        for token in string.gmatch(buffInput, "([^;,|\r\n]+)") do
+                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                            if cleanToken and cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
+                                return true
+                            end
+                        end
+                        return false
+                    end
+                    _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
+
                     local function IsSelfBuffOrNoTargetSkill(skillId)
                         if not skillId then return false end
                         local noTargetGroupIds = {
@@ -6398,7 +7127,19 @@ local function CreateModUI()
                 _G.Mod_AutoApproachTowerBoss = false
                 _G.Mod_AutoChallengeTower_Enabled = false
                 _G.Mod_AutoTower_CheckSkill_Enabled = false
+                _G.Mod_TowerCheck_Limit_Enabled = true
+                _G.Mod_TowerCheck_AngelSpike_Enabled = true
+                _G.Mod_TowerCheck_ElfAtkBuff_Enabled = true
+                _G.Mod_TowerCheck_ElfDefBuff_Enabled = true
+                _G.Mod_TowerCheck_DkHpBuff_Enabled = true
+                _G.Mod_AutoBuff_Enabled = false
+                _G.Mod_AutoAOE_Enabled = false
                 _G.Mod_AutoChallengeTower_Count = 0
+                _G.Mod_LastTowerSkillMapId = nil
+                _G.Mod_TowerSkillsCastDone = false
+                _G.Mod_TowerCastLimitDone = false
+                _G.Mod_TowerCastAngelDone = false
+                _G.Mod_TowerCastStartTime = 0
                 _G.Mod_DisableVisuals = false
                 _G.Mod_InfiniteInstance = false
                 _G.Mod_AutoUseAngel = false
@@ -7299,7 +8040,7 @@ local function CreateModUI()
             end)
         end
 
-        local function CreateToggle(label, varName, xPos, yPos, customWidth, targetList, customParent, customHeight, customFontSize)
+        local function CreateToggle(label, varName, xPos, yPos, customWidth, targetList, customParent, customHeight, customFontSize, activeColor)
             local tGo = GameObject(varName .. "_Toggle")
             tGo.transform:SetParent((customParent or panelGo).transform, false)
             if not customParent then
@@ -7363,8 +8104,9 @@ local function CreateModUI()
                     end
                 end
 
+                local actCol = activeColor or Color(0.1, 0.6, 0.2, 1)
                 if _G[varName] then
-                    bgImg.color = Color(0.1, 0.6, 0.2, 1)
+                    bgImg.color = actCol
                     txt.text = label .. extra
                     txt.color = Color.white
                 else
@@ -7457,6 +8199,7 @@ local function CreateModUI()
                     end
                 end)
             end)
+            return tGo, txt, bgImg
         end
 
         local function CreateRangeMultiplierControl(startX, yPos, prefix, valueVarName, step)
@@ -9739,25 +10482,183 @@ local function CreateModUI()
                 CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
                 curY = curY - 45
 
-                -- Nút AUTO THÁP & CHECK SKILL chung 1 dòng (Chỉ hiển thị khi có lệnh bí mật /autothap)
+                -- CỤM AUTO THÁP & CHECK SKILL (Chỉ hiển thị khi có lệnh bí mật /autothap)
                 if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
-                    local wAuto = 145
-                    local wCheck = 105
-                    local gap = 10
-                    CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, wAuto, nil, contentGo, 35, 13)
-                    CreateToggle("CHECK SKILL", "Mod_AutoTower_CheckSkill_Enabled", btnX + wAuto + gap, curY, wCheck, nil, contentGo, 35, 13)
+                    CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                    curY = curY - 45
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: CỤM CHECK SKILL THÁP (MÀU XANH LOAD, BUFF CÔNG & BUFF THỦ)
+                    -- Mô tả: Nút CHECK SKILL THÁP & 4 option con hiển thị màu xanh Load (0.2, 0.6, 1, 1) khi selected.
+                    --        Chia tách 2 Buff Elf thành Buff Công (Sức Mạnh Chiến Thần) và Buff Thủ (Ánh Sáng Thủ Hộ).
+                    -- =========================================================================
+                    local loadBlueColor = Color(0.2, 0.6, 1, 1)
+                    CreateToggle("CHECK SKILL THÁP", "Mod_AutoTower_CheckSkill_Enabled", btnX, curY, btnW, nil, contentGo, 35, nil, loadBlueColor)
+                    curY = curY - 40
+
+                    -- Các Options con bên dưới CHECK SKILL THÁP chia thành 2 hàng cân đối (W = 125px)
+                    local optW = 125
+                    local optGap = 10
+                    -- Hàng 1: CỰC HẠN & THÁNH HỒN GAI
+                    local _, txtLimit = CreateToggle("CỰC HẠN", "Mod_TowerCheck_Limit_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    local _, txtAngel = CreateToggle("THÁNH HỒN GAI", "Mod_TowerCheck_AngelSpike_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    curY = curY - 35
+
+                    -- Hàng 2: BUFF CÔNG & BUFF THỦ
+                    local _, txtElfAtk = CreateToggle("BUFF CÔNG", "Mod_TowerCheck_ElfAtkBuff_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    local _, txtElfDef = CreateToggle("BUFF THỦ", "Mod_TowerCheck_ElfDefBuff_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    curY = curY - 35
+
+                    -- Hàng 3: BUFF MÁU (DK Ánh Sinh Mệnh, chiếm 1/2 hàng)
+                    local _, txtDkHp = CreateToggle("BUFF MÁU", "Mod_TowerCheck_DkHpBuff_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    curY = curY - 40
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: REAL-TIME CẬP NHẬT COOLDOWN & THỜI LƯỢNG BUFF TRÊN CÁC NÚT CHECK SKILL
+                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai)
+                    --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu
+                    -- =========================================================================
+                    _G.Mod_UpdateTowerSkillButtons = function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if not me then return end
+
+                        local curMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                        local curSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+
+                        local function GetCdSeconds(cdMsg)
+                            if not cdMsg then return 0 end
+                            local endTime = (type(cdMsg) == "table" and cdMsg.endTime) or (type(cdMsg) == "number" and cdMsg) or 0
+                            if not endTime or endTime <= 0 then return 0 end
+                            if endTime > 1000000000000 then
+                                if curMs > 0 and endTime > curMs then
+                                    return math.ceil((endTime - curMs) / 1000)
+                                end
+                            else
+                                if endTime > curSec then
+                                    return math.ceil(endTime - curSec)
+                                end
+                            end
+                            return 0
+                        end
+
+                        -- 1. Cực Hạn CD
+                        if txtLimit and txtLimit.gameObject and txtLimit.gameObject.activeInHierarchy then
+                            local cdMsg = me.cd and (me.cd[410700] or me.cd[410702])
+                            local cd = GetCdSeconds(cdMsg)
+                            local newTxt = (cd > 0) and ("CỰC HẠN (" .. cd .. "s)") or "CỰC HẠN"
+                            if txtLimit.text ~= newTxt then txtLimit.text = newTxt end
+                        end
+
+                        -- 2. Thánh Hồn Gai CD
+                        if txtAngel and txtAngel.gameObject and txtAngel.gameObject.activeInHierarchy then
+                            local cdMsg = me.cd and (me.cd[34011800] or me.cd[34011801])
+                            local cd = GetCdSeconds(cdMsg)
+                            local newTxt = (cd > 0) and ("THÁNH HỒN GAI (" .. cd .. "s)") or "THÁNH HỒN GAI"
+                            if txtAngel.text ~= newTxt then txtAngel.text = newTxt end
+                        end
+
+                        -- 3, 4, 5. Buff Công, Buff Thủ & Buff Máu
+                        local needAtk = (txtElfAtk and txtElfAtk.gameObject and txtElfAtk.gameObject.activeInHierarchy)
+                        local needDef = (txtElfDef and txtElfDef.gameObject and txtElfDef.gameObject.activeInHierarchy)
+                        local needHp = (txtDkHp and txtDkHp.gameObject and txtDkHp.gameObject.activeInHierarchy)
+
+                        if needAtk or needDef or needHp then
+                            local meId = me.id or (me.data and me.data.id) or 0
+                            local _, _, _, atkRemain, defRemain, hpRemain = false, false, false, 0, 0, 0
+                            if _G.Mod_CheckPlayerBuffs then
+                                _, _, _, atkRemain, defRemain, hpRemain = _G.Mod_CheckPlayerBuffs(meId)
+                            end
+
+                            if needAtk then
+                                local newTxt = (atkRemain > 0) and ("BUFF CÔNG (" .. atkRemain .. "s)") or "BUFF CÔNG"
+                                if txtElfAtk.text ~= newTxt then txtElfAtk.text = newTxt end
+                            end
+
+                            if needDef then
+                                local newTxt = (defRemain > 0) and ("BUFF THỦ (" .. defRemain .. "s)") or "BUFF THỦ"
+                                if txtElfDef.text ~= newTxt then txtElfDef.text = newTxt end
+                            end
+
+                            if needHp then
+                                local newTxt = (hpRemain > 0) and ("BUFF MÁU (" .. hpRemain .. "s)") or "BUFF MÁU"
+                                if txtDkHp.text ~= newTxt then txtDkHp.text = newTxt end
+                            end
+                        end
+                    end
+                end
+
+                -- Nút AUTO AOE (Chỉ hiển thị khi có lệnh bí mật /autoaoe)
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autoaoe") then
+                    CreateToggle("AUTO AOE", "Mod_AutoAOE_Enabled", btnX, curY, btnW, nil, contentGo, 35)
                     curY = curY - 45
                 end
 
-                -- Nút MG DÙNG AOE (Chỉ hiển thị khi có lệnh bí mật /aoemg)
-                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/aoemg") then
-                    if _G.Mod_MG_ForceAOE_Enabled == nil then
-                        pcall(function()
-                            _G.Mod_MG_ForceAOE_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_MG_ForceAOE_Enabled", 0) == 1)
-                        end)
-                        if _G.Mod_MG_ForceAOE_Enabled == nil then _G.Mod_MG_ForceAOE_Enabled = false end
+                -- Nút AUTO BUFF & Ô nhập danh sách mục tiêu (Chỉ hiển thị khi có lệnh bí mật /autobuff)
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autobuff") then
+                    local autoBuffW = 100
+                    local targetInputW = 150
+                    local spacingGap = 10
+                    CreateToggle("AUTO BUFF", "Mod_AutoBuff_Enabled", btnX, curY, autoBuffW, nil, contentGo, 35)
+
+                    -- Ô InputField nhập danh sách tên nhận buff (cách nhau dấu ;)
+                    local buffTgtGo = GameObject("AutoBuffTargetsInput")
+                    buffTgtGo.transform:SetParent(contentGo.transform, false)
+                    local buffRt = buffTgtGo:AddComponent(typeof(RectTransform))
+                    buffRt.anchorMin, buffRt.anchorMax, buffRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    buffRt.anchoredPosition = Vector2(btnX + autoBuffW + spacingGap, curY)
+                    buffRt.sizeDelta = Vector2(targetInputW, 35)
+
+                    local buffBg = GameObject("Bg")
+                    buffBg.transform:SetParent(buffTgtGo.transform, false)
+                    local buffBgRt = buffBg:AddComponent(typeof(RectTransform))
+                    buffBgRt.anchorMin, buffBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    buffBgRt.sizeDelta = Vector2(0, 0)
+                    local buffBgImg = buffBg:AddComponent(typeof(Image))
+                    buffBgImg.color = Color(0.12, 0.12, 0.15, 0.95)
+
+                    local buffTxtGo = GameObject("Text")
+                    buffTxtGo.transform:SetParent(buffTgtGo.transform, false)
+                    local buffTxtRt = buffTxtGo:AddComponent(typeof(RectTransform))
+                    buffTxtRt.anchorMin, buffTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    buffTxtRt.offsetMin, buffTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                    local buffTxt = buffTxtGo:AddComponent(typeof(Text))
+
+                    if _G.Mod_AutoBuff_Targets == nil then
+                        _G.Mod_AutoBuff_Targets = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoBuff_Targets", "")
                     end
-                    CreateToggle("MG DÙNG AOE", "Mod_MG_ForceAOE_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+
+                    buffTxt.text = _G.Mod_AutoBuff_Targets
+                    buffTxt.color, buffTxt.fontSize = Color.white, 13
+                    buffTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then buffTxt.font = defaultFont end
+
+                    local buffField = buffTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                    buffField.textComponent = buffTxt
+                    buffField.text = _G.Mod_AutoBuff_Targets
+
+                    -- Placeholder nếu trống
+                    local phGo = GameObject("Placeholder")
+                    phGo.transform:SetParent(buffTgtGo.transform, false)
+                    local phRt = phGo:AddComponent(typeof(RectTransform))
+                    phRt.anchorMin, phRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    phRt.offsetMin, phRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                    local phTxt = phGo:AddComponent(typeof(Text))
+                    phTxt.text = "Tên nhận buff (;)"
+                    phTxt.fontSize = 11
+                    phTxt.fontStyle = CS.UnityEngine.FontStyle.Italic
+                    phTxt.color = Color(0.6, 0.6, 0.6, 0.6)
+                    phTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then phTxt.font = defaultFont end
+                    buffField.placeholder = phTxt
+
+                    buffField.onValueChanged:AddListener(function(val)
+                        _G.Mod_AutoBuff_Targets = val
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoBuff_Targets", val)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                    end)
+
                     curY = curY - 45
                 end
 
@@ -10677,47 +11578,54 @@ local function CreateModUI()
             sepTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then sepTxt.font = defaultFont end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: CÔNG CỤ TẠO TOKEN BẢN QUYỀN (KEYGEN VIP 2026 CHO ADMIN)
+            -- Mô tả: Giao diện tạo Token bản quyền hỗ trợ cấu hình Chuyển C3-C12, chọn Ngày Bắt Đầu (Start Date)
+            --        và nhập Số Ngày Tùy Chỉnh (Custom Days) đồng bộ chuẩn thuật toán MD5 + Base64 với Keygen.ps1.
+            -- =========================================================================
             -- Token Generator Title
             local tokTitleGo = GameObject("TokTitle")
             tokTitleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, tokTitleGo)
             local tokRt = tokTitleGo:AddComponent(typeof(RectTransform))
             tokRt.anchorMin, tokRt.anchorMax, tokRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            tokRt.anchoredPosition = Vector2(0, -160)
-            tokRt.sizeDelta = Vector2(500, 30)
+            tokRt.anchoredPosition = Vector2(0, -150)
+            tokRt.sizeDelta = Vector2(500, 26)
             local tokTxt = tokTitleGo:AddComponent(typeof(Text))
-            tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN"
-            tokTxt.color, tokTxt.fontSize, tokTxt.alignment = Color(0.2, 1, 0.2, 1), 20, TextAnchor.MiddleCenter
+            tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN (VIP 2026)"
+            tokTxt.color, tokTxt.fontSize, tokTxt.alignment = Color(0.2, 1, 0.2, 1), 19, TextAnchor.MiddleCenter
             if defaultFont then tokTxt.font = defaultFont end
 
             local adminDeviceCode = ""
             local adminUID = "ALL"
             local adminMainTier = 8
             local adminSubTier = 7
+            local adminStartDateStr = ""
+            local adminCustomDaysStr = ""
             local adminDuration = 3
             local adminGenToken = ""
 
-            -- Input code Label
+            -- 1. Input Device Code (MD5) Label
             local inCodeLblGo = GameObject("InCodeLbl")
             inCodeLblGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, inCodeLblGo)
             local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
             inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -190)
-            inCodeLblRt.sizeDelta = Vector2(400, 20)
+            inCodeLblRt.anchoredPosition = Vector2(20, -178)
+            inCodeLblRt.sizeDelta = Vector2(400, 18)
             local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
-            inCodeLblTxt.text = "Mã MD5 của khách:"
-            inCodeLblTxt.color, inCodeLblTxt.fontSize = Color.white, 15
+            inCodeLblTxt.text = "1. Mã MD5 thiết bị của khách:"
+            inCodeLblTxt.color, inCodeLblTxt.fontSize = Color.white, 14
             if defaultFont then inCodeLblTxt.font = defaultFont end
 
-            -- Input code Field
+            -- Input Device Code Field
             local inCodeGo = GameObject("InCodeInput")
             inCodeGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, inCodeGo)
             local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
             inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -210)
-            inCodeRt.sizeDelta = Vector2(550, 35)
+            inCodeRt.anchoredPosition = Vector2(20, -196)
+            inCodeRt.sizeDelta = Vector2(550, 32)
             local inCodeImg = inCodeGo:AddComponent(typeof(Image))
             inCodeImg.color = Color(1, 1, 1, 1)
 
@@ -10728,7 +11636,7 @@ local function CreateModUI()
             txtRt.offsetMin, txtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
             local inCodeTxt = textGo:AddComponent(typeof(Text))
             inCodeTxt.text = adminDeviceCode
-            inCodeTxt.color, inCodeTxt.fontSize = Color.black, 16
+            inCodeTxt.color, inCodeTxt.fontSize = Color.black, 15
             inCodeTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then inCodeTxt.font = defaultFont end
 
@@ -10745,8 +11653,8 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteBtnGo)
             local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
             pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -210)
-            pasteRt.sizeDelta = Vector2(120, 35)
+            pasteRt.anchoredPosition = Vector2(-20, -196)
+            pasteRt.sizeDelta = Vector2(120, 32)
             local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
             pasteImg.color = Color(0.8, 0.4, 0, 1)
             local pasteBtn = pasteBtnGo:AddComponent(typeof(Button))
@@ -10759,7 +11667,7 @@ local function CreateModUI()
             local pTxt = pTxtGo:AddComponent(typeof(Text))
             pTxt.text = "Paste MD5"
             pTxt.raycastTarget = false
-            pTxt.color, pTxt.fontSize, pTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            pTxt.color, pTxt.fontSize, pTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
             if defaultFont then pTxt.font = defaultFont end
 
             pasteBtn.onClick:AddListener(function()
@@ -10767,17 +11675,17 @@ local function CreateModUI()
                 inputField.text = adminDeviceCode
             end)
 
-            -- Input UID Label
+            -- 2. Input UID Label
             local inUidLblGo = GameObject("InUidLbl")
             inUidLblGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, inUidLblGo)
             local inUidLblRt = inUidLblGo:AddComponent(typeof(RectTransform))
             inUidLblRt.anchorMin, inUidLblRt.anchorMax, inUidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidLblRt.anchoredPosition = Vector2(20, -250)
-            inUidLblRt.sizeDelta = Vector2(400, 20)
+            inUidLblRt.anchoredPosition = Vector2(20, -232)
+            inUidLblRt.sizeDelta = Vector2(400, 18)
             local inUidLblTxt = inUidLblGo:AddComponent(typeof(Text))
-            inUidLblTxt.text = "UID của khách (hoặc ALL):"
-            inUidLblTxt.color, inUidLblTxt.fontSize = Color.white, 15
+            inUidLblTxt.text = "2. UID của khách (Ấn Enter hoặc để trống là ALL):"
+            inUidLblTxt.color, inUidLblTxt.fontSize = Color.white, 14
             if defaultFont then inUidLblTxt.font = defaultFont end
 
             -- Input UID Field
@@ -10786,8 +11694,8 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, inUidGo)
             local inUidRt = inUidGo:AddComponent(typeof(RectTransform))
             inUidRt.anchorMin, inUidRt.anchorMax, inUidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidRt.anchoredPosition = Vector2(20, -270)
-            inUidRt.sizeDelta = Vector2(550, 35)
+            inUidRt.anchoredPosition = Vector2(20, -250)
+            inUidRt.sizeDelta = Vector2(550, 32)
             local inUidImg = inUidGo:AddComponent(typeof(Image))
             inUidImg.color = Color(1, 1, 1, 1)
 
@@ -10798,7 +11706,7 @@ local function CreateModUI()
             uTxtRt.offsetMin, uTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
             local inUidTxt = uidTextGo:AddComponent(typeof(Text))
             inUidTxt.text = adminUID
-            inUidTxt.color, inUidTxt.fontSize = Color.black, 16
+            inUidTxt.color, inUidTxt.fontSize = Color.black, 15
             inUidTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then inUidTxt.font = defaultFont end
 
@@ -10815,8 +11723,8 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, pasteUidBtnGo)
             local pasteUidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
             pasteUidRt.anchorMin, pasteUidRt.anchorMax, pasteUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteUidRt.anchoredPosition = Vector2(-20, -270)
-            pasteUidRt.sizeDelta = Vector2(120, 35)
+            pasteUidRt.anchoredPosition = Vector2(-20, -250)
+            pasteUidRt.sizeDelta = Vector2(120, 32)
             local pasteUidImg = pasteUidBtnGo:AddComponent(typeof(Image))
             pasteUidImg.color = Color(0.8, 0.4, 0, 1)
             local pasteUidBtn = pasteUidBtnGo:AddComponent(typeof(Button))
@@ -10829,7 +11737,7 @@ local function CreateModUI()
             local pUidTxt = pUidTxtGo:AddComponent(typeof(Text))
             pUidTxt.text = "Paste UID"
             pUidTxt.raycastTarget = false
-            pUidTxt.color, pUidTxt.fontSize, pUidTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            pUidTxt.color, pUidTxt.fontSize, pUidTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
             if defaultFont then pUidTxt.font = defaultFont end
 
             pasteUidBtn.onClick:AddListener(function()
@@ -10837,14 +11745,14 @@ local function CreateModUI()
                 uidInputField.text = adminUID
             end)
 
-            -- INPUT CHUYỂN CHÍNH & CHUYỂN PHỤ CHO TOKEN
+            -- 3. INPUT CHUYỂN CHÍNH & CHUYỂN PHỤ CHO TOKEN
             local tokTierRowGo = GameObject("TokTierRow")
             tokTierRowGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, tokTierRowGo)
             local ttrRt = tokTierRowGo:AddComponent(typeof(RectTransform))
             ttrRt.anchorMin, ttrRt.anchorMax, ttrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ttrRt.anchoredPosition = Vector2(20, -310)
-            ttrRt.sizeDelta = Vector2(550, 30)
+            ttrRt.anchoredPosition = Vector2(20, -286)
+            ttrRt.sizeDelta = Vector2(680, 28)
 
             -- Chuyển chính (3-12)
             local tokMainLblGo = GameObject("TokMainLbl")
@@ -10852,10 +11760,10 @@ local function CreateModUI()
             local tmRt = tokMainLblGo:AddComponent(typeof(RectTransform))
             tmRt.anchorMin, tmRt.anchorMax, tmRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             tmRt.anchoredPosition = Vector2(0, 0)
-            tmRt.sizeDelta = Vector2(150, 30)
+            tmRt.sizeDelta = Vector2(145, 28)
             local tmTxt = tokMainLblGo:AddComponent(typeof(Text))
-            tmTxt.text = "Chuyển chính (3-12):"
-            tmTxt.color, tmTxt.fontSize = Color.white, 15
+            tmTxt.text = "3. Chuyển chính (3-12):"
+            tmTxt.color, tmTxt.fontSize = Color.white, 14
             tmTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then tmTxt.font = defaultFont end
 
@@ -10863,8 +11771,8 @@ local function CreateModUI()
             tokMainInGo.transform:SetParent(tokTierRowGo.transform, false)
             local tmiRt = tokMainInGo:AddComponent(typeof(RectTransform))
             tmiRt.anchorMin, tmiRt.anchorMax, tmiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tmiRt.anchoredPosition = Vector2(155, 0)
-            tmiRt.sizeDelta = Vector2(60, 30)
+            tmiRt.anchoredPosition = Vector2(148, 0)
+            tmiRt.sizeDelta = Vector2(55, 28)
             local tmiImg = tokMainInGo:AddComponent(typeof(Image))
             tmiImg.color = Color(1, 1, 1, 1)
             local tmiTextGo = GameObject("Text")
@@ -10874,7 +11782,7 @@ local function CreateModUI()
             tmitRt.offsetMin, tmitRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
             local tmiTxt = tmiTextGo:AddComponent(typeof(Text))
             tmiTxt.text = tostring(adminMainTier)
-            tmiTxt.color, tmiTxt.fontSize = Color.black, 16
+            tmiTxt.color, tmiTxt.fontSize = Color.black, 15
             tmiTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then tmiTxt.font = defaultFont end
             local tmiField = tokMainInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
@@ -10889,11 +11797,11 @@ local function CreateModUI()
             tokSubLblGo.transform:SetParent(tokTierRowGo.transform, false)
             local tsRt = tokSubLblGo:AddComponent(typeof(RectTransform))
             tsRt.anchorMin, tsRt.anchorMax, tsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tsRt.anchoredPosition = Vector2(240, 0)
-            tsRt.sizeDelta = Vector2(140, 30)
+            tsRt.anchoredPosition = Vector2(220, 0)
+            tsRt.sizeDelta = Vector2(140, 28)
             local tsTxt = tokSubLblGo:AddComponent(typeof(Text))
-            tsTxt.text = "Chuyển phụ (3-12):"
-            tsTxt.color, tsTxt.fontSize = Color.white, 15
+            tsTxt.text = "4. Chuyển phụ (3-12):"
+            tsTxt.color, tsTxt.fontSize = Color.white, 14
             tsTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then tsTxt.font = defaultFont end
 
@@ -10901,8 +11809,8 @@ local function CreateModUI()
             tokSubInGo.transform:SetParent(tokTierRowGo.transform, false)
             local tsiRt = tokSubInGo:AddComponent(typeof(RectTransform))
             tsiRt.anchorMin, tsiRt.anchorMax, tsiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tsiRt.anchoredPosition = Vector2(385, 0)
-            tsiRt.sizeDelta = Vector2(60, 30)
+            tsiRt.anchoredPosition = Vector2(362, 0)
+            tsiRt.sizeDelta = Vector2(55, 28)
             local tsiImg = tokSubInGo:AddComponent(typeof(Image))
             tsiImg.color = Color(1, 1, 1, 1)
             local tsiTextGo = GameObject("Text")
@@ -10912,7 +11820,7 @@ local function CreateModUI()
             tsitRt.offsetMin, tsitRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
             local tsiTxt = tsiTextGo:AddComponent(typeof(Text))
             tsiTxt.text = tostring(adminSubTier)
-            tsiTxt.color, tsiTxt.fontSize = Color.black, 16
+            tsiTxt.color, tsiTxt.fontSize = Color.black, 15
             tsiTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then tsiTxt.font = defaultFont end
             local tsiField = tokSubInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
@@ -10922,17 +11830,150 @@ local function CreateModUI()
                 adminSubTier = tonumber(val) or 7
             end)
 
-            -- Options
+            -- 4. INPUT NGÀY BẮT ĐẦU (START DATE) - MỚI THEO KEYGEN.PS1
+            local startDateRowGo = GameObject("StartDateRow")
+            startDateRowGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, startDateRowGo)
+            local sdrRt = startDateRowGo:AddComponent(typeof(RectTransform))
+            sdrRt.anchorMin, sdrRt.anchorMax, sdrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sdrRt.anchoredPosition = Vector2(20, -318)
+            sdrRt.sizeDelta = Vector2(680, 28)
+
+            local sdLblGo = GameObject("StartDateLbl")
+            sdLblGo.transform:SetParent(startDateRowGo.transform, false)
+            local sdLblRt = sdLblGo:AddComponent(typeof(RectTransform))
+            sdLblRt.anchorMin, sdLblRt.anchorMax, sdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sdLblRt.anchoredPosition = Vector2(0, 0)
+            sdLblRt.sizeDelta = Vector2(130, 28)
+            local sdLblTxt = sdLblGo:AddComponent(typeof(Text))
+            sdLblTxt.text = "5. Ngày bắt đầu:"
+            sdLblTxt.color, sdLblTxt.fontSize = Color.white, 14
+            sdLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sdLblTxt.font = defaultFont end
+
+            local sdInGo = GameObject("StartDateInput")
+            sdInGo.transform:SetParent(startDateRowGo.transform, false)
+            local sdiRt = sdInGo:AddComponent(typeof(RectTransform))
+            sdiRt.anchorMin, sdiRt.anchorMax, sdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sdiRt.anchoredPosition = Vector2(135, 0)
+            sdiRt.sizeDelta = Vector2(335, 28)
+            local sdiImg = sdInGo:AddComponent(typeof(Image))
+            sdiImg.color = Color(1, 1, 1, 1)
+
+            local sdiTextGo = GameObject("Text")
+            sdiTextGo.transform:SetParent(sdInGo.transform, false)
+            local sditRt = sdiTextGo:AddComponent(typeof(RectTransform))
+            sditRt.anchorMin, sditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            sditRt.offsetMin, sditRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local sdiTxt = sdiTextGo:AddComponent(typeof(Text))
+            sdiTxt.text = adminStartDateStr
+            sdiTxt.color, sdiTxt.fontSize = Color.black, 14
+            sdiTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sdiTxt.font = defaultFont end
+
+            local startDateField = sdInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            startDateField.textComponent = sdiTxt
+            startDateField.text = adminStartDateStr
+            startDateField.onValueChanged:AddListener(function(val)
+                adminStartDateStr = val or ""
+            end)
+
+            -- Nút "Hiện Tại" (Now)
+            local nowBtnGo = GameObject("NowBtn")
+            nowBtnGo.transform:SetParent(startDateRowGo.transform, false)
+            local nowRt = nowBtnGo:AddComponent(typeof(RectTransform))
+            nowRt.anchorMin, nowRt.anchorMax, nowRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            nowRt.anchoredPosition = Vector2(478, 0)
+            nowRt.sizeDelta = Vector2(85, 28)
+            local nowImg = nowBtnGo:AddComponent(typeof(Image))
+            nowImg.color = Color(0.15, 0.45, 0.75, 1)
+            local nowBtn = nowBtnGo:AddComponent(typeof(Button))
+            nowBtn.targetGraphic = nowImg
+            local nowTxtGo = GameObject("Txt")
+            nowTxtGo.transform:SetParent(nowBtnGo.transform, false)
+            local nowtRt = nowTxtGo:AddComponent(typeof(RectTransform))
+            nowtRt.anchorMin, nowtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            nowtRt.sizeDelta = Vector2(0, 0)
+            local nowTxt = nowTxtGo:AddComponent(typeof(Text))
+            nowTxt.text = "Hiện Tại"
+            nowTxt.raycastTarget = false
+            nowTxt.color, nowTxt.fontSize, nowTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+            if defaultFont then nowTxt.font = defaultFont end
+
+            nowBtn.onClick:AddListener(function()
+                local nowStr = os.date("%d/%m/%Y")
+                adminStartDateStr = nowStr
+                startDateField.text = nowStr
+            end)
+
+            -- Nút "Xóa" (Trống = Lấy giờ thực khi tạo)
+            local clearDateBtnGo = GameObject("ClearDateBtn")
+            clearDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
+            local clrRt = clearDateBtnGo:AddComponent(typeof(RectTransform))
+            clrRt.anchorMin, clrRt.anchorMax, clrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            clrRt.anchoredPosition = Vector2(568, 0)
+            clrRt.sizeDelta = Vector2(50, 28)
+            local clrImg = clearDateBtnGo:AddComponent(typeof(Image))
+            clrImg.color = Color(0.4, 0.4, 0.4, 1)
+            local clrBtn = clearDateBtnGo:AddComponent(typeof(Button))
+            clrBtn.targetGraphic = clrImg
+            local clrTxtGo = GameObject("Txt")
+            clrTxtGo.transform:SetParent(clearDateBtnGo.transform, false)
+            local clrtRt = clrTxtGo:AddComponent(typeof(RectTransform))
+            clrtRt.anchorMin, clrtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            clrtRt.sizeDelta = Vector2(0, 0)
+            local clrTxt = clrTxtGo:AddComponent(typeof(Text))
+            clrTxt.text = "Xóa"
+            clrTxt.raycastTarget = false
+            clrTxt.color, clrTxt.fontSize, clrTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+            if defaultFont then clrTxt.font = defaultFont end
+
+            clrBtn.onClick:AddListener(function()
+                adminStartDateStr = ""
+                startDateField.text = ""
+            end)
+
+            -- Nút "Paste" Date
+            local pasteDateBtnGo = GameObject("PasteDateBtn")
+            pasteDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
+            local pdtRt = pasteDateBtnGo:AddComponent(typeof(RectTransform))
+            pdtRt.anchorMin, pdtRt.anchorMax, pdtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            pdtRt.anchoredPosition = Vector2(623, 0)
+            pdtRt.sizeDelta = Vector2(55, 28)
+            local pdtImg = pasteDateBtnGo:AddComponent(typeof(Image))
+            pdtImg.color = Color(0.8, 0.4, 0, 1)
+            local pdtBtn = pasteDateBtnGo:AddComponent(typeof(Button))
+            pdtBtn.targetGraphic = pdtImg
+            local pdtTxtGo = GameObject("Txt")
+            pdtTxtGo.transform:SetParent(pasteDateBtnGo.transform, false)
+            local pdttRt = pdtTxtGo:AddComponent(typeof(RectTransform))
+            pdttRt.anchorMin, pdttRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            pdttRt.sizeDelta = Vector2(0, 0)
+            local pdtTxt = pdtTxtGo:AddComponent(typeof(Text))
+            pdtTxt.text = "Paste"
+            pdtTxt.raycastTarget = false
+            pdtTxt.color, pdtTxt.fontSize, pdtTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+            if defaultFont then pdtTxt.font = defaultFont end
+
+            pdtBtn.onClick:AddListener(function()
+                local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
+                adminStartDateStr = clip
+                startDateField.text = clip
+            end)
+
+            -- 5. THỜI HẠN & Ô NHẬP SỐ NGÀY TÙY CHỈNH - MỚI THEO KEYGEN.PS1
             local optsTitleGo = GameObject("OptsTitle")
             optsTitleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, optsTitleGo)
             local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
             optsRt.anchorMin, optsRt.anchorMax, optsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optsRt.anchoredPosition = Vector2(20, -345)
-            optsRt.sizeDelta = Vector2(150, 30)
+            optsRt.anchoredPosition = Vector2(20, -350)
+            optsRt.sizeDelta = Vector2(95, 26)
             local optsTxt = optsTitleGo:AddComponent(typeof(Text))
-            optsTxt.text = "Chọn thời hạn:"
-            optsTxt.color, optsTxt.fontSize = Color.white, 15
+            optsTxt.text = "6. Thời hạn:"
+            optsTxt.color, optsTxt.fontSize = Color.white, 14
+            optsTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then optsTxt.font = defaultFont end
 
             local optDurationText = GameObject("OptDurTxt")
@@ -10940,23 +11981,106 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, optDurationText)
             local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
             optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optDTkRt.anchoredPosition = Vector2(170, -345)
-            optDTkRt.sizeDelta = Vector2(400, 30)
+            optDTkRt.anchoredPosition = Vector2(115, -350)
+            optDTkRt.sizeDelta = Vector2(210, 26)
             local optDTkTxt = optDurationText:AddComponent(typeof(Text))
             optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
-            optDTkTxt.color, optDTkTxt.fontSize = Color.white, 18
+            optDTkTxt.color, optDTkTxt.fontSize = Color.white, 15
+            optDTkTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then optDTkTxt.font = defaultFont end
 
-            local function CreateOptBtn(x, y, label, durVal)
-                local btnGo = GameObject("OptBtn_" .. durVal)
+            -- Label Số ngày tùy chỉnh
+            local customDaysLblGo = GameObject("CustomDaysLbl")
+            customDaysLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, customDaysLblGo)
+            local cdlRt = customDaysLblGo:AddComponent(typeof(RectTransform))
+            cdlRt.anchorMin, cdlRt.anchorMax, cdlRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            cdlRt.anchoredPosition = Vector2(330, -350)
+            cdlRt.sizeDelta = Vector2(130, 26)
+            local cdlTxt = customDaysLblGo:AddComponent(typeof(Text))
+            cdlTxt.text = "Tùy chỉnh (ngày):"
+            cdlTxt.color, cdlTxt.fontSize = Color.yellow, 14
+            cdlTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then cdlTxt.font = defaultFont end
+
+            -- Input Số ngày tùy chỉnh
+            local customDaysInGo = GameObject("CustomDaysInput")
+            customDaysInGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, customDaysInGo)
+            local cdiRt = customDaysInGo:AddComponent(typeof(RectTransform))
+            cdiRt.anchorMin, cdiRt.anchorMax, cdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            cdiRt.anchoredPosition = Vector2(462, -350)
+            cdiRt.sizeDelta = Vector2(75, 26)
+            local cdiImg = customDaysInGo:AddComponent(typeof(Image))
+            cdiImg.color = Color(1, 1, 1, 1)
+
+            local cdiTextGo = GameObject("Text")
+            cdiTextGo.transform:SetParent(customDaysInGo.transform, false)
+            local cditRt = cdiTextGo:AddComponent(typeof(RectTransform))
+            cditRt.anchorMin, cditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            cditRt.offsetMin, cditRt.offsetMax = Vector2(3, 0), Vector2(-3, 0)
+            local cdiTxt = cdiTextGo:AddComponent(typeof(Text))
+            cdiTxt.text = adminCustomDaysStr
+            cdiTxt.color, cdiTxt.fontSize = Color.black, 14
+            cdiTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then cdiTxt.font = defaultFont end
+
+            local customDaysField = customDaysInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            customDaysField.textComponent = cdiTxt
+            customDaysField.text = adminCustomDaysStr
+
+            customDaysField.onValueChanged:AddListener(function(val)
+                adminCustomDaysStr = val or ""
+                local num = tonumber(val)
+                if num and num > 0 then
+                    adminDuration = num
+                    optDTkTxt.text = "<color=green>[ Tùy chỉnh: " .. tostring(num) .. " Ngày ]</color>"
+                elseif val == "" then
+                    optDTkTxt.text = "<color=green>[ " .. tostring(adminDuration) .. " Ngày ]</color>"
+                end
+            end)
+
+            -- Nút 60 Giây (Test Hết Hạn - giống lựa chọn 8 trong Keygen.ps1)
+            local btn60sGo = GameObject("OptBtn_60s")
+            btn60sGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, btn60sGo)
+            local b60Rt = btn60sGo:AddComponent(typeof(RectTransform))
+            b60Rt.anchorMin, b60Rt.anchorMax, b60Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            b60Rt.anchoredPosition = Vector2(550, -350)
+            b60Rt.sizeDelta = Vector2(130, 26)
+            local b60Img = btn60sGo:AddComponent(typeof(Image))
+            b60Img.color = Color(0.65, 0.25, 0.1, 1)
+            local b60Btn = btn60sGo:AddComponent(typeof(Button))
+            b60Btn.targetGraphic = b60Img
+            local b60TxtGo = GameObject("Txt")
+            b60TxtGo.transform:SetParent(btn60sGo.transform, false)
+            local b60tRt = b60TxtGo:AddComponent(typeof(RectTransform))
+            b60tRt.anchorMin, b60tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            b60tRt.sizeDelta = Vector2(0, 0)
+            local b60Txt = b60TxtGo:AddComponent(typeof(Text))
+            b60Txt.text = "60s (Test Hạn)"
+            b60Txt.raycastTarget = false
+            b60Txt.color, b60Txt.fontSize, b60Txt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+            if defaultFont then b60Txt.font = defaultFont end
+
+            b60Btn.onClick:AddListener(function()
+                adminDuration = 0.000694444
+                if customDaysField then customDaysField.text = "" end
+                adminCustomDaysStr = ""
+                optDTkTxt.text = "<color=orange>[ 60 Giây (Test) ]</color>"
+            end)
+
+            -- Hàng các nút thời hạn Preset
+            local function CreateOptBtn(x, y, label, durVal, w)
+                local btnGo = GameObject("OptBtn_" .. tostring(durVal))
                 btnGo.transform:SetParent(panelGo.transform, false)
                 table.insert(_G.AdminUIList, btnGo)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(90, 32)
+                rt.sizeDelta = Vector2(w or 85, 28)
                 local img = btnGo:AddComponent(typeof(Image))
-                img.color = Color(0.3, 0.3, 0.3, 1)
+                img.color = Color(0.25, 0.25, 0.25, 1)
                 local btn = btnGo:AddComponent(typeof(Button))
                 btn.targetGraphic = img
                 local txtGo = GameObject("Txt")
@@ -10967,31 +12091,35 @@ local function CreateModUI()
                 local tTxt = txtGo:AddComponent(typeof(Text))
                 tTxt.text = label
                 tTxt.raycastTarget = false
-                tTxt.color, tTxt.fontSize, tTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
+                tTxt.color, tTxt.fontSize, tTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
                 if defaultFont then tTxt.font = defaultFont end
 
                 btn.onClick:AddListener(function()
                     adminDuration = durVal
+                    if customDaysField then customDaysField.text = "" end
+                    adminCustomDaysStr = ""
                     optDTkTxt.text = "<color=green>[ " .. label .. " ]</color>"
                 end)
             end
 
-            CreateOptBtn(20, -375, "3 Ngày", 3)
-            CreateOptBtn(120, -375, "7 Ngày", 7)
-            CreateOptBtn(220, -375, "15 Ngày", 15)
-            CreateOptBtn(320, -375, "30 Ngày", 30)
-            CreateOptBtn(420, -375, "90 Ngày", 90)
+            CreateOptBtn(20, -382, "3 Ngày", 3, 90)
+            CreateOptBtn(118, -382, "7 Ngày", 7, 90)
+            CreateOptBtn(216, -382, "15 Ngày", 15, 90)
+            CreateOptBtn(314, -382, "30 Ngày", 30, 90)
+            CreateOptBtn(412, -382, "60 Ngày", 60, 90)
+            CreateOptBtn(510, -382, "90 Ngày", 90, 85)
+            CreateOptBtn(602, -382, "365 Ngày", 365, 80)
 
-            -- Generate Button
+            -- 6. NÚT TẠO TOKEN
             local genBtnGo = GameObject("AdminGenBtn")
             genBtnGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, genBtnGo)
             local genRt = genBtnGo:AddComponent(typeof(RectTransform))
             genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            genRt.anchoredPosition = Vector2(0, -415)
-            genRt.sizeDelta = Vector2(250, 40)
+            genRt.anchoredPosition = Vector2(0, -416)
+            genRt.sizeDelta = Vector2(250, 36)
             local genImg = genBtnGo:AddComponent(typeof(Image))
-            genImg.color = Color(0, 0.8, 0, 1)
+            genImg.color = Color(0, 0.75, 0, 1)
             local genBtn = genBtnGo:AddComponent(typeof(Button))
             genBtn.targetGraphic = genImg
             local gTxtGo = GameObject("GenTxt")
@@ -11002,17 +12130,17 @@ local function CreateModUI()
             local gTxt = gTxtGo:AddComponent(typeof(Text))
             gTxt.text = "TẠO TOKEN"
             gTxt.raycastTarget = false
-            gTxt.color, gTxt.fontSize, gTxt.alignment = Color.white, 20, TextAnchor.MiddleCenter
+            gTxt.color, gTxt.fontSize, gTxt.alignment = Color.white, 19, TextAnchor.MiddleCenter
             if defaultFont then gTxt.font = defaultFont end
 
-            -- Token Result
+            -- 7. Ô HIỂN THỊ KẾT QUẢ TOKEN & NÚT COPY
             local resGo = GameObject("ResTxt")
             resGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AdminUIList, resGo)
             local resRt = resGo:AddComponent(typeof(RectTransform))
             resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            resRt.anchoredPosition = Vector2(20, -465)
-            resRt.sizeDelta = Vector2(550, 55)
+            resRt.anchoredPosition = Vector2(20, -462)
+            resRt.sizeDelta = Vector2(550, 56)
             local resTextGo = GameObject("Text")
             resTextGo.transform:SetParent(resGo.transform, false)
             local resTextRt = resTextGo:AddComponent(typeof(RectTransform))
@@ -11039,8 +12167,8 @@ local function CreateModUI()
             table.insert(_G.AdminUIList, copyTokBtnGo)
             local ctRt = copyTokBtnGo:AddComponent(typeof(RectTransform))
             ctRt.anchorMin, ctRt.anchorMax, ctRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            ctRt.anchoredPosition = Vector2(-20, -470)
-            ctRt.sizeDelta = Vector2(120, 38)
+            ctRt.anchoredPosition = Vector2(-20, -462)
+            ctRt.sizeDelta = Vector2(120, 56)
             local ctImg = copyTokBtnGo:AddComponent(typeof(Image))
             ctImg.color = Color(0.2, 0.6, 1, 1)
             local copyTokBtn = copyTokBtnGo:AddComponent(typeof(Button))
@@ -11065,6 +12193,84 @@ local function CreateModUI()
                 end
             end)
 
+            -- HÀM PARSE NGÀY BẮT ĐẦU SANG UNIX TIMESTAMP (GIỐNG KEYGEN.PS1)
+            local function ParseDateTimeToUnix(dateStr)
+                if not dateStr or dateStr == "" then
+                    return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                end
+                dateStr = string.gsub(dateStr, "^%s*(.-)%s*$", "%1")
+                if dateStr == "" then
+                    return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                end
+
+                local status, parsedUnix = pcall(function()
+                    local culture = CS.System.Globalization.CultureInfo.InvariantCulture
+                    local styles = CS.System.Globalization.DateTimeStyles.None
+                    local formats = {
+                        "dd/MM/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm", "dd/MM/yyyy",
+                        "d/M/yyyy HH:mm:ss", "d/M/yyyy HH:mm", "d/M/yyyy",
+                        "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd",
+                        "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy/MM/dd",
+                        "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm", "dd-MM-yyyy"
+                    }
+                    for i = 1, #formats do
+                        local success, dt = CS.System.DateTime.TryParseExact(dateStr, formats[i], culture, styles)
+                        if success and dt then
+                            local epoch = CS.System.DateTime(1970, 1, 1, 0, 0, 0, CS.System.DateTimeKind.Utc)
+                            local diff = dt:ToUniversalTime():Subtract(epoch).TotalSeconds
+                            return math.floor(diff)
+                        end
+                    end
+                    local success2, dt2 = CS.System.DateTime.TryParse(dateStr)
+                    if success2 and dt2 then
+                        local epoch = CS.System.DateTime(1970, 1, 1, 0, 0, 0, CS.System.DateTimeKind.Utc)
+                        local diff = dt2:ToUniversalTime():Subtract(epoch).TotalSeconds
+                        return math.floor(diff)
+                    end
+                    return nil
+                end)
+                if status and parsedUnix then
+                    return parsedUnix
+                end
+
+                -- Fallback parse bằng Lua pattern
+                local d, m, y, h, min, s = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+):(%d+)")
+                if not d then
+                    d, m, y, h, min = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+)")
+                    s = 0
+                end
+                if not d then
+                    d, m, y = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)")
+                    h, min, s = 0, 0, 0
+                end
+                if not d then
+                    y, m, d, h, min, s = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+):(%d+)")
+                end
+                if not d then
+                    y, m, d, h, min = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+)")
+                    s = 0
+                end
+                if not d then
+                    y, m, d = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)")
+                    h, min, s = 0, 0, 0
+                end
+
+                if y and m and d then
+                    local t = os.time({
+                        year = tonumber(y),
+                        month = tonumber(m),
+                        day = tonumber(d),
+                        hour = tonumber(h or 0),
+                        min = tonumber(min or 0),
+                        sec = tonumber(s or 0)
+                    })
+                    if t then return t end
+                end
+
+                return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+            end
+
+            -- LOGIC BẤM NÚT TẠO TOKEN
             genBtn.onClick:AddListener(function()
                 local codeInput = (inputField and inputField.text and inputField.text ~= "") and inputField.text or adminDeviceCode
                 codeInput = string.gsub(codeInput, "^%s*(.-)%s*$", "%1")
@@ -11085,12 +12291,32 @@ local function CreateModUI()
                 if pMain < 3 or pMain > 12 then pMain = 8 end
                 if pSub < 3 or pSub > 12 then pSub = 7 end
 
-                local pTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                -- Xác định Thời Hạn (Duration)
+                local durInputVal = (customDaysField and customDaysField.text and customDaysField.text ~= "") and customDaysField.text or adminCustomDaysStr
+                durInputVal = string.gsub(durInputVal, "^%s*(.-)%s*$", "%1")
+                local finalDuration = adminDuration or 3
+                if durInputVal ~= "" then
+                    local pDur = tonumber(durInputVal)
+                    if pDur and pDur > 0 then
+                        finalDuration = pDur
+                    end
+                end
+
+                -- Format duration lưu trong token (giữ nguyên độ chính xác nếu là 60s)
+                local durStr = tostring(finalDuration)
+                if finalDuration == 0.000694444 then
+                    durStr = "0.000694444"
+                end
+
+                -- Xác định Ngày Bắt Đầu (Start Date)
+                local dateInputVal = (startDateField and startDateField.text and startDateField.text ~= "") and startDateField.text or adminStartDateStr
+                local pTime = ParseDateTimeToUnix(dateInputVal)
+
                 local tokenData = adminDeviceCode ..
                     "|" ..
                     targetUID ..
                     "|" ..
-                    tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. tostring(adminDuration) .. "|" .. tostring(pTime)
+                    tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. durStr .. "|" .. tostring(pTime)
                 local dataToHash = tokenData .. "MUVH_SECRET_SALT_XOAI"
 
                 local status, md5Hash = pcall(function()
@@ -11111,6 +12337,7 @@ local function CreateModUI()
                     resTextComp.text = b64Token
                     if resTxt then resTxt.text = b64Token end
                     CS.UnityEngine.GUIUtility.systemCopyBuffer = b64Token
+
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("Đã tạo và tự động Copy Token!")
                     end

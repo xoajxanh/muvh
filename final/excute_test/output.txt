@@ -1,28 +1,13 @@
 ==================================================================
-         BẮT ĐẦU DETECT: SKILL CỰC HẠN, BUFF ELF & BẢN ĐỒ         
-                 Thời gian: 2026-09-20 23:12:06
+  DETECT & TEST CAST: CỰC HẠN & THÁNH HỒN THIÊN SỨ - GAI         
+                 Thời gian: 2026-09-27 23:06:23
 ==================================================================
-1. BẢN ĐỒ: mapId=1012015 | groupId=1012015 | InTranscript=true
-   -> KẾT QUẢ MAP: MapID 1012015 (Trong PB) [KHÔNG PHẢI LOREN]
-2. SKILL CỰC HẠN (Group 410700):
-   - Không có thông tin CD (Chưa dùng hoặc đã hồi xong hoàn toàn)
-   -> KẾT QUẢ CỰC HẠN: Sẵn sàng sử dụng [OK]
-3. QUÉT TOÀN BỘ BUFF ĐANG CÓ TRÊN NHÂN VẬT:
-   [1] Buff: BUFF Tăng DMG Bảng Săn Ma | buffCId=330011 | buffGroup=330000 | icon=buff_shang_2 | time=473.4s
-   [2] Buff: Ánh Sáng Thủ Hộ | buffCId=31000183 | buffGroup=31000070 | icon=buff_Defend | time=407.6s
-   [3] Buff: Sức Mạnh Chiến Thần | buffCId=31000085 | buffGroup=31000080 | icon=buff_Attack | time=148.4s
-   [4] Buff: Thánh Hoàn: Ấn Ký Khiên Thánh | buffCId=2212015 | buffGroup=2212000 | icon=buff_hr_hd | time=0.0s
-   [5] Buff: Thánh Hoàn: Ấn Ký Thiêu Đốt | buffCId=2211013 | buffGroup=2211000 | icon=buff_hr_gj | time=0.0s
-   [6] Buff: Thánh Hoàn: Ấn Ký Giảm Buff | buffCId=2215015 | buffGroup=2215000 | icon=buff_hr_sd | time=0.0s
-   [7] Buff: Thánh Hoàn: Ấn Ký Trị Liệu | buffCId=2213015 | buffGroup=2213000 | icon=buff_hr_ye | time=0.0s
-   [8] Buff: Giẫm Đạp Chiến Tranh | buffCId=12171001 | buffGroup=12171000 | icon= | time=0.0s
-   [9] Buff: Thánh Hoàn: Ấn Ký Mù | buffCId=2214014 | buffGroup=2214000 | icon=buff_hr_feng | time=0.0s
-   [10] Buff: Tinh Thông Chiến Đấu | buffCId=81005006 | buffGroup=81005000 | icon=buff_blsx | time=0.0s
-------------------------------------------------------------------
-KẾT QUẢ BUFF ELF:
-   * Ánh Sáng Thủ Hộ   : CÓ (407s - Ánh Sáng Thủ Hộ) [OK]
-   * Sức Mạnh Chiến Thần: CÓ (148s - Sức Mạnh Chiến Thần) [OK]
+1. BẢN ĐỒ: mapId=1012017 | groupId=1012017 | TrongPB=true | LàTháp=false
+2. SKILL CỰC HẠN: Group=410700 | SkillID=410702 | Ready=false | CD còn=23s
+3. THÁNH HỒN THIÊN SỨ - GAI: Group=34011800 | SkillID=34011801 | Ready=true | CD còn=0s
+4. THỰC HIỆN TEST CAST SKILL:
+   [BỎ QUA] Cực Hạn đang trong thời gian hồi chiêu!
+   [OK] Đã kích hoạt thi triển Thánh Hồn Thiên Sứ - Gai (ID: 34011801)
 ==================================================================
->>> KẾT LUẬN: CHƯA ĐỦ ĐIỀU KIỆN! Chi tiết thiếu:
-   - Chưa ở map Lorencia
+>>> HOÀN THÀNH TEST! Xem nhân vật trong game có vừa dùng chiêu không.
 ==================================================================
