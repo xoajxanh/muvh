@@ -5370,9 +5370,9 @@ local function CreateModUI()
                             remainSec, rawTimeTxt = Mod_GetTowerRemainSeconds()
                         end
 
-                        -- QuickMsg thời gian đếm ngược lên màn hình mỗi 1 giây (để anh USER kiểm tra chuẩn xác)
+                        -- QuickMsg thời gian đếm ngược lên màn hình mỗi 1 giây (chỉ khi BẬT AUTO THÁP)
                         local nowUiSec = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (nowUiSec - (_G.Mod_LastTowerCountdownQuickMsgTime or 0)) >= 1.0 then
+                        if _G.Mod_AutoChallengeTower_Enabled and (nowUiSec - (_G.Mod_LastTowerCountdownQuickMsgTime or 0)) >= 1.0 then
                             _G.Mod_LastTowerCountdownQuickMsgTime = nowUiSec
                             if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
                                 if remainSec then
@@ -5383,8 +5383,12 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 1. TỰ ĐỘNG DÙNG CỰC HẠN & THÁNH HỒN GAI TẠI GIÂY 31 ĐẾM NGƯỢC (KÈM BẬT AUTOFIGHT ĐỂ BUFF BẢN THÂN TRƯỚC)
-                        if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG DÙNG CỰC HẠN & THÁNH HỒN GAI TẠI GIÂY 31 TRONG THÁP
+                        -- Mô tả: Chỉ hoạt động khi CẢ HAI (AUTO THÁP & CHECK SKILL THÁP) đều đang BẬT.
+                        --        Nếu tắt Auto Tháp hoặc tắt Check Skill Tháp: Tuyệt đối không tự ý ra chiêu!
+                        -- =========================================================================
+                        if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                             if not _G.Mod_TowerSkillsCastDone then
                                 local needLimit = (_G.Mod_TowerCheck_Limit_Enabled == true)
                                 local needAngel = (_G.Mod_TowerCheck_AngelSpike_Enabled == true)
@@ -5462,8 +5466,8 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 2. Tiếp cận Boss tháp (nếu bật toggle TIẾP CẬN BOSS THÁP)
-                        if _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
+                        -- 2. Tiếp cận Boss tháp (nếu bật AUTO THÁP và TIẾP CẬN BOSS THÁP)
+                        if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
                             if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
                                 _G.Mod_ApproachTowerBoss_Done = true
                             end
@@ -5496,12 +5500,24 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Cập nhật Real-Time text trên 4 nút Check Skill Tháp (Cooldown Cực Hạn, Gai & Thời gian Buff Công, Buff Thủ)
-                    if _G.Mod_UpdateTowerSkillButtons then
-                        local nowUiTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (nowUiTime - (_G.Mod_LastTowerSkillUIUpdateTime or 0)) >= 0.25 then
-                            _G.Mod_LastTowerSkillUIUpdateTime = nowUiTime
-                            pcall(_G.Mod_UpdateTowerSkillButtons)
+                    -- =========================================================================
+                    -- [MOD FEATURE]: REAL-TIME CẬP NHẬT NÚT CHECK SKILL THÁP
+                    -- Mô tả: Chỉ chạy timer 0.25s khi AUTO THÁP và CHECK SKILL THÁP đều đang BẬT.
+                    --        Nếu một trong 2 tắt: Dừng hoàn toàn timer để tiết kiệm CPU và reset text về mặc định.
+                    -- =========================================================================
+                    local isTowerSkillActive = _G.Mod_AutoChallengeTower_Enabled and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap")
+                    if isTowerSkillActive then
+                        if _G.Mod_UpdateTowerSkillButtons then
+                            local nowUiTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowUiTime - (_G.Mod_LastTowerSkillUIUpdateTime or 0)) >= 0.25 then
+                                _G.Mod_LastTowerSkillUIUpdateTime = nowUiTime
+                                pcall(_G.Mod_UpdateTowerSkillButtons)
+                            end
+                        end
+                    else
+                        -- Khi không active: Nếu text đang bị ghi đè số giây thì reset về text gốc sạch sẽ
+                        if _G.Mod_ResetTowerSkillButtonTexts then
+                            pcall(_G.Mod_ResetTowerSkillButtonTexts)
                         end
                     end
 
@@ -8342,10 +8358,17 @@ local function CreateModUI()
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
-                if varName == "Mod_AutoChallengeTower_Enabled" or varName == "Mod_AutoApproachTowerBoss" then
+                if varName == "Mod_AutoChallengeTower_Enabled" or varName == "Mod_AutoApproachTowerBoss" or varName == "Mod_AutoTower_CheckSkill_Enabled" then
                     if not _G[varName] then
                         if varName == "Mod_AutoChallengeTower_Enabled" then
                             _G.Mod_AutoChallengeTower_Count = 0
+                        end
+                        if varName == "Mod_AutoChallengeTower_Enabled" or varName == "Mod_AutoTower_CheckSkill_Enabled" then
+                            pcall(function()
+                                if _G.Mod_ResetTowerSkillButtonTexts then
+                                    _G.Mod_ResetTowerSkillButtonTexts()
+                                end
+                            end)
                         end
                         pcall(function()
                             local me = _G.RoleManager and _G.RoleManager.me
@@ -8362,6 +8385,9 @@ local function CreateModUI()
                     if _G.ModUpdateAutoChallengeTowerLabel then
                         _G.ModUpdateAutoChallengeTowerLabel()
                     end
+                end
+                if not _G[varName] and _G.Mod_ResetTowerSkillButtonTexts then
+                    pcall(_G.Mod_ResetTowerSkillButtonTexts)
                 end
                 if varName == "AutoPick_Enabled" and _G[varName] then
                     _G.AutoPick_Count = 0
@@ -10691,20 +10717,20 @@ local function CreateModUI()
                 local btnW = 260
                 local curY = -5
 
-                CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35)
-                curY = curY - 45
-
-                -- CỤM AUTO THÁP & CHECK SKILL (Chỉ hiển thị khi có lệnh bí mật /autothap)
+                -- CỤM AUTO THÁP & CÁC OPTION CON (Chỉ hiển thị khi có lệnh bí mật /autothap)
                 if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                     CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, btnW, nil, contentGo, 35)
                     curY = curY - 45
+
+                    local loadBlueColor = Color(0.2, 0.6, 1, 1)
+                    CreateToggle("TIẾP CẬN BOSS THÁP", "Mod_AutoApproachTowerBoss", btnX, curY, btnW, nil, contentGo, 35, nil, loadBlueColor)
+                    curY = curY - 40
 
                     -- =========================================================================
                     -- [MOD FEATURE]: CỤM CHECK SKILL THÁP (MÀU XANH LOAD, BUFF CÔNG & BUFF THỦ)
                     -- Mô tả: Nút CHECK SKILL THÁP & 4 option con hiển thị màu xanh Load (0.2, 0.6, 1, 1) khi selected.
                     --        Chia tách 2 Buff Elf thành Buff Công (Sức Mạnh Chiến Thần) và Buff Thủ (Ánh Sáng Thủ Hộ).
                     -- =========================================================================
-                    local loadBlueColor = Color(0.2, 0.6, 1, 1)
                     CreateToggle("CHECK SKILL THÁP", "Mod_AutoTower_CheckSkill_Enabled", btnX, curY, btnW, nil, contentGo, 35, nil, loadBlueColor)
                     curY = curY - 40
 
@@ -10728,9 +10754,27 @@ local function CreateModUI()
                     -- =========================================================================
                     -- [MOD FEATURE]: REAL-TIME CẬP NHẬT COOLDOWN & THỜI LƯỢNG BUFF TRÊN CÁC NÚT CHECK SKILL
                     -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai)
-                    --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu
+                    --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu.
+                    --        Khi Auto Tháp hoặc Check Skill Tháp tắt -> Reset text về mặc định sạch sẽ.
                     -- =========================================================================
+                    _G.Mod_ResetTowerSkillButtonTexts = function()
+                        if txtLimit and txtLimit.text ~= "CỰC HẠN" then txtLimit.text = "CỰC HẠN" end
+                        if txtAngel and txtAngel.text ~= "THÁNH HỒN GAI" then txtAngel.text = "THÁNH HỒN GAI" end
+                        if txtElfAtk and txtElfAtk.text ~= "BUFF CÔNG" then txtElfAtk.text = "BUFF CÔNG" end
+                        if txtElfDef and txtElfDef.text ~= "BUFF THỦ" then txtElfDef.text = "BUFF THỦ" end
+                        if txtDkHp and txtDkHp.text ~= "BUFF MÁU" then txtDkHp.text = "BUFF MÁU" end
+                    end
+
                     _G.Mod_UpdateTowerSkillButtons = function()
+                        -- Phân cấp: Bắt buộc CẢ HAI (AUTO THÁP & CHECK SKILL THÁP) đều phải BẬT
+                        local isActive = _G.Mod_AutoChallengeTower_Enabled and _G.Mod_AutoTower_CheckSkill_Enabled
+                        if not isActive then
+                            if _G.Mod_ResetTowerSkillButtonTexts then
+                                _G.Mod_ResetTowerSkillButtonTexts()
+                            end
+                            return
+                        end
+
                         local me = _G.RoleManager and _G.RoleManager.me
                         if not me then return end
 
@@ -10753,26 +10797,34 @@ local function CreateModUI()
                             return 0
                         end
 
-                        -- 1. Cực Hạn CD
+                        -- 1. Cực Hạn CD: Chỉ cập nhật khi toggle con CỰC HẠN đang BẬT
                         if txtLimit and txtLimit.gameObject and txtLimit.gameObject.activeInHierarchy then
-                            local cdMsg = me.cd and (me.cd[410700] or me.cd[410702])
-                            local cd = GetCdSeconds(cdMsg)
-                            local newTxt = (cd > 0) and ("CỰC HẠN (" .. cd .. "s)") or "CỰC HẠN"
-                            if txtLimit.text ~= newTxt then txtLimit.text = newTxt end
+                            if _G.Mod_TowerCheck_Limit_Enabled then
+                                local cdMsg = me.cd and (me.cd[410700] or me.cd[410702])
+                                local cd = GetCdSeconds(cdMsg)
+                                local newTxt = (cd > 0) and ("CỰC HẠN (" .. cd .. "s)") or "CỰC HẠN"
+                                if txtLimit.text ~= newTxt then txtLimit.text = newTxt end
+                            else
+                                if txtLimit.text ~= "CỰC HẠN" then txtLimit.text = "CỰC HẠN" end
+                            end
                         end
 
-                        -- 2. Thánh Hồn Gai CD
+                        -- 2. Thánh Hồn Gai CD: Chỉ cập nhật khi toggle con THÁNH HỒN GAI đang BẬT
                         if txtAngel and txtAngel.gameObject and txtAngel.gameObject.activeInHierarchy then
-                            local cdMsg = me.cd and (me.cd[34011800] or me.cd[34011801])
-                            local cd = GetCdSeconds(cdMsg)
-                            local newTxt = (cd > 0) and ("THÁNH HỒN GAI (" .. cd .. "s)") or "THÁNH HỒN GAI"
-                            if txtAngel.text ~= newTxt then txtAngel.text = newTxt end
+                            if _G.Mod_TowerCheck_AngelSpike_Enabled then
+                                local cdMsg = me.cd and (me.cd[34011800] or me.cd[34011801])
+                                local cd = GetCdSeconds(cdMsg)
+                                local newTxt = (cd > 0) and ("THÁNH HỒN GAI (" .. cd .. "s)") or "THÁNH HỒN GAI"
+                                if txtAngel.text ~= newTxt then txtAngel.text = newTxt end
+                            else
+                                if txtAngel.text ~= "THÁNH HỒN GAI" then txtAngel.text = "THÁNH HỒN GAI" end
+                            end
                         end
 
-                        -- 3, 4, 5. Buff Công, Buff Thủ & Buff Máu
-                        local needAtk = (txtElfAtk and txtElfAtk.gameObject and txtElfAtk.gameObject.activeInHierarchy)
-                        local needDef = (txtElfDef and txtElfDef.gameObject and txtElfDef.gameObject.activeInHierarchy)
-                        local needHp = (txtDkHp and txtDkHp.gameObject and txtDkHp.gameObject.activeInHierarchy)
+                        -- 3, 4, 5. Buff Công, Buff Thủ & Buff Máu: Chỉ quét buff khi có ít nhất một option buff đang BẬT
+                        local needAtk = _G.Mod_TowerCheck_ElfAtkBuff_Enabled and (txtElfAtk and txtElfAtk.gameObject and txtElfAtk.gameObject.activeInHierarchy)
+                        local needDef = _G.Mod_TowerCheck_ElfDefBuff_Enabled and (txtElfDef and txtElfDef.gameObject and txtElfDef.gameObject.activeInHierarchy)
+                        local needHp = _G.Mod_TowerCheck_DkHpBuff_Enabled and (txtDkHp and txtDkHp.gameObject and txtDkHp.gameObject.activeInHierarchy)
 
                         if needAtk or needDef or needHp then
                             local meId = me.id or (me.data and me.data.id) or 0
@@ -10795,6 +10847,17 @@ local function CreateModUI()
                                 local newTxt = (hpRemain > 0) and ("BUFF MÁU (" .. hpRemain .. "s)") or "BUFF MÁU"
                                 if txtDkHp.text ~= newTxt then txtDkHp.text = newTxt end
                             end
+                        end
+
+                        -- Reset các nút buff nếu option tương ứng bị tắt
+                        if not _G.Mod_TowerCheck_ElfAtkBuff_Enabled and txtElfAtk and txtElfAtk.text ~= "BUFF CÔNG" then
+                            txtElfAtk.text = "BUFF CÔNG"
+                        end
+                        if not _G.Mod_TowerCheck_ElfDefBuff_Enabled and txtElfDef and txtElfDef.text ~= "BUFF THỦ" then
+                            txtElfDef.text = "BUFF THỦ"
+                        end
+                        if not _G.Mod_TowerCheck_DkHpBuff_Enabled and txtDkHp and txtDkHp.text ~= "BUFF MÁU" then
+                            txtDkHp.text = "BUFF MÁU"
                         end
                     end
                 end

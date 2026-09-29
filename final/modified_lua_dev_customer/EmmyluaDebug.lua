@@ -28,8 +28,13 @@ _G.Mod_Config_PickupDelay_Max = 500
 _G.Mod_Config_ActiveBasicTab = true
 _G.Mod_Config_ActiveAdvancedTab = true
 _G.Mod_Config_ActiveAutoFarmTab = true
-_G.Mod_Config_CurrentRebirth = 0
-_G.Mod_Config_AdminTelegram = { "legend92vn" }
+-- =========================================================================
+-- [MOD FEATURE]: CẤU HÌNH LIÊN HỆ ADMIN (TELEGRAM & ZALO)
+-- Mô tả: Đường dẫn liên hệ hỗ trợ kích hoạt bản quyền cho khách
+-- =========================================================================
+_G.Mod_Config_AdminTelegram = { "vutmod" }
+_G.Mod_Config_AdminZalo = "https://zalo.me/0386918686"
+_G.Mod_Config_AdminZaloPhone = "0386918686"
 
 local SECRET_SALT = "MUVH_SECRET_SALT_XOAI"
 
@@ -1451,61 +1456,96 @@ local function CreateModUI()
                 activeNoticeTxt.text = _G.Mod_ActiveStatusMsg or "Chưa được kích hoạt bản quyền!"
             end
 
+            -- =========================================================================
+            -- [MOD FEATURE]: CỤM NÚT LIÊN HỆ KÍCH HOẠT (ZALO & TELEGRAM)
+            -- Mô tả: Hiển thị 2 nút liên hệ Zalo (0386918686) và Telegram (@vutmod)
+            --        giúp khách dễ dàng bấm để xin kích hoạt bản quyền
+            -- =========================================================================
             if activeTgContainerGo and not activeTgContainerGo:Equals(nil) then
                 for i = activeTgContainerGo.transform.childCount - 1, 0, -1 do
                     local child = activeTgContainerGo.transform:GetChild(i)
                     CS.UnityEngine.Object.Destroy(child.gameObject)
                 end
-                local admins = _G.Mod_Config_AdminTelegram or { "", "" }
+
                 local btnWidth = 280
                 local btnHeight = 40
                 local gap = 20
-                local startX = -((#admins * btnWidth + (#admins - 1) * gap) / 2) + (btnWidth / 2)
 
-                for idx, adminUser in ipairs(admins) do
-                    local rawUser = tostring(adminUser)
-                    local cleanUser = string.gsub(rawUser, "^@+", "")
+                -- 1. NÚT LIÊN HỆ ZALO (MÀU XANH DƯƠNG ZALO)
+                local zaloGo = GameObject("ZaloBtn")
+                zaloGo.transform:SetParent(activeTgContainerGo.transform, false)
+                local zRt = zaloGo:AddComponent(typeof(RectTransform))
+                zRt.anchorMin = Vector2(0.5, 0.5)
+                zRt.anchorMax = Vector2(0.5, 0.5)
+                zRt.pivot = Vector2(0.5, 0.5)
+                zRt.anchoredPosition = Vector2(-(btnWidth / 2 + gap / 2), 0)
+                zRt.sizeDelta = Vector2(btnWidth, btnHeight)
 
-                    local bGo = GameObject("TgBtn_" .. idx)
-                    bGo.transform:SetParent(activeTgContainerGo.transform, false)
-                    local bRt = bGo:AddComponent(typeof(RectTransform))
-                    bRt.anchorMin = Vector2(0.5, 0.5)
-                    bRt.anchorMax = Vector2(0.5, 0.5)
-                    bRt.pivot = Vector2(0.5, 0.5)
-                    bRt.anchoredPosition = Vector2(startX + (idx - 1) * (btnWidth + gap), 0)
-                    bRt.sizeDelta = Vector2(btnWidth, btnHeight)
+                local zImg = zaloGo:AddComponent(typeof(Image))
+                zImg.color = Color(0.05, 0.45, 0.90, 1)
 
-                    local bImg = bGo:AddComponent(typeof(Image))
-                    bImg.color = Color(0.0, 0.54, 0.83, 1)
+                local zTxtG = GameObject("Txt")
+                zTxtG.transform:SetParent(zaloGo.transform, false)
+                local ztRt = zTxtG:AddComponent(typeof(RectTransform))
+                ztRt.anchorMin = Vector2(0, 0)
+                ztRt.anchorMax = Vector2(1, 1)
+                ztRt.sizeDelta = Vector2(0, 0)
+                local zTxt = zTxtG:AddComponent(typeof(Text))
+                local zaloPhone = _G.Mod_Config_AdminZaloPhone or "0386918686"
+                zTxt.text = "Zalo: " .. zaloPhone
+                zTxt.font = defaultFont
+                zTxt.fontSize = 15
+                zTxt.color = Color.white
+                zTxt.alignment = TextAnchor.MiddleCenter
 
-                    local txtG = GameObject("Txt")
-                    txtG.transform:SetParent(bGo.transform, false)
-                    local tRt = txtG:AddComponent(typeof(RectTransform))
-                    tRt.anchorMin = Vector2(0, 0)
-                    tRt.anchorMax = Vector2(1, 1)
-                    tRt.sizeDelta = Vector2(0, 0)
-                    local txtC = txtG:AddComponent(typeof(Text))
-                    txtC.text = (#admins > 1) and ("Admin Telegram " .. idx) or "Admin Telegram"
-                    txtC.font = defaultFont
-                    txtC.fontSize = 15
-                    txtC.color = Color.white
-                    txtC.alignment = TextAnchor.MiddleCenter
+                local zBtn = zaloGo:AddComponent(typeof(Button))
+                zBtn.onClick:AddListener(function()
+                    local zaloUrl = _G.Mod_Config_AdminZalo or "https://zalo.me/0386918686"
+                    pcall(function() CS.UnityEngine.Application.OpenURL(zaloUrl) end)
+                end)
 
-                    local btnC = bGo:AddComponent(typeof(Button))
-                    btnC.onClick:AddListener(function()
-                        local msg = ""
-                        local hasSerial = (serialMD5 ~= "")
-                        local hasUID = (uid ~= "" and uid ~= "Vui lòng đăng nhập nhân vật để lấy UID")
-                        if hasSerial and hasUID then
-                            msg = "Hi Admin, Active giúp mình với:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
-                        else
-                            msg = "Hi"
-                        end
-                        local urlMsg = CS.UnityEngine.WWW.EscapeURL(msg)
-                        local telegramUrl = "https://t.me/" .. cleanUser .. "?text=" .. urlMsg
-                        pcall(function() CS.UnityEngine.Application.OpenURL(telegramUrl) end)
-                    end)
-                end
+                -- 2. NÚT LIÊN HỆ TELEGRAM (MÀU XANH CYAN TELEGRAM)
+                local tgGo = GameObject("TgBtn")
+                tgGo.transform:SetParent(activeTgContainerGo.transform, false)
+                local tgBtnRt = tgGo:AddComponent(typeof(RectTransform))
+                tgBtnRt.anchorMin = Vector2(0.5, 0.5)
+                tgBtnRt.anchorMax = Vector2(0.5, 0.5)
+                tgBtnRt.pivot = Vector2(0.5, 0.5)
+                tgBtnRt.anchoredPosition = Vector2((btnWidth / 2 + gap / 2), 0)
+                tgBtnRt.sizeDelta = Vector2(btnWidth, btnHeight)
+
+                local tgImg = tgGo:AddComponent(typeof(Image))
+                tgImg.color = Color(0.0, 0.54, 0.83, 1)
+
+                local tgTxtG = GameObject("Txt")
+                tgTxtG.transform:SetParent(tgGo.transform, false)
+                local tgtRt = tgTxtG:AddComponent(typeof(RectTransform))
+                tgtRt.anchorMin = Vector2(0, 0)
+                tgtRt.anchorMax = Vector2(1, 1)
+                tgtRt.sizeDelta = Vector2(0, 0)
+                local tgTxt = tgTxtG:AddComponent(typeof(Text))
+                local tgUser = (_G.Mod_Config_AdminTelegram and _G.Mod_Config_AdminTelegram[1]) or "vutmod"
+                local cleanTgUser = string.gsub(tostring(tgUser), "^@+", "")
+                tgTxt.text = "Telegram: @" .. cleanTgUser
+                tgTxt.font = defaultFont
+                tgTxt.fontSize = 15
+                tgTxt.color = Color.white
+                tgTxt.alignment = TextAnchor.MiddleCenter
+
+                local tgBtn = tgGo:AddComponent(typeof(Button))
+                tgBtn.onClick:AddListener(function()
+                    local msg = ""
+                    local hasSerial = (serialMD5 ~= "")
+                    local hasUID = (uid ~= "" and uid ~= "Vui lòng đăng nhập nhân vật để lấy UID")
+                    if hasSerial and hasUID then
+                        msg = "Hi Admin, Active giúp mình với:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
+                    else
+                        msg = "Hi"
+                    end
+                    local urlMsg = CS.UnityEngine.WWW.EscapeURL(msg)
+                    local telegramUrl = "https://t.me/" .. cleanTgUser .. "?text=" .. urlMsg
+                    pcall(function() CS.UnityEngine.Application.OpenURL(telegramUrl) end)
+                end)
             end
         end
         _G.Mod_RefreshAuthPanelData = RefreshAuthPanelData
