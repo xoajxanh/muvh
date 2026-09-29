@@ -11596,8 +11596,14 @@ local function CreateModUI()
         CreateKundunUI()
 
         -- =========================================================================
-        -- [MOD FEATURE]: GIAO DIỆN TAB QUẢN TRỊ VIÊN & TẠO KEY (ADMIN PANEL UI)
-        -- Mô tả: Giao diện tab Quản Trị Viên dành cho Admin tạo key mới, xóa key, xem danh sách key.
+        -- [MOD FEATURE]: GIAO DIỆN TAB ADMIN SCROLLVIEW & THÔNG TIN CHỨC NĂNG NHÂN VẬT
+        -- Mô tả: Chuyển toàn bộ Tab Admin sang ScrollView mượt mà, bao gồm:
+        --        1. Admin Control (Nút Exec & Cấu hình Chuyển)
+        --        2. Công cụ Tạo Token Bản Quyền (Keygen VIP 2026)
+        --        3. Đường dashed phân cách
+        --        4. Tra cứu thông tin nhân vật (RoleId, UID, Name, MapID, Location) kèm nút GET & COPY
+        --        5. Hàng nút tổng hợp [LẤY TẤT CẢ] & [COPY TỔNG HỢP] đặt ngay dưới tiêu đề
+        --        6. Chức năng Bay Đến theo MapId;x#y hoặc RoleId;MapId;x#y (sử dụng ReqCallFlag)
         -- =========================================================================
         local function CreateAdminUI()
             local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
@@ -11642,986 +11648,1534 @@ local function CreateModUI()
                 return table.concat(result)
             end
 
-            -- Title
-            local titleGo = GameObject("AdminTitle")
-            titleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, titleGo)
-            local titleRt = titleGo:AddComponent(typeof(RectTransform))
-            titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            titleRt.anchoredPosition = Vector2(0, -60)
-            titleRt.sizeDelta = Vector2(500, 30)
-            local titleTxt = titleGo:AddComponent(typeof(Text))
-            titleTxt.text = "=== ADMIN CONTROL PANEL ==="
-            titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 22, TextAnchor.MiddleCenter
-            if defaultFont then titleTxt.font = defaultFont end
+            -- 1. TẠO SCROLL VIEW CHO TAB ADMIN
+            local adminScrollGo = GameObject("AdminScrollView")
+            adminScrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AdminUIList, adminScrollGo)
+            adminScrollGo:SetActive(_G.ModMainTab == "ADMIN")
 
-            -- TOGGLE HIỆN NÚT EXEC
-            local execToggleGo = GameObject("ExecBtn_Toggle")
-            execToggleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, execToggleGo)
-            local etRt = execToggleGo:AddComponent(typeof(RectTransform))
-            etRt.anchorMin, etRt.anchorMax, etRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            etRt.anchoredPosition = Vector2(20, -95)
-            etRt.sizeDelta = Vector2(170, 32)
-            local etBg = GameObject("Bg")
-            etBg.transform:SetParent(execToggleGo.transform, false)
-            local etBgRt = etBg:AddComponent(typeof(RectTransform))
-            etBgRt.anchorMin, etBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            etBgRt.sizeDelta = Vector2(0, 0)
-            local etBgImg = etBg:AddComponent(typeof(Image))
+            local adminScrollRt = adminScrollGo:AddComponent(typeof(RectTransform))
+            adminScrollRt.anchorMin, adminScrollRt.anchorMax, adminScrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            adminScrollRt.anchoredPosition = Vector2(10, -55)
+            adminScrollRt.sizeDelta = Vector2(700, 515)
 
-            local etTxtGo = GameObject("Text")
-            etTxtGo.transform:SetParent(execToggleGo.transform, false)
-            local etTxtRt = etTxtGo:AddComponent(typeof(RectTransform))
-            etTxtRt.anchorMin, etTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            etTxtRt.sizeDelta = Vector2(0, 0)
-            local etTxt = etTxtGo:AddComponent(typeof(Text))
-            etTxt.raycastTarget = false
-            etTxt.fontSize = 15
-            etTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then etTxt.font = defaultFont end
+            local adminScrollImg = adminScrollGo:AddComponent(typeof(Image))
+            adminScrollImg.color = Color(0, 0, 0, 0.01)
 
-            local etBtn = execToggleGo:AddComponent(typeof(Button))
-            local function UpdateExecToggleLabel()
-                if _G.Mod_ExecBtn_Visible then
-                    etBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                    etTxt.text = "HIỆN NÚT EXEC: ON"
-                    etTxt.color = Color.white
-                else
-                    etBgImg.color = Color(0.5, 0.2, 0.2, 1)
-                    etTxt.text = "HIỆN NÚT EXEC: OFF"
-                    etTxt.color = Color.white
-                end
-            end
-            UpdateExecToggleLabel()
+            local adminScrollRect = adminScrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            adminScrollRect.horizontal = false
+            adminScrollRect.vertical = true
+            adminScrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            adminScrollRect.scrollSensitivity = 30
 
-            etBtn.onClick:AddListener(function()
-                _G.Mod_ExecBtn_Visible = not _G.Mod_ExecBtn_Visible
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_ExecBtn_Visible", _G.Mod_ExecBtn_Visible and 1 or 0)
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateExecToggleLabel()
-                if _G.Mod_FloatingExecBtnGo then
-                    _G.Mod_FloatingExecBtnGo:SetActive(_G.Mod_IsAdmin == true and _G.Mod_ExecBtn_Visible == true)
-                end
-            end)
+            local adminVpGo = GameObject("Viewport")
+            adminVpGo.transform:SetParent(adminScrollGo.transform, false)
+            local adminVpRt = adminVpGo:AddComponent(typeof(RectTransform))
+            adminVpRt.anchorMin, adminVpRt.anchorMax, adminVpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            adminVpRt.sizeDelta = Vector2(0, 0)
+            adminVpGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
 
-            -- ADMIN TIER CONTROLS (Chuyển chính & Chuyển phụ cho Admin test) - Đặt ngang hàng với nút Exec (Y = -95, X = 200)
-            local adminTierGo = GameObject("AdminTierRow")
-            adminTierGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, adminTierGo)
-            local atRt = adminTierGo:AddComponent(typeof(RectTransform))
-            atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            atRt.anchoredPosition = Vector2(200, -95)
-            atRt.sizeDelta = Vector2(390, 32)
+            local adminContentGo = GameObject("Content")
+            adminContentGo.transform:SetParent(adminVpGo.transform, false)
+            local adminContentRt = adminContentGo:AddComponent(typeof(RectTransform))
+            adminContentRt.anchorMin, adminContentRt.anchorMax, adminContentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            adminContentRt.anchoredPosition = Vector2(0, 0)
+            adminContentRt.sizeDelta = Vector2(0, 750)
 
-            local atLblGo = GameObject("Lbl")
-            atLblGo.transform:SetParent(adminTierGo.transform, false)
-            local atLblRt = atLblGo:AddComponent(typeof(RectTransform))
-            atLblRt.anchorMin, atLblRt.anchorMax, atLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            atLblRt.anchoredPosition = Vector2(0, 0)
-            atLblRt.sizeDelta = Vector2(135, 30)
-            local atLblTxt = atLblGo:AddComponent(typeof(Text))
-            atLblTxt.text = "Cấu hình Chuyển:"
-            atLblTxt.color, atLblTxt.fontSize = Color.yellow, 15
-            atLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then atLblTxt.font = defaultFont end
+            adminScrollRect.viewport = adminVpRt
+            adminScrollRect.content = adminContentRt
 
-            -- Label Chính
-            local priLblGo = GameObject("PriLbl")
-            priLblGo.transform:SetParent(adminTierGo.transform, false)
-            local priLblRt = priLblGo:AddComponent(typeof(RectTransform))
-            priLblRt.anchorMin, priLblRt.anchorMax, priLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            priLblRt.anchoredPosition = Vector2(140, 0)
-            priLblRt.sizeDelta = Vector2(45, 30)
-            local priLblTxt = priLblGo:AddComponent(typeof(Text))
-            priLblTxt.text = "Chính:"
-            priLblTxt.color, priLblTxt.fontSize = Color.white, 15
-            priLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then priLblTxt.font = defaultFont end
-
-            -- Input Primary Tier
-            local priInGo = GameObject("PriInput")
-            priInGo.transform:SetParent(adminTierGo.transform, false)
-            local priInRt = priInGo:AddComponent(typeof(RectTransform))
-            priInRt.anchorMin, priInRt.anchorMax, priInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            priInRt.anchoredPosition = Vector2(185, 0)
-            priInRt.sizeDelta = Vector2(40, 30)
-            local priInImg = priInGo:AddComponent(typeof(Image))
-            priInImg.color = Color(1, 1, 1, 1)
-            local priTxtGo = GameObject("Text")
-            priTxtGo.transform:SetParent(priInGo.transform, false)
-            local pTxtRt = priTxtGo:AddComponent(typeof(RectTransform))
-            pTxtRt.anchorMin, pTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            pTxtRt.offsetMin, pTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
-            local priTxt = priTxtGo:AddComponent(typeof(Text))
-            priTxt.text = tostring(_G.Mod_Config_Reincarnation_Primary or 8)
-            priTxt.color, priTxt.fontSize = Color.black, 16
-            priTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then priTxt.font = defaultFont end
-            local priField = priInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            priField.textComponent = priTxt
-            priField.text = tostring(_G.Mod_Config_Reincarnation_Primary or 8)
-
-            -- Label Phụ
-            local secLblGo = GameObject("SecLbl")
-            secLblGo.transform:SetParent(adminTierGo.transform, false)
-            local secLblRt = secLblGo:AddComponent(typeof(RectTransform))
-            secLblRt.anchorMin, secLblRt.anchorMax, secLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            secLblRt.anchoredPosition = Vector2(230, 0)
-            secLblRt.sizeDelta = Vector2(35, 30)
-            local secLblTxt = secLblGo:AddComponent(typeof(Text))
-            secLblTxt.text = "Phụ:"
-            secLblTxt.color, secLblTxt.fontSize = Color.white, 15
-            secLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then secLblTxt.font = defaultFont end
-
-            -- Input Secondary Tier
-            local secInGo = GameObject("SecInput")
-            secInGo.transform:SetParent(adminTierGo.transform, false)
-            local secInRt = secInGo:AddComponent(typeof(RectTransform))
-            secInRt.anchorMin, secInRt.anchorMax, secInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            secInRt.anchoredPosition = Vector2(265, 0)
-            secInRt.sizeDelta = Vector2(40, 30)
-            local secInImg = secInGo:AddComponent(typeof(Image))
-            secInImg.color = Color(1, 1, 1, 1)
-            local secTxtGo = GameObject("Text")
-            secTxtGo.transform:SetParent(secInGo.transform, false)
-            local sTxtRt = secTxtGo:AddComponent(typeof(RectTransform))
-            sTxtRt.anchorMin, sTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            sTxtRt.offsetMin, sTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
-            local secTxt = secTxtGo:AddComponent(typeof(Text))
-            secTxt.text = tostring(_G.Mod_Config_Reincarnation_Secondary or 7)
-            secTxt.color, secTxt.fontSize = Color.black, 16
-            secTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then secTxt.font = defaultFont end
-            local secField = secInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            secField.textComponent = secTxt
-            secField.text = tostring(_G.Mod_Config_Reincarnation_Secondary or 7)
-
-            -- Nút Áp dụng Admin Tier
-            local applyBtnGo = GameObject("ApplyTierBtn")
-            applyBtnGo.transform:SetParent(adminTierGo.transform, false)
-            local applyRt = applyBtnGo:AddComponent(typeof(RectTransform))
-            applyRt.anchorMin, applyRt.anchorMax, applyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            applyRt.anchoredPosition = Vector2(310, 0)
-            applyRt.sizeDelta = Vector2(75, 30)
-            local applyImg = applyBtnGo:AddComponent(typeof(Image))
-            applyImg.color = Color(0.2, 0.6, 0.2, 1)
-            local applyBtn = applyBtnGo:AddComponent(typeof(Button))
-            local aTxtGo = GameObject("Text")
-            aTxtGo.transform:SetParent(applyBtnGo.transform, false)
-            local aTxtRt = aTxtGo:AddComponent(typeof(RectTransform))
-            aTxtRt.anchorMin, aTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            aTxtRt.sizeDelta = Vector2(0, 0)
-            local aTxt = aTxtGo:AddComponent(typeof(Text))
-            aTxt.text = "Áp dụng"
-            aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
-            if defaultFont then aTxt.font = defaultFont end
-
-            applyBtn.onClick:AddListener(function()
-                local pVal = tonumber(priField.text) or 8
-                local sVal = tonumber(secField.text) or 7
-                if pVal < 3 or pVal > 12 then pVal = 8 end
-                if sVal < 3 or sVal > 12 then sVal = 7 end
-                _G.Mod_Config_Reincarnation_Primary = pVal
-                _G.Mod_Config_Reincarnation_Secondary = sVal
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_PrimaryTier", pVal)
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_SecondaryTier", sVal)
-                CS.UnityEngine.PlayerPrefs.Save()
-                if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                if UpdateBossWatchUIText then UpdateBossWatchUIText() end
-                if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
-                if _G.FloatingWordUtility then
-                    _G.FloatingWordUtility.QuickMsg(string.format(
-                        "Đã áp dụng: Chính C%d, Phụ C%d!", pVal, sVal))
-                end
-            end)
-
-            -- Separator
-            local sepGo = GameObject("AdminSep")
-            sepGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, sepGo)
-            local sepRt = sepGo:AddComponent(typeof(RectTransform))
-            sepRt.anchorMin, sepRt.anchorMax, sepRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            sepRt.anchoredPosition = Vector2(0, -135)
-            sepRt.sizeDelta = Vector2(1000, 20)
-            local sepTxt = sepGo:AddComponent(typeof(Text))
-            sepTxt.raycastTarget = false
-            sepTxt.text = "------------------------------------------------------------------------------------------------------------"
-            sepTxt.color = Color(0.7, 0.7, 0.7, 1)
-            sepTxt.fontSize = 18
-            sepTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then sepTxt.font = defaultFont end
-
-            -- =========================================================================
-            -- [MOD FEATURE]: CÔNG CỤ TẠO TOKEN BẢN QUYỀN (KEYGEN VIP 2026 CHO ADMIN)
-            -- Mô tả: Giao diện tạo Token bản quyền hỗ trợ cấu hình Chuyển C3-C12, chọn Ngày Bắt Đầu (Start Date)
-            --        và nhập Số Ngày Tùy Chỉnh (Custom Days) đồng bộ chuẩn thuật toán MD5 + Base64 với Keygen.ps1.
-            -- =========================================================================
-            -- Token Generator Title
-            local tokTitleGo = GameObject("TokTitle")
-            tokTitleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, tokTitleGo)
-            local tokRt = tokTitleGo:AddComponent(typeof(RectTransform))
-            tokRt.anchorMin, tokRt.anchorMax, tokRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            tokRt.anchoredPosition = Vector2(0, -150)
-            tokRt.sizeDelta = Vector2(500, 26)
-            local tokTxt = tokTitleGo:AddComponent(typeof(Text))
-            tokTxt.text = "CÔNG CỤ TẠO TOKEN BẢN QUYỀN (VIP 2026)"
-            tokTxt.color, tokTxt.fontSize, tokTxt.alignment = Color(0.2, 1, 0.2, 1), 19, TextAnchor.MiddleCenter
-            if defaultFont then tokTxt.font = defaultFont end
-
-            local adminDeviceCode = ""
-            local adminUID = "ALL"
-            local adminMainTier = 8
-            local adminSubTier = 7
-            local adminStartDateStr = ""
-            local adminCustomDaysStr = ""
-            local adminDuration = 3
-            local adminGenToken = ""
-
-            -- 1. Input Device Code (MD5) Label
-            local inCodeLblGo = GameObject("InCodeLbl")
-            inCodeLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, inCodeLblGo)
-            local inCodeLblRt = inCodeLblGo:AddComponent(typeof(RectTransform))
-            inCodeLblRt.anchorMin, inCodeLblRt.anchorMax, inCodeLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeLblRt.anchoredPosition = Vector2(20, -178)
-            inCodeLblRt.sizeDelta = Vector2(400, 18)
-            local inCodeLblTxt = inCodeLblGo:AddComponent(typeof(Text))
-            inCodeLblTxt.text = "1. Mã MD5 thiết bị của khách:"
-            inCodeLblTxt.color, inCodeLblTxt.fontSize = Color.white, 14
-            if defaultFont then inCodeLblTxt.font = defaultFont end
-
-            -- Input Device Code Field
-            local inCodeGo = GameObject("InCodeInput")
-            inCodeGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, inCodeGo)
-            local inCodeRt = inCodeGo:AddComponent(typeof(RectTransform))
-            inCodeRt.anchorMin, inCodeRt.anchorMax, inCodeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inCodeRt.anchoredPosition = Vector2(20, -196)
-            inCodeRt.sizeDelta = Vector2(550, 32)
-            local inCodeImg = inCodeGo:AddComponent(typeof(Image))
-            inCodeImg.color = Color(1, 1, 1, 1)
-
-            local textGo = GameObject("Text")
-            textGo.transform:SetParent(inCodeGo.transform, false)
-            local txtRt = textGo:AddComponent(typeof(RectTransform))
-            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            txtRt.offsetMin, txtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local inCodeTxt = textGo:AddComponent(typeof(Text))
-            inCodeTxt.text = adminDeviceCode
-            inCodeTxt.color, inCodeTxt.fontSize = Color.black, 15
-            inCodeTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then inCodeTxt.font = defaultFont end
-
-            local inputField = inCodeGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            inputField.textComponent = inCodeTxt
-            inputField.text = adminDeviceCode
-
-            inputField.onValueChanged:AddListener(function(val)
-                adminDeviceCode = val
-            end)
-
-            local pasteBtnGo = GameObject("AdminPasteBtn")
-            pasteBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, pasteBtnGo)
-            local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
-            pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-20, -196)
-            pasteRt.sizeDelta = Vector2(120, 32)
-            local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
-            pasteImg.color = Color(0.8, 0.4, 0, 1)
-            local pasteBtn = pasteBtnGo:AddComponent(typeof(Button))
-            pasteBtn.targetGraphic = pasteImg
-            local pTxtGo = GameObject("PasteTxt")
-            pTxtGo.transform:SetParent(pasteBtnGo.transform, false)
-            local pTxtRt = pTxtGo:AddComponent(typeof(RectTransform))
-            pTxtRt.anchorMin, pTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            pTxtRt.offsetMin, pTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local pTxt = pTxtGo:AddComponent(typeof(Text))
-            pTxt.text = "Paste MD5"
-            pTxt.raycastTarget = false
-            pTxt.color, pTxt.fontSize, pTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
-            if defaultFont then pTxt.font = defaultFont end
-
-            pasteBtn.onClick:AddListener(function()
-                adminDeviceCode = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
-                inputField.text = adminDeviceCode
-            end)
-
-            -- 2. Input UID Label
-            local inUidLblGo = GameObject("InUidLbl")
-            inUidLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, inUidLblGo)
-            local inUidLblRt = inUidLblGo:AddComponent(typeof(RectTransform))
-            inUidLblRt.anchorMin, inUidLblRt.anchorMax, inUidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidLblRt.anchoredPosition = Vector2(20, -232)
-            inUidLblRt.sizeDelta = Vector2(400, 18)
-            local inUidLblTxt = inUidLblGo:AddComponent(typeof(Text))
-            inUidLblTxt.text = "2. UID của khách (Ấn Enter hoặc để trống là ALL):"
-            inUidLblTxt.color, inUidLblTxt.fontSize = Color.white, 14
-            if defaultFont then inUidLblTxt.font = defaultFont end
-
-            -- Input UID Field
-            local inUidGo = GameObject("InUidInput")
-            inUidGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, inUidGo)
-            local inUidRt = inUidGo:AddComponent(typeof(RectTransform))
-            inUidRt.anchorMin, inUidRt.anchorMax, inUidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            inUidRt.anchoredPosition = Vector2(20, -250)
-            inUidRt.sizeDelta = Vector2(550, 32)
-            local inUidImg = inUidGo:AddComponent(typeof(Image))
-            inUidImg.color = Color(1, 1, 1, 1)
-
-            local uidTextGo = GameObject("Text")
-            uidTextGo.transform:SetParent(inUidGo.transform, false)
-            local uTxtRt = uidTextGo:AddComponent(typeof(RectTransform))
-            uTxtRt.anchorMin, uTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            uTxtRt.offsetMin, uTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local inUidTxt = uidTextGo:AddComponent(typeof(Text))
-            inUidTxt.text = adminUID
-            inUidTxt.color, inUidTxt.fontSize = Color.black, 15
-            inUidTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then inUidTxt.font = defaultFont end
-
-            local uidInputField = inUidGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            uidInputField.textComponent = inUidTxt
-            uidInputField.text = adminUID
-
-            uidInputField.onValueChanged:AddListener(function(val)
-                adminUID = val
-            end)
-
-            local pasteUidBtnGo = GameObject("AdminPasteUidBtn")
-            pasteUidBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, pasteUidBtnGo)
-            local pasteUidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
-            pasteUidRt.anchorMin, pasteUidRt.anchorMax, pasteUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteUidRt.anchoredPosition = Vector2(-20, -250)
-            pasteUidRt.sizeDelta = Vector2(120, 32)
-            local pasteUidImg = pasteUidBtnGo:AddComponent(typeof(Image))
-            pasteUidImg.color = Color(0.8, 0.4, 0, 1)
-            local pasteUidBtn = pasteUidBtnGo:AddComponent(typeof(Button))
-            pasteUidBtn.targetGraphic = pasteUidImg
-            local pUidTxtGo = GameObject("PasteUidTxt")
-            pUidTxtGo.transform:SetParent(pasteUidBtnGo.transform, false)
-            local pUidTxtRt = pUidTxtGo:AddComponent(typeof(RectTransform))
-            pUidTxtRt.anchorMin, pUidTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            pUidTxtRt.offsetMin, pUidTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local pUidTxt = pUidTxtGo:AddComponent(typeof(Text))
-            pUidTxt.text = "Paste UID"
-            pUidTxt.raycastTarget = false
-            pUidTxt.color, pUidTxt.fontSize, pUidTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
-            if defaultFont then pUidTxt.font = defaultFont end
-
-            pasteUidBtn.onClick:AddListener(function()
-                adminUID = CS.UnityEngine.GUIUtility.systemCopyBuffer or "ALL"
-                uidInputField.text = adminUID
-            end)
-
-            -- 3. INPUT CHUYỂN CHÍNH & CHUYỂN PHỤ CHO TOKEN
-            local tokTierRowGo = GameObject("TokTierRow")
-            tokTierRowGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, tokTierRowGo)
-            local ttrRt = tokTierRowGo:AddComponent(typeof(RectTransform))
-            ttrRt.anchorMin, ttrRt.anchorMax, ttrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ttrRt.anchoredPosition = Vector2(20, -286)
-            ttrRt.sizeDelta = Vector2(680, 28)
-
-            -- Chuyển chính (3-12)
-            local tokMainLblGo = GameObject("TokMainLbl")
-            tokMainLblGo.transform:SetParent(tokTierRowGo.transform, false)
-            local tmRt = tokMainLblGo:AddComponent(typeof(RectTransform))
-            tmRt.anchorMin, tmRt.anchorMax, tmRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tmRt.anchoredPosition = Vector2(0, 0)
-            tmRt.sizeDelta = Vector2(145, 28)
-            local tmTxt = tokMainLblGo:AddComponent(typeof(Text))
-            tmTxt.text = "3. Chuyển chính (3-12):"
-            tmTxt.color, tmTxt.fontSize = Color.white, 14
-            tmTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then tmTxt.font = defaultFont end
-
-            local tokMainInGo = GameObject("TokMainInput")
-            tokMainInGo.transform:SetParent(tokTierRowGo.transform, false)
-            local tmiRt = tokMainInGo:AddComponent(typeof(RectTransform))
-            tmiRt.anchorMin, tmiRt.anchorMax, tmiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tmiRt.anchoredPosition = Vector2(148, 0)
-            tmiRt.sizeDelta = Vector2(55, 28)
-            local tmiImg = tokMainInGo:AddComponent(typeof(Image))
-            tmiImg.color = Color(1, 1, 1, 1)
-            local tmiTextGo = GameObject("Text")
-            tmiTextGo.transform:SetParent(tokMainInGo.transform, false)
-            local tmitRt = tmiTextGo:AddComponent(typeof(RectTransform))
-            tmitRt.anchorMin, tmitRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            tmitRt.offsetMin, tmitRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
-            local tmiTxt = tmiTextGo:AddComponent(typeof(Text))
-            tmiTxt.text = tostring(adminMainTier)
-            tmiTxt.color, tmiTxt.fontSize = Color.black, 15
-            tmiTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then tmiTxt.font = defaultFont end
-            local tmiField = tokMainInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            tmiField.textComponent = tmiTxt
-            tmiField.text = tostring(adminMainTier)
-            tmiField.onValueChanged:AddListener(function(val)
-                adminMainTier = tonumber(val) or 8
-            end)
-
-            -- Chuyển phụ (3-12)
-            local tokSubLblGo = GameObject("TokSubLbl")
-            tokSubLblGo.transform:SetParent(tokTierRowGo.transform, false)
-            local tsRt = tokSubLblGo:AddComponent(typeof(RectTransform))
-            tsRt.anchorMin, tsRt.anchorMax, tsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tsRt.anchoredPosition = Vector2(220, 0)
-            tsRt.sizeDelta = Vector2(140, 28)
-            local tsTxt = tokSubLblGo:AddComponent(typeof(Text))
-            tsTxt.text = "4. Chuyển phụ (3-12):"
-            tsTxt.color, tsTxt.fontSize = Color.white, 14
-            tsTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then tsTxt.font = defaultFont end
-
-            local tokSubInGo = GameObject("TokSubInput")
-            tokSubInGo.transform:SetParent(tokTierRowGo.transform, false)
-            local tsiRt = tokSubInGo:AddComponent(typeof(RectTransform))
-            tsiRt.anchorMin, tsiRt.anchorMax, tsiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tsiRt.anchoredPosition = Vector2(362, 0)
-            tsiRt.sizeDelta = Vector2(55, 28)
-            local tsiImg = tokSubInGo:AddComponent(typeof(Image))
-            tsiImg.color = Color(1, 1, 1, 1)
-            local tsiTextGo = GameObject("Text")
-            tsiTextGo.transform:SetParent(tokSubInGo.transform, false)
-            local tsitRt = tsiTextGo:AddComponent(typeof(RectTransform))
-            tsitRt.anchorMin, tsitRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            tsitRt.offsetMin, tsitRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
-            local tsiTxt = tsiTextGo:AddComponent(typeof(Text))
-            tsiTxt.text = tostring(adminSubTier)
-            tsiTxt.color, tsiTxt.fontSize = Color.black, 15
-            tsiTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then tsiTxt.font = defaultFont end
-            local tsiField = tokSubInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            tsiField.textComponent = tsiTxt
-            tsiField.text = tostring(adminSubTier)
-            tsiField.onValueChanged:AddListener(function(val)
-                adminSubTier = tonumber(val) or 7
-            end)
-
-            -- 4. INPUT NGÀY BẮT ĐẦU (START DATE) - MỚI THEO KEYGEN.PS1
-            local startDateRowGo = GameObject("StartDateRow")
-            startDateRowGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, startDateRowGo)
-            local sdrRt = startDateRowGo:AddComponent(typeof(RectTransform))
-            sdrRt.anchorMin, sdrRt.anchorMax, sdrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            sdrRt.anchoredPosition = Vector2(20, -318)
-            sdrRt.sizeDelta = Vector2(680, 28)
-
-            local sdLblGo = GameObject("StartDateLbl")
-            sdLblGo.transform:SetParent(startDateRowGo.transform, false)
-            local sdLblRt = sdLblGo:AddComponent(typeof(RectTransform))
-            sdLblRt.anchorMin, sdLblRt.anchorMax, sdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            sdLblRt.anchoredPosition = Vector2(0, 0)
-            sdLblRt.sizeDelta = Vector2(130, 28)
-            local sdLblTxt = sdLblGo:AddComponent(typeof(Text))
-            sdLblTxt.text = "5. Ngày bắt đầu:"
-            sdLblTxt.color, sdLblTxt.fontSize = Color.white, 14
-            sdLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sdLblTxt.font = defaultFont end
-
-            local sdInGo = GameObject("StartDateInput")
-            sdInGo.transform:SetParent(startDateRowGo.transform, false)
-            local sdiRt = sdInGo:AddComponent(typeof(RectTransform))
-            sdiRt.anchorMin, sdiRt.anchorMax, sdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            sdiRt.anchoredPosition = Vector2(135, 0)
-            sdiRt.sizeDelta = Vector2(335, 28)
-            local sdiImg = sdInGo:AddComponent(typeof(Image))
-            sdiImg.color = Color(1, 1, 1, 1)
-
-            local sdiTextGo = GameObject("Text")
-            sdiTextGo.transform:SetParent(sdInGo.transform, false)
-            local sditRt = sdiTextGo:AddComponent(typeof(RectTransform))
-            sditRt.anchorMin, sditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            sditRt.offsetMin, sditRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local sdiTxt = sdiTextGo:AddComponent(typeof(Text))
-            sdiTxt.text = adminStartDateStr
-            sdiTxt.color, sdiTxt.fontSize = Color.black, 14
-            sdiTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sdiTxt.font = defaultFont end
-
-            local startDateField = sdInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            startDateField.textComponent = sdiTxt
-            startDateField.text = adminStartDateStr
-            startDateField.onValueChanged:AddListener(function(val)
-                adminStartDateStr = val or ""
-            end)
-
-            -- Nút "Hiện Tại" (Now)
-            local nowBtnGo = GameObject("NowBtn")
-            nowBtnGo.transform:SetParent(startDateRowGo.transform, false)
-            local nowRt = nowBtnGo:AddComponent(typeof(RectTransform))
-            nowRt.anchorMin, nowRt.anchorMax, nowRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            nowRt.anchoredPosition = Vector2(478, 0)
-            nowRt.sizeDelta = Vector2(85, 28)
-            local nowImg = nowBtnGo:AddComponent(typeof(Image))
-            nowImg.color = Color(0.15, 0.45, 0.75, 1)
-            local nowBtn = nowBtnGo:AddComponent(typeof(Button))
-            nowBtn.targetGraphic = nowImg
-            local nowTxtGo = GameObject("Txt")
-            nowTxtGo.transform:SetParent(nowBtnGo.transform, false)
-            local nowtRt = nowTxtGo:AddComponent(typeof(RectTransform))
-            nowtRt.anchorMin, nowtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            nowtRt.sizeDelta = Vector2(0, 0)
-            local nowTxt = nowTxtGo:AddComponent(typeof(Text))
-            nowTxt.text = "Hiện Tại"
-            nowTxt.raycastTarget = false
-            nowTxt.color, nowTxt.fontSize, nowTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
-            if defaultFont then nowTxt.font = defaultFont end
-
-            nowBtn.onClick:AddListener(function()
-                local nowStr = os.date("%d/%m/%Y")
-                adminStartDateStr = nowStr
-                startDateField.text = nowStr
-            end)
-
-            -- Nút "Xóa" (Trống = Lấy giờ thực khi tạo)
-            local clearDateBtnGo = GameObject("ClearDateBtn")
-            clearDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
-            local clrRt = clearDateBtnGo:AddComponent(typeof(RectTransform))
-            clrRt.anchorMin, clrRt.anchorMax, clrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            clrRt.anchoredPosition = Vector2(568, 0)
-            clrRt.sizeDelta = Vector2(50, 28)
-            local clrImg = clearDateBtnGo:AddComponent(typeof(Image))
-            clrImg.color = Color(0.4, 0.4, 0.4, 1)
-            local clrBtn = clearDateBtnGo:AddComponent(typeof(Button))
-            clrBtn.targetGraphic = clrImg
-            local clrTxtGo = GameObject("Txt")
-            clrTxtGo.transform:SetParent(clearDateBtnGo.transform, false)
-            local clrtRt = clrTxtGo:AddComponent(typeof(RectTransform))
-            clrtRt.anchorMin, clrtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            clrtRt.sizeDelta = Vector2(0, 0)
-            local clrTxt = clrTxtGo:AddComponent(typeof(Text))
-            clrTxt.text = "Xóa"
-            clrTxt.raycastTarget = false
-            clrTxt.color, clrTxt.fontSize, clrTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
-            if defaultFont then clrTxt.font = defaultFont end
-
-            clrBtn.onClick:AddListener(function()
-                adminStartDateStr = ""
-                startDateField.text = ""
-            end)
-
-            -- Nút "Paste" Date
-            local pasteDateBtnGo = GameObject("PasteDateBtn")
-            pasteDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
-            local pdtRt = pasteDateBtnGo:AddComponent(typeof(RectTransform))
-            pdtRt.anchorMin, pdtRt.anchorMax, pdtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            pdtRt.anchoredPosition = Vector2(623, 0)
-            pdtRt.sizeDelta = Vector2(55, 28)
-            local pdtImg = pasteDateBtnGo:AddComponent(typeof(Image))
-            pdtImg.color = Color(0.8, 0.4, 0, 1)
-            local pdtBtn = pasteDateBtnGo:AddComponent(typeof(Button))
-            pdtBtn.targetGraphic = pdtImg
-            local pdtTxtGo = GameObject("Txt")
-            pdtTxtGo.transform:SetParent(pasteDateBtnGo.transform, false)
-            local pdttRt = pdtTxtGo:AddComponent(typeof(RectTransform))
-            pdttRt.anchorMin, pdttRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            pdttRt.sizeDelta = Vector2(0, 0)
-            local pdtTxt = pdtTxtGo:AddComponent(typeof(Text))
-            pdtTxt.text = "Paste"
-            pdtTxt.raycastTarget = false
-            pdtTxt.color, pdtTxt.fontSize, pdtTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
-            if defaultFont then pdtTxt.font = defaultFont end
-
-            pdtBtn.onClick:AddListener(function()
-                local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
-                clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
-                adminStartDateStr = clip
-                startDateField.text = clip
-            end)
-
-            -- 5. THỜI HẠN & Ô NHẬP SỐ NGÀY TÙY CHỈNH - MỚI THEO KEYGEN.PS1
-            local optsTitleGo = GameObject("OptsTitle")
-            optsTitleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, optsTitleGo)
-            local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
-            optsRt.anchorMin, optsRt.anchorMax, optsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optsRt.anchoredPosition = Vector2(20, -350)
-            optsRt.sizeDelta = Vector2(95, 26)
-            local optsTxt = optsTitleGo:AddComponent(typeof(Text))
-            optsTxt.text = "6. Thời hạn:"
-            optsTxt.color, optsTxt.fontSize = Color.white, 14
-            optsTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then optsTxt.font = defaultFont end
-
-            local optDurationText = GameObject("OptDurTxt")
-            optDurationText.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, optDurationText)
-            local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
-            optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            optDTkRt.anchoredPosition = Vector2(115, -350)
-            optDTkRt.sizeDelta = Vector2(210, 26)
-            local optDTkTxt = optDurationText:AddComponent(typeof(Text))
-            optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
-            optDTkTxt.color, optDTkTxt.fontSize = Color.white, 15
-            optDTkTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then optDTkTxt.font = defaultFont end
-
-            -- Label Số ngày tùy chỉnh
-            local customDaysLblGo = GameObject("CustomDaysLbl")
-            customDaysLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, customDaysLblGo)
-            local cdlRt = customDaysLblGo:AddComponent(typeof(RectTransform))
-            cdlRt.anchorMin, cdlRt.anchorMax, cdlRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            cdlRt.anchoredPosition = Vector2(330, -350)
-            cdlRt.sizeDelta = Vector2(130, 26)
-            local cdlTxt = customDaysLblGo:AddComponent(typeof(Text))
-            cdlTxt.text = "Tùy chỉnh (ngày):"
-            cdlTxt.color, cdlTxt.fontSize = Color.yellow, 14
-            cdlTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then cdlTxt.font = defaultFont end
-
-            -- Input Số ngày tùy chỉnh
-            local customDaysInGo = GameObject("CustomDaysInput")
-            customDaysInGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, customDaysInGo)
-            local cdiRt = customDaysInGo:AddComponent(typeof(RectTransform))
-            cdiRt.anchorMin, cdiRt.anchorMax, cdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            cdiRt.anchoredPosition = Vector2(462, -350)
-            cdiRt.sizeDelta = Vector2(75, 26)
-            local cdiImg = customDaysInGo:AddComponent(typeof(Image))
-            cdiImg.color = Color(1, 1, 1, 1)
-
-            local cdiTextGo = GameObject("Text")
-            cdiTextGo.transform:SetParent(customDaysInGo.transform, false)
-            local cditRt = cdiTextGo:AddComponent(typeof(RectTransform))
-            cditRt.anchorMin, cditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            cditRt.offsetMin, cditRt.offsetMax = Vector2(3, 0), Vector2(-3, 0)
-            local cdiTxt = cdiTextGo:AddComponent(typeof(Text))
-            cdiTxt.text = adminCustomDaysStr
-            cdiTxt.color, cdiTxt.fontSize = Color.black, 14
-            cdiTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then cdiTxt.font = defaultFont end
-
-            local customDaysField = customDaysInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            customDaysField.textComponent = cdiTxt
-            customDaysField.text = adminCustomDaysStr
-
-            customDaysField.onValueChanged:AddListener(function(val)
-                adminCustomDaysStr = val or ""
-                local num = tonumber(val)
-                if num and num > 0 then
-                    adminDuration = num
-                    optDTkTxt.text = "<color=green>[ Tùy chỉnh: " .. tostring(num) .. " Ngày ]</color>"
-                elseif val == "" then
-                    optDTkTxt.text = "<color=green>[ " .. tostring(adminDuration) .. " Ngày ]</color>"
-                end
-            end)
-
-            -- Nút 60 Giây (Test Hết Hạn - giống lựa chọn 8 trong Keygen.ps1)
-            local btn60sGo = GameObject("OptBtn_60s")
-            btn60sGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, btn60sGo)
-            local b60Rt = btn60sGo:AddComponent(typeof(RectTransform))
-            b60Rt.anchorMin, b60Rt.anchorMax, b60Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            b60Rt.anchoredPosition = Vector2(550, -350)
-            b60Rt.sizeDelta = Vector2(130, 26)
-            local b60Img = btn60sGo:AddComponent(typeof(Image))
-            b60Img.color = Color(0.65, 0.25, 0.1, 1)
-            local b60Btn = btn60sGo:AddComponent(typeof(Button))
-            b60Btn.targetGraphic = b60Img
-            local b60TxtGo = GameObject("Txt")
-            b60TxtGo.transform:SetParent(btn60sGo.transform, false)
-            local b60tRt = b60TxtGo:AddComponent(typeof(RectTransform))
-            b60tRt.anchorMin, b60tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            b60tRt.sizeDelta = Vector2(0, 0)
-            local b60Txt = b60TxtGo:AddComponent(typeof(Text))
-            b60Txt.text = "60s (Test Hạn)"
-            b60Txt.raycastTarget = false
-            b60Txt.color, b60Txt.fontSize, b60Txt.alignment = Color.white, 13, TextAnchor.MiddleCenter
-            if defaultFont then b60Txt.font = defaultFont end
-
-            b60Btn.onClick:AddListener(function()
-                adminDuration = 0.000694444
-                if customDaysField then customDaysField.text = "" end
-                adminCustomDaysStr = ""
-                optDTkTxt.text = "<color=orange>[ 60 Giây (Test) ]</color>"
-            end)
-
-            -- Hàng các nút thời hạn Preset
-            local function CreateOptBtn(x, y, label, durVal, w)
-                local btnGo = GameObject("OptBtn_" .. tostring(durVal))
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AdminUIList, btnGo)
+            -- Helper: Tạo Button nhỏ
+            local function CreateSmallBtn(parent, x, y, w, h, text, bgColor, onClick)
+                local btnGo = GameObject("Btn_" .. text)
+                btnGo.transform:SetParent(parent.transform, false)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(w or 85, 28)
+                rt.sizeDelta = Vector2(w, h)
                 local img = btnGo:AddComponent(typeof(Image))
-                img.color = Color(0.25, 0.25, 0.25, 1)
+                img.color = bgColor or Color(0.2, 0.5, 0.8, 1)
+
                 local btn = btnGo:AddComponent(typeof(Button))
                 btn.targetGraphic = img
-                local txtGo = GameObject("Txt")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local tRt = txtGo:AddComponent(typeof(RectTransform))
+
+                local tGo = GameObject("Txt")
+                tGo.transform:SetParent(btnGo.transform, false)
+                local tRt = tGo:AddComponent(typeof(RectTransform))
                 tRt.anchorMin, tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                tRt.offsetMin, tRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-                local tTxt = txtGo:AddComponent(typeof(Text))
-                tTxt.text = label
+                tRt.sizeDelta = Vector2(0, 0)
+                local tTxt = tGo:AddComponent(typeof(Text))
                 tTxt.raycastTarget = false
-                tTxt.color, tTxt.fontSize, tTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
+                tTxt.text = text
+                tTxt.color = Color.white
+                tTxt.fontSize = 12
+                tTxt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then tTxt.font = defaultFont end
 
-                btn.onClick:AddListener(function()
-                    adminDuration = durVal
-                    if customDaysField then customDaysField.text = "" end
-                    adminCustomDaysStr = ""
-                    optDTkTxt.text = "<color=green>[ " .. label .. " ]</color>"
+                if onClick then
+                    btn.onClick:AddListener(onClick)
+                end
+                return btnGo, btn, tTxt, img
+            end
+
+            -- Helper: Tạo InputField nhỏ
+            local function CreateSmallInput(parent, x, y, w, h, defaultVal, isReadOnly)
+                local inGo = GameObject("Input")
+                inGo.transform:SetParent(parent.transform, false)
+                local rt = inGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(w, h)
+                local img = inGo:AddComponent(typeof(Image))
+                img.color = Color(1, 1, 1, 1)
+
+                local tGo = GameObject("Text")
+                tGo.transform:SetParent(inGo.transform, false)
+                local tRt = tGo:AddComponent(typeof(RectTransform))
+                tRt.anchorMin, tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                tRt.offsetMin, tRt.offsetMax = Vector2(4, 0), Vector2(-4, 0)
+                local txt = tGo:AddComponent(typeof(Text))
+                txt.text = defaultVal or ""
+                txt.color = Color.black
+                txt.fontSize = 13
+                txt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then txt.font = defaultFont end
+
+                local inp = inGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                inp.textComponent = txt
+                inp.text = defaultVal or ""
+                if isReadOnly then
+                    inp.readOnly = true
+                end
+                return inGo, inp, txt
+            end
+
+            -- =========================================================================
+            -- PHẦN 1: ADMIN CONTROL PANEL (NÚT EXEC & CẤU HÌNH CHUYỂN)
+            -- =========================================================================
+            local function BuildAdminControlSection(parentGo)
+                local titleGo = GameObject("AdminTitle")
+                titleGo.transform:SetParent(parentGo.transform, false)
+                local titleRt = titleGo:AddComponent(typeof(RectTransform))
+                titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+                titleRt.anchoredPosition = Vector2(0, -10)
+                titleRt.sizeDelta = Vector2(500, 26)
+                local titleTxt = titleGo:AddComponent(typeof(Text))
+                titleTxt.text = "=== ADMIN CONTROL PANEL ==="
+                titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 20, TextAnchor.MiddleCenter
+                if defaultFont then titleTxt.font = defaultFont end
+
+                -- TOGGLE HIỆN NÚT EXEC
+                local execToggleGo = GameObject("ExecBtn_Toggle")
+                execToggleGo.transform:SetParent(parentGo.transform, false)
+                local etRt = execToggleGo:AddComponent(typeof(RectTransform))
+                etRt.anchorMin, etRt.anchorMax, etRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                etRt.anchoredPosition = Vector2(15, -42)
+                etRt.sizeDelta = Vector2(170, 32)
+                local etBg = GameObject("Bg")
+                etBg.transform:SetParent(execToggleGo.transform, false)
+                local etBgRt = etBg:AddComponent(typeof(RectTransform))
+                etBgRt.anchorMin, etBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                etBgRt.sizeDelta = Vector2(0, 0)
+                local etBgImg = etBg:AddComponent(typeof(Image))
+
+                local etTxtGo = GameObject("Text")
+                etTxtGo.transform:SetParent(execToggleGo.transform, false)
+                local etTxtRt = etTxtGo:AddComponent(typeof(RectTransform))
+                etTxtRt.anchorMin, etTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                etTxtRt.sizeDelta = Vector2(0, 0)
+                local etTxt = etTxtGo:AddComponent(typeof(Text))
+                etTxt.raycastTarget = false
+                etTxt.fontSize = 15
+                etTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then etTxt.font = defaultFont end
+
+                local etBtn = execToggleGo:AddComponent(typeof(Button))
+                local function UpdateExecToggleLabel()
+                    if _G.Mod_ExecBtn_Visible then
+                        etBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                        etTxt.text = "HIỆN NÚT EXEC: ON"
+                        etTxt.color = Color.white
+                    else
+                        etBgImg.color = Color(0.5, 0.2, 0.2, 1)
+                        etTxt.text = "HIỆN NÚT EXEC: OFF"
+                        etTxt.color = Color.white
+                    end
+                end
+                UpdateExecToggleLabel()
+
+                etBtn.onClick:AddListener(function()
+                    _G.Mod_ExecBtn_Visible = not _G.Mod_ExecBtn_Visible
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_ExecBtn_Visible", _G.Mod_ExecBtn_Visible and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateExecToggleLabel()
+                    if _G.Mod_FloatingExecBtnGo then
+                        _G.Mod_FloatingExecBtnGo:SetActive(_G.Mod_IsAdmin == true and _G.Mod_ExecBtn_Visible == true)
+                    end
+                end)
+
+                -- ADMIN TIER CONTROLS (Chuyển chính & Chuyển phụ cho Admin test)
+                local adminTierGo = GameObject("AdminTierRow")
+                adminTierGo.transform:SetParent(parentGo.transform, false)
+                local atRt = adminTierGo:AddComponent(typeof(RectTransform))
+                atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                atRt.anchoredPosition = Vector2(195, -42)
+                atRt.sizeDelta = Vector2(390, 32)
+
+                local atLblGo = GameObject("Lbl")
+                atLblGo.transform:SetParent(adminTierGo.transform, false)
+                local atLblRt = atLblGo:AddComponent(typeof(RectTransform))
+                atLblRt.anchorMin, atLblRt.anchorMax, atLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                atLblRt.anchoredPosition = Vector2(0, 0)
+                atLblRt.sizeDelta = Vector2(135, 30)
+                local atLblTxt = atLblGo:AddComponent(typeof(Text))
+                atLblTxt.text = "Cấu hình Chuyển:"
+                atLblTxt.color, atLblTxt.fontSize = Color.yellow, 15
+                atLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then atLblTxt.font = defaultFont end
+
+                -- Label Chính
+                local priLblGo = GameObject("PriLbl")
+                priLblGo.transform:SetParent(adminTierGo.transform, false)
+                local priLblRt = priLblGo:AddComponent(typeof(RectTransform))
+                priLblRt.anchorMin, priLblRt.anchorMax, priLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                priLblRt.anchoredPosition = Vector2(140, 0)
+                priLblRt.sizeDelta = Vector2(45, 30)
+                local priLblTxt = priLblGo:AddComponent(typeof(Text))
+                priLblTxt.text = "Chính:"
+                priLblTxt.color, priLblTxt.fontSize = Color.white, 15
+                priLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then priLblTxt.font = defaultFont end
+
+                -- Input Primary Tier
+                local priInGo = GameObject("PriInput")
+                priInGo.transform:SetParent(adminTierGo.transform, false)
+                local priInRt = priInGo:AddComponent(typeof(RectTransform))
+                priInRt.anchorMin, priInRt.anchorMax, priInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                priInRt.anchoredPosition = Vector2(185, 0)
+                priInRt.sizeDelta = Vector2(40, 30)
+                local priInImg = priInGo:AddComponent(typeof(Image))
+                priInImg.color = Color(1, 1, 1, 1)
+
+                local priInTxtGo = GameObject("Text")
+                priInTxtGo.transform:SetParent(priInGo.transform, false)
+                local priInTxtRt = priInTxtGo:AddComponent(typeof(RectTransform))
+                priInTxtRt.anchorMin, priInTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                priInTxtRt.offsetMin, priInTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
+                local priInTxt = priInTxtGo:AddComponent(typeof(Text))
+                priInTxt.text = tostring(_G.Mod_Admin_PrimaryTier or 8)
+                priInTxt.color, priInTxt.fontSize = Color.black, 15
+                priInTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then priInTxt.font = defaultFont end
+
+                local priInField = priInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                priInField.textComponent = priInTxt
+                priInField.text = tostring(_G.Mod_Admin_PrimaryTier or 8)
+                priInField.onValueChanged:AddListener(function(val)
+                    local num = tonumber(val)
+                    if num and num >= 3 and num <= 12 then
+                        _G.Mod_Admin_PrimaryTier = num
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_PrimaryTier", num)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        if _G.Mod_UpdateClassDisplay then _G.Mod_UpdateClassDisplay() end
+                    end
+                end)
+
+                -- Label Phụ
+                local secLblGo = GameObject("SecLbl")
+                secLblGo.transform:SetParent(adminTierGo.transform, false)
+                local secLblRt = secLblGo:AddComponent(typeof(RectTransform))
+                secLblRt.anchorMin, secLblRt.anchorMax, secLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                secLblRt.anchoredPosition = Vector2(240, 0)
+                secLblRt.sizeDelta = Vector2(40, 30)
+                local secLblTxt = secLblGo:AddComponent(typeof(Text))
+                secLblTxt.text = "Phụ:"
+                secLblTxt.color, secLblTxt.fontSize = Color.white, 15
+                secLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then secLblTxt.font = defaultFont end
+
+                -- Input Secondary Tier
+                local secInGo = GameObject("SecInput")
+                secInGo.transform:SetParent(adminTierGo.transform, false)
+                local secInRt = secInGo:AddComponent(typeof(RectTransform))
+                secInRt.anchorMin, secInRt.anchorMax, secInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                secInRt.anchoredPosition = Vector2(280, 0)
+                secInRt.sizeDelta = Vector2(40, 30)
+                local secInImg = secInGo:AddComponent(typeof(Image))
+                secInImg.color = Color(1, 1, 1, 1)
+
+                local secInTxtGo = GameObject("Text")
+                secInTxtGo.transform:SetParent(secInGo.transform, false)
+                local secInTxtRt = secInTxtGo:AddComponent(typeof(RectTransform))
+                secInTxtRt.anchorMin, secInTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                secInTxtRt.offsetMin, secInTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
+                local secInTxt = secInTxtGo:AddComponent(typeof(Text))
+                secInTxt.text = tostring(_G.Mod_Admin_SecondaryTier or 7)
+                secInTxt.color, secInTxt.fontSize = Color.black, 15
+                secInTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then secInTxt.font = defaultFont end
+
+                local secInField = secInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                secInField.textComponent = secInTxt
+                secInField.text = tostring(_G.Mod_Admin_SecondaryTier or 7)
+                secInField.onValueChanged:AddListener(function(val)
+                    local num = tonumber(val)
+                    if num and num >= 3 and num <= 12 then
+                        _G.Mod_Admin_SecondaryTier = num
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_SecondaryTier", num)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        if _G.Mod_UpdateClassDisplay then _G.Mod_UpdateClassDisplay() end
+                    end
                 end)
             end
 
-            CreateOptBtn(20, -382, "3 Ngày", 3, 90)
-            CreateOptBtn(118, -382, "7 Ngày", 7, 90)
-            CreateOptBtn(216, -382, "15 Ngày", 15, 90)
-            CreateOptBtn(314, -382, "30 Ngày", 30, 90)
-            CreateOptBtn(412, -382, "60 Ngày", 60, 90)
-            CreateOptBtn(510, -382, "90 Ngày", 90, 85)
-            CreateOptBtn(602, -382, "365 Ngày", 365, 80)
+            -- =========================================================================
+            -- PHẦN 2: CÔNG CỤ TẠO TOKEN BẢN QUYỀN (KEYGEN VIP 2026 CHO ADMIN)
+            -- =========================================================================
+            local function BuildAdminKeygenSection(parentGo)
+                local kg = {
+                    deviceCode = "",
+                    uid = "ALL",
+                    duration = 3,
+                    customDaysStr = "",
+                    startDateStr = os.date("%d/%m/%Y"),
+                    mainTier = 8,
+                    subTier = 7,
+                    genToken = ""
+                }
 
-            -- 6. NÚT TẠO TOKEN
-            local genBtnGo = GameObject("AdminGenBtn")
-            genBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, genBtnGo)
-            local genRt = genBtnGo:AddComponent(typeof(RectTransform))
-            genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-            genRt.anchoredPosition = Vector2(0, -416)
-            genRt.sizeDelta = Vector2(250, 36)
-            local genImg = genBtnGo:AddComponent(typeof(Image))
-            genImg.color = Color(0, 0.75, 0, 1)
-            local genBtn = genBtnGo:AddComponent(typeof(Button))
-            genBtn.targetGraphic = genImg
-            local gTxtGo = GameObject("GenTxt")
-            gTxtGo.transform:SetParent(genBtnGo.transform, false)
-            local gTxtRt = gTxtGo:AddComponent(typeof(RectTransform))
-            gTxtRt.anchorMin, gTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            gTxtRt.offsetMin, gTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local gTxt = gTxtGo:AddComponent(typeof(Text))
-            gTxt.text = "TẠO TOKEN"
-            gTxt.raycastTarget = false
-            gTxt.color, gTxt.fontSize, gTxt.alignment = Color.white, 19, TextAnchor.MiddleCenter
-            if defaultFont then gTxt.font = defaultFont end
+                local kgTitleGo = GameObject("KeygenTitle")
+                kgTitleGo.transform:SetParent(parentGo.transform, false)
+                local kgtRt = kgTitleGo:AddComponent(typeof(RectTransform))
+                kgtRt.anchorMin, kgtRt.anchorMax, kgtRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+                kgtRt.anchoredPosition = Vector2(0, -82)
+                kgtRt.sizeDelta = Vector2(500, 24)
+                local kgtTxt = kgTitleGo:AddComponent(typeof(Text))
+                kgtTxt.text = "=== TẠO TOKEN BẢN QUYỀN VIP 2026 ==="
+                kgtTxt.color, kgtTxt.fontSize, kgtTxt.alignment = Color.cyan, 17, TextAnchor.MiddleCenter
+                if defaultFont then kgtTxt.font = defaultFont end
 
-            -- 7. Ô HIỂN THỊ KẾT QUẢ TOKEN & NÚT COPY
-            local resGo = GameObject("ResTxt")
-            resGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, resGo)
-            local resRt = resGo:AddComponent(typeof(RectTransform))
-            resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            resRt.anchoredPosition = Vector2(20, -462)
-            resRt.sizeDelta = Vector2(550, 56)
-            local resTextGo = GameObject("Text")
-            resTextGo.transform:SetParent(resGo.transform, false)
-            local resTextRt = resTextGo:AddComponent(typeof(RectTransform))
-            resTextRt.anchorMin, resTextRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            resTextRt.sizeDelta = Vector2(0, 0)
-            local resTextComp = resTextGo:AddComponent(typeof(Text))
-            resTextComp.raycastTarget = false
-            resTextComp.color = Color.cyan
-            resTextComp.fontSize = 14
-            resTextComp.alignment = TextAnchor.UpperLeft
-            if defaultFont then resTextComp.font = defaultFont end
+                -- 1. INPUT DEVICE CODE (MD5)
+                local devCodeRowGo = GameObject("DevCodeRow")
+                devCodeRowGo.transform:SetParent(parentGo.transform, false)
+                local dcrRt = devCodeRowGo:AddComponent(typeof(RectTransform))
+                dcrRt.anchorMin, dcrRt.anchorMax, dcrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                dcrRt.anchoredPosition = Vector2(15, -112)
+                dcrRt.sizeDelta = Vector2(670, 32)
 
-            local resTxt
-            pcall(function()
-                local resImg = resGo:AddComponent(typeof(Image))
-                resImg.color = Color(0, 0, 0, 0.5)
-                resTxt = resGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-                resTxt.textComponent = resTextComp
-                resTxt.text = ""
-            end)
+                local inLblGo = GameObject("InLbl")
+                inLblGo.transform:SetParent(devCodeRowGo.transform, false)
+                local inLblRt = inLblGo:AddComponent(typeof(RectTransform))
+                inLblRt.anchorMin, inLblRt.anchorMax, inLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                inLblRt.anchoredPosition = Vector2(0, 0)
+                inLblRt.sizeDelta = Vector2(130, 32)
+                local inLblTxt = inLblGo:AddComponent(typeof(Text))
+                inLblTxt.text = "1. Mã MD5 thiết bị:"
+                inLblTxt.color, inLblTxt.fontSize = Color.white, 14
+                inLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then inLblTxt.font = defaultFont end
 
-            local copyTokBtnGo = GameObject("CopyTokBtn")
-            copyTokBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AdminUIList, copyTokBtnGo)
-            local ctRt = copyTokBtnGo:AddComponent(typeof(RectTransform))
-            ctRt.anchorMin, ctRt.anchorMax, ctRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            ctRt.anchoredPosition = Vector2(-20, -462)
-            ctRt.sizeDelta = Vector2(120, 56)
-            local ctImg = copyTokBtnGo:AddComponent(typeof(Image))
-            ctImg.color = Color(0.2, 0.6, 1, 1)
-            local copyTokBtn = copyTokBtnGo:AddComponent(typeof(Button))
-            copyTokBtn.targetGraphic = ctImg
-            local ctTxtGo = GameObject("CTxt")
-            ctTxtGo.transform:SetParent(copyTokBtnGo.transform, false)
-            local ctTxtRt = ctTxtGo:AddComponent(typeof(RectTransform))
-            ctTxtRt.anchorMin, ctTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            ctTxtRt.offsetMin, ctTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local ctTxt = ctTxtGo:AddComponent(typeof(Text))
-            ctTxt.text = "Copy Token"
-            ctTxt.raycastTarget = false
-            ctTxt.color, ctTxt.fontSize, ctTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
-            if defaultFont then ctTxt.font = defaultFont end
+                local inputGo = GameObject("KeygenInput")
+                inputGo.transform:SetParent(devCodeRowGo.transform, false)
+                local inRt = inputGo:AddComponent(typeof(RectTransform))
+                inRt.anchorMin, inRt.anchorMax, inRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                inRt.anchoredPosition = Vector2(135, 0)
+                inRt.sizeDelta = Vector2(335, 32)
+                local inImg = inputGo:AddComponent(typeof(Image))
+                inImg.color = Color(1, 1, 1, 1)
 
-            copyTokBtn.onClick:AddListener(function()
-                if adminGenToken ~= "" then
-                    CS.UnityEngine.GUIUtility.systemCopyBuffer = adminGenToken
-                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                        _G.FloatingWordUtility.QuickMsg("Đã copy Token!")
+                local inTextGo = GameObject("Text")
+                inTextGo.transform:SetParent(inputGo.transform, false)
+                local inTextRt = inTextGo:AddComponent(typeof(RectTransform))
+                inTextRt.anchorMin, inTextRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                inTextRt.offsetMin, inTextRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local inTxt = inTextGo:AddComponent(typeof(Text))
+                inTxt.text = kg.deviceCode
+                inTxt.color, inTxt.fontSize = Color.black, 14
+                inTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then inTxt.font = defaultFont end
+
+                local inputField = inputGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                inputField.textComponent = inTxt
+                inputField.text = kg.deviceCode
+                inputField.onValueChanged:AddListener(function(val)
+                    kg.deviceCode = val or ""
+                end)
+
+                -- Nút "Lấy Máy Này" (Get My Device)
+                local getMyDevBtnGo = GameObject("GetMyDevBtn")
+                getMyDevBtnGo.transform:SetParent(devCodeRowGo.transform, false)
+                local gmdRt = getMyDevBtnGo:AddComponent(typeof(RectTransform))
+                gmdRt.anchorMin, gmdRt.anchorMax, gmdRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                gmdRt.anchoredPosition = Vector2(478, 0)
+                gmdRt.sizeDelta = Vector2(90, 32)
+                local gmdImg = getMyDevBtnGo:AddComponent(typeof(Image))
+                gmdImg.color = Color(0.15, 0.45, 0.75, 1)
+                local gmdBtn = getMyDevBtnGo:AddComponent(typeof(Button))
+                gmdBtn.targetGraphic = gmdImg
+                local gmdTxtGo = GameObject("Txt")
+                gmdTxtGo.transform:SetParent(getMyDevBtnGo.transform, false)
+                local gmdtRt = gmdTxtGo:AddComponent(typeof(RectTransform))
+                gmdtRt.anchorMin, gmdtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                gmdtRt.sizeDelta = Vector2(0, 0)
+                local gmdTxt = gmdTxtGo:AddComponent(typeof(Text))
+                gmdTxt.text = "Lấy Máy Này"
+                gmdTxt.raycastTarget = false
+                gmdTxt.color, gmdTxt.fontSize, gmdTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then gmdTxt.font = defaultFont end
+
+                gmdBtn.onClick:AddListener(function()
+                    local myCode = (_G.Mod_GetDeviceCode and _G.Mod_GetDeviceCode()) or ""
+                    if myCode ~= "" then
+                        kg.deviceCode = myCode
+                        inputField.text = myCode
                     end
-                end
-            end)
+                end)
 
-            -- HÀM PARSE NGÀY BẮT ĐẦU SANG UNIX TIMESTAMP (GIỐNG KEYGEN.PS1)
-            local function ParseDateTimeToUnix(dateStr)
-                if not dateStr or dateStr == "" then
-                    return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
-                end
-                dateStr = string.gsub(dateStr, "^%s*(.-)%s*$", "%1")
-                if dateStr == "" then
-                    return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
-                end
+                -- Nút "Paste MD5"
+                local pasteDevBtnGo = GameObject("PasteDevBtn")
+                pasteDevBtnGo.transform:SetParent(devCodeRowGo.transform, false)
+                local pdevRt = pasteDevBtnGo:AddComponent(typeof(RectTransform))
+                pdevRt.anchorMin, pdevRt.anchorMax, pdevRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                pdevRt.anchoredPosition = Vector2(574, 0)
+                pdevRt.sizeDelta = Vector2(96, 32)
+                local pdevImg = pasteDevBtnGo:AddComponent(typeof(Image))
+                pdevImg.color = Color(0.8, 0.4, 0, 1)
+                local pdevBtn = pasteDevBtnGo:AddComponent(typeof(Button))
+                pdevBtn.targetGraphic = pdevImg
+                local pdevTxtGo = GameObject("Txt")
+                pdevTxtGo.transform:SetParent(pasteDevBtnGo.transform, false)
+                local pdevtRt = pdevTxtGo:AddComponent(typeof(RectTransform))
+                pdevtRt.anchorMin, pdevtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                pdevtRt.sizeDelta = Vector2(0, 0)
+                local pdevTxt = pdevTxtGo:AddComponent(typeof(Text))
+                pdevTxt.text = "Paste MD5"
+                pdevTxt.raycastTarget = false
+                pdevTxt.color, pdevTxt.fontSize, pdevTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
+                if defaultFont then pdevTxt.font = defaultFont end
 
-                local status, parsedUnix = pcall(function()
-                    local culture = CS.System.Globalization.CultureInfo.InvariantCulture
-                    local styles = CS.System.Globalization.DateTimeStyles.None
-                    local formats = {
-                        "dd/MM/yyyy HH:mm:ss", "dd/MM/yyyy HH:mm", "dd/MM/yyyy",
-                        "d/M/yyyy HH:mm:ss", "d/M/yyyy HH:mm", "d/M/yyyy",
-                        "yyyy-MM-dd HH:mm:ss", "yyyy-MM-dd HH:mm", "yyyy-MM-dd",
-                        "yyyy/MM/dd HH:mm:ss", "yyyy/MM/dd HH:mm", "yyyy/MM/dd",
-                        "dd-MM-yyyy HH:mm:ss", "dd-MM-yyyy HH:mm", "dd-MM-yyyy"
-                    }
-                    for i = 1, #formats do
-                        local success, dt = CS.System.DateTime.TryParseExact(dateStr, formats[i], culture, styles)
-                        if success and dt then
-                            local epoch = CS.System.DateTime(1970, 1, 1, 0, 0, 0, CS.System.DateTimeKind.Utc)
-                            local diff = dt:ToUniversalTime():Subtract(epoch).TotalSeconds
-                            return math.floor(diff)
+                pdevBtn.onClick:AddListener(function()
+                    local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                    clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
+                    kg.deviceCode = clip
+                    inputField.text = clip
+                end)
+
+                -- 2. INPUT UID
+                local uidRowGo = GameObject("UidRow")
+                uidRowGo.transform:SetParent(parentGo.transform, false)
+                local uidrRt = uidRowGo:AddComponent(typeof(RectTransform))
+                uidrRt.anchorMin, uidrRt.anchorMax, uidrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                uidrRt.anchoredPosition = Vector2(15, -149)
+                uidrRt.sizeDelta = Vector2(670, 32)
+
+                local uidLblGo = GameObject("UidLbl")
+                uidLblGo.transform:SetParent(uidRowGo.transform, false)
+                local uidLblRt = uidLblGo:AddComponent(typeof(RectTransform))
+                uidLblRt.anchorMin, uidLblRt.anchorMax, uidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                uidLblRt.anchoredPosition = Vector2(0, 0)
+                uidLblRt.sizeDelta = Vector2(130, 32)
+                local uidLblTxt = uidLblGo:AddComponent(typeof(Text))
+                uidLblTxt.text = "2. UID Nhân Vật:"
+                uidLblTxt.color, uidLblTxt.fontSize = Color.white, 14
+                uidLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then uidLblTxt.font = defaultFont end
+
+                local uidInputGo = GameObject("UidKeygenInput")
+                uidInputGo.transform:SetParent(uidRowGo.transform, false)
+                local uidinRt = uidInputGo:AddComponent(typeof(RectTransform))
+                uidinRt.anchorMin, uidinRt.anchorMax, uidinRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                uidinRt.anchoredPosition = Vector2(135, 0)
+                uidinRt.sizeDelta = Vector2(335, 32)
+                local uidinImg = uidInputGo:AddComponent(typeof(Image))
+                uidinImg.color = Color(1, 1, 1, 1)
+
+                local uidinTextGo = GameObject("Text")
+                uidinTextGo.transform:SetParent(uidInputGo.transform, false)
+                local uidinTextRt = uidinTextGo:AddComponent(typeof(RectTransform))
+                uidinTextRt.anchorMin, uidinTextRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                uidinTextRt.offsetMin, uidinTextRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local uidinTxt = uidinTextGo:AddComponent(typeof(Text))
+                uidinTxt.text = kg.uid
+                uidinTxt.color, uidinTxt.fontSize = Color.black, 14
+                uidinTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then uidinTxt.font = defaultFont end
+
+                local uidInputField = uidInputGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                uidInputField.textComponent = uidinTxt
+                uidInputField.text = kg.uid
+                uidInputField.onValueChanged:AddListener(function(val)
+                    kg.uid = val or "ALL"
+                end)
+
+                -- Nút "Lấy UID Này"
+                local getMyUidBtnGo = GameObject("GetMyUidBtn")
+                getMyUidBtnGo.transform:SetParent(uidRowGo.transform, false)
+                local gmuRt = getMyUidBtnGo:AddComponent(typeof(RectTransform))
+                gmuRt.anchorMin, gmuRt.anchorMax, gmuRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                gmuRt.anchoredPosition = Vector2(478, 0)
+                gmuRt.sizeDelta = Vector2(90, 32)
+                local gmuImg = getMyUidBtnGo:AddComponent(typeof(Image))
+                gmuImg.color = Color(0.15, 0.45, 0.75, 1)
+                local gmuBtn = getMyUidBtnGo:AddComponent(typeof(Button))
+                gmuBtn.targetGraphic = gmdImg
+                local gmuTxtGo = GameObject("Txt")
+                gmuTxtGo.transform:SetParent(getMyUidBtnGo.transform, false)
+                local gmutRt = gmuTxtGo:AddComponent(typeof(RectTransform))
+                gmutRt.anchorMin, gmutRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                gmutRt.sizeDelta = Vector2(0, 0)
+                local gmuTxt = gmuTxtGo:AddComponent(typeof(Text))
+                gmuTxt.text = "Lấy UID Này"
+                gmuTxt.raycastTarget = false
+                gmuTxt.color, gmuTxt.fontSize, gmuTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then gmuTxt.font = defaultFont end
+
+                gmuBtn.onClick:AddListener(function()
+                    local myUid = (_G.Mod_GetCharacterUID and _G.Mod_GetCharacterUID()) or ""
+                    if myUid ~= "" and myUid ~= "Vui lòng đăng nhập nhân vật để lấy UID" then
+                        kg.uid = myUid
+                        uidInputField.text = myUid
+                    end
+                end)
+
+                -- Nút "Paste UID"
+                local pasteUidBtnGo = GameObject("PasteUidBtn")
+                pasteUidBtnGo.transform:SetParent(uidRowGo.transform, false)
+                local puidRt = pasteUidBtnGo:AddComponent(typeof(RectTransform))
+                puidRt.anchorMin, puidRt.anchorMax, puidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                puidRt.anchoredPosition = Vector2(574, 0)
+                puidRt.sizeDelta = Vector2(96, 32)
+                local puidImg = pasteUidBtnGo:AddComponent(typeof(Image))
+                puidImg.color = Color(0.8, 0.4, 0, 1)
+                local puidBtn = pasteUidBtnGo:AddComponent(typeof(Button))
+                puidBtn.targetGraphic = puidImg
+                local puidTxtGo = GameObject("Txt")
+                puidTxtGo.transform:SetParent(pasteUidBtnGo.transform, false)
+                local puidtRt = puidTxtGo:AddComponent(typeof(RectTransform))
+                puidtRt.anchorMin, puidtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                puidtRt.sizeDelta = Vector2(0, 0)
+                local puidTxt = puidTxtGo:AddComponent(typeof(Text))
+                puidTxt.text = "Paste UID"
+                puidTxt.raycastTarget = false
+                puidTxt.color, puidTxt.fontSize, puidTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
+                if defaultFont then puidTxt.font = defaultFont end
+
+                puidBtn.onClick:AddListener(function()
+                    local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                    clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
+                    kg.uid = clip
+                    uidInputField.text = clip
+                end)
+
+                -- 3. CẤU HÌNH TIER PHỤ (TOKEN TIERS)
+                local tierRowGo = GameObject("TierRow")
+                tierRowGo.transform:SetParent(parentGo.transform, false)
+                local trRt = tierRowGo:AddComponent(typeof(RectTransform))
+                trRt.anchorMin, trRt.anchorMax, trRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                trRt.anchoredPosition = Vector2(15, -186)
+                trRt.sizeDelta = Vector2(670, 32)
+
+                local trLblGo = GameObject("TrLbl")
+                trLblGo.transform:SetParent(tierRowGo.transform, false)
+                local trLblRt = trLblGo:AddComponent(typeof(RectTransform))
+                trLblRt.anchorMin, trLblRt.anchorMax, trLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                trLblRt.anchoredPosition = Vector2(0, 0)
+                trLblRt.sizeDelta = Vector2(130, 32)
+                local trLblTxt = trLblGo:AddComponent(typeof(Text))
+                trLblTxt.text = "3. Chuyển chính:"
+                trLblTxt.color, trLblTxt.fontSize = Color.white, 14
+                trLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then trLblTxt.font = defaultFont end
+
+                -- Input Token Primary Tier
+                local tpiGo = GameObject("TokenPriInput")
+                tpiGo.transform:SetParent(tierRowGo.transform, false)
+                local tpiRt = tpiGo:AddComponent(typeof(RectTransform))
+                tpiRt.anchorMin, tpiRt.anchorMax, tpiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tpiRt.anchoredPosition = Vector2(135, 0)
+                tpiRt.sizeDelta = Vector2(50, 32)
+                local tpiImg = tpiGo:AddComponent(typeof(Image))
+                tpiImg.color = Color(1, 1, 1, 1)
+
+                local tpiTextGo = GameObject("Text")
+                tpiTextGo.transform:SetParent(tpiGo.transform, false)
+                local tpitRt = tpiTextGo:AddComponent(typeof(RectTransform))
+                tpitRt.anchorMin, tpitRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                tpitRt.offsetMin, tpitRt.offsetMax = Vector2(3, 0), Vector2(-3, 0)
+                local tpiTxt = tpiTextGo:AddComponent(typeof(Text))
+                tpiTxt.text = tostring(kg.mainTier)
+                tpiTxt.color, tpiTxt.fontSize = Color.black, 15
+                tpiTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then tpiTxt.font = defaultFont end
+
+                local tpiField = tpiGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                tpiField.textComponent = tpiTxt
+                tpiField.text = tostring(kg.mainTier)
+                tpiField.onValueChanged:AddListener(function(val)
+                    kg.mainTier = tonumber(val) or 8
+                end)
+
+                -- Label Chuyển phụ
+                local trLbl2Go = GameObject("TrLbl2")
+                trLbl2Go.transform:SetParent(tierRowGo.transform, false)
+                local trLbl2Rt = trLbl2Go:AddComponent(typeof(RectTransform))
+                trLbl2Rt.anchorMin, trLbl2Rt.anchorMax, trLbl2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                trLbl2Rt.anchoredPosition = Vector2(210, 0)
+                trLbl2Rt.sizeDelta = Vector2(150, 32)
+                local trLbl2Txt = trLbl2Go:AddComponent(typeof(Text))
+                trLbl2Txt.text = "4. Chuyển phụ (3-12):"
+                trLbl2Txt.color, trLbl2Txt.fontSize = Color.white, 14
+                trLbl2Txt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then trLbl2Txt.font = defaultFont end
+
+                -- Input Token Secondary Tier
+                local tsiGo = GameObject("TokenSecInput")
+                tsiGo.transform:SetParent(tierRowGo.transform, false)
+                local tsiRt = tsiGo:AddComponent(typeof(RectTransform))
+                tsiRt.anchorMin, tsiRt.anchorMax, tsiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tsiRt.anchoredPosition = Vector2(365, 0)
+                tsiRt.sizeDelta = Vector2(50, 32)
+                local tsiImg = tsiGo:AddComponent(typeof(Image))
+                tsiImg.color = Color(1, 1, 1, 1)
+
+                local tsiTextGo = GameObject("Text")
+                tsiTextGo.transform:SetParent(tsiGo.transform, false)
+                local tsitRt = tsiTextGo:AddComponent(typeof(RectTransform))
+                tsitRt.anchorMin, tsitRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                tsitRt.offsetMin, tsitRt.offsetMax = Vector2(3, 0), Vector2(-3, 0)
+                local tsiTxt = tsiTextGo:AddComponent(typeof(Text))
+                tsiTxt.text = tostring(kg.subTier)
+                tsiTxt.color, tsiTxt.fontSize = Color.black, 15
+                tsiTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then tsiTxt.font = defaultFont end
+
+                local tsiField = tsiGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                tsiField.textComponent = tsiTxt
+                tsiField.text = tostring(kg.subTier)
+                tsiField.onValueChanged:AddListener(function(val)
+                    kg.subTier = tonumber(val) or 7
+                end)
+
+                -- 4. INPUT NGÀY BẮT ĐẦU (START DATE)
+                local startDateRowGo = GameObject("StartDateRow")
+                startDateRowGo.transform:SetParent(parentGo.transform, false)
+                local sdrRt = startDateRowGo:AddComponent(typeof(RectTransform))
+                sdrRt.anchorMin, sdrRt.anchorMax, sdrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                sdrRt.anchoredPosition = Vector2(15, -222)
+                sdrRt.sizeDelta = Vector2(670, 28)
+
+                local sdLblGo = GameObject("StartDateLbl")
+                sdLblGo.transform:SetParent(startDateRowGo.transform, false)
+                local sdLblRt = sdLblGo:AddComponent(typeof(RectTransform))
+                sdLblRt.anchorMin, sdLblRt.anchorMax, sdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                sdLblRt.anchoredPosition = Vector2(0, 0)
+                sdLblRt.sizeDelta = Vector2(130, 28)
+                local sdLblTxt = sdLblGo:AddComponent(typeof(Text))
+                sdLblTxt.text = "5. Ngày bắt đầu:"
+                sdLblTxt.color, sdLblTxt.fontSize = Color.white, 14
+                sdLblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then sdLblTxt.font = defaultFont end
+
+                local sdInGo = GameObject("StartDateInput")
+                sdInGo.transform:SetParent(startDateRowGo.transform, false)
+                local sdiRt = sdInGo:AddComponent(typeof(RectTransform))
+                sdiRt.anchorMin, sdiRt.anchorMax, sdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                sdiRt.anchoredPosition = Vector2(135, 0)
+                sdiRt.sizeDelta = Vector2(335, 28)
+                local sdiImg = sdInGo:AddComponent(typeof(Image))
+                sdiImg.color = Color(1, 1, 1, 1)
+
+                local sdiTextGo = GameObject("Text")
+                sdiTextGo.transform:SetParent(sdInGo.transform, false)
+                local sditRt = sdiTextGo:AddComponent(typeof(RectTransform))
+                sditRt.anchorMin, sditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                sditRt.offsetMin, sditRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local sdiTxt = sdiTextGo:AddComponent(typeof(Text))
+                sdiTxt.text = kg.startDateStr
+                sdiTxt.color, sdiTxt.fontSize = Color.black, 14
+                sdiTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then sdiTxt.font = defaultFont end
+
+                local startDateField = sdInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                startDateField.textComponent = sdiTxt
+                startDateField.text = kg.startDateStr
+                startDateField.onValueChanged:AddListener(function(val)
+                    kg.startDateStr = val or ""
+                end)
+
+                -- Nút "Hiện Tại" (Now)
+                local nowBtnGo = GameObject("NowBtn")
+                nowBtnGo.transform:SetParent(startDateRowGo.transform, false)
+                local nowRt = nowBtnGo:AddComponent(typeof(RectTransform))
+                nowRt.anchorMin, nowRt.anchorMax, nowRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                nowRt.anchoredPosition = Vector2(478, 0)
+                nowRt.sizeDelta = Vector2(85, 28)
+                local nowImg = nowBtnGo:AddComponent(typeof(Image))
+                nowImg.color = Color(0.15, 0.45, 0.75, 1)
+                local nowBtn = nowBtnGo:AddComponent(typeof(Button))
+                nowBtn.targetGraphic = nowImg
+                local nowTxtGo = GameObject("Txt")
+                nowTxtGo.transform:SetParent(nowBtnGo.transform, false)
+                local nowtRt = nowTxtGo:AddComponent(typeof(RectTransform))
+                nowtRt.anchorMin, nowtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                nowtRt.sizeDelta = Vector2(0, 0)
+                local nowTxt = nowTxtGo:AddComponent(typeof(Text))
+                nowTxt.text = "Hiện Tại"
+                nowTxt.raycastTarget = false
+                nowTxt.color, nowTxt.fontSize, nowTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then nowTxt.font = defaultFont end
+
+                nowBtn.onClick:AddListener(function()
+                    local nowStr = os.date("%d/%m/%Y")
+                    kg.startDateStr = nowStr
+                    startDateField.text = nowStr
+                end)
+
+                -- Nút "Xóa"
+                local clearDateBtnGo = GameObject("ClearDateBtn")
+                clearDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
+                local clrRt = clearDateBtnGo:AddComponent(typeof(RectTransform))
+                clrRt.anchorMin, clrRt.anchorMax, clrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                clrRt.anchoredPosition = Vector2(568, 0)
+                clrRt.sizeDelta = Vector2(48, 28)
+                local clrImg = clearDateBtnGo:AddComponent(typeof(Image))
+                clrImg.color = Color(0.4, 0.4, 0.4, 1)
+                local clrBtn = clearDateBtnGo:AddComponent(typeof(Button))
+                clrBtn.targetGraphic = clrImg
+                local clrTxtGo = GameObject("Txt")
+                clrTxtGo.transform:SetParent(clearDateBtnGo.transform, false)
+                local clrtRt = clrTxtGo:AddComponent(typeof(RectTransform))
+                clrtRt.anchorMin, clrtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                clrtRt.sizeDelta = Vector2(0, 0)
+                local clrTxt = clrTxtGo:AddComponent(typeof(Text))
+                clrTxt.text = "Xóa"
+                clrTxt.raycastTarget = false
+                clrTxt.color, clrTxt.fontSize, clrTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then clrTxt.font = defaultFont end
+
+                clrBtn.onClick:AddListener(function()
+                    kg.startDateStr = ""
+                    startDateField.text = ""
+                end)
+
+                -- Nút "Paste" Date
+                local pasteDateBtnGo = GameObject("PasteDateBtn")
+                pasteDateBtnGo.transform:SetParent(startDateRowGo.transform, false)
+                local pdtRt = pasteDateBtnGo:AddComponent(typeof(RectTransform))
+                pdtRt.anchorMin, pdtRt.anchorMax, pdtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                pdtRt.anchoredPosition = Vector2(620, 0)
+                pdtRt.sizeDelta = Vector2(50, 28)
+                local pdtImg = pasteDateBtnGo:AddComponent(typeof(Image))
+                pdtImg.color = Color(0.8, 0.4, 0, 1)
+                local pdtBtn = pasteDateBtnGo:AddComponent(typeof(Button))
+                pdtBtn.targetGraphic = pdtImg
+                local pdtTxtGo = GameObject("Txt")
+                pdtTxtGo.transform:SetParent(pasteDateBtnGo.transform, false)
+                local pdttRt = pdtTxtGo:AddComponent(typeof(RectTransform))
+                pdttRt.anchorMin, pdttRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                pdttRt.sizeDelta = Vector2(0, 0)
+                local pdtTxt = pdtTxtGo:AddComponent(typeof(Text))
+                pdtTxt.text = "Paste"
+                pdtTxt.raycastTarget = false
+                pdtTxt.color, pdtTxt.fontSize, pdtTxt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then pdtTxt.font = defaultFont end
+
+                pdtBtn.onClick:AddListener(function()
+                    local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                    clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
+                    kg.startDateStr = clip
+                    startDateField.text = clip
+                end)
+
+                -- 5. THỜI HẠN & Ô NHẬP SỐ NGÀY TÙY CHỈNH
+                local optsTitleGo = GameObject("OptsTitle")
+                optsTitleGo.transform:SetParent(parentGo.transform, false)
+                local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
+                optsRt.anchorMin, optsRt.anchorMax, optsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                optsRt.anchoredPosition = Vector2(15, -254)
+                optsRt.sizeDelta = Vector2(95, 26)
+                local optsTxt = optsTitleGo:AddComponent(typeof(Text))
+                optsTxt.text = "6. Thời hạn:"
+                optsTxt.color, optsTxt.fontSize = Color.white, 14
+                optsTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then optsTxt.font = defaultFont end
+
+                local optDurationText = GameObject("OptDurTxt")
+                optDurationText.transform:SetParent(parentGo.transform, false)
+                local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
+                optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                optDTkRt.anchoredPosition = Vector2(110, -254)
+                optDTkRt.sizeDelta = Vector2(210, 26)
+                local optDTkTxt = optDurationText:AddComponent(typeof(Text))
+                optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
+                optDTkTxt.color, optDTkTxt.fontSize = Color.white, 15
+                optDTkTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then optDTkTxt.font = defaultFont end
+
+                -- Label Số ngày tùy chỉnh
+                local customDaysLblGo = GameObject("CustomDaysLbl")
+                customDaysLblGo.transform:SetParent(parentGo.transform, false)
+                local cdlRt = customDaysLblGo:AddComponent(typeof(RectTransform))
+                cdlRt.anchorMin, cdlRt.anchorMax, cdlRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                cdlRt.anchoredPosition = Vector2(325, -254)
+                cdlRt.sizeDelta = Vector2(130, 26)
+                local cdlTxt = customDaysLblGo:AddComponent(typeof(Text))
+                cdlTxt.text = "Tùy chỉnh (ngày):"
+                cdlTxt.color, cdlTxt.fontSize = Color.yellow, 14
+                cdlTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then cdlTxt.font = defaultFont end
+
+                -- Input Số ngày tùy chỉnh
+                local customDaysInGo = GameObject("CustomDaysInput")
+                customDaysInGo.transform:SetParent(parentGo.transform, false)
+                local cdiRt = customDaysInGo:AddComponent(typeof(RectTransform))
+                cdiRt.anchorMin, cdiRt.anchorMax, cdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                cdiRt.anchoredPosition = Vector2(455, -254)
+                cdiRt.sizeDelta = Vector2(75, 26)
+                local cdiImg = customDaysInGo:AddComponent(typeof(Image))
+                cdiImg.color = Color(1, 1, 1, 1)
+
+                local cdiTextGo = GameObject("Text")
+                cdiTextGo.transform:SetParent(customDaysInGo.transform, false)
+                local cditRt = cdiTextGo:AddComponent(typeof(RectTransform))
+                cditRt.anchorMin, cditRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                cditRt.offsetMin, cditRt.offsetMax = Vector2(3, 0), Vector2(-3, 0)
+                local cdiTxt = cdiTextGo:AddComponent(typeof(Text))
+                cdiTxt.text = kg.customDaysStr
+                cdiTxt.color, cdiTxt.fontSize = Color.black, 14
+                cdiTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then cdiTxt.font = defaultFont end
+
+                local customDaysField = customDaysInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                customDaysField.textComponent = cdiTxt
+                customDaysField.text = kg.customDaysStr
+
+                customDaysField.onValueChanged:AddListener(function(val)
+                    kg.customDaysStr = val or ""
+                    local num = tonumber(val)
+                    if num and num > 0 then
+                        optDTkTxt.text = string.format("<color=yellow>[ %s Ngày ]</color>", tostring(num))
+                    else
+                        if kg.duration == 0.000694444 then
+                            optDTkTxt.text = "<color=red>[ 60 Giây ]</color>"
+                        else
+                            optDTkTxt.text = string.format("<color=green>[ %d Ngày ]</color>", kg.duration)
                         end
                     end
-                    local success2, dt2 = CS.System.DateTime.TryParse(dateStr)
-                    if success2 and dt2 then
-                        local epoch = CS.System.DateTime(1970, 1, 1, 0, 0, 0, CS.System.DateTimeKind.Utc)
-                        local diff = dt2:ToUniversalTime():Subtract(epoch).TotalSeconds
-                        return math.floor(diff)
-                    end
-                    return nil
                 end)
-                if status and parsedUnix then
-                    return parsedUnix
+
+                -- Nút test 60 giây
+                local testBtn60sGo = GameObject("Btn_60sTest")
+                testBtn60sGo.transform:SetParent(parentGo.transform, false)
+                local t60Rt = testBtn60sGo:AddComponent(typeof(RectTransform))
+                t60Rt.anchorMin, t60Rt.anchorMax, t60Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                t60Rt.anchoredPosition = Vector2(538, -254)
+                t60Rt.sizeDelta = Vector2(132, 26)
+                local t60Img = testBtn60sGo:AddComponent(typeof(Image))
+                t60Img.color = Color(0.7, 0.2, 0.2, 1)
+                local t60Btn = testBtn60sGo:AddComponent(typeof(Button))
+                t60Btn.targetGraphic = t60Img
+                local t60TxtGo = GameObject("Txt")
+                t60TxtGo.transform:SetParent(testBtn60sGo.transform, false)
+                local t60tRt = t60TxtGo:AddComponent(typeof(RectTransform))
+                t60tRt.anchorMin, t60tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                t60tRt.sizeDelta = Vector2(0, 0)
+                local t60Txt = t60TxtGo:AddComponent(typeof(Text))
+                t60Txt.text = "60s (Test Hạn)"
+                t60Txt.raycastTarget = false
+                t60Txt.color, t60Txt.fontSize, t60Txt.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                if defaultFont then t60Txt.font = defaultFont end
+
+                t60Btn.onClick:AddListener(function()
+                    kg.duration = 0.000694444
+                    kg.customDaysStr = ""
+                    customDaysField.text = ""
+                    optDTkTxt.text = "<color=red>[ 60 Giây ]</color>"
+                end)
+
+                -- Các nút thời hạn Preset (Hàng 1: 3, 7, 15, 30, 60, 90, 365)
+                local durPresets = { 3, 7, 15, 30, 60, 90, 365 }
+                local btnStartX = 15
+                local btnGap = 8
+                local btnW = 88
+                for idx, dVal in ipairs(durPresets) do
+                    local dBtnGo = GameObject("BtnDur_" .. dVal)
+                    dBtnGo.transform:SetParent(parentGo.transform, false)
+                    local dRt = dBtnGo:AddComponent(typeof(RectTransform))
+                    dRt.anchorMin, dRt.anchorMax, dRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    dRt.anchoredPosition = Vector2(btnStartX + (idx - 1) * (btnW + btnGap), -284)
+                    dRt.sizeDelta = Vector2(btnW, 26)
+
+                    local dImg = dBtnGo:AddComponent(typeof(Image))
+                    dImg.color = Color(0.2, 0.2, 0.2, 1)
+
+                    local dtGo = GameObject("Txt")
+                    dtGo.transform:SetParent(dBtnGo.transform, false)
+                    local dtRt = dtGo:AddComponent(typeof(RectTransform))
+                    dtRt.anchorMin, dtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    dtRt.sizeDelta = Vector2(0, 0)
+                    local dTxt = dtGo:AddComponent(typeof(Text))
+                    dTxt.raycastTarget = false
+                    dTxt.text = tostring(dVal) .. " Ngày"
+                    dTxt.color = Color.white
+                    dTxt.fontSize = 13
+                    dTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then dTxt.font = defaultFont end
+
+                    local dBtn = dBtnGo:AddComponent(typeof(Button))
+                    dBtn.targetGraphic = dImg
+                    dBtn.onClick:AddListener(function()
+                        kg.duration = dVal
+                        kg.customDaysStr = ""
+                        customDaysField.text = ""
+                        optDTkTxt.text = string.format("<color=green>[ %d Ngày ]</color>", dVal)
+                    end)
                 end
 
-                -- Fallback parse bằng Lua pattern
-                local d, m, y, h, min, s = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+):(%d+)")
-                if not d then
-                    d, m, y, h, min = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+)")
-                    s = 0
-                end
-                if not d then
-                    d, m, y = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)")
-                    h, min, s = 0, 0, 0
-                end
-                if not d then
-                    y, m, d, h, min, s = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+):(%d+)")
-                end
-                if not d then
-                    y, m, d, h, min = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+)")
-                    s = 0
-                end
-                if not d then
-                    y, m, d = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)")
-                    h, min, s = 0, 0, 0
+                -- 6. NÚT TẠO TOKEN
+                local genBtnGo = GameObject("GenTokenBtn")
+                genBtnGo.transform:SetParent(parentGo.transform, false)
+                local genRt = genBtnGo:AddComponent(typeof(RectTransform))
+                genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                genRt.anchoredPosition = Vector2(135, -316)
+                genRt.sizeDelta = Vector2(250, 32)
+                local genImg = genBtnGo:AddComponent(typeof(Image))
+                genImg.color = Color(0, 0.7, 0.1, 1)
+                local genBtn = genBtnGo:AddComponent(typeof(Button))
+                genBtn.targetGraphic = genImg
+
+                local genTxtGo = GameObject("Txt")
+                genTxtGo.transform:SetParent(genBtnGo.transform, false)
+                local gentRt = genTxtGo:AddComponent(typeof(RectTransform))
+                gentRt.anchorMin, gentRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                gentRt.sizeDelta = Vector2(0, 0)
+                local genTxt = genTxtGo:AddComponent(typeof(Text))
+                genTxt.text = "TẠO TOKEN"
+                genTxt.raycastTarget = false
+                genTxt.color, genTxt.fontSize, genTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+                if defaultFont then genTxt.font = defaultFont end
+
+                -- 7. KẾT QUẢ TOKEN & NÚT COPY
+                local resBoxGo = GameObject("TokenResultBox")
+                resBoxGo.transform:SetParent(parentGo.transform, false)
+                local resRt = resBoxGo:AddComponent(typeof(RectTransform))
+                resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                resRt.anchoredPosition = Vector2(15, -354)
+                resRt.sizeDelta = Vector2(670, 56)
+
+                local resBg = GameObject("Bg")
+                resBg.transform:SetParent(resBoxGo.transform, false)
+                local resBgRt = resBg:AddComponent(typeof(RectTransform))
+                resBgRt.anchorMin, resBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                resBgRt.sizeDelta = Vector2(0, 0)
+                local resBgImg = resBg:AddComponent(typeof(Image))
+                resBgImg.color = Color(0.1, 0.1, 0.1, 0.9)
+
+                local resTxtGo = GameObject("Text")
+                resTxtGo.transform:SetParent(resBoxGo.transform, false)
+                local resTxtRt = resTxtGo:AddComponent(typeof(RectTransform))
+                resTxtRt.anchorMin, resTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                resTxtRt.offsetMin, resTxtRt.offsetMax = Vector2(8, 4), Vector2(-110, -4)
+                local resTextComp = resTxtGo:AddComponent(typeof(Text))
+                resTextComp.text = "Chưa có token được tạo..."
+                resTextComp.color = Color.yellow
+                resTextComp.fontSize = 13
+                resTextComp.alignment = TextAnchor.MiddleLeft
+                if defaultFont then resTextComp.font = defaultFont end
+
+                local resInField = resBoxGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                resInField.textComponent = resTextComp
+                resInField.text = ""
+                resInField.readOnly = true
+
+                -- Nút Copy Token
+                local cpBtnGo = GameObject("CopyTokenBtn")
+                cpBtnGo.transform:SetParent(resBoxGo.transform, false)
+                local cpRt = cpBtnGo:AddComponent(typeof(RectTransform))
+                cpRt.anchorMin, cpRt.anchorMax, cpRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+                cpRt.anchoredPosition = Vector2(-8, 0)
+                cpRt.sizeDelta = Vector2(95, 42)
+                local cpImg = cpBtnGo:AddComponent(typeof(Image))
+                cpImg.color = Color(0.15, 0.55, 0.95, 1)
+                local cpBtn = cpBtnGo:AddComponent(typeof(Button))
+                cpBtn.targetGraphic = cpImg
+
+                local cpTxtGo = GameObject("Txt")
+                cpTxtGo.transform:SetParent(cpBtnGo.transform, false)
+                local cptRt = cpTxtGo:AddComponent(typeof(RectTransform))
+                cptRt.anchorMin, cptRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                cptRt.sizeDelta = Vector2(0, 0)
+                local cpTxt = cpTxtGo:AddComponent(typeof(Text))
+                cpTxt.text = "Copy Token"
+                cpTxt.raycastTarget = false
+                cpTxt.color, cpTxt.fontSize, cpTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
+                if defaultFont then cpTxt.font = defaultFont end
+
+                cpBtn.onClick:AddListener(function()
+                    if kg.genToken and kg.genToken ~= "" then
+                        CS.UnityEngine.GUIUtility.systemCopyBuffer = kg.genToken
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã Copy Token vào bộ nhớ tạm!")
+                        end
+                    end
+                end)
+
+                -- Helper chuyển DateTime chuỗi sang Unix Timestamp
+                local function ParseDateTimeToUnix(dateStr)
+                    if not dateStr or dateStr == "" then
+                        return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                    end
+
+                    local d, m, y, h, min, s = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+):(%d+)")
+                    if not d then
+                        d, m, y, h, min = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)%s+(%d+):(%d+)")
+                        s = 0
+                    end
+                    if not d then
+                        d, m, y = string.match(dateStr, "(%d+)%/(%d+)%/(%d+)")
+                        h, min, s = 0, 0, 0
+                    end
+                    if not d then
+                        y, m, d, h, min, s = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+):(%d+)")
+                    end
+                    if not d then
+                        y, m, d, h, min = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)%s+(%d+):(%d+)")
+                        s = 0
+                    end
+                    if not d then
+                        y, m, d = string.match(dateStr, "(%d+)%-(%d+)%-(%d+)")
+                        h, min, s = 0, 0, 0
+                    end
+
+                    if y and m and d then
+                        local t = os.time({
+                            year = tonumber(y),
+                            month = tonumber(m),
+                            day = tonumber(d),
+                            hour = tonumber(h or 0),
+                            min = tonumber(min or 0),
+                            sec = tonumber(s or 0)
+                        })
+                        if t then return t end
+                    end
+
+                    return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
                 end
 
-                if y and m and d then
-                    local t = os.time({
-                        year = tonumber(y),
-                        month = tonumber(m),
-                        day = tonumber(d),
-                        hour = tonumber(h or 0),
-                        min = tonumber(min or 0),
-                        sec = tonumber(s or 0)
-                    })
-                    if t then return t end
-                end
+                -- LOGIC BẤM NÚT TẠO TOKEN
+                genBtn.onClick:AddListener(function()
+                    local codeInput = (inputField and inputField.text and inputField.text ~= "") and inputField.text or kg.deviceCode
+                    codeInput = string.gsub(codeInput, "^%s*(.-)%s*$", "%1")
+                    if codeInput == "" then
+                        resTextComp.text = "<color=red>Lỗi: Chưa nhập mã MD5 thiết bị!</color>"
+                        if resTxt then resTxt.text = resTextComp.text end
+                        return
+                    end
+                    kg.deviceCode = codeInput
 
-                return (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+                    local uidVal = (uidInputField and uidInputField.text and uidInputField.text ~= "") and uidInputField.text or kg.uid
+                    uidVal = string.gsub(uidVal, "^%s*(.-)%s*$", "%1")
+                    local targetUID = (uidVal ~= "") and uidVal or "ALL"
+                    kg.uid = targetUID
+
+                    local pMain = tonumber(kg.mainTier) or 8
+                    local pSub = tonumber(kg.subTier) or 7
+                    if pMain < 3 or pMain > 12 then pMain = 8 end
+                    if pSub < 3 or pSub > 12 then pSub = 7 end
+
+                    -- Xác định Thời Hạn (Duration)
+                    local durInputVal = (customDaysField and customDaysField.text and customDaysField.text ~= "") and customDaysField.text or kg.customDaysStr
+                    durInputVal = string.gsub(durInputVal, "^%s*(.-)%s*$", "%1")
+                    local finalDuration = kg.duration or 3
+                    if durInputVal ~= "" then
+                        local pDur = tonumber(durInputVal)
+                        if pDur and pDur > 0 then
+                            finalDuration = pDur
+                        end
+                    end
+
+                    -- Format duration lưu trong token (giữ nguyên độ chính xác nếu là 60s)
+                    local durStr = tostring(finalDuration)
+                    if finalDuration == 0.000694444 then
+                        durStr = "0.000694444"
+                    end
+
+                    -- Xác định Ngày Bắt Đầu (Start Date)
+                    local dateInputVal = (startDateField and startDateField.text and startDateField.text ~= "") and startDateField.text or kg.startDateStr
+                    local pTime = ParseDateTimeToUnix(dateInputVal)
+
+                    local tokenData = kg.deviceCode ..
+                        "|" ..
+                        targetUID ..
+                        "|" ..
+                        tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. durStr .. "|" .. tostring(pTime)
+                    local dataToHash = tokenData .. "MUVH_SECRET_SALT_XOAI"
+
+                    local status, md5Hash = pcall(function()
+                        return string.lower(tostring(CS.PCUtility.Md5(dataToHash)))
+                    end)
+                    if not status or not md5Hash then
+                        resTextComp.text = "<color=red>Lỗi: Không tạo được MD5!</color>"
+                        if resTxt then resTxt.text = resTextComp.text end
+                        return
+                    end
+
+                    local finalString = tokenData .. "|" .. md5Hash
+                    local status2, b64Token = pcall(function()
+                        return Base64Encode(finalString)
+                    end)
+                    if status2 and b64Token and b64Token ~= "" then
+                        kg.genToken = b64Token
+                        resTextComp.text = b64Token
+                        if resTxt then resTxt.text = b64Token end
+                        CS.UnityEngine.GUIUtility.systemCopyBuffer = b64Token
+
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã tạo và tự động Copy Token!")
+                        end
+                    else
+                        resTextComp.text = "<color=red>Lỗi Base64 Encode!</color>"
+                        if resTxt then resTxt.text = resTextComp.text end
+                    end
+                end)
             end
 
-            -- LOGIC BẤM NÚT TẠO TOKEN
-            genBtn.onClick:AddListener(function()
-                local codeInput = (inputField and inputField.text and inputField.text ~= "") and inputField.text or adminDeviceCode
-                codeInput = string.gsub(codeInput, "^%s*(.-)%s*$", "%1")
-                if codeInput == "" then
-                    resTextComp.text = "<color=red>Lỗi: Chưa nhập mã MD5 thiết bị!</color>"
-                    if resTxt then resTxt.text = resTextComp.text end
-                    return
-                end
-                adminDeviceCode = codeInput
+            -- =========================================================================
+            -- PHẦN 3: THÔNG TIN VÀ CHỨC NĂNG NHÂN VẬT (ROLEID, UID, NAME, MAPID, LOC, BAY ĐẾN)
+            -- =========================================================================
+            local function BuildAdminCharInfoSection(parentGo)
+                local ui = {}
 
-                local uidVal = (uidInputField and uidInputField.text and uidInputField.text ~= "") and uidInputField.text or adminUID
-                uidVal = string.gsub(uidVal, "^%s*(.-)%s*$", "%1")
-                local targetUID = (uidVal ~= "") and uidVal or "ALL"
-                adminUID = targetUID
+                -- Đường dashed phân cách
+                local dashedSepGo = GameObject("AdminDashedSep")
+                dashedSepGo.transform:SetParent(parentGo.transform, false)
+                local dsRt = dashedSepGo:AddComponent(typeof(RectTransform))
+                dsRt.anchorMin, dsRt.anchorMax, dsRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+                dsRt.anchoredPosition = Vector2(0, -425)
+                dsRt.sizeDelta = Vector2(680, 16)
+                local dsTxt = dashedSepGo:AddComponent(typeof(Text))
+                dsTxt.raycastTarget = false
+                dsTxt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+                dsTxt.color = Color(0.65, 0.65, 0.65, 0.9)
+                dsTxt.fontSize = 13
+                dsTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then dsTxt.font = defaultFont end
 
-                local pMain = tonumber(adminMainTier) or 8
-                local pSub = tonumber(adminSubTier) or 7
-                if pMain < 3 or pMain > 12 then pMain = 8 end
-                if pSub < 3 or pSub > 12 then pSub = 7 end
+                -- Tiêu đề Mục Thông Tin & Chức Năng Nhân Vật (Căn giữa)
+                local infoTitleGo = GameObject("CharInfoTitle")
+                infoTitleGo.transform:SetParent(parentGo.transform, false)
+                local infoTitleRt = infoTitleGo:AddComponent(typeof(RectTransform))
+                infoTitleRt.anchorMin, infoTitleRt.anchorMax, infoTitleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+                infoTitleRt.anchoredPosition = Vector2(0, -445)
+                infoTitleRt.sizeDelta = Vector2(600, 24)
+                local infoTitleTxt = infoTitleGo:AddComponent(typeof(Text))
+                infoTitleTxt.text = "=== THÔNG TIN, CHỨC NĂNG NHÂN VẬT ==="
+                infoTitleTxt.color, infoTitleTxt.fontSize, infoTitleTxt.alignment = Color(1, 0.85, 0.2, 1), 16, TextAnchor.MiddleCenter
+                if defaultFont then infoTitleTxt.font = defaultFont end
 
-                -- Xác định Thời Hạn (Duration)
-                local durInputVal = (customDaysField and customDaysField.text and customDaysField.text ~= "") and customDaysField.text or adminCustomDaysStr
-                durInputVal = string.gsub(durInputVal, "^%s*(.-)%s*$", "%1")
-                local finalDuration = adminDuration or 3
-                if durInputVal ~= "" then
-                    local pDur = tonumber(durInputVal)
-                    if pDur and pDur > 0 then
-                        finalDuration = pDur
+                -- Helper copy text kèm popup
+                local function CopyWithNotice(val, name)
+                    if not val or val == "" then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Chưa có dữ liệu " .. (name or "") .. " để Copy!")
+                        end
+                        return
                     end
-                end
-
-                -- Format duration lưu trong token (giữ nguyên độ chính xác nếu là 60s)
-                local durStr = tostring(finalDuration)
-                if finalDuration == 0.000694444 then
-                    durStr = "0.000694444"
-                end
-
-                -- Xác định Ngày Bắt Đầu (Start Date)
-                local dateInputVal = (startDateField and startDateField.text and startDateField.text ~= "") and startDateField.text or adminStartDateStr
-                local pTime = ParseDateTimeToUnix(dateInputVal)
-
-                local tokenData = adminDeviceCode ..
-                    "|" ..
-                    targetUID ..
-                    "|" ..
-                    tostring(pMain) .. "|" .. tostring(pSub) .. "|" .. durStr .. "|" .. tostring(pTime)
-                local dataToHash = tokenData .. "MUVH_SECRET_SALT_XOAI"
-
-                local status, md5Hash = pcall(function()
-                    return string.lower(tostring(CS.PCUtility.Md5(dataToHash)))
-                end)
-                if not status or not md5Hash then
-                    resTextComp.text = "<color=red>Lỗi: Không tạo được MD5!</color>"
-                    if resTxt then resTxt.text = resTextComp.text end
-                    return
-                end
-
-                local finalString = tokenData .. "|" .. md5Hash
-                local status2, b64Token = pcall(function()
-                    return Base64Encode(finalString)
-                end)
-                if status2 and b64Token and b64Token ~= "" then
-                    adminGenToken = b64Token
-                    resTextComp.text = b64Token
-                    if resTxt then resTxt.text = b64Token end
-                    CS.UnityEngine.GUIUtility.systemCopyBuffer = b64Token
-
+                    CS.UnityEngine.GUIUtility.systemCopyBuffer = tostring(val)
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                        _G.FloatingWordUtility.QuickMsg("Đã tạo và tự động Copy Token!")
+                        _G.FloatingWordUtility.QuickMsg(string.format("Đã Copy %s: %s", (name or ""), tostring(val)))
                     end
-                else
-                    resTextComp.text = "<color=red>Lỗi Base64 Encode!</color>"
-                    if resTxt then resTxt.text = resTextComp.text end
                 end
-            end)
+
+                -- Các hàm trích xuất dữ liệu nhân vật
+                local function GetRoleIdVal()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    local val = (me and (me.id or (me.data and me.data.id))) or ""
+                    if val == "" and _G.ViewData and _G.ViewData.meData then
+                        val = _G.ViewData.meData.id or ""
+                    end
+                    return tostring(val or "")
+                end
+
+                local function GetCharUidVal()
+                    local val = (_G.Mod_GetCharacterUID and _G.Mod_GetCharacterUID()) or ""
+                    if val == "" and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.uid then
+                        val = tostring(_G.ViewData.meData.uid)
+                    end
+                    return tostring(val or "")
+                end
+
+                local function GetNameVal()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    local val = (me and me.data and (me.data.name or me.data.Name)) or (me and (me.name or me.showName)) or ""
+                    if val == "" and _G.ViewData and _G.ViewData.meData then
+                        val = _G.ViewData.meData.name or ""
+                    end
+                    return tostring(val or "")
+                end
+
+                local function GetMapIdVal()
+                    local val = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or ""
+                    if (val == "" or val == 0) and _G.RoleManager and _G.RoleManager.me then
+                        val = _G.RoleManager.me.mapId or ""
+                    end
+                    return tostring(val or "")
+                end
+
+                local function GetLocationVal()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me then
+                        local mx = (me.serverCoord and me.serverCoord.x) or (me.cellPos and me.cellPos.x) or me.x or 0
+                        local my = (me.serverCoord and me.serverCoord.y) or (me.cellPos and me.cellPos.y) or me.y or 0
+                        return string.format("%d#%d", math.floor(mx), math.floor(my))
+                    end
+                    return ""
+                end
+
+                -- HÀNG NÚT TỔNG HỢP: [ LẤY TẤT CẢ ] và [ COPY TỔNG HỢP ] (Đặt ngay dưới tiêu đề, Y = -475)
+                CreateSmallBtn(parentGo, 15, -475, 150, 26, "[ LẤY TẤT CẢ ]", Color(0.1, 0.65, 0.35, 1), function()
+                    local rId = GetRoleIdVal()
+                    local cUid = GetCharUidVal()
+                    local nVal = GetNameVal()
+                    local mId = GetMapIdVal()
+                    local lVal = GetLocationVal()
+                    if ui.roleIdInp then ui.roleIdInp.text = rId end
+                    if ui.charUidInp then ui.charUidInp.text = cUid end
+                    if ui.nameInp then ui.nameInp.text = nVal end
+                    if ui.mapIdInp then ui.mapIdInp.text = mId end
+                    if ui.locInp then ui.locInp.text = lVal end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Đã cập nhật toàn bộ 5 thông tin nhân vật!")
+                    end
+                end)
+
+                CreateSmallBtn(parentGo, 175, -475, 180, 26, "[ COPY TỔNG HỢP ]", Color(0.7, 0.3, 0.6, 1), function()
+                    local rId = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
+                    local cUid = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
+                    local nVal = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
+                    local mId = (ui.mapIdInp and ui.mapIdInp.text ~= "") and ui.mapIdInp.text or GetMapIdVal()
+                    local lVal = (ui.locInp and ui.locInp.text ~= "") and ui.locInp.text or GetLocationVal()
+                    local combo = string.format("RoleId: %s | UID: %s | Name: %s | MapID: %s | Loc: %s", rId, cUid, nVal, mId, lVal)
+                    CS.UnityEngine.GUIUtility.systemCopyBuffer = combo
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Đã Copy toàn bộ thông tin nhân vật vào Clipboard!")
+                    end
+                end)
+
+                -- 1. HÀNG 1: RoleId & UID (Y = -507)
+                -- 1.1 RoleId
+                local rIdLblGo = GameObject("RoleIdLbl")
+                rIdLblGo.transform:SetParent(parentGo.transform, false)
+                local rIdLblRt = rIdLblGo:AddComponent(typeof(RectTransform))
+                rIdLblRt.anchorMin, rIdLblRt.anchorMax, rIdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rIdLblRt.anchoredPosition = Vector2(15, -507)
+                rIdLblRt.sizeDelta = Vector2(55, 26)
+                local rIdLblTxt = rIdLblGo:AddComponent(typeof(Text))
+                rIdLblTxt.text = "RoleId:"
+                rIdLblTxt.color, rIdLblTxt.fontSize, rIdLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
+                if defaultFont then rIdLblTxt.font = defaultFont end
+
+                local _, roleIdInp, _ = CreateSmallInput(parentGo, 72, -507, 145, 26, "", false)
+                ui.roleIdInp = roleIdInp
+
+                CreateSmallBtn(parentGo, 222, -507, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                    local v = GetRoleIdVal()
+                    ui.roleIdInp.text = v
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("RoleId: " .. (v ~= "" and v or "Trống"))
+                    end
+                end)
+                CreateSmallBtn(parentGo, 268, -507, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                    local v = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
+                    CopyWithNotice(v, "RoleId")
+                end)
+
+                -- 1.2 UID
+                local uidLblGo = GameObject("UidLbl")
+                uidLblGo.transform:SetParent(parentGo.transform, false)
+                local uidLblRt = uidLblGo:AddComponent(typeof(RectTransform))
+                uidLblRt.anchorMin, uidLblRt.anchorMax, uidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                uidLblRt.anchoredPosition = Vector2(340, -507)
+                uidLblRt.sizeDelta = Vector2(40, 26)
+                local uidLblTxt = uidLblGo:AddComponent(typeof(Text))
+                uidLblTxt.text = "UID:"
+                uidLblTxt.color, uidLblTxt.fontSize, uidLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
+                if defaultFont then uidLblTxt.font = defaultFont end
+
+                local _, charUidInp, _ = CreateSmallInput(parentGo, 385, -507, 175, 26, "", false)
+                ui.charUidInp = charUidInp
+
+                CreateSmallBtn(parentGo, 565, -507, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                    local v = GetCharUidVal()
+                    ui.charUidInp.text = v
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("UID: " .. (v ~= "" and v or "Trống"))
+                    end
+                end)
+                CreateSmallBtn(parentGo, 611, -507, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                    local v = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
+                    CopyWithNotice(v, "UID")
+                end)
+
+                -- 2. HÀNG 2: Name (Y = -539) - Phía bên phải để trống
+                local nameLblGo = GameObject("NameLbl")
+                nameLblGo.transform:SetParent(parentGo.transform, false)
+                local nameLblRt = nameLblGo:AddComponent(typeof(RectTransform))
+                nameLblRt.anchorMin, nameLblRt.anchorMax, nameLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                nameLblRt.anchoredPosition = Vector2(15, -539)
+                nameLblRt.sizeDelta = Vector2(55, 26)
+                local nameLblTxt = nameLblGo:AddComponent(typeof(Text))
+                nameLblTxt.text = "Name:"
+                nameLblTxt.color, nameLblTxt.fontSize, nameLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
+                if defaultFont then nameLblTxt.font = defaultFont end
+
+                local _, nameInp, _ = CreateSmallInput(parentGo, 72, -539, 145, 26, "", false)
+                ui.nameInp = nameInp
+
+                CreateSmallBtn(parentGo, 222, -539, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                    local v = GetNameVal()
+                    ui.nameInp.text = v
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Name: " .. (v ~= "" and v or "Trống"))
+                    end
+                end)
+                CreateSmallBtn(parentGo, 268, -539, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                    local v = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
+                    CopyWithNotice(v, "Name")
+                end)
+
+                -- 3. HÀNG 3: MapID & Location (Y = -571)
+                -- 3.1 MapID
+                local mapLblGo = GameObject("MapIdLbl")
+                mapLblGo.transform:SetParent(parentGo.transform, false)
+                local mapLblRt = mapLblGo:AddComponent(typeof(RectTransform))
+                mapLblRt.anchorMin, mapLblRt.anchorMax, mapLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                mapLblRt.anchoredPosition = Vector2(15, -571)
+                mapLblRt.sizeDelta = Vector2(55, 26)
+                local mapLblTxt = mapLblGo:AddComponent(typeof(Text))
+                mapLblTxt.text = "MapID:"
+                mapLblTxt.color, mapLblTxt.fontSize, mapLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
+                if defaultFont then mapLblTxt.font = defaultFont end
+
+                local _, mapIdInp, _ = CreateSmallInput(parentGo, 72, -571, 145, 26, "", false)
+                ui.mapIdInp = mapIdInp
+
+                CreateSmallBtn(parentGo, 222, -571, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                    local v = GetMapIdVal()
+                    ui.mapIdInp.text = v
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("MapID: " .. (v ~= "" and v or "Trống"))
+                    end
+                end)
+                CreateSmallBtn(parentGo, 268, -571, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                    local v = (ui.mapIdInp and ui.mapIdInp.text ~= "") and ui.mapIdInp.text or GetMapIdVal()
+                    CopyWithNotice(v, "MapID")
+                end)
+
+                -- 3.2 Location (X#Y)
+                local locLblGo = GameObject("LocLbl")
+                locLblGo.transform:SetParent(parentGo.transform, false)
+                local locLblRt = locLblGo:AddComponent(typeof(RectTransform))
+                locLblRt.anchorMin, locLblRt.anchorMax, locLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                locLblRt.anchoredPosition = Vector2(340, -571)
+                locLblRt.sizeDelta = Vector2(45, 26)
+                local locLblTxt = locLblGo:AddComponent(typeof(Text))
+                locLblTxt.text = "Tọa độ:"
+                locLblTxt.color, locLblTxt.fontSize, locLblTxt.alignment = Color.white, 13, TextAnchor.MiddleLeft
+                if defaultFont then locLblTxt.font = defaultFont end
+
+                local _, locInp, _ = CreateSmallInput(parentGo, 385, -571, 175, 26, "", false)
+                ui.locInp = locInp
+
+                CreateSmallBtn(parentGo, 565, -571, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                    local v = GetLocationVal()
+                    ui.locInp.text = v
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Tọa độ: " .. (v ~= "" and v or "Trống"))
+                    end
+                end)
+                CreateSmallBtn(parentGo, 611, -571, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                    local v = (ui.locInp and ui.locInp.text ~= "") and ui.locInp.text or GetLocationVal()
+                    CopyWithNotice(v, "Tọa độ")
+                end)
+
+                -- 4. HÀNG 4: CHỨC NĂNG BAY ĐẾN (Y = -611)
+                local flyLblGo = GameObject("FlyLbl")
+                flyLblGo.transform:SetParent(parentGo.transform, false)
+                local flyLblRt = flyLblGo:AddComponent(typeof(RectTransform))
+                flyLblRt.anchorMin, flyLblRt.anchorMax, flyLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                flyLblRt.anchoredPosition = Vector2(15, -611)
+                flyLblRt.sizeDelta = Vector2(55, 26)
+                local flyLblTxt = flyLblGo:AddComponent(typeof(Text))
+                flyLblTxt.text = "Bay đến:"
+                flyLblTxt.color, flyLblTxt.fontSize, flyLblTxt.alignment = Color.yellow, 13, TextAnchor.MiddleLeft
+                if defaultFont then flyLblTxt.font = defaultFont end
+
+                local _, flyInp, flyTxt = CreateSmallInput(parentGo, 72, -611, 145, 26, "", false)
+                flyTxt.fontSize = 12
+                flyInp.text = ""
+                ui.flyInp = flyInp
+
+                -- Nút [PASTE]
+                CreateSmallBtn(parentGo, 222, -611, 44, 26, "Paste", Color(0.8, 0.4, 0, 1), function()
+                    local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                    clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
+                    ui.flyInp.text = clip
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Đã Paste: " .. clip)
+                    end
+                end)
+
+                -- Nút [COPY]
+                CreateSmallBtn(parentGo, 270, -611, 46, 26, "Copy", Color(0.85, 0.5, 0.1, 1), function()
+                    local val = ui.flyInp and ui.flyInp.text or ""
+                    val = string.gsub(val, "^%s*(.-)%s*$", "%1")
+                    if val ~= "" then
+                        CS.UnityEngine.GUIUtility.systemCopyBuffer = val
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã Copy: " .. val)
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Chưa có nội dung để Copy!")
+                        end
+                    end
+                end)
+
+                -- Nút [HIỆN TẠI]
+                CreateSmallBtn(parentGo, 324, -611, 160, 26, "Lấy Tọa Độ Hiện Tại", Color(0.2, 0.5, 0.75, 1), function()
+                    local mId = GetMapIdVal()
+                    local lVal = GetLocationVal()
+                    if mId ~= "" and lVal ~= "" then
+                        ui.flyInp.text = mId .. ";" .. lVal
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã điền tọa độ hiện tại: " .. ui.flyInp.text)
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Chưa lấy được tọa độ hiện tại!")
+                        end
+                    end
+                end)
+
+                -- Nút [BAY NGAY] (Nổi bật, cam tươi viền xanh)
+                CreateSmallBtn(parentGo, 492, -611, 165, 26, "BAY NGAY >>", Color(0.85, 0.25, 0.1, 1), function()
+                    local inputRaw = ui.flyInp and ui.flyInp.text or ""
+                    inputRaw = string.gsub(inputRaw, "^%s*(.-)%s*$", "%1")
+                    if inputRaw == "" then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Vui lòng nhập MapId;x#y hoặc RoleId;MapId;x#y!")
+                        end
+                        return
+                    end
+
+                    -- Hỗ trợ đa định dạng:
+                    -- 1. [RoleId;MapId;x#y] (ví dụ: 5944970060872593508;1012015;14#13)
+                    -- 2. [MapId;x#y] (ví dụ: 1012015;14#13)
+                    -- 3. Chuỗi tổng hợp: RoleId: ... MapID: ... Loc: x#y
+                    local targetRoleId = nil
+                    local targetMap = nil
+                    local targetX = nil
+                    local targetY = nil
+
+                    -- Kiểm tra nếu là chuỗi copy tổng hợp
+                    local cRole, cMap, cX, cY = string.match(inputRaw, "RoleId:%s*(%d+).-MapID:%s*(%d+).-Loc:%s*(%d+)[#,;%s]+(%d+)")
+                    if cRole and cMap and cX and cY then
+                        targetRoleId = tonumber(cRole)
+                        targetMap = tonumber(cMap)
+                        targetX = tonumber(cX)
+                        targetY = tonumber(cY)
+                    else
+                        local numbers = {}
+                        for num in string.gmatch(inputRaw, "%d+") do
+                            table.insert(numbers, num)
+                        end
+
+                        if #numbers >= 4 then
+                            -- 4 số: RoleId, MapId, X, Y
+                            targetRoleId = tonumber(numbers[1])
+                            targetMap = tonumber(numbers[2])
+                            targetX = tonumber(numbers[3])
+                            targetY = tonumber(numbers[4])
+                        elseif #numbers == 3 then
+                            -- 3 số: MapId, X, Y
+                            targetRoleId = nil
+                            targetMap = tonumber(numbers[1])
+                            targetX = tonumber(numbers[2])
+                            targetY = tonumber(numbers[3])
+                        end
+                    end
+
+                    if not targetMap or not targetX or not targetY then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Sai định dạng! Mẫu: MapId;x#y hoặc RoleId;MapId;x#y")
+                        end
+                        return
+                    end
+
+                    local called = false
+                    if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                        pcall(function()
+                            _G.networkRequest.ReqCallFlag(nil, targetRoleId, targetMap, 1, targetX, targetY)
+                            called = true
+                        end)
+                    end
+                    if not called and _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                        pcall(function()
+                            local req = {
+                                mapId = targetMap,
+                                line = 1,
+                                x = targetX,
+                                y = targetY
+                            }
+                            if targetRoleId then
+                                req.rid = targetRoleId
+                            end
+                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, req)
+                            called = true
+                        end)
+                    end
+
+                    if called then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            if targetRoleId then
+                                _G.FloatingWordUtility.QuickMsg(string.format("Đang bay đến Map %d (%d#%d) theo RoleId %s...", targetMap, targetX, targetY, tostring(targetRoleId)))
+                            else
+                                _G.FloatingWordUtility.QuickMsg(string.format("Đang truyền tống đến Map %d (%d#%d)...", targetMap, targetX, targetY))
+                            end
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Không tìm thấy hàm ReqCallFlag để dịch chuyển!")
+                        end
+                    end
+                end)
+
+                -- Chú thích hướng dẫn định dạng phía dưới
+                local flyTipGo = GameObject("FlyTip")
+                flyTipGo.transform:SetParent(parentGo.transform, false)
+                local flyTipRt = flyTipGo:AddComponent(typeof(RectTransform))
+                flyTipRt.anchorMin, flyTipRt.anchorMax, flyTipRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                flyTipRt.anchoredPosition = Vector2(15, -645)
+                flyTipRt.sizeDelta = Vector2(650, 20)
+                local flyTipTxt = flyTipGo:AddComponent(typeof(Text))
+                flyTipTxt.raycastTarget = false
+                flyTipTxt.text = "<color=#888888>* Định dạng: MapId;x#y hoặc RoleId;MapId;x#y (ví dụ: 1012015;14#13 hoặc 59449...;1012015;14#13)</color>"
+                flyTipTxt.fontSize = 12
+                flyTipTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then flyTipTxt.font = defaultFont end
+            end
+
+            -- KHỞI TẠO CÁC MỤC TRONG ADMIN SCROLLVIEW
+            BuildAdminControlSection(adminContentGo)
+            BuildAdminKeygenSection(adminContentGo)
+            BuildAdminCharInfoSection(adminContentGo)
         end
+        
         -- Main Tab Buttons
         local isAd = _G.Mod_IsAdmin
         local width = isAd and 160 or 220
@@ -12773,6 +13327,7 @@ local function CreateModUI()
         end
         if _G.Mod_IsAdmin then
             CreateAdminUI()
+            RefreshMainTabs()
         end
 
 
