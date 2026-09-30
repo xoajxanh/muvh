@@ -7275,6 +7275,18 @@ local function CreateModUI()
         end
         _G.Mod_GetCharacterUID = Mod_GetCharacterUID
 
+        local function Mod_GetDeviceCode()
+            local devCode = ""
+            pcall(function()
+                local deviceId = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
+                if deviceId and tostring(deviceId) ~= "" then
+                    devCode = string.lower(tostring(CS.PCUtility.Md5(tostring(deviceId) .. "XOAI")))
+                end
+            end)
+            return devCode
+        end
+        _G.Mod_GetDeviceCode = Mod_GetDeviceCode
+
         local _lastAuthCheckTime = 0
         local _cachedAuthResult = false
         -- =========================================================================
@@ -11680,7 +11692,7 @@ local function CreateModUI()
             local adminContentRt = adminContentGo:AddComponent(typeof(RectTransform))
             adminContentRt.anchorMin, adminContentRt.anchorMax, adminContentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
             adminContentRt.anchoredPosition = Vector2(0, 0)
-            adminContentRt.sizeDelta = Vector2(0, 750)
+            adminContentRt.sizeDelta = Vector2(0, 780)
 
             adminScrollRect.viewport = adminVpRt
             adminScrollRect.content = adminContentRt
@@ -12029,10 +12041,29 @@ local function CreateModUI()
                 if defaultFont then gmdTxt.font = defaultFont end
 
                 gmdBtn.onClick:AddListener(function()
-                    local myCode = (_G.Mod_GetDeviceCode and _G.Mod_GetDeviceCode()) or ""
-                    if myCode ~= "" then
+                    local myCode = ""
+                    if _G.Mod_GetDeviceCode then
+                        myCode = _G.Mod_GetDeviceCode()
+                    end
+                    if myCode == "" or myCode == "ERROR_MD5" then
+                        pcall(function()
+                            local deviceId = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
+                            if deviceId and tostring(deviceId) ~= "" then
+                                myCode = string.lower(tostring(CS.PCUtility.Md5(tostring(deviceId) .. "XOAI")))
+                            end
+                        end)
+                    end
+                    if myCode ~= "" and myCode ~= "ERROR_MD5" then
                         kg.deviceCode = myCode
-                        inputField.text = myCode
+                        if inTxt then inTxt.text = myCode end
+                        if inputField then inputField.text = myCode end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã lấy MD5 máy này: " .. string.sub(myCode, 1, 8) .. "...")
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Không lấy được mã MD5 máy này!")
+                        end
                     end
                 end)
 
@@ -12061,8 +12092,18 @@ local function CreateModUI()
                 pdevBtn.onClick:AddListener(function()
                     local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                     clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
-                    kg.deviceCode = clip
-                    inputField.text = clip
+                    if clip ~= "" then
+                        kg.deviceCode = clip
+                        if inTxt then inTxt.text = clip end
+                        if inputField then inputField.text = clip end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã Paste MD5: " .. string.sub(clip, 1, 8) .. "...")
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Clipboard trống!")
+                        end
+                    end
                 end)
 
                 -- 2. INPUT UID
@@ -12122,7 +12163,7 @@ local function CreateModUI()
                 local gmuImg = getMyUidBtnGo:AddComponent(typeof(Image))
                 gmuImg.color = Color(0.15, 0.45, 0.75, 1)
                 local gmuBtn = getMyUidBtnGo:AddComponent(typeof(Button))
-                gmuBtn.targetGraphic = gmdImg
+                gmuBtn.targetGraphic = gmuImg
                 local gmuTxtGo = GameObject("Txt")
                 gmuTxtGo.transform:SetParent(getMyUidBtnGo.transform, false)
                 local gmutRt = gmuTxtGo:AddComponent(typeof(RectTransform))
@@ -12138,7 +12179,15 @@ local function CreateModUI()
                     local myUid = (_G.Mod_GetCharacterUID and _G.Mod_GetCharacterUID()) or ""
                     if myUid ~= "" and myUid ~= "Vui lòng đăng nhập nhân vật để lấy UID" then
                         kg.uid = myUid
-                        uidInputField.text = myUid
+                        if uidinTxt then uidinTxt.text = myUid end
+                        if uidInputField then uidInputField.text = myUid end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã lấy UID: " .. myUid)
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Chưa đăng nhập nhân vật để lấy UID!")
+                        end
                     end
                 end)
 
@@ -12167,8 +12216,18 @@ local function CreateModUI()
                 puidBtn.onClick:AddListener(function()
                     local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                     clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
-                    kg.uid = clip
-                    uidInputField.text = clip
+                    if clip ~= "" then
+                        kg.uid = clip
+                        if uidinTxt then uidinTxt.text = clip end
+                        if uidInputField then uidInputField.text = clip end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã Paste UID: " .. clip)
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Clipboard trống!")
+                        end
+                    end
                 end)
 
                 -- 3. CẤU HÌNH TIER PHỤ (TOKEN TIERS)
@@ -12332,7 +12391,11 @@ local function CreateModUI()
                 nowBtn.onClick:AddListener(function()
                     local nowStr = os.date("%d/%m/%Y")
                     kg.startDateStr = nowStr
-                    startDateField.text = nowStr
+                    if sdiTxt then sdiTxt.text = nowStr end
+                    if startDateField then startDateField.text = nowStr end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("Đã đặt ngày bắt đầu: " .. nowStr)
+                    end
                 end)
 
                 -- Nút "Xóa"
@@ -12359,7 +12422,8 @@ local function CreateModUI()
 
                 clrBtn.onClick:AddListener(function()
                     kg.startDateStr = ""
-                    startDateField.text = ""
+                    if sdiTxt then sdiTxt.text = "" end
+                    if startDateField then startDateField.text = "" end
                 end)
 
                 -- Nút "Paste" Date
@@ -12387,11 +12451,17 @@ local function CreateModUI()
                 pdtBtn.onClick:AddListener(function()
                     local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                     clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
-                    kg.startDateStr = clip
-                    startDateField.text = clip
+                    if clip ~= "" then
+                        kg.startDateStr = clip
+                        if sdiTxt then sdiTxt.text = clip end
+                        if startDateField then startDateField.text = clip end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Đã Paste ngày: " .. clip)
+                        end
+                    end
                 end)
 
-                -- 5. THỜI HẠN & Ô NHẬP SỐ NGÀY TÙY CHỈNH
+                -- 5. THỜI HẠN
                 local optsTitleGo = GameObject("OptsTitle")
                 optsTitleGo.transform:SetParent(parentGo.transform, false)
                 local optsRt = optsTitleGo:AddComponent(typeof(RectTransform))
@@ -12409,33 +12479,88 @@ local function CreateModUI()
                 local optDTkRt = optDurationText:AddComponent(typeof(RectTransform))
                 optDTkRt.anchorMin, optDTkRt.anchorMax, optDTkRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 optDTkRt.anchoredPosition = Vector2(110, -254)
-                optDTkRt.sizeDelta = Vector2(210, 26)
+                optDTkRt.sizeDelta = Vector2(250, 26)
                 local optDTkTxt = optDurationText:AddComponent(typeof(Text))
                 optDTkTxt.text = "<color=green>[ 3 Ngày ]</color>"
                 optDTkTxt.color, optDTkTxt.fontSize = Color.white, 15
                 optDTkTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then optDTkTxt.font = defaultFont end
 
-                -- Label Số ngày tùy chỉnh
+                -- CÁC NÚT THỜI HẠN PRESET (3, 7, 15, 30, 60, 90 Ngày và 60s (Test) thay cho 365)
+                local customDaysField
+                local durPresets = {
+                    { days = 3, label = "3 Ngày", isTest = false },
+                    { days = 7, label = "7 Ngày", isTest = false },
+                    { days = 15, label = "15 Ngày", isTest = false },
+                    { days = 30, label = "30 Ngày", isTest = false },
+                    { days = 60, label = "60 Ngày", isTest = false },
+                    { days = 90, label = "90 Ngày", isTest = false },
+                    { days = 0.000694444, label = "60s (Test)", isTest = true }
+                }
+                local btnStartX = 15
+                local btnGap = 8
+                local btnW = 86
+                for idx, item in ipairs(durPresets) do
+                    local dBtnGo = GameObject("BtnDur_" .. tostring(idx))
+                    dBtnGo.transform:SetParent(parentGo.transform, false)
+                    local dRt = dBtnGo:AddComponent(typeof(RectTransform))
+                    dRt.anchorMin, dRt.anchorMax, dRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    dRt.anchoredPosition = Vector2(btnStartX + (idx - 1) * (btnW + btnGap), -284)
+                    dRt.sizeDelta = Vector2(btnW, 26)
+
+                    local dImg = dBtnGo:AddComponent(typeof(Image))
+                    if item.isTest then
+                        dImg.color = Color(0.75, 0.22, 0.22, 1)
+                    else
+                        dImg.color = Color(0.2, 0.2, 0.2, 1)
+                    end
+
+                    local dtGo = GameObject("Txt")
+                    dtGo.transform:SetParent(dBtnGo.transform, false)
+                    local dtRt = dtGo:AddComponent(typeof(RectTransform))
+                    dtRt.anchorMin, dtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    dtRt.sizeDelta = Vector2(0, 0)
+                    local dTxt = dtGo:AddComponent(typeof(Text))
+                    dTxt.raycastTarget = false
+                    dTxt.text = item.label
+                    dTxt.color = Color.white
+                    dTxt.fontSize = item.isTest and 12 or 13
+                    dTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then dTxt.font = defaultFont end
+
+                    local dBtn = dBtnGo:AddComponent(typeof(Button))
+                    dBtn.targetGraphic = dImg
+                    dBtn.onClick:AddListener(function()
+                        kg.duration = item.days
+                        kg.customDaysStr = ""
+                        if customDaysField then customDaysField.text = "" end
+                        if item.isTest then
+                            optDTkTxt.text = "<color=red>[ 60 Giây ]</color>"
+                        else
+                            optDTkTxt.text = string.format("<color=green>[ %d Ngày ]</color>", item.days)
+                        end
+                    end)
+                end
+
+                -- HÀNG TÙY CHỈNH NGÀY (ĐƯA XUỐNG DƯỚI HÀNG PRESET, Y = -316)
                 local customDaysLblGo = GameObject("CustomDaysLbl")
                 customDaysLblGo.transform:SetParent(parentGo.transform, false)
                 local cdlRt = customDaysLblGo:AddComponent(typeof(RectTransform))
                 cdlRt.anchorMin, cdlRt.anchorMax, cdlRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                cdlRt.anchoredPosition = Vector2(325, -254)
-                cdlRt.sizeDelta = Vector2(130, 26)
+                cdlRt.anchoredPosition = Vector2(15, -316)
+                cdlRt.sizeDelta = Vector2(125, 26)
                 local cdlTxt = customDaysLblGo:AddComponent(typeof(Text))
                 cdlTxt.text = "Tùy chỉnh (ngày):"
                 cdlTxt.color, cdlTxt.fontSize = Color.yellow, 14
                 cdlTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then cdlTxt.font = defaultFont end
 
-                -- Input Số ngày tùy chỉnh
                 local customDaysInGo = GameObject("CustomDaysInput")
                 customDaysInGo.transform:SetParent(parentGo.transform, false)
                 local cdiRt = customDaysInGo:AddComponent(typeof(RectTransform))
                 cdiRt.anchorMin, cdiRt.anchorMax, cdiRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                cdiRt.anchoredPosition = Vector2(455, -254)
-                cdiRt.sizeDelta = Vector2(75, 26)
+                cdiRt.anchoredPosition = Vector2(145, -316)
+                cdiRt.sizeDelta = Vector2(90, 26)
                 local cdiImg = customDaysInGo:AddComponent(typeof(Image))
                 cdiImg.color = Color(1, 1, 1, 1)
 
@@ -12450,7 +12575,7 @@ local function CreateModUI()
                 cdiTxt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then cdiTxt.font = defaultFont end
 
-                local customDaysField = customDaysInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                customDaysField = customDaysInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
                 customDaysField.textComponent = cdiTxt
                 customDaysField.text = kg.customDaysStr
 
@@ -12468,83 +12593,29 @@ local function CreateModUI()
                     end
                 end)
 
-                -- Nút test 60 giây
-                local testBtn60sGo = GameObject("Btn_60sTest")
-                testBtn60sGo.transform:SetParent(parentGo.transform, false)
-                local t60Rt = testBtn60sGo:AddComponent(typeof(RectTransform))
-                t60Rt.anchorMin, t60Rt.anchorMax, t60Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                t60Rt.anchoredPosition = Vector2(538, -254)
-                t60Rt.sizeDelta = Vector2(132, 26)
-                local t60Img = testBtn60sGo:AddComponent(typeof(Image))
-                t60Img.color = Color(0.7, 0.2, 0.2, 1)
-                local t60Btn = testBtn60sGo:AddComponent(typeof(Button))
-                t60Btn.targetGraphic = t60Img
-                local t60TxtGo = GameObject("Txt")
-                t60TxtGo.transform:SetParent(testBtn60sGo.transform, false)
-                local t60tRt = t60TxtGo:AddComponent(typeof(RectTransform))
-                t60tRt.anchorMin, t60tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                t60tRt.sizeDelta = Vector2(0, 0)
-                local t60Txt = t60TxtGo:AddComponent(typeof(Text))
-                t60Txt.text = "60s (Test Hạn)"
-                t60Txt.raycastTarget = false
-                t60Txt.color, t60Txt.fontSize, t60Txt.alignment = Color.white, 13, TextAnchor.MiddleCenter
-                if defaultFont then t60Txt.font = defaultFont end
+                -- Ghi chú cho ô tùy chỉnh
+                local cdiTipGo = GameObject("CustomDaysTip")
+                cdiTipGo.transform:SetParent(parentGo.transform, false)
+                local cdiTipRt = cdiTipGo:AddComponent(typeof(RectTransform))
+                cdiTipRt.anchorMin, cdiTipRt.anchorMax, cdiTipRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                cdiTipRt.anchoredPosition = Vector2(245, -316)
+                cdiTipRt.sizeDelta = Vector2(400, 26)
+                local cdiTipTxt = cdiTipGo:AddComponent(typeof(Text))
+                cdiTipTxt.raycastTarget = false
+                cdiTipTxt.text = "<color=#888888>* Nhập số ngày tùy ý bất kỳ (1, 10, 45, 120...)</color>"
+                cdiTipTxt.fontSize = 12
+                cdiTipTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then cdiTipTxt.font = defaultFont end
 
-                t60Btn.onClick:AddListener(function()
-                    kg.duration = 0.000694444
-                    kg.customDaysStr = ""
-                    customDaysField.text = ""
-                    optDTkTxt.text = "<color=red>[ 60 Giây ]</color>"
-                end)
-
-                -- Các nút thời hạn Preset (Hàng 1: 3, 7, 15, 30, 60, 90, 365)
-                local durPresets = { 3, 7, 15, 30, 60, 90, 365 }
-                local btnStartX = 15
-                local btnGap = 8
-                local btnW = 88
-                for idx, dVal in ipairs(durPresets) do
-                    local dBtnGo = GameObject("BtnDur_" .. dVal)
-                    dBtnGo.transform:SetParent(parentGo.transform, false)
-                    local dRt = dBtnGo:AddComponent(typeof(RectTransform))
-                    dRt.anchorMin, dRt.anchorMax, dRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                    dRt.anchoredPosition = Vector2(btnStartX + (idx - 1) * (btnW + btnGap), -284)
-                    dRt.sizeDelta = Vector2(btnW, 26)
-
-                    local dImg = dBtnGo:AddComponent(typeof(Image))
-                    dImg.color = Color(0.2, 0.2, 0.2, 1)
-
-                    local dtGo = GameObject("Txt")
-                    dtGo.transform:SetParent(dBtnGo.transform, false)
-                    local dtRt = dtGo:AddComponent(typeof(RectTransform))
-                    dtRt.anchorMin, dtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                    dtRt.sizeDelta = Vector2(0, 0)
-                    local dTxt = dtGo:AddComponent(typeof(Text))
-                    dTxt.raycastTarget = false
-                    dTxt.text = tostring(dVal) .. " Ngày"
-                    dTxt.color = Color.white
-                    dTxt.fontSize = 13
-                    dTxt.alignment = TextAnchor.MiddleCenter
-                    if defaultFont then dTxt.font = defaultFont end
-
-                    local dBtn = dBtnGo:AddComponent(typeof(Button))
-                    dBtn.targetGraphic = dImg
-                    dBtn.onClick:AddListener(function()
-                        kg.duration = dVal
-                        kg.customDaysStr = ""
-                        customDaysField.text = ""
-                        optDTkTxt.text = string.format("<color=green>[ %d Ngày ]</color>", dVal)
-                    end)
-                end
-
-                -- 6. NÚT TẠO TOKEN
+                -- 6. NÚT TẠO TOKEN (CĂN CHÍNH GIỮA)
                 local genBtnGo = GameObject("GenTokenBtn")
                 genBtnGo.transform:SetParent(parentGo.transform, false)
                 local genRt = genBtnGo:AddComponent(typeof(RectTransform))
-                genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                genRt.anchoredPosition = Vector2(135, -316)
-                genRt.sizeDelta = Vector2(250, 32)
+                genRt.anchorMin, genRt.anchorMax, genRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+                genRt.anchoredPosition = Vector2(0, -352)
+                genRt.sizeDelta = Vector2(260, 34)
                 local genImg = genBtnGo:AddComponent(typeof(Image))
-                genImg.color = Color(0, 0.7, 0.1, 1)
+                genImg.color = Color(0, 0.75, 0.15, 1)
                 local genBtn = genBtnGo:AddComponent(typeof(Button))
                 genBtn.targetGraphic = genImg
 
@@ -12564,15 +12635,10 @@ local function CreateModUI()
                 resBoxGo.transform:SetParent(parentGo.transform, false)
                 local resRt = resBoxGo:AddComponent(typeof(RectTransform))
                 resRt.anchorMin, resRt.anchorMax, resRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                resRt.anchoredPosition = Vector2(15, -354)
+                resRt.anchoredPosition = Vector2(15, -396)
                 resRt.sizeDelta = Vector2(670, 56)
 
-                local resBg = GameObject("Bg")
-                resBg.transform:SetParent(resBoxGo.transform, false)
-                local resBgRt = resBg:AddComponent(typeof(RectTransform))
-                resBgRt.anchorMin, resBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                resBgRt.sizeDelta = Vector2(0, 0)
-                local resBgImg = resBg:AddComponent(typeof(Image))
+                local resBgImg = resBoxGo:AddComponent(typeof(Image))
                 resBgImg.color = Color(0.1, 0.1, 0.1, 0.9)
 
                 local resTxtGo = GameObject("Text")
@@ -12585,12 +12651,27 @@ local function CreateModUI()
                 resTextComp.color = Color.yellow
                 resTextComp.fontSize = 13
                 resTextComp.alignment = TextAnchor.MiddleLeft
+                resTextComp.raycastTarget = false
+                resTextComp.horizontalOverflow = CS.UnityEngine.HorizontalWrapMode.Wrap
+                resTextComp.verticalOverflow = CS.UnityEngine.VerticalWrapMode.Truncate
                 if defaultFont then resTextComp.font = defaultFont end
 
                 local resInField = resBoxGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                resInField.targetGraphic = resBgImg
                 resInField.textComponent = resTextComp
-                resInField.text = ""
+                resInField.lineType = CS.UnityEngine.UI.InputField.LineType.MultiLineSubmit
                 resInField.readOnly = true
+
+                local function SetResultDisplay(str, col)
+                    if resTextComp then
+                        resTextComp.color = col or Color.yellow
+                        resTextComp.text = str or ""
+                    end
+                    if resInField then
+                        resInField.text = str or ""
+                    end
+                end
+                SetResultDisplay("Chưa có token được tạo...", Color.yellow)
 
                 -- Nút Copy Token
                 local cpBtnGo = GameObject("CopyTokenBtn")
@@ -12616,10 +12697,18 @@ local function CreateModUI()
                 if defaultFont then cpTxt.font = defaultFont end
 
                 cpBtn.onClick:AddListener(function()
-                    if kg.genToken and kg.genToken ~= "" then
-                        CS.UnityEngine.GUIUtility.systemCopyBuffer = kg.genToken
+                    local tokenToCopy = kg.genToken
+                    if (not tokenToCopy or tokenToCopy == "") and resInField and resInField.text and resInField.text ~= "" and resInField.text ~= "Chưa có token được tạo..." and not string.find(resInField.text, "Lỗi") then
+                        tokenToCopy = resInField.text
+                    end
+                    if tokenToCopy and tokenToCopy ~= "" then
+                        CS.UnityEngine.GUIUtility.systemCopyBuffer = tokenToCopy
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                             _G.FloatingWordUtility.QuickMsg("Đã Copy Token vào bộ nhớ tạm!")
+                        end
+                    else
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("Chưa có token để Copy!")
                         end
                     end
                 end)
@@ -12671,8 +12760,7 @@ local function CreateModUI()
                     local codeInput = (inputField and inputField.text and inputField.text ~= "") and inputField.text or kg.deviceCode
                     codeInput = string.gsub(codeInput, "^%s*(.-)%s*$", "%1")
                     if codeInput == "" then
-                        resTextComp.text = "<color=red>Lỗi: Chưa nhập mã MD5 thiết bị!</color>"
-                        if resTxt then resTxt.text = resTextComp.text end
+                        SetResultDisplay("Lỗi: Chưa nhập mã MD5 thiết bị!", Color.red)
                         return
                     end
                     kg.deviceCode = codeInput
@@ -12719,8 +12807,7 @@ local function CreateModUI()
                         return string.lower(tostring(CS.PCUtility.Md5(dataToHash)))
                     end)
                     if not status or not md5Hash then
-                        resTextComp.text = "<color=red>Lỗi: Không tạo được MD5!</color>"
-                        if resTxt then resTxt.text = resTextComp.text end
+                        SetResultDisplay("Lỗi: Không tạo được MD5!", Color.red)
                         return
                     end
 
@@ -12730,16 +12817,14 @@ local function CreateModUI()
                     end)
                     if status2 and b64Token and b64Token ~= "" then
                         kg.genToken = b64Token
-                        resTextComp.text = b64Token
-                        if resTxt then resTxt.text = b64Token end
+                        SetResultDisplay(b64Token, Color.green)
                         CS.UnityEngine.GUIUtility.systemCopyBuffer = b64Token
 
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                             _G.FloatingWordUtility.QuickMsg("Đã tạo và tự động Copy Token!")
                         end
                     else
-                        resTextComp.text = "<color=red>Lỗi Base64 Encode!</color>"
-                        if resTxt then resTxt.text = resTextComp.text end
+                        SetResultDisplay("Lỗi Base64 Encode!", Color.red)
                     end
                 end)
             end
@@ -12755,7 +12840,7 @@ local function CreateModUI()
                 dashedSepGo.transform:SetParent(parentGo.transform, false)
                 local dsRt = dashedSepGo:AddComponent(typeof(RectTransform))
                 dsRt.anchorMin, dsRt.anchorMax, dsRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-                dsRt.anchoredPosition = Vector2(0, -425)
+                dsRt.anchoredPosition = Vector2(0, -466)
                 dsRt.sizeDelta = Vector2(680, 16)
                 local dsTxt = dashedSepGo:AddComponent(typeof(Text))
                 dsTxt.raycastTarget = false
@@ -12770,7 +12855,7 @@ local function CreateModUI()
                 infoTitleGo.transform:SetParent(parentGo.transform, false)
                 local infoTitleRt = infoTitleGo:AddComponent(typeof(RectTransform))
                 infoTitleRt.anchorMin, infoTitleRt.anchorMax, infoTitleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-                infoTitleRt.anchoredPosition = Vector2(0, -445)
+                infoTitleRt.anchoredPosition = Vector2(0, -486)
                 infoTitleRt.sizeDelta = Vector2(600, 24)
                 local infoTitleTxt = infoTitleGo:AddComponent(typeof(Text))
                 infoTitleTxt.text = "=== THÔNG TIN, CHỨC NĂNG NHÂN VẬT ==="
@@ -12836,8 +12921,8 @@ local function CreateModUI()
                     return ""
                 end
 
-                -- HÀNG NÚT TỔNG HỢP: [ LẤY TẤT CẢ ] và [ COPY TỔNG HỢP ] (Đặt ngay dưới tiêu đề, Y = -475)
-                CreateSmallBtn(parentGo, 15, -475, 150, 26, "[ LẤY TẤT CẢ ]", Color(0.1, 0.65, 0.35, 1), function()
+                -- HÀNG NÚT TỔNG HỢP: [ LẤY TẤT CẢ ] và [ COPY TỔNG HỢP ] (Đặt ngay dưới tiêu đề, Y = -516)
+                CreateSmallBtn(parentGo, 15, -516, 150, 26, "[ LẤY TẤT CẢ ]", Color(0.1, 0.65, 0.35, 1), function()
                     local rId = GetRoleIdVal()
                     local cUid = GetCharUidVal()
                     local nVal = GetNameVal()
@@ -12853,7 +12938,7 @@ local function CreateModUI()
                     end
                 end)
 
-                CreateSmallBtn(parentGo, 175, -475, 180, 26, "[ COPY TỔNG HỢP ]", Color(0.7, 0.3, 0.6, 1), function()
+                CreateSmallBtn(parentGo, 175, -516, 180, 26, "[ COPY TỔNG HỢP ]", Color(0.7, 0.3, 0.6, 1), function()
                     local rId = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
                     local cUid = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
                     local nVal = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
@@ -12866,30 +12951,30 @@ local function CreateModUI()
                     end
                 end)
 
-                -- 1. HÀNG 1: RoleId & UID (Y = -507)
+                -- 1. HÀNG 1: RoleId & UID (Y = -548)
                 -- 1.1 RoleId
                 local rIdLblGo = GameObject("RoleIdLbl")
                 rIdLblGo.transform:SetParent(parentGo.transform, false)
                 local rIdLblRt = rIdLblGo:AddComponent(typeof(RectTransform))
                 rIdLblRt.anchorMin, rIdLblRt.anchorMax, rIdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rIdLblRt.anchoredPosition = Vector2(15, -507)
+                rIdLblRt.anchoredPosition = Vector2(15, -548)
                 rIdLblRt.sizeDelta = Vector2(55, 26)
                 local rIdLblTxt = rIdLblGo:AddComponent(typeof(Text))
                 rIdLblTxt.text = "RoleId:"
                 rIdLblTxt.color, rIdLblTxt.fontSize, rIdLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then rIdLblTxt.font = defaultFont end
 
-                local _, roleIdInp, _ = CreateSmallInput(parentGo, 72, -507, 145, 26, "", false)
+                local _, roleIdInp, _ = CreateSmallInput(parentGo, 72, -548, 145, 26, "", false)
                 ui.roleIdInp = roleIdInp
 
-                CreateSmallBtn(parentGo, 222, -507, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -548, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetRoleIdVal()
                     ui.roleIdInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("RoleId: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -507, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -548, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
                     CopyWithNotice(v, "RoleId")
                 end)
@@ -12899,79 +12984,79 @@ local function CreateModUI()
                 uidLblGo.transform:SetParent(parentGo.transform, false)
                 local uidLblRt = uidLblGo:AddComponent(typeof(RectTransform))
                 uidLblRt.anchorMin, uidLblRt.anchorMax, uidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                uidLblRt.anchoredPosition = Vector2(340, -507)
+                uidLblRt.anchoredPosition = Vector2(340, -548)
                 uidLblRt.sizeDelta = Vector2(40, 26)
                 local uidLblTxt = uidLblGo:AddComponent(typeof(Text))
                 uidLblTxt.text = "UID:"
                 uidLblTxt.color, uidLblTxt.fontSize, uidLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then uidLblTxt.font = defaultFont end
 
-                local _, charUidInp, _ = CreateSmallInput(parentGo, 385, -507, 175, 26, "", false)
+                local _, charUidInp, _ = CreateSmallInput(parentGo, 385, -548, 175, 26, "", false)
                 ui.charUidInp = charUidInp
 
-                CreateSmallBtn(parentGo, 565, -507, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 565, -548, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetCharUidVal()
                     ui.charUidInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("UID: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 611, -507, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 611, -548, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
                     CopyWithNotice(v, "UID")
                 end)
 
-                -- 2. HÀNG 2: Name (Y = -539) - Phía bên phải để trống
+                -- 2. HÀNG 2: Name (Y = -580) - Phía bên phải để trống
                 local nameLblGo = GameObject("NameLbl")
                 nameLblGo.transform:SetParent(parentGo.transform, false)
                 local nameLblRt = nameLblGo:AddComponent(typeof(RectTransform))
                 nameLblRt.anchorMin, nameLblRt.anchorMax, nameLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                nameLblRt.anchoredPosition = Vector2(15, -539)
+                nameLblRt.anchoredPosition = Vector2(15, -580)
                 nameLblRt.sizeDelta = Vector2(55, 26)
                 local nameLblTxt = nameLblGo:AddComponent(typeof(Text))
                 nameLblTxt.text = "Name:"
                 nameLblTxt.color, nameLblTxt.fontSize, nameLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then nameLblTxt.font = defaultFont end
 
-                local _, nameInp, _ = CreateSmallInput(parentGo, 72, -539, 145, 26, "", false)
+                local _, nameInp, _ = CreateSmallInput(parentGo, 72, -580, 145, 26, "", false)
                 ui.nameInp = nameInp
 
-                CreateSmallBtn(parentGo, 222, -539, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -580, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetNameVal()
                     ui.nameInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("Name: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -539, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -580, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
                     CopyWithNotice(v, "Name")
                 end)
 
-                -- 3. HÀNG 3: MapID & Location (Y = -571)
+                -- 3. HÀNG 3: MapID & Location (Y = -612)
                 -- 3.1 MapID
                 local mapLblGo = GameObject("MapIdLbl")
                 mapLblGo.transform:SetParent(parentGo.transform, false)
                 local mapLblRt = mapLblGo:AddComponent(typeof(RectTransform))
                 mapLblRt.anchorMin, mapLblRt.anchorMax, mapLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                mapLblRt.anchoredPosition = Vector2(15, -571)
+                mapLblRt.anchoredPosition = Vector2(15, -612)
                 mapLblRt.sizeDelta = Vector2(55, 26)
                 local mapLblTxt = mapLblGo:AddComponent(typeof(Text))
                 mapLblTxt.text = "MapID:"
                 mapLblTxt.color, mapLblTxt.fontSize, mapLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then mapLblTxt.font = defaultFont end
 
-                local _, mapIdInp, _ = CreateSmallInput(parentGo, 72, -571, 145, 26, "", false)
+                local _, mapIdInp, _ = CreateSmallInput(parentGo, 72, -612, 145, 26, "", false)
                 ui.mapIdInp = mapIdInp
 
-                CreateSmallBtn(parentGo, 222, -571, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -612, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetMapIdVal()
                     ui.mapIdInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("MapID: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -571, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -612, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.mapIdInp and ui.mapIdInp.text ~= "") and ui.mapIdInp.text or GetMapIdVal()
                     CopyWithNotice(v, "MapID")
                 end)
@@ -12981,47 +13066,47 @@ local function CreateModUI()
                 locLblGo.transform:SetParent(parentGo.transform, false)
                 local locLblRt = locLblGo:AddComponent(typeof(RectTransform))
                 locLblRt.anchorMin, locLblRt.anchorMax, locLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                locLblRt.anchoredPosition = Vector2(340, -571)
+                locLblRt.anchoredPosition = Vector2(340, -612)
                 locLblRt.sizeDelta = Vector2(45, 26)
                 local locLblTxt = locLblGo:AddComponent(typeof(Text))
                 locLblTxt.text = "Tọa độ:"
                 locLblTxt.color, locLblTxt.fontSize, locLblTxt.alignment = Color.white, 13, TextAnchor.MiddleLeft
                 if defaultFont then locLblTxt.font = defaultFont end
 
-                local _, locInp, _ = CreateSmallInput(parentGo, 385, -571, 175, 26, "", false)
+                local _, locInp, _ = CreateSmallInput(parentGo, 385, -612, 175, 26, "", false)
                 ui.locInp = locInp
 
-                CreateSmallBtn(parentGo, 565, -571, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 565, -612, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetLocationVal()
                     ui.locInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("Tọa độ: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 611, -571, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 611, -612, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.locInp and ui.locInp.text ~= "") and ui.locInp.text or GetLocationVal()
                     CopyWithNotice(v, "Tọa độ")
                 end)
 
-                -- 4. HÀNG 4: CHỨC NĂNG BAY ĐẾN (Y = -611)
+                -- 4. HÀNG 4: CHỨC NĂNG BAY ĐẾN (Y = -652)
                 local flyLblGo = GameObject("FlyLbl")
                 flyLblGo.transform:SetParent(parentGo.transform, false)
                 local flyLblRt = flyLblGo:AddComponent(typeof(RectTransform))
                 flyLblRt.anchorMin, flyLblRt.anchorMax, flyLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                flyLblRt.anchoredPosition = Vector2(15, -611)
+                flyLblRt.anchoredPosition = Vector2(15, -652)
                 flyLblRt.sizeDelta = Vector2(55, 26)
                 local flyLblTxt = flyLblGo:AddComponent(typeof(Text))
                 flyLblTxt.text = "Bay đến:"
                 flyLblTxt.color, flyLblTxt.fontSize, flyLblTxt.alignment = Color.yellow, 13, TextAnchor.MiddleLeft
                 if defaultFont then flyLblTxt.font = defaultFont end
 
-                local _, flyInp, flyTxt = CreateSmallInput(parentGo, 72, -611, 145, 26, "", false)
+                local _, flyInp, flyTxt = CreateSmallInput(parentGo, 72, -652, 145, 26, "", false)
                 flyTxt.fontSize = 12
                 flyInp.text = ""
                 ui.flyInp = flyInp
 
                 -- Nút [PASTE]
-                CreateSmallBtn(parentGo, 222, -611, 44, 26, "Paste", Color(0.8, 0.4, 0, 1), function()
+                CreateSmallBtn(parentGo, 222, -652, 44, 26, "Paste", Color(0.8, 0.4, 0, 1), function()
                     local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                     clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
                     ui.flyInp.text = clip
@@ -13031,7 +13116,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [COPY]
-                CreateSmallBtn(parentGo, 270, -611, 46, 26, "Copy", Color(0.85, 0.5, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 270, -652, 46, 26, "Copy", Color(0.85, 0.5, 0.1, 1), function()
                     local val = ui.flyInp and ui.flyInp.text or ""
                     val = string.gsub(val, "^%s*(.-)%s*$", "%1")
                     if val ~= "" then
@@ -13047,7 +13132,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [HIỆN TẠI]
-                CreateSmallBtn(parentGo, 324, -611, 160, 26, "Lấy Tọa Độ Hiện Tại", Color(0.2, 0.5, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 324, -652, 160, 26, "Lấy Tọa Độ Hiện Tại", Color(0.2, 0.5, 0.75, 1), function()
                     local mId = GetMapIdVal()
                     local lVal = GetLocationVal()
                     if mId ~= "" and lVal ~= "" then
@@ -13063,7 +13148,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [BAY NGAY] (Nổi bật, cam tươi viền xanh)
-                CreateSmallBtn(parentGo, 492, -611, 165, 26, "BAY NGAY >>", Color(0.85, 0.25, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 492, -652, 165, 26, "BAY NGAY >>", Color(0.85, 0.25, 0.1, 1), function()
                     local inputRaw = ui.flyInp and ui.flyInp.text or ""
                     inputRaw = string.gsub(inputRaw, "^%s*(.-)%s*$", "%1")
                     if inputRaw == "" then
@@ -13160,7 +13245,7 @@ local function CreateModUI()
                 flyTipGo.transform:SetParent(parentGo.transform, false)
                 local flyTipRt = flyTipGo:AddComponent(typeof(RectTransform))
                 flyTipRt.anchorMin, flyTipRt.anchorMax, flyTipRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                flyTipRt.anchoredPosition = Vector2(15, -645)
+                flyTipRt.anchoredPosition = Vector2(15, -686)
                 flyTipRt.sizeDelta = Vector2(650, 20)
                 local flyTipTxt = flyTipGo:AddComponent(typeof(Text))
                 flyTipTxt.raycastTarget = false
