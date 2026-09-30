@@ -1,1 +1,1 @@
-# Clean
+git status -s

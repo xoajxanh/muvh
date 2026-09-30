@@ -1174,7 +1174,10 @@ local function CreateModUI()
         pkBtnComp.onClick:AddListener(function()
             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Vui lòng kích hoạt bản quyền Mod!") end
-                if _G.authPanelGo then _G.authPanelGo:SetActive(true) end
+                if _G.authPanelGo then
+                    if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
+                    _G.authPanelGo:SetActive(true)
+                end
                 return
             end
             _G.Mod_AutoPK_Enabled = not _G.Mod_AutoPK_Enabled
@@ -2438,6 +2441,7 @@ local function CreateModUI()
         -- =========================================================================
         local function ApplyAttackRangeMultiplier(mult)
             mult = mult or _G.Mod_CustomAttackRangeMultiplier or 1.0
+            if mult > 1.8 then mult = 1.8 end
             pcall(function()
                 local skillDic = nil
                 if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
@@ -2480,6 +2484,9 @@ local function CreateModUI()
             pcall(function()
                 _G.Mod_CustomAttackRangeMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_CustomAttackRangeMultiplier", 1.0)
             end)
+        end
+        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_CustomAttackRangeMultiplier > 1.8 then
+            _G.Mod_CustomAttackRangeMultiplier = 1.8
         end
         if _G.Mod_CustomAttackRange == nil then
             pcall(function()
@@ -5683,6 +5690,229 @@ local function CreateModUI()
                     end
 
                     -- =========================================================================
+                    -- [MOD FEATURE]: BỘ LỌC BẢO HỘ & SO KHỚP MỤC TIÊU SMART TARGET / AUTO BUFF (SMART TARGET & EXCLUSION)
+                    -- Mô tả:
+                    -- 1. Tự động nhận diện và bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy (IsPlayerProtected).
+                    -- 2. Hỗ trợ đa điều kiện (phân tách bởi ';', ',', '|', xuống dòng) và Server ID (s393, S393., 393...).
+                    -- 3. HỖ TRỢ TIỀN TỐ NGOẠI LỆ '-' (VD: -Dino;s395): Token có dấu '-' được kiểm tra ĐẦU TIÊN.
+                    --    Nếu mục tiêu khớp bất kỳ token ngoại lệ nào -> Lập tức bỏ qua (return false), không target!
+                    -- =========================================================================
+                    local function IsPlayerProtected(role)
+                        if not role or role.isDead then return false end
+
+                        local protectTime = 0
+                        if role.GetProtectTIme then
+                            protectTime = role:GetProtectTIme() or 0
+                        end
+                        if protectTime == 0 and role.data then
+                            protectTime = role.data.hangUpProtectionTime or role.data.crossServerHangUpTime or 0
+                        end
+                        if protectTime == 0 then
+                            protectTime = role.hangUpProtectionTime or role.crossServerHangUpTime or 0
+                        end
+
+                        if protectTime and protectTime > 0 then
+                            local nowMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                            if nowMs > 0 and protectTime > nowMs then
+                                return true
+                            end
+                            local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+                            if protectTime > nowSec and protectTime < 1000000000000 then
+                                return true
+                            end
+                        end
+
+                        if role.killMonsterEffect and role.killMonsterEffect.isModelActive then
+                            return true
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsPlayerProtected = IsPlayerProtected
+
+                    local function isMatchSingleToken(p, token)
+                        if not token or token == "" or not p then return false end
+                        local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                        if not cleanToken or cleanToken == "" then return false end
+
+                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
+                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
+                            string.match(cleanToken, "^[Ss](%d+)$") or
+                            string.match(cleanToken, "^(%d+)$")
+
+                        local targetNum = sId and tonumber(sId) or nil
+                        if targetNum then
+                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                            if not pSid and p.data then
+                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
+                            end
+                            if pSid and tonumber(pSid) == targetNum then
+                                return true
+                            end
+                        end
+
+                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
+                        local strList = {}
+                        local pName = ""
+                        if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
+                        if p.GetName then
+                            pcall(function()
+                                local n = p:GetName()
+                                if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
+                            end)
+                        end
+                        if p.GetUnionName then
+                            pcall(function()
+                                local u = p:GetUnionName()
+                                if u then
+                                    table.insert(strList, tostring(u))
+                                    table.insert(strList, "[" .. tostring(u) .. "]")
+                                end
+                            end)
+                        end
+                        if p.data then
+                            if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
+                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                            if p.data.unionName then
+                                table.insert(strList, tostring(p.data.unionName))
+                                table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
+                            end
+                            local dataSid = p.data.serverId or p.data.sid
+                            if dataSid then
+                                table.insert(strList, "S" .. tostring(dataSid) .. ".")
+                                table.insert(strList, "S" .. tostring(dataSid))
+                            end
+                        end
+                        if p.serverId then
+                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
+                            table.insert(strList, "S" .. tostring(p.serverId))
+                        end
+                        if p.showName then table.insert(strList, tostring(p.showName)) end
+                        if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
+
+                        -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
+                        local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
+                        if sidVal and pName ~= "" then
+                            local sValStr = tostring(sidVal)
+                            table.insert(strList, "S" .. sValStr .. "." .. pName)
+                            table.insert(strList, "S" .. sValStr .. ". " .. pName)
+                            table.insert(strList, "S" .. sValStr .. "_" .. pName)
+                            table.insert(strList, "S" .. sValStr .. " " .. pName)
+                            table.insert(strList, "[S" .. sValStr .. "]" .. pName)
+                            table.insert(strList, "[S" .. sValStr .. "] " .. pName)
+                        end
+
+                        if sId then
+                            local pattern1 = "s" .. sId .. "%."
+                            local pattern2 = "s" .. sId .. "_"
+                            local pattern3 = "s" .. sId
+                            for _, s in ipairs(strList) do
+                                local sLower = string.lower(s)
+                                if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
+                                    return true
+                                end
+                            end
+                        else
+                            local lowerInput = string.lower(cleanToken)
+                            for _, s in ipairs(strList) do
+                                if string.find(string.lower(s), lowerInput, 1, true) then
+                                    return true
+                                end
+                            end
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsMatchSingleToken = isMatchSingleToken
+
+                    local function parseTargetTokens(inputStr)
+                        local exclusions = {}
+                        local inclusions = {}
+                        if not inputStr or inputStr == "" then
+                            return exclusions, inclusions
+                        end
+                        for token in string.gmatch(inputStr, "([^;,|\r\n]+)") do
+                            local clean = string.match(token, "^%s*(.-)%s*$")
+                            if clean and clean ~= "" then
+                                if string.sub(clean, 1, 1) == "-" then
+                                    local exclToken = string.match(string.sub(clean, 2), "^%s*(.-)%s*$")
+                                    if exclToken and exclToken ~= "" then
+                                        table.insert(exclusions, exclToken)
+                                    end
+                                else
+                                    table.insert(inclusions, clean)
+                                end
+                            end
+                        end
+                        return exclusions, inclusions
+                    end
+
+                    local function isMatchLockTarget(p, lockInput)
+                        if not p or p.isDead then return false end
+
+                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
+                        if IsPlayerProtected(p) then
+                            return false
+                        end
+
+                        if not lockInput or lockInput == "" then return true end
+
+                        local exclusions, inclusions = parseTargetTokens(lockInput)
+
+                        -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
+                        -- Nếu có tiền tố '-' (VD: -Dino;s395): Bỏ qua toàn bộ điều kiện sau, KHÔNG target!
+                        for _, exclToken in ipairs(exclusions) do
+                            if isMatchSingleToken(p, exclToken) then
+                                return false
+                            end
+                        end
+
+                        -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
+                        -- Nếu chỉ toàn token ngoại lệ '-' -> Tất cả ai không bị ngoại lệ đều được target
+                        if #inclusions == 0 then
+                            return true
+                        end
+
+                        -- Nếu có điều kiện chỉ định -> Phải khớp ít nhất 1 token chỉ định
+                        for _, inclToken in ipairs(inclusions) do
+                            if isMatchSingleToken(p, inclToken) then
+                                return true
+                            end
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
+
+                    local function isMatchBuffTarget(p, buffInput)
+                        if not buffInput or buffInput == "" then return true end
+                        if not p or p.isDead then return false end
+
+                        local exclusions, inclusions = parseTargetTokens(buffInput)
+
+                        -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
+                        for _, exclToken in ipairs(exclusions) do
+                            if isMatchSingleToken(p, exclToken) then
+                                return false
+                            end
+                        end
+
+                        -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
+                        if #inclusions == 0 then
+                            return true
+                        end
+
+                        for _, inclToken in ipairs(inclusions) do
+                            if isMatchSingleToken(p, inclToken) then
+                                return true
+                            end
+                        end
+
+                        return false
+                    end
+                    _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
+
+                    -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG BUFF ĐỒNG ĐỘI (AUTO BUFF ENGINE)
                     -- Mô tả: Khi có lệnh bí mật /autobuff và toggle AUTO BUFF bật:
                     --        - BẮT BUỘC: TextField (Mod_AutoBuff_Targets) phải có tên mục tiêu chỉ định.
@@ -5714,6 +5944,7 @@ local function CreateModUI()
                                 -- 1. Kiểm tra vị trí bãi buff (101096, 20, 207)
                                 local distToBuffSpot = math.max(math.abs((myCell.x or 0) - 20), math.abs((myCell.y or 0) - 207))
                                 if not isAtBuffMap or distToBuffSpot > 5 then
+                                    _G.Mod_AutoBuff_ArrivedJiggleDone = false
                                     if (nowBuffTime - (_G.Mod_LastAutoBuffMoveTime or 0)) >= 5.0 then
                                         _G.Mod_LastAutoBuffMoveTime = nowBuffTime
                                         if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
@@ -5724,6 +5955,22 @@ local function CreateModUI()
                                         end
                                     end
                                     return
+                                else
+                                    -- =========================================================================
+                                    -- [MOD FEATURE]: PHÁ LAG PATH FINDER KHI TỚI VỊ TRÍ BUFF (ANTI-STUCK JIGGLE)
+                                    -- Mô tả: Di chuyển ngẫu nhiên +-1 ô ngay khi đến bãi buff (20, 207) để đồng bộ toạ độ client
+                                    -- =========================================================================
+                                    if not _G.Mod_AutoBuff_ArrivedJiggleDone then
+                                        _G.Mod_AutoBuff_ArrivedJiggleDone = true
+                                        local meX = (myCell.x and myCell.x > 0 and myCell.x) or 20
+                                        local meY = (myCell.y and myCell.y > 0 and myCell.y) or 207
+                                        local dx = math.random(-1, 1)
+                                        local dy = math.random(-1, 1)
+                                        if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                                        if me.MoveTo then
+                                            me:MoveTo({ x = meX + dx, y = meY + dy })
+                                        end
+                                    end
                                 end
 
                                 -- 2. Tắt Auto PK và chuyển sang PK Hòa Bình
@@ -5766,21 +6013,7 @@ local function CreateModUI()
                                                     p.tempPathFindingDistance = dist
                                                     local isMatch = false
                                                     if hasFilter then
-                                                        -- Trích xuất tên người chơi đa thuộc tính chuẩn xác
-                                                        local pName = (p.data and (p.data.name or p.data.Name or p.data.roleName)) or p.name or p.Name or p.showName or ""
-                                                        local pLower = string.lower(pName)
-                                                        for token in string.gmatch(_G.Mod_AutoBuff_Targets, "([^;,|\r\n]+)") do
-                                                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
-                                                            if cleanToken and cleanToken ~= "" then
-                                                                if string.find(pLower, string.lower(cleanToken), 1, true) then
-                                                                    isMatch = true
-                                                                    break
-                                                                end
-                                                            end
-                                                        end
-                                                        if not isMatch and _G.Mod_IsMatchBuffTarget then
-                                                            isMatch = _G.Mod_IsMatchBuffTarget(p, _G.Mod_AutoBuff_Targets)
-                                                        end
+                                                        isMatch = isMatchBuffTarget(p, _G.Mod_AutoBuff_Targets)
                                                     else
                                                         isMatch = true
                                                     end
@@ -6713,174 +6946,13 @@ local function CreateModUI()
 
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: BỘ LỌC BẢO HỘ KHI TREO MÁY & KHÓA MỤC TIÊU ĐA ĐIỀU KIỆN (LOCK TARGET & PROTECTION BYPASS)
-                    -- Mô tả:
-                    -- 1. Tự động nhận diện và bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy (Thủ Hộ / Miễn Dịch PK).
-                    -- 2. Khóa mục tiêu hỗ trợ tổ hợp đa điều kiện phân tách bằng dấu chấm phẩy ';' (VD: S393.;S395.;LucMac).
+                    -- [MOD FEATURE]: KHÓA MỤC TIÊU SMART TARGET & BẢO HỘ (ĐÃ ĐƯỢC ĐỊNH NGHĨA PHÍA TRÊN)
+                    -- Mô tả: IsPlayerProtected, isMatchSingleToken, isMatchLockTarget, isMatchBuffTarget đã được khởi tạo tập trung ở đầu Timer Loop
                     -- =========================================================================
-                    local function IsPlayerProtected(role)
-                        if not role or role.isDead then return false end
-
-                        local protectTime = 0
-                        if role.GetProtectTIme then
-                            protectTime = role:GetProtectTIme() or 0
-                        end
-                        if protectTime == 0 and role.data then
-                            protectTime = role.data.hangUpProtectionTime or role.data.crossServerHangUpTime or 0
-                        end
-                        if protectTime == 0 then
-                            protectTime = role.hangUpProtectionTime or role.crossServerHangUpTime or 0
-                        end
-
-                        if protectTime and protectTime > 0 then
-                            local nowMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-                            if nowMs > 0 and protectTime > nowMs then
-                                return true
-                            end
-                            local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
-                            if protectTime > nowSec and protectTime < 1000000000000 then
-                                return true
-                            end
-                        end
-
-                        if role.killMonsterEffect and role.killMonsterEffect.isModelActive then
-                            return true
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsPlayerProtected = IsPlayerProtected
-
-                    -- =========================================================================
-                    -- [MOD FEATURE]: KHÓA MỤC TIÊU ĐA ĐIỀU KIỆN & SERVER PREFIX (S393., S395., NAME, GUILD)
-                    -- =========================================================================
-                    local function isMatchSingleToken(p, token)
-                        if not token or token == "" or not p then return false end
-                        local cleanToken = string.match(token, "^%s*(.-)%s*$")
-                        if not cleanToken or cleanToken == "" then return false end
-
-                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
-                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
-                            string.match(cleanToken, "^[Ss](%d+)$") or
-                            string.match(cleanToken, "^(%d+)$")
-
-                        local targetNum = sId and tonumber(sId) or nil
-                        if targetNum then
-                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
-                            if not pSid and p.data then
-                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
-                            end
-                            if pSid and tonumber(pSid) == targetNum then
-                                return true
-                            end
-                        end
-
-                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
-                        local strList = {}
-                        local pName = ""
-                        if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
-                        if p.GetName then
-                            pcall(function()
-                                local n = p:GetName()
-                                if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
-                            end)
-                        end
-                        if p.GetUnionName then
-                            pcall(function()
-                                local u = p:GetUnionName()
-                                if u then
-                                    table.insert(strList, tostring(u))
-                                    table.insert(strList, "[" .. tostring(u) .. "]")
-                                end
-                            end)
-                        end
-                        if p.data then
-                            if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
-                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
-                            if p.data.unionName then
-                                table.insert(strList, tostring(p.data.unionName))
-                                table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
-                            end
-                            local dataSid = p.data.serverId or p.data.sid
-                            if dataSid then
-                                table.insert(strList, "S" .. tostring(dataSid) .. ".")
-                                table.insert(strList, "S" .. tostring(dataSid))
-                            end
-                        end
-                        if p.serverId then
-                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
-                            table.insert(strList, "S" .. tostring(p.serverId))
-                        end
-                        if p.showName then table.insert(strList, tostring(p.showName)) end
-                        if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
-
-                        -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
-                        local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
-                        if sidVal and pName ~= "" then
-                            local sValStr = tostring(sidVal)
-                            table.insert(strList, "S" .. sValStr .. "." .. pName)
-                            table.insert(strList, "S" .. sValStr .. ". " .. pName)
-                            table.insert(strList, "S" .. sValStr .. "_" .. pName)
-                            table.insert(strList, "S" .. sValStr .. " " .. pName)
-                            table.insert(strList, "[S" .. sValStr .. "]" .. pName)
-                            table.insert(strList, "[S" .. sValStr .. "] " .. pName)
-                        end
-
-                        if sId then
-                            local pattern1 = "s" .. sId .. "%."
-                            local pattern2 = "s" .. sId .. "_"
-                            local pattern3 = "s" .. sId
-                            for _, s in ipairs(strList) do
-                                local sLower = string.lower(s)
-                                if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
-                                    return true
-                                end
-                            end
-                        else
-                            local lowerInput = string.lower(cleanToken)
-                            for _, s in ipairs(strList) do
-                                if string.find(string.lower(s), lowerInput, 1, true) then
-                                    return true
-                                end
-                            end
-                        end
-
-                        return false
-                    end
-
-                    local function isMatchLockTarget(p, lockInput)
-                        if not lockInput or lockInput == "" then return true end
-                        if not p or p.isDead then return false end
-
-                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
-                        if IsPlayerProtected(p) then
-                            return false
-                        end
-
-                        -- Tách chuỗi theo dấu chấm phẩy ';', phẩy ',', gạch '|' (Hỗ trợ đa điều kiện - Logic OR)
-                        for token in string.gmatch(lockInput, "([^;,|\r\n]+)") do
-                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
-                            if cleanToken and cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
-                                return true
-                            end
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
-
-                    local function isMatchBuffTarget(p, buffInput)
-                        if not buffInput or buffInput == "" then return true end
-                        if not p or p.isDead then return false end
-                        for token in string.gmatch(buffInput, "([^;,|\r\n]+)") do
-                            local cleanToken = string.match(token, "^%s*(.-)%s*$")
-                            if cleanToken and cleanToken ~= "" and isMatchSingleToken(p, cleanToken) then
-                                return true
-                            end
-                        end
-                        return false
-                    end
-                    _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
+                    local IsPlayerProtected = _G.Mod_IsPlayerProtected
+                    local isMatchSingleToken = _G.Mod_IsMatchSingleToken
+                    local isMatchLockTarget = _G.Mod_IsMatchLockTarget
+                    local isMatchBuffTarget = _G.Mod_IsMatchBuffTarget
 
                     local function IsSelfBuffOrNoTargetSkill(skillId)
                         if not skillId then return false end
@@ -7450,6 +7522,11 @@ local function CreateModUI()
                         local errTxt = errTxtGo:GetComponent(typeof(CS.UnityEngine.UI.Text))
                         if errTxt then errTxt.text = "Đã xóa cài đặt & Token, vui lòng nhập Token mới." end
                     end
+                    -- =========================================================================
+                    -- [MOD FEATURE]: LÀM MỚI DỮ LIỆU BẢNG KÍCH HOẠT KHI CLEAR
+                    -- Mô tả: Gọi làm mới động mã MD5 máy và UID nhân vật khi mở lại bảng Active
+                    -- =========================================================================
+                    if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
                     _G.authPanelGo:SetActive(true)
                 end
             end)
@@ -7523,8 +7600,22 @@ local function CreateModUI()
                 return (status2 and res2) and res2 or ""
             end
 
-            local deviceId = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
-            local deviceCode = GetMD5(deviceId .. "XOAI")
+            local function GetLiveDeviceCode()
+                local devCode = ""
+                if _G.Mod_GetDeviceCode then
+                    devCode = _G.Mod_GetDeviceCode()
+                end
+                if devCode == "" or devCode == "ERROR_MD5" then
+                    pcall(function()
+                        local deviceId = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
+                        if deviceId and tostring(deviceId) ~= "" then
+                            devCode = string.lower(tostring(CS.PCUtility.Md5(tostring(deviceId) .. "XOAI")))
+                        end
+                    end)
+                end
+                return devCode
+            end
+            local deviceCode = GetLiveDeviceCode()
 
             local titleGo = GameObject("AuthTitle")
             titleGo.transform:SetParent(authPanelGo.transform, false)
@@ -7593,7 +7684,8 @@ local function CreateModUI()
             if defaultFont then cTxt2.font = defaultFont end
 
             copyBtn.onClick:AddListener(function()
-                CS.UnityEngine.GUIUtility.systemCopyBuffer = deviceCode
+                local myCode = GetLiveDeviceCode()
+                CS.UnityEngine.GUIUtility.systemCopyBuffer = myCode
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã copy mã thiết bị!") end
             end)
 
@@ -7822,7 +7914,8 @@ local function CreateModUI()
                     return false
                 end
 
-                if pCode ~= deviceCode then
+                local currentLiveCode = GetLiveDeviceCode()
+                if pCode ~= currentLiveCode then
                     if not isSilent then errTxt.text = "Token không dành cho thiết bị này!" end
                     return false
                 end
@@ -7934,6 +8027,39 @@ local function CreateModUI()
                     _G.Mod_ClearAllPlayerPrefs()
                 end
             end)
+            -- =========================================================================
+            -- [MOD FEATURE]: LÀM MỚI DỮ LIỆU BẢNG KÍCH HOẠT (REFRESH AUTH DATA)
+            -- Mô tả: Cập nhật động mã MD5 thiết bị và UID nhân vật mỗi khi mở hoặc làm mới màn hình Active
+            -- =========================================================================
+            local function RefreshAuthUI()
+                if not authPanelGo or authPanelGo:Equals(nil) then return end
+                local currentDevCode = GetLiveDeviceCode()
+                local currentUID = Mod_GetCharacterUID()
+                local valUID = (currentUID ~= "" and currentUID or "Chưa đăng nhập nhân vật")
+
+                pcall(function()
+                    local codeF = authPanelGo.transform:Find("AuthCodeInput")
+                    if codeF then
+                        local inp = codeF:GetComponent(typeof(CS.UnityEngine.UI.InputField))
+                        if inp then inp.text = currentDevCode end
+                        local txt = codeF:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
+                        if txt then txt.text = currentDevCode end
+                    end
+                end)
+
+                pcall(function()
+                    local uidF = authPanelGo.transform:Find("AuthUidInput")
+                    if uidF then
+                        local inpU = uidF:GetComponent(typeof(CS.UnityEngine.UI.InputField))
+                        if inpU then inpU.text = valUID end
+                        local txtU = uidF:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
+                        if txtU then txtU.text = valUID end
+                    end
+                end)
+            end
+            _G.Mod_RefreshAuthUI = RefreshAuthUI
+            RefreshAuthUI()
+
             authWmGo.transform:SetAsLastSibling()
         end
         if not _G.Mod_IsAdmin then CreateAuthUI() end
@@ -7956,16 +8082,11 @@ local function CreateModUI()
                 else
                     if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
                     if _G.authPanelGo then
-                        local curU = _G.Mod_GetCharacterUID and _G.Mod_GetCharacterUID() or ""
-                        local valU = (curU ~= "" and curU or "Chưa đăng nhập nhân vật")
-                        pcall(function()
-                            local uidGo = _G.authPanelGo.transform:Find("AuthUidInput")
-                            if uidGo then
-                                local inp = uidGo:GetComponent(typeof(CS.UnityEngine.UI.InputField))
-                                if inp then inp.text = valU end
-                            end
-                        end)
-                        _G.authPanelGo:SetActive(not _G.authPanelGo.activeSelf)
+                        local showAuth = not _G.authPanelGo.activeSelf
+                        _G.authPanelGo:SetActive(showAuth)
+                        if showAuth and _G.Mod_RefreshAuthUI then
+                            pcall(_G.Mod_RefreshAuthUI)
+                        end
                     end
                 end
             end)
@@ -8117,6 +8238,9 @@ local function CreateModUI()
         if _G.Mod_CustomAttackRangeMultiplier == nil then
             _G.Mod_CustomAttackRangeMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
                 "Mod_CustomAttackRangeMultiplier", 1.0)
+        end
+        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_CustomAttackRangeMultiplier > 1.8 then
+            _G.Mod_CustomAttackRangeMultiplier = 1.8
         end
         if _G.Mod_CustomAttackRange == nil then
             _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
@@ -8511,7 +8635,8 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
+                local maxVal = (valueVarName == "Mod_CustomAttackRangeMultiplier") and 1.8 or 10.0
+                _G[valueVarName] = math.min(maxVal, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
@@ -14632,6 +14757,39 @@ local function CreateModUI()
     end)
     if not status then
         WriteLog("LỖI TẠO UI: " .. tostring(err))
+    end
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: TẠO MOD UI NGAY TỪ MÀN HÌNH ĐĂNG NHẬP (LOGIN SCENE & IN-GAME)
+-- Mô tả: Khởi tạo MySuperModCanvas và các nút Floating (VỤT, AUTO PK, EXEC) ngay từ ngoài đăng nhập
+-- =========================================================================
+_G.Mod_CreateUIImmediately = function()
+    if not _G.MyModCreated then
+        pcall(function()
+            _G.MyModCreated = true
+            CreateModUI()
+        end)
+    end
+end
+
+-- Tạo ngay khi nạp script
+_G.Mod_CreateUIImmediately()
+
+if not _G.ModUIHeartbeat_Started then
+    _G.ModUIHeartbeat_Started = true
+    if _G.Timer and _G.Timer.StartLoopForever then
+        _G.Timer.StartLoopForever(0.5, function()
+            if not _G.MyModCreated then
+                _G.Mod_CreateUIImmediately()
+            end
+        end)
+    elseif _G.Timer and _G.Timer.StartLoop then
+        _G.Timer.StartLoop(0.5, -1, function()
+            if not _G.MyModCreated then
+                _G.Mod_CreateUIImmediately()
+            end
+        end)
     end
 end
 

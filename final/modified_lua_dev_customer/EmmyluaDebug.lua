@@ -1325,7 +1325,8 @@ local function CreateModUI()
         sctTxt.alignment = TextAnchor.MiddleCenter
         local scBtn = sCopyGo:AddComponent(typeof(Button))
         scBtn.onClick:AddListener(function()
-            local val = activeSerialTxt and activeSerialTxt.text or ""
+            local val = Mod_GetDeviceSerialMD5()
+            if activeSerialTxt and not activeSerialTxt:Equals(nil) then activeSerialTxt.text = val end
             if val ~= "" then
                 pcall(function() CS.UnityEngine.GUIUtility.systemCopyBuffer = val end)
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Mã thiết bị!") end
@@ -1395,7 +1396,16 @@ local function CreateModUI()
         uctTxt.alignment = TextAnchor.MiddleCenter
         local ucBtn = uCopyGo:AddComponent(typeof(Button))
         ucBtn.onClick:AddListener(function()
-            local val = activeUidTxt and activeUidTxt.text or ""
+            local val = Mod_GetCharacterUID()
+            if activeUidTxt and not activeUidTxt:Equals(nil) then
+                if val ~= "" then
+                    activeUidTxt.text = val
+                    activeUidTxt.color = Color.white
+                else
+                    activeUidTxt.text = "Vui lòng đăng nhập nhân vật để lấy UID"
+                    activeUidTxt.color = Color(1.0, 0.7, 0.3, 1.0)
+                end
+            end
             if val ~= "" and not string.find(val, "Vui lòng") then
                 pcall(function() CS.UnityEngine.GUIUtility.systemCopyBuffer = val end)
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã chép Character UID!") end
@@ -1439,6 +1449,10 @@ local function CreateModUI()
         rtTxt.alignment = TextAnchor.MiddleCenter
         local rBtn = reloadGo:AddComponent(typeof(Button))
 
+        -- =========================================================================
+        -- [MOD FEATURE]: LÀM MỚI DỮ LIỆU BẢNG KÍCH HOẠT CUSTOMER (REFRESH AUTH DATA)
+        -- Mô tả: Cập nhật động mã MD5 thiết bị và UID nhân vật mỗi khi mở hoặc làm mới màn hình Active
+        -- =========================================================================
         local function RefreshAuthPanelData()
             local serialMD5 = Mod_GetDeviceSerialMD5()
             local uid = Mod_GetCharacterUID()
@@ -1534,11 +1548,13 @@ local function CreateModUI()
 
                 local tgBtn = tgGo:AddComponent(typeof(Button))
                 tgBtn.onClick:AddListener(function()
+                    local liveSerial = Mod_GetDeviceSerialMD5()
+                    local liveUID = Mod_GetCharacterUID()
                     local msg = ""
-                    local hasSerial = (serialMD5 ~= "")
-                    local hasUID = (uid ~= "" and uid ~= "Vui lòng đăng nhập nhân vật để lấy UID")
+                    local hasSerial = (liveSerial ~= "")
+                    local hasUID = (liveUID ~= "" and liveUID ~= "Vui lòng đăng nhập nhân vật để lấy UID")
                     if hasSerial and hasUID then
-                        msg = "Hi Admin, Active giúp mình với:\nSerialMD5: " .. serialMD5 .. "\nUID: " .. uid
+                        msg = "Hi Admin, Active giúp mình với:\nSerialMD5: " .. liveSerial .. "\nUID: " .. liveUID
                     else
                         msg = "Hi"
                     end
@@ -1549,6 +1565,7 @@ local function CreateModUI()
             end
         end
         _G.Mod_RefreshAuthPanelData = RefreshAuthPanelData
+        RefreshAuthPanelData()
 
         rBtn.onClick:AddListener(function()
             if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đang kiểm tra Kích hoạt từ Server...") end
@@ -5778,9 +5795,14 @@ local function CreateModUI()
             end)
         end)
 
-        if _G.Mod_ApplyAttackRangeMultiplier == nil then
-            _G.Mod_ApplyAttackRangeMultiplier = function(mult)
+        -- =========================================================================
+        -- [MOD FEATURE]: PHẠM VI TẤN CÔNG THEO SỐ Ô (ATTACK RANGE IN CELLS)
+        -- Mô tả: Cài đặt tầm đánh kỹ năng theo số ô (1 - 15 ô), thay thế hệ số nhân
+        -- =========================================================================
+        if _G.Mod_ApplyAttackRangeCells == nil then
+            _G.Mod_ApplyAttackRangeCells = function(cells)
                 pcall(function()
+                    cells = math.max(1, math.min(15, math.floor(cells or 8)))
                     local skillDic = nil
                     if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
                         skillDic = _G.ClientTable.cfg_Skill_skillManager:GetDic()
@@ -5794,12 +5816,14 @@ local function CreateModUI()
                                 if not skillData._originalReleaseDistance then
                                     skillData._originalReleaseDistance = skillData.releaseDistance
                                 end
-                                skillData.releaseDistance = skillData._originalReleaseDistance * mult
+                                if skillData._originalReleaseDistance > 0 and skillData._originalReleaseDistance < 9999 then
+                                    skillData.releaseDistance = cells
+                                end
                             end
                         end
                     end
                     if CS and CS.UnityEngine and CS.UnityEngine.Camera and CS.UnityEngine.Camera.main then
-                        if mult > 1.2 then
+                        if cells > 10 then
                             CS.UnityEngine.Camera.main.farClipPlane = 1000
                             if CS.UnityEngine.RenderSettings then CS.UnityEngine.RenderSettings.fog = false end
                         end
@@ -5807,6 +5831,7 @@ local function CreateModUI()
                 end)
             end
         end
+        _G.Mod_ApplyAttackRangeMultiplier = _G.Mod_ApplyAttackRangeCells
 
         -- UI State Variables Initialization
         if _G.RunSpeedMultiplier == nil then
@@ -5817,10 +5842,11 @@ local function CreateModUI()
             _G.AtkSpeedMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
                 "Mod_AtkSpeedMultiplier", 1.0)
         end
-        if _G.Mod_CustomAttackRangeMultiplier == nil then
-            _G.Mod_CustomAttackRangeMultiplier = CS.UnityEngine.PlayerPrefs.GetFloat(
-                "Mod_CustomAttackRangeMultiplier", 1.0)
+        if _G.Mod_CustomAttackRangeCells == nil then
+            _G.Mod_CustomAttackRangeCells = CS.UnityEngine.PlayerPrefs.GetInt(
+                "Mod_CustomAttackRangeCells", 8)
         end
+        _G.Mod_CustomAttackRangeCells = math.max(1, math.min(15, _G.Mod_CustomAttackRangeCells))
         if _G.Mod_CustomAttackRange == nil then
             _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_CustomAttackRange", 0)
@@ -5936,7 +5962,7 @@ local function CreateModUI()
         CreateSpeedControl(415, -60, "Tốc Chạy: ", "RunSpeedMultiplier", 0.1)
         CreateSpeedControl(415, -100, "Tốc Đánh: ", "AtkSpeedMultiplier", 0.1)
 
-        local function CreateRangeMultiplierControl(startX, yPos, prefix, valueVarName, step)
+        local function CreateAttackRangeCellsControl(startX, yPos, prefix, valueVarName, step)
             local centerX = startX + 90
             local valGo = GameObject(valueVarName .. "_Val")
             valGo.transform:SetParent(panelGo.transform, false)
@@ -5947,7 +5973,7 @@ local function CreateModUI()
             local vTxt = valGo:AddComponent(typeof(Text))
             table.insert(_G.CoBanUIList, valGo)
             vTxt.raycastTarget = false
-            vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
+            vTxt.text = string.format("%s%d ô", prefix, _G[valueVarName] or 8)
             vTxt.alignment = TextAnchor.MiddleCenter
             vTxt.color = Color(0.8, 1, 0.8, 1)
             vTxt.fontSize = 18
@@ -5977,31 +6003,29 @@ local function CreateModUI()
             local pBtnComp = createBtn("_Plus", 80, 40, 30, "+", Color(0.3, 0.3, 0.3, 1))
 
             local function UpdateLabel()
-                vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
-                if valueVarName == "Mod_CustomAttackRangeMultiplier" and _G.Mod_ApplyAttackRangeMultiplier then
-                    _G.Mod_ApplyAttackRangeMultiplier(_G[valueVarName])
+                vTxt.text = string.format("%s%d ô", prefix, _G[valueVarName] or 8)
+                if _G.Mod_ApplyAttackRangeCells then
+                    _G.Mod_ApplyAttackRangeCells(_G[valueVarName])
                 end
             end
 
             mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
+                _G[valueVarName] = math.max(1, (_G[valueVarName] or 8) - (step or 1))
+                CS.UnityEngine.PlayerPrefs.SetInt(valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.min(10.0, _G[valueVarName] + step)
-                local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
-                CS.UnityEngine.PlayerPrefs.SetFloat(prefKey, _G[valueVarName])
+                _G[valueVarName] = math.min(15, (_G[valueVarName] or 8) + (step or 1))
+                CS.UnityEngine.PlayerPrefs.SetInt(valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
         end
 
-        CreateRangeMultiplierControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeMultiplier", 0.1)
-        if _G.Mod_CustomAttackRangeMultiplier and _G.Mod_ApplyAttackRangeMultiplier then
-            _G.Mod_ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+        CreateAttackRangeCellsControl(70, -140, "Tầm Đánh: ", "Mod_CustomAttackRangeCells", 1)
+        if _G.Mod_CustomAttackRangeCells and _G.Mod_ApplyAttackRangeCells then
+            _G.Mod_ApplyAttackRangeCells(_G.Mod_CustomAttackRangeCells)
         end
 
         local function CreateRangeControl(startX, yPos, prefix, valueVarName, step)
