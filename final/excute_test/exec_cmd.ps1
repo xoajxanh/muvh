@@ -1,1 +1,1 @@
-git status -s
+git diff modified_lua_dev_customer/EmmyluaDebug.lua

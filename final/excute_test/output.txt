@@ -1,13 +1,45 @@
 ==================================================================
-  DETECT & TEST CAST: CỰC HẠN & THÁNH HỒN THIÊN SỨ - GAI         
-                 Thời gian: 2026-09-27 23:06:23
+   KHỞI ĐỘNG ĐĂNG KÝ HÀNG LOẠT (0021 -> 0050: TỔNG 30 ACC)
+   Mật khẩu: 12345ZXC
+   Thời gian bắt đầu: 2026-10-01 14:24:13
 ==================================================================
-1. BẢN ĐỒ: mapId=1012017 | groupId=1012017 | TrongPB=true | LàTháp=false
-2. SKILL CỰC HẠN: Group=410700 | SkillID=410702 | Ready=false | CD còn=23s
-3. THÁNH HỒN THIÊN SỨ - GAI: Group=34011800 | SkillID=34011801 | Ready=true | CD còn=0s
-4. THỰC HIỆN TEST CAST SKILL:
-   [BỎ QUA] Cực Hạn đang trong thời gian hồi chiêu!
-   [OK] Đã kích hoạt thi triển Thánh Hồn Thiên Sứ - Gai (ID: 34011801)
-==================================================================
->>> HOÀN THÀNH TEST! Xem nhân vật trong game có vừa dùng chiêu không.
-==================================================================
+
+--- [1/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0021@gmail.com ---
+   -> Sinh Fake Equip mới: 46f76ecade09dfd161d3746816908f03
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945478842000
+
+--- [2/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0022@gmail.com ---
+   -> Sinh Fake Equip mới: af2d24623374e0f7b6d15e5aceaed153
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945578843000
+
+--- [3/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0023@gmail.com ---
+   -> Sinh Fake Equip mới: 059f60ef75a400d5e8c211fe376f0460
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945678844000
+
+--- [4/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0024@gmail.com ---
+   -> Sinh Fake Equip mới: 9c3e72eabae2193e260fb8f527620235
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945778845000
+
+--- [5/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0025@gmail.com ---
+   -> Sinh Fake Equip mới: a6b387ccdfc7de918eb78c5aa5abe30d
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945878846000
+
+--- [6/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0026@gmail.com ---
+   -> Sinh Fake Equip mới: fa2864f0ab2b2d6c0f34ab8d9c35528e
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083945978847000
+
+--- [7/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0027@gmail.com ---
+   -> Sinh Fake Equip mới: 19231d30fbfd6e988e1025967f5d4482
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083946078848000
+
+--- [8/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0028@gmail.com ---
+   -> Sinh Fake Equip mới: 648a75cbfe596415f18451aec4335f7d
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083946178849000
+
+--- [9/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0029@gmail.com ---
+   -> Sinh Fake Equip mới: a488b3ed7e08357b2971379694c7c542
+   -> [THÀNH CÔNG] Đã tạo xong! UID: 179083946278850000
+
+--- [10/30] BẮT ĐẦU ĐĂNG KÝ: accvutmuvh0030@gmail.com ---
+   -> Sinh Fake Equip mới: 2497fab06cd571c4e72893dedfae8102
+   -> [THẤT BẠI] Mã lỗi ret=10077: thao tác quá nhiều lần, hãy thử lại sau.

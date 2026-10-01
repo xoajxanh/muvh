@@ -5,11 +5,19 @@
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
 -- =========================================================================
+-- [MOD FEATURE]: KHỞI TẠO BIẾN TOÀN CỤC MOD (GLOBAL MOD INIT)
+-- Mô tả: Gán cờ quyền Admin, Dev ngay từ khi nạp script (phục vụ build APK)
+-- =========================================================================
+_G.Mod_IsAdmin = true
+_G.Mod_IsDev = true
+
+-- =========================================================================
 -- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
 -- Mô tả: Khởi tạo biến toàn cục mod, phân quyền Admin/Debug, dọn dẹp file bundle cũ.
 -- =========================================================================
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsAdmin = true
+    _G.Mod_IsDev = true
 
     _G.Mod_IsDebug = true
     _G.Mod_DebugMsg = function(msg)
@@ -3509,10 +3517,29 @@ local function CreateModUI()
                                     end
                                 end
 
-                                -- 3. Bộ lọc [Giữ dòng Ngon] (Áp dụng cho cả Đồ Bộ VÀ Trang Sức Trác Việt 18, 19, 26)
-                                if shouldSmelt and tier >= 3 and tier <= 12 then
-                                    local keepGoodVar = "KeepGood_C" .. tostring(tier)
-                                    if _G.Mod_SmeltConfig[keepGoodVar] then
+                                -- 3. Bộ lọc [Giữ dòng Ngon]
+                                -- =========================================================================
+                                -- [MOD FEATURE]: TÁCH BIỆT GIỮ DÒNG NGON TRÁC VIỆT VÀ ĐỒ BỘ
+                                -- Mô tả: Trang Sức Trác Việt (18, 19, 26) dùng cấu hình KeepGoodTV_C... riêng biệt;
+                                --        Đồ Bộ dùng cấu hình KeepGood_C...
+                                -- =========================================================================
+                                if shouldSmelt then
+                                    local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
+                                    local keepGoodVar = nil
+                                    local evalTier = tier
+                                    if isJewelryTracViet then
+                                        local tvTier = (quality and quality > 0) and quality or tier
+                                        evalTier = tvTier
+                                        if tvTier and tvTier >= 3 and tvTier <= 12 then
+                                            keepGoodVar = "KeepGoodTV_C" .. tostring(tvTier)
+                                        end
+                                    else
+                                        if tier and tier >= 3 and tier <= 12 then
+                                            keepGoodVar = "KeepGood_C" .. tostring(tier)
+                                        end
+                                    end
+
+                                    if keepGoodVar and _G.Mod_SmeltConfig[keepGoodVar] then
                                         local excDesList = {}
                                         local sInfo = item.serverInfo or item.serverData or {}
                                         local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or
@@ -3536,7 +3563,7 @@ local function CreateModUI()
                                             pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
                                         end
 
-                                        local isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, tier, excDesList)
+                                        local isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, evalTier, excDesList)
                                         if isGood then
                                             shouldSmelt = false -- GIỮ LẠI TRONG TÚI
                                         end
@@ -6574,7 +6601,7 @@ local function CreateModUI()
                     --        tự động điều hướng nhân vật đến item gần nhất mượt mà.
                     -- =========================================================================
 
-                    if (_G.AutoPick_Enabled or _G.Mod_AutoPK_Enabled) and _G.Mod_ActiveSpamItems then
+                    if _G.AutoPick_Enabled and _G.Mod_ActiveSpamItems then
                         if _G.AutoPick_Mode == nil then
                             _G.AutoPick_Mode = CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Mode", 1)
                             if _G.AutoPick_Mode ~= 1 and _G.AutoPick_Mode ~= 2 then
@@ -10070,7 +10097,7 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, title1Go)
             local title1Rt = title1Go:AddComponent(typeof(RectTransform))
             title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            title1Rt.anchoredPosition = Vector2(smeltStartX, -70)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, -50)
             title1Rt.sizeDelta = Vector2(230, 20)
             local title1Txt = title1Go:AddComponent(typeof(Text))
             title1Txt.raycastTarget = false
@@ -10186,7 +10213,7 @@ local function CreateModUI()
                 return itemObj
             end
 
-            local curY = -95
+            local curY = -75
             local function CreateTracVietRow(lblText, prefix)
                 local lblGo = GameObject("SmeltLbl_" .. prefix)
                 lblGo.transform:SetParent(panelGo.transform, false)
@@ -10203,7 +10230,7 @@ local function CreateModUI()
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
 
-                for colIdx = 1, 3 do
+                for colIdx = 1, 4 do
                     CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
                 end
                 curY = curY - 26
@@ -10213,8 +10240,32 @@ local function CreateModUI()
             CreateTracVietRow("DÂY CHUYỀN", "Necklace")
             CreateTracVietRow("KHUYÊN", "Earring")
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT
+            -- Mô tả: Cấu hình giữ dòng ngon độc lập cho Trang Sức Trác Việt (Nhẫn, Dây Chuyền, Khuyên)
+            -- =========================================================================
+            local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
+            kgTvLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgTvLblGo)
+            local kgTvLblRt = kgTvLblGo:AddComponent(typeof(RectTransform))
+            kgTvLblRt.anchorMin, kgTvLblRt.anchorMax, kgTvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgTvLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgTvLblRt.sizeDelta = Vector2(85, btnH)
+            local kgTvLblTxt = kgTvLblGo:AddComponent(typeof(Text))
+            kgTvLblTxt.raycastTarget = false
+            kgTvLblTxt.text = "GIỮ DÒNG NGON"
+            kgTvLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgTvLblTxt.fontSize = 10
+            kgTvLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgTvLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+            curY = curY - 26
+
             -- 2. VẠCH DASHED NGĂN CÁCH
-            curY = curY - 5
+            curY = curY - 2
             local dashGo = GameObject("SmeltDashLine")
             dashGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, dashGo)
@@ -10231,7 +10282,7 @@ local function CreateModUI()
             if defaultFont then dashTxt.font = defaultFont end
 
             -- 3. PHẦN 2: TÁCH ĐỒ BỘ & GIỮ DÒNG NGON
-            curY = curY - 20
+            curY = curY - 18
             local title2Go = GameObject("SmeltTitle2")
             title2Go.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, title2Go)
@@ -10442,9 +10493,13 @@ local function CreateModUI()
                     or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel())
                     or 4
 
-                -- Trác Việt (3 nút): x-2, x-1, x (Ví dụ: C9 chính -> C7, C8, C9)
+                -- =========================================================================
+                -- [MOD FEATURE]: CÂN BẰNG 4 CỘT TRÁC VIỆT (x-3, x-2, x-1, x)
+                -- Mô tả: Mở rộng 4 cột cho Trác Việt và Giữ Dòng Ngon Trác Việt cân xứng với Đồ Bộ
+                -- =========================================================================
+                -- Trác Việt (4 nút): x-3, x-2, x-1, x (Ví dụ: C10 chính -> C7, C8, C9, C10)
                 local tracVietTiers = {}
-                for _, offset in ipairs({ 2, 1, 0 }) do
+                for _, offset in ipairs({ 3, 2, 1, 0 }) do
                     local tierNum = x - offset
                     if tierNum >= 3 and tierNum <= 12 then
                         table.insert(tracVietTiers, "C" .. tostring(tierNum))
@@ -10464,7 +10519,8 @@ local function CreateModUI()
 
                 -- Refresh all Smelt Toggles in pool
                 for _, toggleItem in ipairs(smeltTogglePool) do
-                    local tiersList = (toggleItem.prefix == "Ring" or toggleItem.prefix == "Necklace" or toggleItem.prefix == "Earring") and tracVietTiers or doBoTiers
+                    local isTracVietPrefix = (toggleItem.prefix == "Ring" or toggleItem.prefix == "Necklace" or toggleItem.prefix == "Earring" or toggleItem.prefix == "KeepGoodTV")
+                    local tiersList = isTracVietPrefix and tracVietTiers or doBoTiers
                     local tag = tiersList[toggleItem.colIdx]
                     if tag then
                         toggleItem.go:SetActive(true)
@@ -13745,15 +13801,11 @@ local function CreateModUI()
 
                     local delayMs = 0
                     if hasTargetNearby then
-                        if isBone or isRune or isFumo then
-                            delayMs = math.random(500, 1500)
-                        else
-                            delayMs = 0
-                        end
+                        delayMs = math.random(500, 1500)
                     elseif logPrefix == "KTĐ" or isSecretTrickActive then
                         delayMs = 0
                     else
-                        delayMs = 0
+                        delayMs = 300
                     end
 
                     local delaySec = delayMs / 1000.0

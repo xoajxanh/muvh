@@ -309,7 +309,15 @@ local function Mod_ApplyConfig(config)
     if config.boss_refresh_max then _G.Mod_Config_BossRefresh_Max = tonumber(config.boss_refresh_max) end
     if config.max_move_speed then _G.Mod_Config_MaxMoveSpeed = tonumber(config.max_move_speed) end
     if config.max_attack_speed then _G.Mod_Config_MaxAttackSpeed = tonumber(config.max_attack_speed) end
-    if config.max_monster_range then _G.Mod_Config_MaxMonsterRange = tonumber(config.max_monster_range) end
+    -- =========================================================================
+    -- [MOD FEATURE]: GIỚI HẠN TỐI ĐA PHÁT HIỆN ĐỊCH (MAX 15)
+    -- Mô tả: Kể cả Token có cấu hình max_monster_range bao nhiêu cũng chỉ lấy tối đa 15
+    -- =========================================================================
+    if config.max_monster_range then
+        _G.Mod_Config_MaxMonsterRange = math.min(15, tonumber(config.max_monster_range) or 15)
+    else
+        _G.Mod_Config_MaxMonsterRange = math.min(15, _G.Mod_Config_MaxMonsterRange or 12)
+    end
     if config.max_pickup_count then _G.Mod_Config_MaxPickupCount = tonumber(config.max_pickup_count) end
     if config.pickup_delay_min then _G.Mod_Config_PickupDelay_Min = tonumber(config.pickup_delay_min) end
     if config.pickup_delay_max then _G.Mod_Config_PickupDelay_Max = tonumber(config.pickup_delay_max) end
@@ -372,8 +380,9 @@ local function Mod_ApplyConfig(config)
     if _G.AtkSpeedMultiplier and _G.Mod_Config_MaxAttackSpeed then
         _G.AtkSpeedMultiplier = math.min(_G.AtkSpeedMultiplier, _G.Mod_Config_MaxAttackSpeed)
     end
-    if _G.Mod_CustomAttackRange and _G.Mod_Config_MaxMonsterRange then
-        _G.Mod_CustomAttackRange = math.min(_G.Mod_CustomAttackRange, _G.Mod_Config_MaxMonsterRange)
+    if _G.Mod_CustomAttackRange then
+        local maxRange = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
+        _G.Mod_CustomAttackRange = math.min(_G.Mod_CustomAttackRange, maxRange)
     end
     if _G.AutoPick_Limit and _G.Mod_Config_MaxPickupCount then
         _G.AutoPick_Limit = math.min(_G.AutoPick_Limit, _G.Mod_Config_MaxPickupCount)
@@ -3156,6 +3165,7 @@ local function CreateModUI()
                 if oldState ~= newState then
                     LogMsg(string.format("[FSM] State %s -> %s (%s)", tostring(oldState), tostring(newState), tostring(reason or "")))
                     _G.Mod_AutoFarmBoss_State = newState
+                    _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
                 end
             end
             _G.Mod_SetBossState = SetBossState
@@ -3474,11 +3484,29 @@ local function CreateModUI()
                                     end
                                 end
 
-                                -- 3. Bộ lọc [Giữ dòng Ngon] (Chỉ áp dụng cho Đồ Bộ, KHÔNG áp dụng cho Trang Sức Trác Việt 18, 19, 26)
-                                local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
-                                if shouldSmelt and not isJewelryTracViet and tier >= 3 and tier <= 12 then
-                                    local keepGoodVar = "KeepGood_C" .. tostring(tier)
-                                    if _G.Mod_SmeltConfig[keepGoodVar] then
+                                -- 3. Bộ lọc [Giữ dòng Ngon]
+                                -- =========================================================================
+                                -- [MOD FEATURE]: TÁCH BIỆT GIỮ DÒNG NGON TRÁC VIỆT VÀ ĐỒ BỘ
+                                -- Mô tả: Trang Sức Trác Việt (18, 19, 26) dùng cấu hình KeepGoodTV_C... riêng biệt;
+                                --        Đồ Bộ dùng cấu hình KeepGood_C...
+                                -- =========================================================================
+                                if shouldSmelt then
+                                    local isJewelryTracViet = (subType == 18 or subType == 19 or subType == 26)
+                                    local keepGoodVar = nil
+                                    local evalTier = tier
+                                    if isJewelryTracViet then
+                                        local tvTier = (quality and quality > 0) and quality or tier
+                                        evalTier = tvTier
+                                        if tvTier and tvTier >= 3 and tvTier <= 12 then
+                                            keepGoodVar = "KeepGoodTV_C" .. tostring(tvTier)
+                                        end
+                                    else
+                                        if tier and tier >= 3 and tier <= 12 then
+                                            keepGoodVar = "KeepGood_C" .. tostring(tier)
+                                        end
+                                    end
+
+                                    if keepGoodVar and _G.Mod_SmeltConfig[keepGoodVar] then
                                         local excDesList = {}
                                         local sInfo = item.serverInfo or item.serverData or {}
                                         local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or
@@ -3502,7 +3530,7 @@ local function CreateModUI()
                                             pcall(function() excDesList = item:GetEquipExcellenceDesList() end)
                                         end
 
-                                        local isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, tier, excDesList)
+                                        local isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, evalTier, excDesList)
                                         if isGood then
                                             shouldSmelt = false -- GIỮ LẠI TRONG TÚI
                                         end
@@ -3820,6 +3848,16 @@ local function CreateModUI()
 
                         if not foundScroll then
                             LogMsg("Không có Bùa Về Thành! Đợi 10s...")
+                            -- =========================================================================
+                            -- [MOD FEATURE]: CẢNH BÁO HẾT BÙA VỀ THÀNH TRONG AUTO BOSS
+                            -- Mô tả: Hiển thị thông báo chữ đỏ ở giữa màn hình (FloatingTip) khi hết Bùa Về Thành
+                            -- =========================================================================
+                            local alertMsg = "<color=#FF0000>[AUTO BOSS] HẾT BÙA VỀ THÀNH! VUI LÒNG BỔ SUNG ĐỂ TIẾP TỤC!</color>"
+                            if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+                                _G.FloatingTipUtility.QuickMsg(alertMsg)
+                            elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                _G.FloatingWordUtility.QuickMsg(alertMsg)
+                            end
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 10.0
                         else
                             LogMsg("Dùng Bùa Về Thành quay về Lorencia...")
@@ -4479,26 +4517,15 @@ local function CreateModUI()
                             end
                         end
 
-                        local targetPos = target.currentPos
-                        local dist = 9999
-                        if px and py and targetPos and targetPos.x and targetPos.y then
-                            local dx = px - targetPos.x
-                            local dy = py - targetPos.y
-                            dist = math.sqrt(dx * dx + dy * dy)
-                        end
-
-                        local hasArrived = (dist <= 3.5)
-
-                        if not hasArrived then
-                            -- Nếu chưa áp sát đến bán kính mục tiêu: Tiếp tục duy trì di chuyển!
-                            _G.Mod_AutoFarmBoss_BossWait = 0
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
-                            return
-                        end
-
-                        -- Đã áp sát đến tọa độ Boss -> Quét tìm Boss & Bật Auto Fight
+                        -- =========================================================================
+                        -- [MOD FEATURE]: QUÉT TÌM BOSS VÀ CHUYỂN COMBAT NGAY KHI VÀO TẦM
+                        -- Mô tả: Quét tìm Boss sống ngay từ xa (tầm nhận diện ~15m hoặc đã target Boss).
+                        --        Nếu phát hiện Boss sống, chuyển ngay sang State 5 (Combat) và bật AutoFight,
+                        --        không bắt nhân vật tầm xa (Cung, Phép...) phải áp sát <= 3.5m mới đánh.
+                        -- =========================================================================
                         local foundBoss = false
                         local isHighHp = false
+                        local bossRoleObj = nil
 
                         if _G.RoleManager and _G.RoleManager.GetRolesByType then
                             local monsterRoles = _G.RoleManager.GetRolesByType(2)
@@ -4509,9 +4536,11 @@ local function CreateModUI()
 
                                     local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
                                     local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
+                                    local isTarget = (_G.RoleManager.me and _G.RoleManager.me.TargetAvatar and _G.RoleManager.me.TargetAvatar == role)
 
-                                    if role.hp and role.hp > 0 and (idMatch or nameMatch) then
+                                    if role.hp and role.hp > 0 and (idMatch or nameMatch or isTarget) then
                                         foundBoss = true
+                                        bossRoleObj = role
                                         local maxHp = role.maxHp or role.maxHP
                                         if not maxHp or maxHp <= 0 then maxHp = role.hp end
 
@@ -4520,7 +4549,7 @@ local function CreateModUI()
 
                                         if maxHp > 0 then
                                             local hpPct = (role.hp / maxHp) * 100
-                                            LogMsg(string.format("Đã tới nơi! Tìm thấy Boss %s - HP: %.2f%%",
+                                            LogMsg(string.format("Tìm thấy Boss %s - HP: %.2f%%",
                                                 tostring(target.cfg.name or ""), hpPct))
 
                                             local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
@@ -4537,6 +4566,19 @@ local function CreateModUI()
                         end
 
                         if foundBoss then
+                            -- Đã phát hiện Boss sống! Xóa ngay watchdog để không bao giờ bị giật MoveTo
+                            _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
+
+                            -- Cập nhật tọa độ thực tế của Boss nếu Boss di chuyển ra xa điểm spawn
+                            if bossRoleObj and target.currentPos then
+                                local bx = bossRoleObj.serverCoord and bossRoleObj.serverCoord.x or (bossRoleObj.cellPos and bossRoleObj.cellPos.x) or (bossRoleObj.data and bossRoleObj.data.x)
+                                local by = bossRoleObj.serverCoord and bossRoleObj.serverCoord.y or (bossRoleObj.cellPos and bossRoleObj.cellPos.y) or (bossRoleObj.data and bossRoleObj.data.y)
+                                if bx and by then
+                                    target.currentPos.x = tonumber(bx) or target.currentPos.x
+                                    target.currentPos.y = tonumber(by) or target.currentPos.y
+                                end
+                            end
+
                             if isHighHp then
                                 if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                     _G.RoleManager.me:SetAutoFight("AutoFight")
@@ -4553,8 +4595,76 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
+                            return
+                        end
+
+                        -- Chưa tìm thấy Boss trên màn hình -> Kiểm tra khoảng cách tới tọa độ chỉ định
+                        local targetPos = target.currentPos
+                        local dist = 9999
+                        if px and py and targetPos and targetPos.x and targetPos.y then
+                            local dx = px - targetPos.x
+                            local dy = py - targetPos.y
+                            dist = math.sqrt(dx * dx + dy * dy)
+                        end
+
+                        local hasArrived = (dist <= 1.5)
+
+                        if not hasArrived then
+                            -- Chưa tới nơi và chưa thấy Boss: Tiếp tục duy trì di chuyển!
+                            _G.Mod_AutoFarmBoss_BossWait = 0
+
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TỰ ĐỘNG CHẠY TIẾP KHI DỪNG DI CHUYỂN TRONG AUTO BOSS
+                            -- Mô tả: Kiểm tra nếu nhân vật dừng di chuyển (IsMoving == false) liên tục >= 3s,
+                            --        tự động gọi lại lệnh MoveTo để tiếp tục chạy tới tọa độ Boss chỉ định.
+                            -- =========================================================================
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local isMoving = false
+                            if me and me.IsMoving then
+                                isMoving = me:IsMoving()
+                            end
+
+                            if isMoving then
+                                _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
+                            else
+                                if me and (not me.hp or me.hp > 0) then
+                                    _G.Mod_AutoFarmBoss_StopMoveStartTime = _G.Mod_AutoFarmBoss_StopMoveStartTime or nowRealtime
+                                    if (nowRealtime - _G.Mod_AutoFarmBoss_StopMoveStartTime) >= 3.0 then
+                                        _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
+                                        if target and target.currentPos then
+                                            LogMsg(string.format("Nhân vật dừng di chuyển > 3s (cách tọa độ Boss %s %.1fm). Tự động tiếp tục chạy tới Boss...", tostring(target.cfg and target.cfg.name or ""), dist))
+                                            local moved = false
+                                            if me and me.MoveTo then
+                                                local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
+                                                me:MoveTo(cellPos, 0, function(status)
+                                                    _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                end)
+                                                moved = true
+                                            end
+                                            if not moved then
+                                                local targetVector = Vector2(target.currentPos.x, target.currentPos.y)
+                                                if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                                                    _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
+                                                        target.line, nil, (Purpose and Purpose.None) or 0, function()
+                                                            _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                        end, 3, true)
+                                                elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
+                                                    _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
+                                                        (Purpose and Purpose.None) or 0, function()
+                                                            _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                        end)
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                            return
                         else
-                            -- Đã thực sự đến nơi nhưng chưa thấy Boss (đang đợi Boss xuất hiện)
+                            -- Đã tới cự ly <= 3.5m nhưng không thấy Boss -> Đang đứng đón đầu chờ Boss xuất hiện
+                            _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
                             _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_BossWait <= 20 then
                                 if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
@@ -4837,9 +4947,10 @@ local function CreateModUI()
                     end
 
                     if _G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0 then
+                        local safeScope = math.min(15, _G.Mod_CustomAttackRange)
                         if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                            if _G.QiJiHelperData.SettingData.KillMonsterScope ~= _G.Mod_CustomAttackRange then
-                                _G.QiJiHelperData.SettingData.KillMonsterScope = _G.Mod_CustomAttackRange
+                            if _G.QiJiHelperData.SettingData.KillMonsterScope ~= safeScope then
+                                _G.QiJiHelperData.SettingData.KillMonsterScope = safeScope
                             end
                         end
                     end
@@ -5851,6 +5962,12 @@ local function CreateModUI()
             _G.Mod_CustomAttackRange = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_CustomAttackRange", 0)
         end
+        local maxRangeCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
+        if _G.Mod_CustomAttackRange > maxRangeCap then
+            _G.Mod_CustomAttackRange = maxRangeCap
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", _G.Mod_CustomAttackRange)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
         if _G.Mod_AutoApproachTowerBoss == nil then
             pcall(function() _G.Mod_AutoApproachTowerBoss = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoApproachTowerBoss", 0) == 1) end)
             if _G.Mod_AutoApproachTowerBoss == nil then _G.Mod_AutoApproachTowerBoss = false end
@@ -6083,7 +6200,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
-                local maxCap = _G.Mod_Config_MaxMonsterRange or 15
+                local maxCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
                 _G[valueVarName] = math.min(maxCap, _G[valueVarName] + step)
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
@@ -6098,7 +6215,7 @@ local function CreateModUI()
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
-                local maxCap = _G.Mod_Config_MaxMonsterRange or 15
+                local maxCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
                 _G[valueVarName] = math.min(maxCap, _G[valueVarName] + (step * 5))
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
@@ -7163,7 +7280,7 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, title1Go)
             local title1Rt = title1Go:AddComponent(typeof(RectTransform))
             title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            title1Rt.anchoredPosition = Vector2(smeltStartX, -65)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, -50)
             title1Rt.sizeDelta = Vector2(230, 20)
             local title1Txt = title1Go:AddComponent(typeof(Text))
             title1Txt.raycastTarget = false
@@ -7218,7 +7335,7 @@ local function CreateModUI()
                 return itemObj
             end
 
-            local curY = -95
+            local curY = -75
             local function CreateTracVietRow(lblText, prefix)
                 local lblGo = GameObject("SmeltLbl_" .. prefix)
                 lblGo.transform:SetParent(panelGo.transform, false)
@@ -7235,7 +7352,7 @@ local function CreateModUI()
                 lblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then lblTxt.font = defaultFont end
 
-                for colIdx = 1, 3 do
+                for colIdx = 1, 4 do
                     CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
                 end
                 curY = curY - 26
@@ -7245,8 +7362,32 @@ local function CreateModUI()
             CreateTracVietRow("DÂY CHUYỀN", "Necklace")
             CreateTracVietRow("KHUYÊN", "Earring")
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT
+            -- Mô tả: Cấu hình giữ dòng ngon độc lập cho Trang Sức Trác Việt (Nhẫn, Dây Chuyền, Khuyên)
+            -- =========================================================================
+            local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
+            kgTvLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgTvLblGo)
+            local kgTvLblRt = kgTvLblGo:AddComponent(typeof(RectTransform))
+            kgTvLblRt.anchorMin, kgTvLblRt.anchorMax, kgTvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgTvLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgTvLblRt.sizeDelta = Vector2(85, btnH)
+            local kgTvLblTxt = kgTvLblGo:AddComponent(typeof(Text))
+            kgTvLblTxt.raycastTarget = false
+            kgTvLblTxt.text = "GIỮ DÒNG NGON"
+            kgTvLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgTvLblTxt.fontSize = 10
+            kgTvLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgTvLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+            curY = curY - 26
+
             -- Dash Line
-            curY = curY - 5
+            curY = curY - 2
             local dashGo = GameObject("SmeltDashLine")
             dashGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, dashGo)
@@ -7263,7 +7404,7 @@ local function CreateModUI()
             if defaultFont then dashTxt.font = defaultFont end
 
             -- Title 2: ĐỒ BỘ & DÒNG NGON
-            curY = curY - 20
+            curY = curY - 18
             local title2Go = GameObject("SmeltTitle2")
             title2Go.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, title2Go)
@@ -7508,9 +7649,13 @@ local function CreateModUI()
                     or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel())
                     or 4
 
-                -- Trác Việt (3 nút): x-1, x, x+1
+                -- =========================================================================
+                -- [MOD FEATURE]: CÂN BẰNG 4 CỘT TRÁC VIỆT (x-3, x-2, x-1, x)
+                -- Mô tả: Mở rộng 4 cột cho Trác Việt và Giữ Dòng Ngon Trác Việt cân xứng với Đồ Bộ
+                -- =========================================================================
+                -- Trác Việt (4 nút): x-3, x-2, x-1, x (Ví dụ: C10 chính -> C7, C8, C9, C10)
                 local tracVietTiers = {}
-                for _, offset in ipairs({ 1, 0, -1 }) do
+                for _, offset in ipairs({ 3, 2, 1, 0 }) do
                     local tierNum = x - offset
                     if tierNum >= 3 and tierNum <= 12 then
                         table.insert(tracVietTiers, "C" .. tostring(tierNum))
@@ -7530,7 +7675,8 @@ local function CreateModUI()
 
                 -- Refresh all Smelt Toggles in pool
                 for _, toggleItem in ipairs(smeltTogglePool) do
-                    local tiersList = (toggleItem.prefix == "Ring" or toggleItem.prefix == "Necklace" or toggleItem.prefix == "Earring") and tracVietTiers or doBoTiers
+                    local isTracVietPrefix = (toggleItem.prefix == "Ring" or toggleItem.prefix == "Necklace" or toggleItem.prefix == "Earring" or toggleItem.prefix == "KeepGoodTV")
+                    local tiersList = isTracVietPrefix and tracVietTiers or doBoTiers
                     local tag = tiersList[toggleItem.colIdx]
                     if tag then
                         toggleItem.go:SetActive(true)
