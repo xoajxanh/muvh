@@ -12013,7 +12013,7 @@ local function CreateModUI()
                 local atRt = adminTierGo:AddComponent(typeof(RectTransform))
                 atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 atRt.anchoredPosition = Vector2(195, -42)
-                atRt.sizeDelta = Vector2(390, 32)
+                atRt.sizeDelta = Vector2(400, 32)
 
                 local atLblGo = GameObject("Lbl")
                 atLblGo.transform:SetParent(adminTierGo.transform, false)
@@ -12040,6 +12040,21 @@ local function CreateModUI()
                 priLblTxt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then priLblTxt.font = defaultFont end
 
+                -- Lấy giá trị khởi tạo ưu tiên theo cấu hình hiện hành
+                local curPriVal = _G.Mod_Config_Reincarnation_Primary
+                if not curPriVal then
+                    pcall(function() curPriVal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0) end)
+                    if not curPriVal or curPriVal < 3 or curPriVal > 12 then curPriVal = nil end
+                end
+                curPriVal = curPriVal or _G.Mod_Admin_PrimaryTier or 8
+
+                local curSecVal = _G.Mod_Config_Reincarnation_Secondary
+                if not curSecVal then
+                    pcall(function() curSecVal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0) end)
+                    if not curSecVal or curSecVal < 3 or curSecVal > 12 then curSecVal = nil end
+                end
+                curSecVal = curSecVal or _G.Mod_Admin_SecondaryTier or 7
+
                 -- Input Primary Tier
                 local priInGo = GameObject("PriInput")
                 priInGo.transform:SetParent(adminTierGo.transform, false)
@@ -12056,33 +12071,22 @@ local function CreateModUI()
                 priInTxtRt.anchorMin, priInTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
                 priInTxtRt.offsetMin, priInTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
                 local priInTxt = priInTxtGo:AddComponent(typeof(Text))
-                priInTxt.text = tostring(_G.Mod_Admin_PrimaryTier or 8)
+                priInTxt.text = tostring(curPriVal)
                 priInTxt.color, priInTxt.fontSize = Color.black, 15
                 priInTxt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then priInTxt.font = defaultFont end
 
                 local priInField = priInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
                 priInField.textComponent = priInTxt
-                priInField.text = tostring(_G.Mod_Admin_PrimaryTier or 8)
-                priInField.onValueChanged:AddListener(function(val)
-                    local num = tonumber(val)
-                    if num and num >= 3 and num <= 12 then
-                        _G.Mod_Admin_PrimaryTier = num
-                        pcall(function()
-                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_PrimaryTier", num)
-                            CS.UnityEngine.PlayerPrefs.Save()
-                        end)
-                        if _G.Mod_UpdateClassDisplay then _G.Mod_UpdateClassDisplay() end
-                    end
-                end)
+                priInField.text = tostring(curPriVal)
 
                 -- Label Phụ
                 local secLblGo = GameObject("SecLbl")
                 secLblGo.transform:SetParent(adminTierGo.transform, false)
                 local secLblRt = secLblGo:AddComponent(typeof(RectTransform))
                 secLblRt.anchorMin, secLblRt.anchorMax, secLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                secLblRt.anchoredPosition = Vector2(240, 0)
-                secLblRt.sizeDelta = Vector2(40, 30)
+                secLblRt.anchoredPosition = Vector2(230, 0)
+                secLblRt.sizeDelta = Vector2(35, 30)
                 local secLblTxt = secLblGo:AddComponent(typeof(Text))
                 secLblTxt.text = "Phụ:"
                 secLblTxt.color, secLblTxt.fontSize = Color.white, 15
@@ -12094,7 +12098,7 @@ local function CreateModUI()
                 secInGo.transform:SetParent(adminTierGo.transform, false)
                 local secInRt = secInGo:AddComponent(typeof(RectTransform))
                 secInRt.anchorMin, secInRt.anchorMax, secInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                secInRt.anchoredPosition = Vector2(280, 0)
+                secInRt.anchoredPosition = Vector2(265, 0)
                 secInRt.sizeDelta = Vector2(40, 30)
                 local secInImg = secInGo:AddComponent(typeof(Image))
                 secInImg.color = Color(1, 1, 1, 1)
@@ -12105,23 +12109,64 @@ local function CreateModUI()
                 secInTxtRt.anchorMin, secInTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
                 secInTxtRt.offsetMin, secInTxtRt.offsetMax = Vector2(2, 0), Vector2(-2, 0)
                 local secInTxt = secInTxtGo:AddComponent(typeof(Text))
-                secInTxt.text = tostring(_G.Mod_Admin_SecondaryTier or 7)
+                secInTxt.text = tostring(curSecVal)
                 secInTxt.color, secInTxt.fontSize = Color.black, 15
                 secInTxt.alignment = TextAnchor.MiddleCenter
                 if defaultFont then secInTxt.font = defaultFont end
 
                 local secInField = secInGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
                 secInField.textComponent = secInTxt
-                secInField.text = tostring(_G.Mod_Admin_SecondaryTier or 7)
-                secInField.onValueChanged:AddListener(function(val)
-                    local num = tonumber(val)
-                    if num and num >= 3 and num <= 12 then
-                        _G.Mod_Admin_SecondaryTier = num
-                        pcall(function()
-                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_SecondaryTier", num)
-                            CS.UnityEngine.PlayerPrefs.Save()
-                        end)
-                        if _G.Mod_UpdateClassDisplay then _G.Mod_UpdateClassDisplay() end
+                secInField.text = tostring(curSecVal)
+
+                -- =========================================================================
+                -- [MOD FEATURE]: NÚT UPDATE CHUYỂN CHÍNH PHỤ ADMIN
+                -- Mô tả: Cập nhật và lưu đồng bộ cấu hình chuyển chính/phụ của Admin vào hệ thống Mod
+                -- =========================================================================
+                local applyBtnGo = GameObject("ApplyTierBtn")
+                applyBtnGo.transform:SetParent(adminTierGo.transform, false)
+                local applyRt = applyBtnGo:AddComponent(typeof(RectTransform))
+                applyRt.anchorMin, applyRt.anchorMax, applyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                applyRt.anchoredPosition = Vector2(310, 0)
+                applyRt.sizeDelta = Vector2(75, 30)
+                local applyImg = applyBtnGo:AddComponent(typeof(Image))
+                applyImg.color = Color(0.2, 0.6, 0.2, 1)
+                local applyBtn = applyBtnGo:AddComponent(typeof(Button))
+                local aTxtGo = GameObject("Text")
+                aTxtGo.transform:SetParent(applyBtnGo.transform, false)
+                local aTxtRt = aTxtGo:AddComponent(typeof(RectTransform))
+                aTxtRt.anchorMin, aTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                aTxtRt.sizeDelta = Vector2(0, 0)
+                local aTxt = aTxtGo:AddComponent(typeof(Text))
+                aTxt.text = "Update"
+                aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
+                if defaultFont then aTxt.font = defaultFont end
+
+                applyBtn.onClick:AddListener(function()
+                    local pVal = tonumber(priInField.text) or 8
+                    local sVal = tonumber(secInField.text) or 7
+                    if pVal < 3 or pVal > 12 then pVal = 8 end
+                    if sVal < 3 or sVal > 12 then sVal = 7 end
+                    priInField.text = tostring(pVal)
+                    secInField.text = tostring(sVal)
+
+                    _G.Mod_Admin_PrimaryTier = pVal
+                    _G.Mod_Admin_SecondaryTier = sVal
+                    _G.Mod_Config_Reincarnation_Primary = pVal
+                    _G.Mod_Config_Reincarnation_Secondary = sVal
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_PrimaryTier", pVal)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Admin_SecondaryTier", sVal)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_PrimaryTier", pVal)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_SecondaryTier", sVal)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
+                    if UpdateBossWatchUIText then pcall(UpdateBossWatchUIText) end
+                    if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+                    if RefreshMainTabs then RefreshMainTabs() end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg(string.format(
+                            "Đã cập nhật: Chính C%d, Phụ C%d!", pVal, sVal))
                     end
                 end)
             end

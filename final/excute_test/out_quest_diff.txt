@@ -1,0 +1,332 @@
+﻿
+  final\excute_test\out_bak_diff.txt:1356:+            _G.FloatingWordUtility.QuickMsg(string.format("ĐÃ HOÀN THÀNH 
+TẤT CẢ %d ACC LÊN LV %d!", totalAccs, targetLvl))
+  final\excute_test\out_bak_diff.txt:1357:+        end
+  final\excute_test\out_bak_diff.txt:1358:+    end
+  final\excute_test\out_bak_diff.txt:1359:+end
+  final\excute_test\out_bak_diff.txt:1360:+
+> final\excute_test\out_bak_diff.txt:1361: StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1362:     if not _G.Bot_Running or _G.Bot_PauseTask then
+  final\excute_test\out_bak_diff.txt:1363:         return
+> final\excute_test\out_bak_diff.txt:1364:@@ -6767,7 +7039,12 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1365:     local pMe = _G.RoleManager and _G.RoleManager.me
+  final\excute_test\out_bak_diff.txt:1366:     local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and 
+pMe.data.level) or 1
+  final\excute_test\out_bak_diff.txt:1367: 
+  final\excute_test\out_bak_diff.txt:1368:-    StartGlobal30sUpgradePipeline()
+  final\excute_test\out_bak_diff.txt:1369:+    -- CHỈ KÍCH HOẠT CHU KỲ NÂNG CẤP & THU HỒI ĐỒ ĐỊNH KỲ SAU LEVEL 20:
+  final\excute_test\out_bak_diff.txt:1370:+    if currentLevel >= 20 then
+  final\excute_test\out_bak_diff.txt:1371:+        StartGlobal30sUpgradePipeline()
+  final\excute_test\out_bak_diff.txt:1372:+        if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
+  final\excute_test\out_bak_diff.txt:1373:+        RunPeriodicUpgradeCycle()
+  final\excute_test\out_bak_diff.txt:1374:+    end
+  final\excute_test\out_bak_diff.txt:1375: 
+  final\excute_test\out_bak_diff.txt:1376:     
+Log("=========================================================================")
+  final\excute_test\out_bak_diff.txt:1377:     Log(string.format(">>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL %s] ƯU TIÊN QUÉT 
+VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<", tostring(currentLevel)), true)
+> final\excute_test\out_bak_diff.txt:1378:@@ -6781,9 +7058,6 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1379:         end
+  final\excute_test\out_bak_diff.txt:1380:     end)
+  final\excute_test\out_bak_diff.txt:1381: 
+  final\excute_test\out_bak_diff.txt:1382:-    if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
+  final\excute_test\out_bak_diff.txt:1383:-    RunPeriodicUpgradeCycle()
+  final\excute_test\out_bak_diff.txt:1384:-
+  final\excute_test\out_bak_diff.txt:1385:     if _G.BotQuestMonitorTimer then
+  final\excute_test\out_bak_diff.txt:1386:         pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
+  final\excute_test\out_bak_diff.txt:1387:         _G.BotQuestMonitorTimer = nil
+> final\excute_test\out_bak_diff.txt:1388:@@ -6791,20 +7065,66 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1389: 
+  final\excute_test\out_bak_diff.txt:1390:     local loopTickCount = 0
+  final\excute_test\out_bak_diff.txt:1391: 
+  final\excute_test\out_bak_diff.txt:1392:-    _G.BotQuestMonitorTimer = Timer.StartLoop(1.0, -1, function()
+  final\excute_test\out_bak_diff.txt:1393:+    _G.BotQuestMonitorTimer = Timer.StartLoop(0.3, -1, function()
+  final\excute_test\out_bak_diff.txt:1394:         pcall(function()
+  final\excute_test\out_bak_diff.txt:1395:             if not _G.Bot_Running or _G.Bot_PauseTask or 
+_G.Mod_IsRunningInstance then
+  final\excute_test\out_bak_diff.txt:1396:                 return
+  final\excute_test\out_bak_diff.txt:1397:             end
+  final\excute_test\out_bak_diff.txt:1398: 
+  final\excute_test\out_bak_diff.txt:1399:+            -- Luôn quét dọn popup và tự động bấm nhận thưởng tức thì 
+(<0.3s, không chờ đếm ngược 5s)
+  final\excute_test\out_bak_diff.txt:1400:+            DismissBlockers()
+  final\excute_test\out_bak_diff.txt:1401:+
+  final\excute_test\out_bak_diff.txt:1402:             local me = _G.RoleManager and _G.RoleManager.me
+  final\excute_test\out_bak_diff.txt:1403:             local lvl = (me and me.level) or (me and me.data and 
+me.data.level) or 1
+  final\excute_test\out_bak_diff.txt:1404:+            local targetLvl = 
+CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
+  final\excute_test\out_bak_diff.txt:1405: 
+  final\excute_test\out_bak_diff.txt:1406:-            DismissBlockers()
+  final\excute_test\out_bak_diff.txt:1407:+            -- KIỂM TRA MỤC TIÊU CẤP ĐỘ FARM BOT (MẶC ĐỊNH LV 50):
+  final\excute_test\out_bak_diff.txt:1408:+            if lvl >= targetLvl then
+  final\excute_test\out_bak_diff.txt:1409:+                _G.OnAccountReachLevelGoal(lvl, targetLvl)
+  final\excute_test\out_bak_diff.txt:1410:+                return
+  final\excute_test\out_bak_diff.txt:1411:+            end
+  final\excute_test\out_bak_diff.txt:1412:+
+  final\excute_test\out_bak_diff.txt:1413:+            -- 
+=========================================================================
+  final\excute_test\out_bak_diff.txt:1414:+            -- [GIAI ĐOẠN TÂN THỦ LV 1 -> 9]:
+  final\excute_test\out_bak_diff.txt:1415:+            -- Tĩnh lặng hoàn toàn theo yêu cầu của User:
+  final\excute_test\out_bak_diff.txt:1416:+            -- Từ lv 1 đến 10, chỉ làm theo nv tân thủ của game, mod chưa 
+can thiệp gì cả.
+  final\excute_test\out_bak_diff.txt:1417:+            -- 
+=========================================================================
+  final\excute_test\out_bak_diff.txt:1418:+            if lvl < 10 then
+  final\excute_test\out_bak_diff.txt:1453:-            if loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
+  final\excute_test\out_bak_diff.txt:1454:+            if loopTickCount % 50 == 0 and not _G.Mod_IsRunningInstance then
+  final\excute_test\out_bak_diff.txt:1455:                 CheckAndRunBloodCastleOrDemonPlaza()
+  final\excute_test\out_bak_diff.txt:1456:             end
+  final\excute_test\out_bak_diff.txt:1457: 
+> final\excute_test\out_bak_diff.txt:1458:@@ -6822,29 +7142,37 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1459:             -- 
+=========================================================================
+  final\excute_test\out_bak_diff.txt:1460:             pcall(function()
+  final\excute_test\out_bak_diff.txt:1461:                 if _G.TaskData and _G.TaskData.activeTasks then
+  final\excute_test\out_bak_diff.txt:1462:+                    local nowSec = os.time()
+  final\excute_test\out_bak_diff.txt:1463:+                    _G.ClaimedTaskCooldown = _G.ClaimedTaskCooldown or {}
+  final\excute_test\out_bak_diff.txt:1464:                     for tId, task in pairs(_G.TaskData.activeTasks) do
+  final\excute_test\out_bak_diff.txt:1465:-                        if task then
+  final\excute_test\out_bak_diff.txt:1466:-                            local s = (task.GetState and task:GetState()) 
+or task.state or 0
+  final\excute_test\out_bak_diff.txt:1467:-                            if s == (_G.TaskStateType and 
+_G.TaskStateType.Completed or 2) or s == 2 or s == 3 then
+  final\excute_test\out_bak_diff.txt:1468:-                                Log(string.format("-> [CLAIM TỨC THÌ TASK 
+%s]: Đã hoàn thành! Nộp và nhận thưởng ngay...", tostring(tId)), true)
+  final\excute_test\out_bak_diff.txt:1469:-                                if _G.networkRequest then
+  final\excute_test\out_bak_diff.txt:1470:-                                    if _G.networkRequest.ReqCompleteTask 
+then _G.networkRequest.ReqCompleteTask(tId) end
+  final\excute_test\out_bak_diff.txt:1471:-                                    if _G.networkRequest.ReqSubmitTask then 
+_G.networkRequest.ReqSubmitTask(tId) end
+  final\excute_test\out_bak_diff.txt:1472:-                                end
+  final\excute_test\out_bak_diff.txt:1473:-                                if _G.NetManager and _G.TaskMessage then
+  final\excute_test\out_bak_diff.txt:1474:-                                    if _G.TaskMessage.ReqCompleteTask then 
+_G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = tId, id = tId }) end
+  final\excute_test\out_bak_diff.txt:1475:-                                    if _G.TaskMessage.ReqSubmitTask then 
+_G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = tId, id = tId }) end
+  final\excute_test\out_bak_diff.txt:1476:-                                end
+  final\excute_test\out_bak_diff.txt:1477:-                                if _G.EventManager and _G.Event then
+  final\excute_test\out_bak_diff.txt:1478:-                                    if _G.Event.Task_BtnRewardClick then 
+_G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, tId) end
+  final\excute_test\out_bak_diff.txt:1479:-                                    if _G.Event.Task_BtnSubmitClick then 
+_G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, tId) end
+  final\excute_test\out_bak_diff.txt:1480:-                                end
+  final\excute_test\out_bak_diff.txt:1481:-                                if _G.TaskManager and _G.TaskManager.TaskGo 
+then
+  final\excute_test\out_bak_diff.txt:1482:-                                    _G.TaskManager.TaskGo(tId, 
+_G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+  final\excute_test\out_bak_diff.txt:1483:-                                end
+  final\excute_test\out_bak_diff.txt:1484:-                                local taskUI = _G.UIManager and 
+_G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and 
+_G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+  final\excute_test\out_bak_diff.txt:1485:-                                if taskUI and taskUI.TaskItemClick then
+  final\excute_test\out_bak_diff.txt:1486:-                                    taskUI:TaskItemClick(tId)
+  final\excute_test\out_bak_diff.txt:1487:+                        if task and tId ~= 80101 then
+  final\excute_test\out_bak_diff.txt:1488:+                            local tType = (task.GetTaskTypeID and 
+task:GetTaskTypeID()) or 0
+  final\excute_test\out_bak_diff.txt:1513:+                                        end
+  final\excute_test\out_bak_diff.txt:1514:+                                    end
+  final\excute_test\out_bak_diff.txt:1515:                                 end
+  final\excute_test\out_bak_diff.txt:1516:                             end
+  final\excute_test\out_bak_diff.txt:1517:                         end
+> final\excute_test\out_bak_diff.txt:1518:@@ -7024,24 +7352,18 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1519:                             -- Nếu nhân vật Level < 100: Cày trực tiếp 
+online vì tân thủ lên cấp cực nhanh
+  final\excute_test\out_bak_diff.txt:1520:                             local curMap = (_G.SceneData and 
+_G.SceneData.mapId) or 0
+  final\excute_test\out_bak_diff.txt:1521:                             
+  final\excute_test\out_bak_diff.txt:1522:-                            local isMoving = false
+  final\excute_test\out_bak_diff.txt:1523:-                            local isFighting = false
+  final\excute_test\out_bak_diff.txt:1524:-                            pcall(function()
+  final\excute_test\out_bak_diff.txt:1525:-                                local me = _G.RoleManager and 
+_G.RoleManager.me
+  final\excute_test\out_bak_diff.txt:1526:-                                if me and me.IsMoving and me:IsMoving() 
+then isMoving = true end
+  final\excute_test\out_bak_diff.txt:1527:-                                if me and (me.isFightState or 
+(me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+  final\excute_test\out_bak_diff.txt:1528:-                                if _G.QiJiHelperData and 
+_G.QiJiHelperData.isAutoFight then isFighting = true end
+  final\excute_test\out_bak_diff.txt:1529:-                            end)
+  final\excute_test\out_bak_diff.txt:1530:-
+  final\excute_test\out_bak_diff.txt:1531:-                            _G.Bot_LastFarmTeleportTime = 
+_G.Bot_LastFarmTeleportTime or 0
+  final\excute_test\out_bak_diff.txt:1532:+                            local isNewTask = (_G.Bot_CurrentTaskId ~= 
+taskId)
+  final\excute_test\out_bak_diff.txt:1533:                             local nowSec = os.time()
+  final\excute_test\out_bak_diff.txt:1534:-                            
+  final\excute_test\out_bak_diff.txt:1535:-                            if (not isMoving and not isFighting) or (nowSec 
+- _G.Bot_LastFarmTeleportTime >= 8) then
+  final\excute_test\out_bak_diff.txt:1536:+                            _G.Bot_LastFarmTeleportTime = 
+_G.Bot_LastFarmTeleportTime or 0
+  final\excute_test\out_bak_diff.txt:1537:+
+  final\excute_test\out_bak_diff.txt:1538:+                            -- CHỈ truyền tống đến bãi cày tối ưu 1 LẦN khi 
+nhận nhiệm vụ mới hoặc sau 45s nếu bị kẹt
+  final\excute_test\out_bak_diff.txt:1539:+                            if isNewTask or (nowSec - 
+_G.Bot_LastFarmTeleportTime >= 45) then
+  final\excute_test\out_bak_diff.txt:1540:+                                _G.Bot_CurrentTaskId = taskId
+  final\excute_test\out_bak_diff.txt:1541:                                 _G.Bot_LastFarmTeleportTime = nowSec
+  final\excute_test\out_bak_diff.txt:1542:                                 pcall(function()
+  final\excute_test\out_bak_diff.txt:1543:                                     local hasTele = 
+TeleportToBestFarmPoint(curMap)
+  final\excute_test\out_bak_diff.txt:1544:                                     if hasTele then
+  final\excute_test\out_bak_diff.txt:1545:-                                        Log(string.format("[Luyện Cấp] : 
+Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d để cày cấp!", taskId, tostring(taskName), curMap), true)
+  final\excute_test\out_bak_diff.txt:1546:+                                        Log(string.format("[Luyện Cấp] : 
+Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d để cày cấp (1 lần)!", taskId, tostring(taskName), curMap), 
+true)
+  final\excute_test\out_bak_diff.txt:1547:                                         SaveOutput()
+  final\excute_test\out_bak_diff.txt:1548:                                     end
+  final\excute_test\out_bak_diff.txt:1549:                                 end)
+> final\excute_test\out_bak_diff.txt:1550:@@ -7182,6 +7504,79 @@ StartNewbieQuestPipeline = function()
+  final\excute_test\out_bak_diff.txt:1551:                                 end
+  final\excute_test\out_bak_diff.txt:1552:                             end)
+  final\excute_test\out_bak_diff.txt:1553: 
+  final\excute_test\out_bak_diff.txt:1554:+                        -- 
+=========================================================================
+  final\excute_test\out_bak_diff.txt:1555:+                        -- [MOD FEATURE]: TỰ ĐỘNG THU HỒI ĐỒ TÂN THỦ (TASK 
+3010, 3061...)
+  final\excute_test\out_bak_diff.txt:1556:+                        -- 
+=========================================================================
+  final\excute_test\out_bak_diff.txt:1557:+                        elseif behavior == TASK_BEHAVIOR.RECYCLE then
+  final\excute_test\out_bak_diff.txt:1558:+                            local nowSec = os.time()
+  final\excute_test\out_bak_diff.txt:1559:+                            _G.Bot_LastRecycleTaskTime = 
+_G.Bot_LastRecycleTaskTime or 0
+  final\excute_test\out_bak_diff.txt:1560:+                            if nowSec - _G.Bot_LastRecycleTaskTime >= 2 then
+  final\excute_test\out_bak_diff.txt:1561:+                                _G.Bot_LastRecycleTaskTime = nowSec
+  final\excute_test\out_bak_diff.txt:1562:+
+  final\excute_test\out_bak_diff.txt:1563:+                                -- 1. Tìm 1 vật phẩm trong túi để thu hồi 
+(ưu tiên trang bị rác, nếu không có thì lấy 1 bình mana/máu)
+  final\excute_test\out_bak_diff.txt:1564:+                                local candidate = nil
+  final\excute_test\out_bak_diff.txt:1565:+                                if _G.BagInfoData and 
+_G.BagInfoData.TotalItems then
+  final\excute_test\out_bak_diff.txt:1566:+                                    for _, item in 
+pairs(_G.BagInfoData.TotalItems) do
+  final\excute_test\out_bak_diff.txt:1567:+                                        if item and item.id and item.count 
+and item.count > 0 and item.tblItem then
+  final\excute_test\out_bak_diff.txt:1568:+                                            if item.tblItem.type == 1 then
+  final\excute_test\out_bak_diff.txt:1569:+                                                candidate = item
+  final\excute_test\out_bak_diff.txt:1570:+                                                break
+  final\excute_test\out_bak_diff.txt:1571:+                                            end
+  final\excute_test\out_bak_diff.txt:1572:+                                        end
+  final\excute_test\out_bak_diff.txt:1573:+                                    end
+  final\excute_test\out_bak_diff.txt:1574:+                                    if not candidate then
+  final\excute_test\out_bak_diff.txt:1575:+                                        for _, item in 
+pairs(_G.BagInfoData.TotalItems) do
+  final\excute_test\out_bak_diff.txt:1576:+                                            if item and item.id and 
+item.count and item.count > 0 then
+  final\excute_test\out_bak_diff.txt:1577:+                                                candidate = item
+  final\excute_test\out_bak_diff.txt:1578:+                                                break
+  final\excute_test\out_bak_diff.txt:1579:+                                            end
+  final\excute_test\out_bak_diff.txt:1580:+                                        end
+  final\excute_test\out_bak_diff.txt:1651:-                        _G.RunAutoGiftcode(function()
+  final\excute_test\out_bak_diff.txt:1652:-                            
+Log("=========================================================================")
+  final\excute_test\out_bak_diff.txt:1653:-                            Log(">>> ĐÃ NHẬN CODE & HÒM THƯ XONG! BẮT ĐẦU 
+AUTO NHIỆM VỤ TÂN THỦ (1s/LẦN)... <<<", true)
+  final\excute_test\out_bak_diff.txt:1654:-                            
+Log("=========================================================================")
+  final\excute_test\out_bak_diff.txt:1655:-                            SaveOutput()
+> final\excute_test\out_bak_diff.txt:1656:-                            StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1657:-                        end)
+  final\excute_test\out_bak_diff.txt:1658:-                    else
+  final\excute_test\out_bak_diff.txt:1659:-                        if currentLevel > 3 then
+  final\excute_test\out_bak_diff.txt:1660:-                            Log(string.format("-> [LEVEL %d > 3] Đã từng 
+nhận code -> BỎ QUA NHẬP CODE & ĐI THẲNG VÀO LÀM TIẾP NHIỆM VỤ TÂN THỦ!", currentLevel), true)
+  final\excute_test\out_bak_diff.txt:1661:-                            SaveOutput()
+  final\excute_test\out_bak_diff.txt:1662:-                        end
+> final\excute_test\out_bak_diff.txt:1663:-                        StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1664:-                    end
+  final\excute_test\out_bak_diff.txt:1665:+                    -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần 
+túy, chưa can thiệp gì
+> final\excute_test\out_bak_diff.txt:1666:+                    -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã 
+Giftcode bên trong StartNewbieQuestPipeline
+> final\excute_test\out_bak_diff.txt:1667:+                    StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1668:             end)
+  final\excute_test\out_bak_diff.txt:1669:         end)
+  final\excute_test\out_bak_diff.txt:1670: 
+  final\excute_test\out_bak_diff.txt:1671:@@ -7806,6 +8186,9 @@ _G.Bot_PauseTask = false
+  final\excute_test\out_bak_diff.txt:1672: _G.StartAutoFarmBot = function()
+  final\excute_test\out_bak_diff.txt:1673:     _G.Bot_Running = true
+  final\excute_test\out_bak_diff.txt:1674:     _G.Bot_PauseTask = false
+  final\excute_test\out_bak_diff.txt:1675:+    _G.IsSwitchingAccount = false
+  final\excute_test\out_bak_diff.txt:1676:+    _G.HasCreatedRoleForTarget = false
+  final\excute_test\out_bak_diff.txt:1677:+    _G.IsRoleCreating = false
+  final\excute_test\out_bak_diff.txt:1678:     if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
+  final\excute_test\out_bak_diff.txt:1679: 
+  final\excute_test\out_bak_diff.txt:1680:     local isInGame = false
+  final\excute_test\out_bak_diff.txt:1681:@@ -7870,29 +8253,27 @@ _G.StartAutoFarmBot = function()
+  final\excute_test\out_bak_diff.txt:1682:         ApplyFovAndSpeed()
+  final\excute_test\out_bak_diff.txt:1683:         DismissBlockers()
+  final\excute_test\out_bak_diff.txt:1684: 
+  final\excute_test\out_bak_diff.txt:1685:-        if AutoBuyPotionsIfLow then
+  final\excute_test\out_bak_diff.txt:1686:-            AutoBuyPotionsIfLow(50, 100)
+  final\excute_test\out_bak_diff.txt:1687:-        end
+  final\excute_test\out_bak_diff.txt:1688:+        if curLvl >= 20 then
+  final\excute_test\out_bak_diff.txt:1689:+            if AutoBuyPotionsIfLow then
+  final\excute_test\out_bak_diff.txt:1690:+                AutoBuyPotionsIfLow(50, 100)
+  final\excute_test\out_bak_diff.txt:1691:+            end
+  final\excute_test\out_bak_diff.txt:1692: 
+  final\excute_test\out_bak_diff.txt:1693:-        if AutoClaimNewServerRewards then
+  final\excute_test\out_bak_diff.txt:1694:-            AutoClaimNewServerRewards()
+  final\excute_test\out_bak_diff.txt:1695:-        end
+  final\excute_test\out_bak_diff.txt:1696:+            if AutoClaimNewServerRewards then
+  final\excute_test\out_bak_diff.txt:1697:+                AutoClaimNewServerRewards()
+  final\excute_test\out_bak_diff.txt:1703:+                AutoClaimDailyWelfare()
+  final\excute_test\out_bak_diff.txt:1704:+            end
+  final\excute_test\out_bak_diff.txt:1705:         end
+  final\excute_test\out_bak_diff.txt:1706: 
+  final\excute_test\out_bak_diff.txt:1707:         -- BỎ hoàn toàn điều kiện curLvl >= 100 gây nhảy ra bãi farm dừng 
+sớm
+> final\excute_test\out_bak_diff.txt:1708:         -- LUÔN LUÔN kích hoạt StartNewbieQuestPipeline để chạy vòng lặp 
+quét và claim nhiệm vụ 1s/lần!
+  final\excute_test\out_bak_diff.txt:1709:         Log(string.format(">>> [CẤP ĐỘ %d] KHỞI CHẠY VÒNG LẶP CHÍNH QUÉT VÀ 
+CLAIM NHIỆM VỤ (1s/LẦN)! <<<", curLvl), true)
+  final\excute_test\out_bak_diff.txt:1710:         SaveOutput()
+  final\excute_test\out_bak_diff.txt:1711:-        if curLvl <= 3 and _G.RunAutoGiftcode then
+  final\excute_test\out_bak_diff.txt:1712:-            _G.RunAutoGiftcode(function()
+> final\excute_test\out_bak_diff.txt:1713:-                StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1714:-            end)
+  final\excute_test\out_bak_diff.txt:1715:-        else
+> final\excute_test\out_bak_diff.txt:1716:-            StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1717:-        end
+  final\excute_test\out_bak_diff.txt:1718:+        -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần túy, chưa 
+can thiệp gì
+> final\excute_test\out_bak_diff.txt:1719:+        -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã Giftcode bên 
+trong StartNewbieQuestPipeline
+> final\excute_test\out_bak_diff.txt:1720:+        StartNewbieQuestPipeline()
+  final\excute_test\out_bak_diff.txt:1721:     else
+  final\excute_test\out_bak_diff.txt:1722:         -- Kiểm tra xem có đang ở màn hình Chọn Nhân Vật không
+  final\excute_test\out_bak_diff.txt:1723:         local isAtSelectRole = false
+  final\excute_test\out_bak_diff.txt:1724:@@ -7915,6 +8296,27 @@ _G.StartAutoFarmBot = function()
+  final\excute_test\out_bak_diff.txt:1725:             end
+  final\excute_test\out_bak_diff.txt:1726:         end)
+  final\excute_test\out_bak_diff.txt:1727: 
+  final\excute_test\out_bak_diff.txt:1728:+        -- Kiểm tra xem có đang ở màn hình Tạo Nhân Vật không 
+(LoginCreateRoleUI)
+  final\excute_test\out_bak_diff.txt:1729:+        local isAtCreateRole = false
+  final\excute_test\out_bak_diff.txt:1730:+        pcall(function()
+  final\excute_test\out_bak_diff.txt:1731:+            if _G.UIManager and _G.UIManager.IsVisible then
+  final\excute_test\out_bak_diff.txt:1732:+                if _G.UIManager.IsVisible("Login_LoginCreateRoleUI") or 
+(_G.UIID and _G.UIID.LoginCreateRoleUI and _G.UIManager.IsVisible(_G.UIID.LoginCreateRoleUI)) then
+  final\excute_test\out_bak_diff.txt:1733:+                    isAtCreateRole = true
+  final\excute_test\out_bak_diff.txt:1734:+                end
+  final\excute_test\out_bak_diff.txt:1735:+            end
+  final\excute_test\out_bak_diff.txt:1736:+            local curCreateUI = _G.UIManager and _G.UIManager.GetUiByName 
+and _G.UIManager.GetUiByName("Login_LoginCreateRoleUI")
+  final\excute_test\out_bak_diff.txt:1737:+            if curCreateUI and not IsNil(curCreateUI) then
+  final\excute_test\out_bak_diff.txt:1738:+                isAtCreateRole = true
+  final\excute_test\out_bak_diff.txt:1739:+            end
+  final\excute_test\out_bak_diff.txt:1740:+        end)
+  final\excute_test\out_bak_diff.txt:1741:+
+  final\excute_test\out_bak_diff.txt:1742:+        if isAtCreateRole then
+  final\excute_test\out_bak_diff.txt:1743:+            Log(">>> [PHÁT HIỆN MÀN HÌNH TẠO NHÂN VẬT]: Đang ở 
+LoginCreateRoleUI -> Tự động tạo nhân vật Cung Thủ ở Slot 1! <<<", true)
+  final\excute_test\out_bak_diff.txt:1744:+            SaveOutput()
+  final\excute_test\out_bak_diff.txt:1745:+            CreateRoleAndEnterGame(1)
+  final\excute_test\out_bak_diff.txt:1746:+            return
+  final\excute_test\out_bak_diff.txt:1747:+        end
+  final\excute_test\out_bak_diff.txt:1748:+
+  final\excute_test\out_bak_diff.txt:1749:         if isAtSelectRole then
+  final\excute_test\out_bak_diff.txt:1750:             if curRoleCount > 0 then
+
+

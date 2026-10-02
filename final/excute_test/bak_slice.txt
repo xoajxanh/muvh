@@ -1,0 +1,502 @@
+﻿StartNewbieQuestPipeline = function()
+    if not _G.Bot_Running or _G.Bot_PauseTask then
+        return
+    end
+
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
+
+    StartGlobal30sUpgradePipeline()
+
+    Log("=========================================================================")
+    Log(string.format(">>> [VÃ’NG Láº¶P CHÃNH 1S/Láº¦N: LEVEL %s] Æ¯U TIÃŠN QUÃ‰T VÃ€ HOÃ€N THÃ€NH Táº¤T Cáº¢ QUEST! <<<", tostring(currentLevel)), true)
+    Log("=========================================================================")
+    SaveOutput()
+
+    pcall(function()
+        if _G.AutoTaskManage then
+            _G.AutoTaskManage.SetAutoTask(true)
+            _G.AutoTaskManage.StartCurAutoTask(true)
+        end
+    end)
+
+    if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
+    RunPeriodicUpgradeCycle()
+
+    if _G.BotQuestMonitorTimer then
+        pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
+        _G.BotQuestMonitorTimer = nil
+    end
+
+    local loopTickCount = 0
+
+    _G.BotQuestMonitorTimer = Timer.StartLoop(1.0, -1, function()
+        pcall(function()
+            if not _G.Bot_Running or _G.Bot_PauseTask or _G.Mod_IsRunningInstance then
+                return
+            end
+
+            local me = _G.RoleManager and _G.RoleManager.me
+            local lvl = (me and me.level) or (me and me.data and me.data.level) or 1
+
+            DismissBlockers()
+
+            loopTickCount = loopTickCount + 1
+
+            if loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
+                CheckAndRunBloodCastleOrDemonPlaza()
+            end
+
+            AutoAddAttributePoints()
+
+            -- Chu trÃ¬nh nÃ¢ng cáº¥p cháº¡y Ä‘á»‹nh ká»³ qua Global Timer, khÃ´ng cháº·n pipeline lÃ m quest
+            if _G.Mod_IsRunningInstance then
+                return
+            end
+
+            if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
+
+            -- =========================================================================
+            -- [CLAIM Táº¤T Cáº¢ NHIá»†M Vá»¤ ÄÃƒ HOÃ€N THÃ€NH (CHÃNH, NHÃNH, THÆ¯á»žNG) 1S/Láº¦N]
+            -- =========================================================================
+            pcall(function()
+                if _G.TaskData and _G.TaskData.activeTasks then
+                    for tId, task in pairs(_G.TaskData.activeTasks) do
+                        if task then
+                            local s = (task.GetState and task:GetState()) or task.state or 0
+                            if s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or s == 2 or s == 3 then
+                                Log(string.format("-> [CLAIM Tá»¨C THÃŒ TASK %s]: ÄÃ£ hoÃ n thÃ nh! Ná»™p vÃ  nháº­n thÆ°á»Ÿng ngay...", tostring(tId)), true)
+                                if _G.networkRequest then
+                                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(tId) end
+                                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(tId) end
+                                end
+                                if _G.NetManager and _G.TaskMessage then
+                                    if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = tId, id = tId }) end
+                                    if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = tId, id = tId }) end
+                                end
+                                if _G.EventManager and _G.Event then
+                                    if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, tId) end
+                                    if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, tId) end
+                                end
+                                if _G.TaskManager and _G.TaskManager.TaskGo then
+                                    _G.TaskManager.TaskGo(tId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                end
+                                local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+                                if taskUI and taskUI.TaskItemClick then
+                                    taskUI:TaskItemClick(tId)
+                                end
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if _G.TaskData then
+                local curTask = _G.TaskData.GetOrderMainTask and _G.TaskData.GetOrderMainTask()
+                if not curTask and _G.TaskData.activeTasks then
+                    for _, t in pairs(_G.TaskData.activeTasks) do
+                        if t and t.GetTaskTypeID and t:GetTaskTypeID() == (_G.RoleTaskType and _G.RoleTaskType.MainTask or 1) then
+                            curTask = t
+                            break
+                        end
+                    end
+                end
+
+                if curTask then
+                    local taskId = curTask.taskId or (curTask.GetId and curTask:GetId()) or 0
+                    local state = (curTask.GetState and curTask:GetState()) or curTask.state or 0
+                    local taskDes = (curTask.GetDes and curTask:GetDes()) or ""
+                    local taskName = (curTask.GetName and curTask:GetName()) or ""
+
+                    -- 1. TRáº NG THÃI HOÃ€N THÃ€NH (Completed = 2 hoáº·c 3): Ná»™p & Nháº­n thÆ°á»Ÿng ngay
+                    if state == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or state == 2 or state == 3 then
+                        _G.Bot_CurrentTaskId = 0
+                        _G.Bot_LastTaskNavTime = 0
+                        Log(string.format("-> [TRáº¢ THÆ¯á»žNG TASK %s]: ÄÃ£ hoÃ n thÃ nh! Ná»™p vÃ  nháº­n thÆ°á»Ÿng...", tostring(taskId)), true)
+                        pcall(function()
+                            if _G.networkRequest then
+                                if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
+                                if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
+                            end
+                            if _G.NetManager and _G.TaskMessage then
+                                if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = taskId, id = taskId }) end
+                                if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = taskId, id = taskId }) end
+                            end
+                            if _G.EventManager and _G.Event then
+                                if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, taskId) end
+                                if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, taskId) end
+                            end
+                            -- TÃ¬m Ä‘Æ°á»ng Ä‘áº¿n NPC ná»™p náº¿u cáº§n
+                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                            end
+                            if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                _G.AutoTaskManage.StartCurAutoTask(true)
+                            end
+                        end)
+                        SaveOutput()
+
+                    -- 2. TRáº NG THÃI CÃ“ THá»‚ NHáº¬N (Acceptable = 0): Gá»­i gÃ³i nháº­n nhiá»‡m vá»¥ & TÃ¬m Ä‘Æ°á»ng Ä‘áº¿n NPC nháº­n náº¿u cáº§n
+                    elseif state == (_G.TaskStateType and _G.TaskStateType.Acceptable or 0) or state == 0 then
+                        pcall(function()
+                            if _G.networkRequest and _G.networkRequest.ReqAcceptTask then _G.networkRequest.ReqAcceptTask(taskId) end
+                            if _G.NetManager and _G.TaskMessage and _G.TaskMessage.ReqAcceptTask then _G.NetManager.Send(_G.TaskMessage.ReqAcceptTask, { taskId = taskId, id = taskId }) end
+                            if _G.EventManager and _G.Event and _G.Event.Task_BtnAcceptClick then _G.EventManager.Dispatch(_G.Event.Task_BtnAcceptClick, taskId) end
+                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                            end
+                            if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                _G.AutoTaskManage.StartCurAutoTask(true)
+                            end
+                        end)
+
+                    -- 3. TRáº NG THÃI ÄANG TIáº¾N HÃ€NH (Accept = 1)
+                    elseif state == (_G.TaskStateType and _G.TaskStateType.Accept or 1) or state == 1 then
+                        local behavior = TASK_CONFIG_BY_ID[taskId]
+                        if not behavior then
+                            -- Fallback nháº­n diá»‡n náº¿u taskId chÆ°a khai bÃ¡o trong báº£ng
+                            local tType = (curTask.GetTaskTypeID and curTask:GetTaskTypeID()) or curTask.type or 0
+                            local goal = curTask.GetTaskGola and curTask:GetTaskGola()
+                            local gType = (goal and goal.goalTbl and goal.goalTbl.type) or 0
+                            local lowName = string.lower(tostring(taskName or ""))
+                            local lowDes = string.lower(tostring(taskDes or ""))
+                            if (taskId >= 21000 and taskId <= 21999) or tType == 15 or gType == 301 or gType == 3101 
+                                or lowName:find("cáº¥p") or lowName:find("level") or lowName:find("lv") 
+                                or lowName:find("tarkan") or lowDes:find("tarkan")
+                                or lowName:find("Ä‘áº¿ vÆ°Æ¡ng") or lowDes:find("Ä‘áº¿ vÆ°Æ¡ng")
+                                or lowName:find("sÃ¡ch Ä‘áº¿ vÆ°Æ¡ng") or lowDes:find("sÃ¡ch Ä‘áº¿ vÆ°Æ¡ng")
+                                or lowName:find("chuyá»ƒn chá»©c") or lowName:find("chuyá»ƒn 1") or lowName:find("chuyá»ƒn 2") or lowName:find("chuyá»ƒn 3")
+                                or lowName:find("má»Ÿ chuyá»ƒn") or lowName:find("chuyá»ƒn sinh") or lowName:find("giai Ä‘oáº¡n") then
+                                behavior = TASK_BEHAVIOR.LEVEL_UP
+                            elseif gType == 101 or gType == 103 or gType == 113 or lowName:find("diá»‡t") or lowName:find("Ä‘Ã¡nh") then
+                                behavior = TASK_BEHAVIOR.MONSTER_KILL
+                            elseif MAP_TRAVEL_TASKS and MAP_TRAVEL_TASKS[taskId] then
+                                behavior = TASK_BEHAVIOR.MAP_TRAVEL
+                            else
+                                behavior = TASK_BEHAVIOR.DIALOGUE
+                            end
+                        end
+
+                        -- A. NHIá»†M Vá»¤ CHUYá»‚N MAP (Äáº¿n Devias, Dungeon, Lost Tower...)
+                        if behavior == TASK_BEHAVIOR.MAP_TRAVEL or (MAP_TRAVEL_TASKS and MAP_TRAVEL_TASKS[taskId]) then
+                            local travelCfg = MAP_TRAVEL_TASKS and MAP_TRAVEL_TASKS[taskId]
+                            if travelCfg then
+                                local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                                local isAlreadyInMap = (tonumber(curMap) == tonumber(travelCfg.targetMap))
+                                if not isAlreadyInMap and travelCfg.altMaps then
+                                    for _, am in ipairs(travelCfg.altMaps) do
+                                        if tonumber(curMap) == tonumber(am) then
+                                            isAlreadyInMap = true
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if not isAlreadyInMap then
+                                    _G.Bot_LastMapTravelTime = _G.Bot_LastMapTravelTime or 0
+                                    local nowSec = os.time()
+                                    if nowSec - _G.Bot_LastMapTravelTime >= 3 then
+                                        _G.Bot_LastMapTravelTime = nowSec
+                                        Log(string.format("-> [CHUYá»‚N MAP TASK %d]: Truyá»n tá»‘ng sang %s (MapId: %s | Tá»a Ä‘á»™: %d#%d)...", taskId, travelCfg.name, tostring(travelCfg.targetMap), travelCfg.x, travelCfg.y), true)
+                                        pcall(function()
+                                            if _G.networkRequest and _G.networkRequest.ReqTransmit then _G.networkRequest.ReqTransmit(travelCfg.targetMap, 1, travelCfg.x, travelCfg.y) end
+                                            if _G.networkRequest and _G.networkRequest.ReqCallFlag then _G.networkRequest.ReqCallFlag(1, 0, travelCfg.targetMap, 1, travelCfg.x, travelCfg.y, 0) end
+                                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                            end
+                                        end)
+                                    end
+                                else
+                                    pcall(function()
+                                        if _G.networkRequest and _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
+                                        if _G.networkRequest and _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
+                                        if _G.TaskManager and _G.TaskManager.TaskGo then
+                                            _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                        end
+                                    end)
+                                end
+                            end
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: CHIáº¾N LÆ¯á»¢C CÃ€Y Cáº¤P OFFLINE CHO LEVEL >= 100
+                        -- MÃ´ táº£: Khi gáº·p nhiá»‡m vá»¥ yÃªu cáº§u cÃ y cáº¥p (LEVEL_UP) mÃ  nhÃ¢n váº­t Ä‘Ã£ Lv >= 100,
+                        -- bot sáº½ khÃ´ng tá»‘n thá»i gian farm chay online mÃ  vÃ©t phÃ³ báº£n, nÃ¢ng cáº¥p, má»Ÿ rÆ°Æ¡ng,
+                        -- ra bÃ£i farm tá»‘i Æ°u rá»“i Ä‘áº£o slot/acc Ä‘á»ƒ nhÃ¢n váº­t tá»± treo offline lÃªn level!
+                        -- =========================================================================
+                        elseif behavior == TASK_BEHAVIOR.LEVEL_UP then
+                            -- Náº¿u nhÃ¢n váº­t Ä‘Ã£ ngoÃ i Lv 100 (Lv >= 100) gáº·p nhiá»‡m vá»¥ báº¯t cÃ y cáº¥p hoáº·c farm dÃ i háº¡n:
+                            -- Tá»‘i Æ°u: VÃ©t phÃ³ báº£n > NÃ¢ng cáº¥p Ä‘á»“ > Cáº¯m bÃ£i farm > Äáº£o slot/acc Ä‘á»ƒ treo offline!
+                            if lvl >= 100 then
+                                if _G.BotQuestMonitorTimer then
+                                    pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
+                                    _G.BotQuestMonitorTimer = nil
+                                end
+                                pcall(function()
+                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
+                                        _G.AutoTaskManage.SetAutoTask(false)
+                                    end
+                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetCurAutoTaskState then
+                                        _G.AutoTaskManage.SetCurAutoTaskState(false)
+                                    end
+                                    local me = _G.RoleManager and _G.RoleManager.me
+                                    if me and me.StopMove then me:StopMove() end
+                                end)
+                                Log("=========================================================================", true)
+                                Log(string.format(">>> [CHIáº¾N LÆ¯á»¢C CÃ€Y Cáº¤P OFFLINE: LEVEL %d >= 100] <<<", lvl), true)
+                                Log(string.format(">>> Nhiá»‡m vá»¥ [%d] \"%s\" yÃªu cáº§u tÄƒng cáº¥p / farm dÃ i háº¡n -> Bot khÃ´ng farm chay online!", taskId, tostring(taskName)), true)
+                                Log(">>> Tiáº¿n hÃ nh: VÃ©t phÃ³ báº£n > NÃ¢ng cáº¥p Ä‘á»“ > Má»Ÿ rÆ°Æ¡ng > Cáº¯m bÃ£i farm > Äá»•i Slot/Acc treo offline! <<<", true)
+                                Log("=========================================================================", true)
+                                SaveOutput()
+
+                                CheckAndRunBloodCastleOrDemonPlaza(function()
+                                    StartStep5_MailAndUpgrade(function()
+                                        StartGoldenChestProcess(function()
+                                            TeleportToTrainMapAndFarm(function()
+                                                SwitchToNextRoleOrAccount()
+                                            end)
+                                        end)
+                                    end)
+                                end)
+                                return
+                            end
+
+                            -- Náº¿u nhÃ¢n váº­t Level < 100: CÃ y trá»±c tiáº¿p online vÃ¬ tÃ¢n thá»§ lÃªn cáº¥p cá»±c nhanh
+                            local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                            
+                            local isMoving = false
+                            local isFighting = false
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.IsMoving and me:IsMoving() then isMoving = true end
+                                if me and (me.isFightState or (me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then isFighting = true end
+                            end)
+
+                            _G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
+                            local nowSec = os.time()
+                            
+                            if (not isMoving and not isFighting) or (nowSec - _G.Bot_LastFarmTeleportTime >= 8) then
+                                _G.Bot_LastFarmTeleportTime = nowSec
+                                pcall(function()
+                                    local hasTele = TeleportToBestFarmPoint(curMap)
+                                    if hasTele then
+                                        Log(string.format("[Luyá»‡n Cáº¥p] : Nhiá»‡m vá»¥ [%d] \"%s\" -> Tiáº¿n vÃ o bÃ£i quÃ¡i tá»‘i Æ°u Map %d Ä‘á»ƒ cÃ y cáº¥p!", taskId, tostring(taskName), curMap), true)
+                                        SaveOutput()
+                                    end
+                                end)
+                            end
+                            
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+                            end)
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: Tá»° Äá»˜NG MUA & Há»ŒC Ká»¸ NÄ‚NG SHOP (ÄÃ TÃŠN ÄA TRÃ™NG, SÃCH...)
+                        -- =========================================================================
+                        elseif behavior == TASK_BEHAVIOR.SKILL_SHOP then
+                            local isShopOpen = false
+                            local shopUI = nil
+                            pcall(function()
+                                if _G.UIManager then
+                                    if _G.UIManager.IsVisible then
+                                        isShopOpen = _G.UIManager.IsVisible("Shop_ShopUI") or (_G.UIID and _G.UIID.Shop and _G.UIManager.IsVisible(_G.UIID.Shop))
+                                    end
+                                    shopUI = _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Shop_ShopUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Shop)))
+                                    if not isShopOpen and shopUI then
+                                        isShopOpen = (shopUI.visible == true) or (shopUI.transform and shopUI.transform.gameObject and shopUI.transform.gameObject.activeInHierarchy)
+                                    end
+                                end
+                            end)
+
+                            -- 1. Náº¿u Shop Ä‘ang má»Ÿ -> QuÃ©t tÃ¬m váº­t pháº©m Ä‘á» cá»­ vÃ  mua ngay
+                            if isShopOpen then
+                                local targetGoodId = nil
+                                if shopUI and shopUI.args and shopUI.args.subPosition and shopUI.args.subPosition > 0 then
+                                    targetGoodId = shopUI.args.subPosition
+                                end
+                                if not targetGoodId and shopUI and shopUI.shopCtrTbl and shopUI.shopCtrTbl.items then
+                                    for _, itemCtr in pairs(shopUI.shopCtrTbl.items) do
+                                        if itemCtr and itemCtr.buyCtr and itemCtr.buyCtr.shop then
+                                            local sData = itemCtr.buyCtr.shop
+                                            local hasEff = (itemCtr.eff_UI_annuikuang and itemCtr.eff_UI_annuikuang.gameObject and itemCtr.eff_UI_annuikuang.gameObject.activeSelf)
+                                            local isRecommend = (itemCtr.img_is_recommend and itemCtr.img_is_recommend.gameObject and itemCtr.img_is_recommend.gameObject.activeSelf)
+                                            local itemName = tostring((itemCtr.itemModelData and itemCtr.itemModelData.itemData and itemCtr.itemModelData.itemData.tblItem and itemCtr.itemModelData.itemData.tblItem.name) or "")
+                                            if hasEff or itemCtr.buyCtr.taskType or (isRecommend and (string.find(itemName, "Äa TrÃ¹ng") or string.find(itemName, "Ká»¹ NÄƒng") or taskId == 3030)) then
+                                                targetGoodId = sData.id
+                                                break
+                                            end
+                                        end
+                                    end
+                                end
+                                if not targetGoodId then
+                                    if taskId == 3030 then targetGoodId = 20409 -- ÄÃ¡ TÃªn Äa TrÃ¹ng (Cung Thá»§)
+                                    elseif taskId == 3020 then targetGoodId = 20401 -- Ká»¹ NÄƒng Chiáº¿n Binh
+                                    elseif taskId == 3040 then targetGoodId = 20410
+                                    elseif taskId == 3041 then targetGoodId = 20411
+                                    end
+                                end
+
+                                if targetGoodId then
+                                    local nowSec = os.time()
+                                    _G.Bot_LastShopBuyTime = _G.Bot_LastShopBuyTime or 0
+                                    if nowSec - _G.Bot_LastShopBuyTime >= 2 then
+                                        _G.Bot_LastShopBuyTime = nowSec
+                                        Log(string.format("-> [MUA Ká»¸ NÄ‚NG TASK %d]: Äang gá»­i lá»‡nh mua váº­t pháº©m (GoodId: %s)...", taskId, tostring(targetGoodId)), true)
+                                        pcall(function()
+                                            if _G.networkRequest and _G.networkRequest.ReqBuy then
+                                                _G.networkRequest.ReqBuy(targetGoodId, 1)
+                                            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                                                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                                                    goodId = targetGoodId,
+                                                    buyCount = 1
+                                                })
+                                            end
+                                        end)
+
+                                        -- Äá»£i 1.5s sau khi mua má»›i Ä‘Ã³ng Shop
+                                        Timer.Start(1.5, function()
+                                            pcall(function()
+                                                if _G.UIManager then
+                                                    if _G.UIID and _G.UIID.Shop then _G.UIManager.Hide(_G.UIID.Shop) end
+                                                    if _G.UIID and _G.UIID.ItemTipUI then _G.UIManager.Hide(_G.UIID.ItemTipUI) end
+                                                    _G.UIManager.Hide("Shop_ShopUI")
+                                                    _G.UIManager.Hide("ItemTipUI")
+                                                end
+                                            end)
+                                        end)
+                                    end
+                                end
+                            else
+                                -- ChÆ°a má»Ÿ Shop -> Äiá»u hÆ°á»›ng má»Ÿ Shop
+                                local nowSec = os.time()
+                                _G.Bot_LastShopNavTime = _G.Bot_LastShopNavTime or 0
+                                if nowSec - _G.Bot_LastShopNavTime >= 4 then
+                                    _G.Bot_LastShopNavTime = nowSec
+                                    Log(string.format("-> [ÄIá»€U HÆ¯á»šNG TASK %s]: Má»Ÿ Shop Ä‘á»ƒ mua \"%s\"...", tostring(taskId), tostring(taskName)), true)
+                                    pcall(function()
+                                        if _G.DirectTask and _G.DirectTask.OpenNav then
+                                            _G.DirectTask.OpenNav(curTask)
+                                        elseif curTask.GetNavi and not string.isNullOrEmpty(curTask:GetNavi()) and _G.NavigationUtility and _G.NavigationUtility.ClickNavigation then
+                                            _G.NavigationUtility.ClickNavigation(curTask:GetNavi())
+                                        end
+                                        if _G.TaskManager and _G.TaskManager.TaskGo then
+                                            _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                        end
+                                    end)
+                                end
+                            end
+
+                            -- 2. Tá»± Ä‘á»™ng dÃ¹ng sÃ¡ch / Ä‘Ã¡ ká»¹ nÄƒng trong tÃºi Ä‘á»ƒ há»c skill (CHá»ˆ DÃ™NG ÄÃšNG ITEM Ká»¸ NÄ‚NG, KHÃ”NG DÃ™NG Bá»ªA ÄÃ)
+                            pcall(function()
+                                if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                    for _, item in pairs(_G.BagInfoData.TotalItems) do
+                                        if item and item.id and item.tblItem then
+                                            local name = tostring(item.tblItem.name or "")
+                                            -- Type 3 SubType 302: ÄÃ¡ ká»¹ nÄƒng há»c skill (nhÆ° ÄÃ¡ TÃªn Äa TrÃ¹ng 4001000)
+                                            -- Type 2 SubType 2/21: SÃ¡ch ká»¹ nÄƒng há»c skill
+                                            local isSkillItem = (item.tblItem.type == 3 and item.tblItem.subType == 302)
+                                                             or (item.tblItem.type == 2 and (item.tblItem.subType == 2 or item.tblItem.subType == 21))
+                                                             or (item.tblItem.rightOperate == 2 and (string.find(name, "Äa TrÃ¹ng") or string.find(name, "Triá»‡u Há»“i") or string.find(name, "Ká»¹ NÄƒng")))
+                                            if isSkillItem and item.tblItem.type ~= 1 then
+                                                if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                                    _G.networkRequest.ReqUseItem(1, item.id)
+                                                elseif _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                                                    _G.NetManager.Send(_G.BagMessage.ReqUseItem, { itemId = item.id, count = 1, clientParams = {} })
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end)
+
+                            -- 3. Ná»™p / Tráº£ nhiá»‡m vá»¥
+                            pcall(function()
+                                if _G.networkRequest then
+                                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
+                                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
+                                end
+                            end)
+
+                        -- C. NHIá»†M Vá»¤ DIá»†T QUÃI (Bá» Tuyáº¿t...) & Äá»I THOáº I NPC: GoTask ngay khi idle, KHÃ”NG spam khi Ä‘ang Ä‘Ã¡nh quÃ¡i
+                        else
+                            local nowSec = os.time()
+                            _G.Bot_CurrentTaskId = _G.Bot_CurrentTaskId or 0
+                            _G.Bot_LastTaskNavTime = _G.Bot_LastTaskNavTime or 0
+
+                            local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
+                            local isIdleTooLong = (nowSec - _G.Bot_LastTaskNavTime >= 2)
+
+                            local isMoving = false
+                            local isFighting = false
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.IsMoving and me:IsMoving() then isMoving = true end
+                                if me and (me.isFightState or (me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then isFighting = true end
+                            end)
+
+                            if isNewTask or (isIdleTooLong and not isMoving and not isFighting) then
+                                _G.Bot_CurrentTaskId = taskId
+                                _G.Bot_LastTaskNavTime = nowSec
+
+                                Log(string.format("-> [ÄIá»€U HÆ¯á»šNG TASK %s]: Báº¯t Ä‘áº§u di chuyá»ƒn tá»›i \"%s\"... ", tostring(taskId), tostring(taskName)), true)
+                                pcall(function()
+                                    if _G.DirectTask and _G.DirectTask.OpenNav then
+                                        _G.DirectTask.OpenNav(curTask)
+                                    elseif curTask.GetNavi and not string.isNullOrEmpty(curTask:GetNavi()) and _G.NavigationUtility and _G.NavigationUtility.ClickNavigation then
+                                        _G.NavigationUtility.ClickNavigation(curTask:GetNavi())
+                                    end
+                                end)
+                                pcall(function()
+                                    if _G.TaskManager and _G.TaskManager.TaskGo then
+                                        _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                    end
+                                end)
+                                pcall(function()
+                                    if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                        _G.AutoTaskManage.StartCurAutoTask(true)
+                                    end
+                                end)
+                            end
+
+                            if behavior == TASK_BEHAVIOR.MONSTER_KILL then
+                                pcall(function()
+                                    local me = _G.RoleManager and _G.RoleManager.me
+                                    if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                    if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                    if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+                                end)
+                            end
+                        end
+                    end
+                else
+                    -- KHÃ”NG CÃ“ NHIá»†M Vá»¤ CHÃNH -> Tá»± Ä‘á»™ng farm bÃ£i tá»‘i Æ°u cá»§a Map hiá»‡n táº¡i
+                    local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                    local isMoving = false
+                    local isFighting = false
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.IsMoving and me:IsMoving() then isMoving = true end
+                        if me and (me.isFightState or (me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then isFighting = true end
+                    end)
+
+                    _G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
+                    local nowSec = os.time()
+                    if (not isMoving and not isFighting) or (nowSec - _G.Bot_LastFarmTeleportTime >= 8) then
+                        _G.Bot_LastFarmTeleportTime = nowSec
+                        pcall(function()
+                            local hasTele = TeleportToBestFarmPoint(curMap)
+                            if hasTele then
+                                Log(string.format("[Luyá»‡n Cáº¥p] : ChÆ°a cÃ³ nhiá»‡m vá»¥ má»›i -> Tá»± Ä‘á»™ng train bÃ£i tá»‘i Æ°u táº¡i Map %d!", curMap), true)
+                                SaveOutput()
+                            end
+                        end)
+                    end
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me

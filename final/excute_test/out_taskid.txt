@@ -1,0 +1,12 @@
+﻿
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7202:                        _G.Bot_CurrentTaskId = 0
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7355:                            local isNewTask = (_G.Bot_CurrentTaskId 
+~= taskId)
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7361:                                _G.Bot_CurrentTaskId = taskId
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7583:                            _G.Bot_CurrentTaskId = 
+_G.Bot_CurrentTaskId or 0
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7586:                            local isNewTask = (_G.Bot_CurrentTaskId 
+~= taskId)
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7599:                                _G.Bot_CurrentTaskId = taskId
+
+

@@ -1,1 +1,1 @@
-git diff modified_lua_dev_customer/EmmyluaDebug.lua
+git status --short final/modified_lua_dev_farm/

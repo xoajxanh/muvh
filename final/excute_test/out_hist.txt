@@ -1,0 +1,44 @@
+﻿commit f24bb948e08b3afc9e4f131e8064ff12ae7f9a1c
+Author: Xoai <xoajxanh.mu0j@gmail.com>
+Date:   Mon Sep 28 23:51:12 2026 +0700
+
+    Fixed AUTO THÁP
+
+ final/modified_lua_dev_farm/EmmyluaDebug.lua | 12 ++++++++----
+ 1 file changed, 8 insertions(+), 4 deletions(-)
+
+commit 1876c4bef4ca089838bb63fc6d01e4b5697e526b
+Author: Xoai <xoajxanh.mu0j@gmail.com>
+Date:   Fri Sep 18 02:31:09 2026 +0700
+
+    FIX CODE
+
+ final/modified_lua_dev_farm/EmmyluaDebug.lua | 1506 ++++++++++++++++++++------
+ 1 file changed, 1168 insertions(+), 338 deletions(-)
+
+commit d5d34896651b25c43f3da754e71dc9b653988719
+Author: Xoai <xoajxanh.mu0j@gmail.com>
+Date:   Thu Sep 17 15:44:00 2026 +0700
+
+    phiên bản client đã tách riêng boss nếu có 2 con
+
+ final/modified_lua_dev_farm/EmmyluaDebug.lua | 2534 ++++++++++++++++++++++++--
+ 1 file changed, 2401 insertions(+), 133 deletions(-)
+
+commit 53aa8b9167cda04c895fc21f284d2e7f1725c0de
+Author: Xoai <xoajxanh.mu0j@gmail.com>
+Date:   Thu Sep 17 00:34:13 2026 +0700
+
+    Pending farm version
+
+ final/modified_lua_dev_farm/EmmyluaDebug.lua | 5217 ++++++++++++++++++++------
+ 1 file changed, 4109 insertions(+), 1108 deletions(-)
+
+commit 88783e36e5f26299d86bfe3f3a389667de865df8
+Author: Xoai <xoajxanh.mu0j@gmail.com>
+Date:   Fri Sep 11 18:53:32 2026 +0700
+
+    ---------FIXED PERFORMANCE OF CLIENT AND CUSTOMER, PENDING FOR FARM FEATURES
+
+ final/modified_lua_dev_farm/EmmyluaDebug.lua | 1882 ++++++++++++++++++++++++++
+ 1 file changed, 1882 insertions(+)

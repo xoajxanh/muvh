@@ -1,0 +1,14 @@
+﻿
+final\modified_lua_dev_farm\EmmyluaDebug.lua:2322:local StartNewbieQuestPipeline
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7057:StartNewbieQuestPipeline = function()
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7726:_G.StartNewbieQuestPipeline = StartNewbieQuestPipeline
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7979:                    -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 
+77 mã Giftcode bên trong StartNewbieQuestPipeline
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7980:                    StartNewbieQuestPipeline()
+final\modified_lua_dev_farm\EmmyluaDebug.lua:8328:        -- LUÔN LUÔN kích hoạt StartNewbieQuestPipeline để chạy vòng 
+lặp quét và claim nhiệm vụ 1s/lần!
+final\modified_lua_dev_farm\EmmyluaDebug.lua:8332:        -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã 
+Giftcode bên trong StartNewbieQuestPipeline
+final\modified_lua_dev_farm\EmmyluaDebug.lua:8333:        StartNewbieQuestPipeline()
+
+

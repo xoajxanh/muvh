@@ -1,0 +1,5 @@
+﻿f24bb94 Fixed AUTO THÁP
+1876c4b FIX CODE
+d5d3489 phiên bản client đã tách riêng boss nếu có 2 con
+53aa8b9 Pending farm version
+88783e3 ---------FIXED PERFORMANCE OF CLIENT AND CUSTOMER, PENDING FOR FARM FEATURES

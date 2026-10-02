@@ -1,0 +1,11 @@
+﻿
+final\modified_lua_dev_farm\EmmyluaDebug.lua:2320:local TeleportToBestFarmPoint
+final\modified_lua_dev_farm\EmmyluaDebug.lua:4064:    TeleportToBestFarmPoint(targetMap)
+final\modified_lua_dev_farm\EmmyluaDebug.lua:5183:TeleportToBestFarmPoint = function(curMap)
+final\modified_lua_dev_farm\EmmyluaDebug.lua:5246:_G.TeleportToBestFarmPoint = TeleportToBestFarmPoint
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7364:                                    local hasTele = 
+TeleportToBestFarmPoint(curMap)
+final\modified_lua_dev_farm\EmmyluaDebug.lua:7650:                            local hasTele = 
+TeleportToBestFarmPoint(curMap)
+
+

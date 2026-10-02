@@ -987,9 +987,7 @@ local function CreateModUI()
             end
         end
 
-        -- =========================================================================
-        -- [MOD FEATURE]: KHỞI TẠO CANVAS & GIAO DIỆN NỔI MOD CHÍNH (MAIN MOD CANVAS)
-        -- =========================================================================
+        
         local GameObject = CS.UnityEngine.GameObject
         local RectTransform = CS.UnityEngine.RectTransform
         local Canvas = CS.UnityEngine.Canvas
@@ -1018,7 +1016,6 @@ local function CreateModUI()
         local scaler = modRoot:AddComponent(typeof(CanvasScaler))
         scaler.uiScaleMode = CS.UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
         scaler.referenceResolution = Vector2(1920, 1080)
-        scaler.matchWidthOrHeight = 0.5
 
         modRoot:AddComponent(typeof(GraphicRaycaster))
 
@@ -1047,7 +1044,6 @@ local function CreateModUI()
 
         local execImg = execBtnGo:AddComponent(typeof(Image))
         execImg.color = Color(0.8, 0.2, 0.2, 1)
-        execImg.raycastTarget = true
 
         local execTxtGo = GameObject("ExecTxt")
         execTxtGo.transform:SetParent(execBtnGo.transform, false)
@@ -1060,12 +1056,10 @@ local function CreateModUI()
         execTxt.color = Color.white
         execTxt.fontSize = 16
         execTxt.alignment = TextAnchor.MiddleCenter
-        execTxt.raycastTarget = false
         if defaultFont then execTxt.font = defaultFont end
         execBtnGo:SetActive(_G.Mod_ExecBtn_Visible ~= false)
 
         local execBtnComp = execBtnGo:AddComponent(typeof(Button))
-        execBtnComp.targetGraphic = execImg
         execBtnComp.onClick:AddListener(function()
             if RunExecuteScript then
                 RunExecuteScript()
@@ -1111,7 +1105,6 @@ local function CreateModUI()
 
         local img = btnGo:AddComponent(typeof(Image))
         img.color = Color(0.215, 0.490, 0.133, 1.0)
-        img.raycastTarget = true
 
         local txtGo = GameObject("ModText")
         txtGo.transform:SetParent(btnGo.transform, false)
@@ -1124,7 +1117,6 @@ local function CreateModUI()
         txt.color = Color.white
         txt.fontSize = 20
         txt.alignment = TextAnchor.MiddleCenter
-        txt.raycastTarget = false
         if defaultFont then txt.font = defaultFont end
 
         -- 3. Mod Menu Panel ("VỤT" Panel - Cấu hình Server & Bot Controller)
@@ -1134,17 +1126,15 @@ local function CreateModUI()
         panelRt.anchorMin = Vector2(0, 0)
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
-        panelRt.anchoredPosition = Vector2(75, 45)
-        panelRt.sizeDelta = Vector2(780, 590)
+        panelRt.anchoredPosition = Vector2(75, 50)
+        panelRt.sizeDelta = Vector2(740, 580)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
-        panelImg.color = Color(0.08, 0.08, 0.08, 0.96)
-        panelImg.raycastTarget = true
+        panelImg.color = Color(0.08, 0.08, 0.08, 0.94)
         panelGo:SetActive(false)
 
         local isExpanded = false
         local btnComp = btnGo:AddComponent(typeof(Button))
-        btnComp.targetGraphic = img
         btnComp.onClick:AddListener(function()
             isExpanded = not isExpanded
             panelGo:SetActive(isExpanded)
@@ -1164,265 +1154,209 @@ local function CreateModUI()
         titleRt.anchorMin = Vector2(0.5, 1)
         titleRt.anchorMax = Vector2(0.5, 1)
         titleRt.pivot = Vector2(0.5, 1)
-        titleRt.anchoredPosition = Vector2(0, -12)
-        titleRt.sizeDelta = Vector2(720, 28)
+        titleRt.anchoredPosition = Vector2(0, -15)
+        titleRt.sizeDelta = Vector2(600, 30)
         local titleTxt = titleGo:AddComponent(typeof(Text))
-        titleTxt.text = "=== HỆ THỐNG FARM BOT TỰ ĐỘNG - MU VĨNH HẰNG ==="
+        titleTxt.text = "=== CẤU HÌNH SERVER DUYỆT TÀI KHOẢN ==="
         titleTxt.color = Color.yellow
-        titleTxt.fontSize = 18
+        titleTxt.fontSize = 20
         titleTxt.alignment = TextAnchor.MiddleCenter
-        titleTxt.raycastTarget = false
         if defaultFont then titleTxt.font = defaultFont end
 
-        -- Helper tạo InputField chuẩn không bị lỗi lớp phủ
-        local function CreateSafeInputField(parent, name, posX, posY, width, height, defaultVal, isNumber)
-            local inGo = GameObject(name)
-            inGo.transform:SetParent(parent.transform, false)
-            local inRt = inGo:AddComponent(typeof(RectTransform))
-            inRt.anchorMin = Vector2(0, 0.5)
-            inRt.anchorMax = Vector2(0, 0.5)
-            inRt.pivot = Vector2(0, 0.5)
-            inRt.anchoredPosition = Vector2(posX, posY)
-            inRt.sizeDelta = Vector2(width, height)
+        -- Top Control Bar (Nhập dải Server)
+        local topBarGo = GameObject("TopBar")
+        topBarGo.transform:SetParent(panelGo.transform, false)
+        local topBarRt = topBarGo:AddComponent(typeof(RectTransform))
+        topBarRt.anchorMin = Vector2(0, 1)
+        topBarRt.anchorMax = Vector2(1, 1)
+        topBarRt.pivot = Vector2(0.5, 1)
+        topBarRt.anchoredPosition = Vector2(0, -50)
+        topBarRt.sizeDelta = Vector2(-30, 40)
 
-            local inImg = inGo:AddComponent(typeof(Image))
-            inImg.color = Color(0.95, 0.95, 0.95, 1)
-            inImg.raycastTarget = true
+        -- Label: Dải Server:
+        local lblRangeGo = GameObject("LblRange")
+        lblRangeGo.transform:SetParent(topBarGo.transform, false)
+        local lrRt = lblRangeGo:AddComponent(typeof(RectTransform))
+        lrRt.anchorMin = Vector2(0, 0.5)
+        lrRt.anchorMax = Vector2(0, 0.5)
+        lrRt.pivot = Vector2(0, 0.5)
+        lrRt.anchoredPosition = Vector2(5, 0)
+        lrRt.sizeDelta = Vector2(85, 30)
+        local lrTxt = lblRangeGo:AddComponent(typeof(Text))
+        lrTxt.text = "Dải Server:"
+        lrTxt.color = Color.white
+        lrTxt.fontSize = 15
+        lrTxt.alignment = TextAnchor.MiddleLeft
+        if defaultFont then lrTxt.font = defaultFont end
 
-            local txtGo = GameObject("Text")
-            txtGo.transform:SetParent(inGo.transform, false)
-            local txtRt = txtGo:AddComponent(typeof(RectTransform))
-            txtRt.anchorMin = Vector2(0, 0)
-            txtRt.anchorMax = Vector2(1, 1)
-            txtRt.offsetMin = Vector2(4, 0)
-            txtRt.offsetMax = Vector2(-4, 0)
+        -- Input Start Server
+        local inStartGo = GameObject("InputStart")
+        inStartGo.transform:SetParent(topBarGo.transform, false)
+        local isRt = inStartGo:AddComponent(typeof(RectTransform))
+        isRt.anchorMin = Vector2(0, 0.5)
+        isRt.anchorMax = Vector2(0, 0.5)
+        isRt.pivot = Vector2(0, 0.5)
+        isRt.anchoredPosition = Vector2(95, 0)
+        isRt.sizeDelta = Vector2(65, 30)
+        local isImg = inStartGo:AddComponent(typeof(Image))
+        isImg.color = Color(1, 1, 1, 1)
 
-            local txtComp = txtGo:AddComponent(typeof(Text))
-            txtComp.text = tostring(defaultVal or "")
-            txtComp.color = Color.black
-            txtComp.fontSize = 14
-            txtComp.alignment = TextAnchor.MiddleCenter
-            txtComp.raycastTarget = false
-            if defaultFont then txtComp.font = defaultFont end
-
-            local inputComp = inGo:AddComponent(typeof(InputField))
-            inputComp.targetGraphic = inImg
-            inputComp.textComponent = txtComp
-            inputComp.text = tostring(defaultVal or "")
-            if isNumber then
-                inputComp.contentType = CS.UnityEngine.UI.InputField.ContentType.IntegerNumber
-            end
-
-            return inputComp
-        end
-
-        -- Helper tạo Text Label chuẩn không chặn raycast
-        local function CreateSafeLabel(parent, name, posX, posY, width, height, textVal)
-            local lblGo = GameObject(name)
-            lblGo.transform:SetParent(parent.transform, false)
-            local lRt = lblGo:AddComponent(typeof(RectTransform))
-            lRt.anchorMin = Vector2(0, 0.5)
-            lRt.anchorMax = Vector2(0, 0.5)
-            lRt.pivot = Vector2(0, 0.5)
-            lRt.anchoredPosition = Vector2(posX, posY)
-            lRt.sizeDelta = Vector2(width, height)
-
-            local txtComp = lblGo:AddComponent(typeof(Text))
-            txtComp.text = textVal
-            txtComp.color = Color.white
-            txtComp.fontSize = 14
-            txtComp.alignment = TextAnchor.MiddleLeft
-            txtComp.raycastTarget = false
-            if defaultFont then txtComp.font = defaultFont end
-            return txtComp
-        end
-
-        -- ---------------------------------------------------------------------
-        -- HÀNG 1: CẤU HÌNH TÀI KHOẢN (Row 1: Y = -42)
-        -- ---------------------------------------------------------------------
-        local rowAccGo = GameObject("RowAccConfig")
-        rowAccGo.transform:SetParent(panelGo.transform, false)
-        local rowAccRt = rowAccGo:AddComponent(typeof(RectTransform))
-        rowAccRt.anchorMin = Vector2(0, 1)
-        rowAccRt.anchorMax = Vector2(1, 1)
-        rowAccRt.pivot = Vector2(0.5, 1)
-        rowAccRt.anchoredPosition = Vector2(0, -42)
-        rowAccRt.sizeDelta = Vector2(-20, 32)
-
-        local savedPrefix = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_AccPrefix", "accvutmuvh")
-        local savedAccStart = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AccStart", 1)
-        local savedAccEnd = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AccEnd", 10)
-        local savedPass = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_AccPass", "12345ZXC")
-        local savedTargetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
-
-        CreateSafeLabel(rowAccGo, "LblP", 5, 0, 52, 28, "Prefix:")
-        local inPrefix = CreateSafeInputField(rowAccGo, "InPrefix", 58, 0, 115, 28, savedPrefix, false)
-
-        CreateSafeLabel(rowAccGo, "LblA", 180, 0, 38, 28, "STT:")
-        local inAccStart = CreateSafeInputField(rowAccGo, "InAccStart", 218, 0, 42, 28, savedAccStart, true)
-        CreateSafeLabel(rowAccGo, "LblT", 265, 0, 18, 28, "➔")
-        local inAccEnd = CreateSafeInputField(rowAccGo, "InAccEnd", 285, 0, 42, 28, savedAccEnd, true)
-
-        CreateSafeLabel(rowAccGo, "LblPw", 335, 0, 42, 28, "Pass:")
-        local inAccPass = CreateSafeInputField(rowAccGo, "InAccPass", 378, 0, 92, 28, savedPass, false)
-
-        CreateSafeLabel(rowAccGo, "LblL", 478, 0, 62, 28, "Cày đến:")
-        local inTargetLvl = CreateSafeInputField(rowAccGo, "InTargetLvl", 542, 0, 42, 28, savedTargetLvl, true)
-
-        -- Nút Lưu Cấu Hình Acc (Màu cam)
-        local btnSaveAccGo = GameObject("BtnSaveAcc")
-        btnSaveAccGo.transform:SetParent(rowAccGo.transform, false)
-        local bsaRt = btnSaveAccGo:AddComponent(typeof(RectTransform))
-        bsaRt.anchorMin = Vector2(0, 0.5)
-        bsaRt.anchorMax = Vector2(0, 0.5)
-        bsaRt.pivot = Vector2(0, 0.5)
-        bsaRt.anchoredPosition = Vector2(595, 0)
-        bsaRt.sizeDelta = Vector2(150, 30)
-
-        local bsaImg = btnSaveAccGo:AddComponent(typeof(Image))
-        bsaImg.color = Color(0.85, 0.45, 0.1, 1)
-        bsaImg.raycastTarget = true
-
-        local bsaTxtGo = GameObject("Text")
-        bsaTxtGo.transform:SetParent(btnSaveAccGo.transform, false)
-        local bsatRt = bsaTxtGo:AddComponent(typeof(RectTransform))
-        bsatRt.anchorMin = Vector2(0, 0)
-        bsatRt.anchorMax = Vector2(1, 1)
-        local bsaTxt = bsaTxtGo:AddComponent(typeof(Text))
-        bsaTxt.text = "LƯU CẤU HÌNH"
-        bsaTxt.color = Color.white
-        bsaTxt.fontSize = 14
-        bsaTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
-        bsaTxt.alignment = TextAnchor.MiddleCenter
-        bsaTxt.raycastTarget = false
-        if defaultFont then bsaTxt.font = defaultFont end
-
-        local bsaBtn = btnSaveAccGo:AddComponent(typeof(Button))
-        bsaBtn.targetGraphic = bsaImg
-
-        -- ---------------------------------------------------------------------
-        -- HÀNG 2: DẢI SERVER & NÚT TIỆN ÍCH (Row 2: Y = -78)
-        -- ---------------------------------------------------------------------
-        local rowSrvGo = GameObject("RowSrvConfig")
-        rowSrvGo.transform:SetParent(panelGo.transform, false)
-        local rowSrvRt = rowSrvGo:AddComponent(typeof(RectTransform))
-        rowSrvRt.anchorMin = Vector2(0, 1)
-        rowSrvRt.anchorMax = Vector2(1, 1)
-        rowSrvRt.pivot = Vector2(0.5, 1)
-        rowSrvRt.anchoredPosition = Vector2(0, -78)
-        rowSrvRt.sizeDelta = Vector2(-20, 32)
-
+        local isTxtGo = GameObject("Text")
+        isTxtGo.transform:SetParent(inStartGo.transform, false)
+        local istRt = isTxtGo:AddComponent(typeof(RectTransform))
+        istRt.anchorMin = Vector2(0, 0)
+        istRt.anchorMax = Vector2(1, 1)
+        istRt.offsetMin = Vector2(4, 0)
+        istRt.offsetMax = Vector2(-4, 0)
+        local isTxt = isTxtGo:AddComponent(typeof(Text))
         local savedStart = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerStart", 450)
+        isTxt.text = tostring(savedStart)
+        isTxt.color = Color.black
+        isTxt.fontSize = 15
+        isTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then isTxt.font = defaultFont end
+
+        local inputFieldStart = inStartGo:AddComponent(typeof(InputField))
+        inputFieldStart.textComponent = isTxt
+        inputFieldStart.text = tostring(savedStart)
+
+        -- Label: đến
+        local lblToGo = GameObject("LblTo")
+        lblToGo.transform:SetParent(topBarGo.transform, false)
+        local ltRt = lblToGo:AddComponent(typeof(RectTransform))
+        ltRt.anchorMin = Vector2(0, 0.5)
+        ltRt.anchorMax = Vector2(0, 0.5)
+        ltRt.pivot = Vector2(0, 0.5)
+        ltRt.anchoredPosition = Vector2(165, 0)
+        ltRt.sizeDelta = Vector2(30, 30)
+        local ltTxt = lblToGo:AddComponent(typeof(Text))
+        ltTxt.text = "đến"
+        ltTxt.color = Color.white
+        ltTxt.fontSize = 15
+        ltTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then ltTxt.font = defaultFont end
+
+        -- Input End Server
+        local inEndGo = GameObject("InputEnd")
+        inEndGo.transform:SetParent(topBarGo.transform, false)
+        local ieRt = inEndGo:AddComponent(typeof(RectTransform))
+        ieRt.anchorMin = Vector2(0, 0.5)
+        ieRt.anchorMax = Vector2(0, 0.5)
+        ieRt.pivot = Vector2(0, 0.5)
+        ieRt.anchoredPosition = Vector2(200, 0)
+        ieRt.sizeDelta = Vector2(65, 30)
+        local ieImg = inEndGo:AddComponent(typeof(Image))
+        ieImg.color = Color(1, 1, 1, 1)
+
+        local ieTxtGo = GameObject("Text")
+        ieTxtGo.transform:SetParent(inEndGo.transform, false)
+        local ietRt = ieTxtGo:AddComponent(typeof(RectTransform))
+        ietRt.anchorMin = Vector2(0, 0)
+        ietRt.anchorMax = Vector2(1, 1)
+        ietRt.offsetMin = Vector2(4, 0)
+        ietRt.offsetMax = Vector2(-4, 0)
+        local ieTxt = ieTxtGo:AddComponent(typeof(Text))
         local savedEnd = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerEnd", 492)
-        local savedTargetSrv = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-        _G.TARGET_SERVER_ID = savedTargetSrv
+        ieTxt.text = tostring(savedEnd)
+        ieTxt.color = Color.black
+        ieTxt.fontSize = 15
+        ieTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then ieTxt.font = defaultFont end
 
-        CreateSafeLabel(rowSrvGo, "LblRange", 5, 0, 78, 28, "Dải Server:")
-        local inputFieldStart = CreateSafeInputField(rowSrvGo, "InputStart", 85, 0, 52, 28, savedStart, true)
-        CreateSafeLabel(rowSrvGo, "LblTo", 143, 0, 28, 28, "đến")
-        local inputFieldEnd = CreateSafeInputField(rowSrvGo, "InputEnd", 173, 0, 52, 28, savedEnd, true)
+        local inputFieldEnd = inEndGo:AddComponent(typeof(InputField))
+        inputFieldEnd.textComponent = ieTxt
+        inputFieldEnd.text = tostring(savedEnd)
 
-        -- Nút CẬP NHẬT GRID (Màu xanh dương)
+        -- Nút UPDATE (Màu cam)
         local btnUpdateGo = GameObject("BtnUpdate")
-        btnUpdateGo.transform:SetParent(rowSrvGo.transform, false)
+        btnUpdateGo.transform:SetParent(topBarGo.transform, false)
         local buRt = btnUpdateGo:AddComponent(typeof(RectTransform))
         buRt.anchorMin = Vector2(0, 0.5)
         buRt.anchorMax = Vector2(0, 0.5)
         buRt.pivot = Vector2(0, 0.5)
-        buRt.anchoredPosition = Vector2(235, 0)
-        buRt.sizeDelta = Vector2(100, 30)
+        buRt.anchoredPosition = Vector2(275, 0)
+        buRt.sizeDelta = Vector2(95, 32)
         local buImg = btnUpdateGo:AddComponent(typeof(Image))
-        buImg.color = Color(0.2, 0.45, 0.85, 1)
-        buImg.raycastTarget = true
+        buImg.color = Color(0.85, 0.45, 0.1, 1)
+        local buBtn = btnUpdateGo:AddComponent(typeof(Button))
 
         local buTxtGo = GameObject("Text")
         buTxtGo.transform:SetParent(btnUpdateGo.transform, false)
         local butRt = buTxtGo:AddComponent(typeof(RectTransform))
-        butRt.anchorMin, butRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        butRt.anchorMin = Vector2(0, 0)
+        butRt.anchorMax = Vector2(1, 1)
         local buTxt = buTxtGo:AddComponent(typeof(Text))
-        buTxt.text = "CẬP NHẬT"
+        buTxt.text = "UPDATE"
         buTxt.color = Color.white
-        buTxt.fontSize = 14
+        buTxt.fontSize = 15
         buTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         buTxt.alignment = TextAnchor.MiddleCenter
-        buTxt.raycastTarget = false
         if defaultFont then buTxt.font = defaultFont end
-        local buBtn = btnUpdateGo:AddComponent(typeof(Button))
-        buBtn.targetGraphic = buImg
 
-        -- Nút CHỌN MỚI NHẤT (Màu xanh lá)
-        local btnNewestGo = GameObject("BtnNewest")
-        btnNewestGo.transform:SetParent(rowSrvGo.transform, false)
-        local bnRt = btnNewestGo:AddComponent(typeof(RectTransform))
+        -- Nút CHỌN HẾT (Màu xanh)
+        local btnAllGo = GameObject("BtnSelectAll")
+        btnAllGo.transform:SetParent(topBarGo.transform, false)
+        local baRt = btnAllGo:AddComponent(typeof(RectTransform))
+        baRt.anchorMin = Vector2(0, 0.5)
+        baRt.anchorMax = Vector2(0, 0.5)
+        baRt.pivot = Vector2(0, 0.5)
+        baRt.anchoredPosition = Vector2(380, 0)
+        baRt.sizeDelta = Vector2(95, 32)
+        local baImg = btnAllGo:AddComponent(typeof(Image))
+        baImg.color = Color(0.2, 0.55, 0.2, 1)
+        local baBtn = btnAllGo:AddComponent(typeof(Button))
+
+        local baTxtGo = GameObject("Text")
+        baTxtGo.transform:SetParent(btnAllGo.transform, false)
+        local batRt = baTxtGo:AddComponent(typeof(RectTransform))
+        batRt.anchorMin = Vector2(0, 0)
+        batRt.anchorMax = Vector2(1, 1)
+        local baTxt = baTxtGo:AddComponent(typeof(Text))
+        baTxt.text = "CHỌN HẾT"
+        baTxt.color = Color.white
+        baTxt.fontSize = 14
+        baTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then baTxt.font = defaultFont end
+
+        -- Nút BỎ CHỌN (Màu xám)
+        local btnNoneGo = GameObject("BtnDeselectAll")
+        btnNoneGo.transform:SetParent(topBarGo.transform, false)
+        local bnRt = btnNoneGo:AddComponent(typeof(RectTransform))
         bnRt.anchorMin = Vector2(0, 0.5)
         bnRt.anchorMax = Vector2(0, 0.5)
         bnRt.pivot = Vector2(0, 0.5)
-        bnRt.anchoredPosition = Vector2(345, 0)
-        bnRt.sizeDelta = Vector2(125, 30)
-        local bnImg = btnNewestGo:AddComponent(typeof(Image))
-        bnImg.color = Color(0.18, 0.62, 0.18, 1)
-        bnImg.raycastTarget = true
+        bnRt.anchoredPosition = Vector2(485, 0)
+        bnRt.sizeDelta = Vector2(95, 32)
+        local bnImg = btnNoneGo:AddComponent(typeof(Image))
+        bnImg.color = Color(0.4, 0.4, 0.4, 1)
+        local bnBtn = btnNoneGo:AddComponent(typeof(Button))
 
         local bnTxtGo = GameObject("Text")
-        bnTxtGo.transform:SetParent(btnNewestGo.transform, false)
+        bnTxtGo.transform:SetParent(btnNoneGo.transform, false)
         local bntRt = bnTxtGo:AddComponent(typeof(RectTransform))
-        bntRt.anchorMin, bntRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        bntRt.anchorMin = Vector2(0, 0)
+        bntRt.anchorMax = Vector2(1, 1)
         local bnTxt = bnTxtGo:AddComponent(typeof(Text))
-        bnTxt.text = "CHỌN MỚI NHẤT"
+        bnTxt.text = "BỎ CHỌN"
         bnTxt.color = Color.white
-        bnTxt.fontSize = 13
-        bnTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        bnTxt.fontSize = 14
         bnTxt.alignment = TextAnchor.MiddleCenter
-        bnTxt.raycastTarget = false
         if defaultFont then bnTxt.font = defaultFont end
-        local bnBtn = btnNewestGo:AddComponent(typeof(Button))
-        bnBtn.targetGraphic = bnImg
 
-        -- Nút RESET VỀ ACC 1 (Màu tím)
-        local btnResetGo = GameObject("BtnResetAcc")
-        btnResetGo.transform:SetParent(rowSrvGo.transform, false)
-        local brRt = btnResetGo:AddComponent(typeof(RectTransform))
-        brRt.anchorMin = Vector2(0, 0.5)
-        brRt.anchorMax = Vector2(0, 0.5)
-        brRt.pivot = Vector2(0, 0.5)
-        brRt.anchoredPosition = Vector2(480, 0)
-        brRt.sizeDelta = Vector2(120, 30)
-        local brImg = btnResetGo:AddComponent(typeof(Image))
-        brImg.color = Color(0.55, 0.25, 0.75, 1)
-        brImg.raycastTarget = true
-
-        local brTxtGo = GameObject("Text")
-        brTxtGo.transform:SetParent(btnResetGo.transform, false)
-        local brtRt = brTxtGo:AddComponent(typeof(RectTransform))
-        brtRt.anchorMin, brtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-        local brTxt = brTxtGo:AddComponent(typeof(Text))
-        brTxt.text = "RESET VỀ ACC 1"
-        brTxt.color = Color.white
-        brTxt.fontSize = 13
-        brTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
-        brTxt.alignment = TextAnchor.MiddleCenter
-        brTxt.raycastTarget = false
-        if defaultFont then brTxt.font = defaultFont end
-        local brBtn = btnResetGo:AddComponent(typeof(Button))
-        brBtn.targetGraphic = brImg
-
-        -- ---------------------------------------------------------------------
-        -- HÀNG 3: DÒNG THỐNG KÊ & TRẠNG THÁI TIẾN ĐỘ REALTIME
-        -- ---------------------------------------------------------------------
+        -- Dòng thống kê số server đã chọn
         local statusGo = GameObject("ServerStatusTxt")
         statusGo.transform:SetParent(panelGo.transform, false)
         local stRt = statusGo:AddComponent(typeof(RectTransform))
         stRt.anchorMin = Vector2(0, 1)
         stRt.anchorMax = Vector2(1, 1)
         stRt.pivot = Vector2(0, 1)
-        stRt.anchoredPosition = Vector2(15, -114)
-        stRt.sizeDelta = Vector2(-30, 24)
+        stRt.anchoredPosition = Vector2(20, -92)
+        stRt.sizeDelta = Vector2(-40, 22)
         local statusTxt = statusGo:AddComponent(typeof(Text))
-        statusTxt.text = "Đang tải thông tin cấu hình..."
-        statusTxt.color = Color(0.2, 0.95, 0.95, 1)
+        statusTxt.text = "Đang tải danh sách server..."
+        statusTxt.color = Color(0.2, 0.9, 0.9, 1)
         statusTxt.fontSize = 14
         statusTxt.alignment = TextAnchor.MiddleLeft
-        statusTxt.raycastTarget = false
         if defaultFont then statusTxt.font = defaultFont end
 
         -- Đường kẻ phân cách
@@ -1432,23 +1366,20 @@ local function CreateModUI()
         sepRt.anchorMin = Vector2(0, 1)
         sepRt.anchorMax = Vector2(1, 1)
         sepRt.pivot = Vector2(0.5, 1)
-        sepRt.anchoredPosition = Vector2(0, -140)
-        sepRt.sizeDelta = Vector2(-20, 2)
+        sepRt.anchoredPosition = Vector2(0, -116)
+        sepRt.sizeDelta = Vector2(-30, 2)
         local sepImg = sepGo:AddComponent(typeof(Image))
         sepImg.color = Color(0.35, 0.35, 0.35, 0.8)
-        sepImg.raycastTarget = false
 
-        -- ---------------------------------------------------------------------
-        -- SCROLLVIEW CHỨA LƯỚI SERVER MỤC TIÊU
-        -- ---------------------------------------------------------------------
+        -- ScrollView Chứa Danh Sách Nút Server
         local scrollGo = GameObject("ServerScrollView")
         scrollGo.transform:SetParent(panelGo.transform, false)
         local sRt = scrollGo:AddComponent(typeof(RectTransform))
         sRt.anchorMin = Vector2(0, 1)
         sRt.anchorMax = Vector2(1, 1)
         sRt.pivot = Vector2(0.5, 1)
-        sRt.anchoredPosition = Vector2(0, -146)
-        sRt.sizeDelta = Vector2(-20, 365)
+        sRt.anchoredPosition = Vector2(0, -122)
+        sRt.sizeDelta = Vector2(-30, 380)
 
         local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
         scrollRect.horizontal = false
@@ -1477,42 +1408,19 @@ local function CreateModUI()
         scrollRect.viewport = vpRt
         scrollRect.content = contentRt
 
-        local serverTileRefs = {}
+        -- Quản lý các nút tile server
+        local serverTiles = {}
 
-        local function UpdateServerStatusUI()
-            local targetSrv = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-            local curAcc = GetCurrentAccount and GetCurrentAccount()
-            local curAccEmail = (curAcc and curAcc.account) or "accvutmuvh0001@gmail.com"
-            local curAccIdx = _G.CurrentAccountIndex or 1
-            local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 10
-            local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
-
-            local pMe = _G.RoleManager and _G.RoleManager.me
-            local curLvl = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
-
-            if statusTxt and not statusTxt:Equals(nil) then
-                statusTxt.text = string.format("Mục tiêu: <color=#00ff88>S%d</color> | Acc: <color=#ffff00>%d/%d</color> (%s) | Cày Lv: <color=#00ff88>%d/%d</color>",
-                    targetSrv, curAccIdx, totalAccs, curAccEmail, curLvl, targetLvl)
-            end
-        end
-        _G.Mod_UpdateServerStatusUI = UpdateServerStatusUI
-
-        local function RefreshTileColors()
-            local currentTarget = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-            for sId, tile in pairs(serverTileRefs) do
-                if tile and tile.img and not tile.img:Equals(nil) and tile.txt and not tile.txt:Equals(nil) then
-                    if sId == currentTarget then
-                        tile.img.color = Color(0.12, 0.72, 0.22, 1.0)
-                        tile.txt.color = Color.white
-                        tile.txt.text = "★S" .. sId
-                        tile.txt.fontStyle = CS.UnityEngine.FontStyle.Bold
-                    else
-                        tile.img.color = Color(0.22, 0.22, 0.22, 1.0)
-                        tile.txt.color = Color(0.75, 0.75, 0.75, 1.0)
-                        tile.txt.text = "S" .. sId
-                        tile.txt.fontStyle = CS.UnityEngine.FontStyle.Normal
-                    end
+        local function UpdateServerStatusText(startId, endId)
+            local total = (endId >= startId) and (endId - startId + 1) or 0
+            local selectedCount = 0
+            for sId = startId, endId do
+                if CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Server_" .. sId, 1) == 1 then
+                    selectedCount = selectedCount + 1
                 end
+            end
+            if statusTxt and not statusTxt:Equals(nil) then
+                statusTxt.text = string.format("Đã chọn: <color=#00ff88>%d / %d</color> server trong dải S%d -> S%d", selectedCount, total, startId, endId)
             end
         end
 
@@ -1521,10 +1429,12 @@ local function CreateModUI()
             endId = tonumber(endId) or 492
             if endId < startId then endId = startId end
 
+            -- Lưu vào PlayerPrefs
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_ServerStart", startId)
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_ServerEnd", endId)
             CS.UnityEngine.PlayerPrefs.Save()
 
+            -- Xóa các nút cũ trong Content
             pcall(function()
                 for i = contentGo.transform.childCount - 1, 0, -1 do
                     local child = contentGo.transform:GetChild(i)
@@ -1534,17 +1444,15 @@ local function CreateModUI()
                 end
             end)
 
-            serverTileRefs = {}
-            local btnW, btnH = 68, 32
+            serverTiles = {}
+            local btnW, btnH = 63, 32
             local gapX, gapY = 6, 6
             local startX, startY = 6, -6
 
             local totalCount = endId - startId + 1
             local totalRows = math.ceil(totalCount / 10)
-            local contentHeight = math.max(360, totalRows * (btnH + gapY) + 20)
+            local contentHeight = math.max(380, totalRows * (btnH + gapY) + 20)
             contentRt.sizeDelta = Vector2(0, contentHeight)
-
-            local currentTarget = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
 
             for sId = startId, endId do
                 local idx = sId - startId
@@ -1564,10 +1472,9 @@ local function CreateModUI()
                 tRt.sizeDelta = Vector2(btnW, btnH)
 
                 local tImg = tileGo:AddComponent(typeof(Image))
-                tImg.raycastTarget = true
-
-                local isSelected = (sId == currentTarget)
-                tImg.color = isSelected and Color(0.12, 0.72, 0.22, 1.0) or Color(0.22, 0.22, 0.22, 1.0)
+                local prefKey = "Mod_Farm_Server_" .. sId
+                local isEnabled = CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 1) == 1
+                tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
 
                 local tTxtGo = GameObject("Text")
                 tTxtGo.transform:SetParent(tileGo.transform, false)
@@ -1575,97 +1482,69 @@ local function CreateModUI()
                 ttRt.anchorMin = Vector2(0, 0)
                 ttRt.anchorMax = Vector2(1, 1)
                 local tTxt = tTxtGo:AddComponent(typeof(Text))
-                tTxt.text = isSelected and ("★S" .. sId) or ("S" .. sId)
-                tTxt.color = isSelected and Color.white or Color(0.75, 0.75, 0.75, 1)
+                tTxt.text = "S" .. sId
+                tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
                 tTxt.fontSize = 13
-                tTxt.fontStyle = isSelected and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
                 tTxt.alignment = TextAnchor.MiddleCenter
-                tTxt.raycastTarget = false
                 if defaultFont then tTxt.font = defaultFont end
 
                 local tBtn = tileGo:AddComponent(typeof(Button))
-                tBtn.targetGraphic = tImg
                 tBtn.onClick:AddListener(function()
-                    _G.TARGET_SERVER_ID = sId
-                    _G.TARGET_SERVER_NAME = "S" .. sId
-                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", sId)
+                    isEnabled = not isEnabled
+                    CS.UnityEngine.PlayerPrefs.SetInt(prefKey, isEnabled and 1 or 0)
                     CS.UnityEngine.PlayerPrefs.Save()
-
-                    if _G.BuildBotAccounts then _G.BuildBotAccounts() end
-                    RefreshTileColors()
-                    UpdateServerStatusUI()
-
-                    if _G.FloatingWordUtility then
-                        _G.FloatingWordUtility.QuickMsg(string.format("Đã chọn máy chủ mục tiêu: S%d!", sId))
-                    end
+                    tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
+                    tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
+                    tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                    UpdateServerStatusText(startId, endId)
                 end)
 
-                serverTileRefs[sId] = {
+                table.insert(serverTiles, {
+                    sId = sId,
+                    prefKey = prefKey,
                     img = tImg,
-                    txt = tTxt
-                }
+                    txt = tTxt,
+                    setEnabled = function(enable)
+                        isEnabled = enable
+                        CS.UnityEngine.PlayerPrefs.SetInt(prefKey, isEnabled and 1 or 0)
+                        tImg.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.28, 0.28, 0.28, 1)
+                        tTxt.color = isEnabled and Color.white or Color(0.75, 0.75, 0.75, 1)
+                        tTxt.fontStyle = isEnabled and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                    end
+                })
             end
 
-            UpdateServerStatusUI()
+            UpdateServerStatusText(startId, endId)
         end
-
-        local function SaveAccountSettingsFromUI()
-            local pfx = tostring(inPrefix.text or "accvutmuvh"):gsub("%s+", "")
-            local aStart = tonumber(inAccStart.text) or 1
-            local aEnd = tonumber(inAccEnd.text) or 10
-            local aPass = tostring(inAccPass.text or "12345ZXC")
-            local tLvl = tonumber(inTargetLvl.text) or 50
-
-            if aEnd < aStart then aEnd = aStart end
-
-            CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_AccPrefix", pfx)
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AccStart", aStart)
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AccEnd", aEnd)
-            CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_AccPass", aPass)
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetLevel", tLvl)
-            CS.UnityEngine.PlayerPrefs.Save()
-
-            if _G.BuildBotAccounts then _G.BuildBotAccounts() end
-            UpdateServerStatusUI()
-
-            if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu: %s [STT %d➔%d] (Cày Lv %d)!", pfx, aStart, aEnd, tLvl))
-            end
-        end
-
-        bsaBtn.onClick:AddListener(SaveAccountSettingsFromUI)
 
         buBtn.onClick:AddListener(function()
             local s = tonumber(inputFieldStart.text) or 450
             local e = tonumber(inputFieldEnd.text) or 492
             RenderServerGrid(s, e)
             if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("Đã cập nhật hiển thị dải S%d ➔ S%d!", s, e))
+                _G.FloatingWordUtility.QuickMsg(string.format("Đã cập nhật danh sách S%d -> S%d!", s, e))
             end
+        end)
+
+        baBtn.onClick:AddListener(function()
+            for _, tile in ipairs(serverTiles) do
+                tile.setEnabled(true)
+            end
+            CS.UnityEngine.PlayerPrefs.Save()
+            local s = tonumber(inputFieldStart.text) or 450
+            local e = tonumber(inputFieldEnd.text) or 492
+            UpdateServerStatusText(s, e)
         end)
 
         bnBtn.onClick:AddListener(function()
+            for _, tile in ipairs(serverTiles) do
+                tile.setEnabled(false)
+            end
+            CS.UnityEngine.PlayerPrefs.Save()
+            local s = tonumber(inputFieldStart.text) or 450
             local e = tonumber(inputFieldEnd.text) or 492
-            _G.TARGET_SERVER_ID = e
-            _G.TARGET_SERVER_NAME = "S" .. e
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", e)
-            CS.UnityEngine.PlayerPrefs.Save()
-            if _G.BuildBotAccounts then _G.BuildBotAccounts() end
-            RefreshTileColors()
-            UpdateServerStatusUI()
-            if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("Đã chọn máy chủ mới nhất: S%d!", e))
-            end
-        end)
-
-        brBtn.onClick:AddListener(function()
-            _G.CurrentAccountIndex = 1
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", 1)
-            CS.UnityEngine.PlayerPrefs.Save()
-            UpdateServerStatusUI()
-            if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg("Đã reset tiến độ về Tài khoản số 1!")
-            end
+            UpdateServerStatusText(s, e)
         end)
 
         -- Khởi tạo render lần đầu
@@ -1685,7 +1564,6 @@ local function CreateModUI()
 
         local bbbImg = btmBotBtnGo:AddComponent(typeof(Image))
         bbbImg.color = Color(0.18, 0.62, 0.18, 1)
-        bbbImg.raycastTarget = true
 
         local bbbTxtGo = GameObject("Text")
         bbbTxtGo.transform:SetParent(btmBotBtnGo.transform, false)
@@ -1698,7 +1576,6 @@ local function CreateModUI()
         bbbTxt.fontSize = 17
         bbbTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         bbbTxt.alignment = TextAnchor.MiddleCenter
-        bbbTxt.raycastTarget = false
         if defaultFont then bbbTxt.font = defaultFont end
 
         _G.ModUpdatePanelBotBtn = function()
@@ -1711,11 +1588,9 @@ local function CreateModUI()
                     bbbImg.color = Color(0.18, 0.62, 0.18, 1)
                 end
             end
-            if _G.Mod_UpdateServerStatusUI then _G.Mod_UpdateServerStatusUI() end
         end
 
         local bbbBtn = btmBotBtnGo:AddComponent(typeof(Button))
-        bbbBtn.targetGraphic = bbbImg
         bbbBtn.onClick:AddListener(function()
             if _G.ToggleAutoFarmBot then
                 _G.ToggleAutoFarmBot()
@@ -1727,6 +1602,7 @@ local function CreateModUI()
 
         -- =========================================================================
         -- [MOD FEATURE]: NÚT THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD (FARM)
+        -- Mô tả: Nút thoát phó bản khẩn cấp khi bị kẹt/lag trong phó bản (QTQ, Huyết Lâu...)
         -- =========================================================================
         local exitPbBtnGo = GameObject("ExitDungeonGlobalBtn")
         exitPbBtnGo.transform:SetParent(panelGo.transform, false)
@@ -1739,7 +1615,6 @@ local function CreateModUI()
 
         local epbImg = exitPbBtnGo:AddComponent(typeof(Image))
         epbImg.color = Color(0.8, 0.15, 0.15, 0.95)
-        epbImg.raycastTarget = true
 
         local epbTxtGo = GameObject("Text")
         epbTxtGo.transform:SetParent(exitPbBtnGo.transform, false)
@@ -1785,8 +1660,29 @@ end
 -- [MOD FEATURE]: HÀM LẤY DANH SÁCH SERVER ĐƯỢC CHỌN (SELECTED SERVER LIST)
 -- =========================================================================
 _G.GetSelectedServerList = function()
-    local target = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-    return { target }
+    local sStart = 450
+    local sEnd = 492
+    pcall(function()
+        sStart = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerStart", 450)
+        sEnd = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_ServerEnd", 492)
+    end)
+    if sEnd < sStart then sEnd = sStart end
+
+    local selected = {}
+    for sId = sStart, sEnd do
+        local isEnabled = true
+        pcall(function()
+            isEnabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Server_" .. sId, 1) == 1
+        end)
+        if isEnabled then
+            table.insert(selected, sId)
+        end
+    end
+
+    if #selected == 0 then
+        table.insert(selected, 491)
+    end
+    return selected
 end
 
 -- =========================================================================
@@ -2338,64 +2234,71 @@ local MAP_TRAVEL_TASKS = {
 _G.MAP_TRAVEL_TASKS = MAP_TRAVEL_TASKS
 
 -- =========================================================================
--- [MOD FEATURE]: HỆ THỐNG DANH SÁCH TÀI KHOẢN FARM TỰ ĐỘNG (MULTI-ACCOUNT PIPELINE)
--- Mô tả: Khởi tạo danh sách tài khoản theo Tiền tố (accvutmuvh...), dải STT (1..10), Server mục tiêu.
+-- [CẤU HÌNH MÁY CHỦ FARM MỤC TIÊU - TARGET SERVER CONFIG]
 -- =========================================================================
-_G.TARGET_SERVER_ID = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-_G.TARGET_SERVER_NAME = "S" .. tostring(_G.TARGET_SERVER_ID)
+_G.TARGET_SERVER_ID = _G.TARGET_SERVER_ID or 491 -- ID Server chỉ định (VD: 491 -> S491). Sau này Mod UI sẽ set biến này trước khi Start.
+_G.TARGET_SERVER_NAME = _G.TARGET_SERVER_NAME or "S491"
 
-local function BuildBotAccounts()
-    local prefix = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_AccPrefix", "accvutmuvh")
-    local sIdx = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AccStart", 1)
-    local eIdx = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AccEnd", 10)
-    local pass = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_AccPass", "12345ZXC")
-    local targetSrv = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-    local domain = "gmail.com"
-
-    if eIdx < sIdx then eIdx = sIdx end
-
-    _G.BotAccounts = {}
-    for i = sIdx, eIdx do
-        local email = string.format("%s%04d@%s", prefix, i, domain)
-        table.insert(_G.BotAccounts, {
-            id = i,
-            stt = i,
-            account = email,
-            password = pass,
-            targetServer = targetSrv,
-            roles = {
-                [1] = {
-                    autoRecycleExcellence = true,
-                    autoSmeltExcellenceAccessory = true,
-                    autoSmeltSuit = true,
-                    keepGoodLines = false,
-                    maxChestBatches = 3,
-                }
+-- =========================================================================
+-- 1. CẤU HÌNH BOT (CHỈ ĐỊNH SERVER FARM & MULTI-ROLE)
+-- =========================================================================
+_G.BotAccounts = {
+    [1] = {
+        account = "accmuvh0001@gmail.com",
+        password = "12345ZXC",
+        targetServer = _G.TARGET_SERVER_ID or 491, -- Server S491 chỉ định
+        roles = {
+            [1] = {
+                autoRecycleExcellence = true,
+                autoSmeltExcellenceAccessory = true,
+                autoSmeltSuit = true,
+                keepGoodLines = false,
+                maxChestBatches = 3,
+            },
+            [2] = {
+                autoRecycleExcellence = true,
+                autoSmeltExcellenceAccessory = true,
+                autoSmeltSuit = true,
+                keepGoodLines = false,
+                maxChestBatches = 3,
+            },
+            [3] = {
+                autoRecycleExcellence = true,
+                autoSmeltExcellenceAccessory = true,
+                autoSmeltSuit = true,
+                keepGoodLines = false,
+                maxChestBatches = 3,
+            },
+            [4] = {
+                autoRecycleExcellence = true,
+                autoSmeltExcellenceAccessory = true,
+                autoSmeltSuit = true,
+                keepGoodLines = false,
+                maxChestBatches = 3,
             }
-        })
-    end
-    return _G.BotAccounts
-end
-_G.BuildBotAccounts = BuildBotAccounts
+        }
+    }
+}
 
-_G.BotAccounts = BuildBotAccounts()
-
-_G.CurrentAccountIndex = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_CurAccIndex", 1)
-if _G.CurrentAccountIndex < 1 or _G.CurrentAccountIndex > #_G.BotAccounts then
-    _G.CurrentAccountIndex = 1
-end
+_G.CurrentAccountIndex = 1
 _G.CurrentRoleIndex = 1
 _G.TargetRoleIndex = 1
 _G.TotalRolesInCurrentAccount = 1
 
 local function GetCurrentAccount()
     if not _G.BotAccounts or #_G.BotAccounts == 0 then
-        BuildBotAccounts()
+        return {
+            account = "accmuvh0001@gmail.com",
+            password = "12345ZXC",
+            targetServer = 491, -- Server S491 mới nhất
+            roles = {}
+        }
     end
     local accIdx = _G.CurrentAccountIndex or 1
-    if accIdx < 1 then accIdx = 1 end
-    if accIdx > #_G.BotAccounts then accIdx = #_G.BotAccounts end
-    _G.CurrentAccountIndex = accIdx
+    if accIdx < 1 or accIdx > #_G.BotAccounts then
+        accIdx = 1
+        _G.CurrentAccountIndex = 1
+    end
     return _G.BotAccounts[accIdx]
 end
 _G.GetCurrentAccount = GetCurrentAccount
@@ -2869,87 +2772,6 @@ DismissBlockers = function()
             UIManager.Hide("Equip_ForgeNavUi")
             UIManager.Hide("Equip_Transfer")
         end
-
-        -- =========================================================================
-        -- [MOD FEATURE]: TỰ ĐỘNG NHẬN THƯỞNG / HOÀN THÀNH POPUP TỨC THÌ (<0.05S)
-        -- Mô tả: Hook hàm đếm ngược Task_TaskInfoUI và kiểm tra hiển thị qua BaseUI.visible
-        -- để nhận thưởng tức thì, hủy bỏ hoàn toàn thời gian chờ 5s mặc định của game!
-        -- =========================================================================
-        pcall(function()
-            if _G.Task_TaskInfoUI and not _G.Task_TaskInfoUI._modAutoHooked then
-                _G.Task_TaskInfoUI._modAutoHooked = true
-                _G.Task_TaskInfoUI.StartAutoCurTask = function(self, autoTime)
-                    if self.countDownTimer then
-                        Timer.Stop(self.countDownTimer)
-                        self.countDownTimer = nil
-                    end
-                    self.countDownTimer = Timer.Start(0.05, function()
-                        self.countDownTimer = nil
-                        pcall(function()
-                            local curT = self.args or (_G.TaskController and _G.TaskController.curTask)
-                            local s = curT and curT.GetState and curT:GetState()
-                            if s == (_G.TaskStateType and _G.TaskStateType.Acceptable or 0) then
-                                self:btn_acceptOnClick()
-                            elseif s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) then
-                                if self.btn_rewardOnClick then self:btn_rewardOnClick(self.btn_reward)
-                                else self:btn_submitOnClick() end
-                            else
-                                self:btn_submitOnClick()
-                            end
-                        end)
-                    end)
-                end
-            end
-        end)
-
-        -- 1. Bảng Task_TaskInfoUI (Hội thoại NPC / Trả thưởng nhiệm vụ)
-        local taskInfoUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskInfoUI") or (_G.UIID and _G.UIID.TaskInfoUI and _G.UIManager.GetUiByName(_G.UIID.TaskInfoUI)))
-        local isInfoVisible = false
-        pcall(function()
-            if taskInfoUI then
-                isInfoVisible = (taskInfoUI.visible == true)
-                    or (_G.UIManager and _G.UIManager.IsVisible and (_G.UIManager.IsVisible("Task_TaskInfoUI") or (_G.UIID and _G.UIID.TaskInfoUI and _G.UIManager.IsVisible(_G.UIID.TaskInfoUI))))
-                    or (taskInfoUI.root and taskInfoUI.root.gameObject and taskInfoUI.root.gameObject.activeInHierarchy)
-            end
-        end)
-        if taskInfoUI and isInfoVisible then
-            pcall(function()
-                if taskInfoUI.countDownTimer then
-                    Timer.Stop(taskInfoUI.countDownTimer)
-                    taskInfoUI.countDownTimer = nil
-                end
-                local curT = taskInfoUI.args or (_G.TaskController and _G.TaskController.curTask)
-                local s = curT and curT.GetState and curT:GetState()
-                if s == (_G.TaskStateType and _G.TaskStateType.Acceptable or 0) then
-                    if taskInfoUI.btn_acceptOnClick then taskInfoUI:btn_acceptOnClick(taskInfoUI.btn_accept) end
-                elseif s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) then
-                    if taskInfoUI.btn_rewardOnClick then taskInfoUI:btn_rewardOnClick(taskInfoUI.btn_reward)
-                    elseif taskInfoUI.btn_submitOnClick then taskInfoUI:btn_submitOnClick(taskInfoUI.btn_submit) end
-                else
-                    if taskInfoUI.btn_submitOnClick then taskInfoUI:btn_submitOnClick(taskInfoUI.btn_submit)
-                    elseif taskInfoUI.btn_rewardOnClick then taskInfoUI:btn_rewardOnClick(taskInfoUI.btn_reward)
-                    elseif taskInfoUI.btn_acceptOnClick then taskInfoUI:btn_acceptOnClick(taskInfoUI.btn_accept) end
-                end
-            end)
-        end
-
-        -- 2. Bảng Task_TransferUI (Nhiệm vụ Chuyển chức / Trả thưởng chuyển chức)
-        local transferTaskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TransferUI") or (_G.UIID and _G.UIID.Task_TransferUI and _G.UIManager.GetUiByName(_G.UIID.Task_TransferUI)))
-        local isTransferVisible = false
-        pcall(function()
-            if transferTaskUI then
-                isTransferVisible = (transferTaskUI.visible == true)
-                    or (_G.UIManager and _G.UIManager.IsVisible and (_G.UIManager.IsVisible("Task_TransferUI") or (_G.UIID and _G.UIID.Task_TransferUI and _G.UIManager.IsVisible(_G.UIID.Task_TransferUI))))
-                    or (transferTaskUI.root and transferTaskUI.root.gameObject and transferTaskUI.root.gameObject.activeInHierarchy)
-            end
-        end)
-        if transferTaskUI and isTransferVisible then
-            pcall(function()
-                if transferTaskUI.btn_submitOnClick then
-                    transferTaskUI:btn_submitOnClick(transferTaskUI.btn_submit)
-                end
-            end)
-        end
         
         -- Tự động bấm Chuyển nhanh khi bảng Chuyển Trang Bị xuất hiện (Kế Thừa Cường Hóa)
         local transferUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)))
@@ -3023,6 +2845,35 @@ DismissBlockers = function()
         local inDS = (curMap >= 1010000 and curMap <= 1010099)
         if inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript) then
             TriggerDungeonSkipWait()
+        end
+
+        -- Tự động hoàn thành / nhận thưởng / nộp nhiệm vụ tức thì khi mở bảng Task_TaskInfoUI (hội thoại NPC / trả thưởng)
+        local taskInfoUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskInfoUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskInfoUI)))
+        if taskInfoUI and ((taskInfoUI.root and taskInfoUI.root.activeInHierarchy) or (taskInfoUI.btn_submit and taskInfoUI.btn_submit.gameObject and taskInfoUI.btn_submit.gameObject.activeInHierarchy) or (taskInfoUI.btn_accept and taskInfoUI.btn_accept.gameObject and taskInfoUI.btn_accept.gameObject.activeInHierarchy) or (taskInfoUI.btn_reward and taskInfoUI.btn_reward.gameObject and taskInfoUI.btn_reward.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if taskInfoUI.countDownTimer then
+                    Timer.Stop(taskInfoUI.countDownTimer)
+                    taskInfoUI.countDownTimer = nil
+                end
+                if taskInfoUI.btn_reward and taskInfoUI.btn_reward.gameObject and taskInfoUI.btn_reward.gameObject.activeInHierarchy and taskInfoUI.btn_rewardOnClick then
+                    taskInfoUI:btn_rewardOnClick(taskInfoUI.btn_reward)
+                elseif taskInfoUI.btn_submit and taskInfoUI.btn_submit.gameObject and taskInfoUI.btn_submit.gameObject.activeInHierarchy and taskInfoUI.btn_submitOnClick then
+                    taskInfoUI:btn_submitOnClick(taskInfoUI.btn_submit)
+                elseif taskInfoUI.btn_accept and taskInfoUI.btn_accept.gameObject and taskInfoUI.btn_accept.gameObject.activeInHierarchy and taskInfoUI.btn_acceptOnClick then
+                    taskInfoUI:btn_acceptOnClick(taskInfoUI.btn_accept)
+                else
+                    if taskInfoUI.btn_submitOnClick then taskInfoUI:btn_submitOnClick() end
+                end
+            end)
+        end
+
+        local transferTaskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TransferUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Task_TransferUI)))
+        if transferTaskUI and ((transferTaskUI.root and transferTaskUI.root.activeInHierarchy) or (transferTaskUI.btn_submit and transferTaskUI.btn_submit.gameObject and transferTaskUI.btn_submit.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if transferTaskUI.btn_submitOnClick then
+                    transferTaskUI:btn_submitOnClick(transferTaskUI.btn_submit)
+                end
+            end)
         end
 
         local transferInfoUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TransferInfoUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Task_TransferInfoUI)))
@@ -3676,9 +3527,28 @@ CreateRoleAndEnterGame = function(targetIdx)
     _G.HasCreatedRoleForTarget = true
 
     local newName = GenerateUniqueRoleName()
+    
+    -- TẬP TRUNG TẠO CUNG THỦ (ARCHER - CAREER 13, SEX 2 NỮ) THEO YÊU CẦU THỬ NGHIỆM
+    -- (Tạm thời comment class Ma Kỵ Sĩ 14 để kiểm thử hoàn hảo từng phần)
+    --[[
+    local canSpellSword = false
+    pcall(function()
+        if LoginData and LoginData.JudgeCanEstablishSpellSwordId then
+            canSpellSword = LoginData.JudgeCanEstablishSpellSwordId()
+        end
+    end)
+    local targetCareer = 14
+    local careerName = "Ma Ky Si (Magic Gladiator)"
+    local targetSex = 1
+    if not canSpellSword then
+        targetCareer = 13
+        careerName = "Cung Thu (Archer)"
+        targetSex = 2
+    end
+    ]]
     local targetCareer = 13 -- Cung Thủ (Archer)
     local careerName = "Cung Thủ (Archer)"
-    local targetSex = 1 -- BẮT BUỘC 1 TRÊN TẤT CẢ CÁC HỆ (KHÔNG PHẢI 2)!
+    local targetSex = 2 -- Nữ
 
     Log("=========================================================================")
     Log(string.format(">>> [TẠO NHÂN VẬT] PHÁT HIỆN SLOT [%d/4] CHƯA CÓ NHÂN VẬT! <<<", targetIdx))
@@ -3686,7 +3556,7 @@ CreateRoleAndEnterGame = function(targetIdx)
     Log("=========================================================================")
     SaveOutput()
 
-    -- 1. Lắng nghe event tạo nhân vật thành công từ Server
+    -- Lắng nghe event tạo nhân vật thành công từ Server
     if _G.TestEventContainer then
         _G.TestEventContainer:Regist(Event.Login_CreateRole, function()
             Log("[EVENT] Login_CreateRole -> TẠO NHÂN VẬT THÀNH CÔNG!")
@@ -3713,58 +3583,12 @@ CreateRoleAndEnterGame = function(targetIdx)
         end)
     end
 
-    -- 2. Thiết lập playerCreateName trong LoginData để UI bắt đúng
-    if _G.LoginData then
-        _G.LoginData.playerCreateName = newName
+    -- Gửi gói tin tạo nhân vật: Chỉ tạo Ma Kỵ Sĩ (14) hoặc Cung Thủ (13)
+    if _G.networkRequest and _G.networkRequest.ReqCreateRole then
+        _G.networkRequest.ReqCreateRole(newName, targetSex, targetCareer)
+    elseif NetManager and NetManager.Send and UserMessage and UserMessage.ReqCreateRole then
+        NetManager.Send(UserMessage.ReqCreateRole, { roleName = newName, sex = targetSex, career = targetCareer })
     end
-
-    -- 3. Tương tác trực tiếp nếu giao diện Login_LoginCreateRoleUI đang mở
-    local createUI = nil
-    pcall(function()
-        if _G.UIManager and _G.UIManager.GetUiByName then
-            createUI = _G.UIManager.GetUiByName("Login_LoginCreateRoleUI")
-        end
-    end)
-
-    if createUI and not IsNil(createUI) then
-        pcall(function()
-            if createUI.SelectCareer then
-                createUI:SelectCareer(targetCareer)
-            end
-            if createUI.tog_archer and createUI.tog_archer.SetIsOn then
-                createUI.tog_archer:SetIsOn(true)
-            end
-            if createUI.InputField_Name and createUI.InputField_Name.SetInputText then
-                createUI.InputField_Name:SetInputText(newName)
-            end
-            if createUI.Button_OkOnClick then
-                Log("-> Kích hoạt Button_OkOnClick trên giao diện LoginCreateRoleUI...", true)
-                createUI:Button_OkOnClick()
-            end
-        end)
-    else
-        -- Gửi trực tiếp gói tin tạo nhân vật tới server
-        Log("-> Gửi gói tin ReqCreateRole trực tiếp tới server...", true)
-        if _G.networkRequest and _G.networkRequest.ReqCreateRole then
-            _G.networkRequest.ReqCreateRole(newName, targetSex, targetCareer)
-        elseif NetManager and NetManager.Send and UserMessage and UserMessage.ReqCreateRole then
-            NetManager.Send(UserMessage.ReqCreateRole, { roleName = newName, sex = targetSex, career = targetCareer })
-        end
-    end
-
-    -- 4. Bộ đệm an toàn tự động thử lại sau 6 giây nếu chưa có phản hồi
-    Timer.Start(6.0, function()
-        if _G.LoginData and _G.LoginData.InGame then return end
-        local pMe = _G.RoleManager and _G.RoleManager.me
-        if pMe and (pMe.level or (pMe.data and pMe.data.level)) then return end
-        local roles = (LoginData and LoginData.roleList) or {}
-        if #roles == 0 then
-            _G.IsRoleCreating = false
-            _G.HasCreatedRoleForTarget = false
-            Log("-> [RETRY]: Sau 6s chưa thấy phản hồi tạo nhân vật, tự động thử lại...", true)
-            CreateRoleAndEnterGame(targetIdx)
-        end
-    end)
 end
 
 -- =========================================================================
@@ -3779,11 +3603,27 @@ SelectRoleByIndex = function(targetIdx)
     local roles = LoginData.roleList or {}
     if targetIdx < 1 then targetIdx = 1 end
 
-    -- BẢO VỆ & XỬ LÝ TÀI KHOẢN MỚI: Nếu danh sách nhân vật chưa có bất kỳ ai (#roles == 0)
-    -- Đây là tài khoản mới tinh chưa tạo nhân vật -> Tự động tạo mới nhân vật ở Slot 1!
+    -- BẢO VỆ AN TOÀN: Nếu danh sách nhân vật chưa có bất kỳ ai (#roles == 0)
+    -- TUYỆT ĐỐI KHÔNG TỰ TIỆN GỌI CreateRoleAndEnterGame!
     if not roles or #roles == 0 then
-        Log("-> [TÀI KHOẢN MỚI]: Chưa có nhân vật nào trên máy chủ này (#roles == 0) -> Tự động tạo mới nhân vật ở Slot 1!", true)
-        CreateRoleAndEnterGame(1)
+        Log("-> [CẢNH BÁO]: Danh sách nhân vật (roleList) đang rỗng! Đang yêu cầu lại từ server...", true)
+        pcall(function()
+            if _G.NetManager and _G.UserMessage and _G.UserMessage.ReqGetRoleList then
+                _G.NetManager.Send(_G.UserMessage.ReqGetRoleList)
+            end
+        end)
+        Timer.Start(2.5, function()
+            local rAgain = (LoginData and LoginData.roleList) or {}
+            if #rAgain == 0 then
+                Log("-> Vẫn chưa có danh sách nhân vật -> Tự động kích hoạt Clean Logout & Re-login từ đầu!", true)
+                ForceLogoutToLogin()
+                Timer.Start(2.5, function()
+                    StartFullLoginProcess()
+                end)
+            else
+                SelectRoleByIndex(targetIdx)
+            end
+        end)
         return
     end
 
@@ -3932,10 +3772,6 @@ end
 --        - Gửi gói tin ReqItemRecycle qua BlackSmith (Type 2 - không cần VIP).
 -- =========================================================================
 AutoRecycleBagItems = function()
-    local pMe = _G.RoleManager and _G.RoleManager.me
-    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-    if curLvl < 20 then return 0 end
-
     local recycledCount = 0
     pcall(function()
         if not _G.BagInfoData then return end
@@ -4750,59 +4586,12 @@ local GIFT_CODES = {
 }
 
 RunAutoGiftcode = function(onFinished)
-    local codeResults = { success = {}, failed = {} }
-    local curCodeChecking = nil
-    local orig_Word_QuickMsg = _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg
-    pcall(function()
-        if _G.FloatingWordUtility and orig_Word_QuickMsg then
-            _G.FloatingWordUtility.QuickMsg = function(msg, ...)
-                pcall(function()
-                    if curCodeChecking then
-                        local mStr = tostring(msg or "")
-                        if string.find(mStr, "thành công") or string.find(mStr, "Đổi thành công") or string.find(mStr, "thành") then
-                            table.insert(codeResults.success, string.format("  + %s: %s", curCodeChecking, mStr))
-                        else
-                            table.insert(codeResults.failed, string.format("  - %s: %s", curCodeChecking, mStr))
-                        end
-                    end
-                end)
-                return orig_Word_QuickMsg(msg, ...)
-            end
-        end
-    end)
-
-    local function FinishAndReport()
-        pcall(function()
-            if _G.FloatingWordUtility and orig_Word_QuickMsg then
-                _G.FloatingWordUtility.QuickMsg = orig_Word_QuickMsg
-            end
-        end)
-
-        Log("=========================================================================", true)
-        Log(string.format(">>> BÁO CÁO PHÂN LOẠI GIFTCODE (TỔNG: %d) <<<", #GIFT_CODES), true)
-        Log(string.format("[MÃ DÙNG TỐT / CÒN HẠN (%d)]: ", #codeResults.success), true)
-        for _, line in ipairs(codeResults.success) do
-            Log(line, true)
-        end
-        Log(string.format("[MÃ HỎNG / HẾT HẠN / ĐÃ DÙNG (%d)]: ", #codeResults.failed), true)
-        for _, line in ipairs(codeResults.failed) do
-            Log(line, true)
-        end
-        Log("=========================================================================", true)
-        SaveOutput()
-        _G.AutoGiftCodeRunning = false
-        if onFinished then
-            pcall(function() onFinished() end)
-        end
-    end
-
     local function DoGiftCodeRoutine()
         local total = #GIFT_CODES
         Log(string.format("[GIFTCODE] Bắt đầu nhập %d mã Giftcode...", total), true)
         SaveOutput()
 
         for i, code in ipairs(GIFT_CODES) do
-            curCodeChecking = code
             Log(string.format("[GIFTCODE] Đang nhập [%d/%d]: %s", i, total, code), true)
             pcall(function()
                 if _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseCDKey then
@@ -4817,7 +4606,6 @@ RunAutoGiftcode = function(onFinished)
                 Coroutine.Wait(0.8) 
             end
         end
-        curCodeChecking = nil
 
         Log("[GIFTCODE] Đã gửi xong tất cả mã code! Chờ 3s máy chủ gửi thư...", true)
         SaveOutput()
@@ -4846,7 +4634,11 @@ RunAutoGiftcode = function(onFinished)
         Log("=========================================================================")
         Log(">>> HOÀN TẤT NHẬP CODE & NHẬN QUÀ TÂN THỦ THÀNH CÔNG! <<<", true)
         Log("=========================================================================")
-        FinishAndReport()
+        SaveOutput()
+        _G.AutoGiftCodeRunning = false
+        if onFinished then
+            pcall(function() onFinished() end)
+        end
     end
 
     if Coroutine and Coroutine.Start then
@@ -4861,7 +4653,6 @@ RunAutoGiftcode = function(onFinished)
         codeLoop = Timer.StartLoop(0.8, -1, function()
             if idx <= total then
                 local code = GIFT_CODES[idx]
-                curCodeChecking = code
                 Log(string.format("[GIFTCODE] Đang nhập [%d/%d]: %s", idx, total, code), true)
                 pcall(function()
                     if _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseCDKey then
@@ -4873,7 +4664,6 @@ RunAutoGiftcode = function(onFinished)
                 SaveOutput()
                 idx = idx + 1
             else
-                curCodeChecking = nil
                 if codeLoop then Timer.Stop(codeLoop) end
                 Log("[GIFTCODE] Đã gửi xong tất cả mã code! Chờ 3s máy chủ gửi thư...", true)
                 SaveOutput()
@@ -4897,7 +4687,11 @@ RunAutoGiftcode = function(onFinished)
                             Log("=========================================================================")
                             Log(">>> HOÀN TẤT NHẬP CODE & NHẬN QUÀ TÂN THỦ THÀNH CÔNG! <<<", true)
                             Log("=========================================================================")
-                            FinishAndReport()
+                            SaveOutput()
+                            _G.AutoGiftCodeRunning = false
+                            if onFinished then
+                                pcall(function() onFinished() end)
+                            end
                         end)
                     end)
                 end)
@@ -6421,11 +6215,6 @@ _G.Global30sUpgradeTimer = _G.Global30sUpgradeTimer or nil
 
 RunPeriodicUpgradeCycle = function()
     if not _G.Bot_Running or _G.Bot_PauseTask then return end
-
-    local pMe = _G.RoleManager and _G.RoleManager.me
-    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-    if curLvl < 20 then return end
-
     pcall(function()
         Log("[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", false)
 
@@ -6970,90 +6759,6 @@ local TASK_CONFIG_BY_ID = {
     [3120] = TASK_BEHAVIOR.CRAFT_ITEM,
 }
 
--- =========================================================================
--- [MOD FEATURE]: BỘ CHUYỂN TÀI KHOẢN TỰ ĐỘNG KHI ĐẠT LEVEL MỤC TIÊU (50)
--- Mô tả: Ghi nhận acc hoàn thành, logout và đăng nhập tài khoản tiếp theo trong danh sách.
--- =========================================================================
-_G.IsSwitchingAccount = false
-_G.OnAccountReachLevelGoal = function(lvl, targetLvl)
-    if _G.IsSwitchingAccount then return end
-    _G.IsSwitchingAccount = true
-
-    if _G.BotQuestMonitorTimer then
-        pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
-        _G.BotQuestMonitorTimer = nil
-    end
-    if _G.Global30sUpgradeTimer then
-        pcall(function() Timer.Stop(_G.Global30sUpgradeTimer) end)
-        _G.Global30sUpgradeTimer = nil
-    end
-
-    local curAcc = GetCurrentAccount()
-    local curAccEmail = curAcc.account or "Unknown"
-    local curAccIdx = _G.CurrentAccountIndex or 1
-    local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
-    local sId, sName = GetActualCurrentServerInfo()
-
-    Log("=========================================================================", true)
-    Log(string.format(">>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [%d/%d] %s ĐẠT LEVEL %d/%d TRÊN %s! <<<",
-        curAccIdx, totalAccs, curAccEmail, lvl, targetLvl, tostring(sName)), true)
-    Log("=========================================================================", true)
-    SaveOutput()
-
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg(string.format("Hoàn tất %s (Lv %d)! Chuyển sang acc kế tiếp...", curAccEmail, lvl))
-    end
-
-    -- Ghi nhật ký vào file thành công
-    pcall(function()
-        local Application = CS.UnityEngine.Application
-        local File = CS.System.IO.File
-        local nowStr = os.date("%Y-%m-%d %H:%M:%S")
-        local logLine = string.format("%s | STT: %04d | Email: %s | Server: %s | Level: %d\r\n", 
-            nowStr, curAccIdx, curAccEmail, tostring(sName), lvl)
-        local outDir = Application.persistentDataPath
-        File.AppendAllText(outDir .. "/farm_success_accounts.txt", logLine, CS.System.Text.Encoding.UTF8)
-    end)
-
-    local nextAccIdx = curAccIdx + 1
-    if nextAccIdx <= totalAccs then
-        _G.CurrentAccountIndex = nextAccIdx
-        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", nextAccIdx)
-        CS.UnityEngine.PlayerPrefs.Save()
-
-        local nextAcc = GetCurrentAccount()
-        Log(string.format(">>> [CHUYỂN TIẾP TÀI KHOẢN]: Chuyển sang Acc [%d/%d]: %s (Server: %s) <<<",
-            nextAccIdx, totalAccs, nextAcc.account, tostring(sName)), true)
-        SaveOutput()
-
-        _G.CurrentRoleIndex = 1
-        _G.TargetRoleIndex = 1
-        _G.HasCreatedRoleForTarget = false
-        _G.IsRoleCreating = false
-        _G.Bot_IsInGameWorld = false
-
-        Timer.Start(1.5, function()
-            ForceLogoutToLogin()
-            Timer.Start(3.0, function()
-                _G.IsSwitchingAccount = false
-                DismissBlockers()
-                StartFullLoginProcess()
-            end)
-        end)
-    else
-        Log("=========================================================================", true)
-        Log(string.format(">>> HOÀN THÀNH TẤT CẢ %d TÀI KHOẢN LÊN LEVEL %d TRÊN MÁY CHỦ %s! <<<", totalAccs, targetLvl, tostring(sName)), true)
-        Log("=========================================================================", true)
-        SaveOutput()
-
-        _G.IsSwitchingAccount = false
-        _G.StopAutoFarmBot()
-        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg(string.format("ĐÃ HOÀN THÀNH TẤT CẢ %d ACC LÊN LV %d!", totalAccs, targetLvl))
-        end
-    end
-end
-
 StartNewbieQuestPipeline = function()
     if not _G.Bot_Running or _G.Bot_PauseTask then
         return
@@ -7062,12 +6767,7 @@ StartNewbieQuestPipeline = function()
     local pMe = _G.RoleManager and _G.RoleManager.me
     local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
 
-    -- CHỈ KÍCH HOẠT CHU KỲ NÂNG CẤP & THU HỒI ĐỒ ĐỊNH KỲ SAU LEVEL 20:
-    if currentLevel >= 20 then
-        StartGlobal30sUpgradePipeline()
-        if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
-        RunPeriodicUpgradeCycle()
-    end
+    StartGlobal30sUpgradePipeline()
 
     Log("=========================================================================")
     Log(string.format(">>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL %s] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<", tostring(currentLevel)), true)
@@ -7081,6 +6781,9 @@ StartNewbieQuestPipeline = function()
         end
     end)
 
+    if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
+    RunPeriodicUpgradeCycle()
+
     if _G.BotQuestMonitorTimer then
         pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
         _G.BotQuestMonitorTimer = nil
@@ -7088,58 +6791,20 @@ StartNewbieQuestPipeline = function()
 
     local loopTickCount = 0
 
-    _G.BotQuestMonitorTimer = Timer.StartLoop(0.3, -1, function()
+    _G.BotQuestMonitorTimer = Timer.StartLoop(1.0, -1, function()
         pcall(function()
             if not _G.Bot_Running or _G.Bot_PauseTask or _G.Mod_IsRunningInstance then
                 return
             end
 
-            -- Luôn quét dọn popup và tự động bấm nhận thưởng tức thì (<0.3s, không chờ đếm ngược 5s)
-            DismissBlockers()
-
             local me = _G.RoleManager and _G.RoleManager.me
             local lvl = (me and me.level) or (me and me.data and me.data.level) or 1
-            local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
 
-            -- KIỂM TRA MỤC TIÊU CẤP ĐỘ FARM BOT (MẶC ĐỊNH LV 50):
-            if lvl >= targetLvl then
-                _G.OnAccountReachLevelGoal(lvl, targetLvl)
-                return
-            end
-
-            -- =========================================================================
-            -- [GIAI ĐOẠN TÂN THỦ LV 1 -> 9]:
-            -- Tập trung bám sát chuỗi nhiệm vụ tân thủ (Main Quest) tự động tương tác NPC.
-            -- Các tính năng nâng cao (Giftcode >= 10, Cường hóa >= 20, Phó bản >= 100)
-            -- đều đã có điều kiện kiểm tra cấp độ riêng bên dưới.
-            -- =========================================================================
-
-            -- =========================================================================
-            -- [GIAI ĐOẠN ĐẠT LEVEL 10+]:
-            -- Kích hoạt nhập 77 mã Giftcode (chỉ chạy 1 lần khi đạt Lv 10)
-            -- =========================================================================
-            if lvl >= 10 and not _G.Bot_HasEnteredGiftcodes and not _G.AutoGiftCodeRunning then
-                _G.Bot_HasEnteredGiftcodes = true
-                _G.AutoGiftCodeRunning = true
-                Log("=========================================================================")
-                Log(string.format(">>> ĐẠT LEVEL %d: BẮT ĐẦU TỰ ĐỘNG NHẬP 77 MÃ GIFTCODE VÀ GHI BÁO CÁO <<<", lvl), true)
-                Log("=========================================================================")
-                SaveOutput()
-                if RunAutoGiftcode then
-                    RunAutoGiftcode(function()
-                        _G.AutoGiftCodeRunning = false
-                    end)
-                end
-            end
-
-            -- KÍCH HOẠT NÂNG CẤP 30S KHI ĐẠT LEVEL 20+:
-            if lvl >= 20 and not _G.Global30sUpgradeTimer then
-                StartGlobal30sUpgradePipeline()
-            end
+            DismissBlockers()
 
             loopTickCount = loopTickCount + 1
 
-            if loopTickCount % 50 == 0 and not _G.Mod_IsRunningInstance then
+            if loopTickCount % 15 == 0 and not _G.Mod_IsRunningInstance then
                 CheckAndRunBloodCastleOrDemonPlaza()
             end
 
@@ -7157,37 +6822,29 @@ StartNewbieQuestPipeline = function()
             -- =========================================================================
             pcall(function()
                 if _G.TaskData and _G.TaskData.activeTasks then
-                    local nowSec = os.time()
-                    _G.ClaimedTaskCooldown = _G.ClaimedTaskCooldown or {}
                     for tId, task in pairs(_G.TaskData.activeTasks) do
-                        if task and tId ~= 80101 then
-                            local tType = (task.GetTaskTypeID and task:GetTaskTypeID()) or 0
-                            if tType < 14 then
-                                local s = (task.GetState and task:GetState()) or task.state or 0
-                                if s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or s == 2 then
-                                    if not _G.ClaimedTaskCooldown[tId] or (nowSec - _G.ClaimedTaskCooldown[tId] >= 8) then
-                                        _G.ClaimedTaskCooldown[tId] = nowSec
-                                        Log(string.format("-> [CLAIM TỨC THÌ TASK %s]: Đã hoàn thành! Nộp và nhận thưởng ngay...", tostring(tId)), true)
-                                        if _G.networkRequest then
-                                            if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(tId) end
-                                            if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(tId) end
-                                        end
-                                        if _G.NetManager and _G.TaskMessage then
-                                            if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = tId, id = tId }) end
-                                            if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = tId, id = tId }) end
-                                        end
-                                        if _G.EventManager and _G.Event then
-                                            if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, tId) end
-                                            if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, tId) end
-                                        end
-                                        if _G.TaskManager and _G.TaskManager.TaskGo then
-                                            _G.TaskManager.TaskGo(tId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
-                                        end
-                                        local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
-                                        if taskUI and taskUI.TaskItemClick then
-                                            taskUI:TaskItemClick(tId)
-                                        end
-                                    end
+                        if task then
+                            local s = (task.GetState and task:GetState()) or task.state or 0
+                            if s == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or s == 2 or s == 3 then
+                                Log(string.format("-> [CLAIM TỨC THÌ TASK %s]: Đã hoàn thành! Nộp và nhận thưởng ngay...", tostring(tId)), true)
+                                if _G.networkRequest then
+                                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(tId) end
+                                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(tId) end
+                                end
+                                if _G.NetManager and _G.TaskMessage then
+                                    if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = tId, id = tId }) end
+                                    if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = tId, id = tId }) end
+                                end
+                                if _G.EventManager and _G.Event then
+                                    if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, tId) end
+                                    if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, tId) end
+                                end
+                                if _G.TaskManager and _G.TaskManager.TaskGo then
+                                    _G.TaskManager.TaskGo(tId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                end
+                                local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+                                if taskUI and taskUI.TaskItemClick then
+                                    taskUI:TaskItemClick(tId)
                                 end
                             end
                         end
@@ -7199,7 +6856,7 @@ StartNewbieQuestPipeline = function()
                 local curTask = _G.TaskData.GetOrderMainTask and _G.TaskData.GetOrderMainTask()
                 if not curTask and _G.TaskData.activeTasks then
                     for _, t in pairs(_G.TaskData.activeTasks) do
-                        if t and t.GetTaskTypeID and (t:GetTaskTypeID() == (_G.RoleTaskType and _G.RoleTaskType.MainTask or 1) or t:GetTaskTypeID() == 15) then
+                        if t and t.GetTaskTypeID and t:GetTaskTypeID() == (_G.RoleTaskType and _G.RoleTaskType.MainTask or 1) then
                             curTask = t
                             break
                         end
@@ -7242,29 +6899,17 @@ StartNewbieQuestPipeline = function()
 
                     -- 2. TRẠNG THÁI CÓ THỂ NHẬN (Acceptable = 0): Gửi gói nhận nhiệm vụ & Tìm đường đến NPC nhận nếu cần
                     elseif state == (_G.TaskStateType and _G.TaskStateType.Acceptable or 0) or state == 0 then
-                        local nowSec = os.time()
-                        _G.Bot_LastTaskAcceptTime = _G.Bot_LastTaskAcceptTime or 0
-                        if nowSec - _G.Bot_LastTaskAcceptTime >= 2 then
-                            _G.Bot_LastTaskAcceptTime = nowSec
-                            pcall(function()
-                                if _G.networkRequest and _G.networkRequest.ReqAcceptTask then _G.networkRequest.ReqAcceptTask(taskId) end
-                                if _G.NetManager and _G.TaskMessage and _G.TaskMessage.ReqAcceptTask then _G.NetManager.Send(_G.TaskMessage.ReqAcceptTask, { taskId = taskId, id = taskId }) end
-                                if _G.EventManager and _G.Event and _G.Event.Task_BtnAcceptClick then _G.EventManager.Dispatch(_G.Event.Task_BtnAcceptClick, taskId) end
-                                if _G.TaskManager and _G.TaskManager.TaskGo then
-                                    _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
-                                end
-                                if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
-                                    _G.AutoTaskManage.SetAutoTask(true)
-                                end
-                                if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
-                                    _G.AutoTaskManage.StartCurAutoTask(true)
-                                end
-                                local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
-                                if taskUI and taskUI.TaskItemClick then
-                                    taskUI:TaskItemClick(taskId)
-                                end
-                            end)
-                        end
+                        pcall(function()
+                            if _G.networkRequest and _G.networkRequest.ReqAcceptTask then _G.networkRequest.ReqAcceptTask(taskId) end
+                            if _G.NetManager and _G.TaskMessage and _G.TaskMessage.ReqAcceptTask then _G.NetManager.Send(_G.TaskMessage.ReqAcceptTask, { taskId = taskId, id = taskId }) end
+                            if _G.EventManager and _G.Event and _G.Event.Task_BtnAcceptClick then _G.EventManager.Dispatch(_G.Event.Task_BtnAcceptClick, taskId) end
+                            if _G.TaskManager and _G.TaskManager.TaskGo then
+                                _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                            end
+                            if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                _G.AutoTaskManage.StartCurAutoTask(true)
+                            end
+                        end)
 
                     -- 3. TRẠNG THÁI ĐANG TIẾN HÀNH (Accept = 1)
                     elseif state == (_G.TaskStateType and _G.TaskStateType.Accept or 1) or state == 1 then
@@ -7274,25 +6919,17 @@ StartNewbieQuestPipeline = function()
                             local tType = (curTask.GetTaskTypeID and curTask:GetTaskTypeID()) or curTask.type or 0
                             local goal = curTask.GetTaskGola and curTask:GetTaskGola()
                             local gType = (goal and goal.goalTbl and goal.goalTbl.type) or 0
-                            local rawName = tostring(taskName or "")
-                            local rawDes = tostring(taskDes or "")
-                            local lowName = string.lower(rawName)
-                            local lowDes = string.lower(rawDes)
-
-                            -- Nhận diện nhiệm vụ Cày Cấp / Tăng Cấp Đến... (cả tiếng Việt có dấu/không dấu và hoa/thường)
-                            local isLevelTask = (taskId >= 21000 and taskId <= 21999) or tType == 15 or gType == 301 or gType == 3101 
-                                or lowName:find("cấp") or lowName:find("cap") or lowName:find("level") or lowName:find("lv") 
-                                or rawName:find("Cấp") or rawName:find("Tăng") or rawName:find("Đạt") or rawName:find("Level")
-                                or lowDes:find("cấp") or lowDes:find("cap") or lowDes:find("level")
+                            local lowName = string.lower(tostring(taskName or ""))
+                            local lowDes = string.lower(tostring(taskDes or ""))
+                            if (taskId >= 21000 and taskId <= 21999) or tType == 15 or gType == 301 or gType == 3101 
+                                or lowName:find("cấp") or lowName:find("level") or lowName:find("lv") 
                                 or lowName:find("tarkan") or lowDes:find("tarkan")
                                 or lowName:find("đế vương") or lowDes:find("đế vương")
                                 or lowName:find("sách đế vương") or lowDes:find("sách đế vương")
                                 or lowName:find("chuyển chức") or lowName:find("chuyển 1") or lowName:find("chuyển 2") or lowName:find("chuyển 3")
-                                or lowName:find("mở chuyển") or lowName:find("chuyển sinh") or lowName:find("giai đoạn")
-
-                            if isLevelTask then
+                                or lowName:find("mở chuyển") or lowName:find("chuyển sinh") or lowName:find("giai đoạn") then
                                 behavior = TASK_BEHAVIOR.LEVEL_UP
-                            elseif gType == 101 or gType == 103 or gType == 113 or lowName:find("diệt") or lowName:find("đánh") or rawName:find("Diệt") or rawName:find("Đánh") then
+                            elseif gType == 101 or gType == 103 or gType == 113 or lowName:find("diệt") or lowName:find("đánh") then
                                 behavior = TASK_BEHAVIOR.MONSTER_KILL
                             elseif MAP_TRAVEL_TASKS and MAP_TRAVEL_TASKS[taskId] then
                                 behavior = TASK_BEHAVIOR.MAP_TRAVEL
@@ -7387,35 +7024,35 @@ StartNewbieQuestPipeline = function()
                             -- Nếu nhân vật Level < 100: Cày trực tiếp online vì tân thủ lên cấp cực nhanh
                             local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
                             
-                            local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
-                            local nowSec = os.time()
-                            _G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
+                            local isMoving = false
+                            local isFighting = false
+                            pcall(function()
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.IsMoving and me:IsMoving() then isMoving = true end
+                                if me and (me.isFightState or (me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then isFighting = true end
+                            end)
 
-                            -- CHỈ truyền tống đến bãi cày tối ưu ĐÚNG 1 LẦN khi nhận nhiệm vụ mới hoặc sau 60s nếu bị kẹt
-                            if isNewTask or (nowSec - _G.Bot_LastFarmTeleportTime >= 60) then
-                                _G.Bot_CurrentTaskId = taskId
+                            _G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
+                            local nowSec = os.time()
+                            
+                            if (not isMoving and not isFighting) or (nowSec - _G.Bot_LastFarmTeleportTime >= 8) then
                                 _G.Bot_LastFarmTeleportTime = nowSec
                                 pcall(function()
                                     local hasTele = TeleportToBestFarmPoint(curMap)
                                     if hasTele then
-                                        Log(string.format("[Luyện Cấp] : Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d để cày cấp (1 LẦN DUY NHẤT)!", taskId, tostring(taskName), curMap), true)
+                                        Log(string.format("[Luyện Cấp] : Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d để cày cấp!", taskId, tostring(taskName), curMap), true)
                                         SaveOutput()
                                     end
                                 end)
                             end
                             
-                            -- Bật AutoFight 1 lần nếu chưa bật (tránh spam lệnh SetAutoFight mỗi tick làm ngắt chiêu)
                             pcall(function()
                                 local me = _G.RoleManager and _G.RoleManager.me
-                                local isAutoFightOpen = me and me.meAutoFight and me.meAutoFight.IsAutoFightOpen and me.meAutoFight:IsAutoFightOpen()
-                                if not isAutoFightOpen then
-                                    if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
-                                    if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
-                                    if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
-                                end
-                                if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
-                                    _G.QiJiHelperData.SetAutoFightData(true)
-                                end
+                                if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
                             end)
 
                         -- =========================================================================
@@ -7545,115 +7182,29 @@ StartNewbieQuestPipeline = function()
                                 end
                             end)
 
-                        -- =========================================================================
-                        -- [MOD FEATURE]: TỰ ĐỘNG THU HỒI ĐỒ TÂN THỦ (TASK 3010, 3061...)
-                        -- =========================================================================
-                        elseif behavior == TASK_BEHAVIOR.RECYCLE then
-                            local nowSec = os.time()
-                            _G.Bot_LastRecycleTaskTime = _G.Bot_LastRecycleTaskTime or 0
-                            if nowSec - _G.Bot_LastRecycleTaskTime >= 2 then
-                                _G.Bot_LastRecycleTaskTime = nowSec
-
-                                -- 1. Tìm 1 vật phẩm trong túi để thu hồi (ưu tiên trang bị rác, nếu không có thì lấy 1 bình mana/máu)
-                                local candidate = nil
-                                if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                                    for _, item in pairs(_G.BagInfoData.TotalItems) do
-                                        if item and item.id and item.count and item.count > 0 and item.tblItem then
-                                            if item.tblItem.type == 1 then
-                                                candidate = item
-                                                break
-                                            end
-                                        end
-                                    end
-                                    if not candidate then
-                                        for _, item in pairs(_G.BagInfoData.TotalItems) do
-                                            if item and item.id and item.count and item.count > 0 then
-                                                candidate = item
-                                                break
-                                            end
-                                        end
-                                    end
-                                end
-
-                                local sellUI = nil
-                                pcall(function()
-                                    if _G.UIManager and _G.UIManager.GetUiByName then
-                                        sellUI = _G.UIManager.GetUiByName("Bag_SellInfoUI")
-                                    end
-                                end)
-
-                                local wayType = (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
-                                if sellUI and sellUI.GetRecycleWayType then
-                                    pcall(function() wayType = sellUI:GetRecycleWayType() end)
-                                end
-
-                                if candidate then
-                                    local sendMap = {}
-                                    sendMap[candidate.id] = 1
-                                    Log(string.format("-> [THU HỒI TASK %d]: Thu hồi 1 vật phẩm (%s) để hoàn thành nhiệm vụ!", taskId, tostring(candidate.tblItem and candidate.tblItem.name or candidate.id)), true)
-                                    SaveOutput()
-                                    if _G.networkRequest and _G.networkRequest.ReqItemRecycle then
-                                        _G.networkRequest.ReqItemRecycle(sendMap, wayType)
-                                    elseif _G.NetManager and _G.ItemRecycleMessage and _G.ItemRecycleMessage.ReqItemRecycle then
-                                        _G.NetManager.Send(_G.ItemRecycleMessage.ReqItemRecycle, { recycleItems = sendMap, recycleType = wayType })
-                                    end
-                                elseif sellUI and sellUI.btn_sellOnClick then
-                                    sellUI:btn_sellOnClick()
-                                end
-
-                                -- 2. Nộp / Trả nhiệm vụ sau khi thu hồi và đóng UI
-                                Timer.Start(1.0, function()
-                                    pcall(function()
-                                        if _G.networkRequest then
-                                            if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(taskId) end
-                                            if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
-                                        end
-                                        if _G.UIManager then
-                                            if _G.UIID and _G.UIID.Bag_SellInfoUI then _G.UIManager.Hide(_G.UIID.Bag_SellInfoUI) end
-                                            if _G.UIID and _G.UIID.BagUI then _G.UIManager.Hide(_G.UIID.BagUI) end
-                                            _G.UIManager.Hide("Bag_SellInfoUI")
-                                            _G.UIManager.Hide("Bag_3DBagInfoUI")
-                                        end
-                                    end)
-                                end)
-                            end
-
-                        -- =========================================================================
-                        -- [MOD FEATURE]: NHIỆM VỤ DIỆT QUÁI (X/Y) & ĐỐI THOẠI NPC - ĐIỀU HƯỚNG 1 LẦN
-                        -- Mô tả: Kích hoạt TaskGo & StartCurAutoTask ĐÚNG 1 LẦN khi nhận nhiệm vụ mới.
-                        -- Khi đang đánh quái x/y, TUYỆT ĐỐI KHÔNG spam tìm đường để nhân vật tập trung đánh quái!
-                        -- =========================================================================
+                        -- C. NHIỆM VỤ DIỆT QUÁI (Bọ Tuyết...) & ĐỐI THOẠI NPC: GoTask ngay khi idle, KHÔNG spam khi đang đánh quái
                         else
                             local nowSec = os.time()
                             _G.Bot_CurrentTaskId = _G.Bot_CurrentTaskId or 0
                             _G.Bot_LastTaskNavTime = _G.Bot_LastTaskNavTime or 0
 
                             local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
+                            local isIdleTooLong = (nowSec - _G.Bot_LastTaskNavTime >= 2)
 
-                            -- Kiểm tra trạng thái đang di chuyển hoặc đang đánh quái chuẩn xác qua API engine
                             local isMoving = false
                             local isFighting = false
                             pcall(function()
                                 local me = _G.RoleManager and _G.RoleManager.me
                                 if me and me.IsMoving and me:IsMoving() then isMoving = true end
-                                if me and me.meAutoFight and me.meAutoFight.IsAutoFightOpen and me.meAutoFight:IsAutoFightOpen() then
-                                    isFighting = true
-                                end
-                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
-                                    isFighting = true
-                                end
+                                if me and (me.isFightState or (me.meAutoFight and me.meAutoFight.isAutoFight)) then isFighting = true end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then isFighting = true end
                             end)
 
-                            -- Thời gian watchdog chống kẹt: Nhiệm vụ diệt quái chờ 60s, đối thoại NPC chờ 20s
-                            local timeoutSec = (behavior == TASK_BEHAVIOR.MONSTER_KILL) and 60 or 20
-                            local isStuckTooLong = (nowSec - _G.Bot_LastTaskNavTime >= timeoutSec)
-
-                            -- CHỈ kích hoạt tìm đường ĐÚNG 1 LẦN khi nhận nhiệm vụ mới hoặc thực sự bị kẹt quá lâu
-                            if isNewTask or (isStuckTooLong and not isMoving and not isFighting) then
+                            if isNewTask or (isIdleTooLong and not isMoving and not isFighting) then
                                 _G.Bot_CurrentTaskId = taskId
                                 _G.Bot_LastTaskNavTime = nowSec
 
-                                Log(string.format("-> [ĐIỀU HƯỚNG TASK %s]: Bắt đầu di chuyển tới \"%s\" (1 LẦN DUY NHẤT)... ", tostring(taskId), tostring(taskName)), true)
+                                Log(string.format("-> [ĐIỀU HƯỚNG TASK %s]: Bắt đầu di chuyển tới \"%s\"... ", tostring(taskId), tostring(taskName)), true)
                                 pcall(function()
                                     if _G.DirectTask and _G.DirectTask.OpenNav then
                                         _G.DirectTask.OpenNav(curTask)
@@ -7667,32 +7218,19 @@ StartNewbieQuestPipeline = function()
                                     end
                                 end)
                                 pcall(function()
-                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
-                                        _G.AutoTaskManage.SetAutoTask(true)
-                                    end
                                     if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
                                         _G.AutoTaskManage.StartCurAutoTask(true)
-                                    end
-                                    local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
-                                    if taskUI and taskUI.TaskItemClick then
-                                        taskUI:TaskItemClick(taskId)
                                     end
                                 end)
                             end
 
-                            -- Nếu là nhiệm vụ diệt quái: Bật AutoFight 1 lần nếu chưa bật
                             if behavior == TASK_BEHAVIOR.MONSTER_KILL then
                                 pcall(function()
                                     local me = _G.RoleManager and _G.RoleManager.me
-                                    local isAutoFightOpen = me and me.meAutoFight and me.meAutoFight.IsAutoFightOpen and me.meAutoFight:IsAutoFightOpen()
-                                    if not isAutoFightOpen then
-                                        if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
-                                        if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
-                                        if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
-                                    end
-                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
-                                        _G.QiJiHelperData.SetAutoFightData(true)
-                                    end
+                                    if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                    if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                    if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
                                 end)
                             end
                         end
@@ -7974,9 +7512,7 @@ ConnectToTargetServer = function()
                 end
 
                 -- ĐIỀU HƯỚNG THEO CẤP ĐỘ NHÂN VẬT KHI BOT ĐANG CHẠY:
-                if currentLevel >= 20 then
-                    StartGlobal30sUpgradePipeline()
-                end
+                StartGlobal30sUpgradePipeline()
 
                 -- BỎ hoàn toàn điều kiện currentLevel >= 100 gây dừng sớm
                 -- LUÔN LUÔN cho nhân vật chạy vòng lặp làm và claim nhiệm vụ liên tục!
@@ -7985,9 +7521,26 @@ ConnectToTargetServer = function()
                 Log("=========================================================================")
                 SaveOutput()
 
-                    -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần túy, chưa can thiệp gì
-                    -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã Giftcode bên trong StartNewbieQuestPipeline
-                    StartNewbieQuestPipeline()
+                    -- Chỉ nhập code nếu Level <= 3 (tài khoản mới tạo), nếu > 3 thì bỏ qua vì đã nhập trước đó
+                    if currentLevel <= 3 and _G.RunAutoGiftcode then
+                        Log("=========================================================================")
+                        Log(">>> [LEVEL <= 3] TỰ ĐỘNG NHẬP 34 CODE & NHẬN HÒM THƯ TRƯỚC TIÊN... <<<", true)
+                        Log("=========================================================================")
+                        SaveOutput()
+                        _G.RunAutoGiftcode(function()
+                            Log("=========================================================================")
+                            Log(">>> ĐÃ NHẬN CODE & HÒM THƯ XONG! BẮT ĐẦU AUTO NHIỆM VỤ TÂN THỦ (1s/LẦN)... <<<", true)
+                            Log("=========================================================================")
+                            SaveOutput()
+                            StartNewbieQuestPipeline()
+                        end)
+                    else
+                        if currentLevel > 3 then
+                            Log(string.format("-> [LEVEL %d > 3] Đã từng nhận code -> BỎ QUA NHẬP CODE & ĐI THẲNG VÀO LÀM TIẾP NHIỆM VỤ TÂN THỦ!", currentLevel), true)
+                            SaveOutput()
+                        end
+                        StartNewbieQuestPipeline()
+                    end
             end)
         end)
 
@@ -8253,9 +7806,6 @@ _G.Bot_PauseTask = false
 _G.StartAutoFarmBot = function()
     _G.Bot_Running = true
     _G.Bot_PauseTask = false
-    _G.IsSwitchingAccount = false
-    _G.HasCreatedRoleForTarget = false
-    _G.IsRoleCreating = false
     if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
 
     local isInGame = false
@@ -8320,27 +7870,29 @@ _G.StartAutoFarmBot = function()
         ApplyFovAndSpeed()
         DismissBlockers()
 
-        if curLvl >= 20 then
-            if AutoBuyPotionsIfLow then
-                AutoBuyPotionsIfLow(50, 100)
-            end
+        if AutoBuyPotionsIfLow then
+            AutoBuyPotionsIfLow(50, 100)
+        end
 
-            if AutoClaimNewServerRewards then
-                AutoClaimNewServerRewards()
-            end
+        if AutoClaimNewServerRewards then
+            AutoClaimNewServerRewards()
+        end
 
-            if AutoClaimDailyWelfare then
-                AutoClaimDailyWelfare()
-            end
+        if AutoClaimDailyWelfare then
+            AutoClaimDailyWelfare()
         end
 
         -- BỎ hoàn toàn điều kiện curLvl >= 100 gây nhảy ra bãi farm dừng sớm
         -- LUÔN LUÔN kích hoạt StartNewbieQuestPipeline để chạy vòng lặp quét và claim nhiệm vụ 1s/lần!
         Log(string.format(">>> [CẤP ĐỘ %d] KHỞI CHẠY VÒNG LẶP CHÍNH QUÉT VÀ CLAIM NHIỆM VỤ (1s/LẦN)! <<<", curLvl), true)
         SaveOutput()
-        -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần túy, chưa can thiệp gì
-        -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã Giftcode bên trong StartNewbieQuestPipeline
-        StartNewbieQuestPipeline()
+        if curLvl <= 3 and _G.RunAutoGiftcode then
+            _G.RunAutoGiftcode(function()
+                StartNewbieQuestPipeline()
+            end)
+        else
+            StartNewbieQuestPipeline()
+        end
     else
         -- Kiểm tra xem có đang ở màn hình Chọn Nhân Vật không
         local isAtSelectRole = false
@@ -8363,27 +7915,6 @@ _G.StartAutoFarmBot = function()
             end
         end)
 
-        -- Kiểm tra xem có đang ở màn hình Tạo Nhân Vật không (LoginCreateRoleUI)
-        local isAtCreateRole = false
-        pcall(function()
-            if _G.UIManager and _G.UIManager.IsVisible then
-                if _G.UIManager.IsVisible("Login_LoginCreateRoleUI") or (_G.UIID and _G.UIID.LoginCreateRoleUI and _G.UIManager.IsVisible(_G.UIID.LoginCreateRoleUI)) then
-                    isAtCreateRole = true
-                end
-            end
-            local curCreateUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Login_LoginCreateRoleUI")
-            if curCreateUI and not IsNil(curCreateUI) then
-                isAtCreateRole = true
-            end
-        end)
-
-        if isAtCreateRole then
-            Log(">>> [PHÁT HIỆN MÀN HÌNH TẠO NHÂN VẬT]: Đang ở LoginCreateRoleUI -> Tự động tạo nhân vật Cung Thủ ở Slot 1! <<<", true)
-            SaveOutput()
-            CreateRoleAndEnterGame(1)
-            return
-        end
-
         if isAtSelectRole then
             if curRoleCount > 0 then
                 local targetIdx = _G.CurrentRoleIndex or 1
@@ -8392,9 +7923,14 @@ _G.StartAutoFarmBot = function()
                 SelectRoleByIndex(targetIdx)
                 return
             else
-                Log(">>> [TÀI KHOẢN MỚI]: Bệ đá trống / Chưa có nhân vật nào -> Tự động tạo mới nhân vật ở Slot 1! <<<", true)
+                -- BỊ KẸT BỆ ĐÁ TRỐNG (roleList == 0 như trong ảnh): Tự động Logout và Login lại từ đầu!
+                Log(">>> [PHÁT HIỆN BỆ ĐÁ TRỐNG / CHƯA CÓ DANH SÁCH NHÂN VẬT] -> Tự động Clean Logout & Login lại từ đầu để nạp đầy đủ danh sách! <<<", true)
                 SaveOutput()
-                CreateRoleAndEnterGame(1)
+                ForceLogoutToLogin()
+                Timer.Start(2.5, function()
+                    DismissBlockers()
+                    StartFullLoginProcess()
+                end)
                 return
             end
         end

@@ -1,11 +1,5 @@
 -- =========================================================================
--- [DEBUG / TEST SCRIPT]: ĐĂNG KÝ HÀNG LOẠT TÀI KHOẢN NGẦM (BATCH SDK REGISTER)
--- Cập nhật:
---   1. Cơ chế Cooldown lũy tiến: Thời gian chờ = 30 * (số lần thử lại + 1).
---      Mỗi khi có acc đăng ký THÀNH CÔNG -> reset số lần thử lại về 0!
---   2. Hiển thị RÕ RÀNG tài khoản đang bị lỗi / đếm ngược (Acc + Index)
---   3. Khi bấm Execute để DỪNG -> Thông báo chính xác đang dừng ở tài khoản nào để lần sau chỉnh START_INDEX chạy tiếp!
--- Danh sách: accvutmuvh0060@gmail.com -> accvutmuvh0500@gmail.com
+-- [EXECUTE TEST SCRIPT]: BỘ KIỂM THỬ TOÀN DIỆN CHO FARM BOT (TẠO NV, ĐẶT TÊN, LOGIN, AUTO FARM)
 -- =========================================================================
 
 pcall(function()
@@ -13,520 +7,203 @@ pcall(function()
     local function AddLog(msg)
         table.insert(logLines, msg)
         if CS and CS.UnityEngine and CS.UnityEngine.Debug and CS.UnityEngine.Debug.Log then
-            CS.UnityEngine.Debug.Log("[MOD_BATCH_REG] " .. tostring(msg))
+            CS.UnityEngine.Debug.Log("[TEST_FARM] " .. tostring(msg))
+        end
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(tostring(msg))
         end
     end
 
     local function SaveOutput()
         local fullContent = table.concat(logLines, "\n")
-        local paths = {
-            (CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath) and (CS.UnityEngine.Application.persistentDataPath .. "/output.txt"),
-            "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-        }
-        for _, p in ipairs(paths) do
-            if p and p ~= "" then
-                pcall(function()
-                    if CS.System.IO.File and CS.System.IO.File.WriteAllText then
-                        CS.System.IO.File.WriteAllText(p, fullContent)
-                    else
-                        local f = io.open(p, "w")
-                        if f then f:write(fullContent); f:close() end
-                    end
-                end)
-            end
-        end
-    end
-
-    local function SafeIsNil(uObj)
-        if uObj == nil then return true end
-        if _G.IsNil then return _G.IsNil(uObj) end
-        local ok, res = pcall(function() return uObj:Equals(nil) end)
-        if ok and res then return true end
-        return false
-    end
-
-    -- =========================================================================
-    -- HIỂN THỊ BANNER CHỮ VÀNG MIDDLE TOP (CHUẨN LOG CỦA BẢN FARM)
-    -- =========================================================================
-    local function ShowTopYellowNotice(msg, duration)
+        local p = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
         pcall(function()
-            if _G.Mod_ShowTopNotice then
-                _G.Mod_ShowTopNotice(msg, duration or 3.5)
-                return
-            end
-
-            if not msg or msg == "" then return end
-            duration = duration or 3.5
-
-            local bannerName = "Mod_TopNoticeBanner"
-            local go = CS.UnityEngine.GameObject.Find(bannerName)
-            if not go or SafeIsNil(go) then
-                go = CS.UnityEngine.GameObject(bannerName)
-                CS.UnityEngine.Object.DontDestroyOnLoad(go)
-
-                local canvas = go:AddComponent(typeof(CS.UnityEngine.Canvas))
-                canvas.renderMode = CS.UnityEngine.RenderMode.ScreenSpaceOverlay
-                canvas.sortingOrder = 32767
-
-                local cs = go:AddComponent(typeof(CS.UnityEngine.UI.CanvasScaler))
-                cs.uiScaleMode = CS.UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize
-                cs.referenceResolution = CS.UnityEngine.Vector2(1920, 1080)
-                cs.matchWidthOrHeight = 0.5
-
-                go:AddComponent(typeof(CS.UnityEngine.UI.GraphicRaycaster))
-
-                -- Panel nền tối mờ ở mép trên giữa màn hình (Middle Top)
-                local bgObj = CS.UnityEngine.GameObject("Bg")
-                bgObj.transform:SetParent(go.transform, false)
-                local bgRt = bgObj:AddComponent(typeof(CS.UnityEngine.RectTransform))
-                bgRt.anchorMin = CS.UnityEngine.Vector2(0.5, 1.0)
-                bgRt.anchorMax = CS.UnityEngine.Vector2(0.5, 1.0)
-                bgRt.pivot = CS.UnityEngine.Vector2(0.5, 1.0)
-                bgRt.anchoredPosition = CS.UnityEngine.Vector2(0, -15)
-                bgRt.sizeDelta = CS.UnityEngine.Vector2(1250, 52)
-
-                local bgImg = bgObj:AddComponent(typeof(CS.UnityEngine.UI.Image))
-                bgImg.color = CS.UnityEngine.Color(0, 0, 0, 0.75)
-
-                -- Text chữ vàng kim rực sáng
-                local textObj = CS.UnityEngine.GameObject("NoticeText")
-                textObj.transform:SetParent(bgObj.transform, false)
-                local rt = textObj:AddComponent(typeof(CS.UnityEngine.RectTransform))
-                rt.anchorMin = CS.UnityEngine.Vector2(0, 0)
-                rt.anchorMax = CS.UnityEngine.Vector2(1, 1)
-                rt.pivot = CS.UnityEngine.Vector2(0.5, 0.5)
-                rt.sizeDelta = CS.UnityEngine.Vector2(-20, 0)
-                rt.anchoredPosition = CS.UnityEngine.Vector2(0, 0)
-
-                local txt = textObj:AddComponent(typeof(CS.UnityEngine.UI.Text))
-                local font = CS.UnityEngine.Resources.GetBuiltinResource(typeof(CS.UnityEngine.Font), "Arial.ttf")
-                if not font then
-                    local anyTxt = CS.UnityEngine.Object.FindObjectOfType(typeof(CS.UnityEngine.UI.Text))
-                    if anyTxt and anyTxt.font then font = anyTxt.font end
-                end
-                if font then txt.font = font end
-                txt.fontSize = 24
-                txt.fontStyle = CS.UnityEngine.FontStyle.Bold
-                txt.alignment = CS.UnityEngine.TextAnchor.MiddleCenter
-                txt.color = CS.UnityEngine.Color(1.0, 0.88, 0.1, 1.0) -- Màu vàng kim rực sáng
-
-                local outline = textObj:AddComponent(typeof(CS.UnityEngine.UI.Outline))
-                outline.effectColor = CS.UnityEngine.Color(0, 0, 0, 0.95)
-                outline.effectDistance = CS.UnityEngine.Vector2(2, -2)
-            end
-
-            go:SetActive(true)
-            local txtComp = go:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
-            if txtComp then
-                txtComp.text = tostring(msg)
-            end
-
-            _G.Mod_TopNoticeSeq = (_G.Mod_TopNoticeSeq or 0) + 1
-            local curSeq = _G.Mod_TopNoticeSeq
-            if _G.Timer and _G.Timer.Start then
-                _G.Timer.Start(duration, function()
-                    if _G.Mod_TopNoticeSeq == curSeq and go and not SafeIsNil(go) then
-                        go:SetActive(false)
-                    end
-                end)
+            if CS.System.IO.File and CS.System.IO.File.WriteAllText then
+                CS.System.IO.File.WriteAllText(p, fullContent)
+            else
+                local f = io.open(p, "w")
+                if f then f:write(fullContent); f:close() end
             end
         end)
     end
 
-    -- =========================================================================
-    -- [CƠ CHẾ TOGGLE]: NẾU ĐANG CHẠY MÀ BẤM EXECUTE -> DỪNG NGAY TIẾN TRÌNH!
-    -- =========================================================================
-    if _G.Mod_BatchRegisterRunning then
-        _G.Mod_BatchRegisterRunning = false
-        local curAcc = _G.Mod_CurrentRegAccount or "Chưa xác định"
-        local curIdx = _G.Mod_CurrentRegIndex or "N/A"
+    AddLog("=========================================================================")
+    AddLog(">>> [EXECUTE TEST]: BẮT ĐẦU KIỂM TRA & KÍCH HOẠT QUY TRÌNH FARM <<<")
+    AddLog("=========================================================================")
 
-        AddLog("==================================================================")
-        AddLog(">>> [NGƯỜI DÙNG DỪNG LỆNH]: ĐÃ DỪNG TIẾN TRÌNH ĐĂNG KÝ HÀNG LOẠT! <<<")
-        AddLog(string.format(">>> ĐANG DỪNG TẠI: %s (Index: %s) <<<", tostring(curAcc), tostring(curIdx)))
-        AddLog(string.format(">>> LẦN SAU CHẠY TIẾP: Hãy đặt START_INDEX = %s trong input.txt! <<<", tostring(curIdx)))
-        AddLog("==================================================================")
+    -- Helper sinh tên độc nhất
+    local function GenName()
+        local NamePrefixes = { "Rex", "Leo", "Kai", "Ken", "Zin", "Max", "Vut", "Roy", "Ben", "Sam", "Tom", "Zen", "Lux", "Fox", "Dan", "Jin", "Jay", "Ron", "Ace", "Neo", "Sky", "Ray", "Taj", "Kev", "Ian", "Eli", "Guy", "Lee", "Ted", "Val", "Zak" }
+        local p = NamePrefixes[math.random(1, #NamePrefixes)]
+        local t = (os.time() + math.random(1, 999)) % 46656
+        local b36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+        local s = ""
+        for i = 1, 3 do
+            local rem = t % 36
+            s = string.sub(b36, rem + 1, rem + 1) .. s
+            t = math.floor(t / 36)
+        end
+        return p .. s
+    end
 
-        local stopNotice = string.format(">>> [ĐÃ DỪNG]: TẠI %s (STT %s) -> LẦN SAU SET START_INDEX = %s <<<", tostring(curAcc), tostring(curIdx), tostring(curIdx))
-        ShowTopYellowNotice(stopNotice, 8.0)
+    -- 1. KIỂM TRA ĐANG Ở TRONG GAME WORLD
+    local isInGame = false
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    if (_G.LoginData and _G.LoginData.InGame) or (pMe and (pMe.level or (pMe.data and pMe.data.level))) then
+        isInGame = true
+    end
+
+    if isInGame then
+        local lvl = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
+        local rName = (pMe and pMe.name) or (pMe and pMe.data and pMe.data.name) or "Me"
+        AddLog(string.format("-> [TRONG GAME]: Nhân vật %s (Cấp %d) đang trong thế giới game!", tostring(rName), lvl))
+
+        -- Kiểm tra nếu đang kẹt ở giao diện Thu Hồi (Task 3010)
+        local curTask = _G.TaskData and _G.TaskData.curMainTask
+        local taskId = (curTask and curTask.id) or 0
+        local isSellUIOpen = false
+        pcall(function()
+            if _G.UIManager and _G.UIManager.IsVisible then
+                isSellUIOpen = _G.UIManager.IsVisible("Bag_SellInfoUI") or (_G.UIID and _G.UIID.Bag_SellInfoUI and _G.UIManager.IsVisible(_G.UIID.Bag_SellInfoUI))
+            end
+        end)
+
+        if taskId == 3010 or isSellUIOpen then
+            AddLog("-> Phát hiện nhiệm vụ Thu Hồi (Task 3010)! Đang tự động giải phóng...")
+            local candidate = nil
+            if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                for _, item in pairs(_G.BagInfoData.TotalItems) do
+                    if item and item.id and item.count and item.count > 0 and item.tblItem then
+                        if item.tblItem.type == 1 then candidate = item break end
+                    end
+                end
+                if not candidate then
+                    for _, item in pairs(_G.BagInfoData.TotalItems) do
+                        if item and item.id and item.count and item.count > 0 then candidate = item break end
+                    end
+                end
+            end
+
+            local wayType = (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
+            if candidate then
+                local sendMap = {}
+                sendMap[candidate.id] = 1
+                AddLog(string.format("-> Gửi lệnh thu hồi 1 item (%s) để xong nhiệm vụ...", tostring(candidate.tblItem and candidate.tblItem.name or candidate.id)))
+                if _G.networkRequest and _G.networkRequest.ReqItemRecycle then
+                    _G.networkRequest.ReqItemRecycle(sendMap, wayType)
+                elseif _G.NetManager and _G.ItemRecycleMessage and _G.ItemRecycleMessage.ReqItemRecycle then
+                    _G.NetManager.Send(_G.ItemRecycleMessage.ReqItemRecycle, { recycleItems = sendMap, recycleType = wayType })
+                end
+            end
+
+            Timer.Start(1.0, function()
+                pcall(function()
+                    if _G.networkRequest then
+                        if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(3010) end
+                        if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(3010) end
+                    end
+                    if _G.UIManager then
+                        if _G.UIID and _G.UIID.Bag_SellInfoUI then _G.UIManager.Hide(_G.UIID.Bag_SellInfoUI) end
+                        if _G.UIID and _G.UIID.BagUI then _G.UIManager.Hide(_G.UIID.BagUI) end
+                        _G.UIManager.Hide("Bag_SellInfoUI")
+                        _G.UIManager.Hide("Bag_3DBagInfoUI")
+                    end
+                end)
+            end)
+        end
+
+
+        AddLog("-> Kích hoạt chu trình Bot Auto Farm & Quest Pipeline...")
+        if _G.StartAutoFarmBot then
+            _G.StartAutoFarmBot()
+        end
         SaveOutput()
         return
     end
 
-    -- Đánh dấu cờ đang chạy
-    _G.Mod_BatchRegisterRunning = true
-
-    -- =========================================================================
-    -- HỆ THỐNG MÃ HÓA CHUẨN SDK (XXTEA + MD5 + BASE64)
-    -- =========================================================================
-    local SDK_SALT = "oxKddFw0opc2ayAqm-WJCfzwdukeFwMFxPy6ClJWe_s"
-    local SDK_SIGNATURE = "YhAY9FjSeo2WC7oeyhhoGZupa8g"
-
-    local function MD5(str)
-        if CS and CS.PCUtility and CS.PCUtility.Md5 then
-            return string.lower(CS.PCUtility.Md5(str))
+    -- 2. KIỂM TRA ĐANG Ở MÀN HÌNH TẠO NHÂN VẬT (LoginCreateRoleUI)
+    local isAtCreateUI = false
+    local createUI = nil
+    pcall(function()
+        if _G.UIManager and _G.UIManager.GetUiByName then
+            createUI = _G.UIManager.GetUiByName("Login_LoginCreateRoleUI")
         end
-        return ""
-    end
-
-    local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-    local function Base64Encode(bytes)
-        local result = {}
-        local len = #bytes
-        for i = 1, len, 3 do
-            local b1 = string.byte(bytes, i)
-            local b2 = (i + 1 <= len) and string.byte(bytes, i + 1) or 0
-            local b3 = (i + 2 <= len) and string.byte(bytes, i + 2) or 0
-            
-            local n = (b1 << 16) | (b2 << 8) | b3
-            
-            local c1 = (n >> 18) & 63
-            local c2 = (n >> 12) & 63
-            local c3 = (n >> 6) & 63
-            local c4 = n & 63
-            
-            table.insert(result, string.sub(b64chars, c1 + 1, c1 + 1))
-            table.insert(result, string.sub(b64chars, c2 + 1, c2 + 1))
-            if i + 1 <= len then
-                table.insert(result, string.sub(b64chars, c3 + 1, c3 + 1))
-            else
-                table.insert(result, "=")
-            end
-            if i + 2 <= len then
-                table.insert(result, string.sub(b64chars, c4 + 1, c4 + 1))
-            else
-                table.insert(result, "=")
+        if _G.UIManager and _G.UIManager.IsVisible then
+            if _G.UIManager.IsVisible("Login_LoginCreateRoleUI") or (_G.UIID and _G.UIID.LoginCreateRoleUI and _G.UIManager.IsVisible(_G.UIID.LoginCreateRoleUI)) then
+                isAtCreateUI = true
             end
         end
-        return table.concat(result)
-    end
-
-    local function UrlEncode(str)
-        if not str then return "" end
-        str = string.gsub(str, "\n", "\r\n")
-        str = string.gsub(str, "([^%w %-%_%.%~])", function(c)
-            return string.format("%%%02X", string.byte(c))
-        end)
-        str = string.gsub(str, " ", "+")
-        return str
-    end
-
-    local function ToIntArray(bStr, isIncludeLength)
-        local len = #bStr
-        local n = ((len & 3) == 0) and (len >> 2) or ((len >> 2) + 1)
-        local result = {}
-        local totalInts = isIncludeLength and (n + 1) or n
-        for i = 1, totalInts do result[i] = 0 end
-        if isIncludeLength then result[totalInts] = len end
-        for i = 1, len do
-            local byteVal = string.byte(bStr, i)
-            local idx = (i - 1) >> 2
-            local shift = ((i - 1) & 3) << 3
-            result[idx + 1] = result[idx + 1] | (byteVal << shift)
+        if createUI and not IsNil(createUI) then
+            isAtCreateUI = true
         end
-        return result
-    end
+    end)
 
-    local function ToByteArray(ints)
-        local len = #ints << 2
-        local bytes = {}
-        for i = 1, len do
-            local idx = (i - 1) >> 2
-            local shift = ((i - 1) & 3) << 3
-            local byteVal = (ints[idx + 1] >> shift) & 255
-            table.insert(bytes, string.char(byteVal))
-        end
-        return table.concat(bytes)
-    end
+    if isAtCreateUI then
+        local newName = GenName()
+        local targetCareer = 13 -- Cung Thủ (Archer)
+        local targetSex = 1 -- BẮT BUỘC 1
 
-    local function FixKey(kStr)
-        local len = #kStr
-        if len == 16 then return kStr end
-        local bytes = {}
-        for i = 1, 16 do
-            if i <= len then
-                table.insert(bytes, string.sub(kStr, i, i))
-            else
-                table.insert(bytes, string.char(0))
-            end
-        end
-        return table.concat(bytes)
-    end
+        AddLog(string.format("-> [MÀN HÌNH TẠO NHÂN VẬT]: Phát hiện LoginCreateRoleUI! Đang tạo Cung Thủ tên: %s", newName))
+        if _G.LoginData then _G.LoginData.playerCreateName = newName end
 
-    local function XXTEA_Encrypt(dataStr, keyStr)
-        if #dataStr == 0 then return dataStr end
-        local v = ToIntArray(dataStr, true)
-        local k = ToIntArray(FixKey(keyStr), false)
-        local n = #v - 1
-        if n < 1 then return dataStr end
-        
-        local z = v[#v]
-        local y = v[1]
-        local DELTA = 0x9E3779B9
-        local q = 6 + (52 // (#v))
-        local sumVal = 0
-        local MASK = 0xFFFFFFFF
-        
-        while q > 0 do
-            sumVal = (sumVal + DELTA) & MASK
-            local e = (sumVal >> 2) & 3
-            for p = 0, n - 1 do
-                y = v[p + 2]
-                local kIdx = ((p & 3) ~ e) + 1
-                local mx = ((( (z >> 5) ~ (y << 2) ) + ( (y >> 3) ~ (z << 4) )) ~ ((sumVal ~ y) + (k[kIdx] ~ z))) & MASK
-                v[p + 1] = (v[p + 1] + mx) & MASK
-                z = v[p + 1]
-            end
-            y = v[1]
-            local kIdx = ((n & 3) ~ e) + 1
-            local mx = ((( (z >> 5) ~ (y << 2) ) + ( (y >> 3) ~ (z << 4) )) ~ ((sumVal ~ y) + (k[kIdx] ~ z))) & MASK
-            v[#v] = (v[#v] + mx) & MASK
-            z = v[#v]
-            q = q - 1
-        end
-        
-        return ToByteArray(v)
-    end
-
-    local function GenerateRandomEquip(seedIdx)
-        local seed = string.format("dev_reg_%d_%d_%d_%d", os.time(), math.random(100000, 999999), math.random(100000, 999999), seedIdx or 0)
-        return MD5(seed)
-    end
-
-    -- =========================================================================
-    -- CẤU HÌNH DANH SÁCH ĐĂNG KÝ HÀNG LOẠT
-    -- =========================================================================
-    local START_INDEX    = 60
-    local END_INDEX      = 500
-    local PASSWORD       = "12345ZXC"
-    local DELAY_SUCCESS  = 3.0   -- Nghỉ 3s sau mỗi lần thành công
-    local BASE_COOLDOWN  = 30    -- Thời gian chờ cơ sở = 30s
-    local REG_URL        = "https://user.muvh.vn/vie/reg_by_email"
-
-    local totalAccounts = END_INDEX - START_INDEX + 1
-    local successAccounts = {}
-    local consecutiveFailures = 0 -- Đếm số lần lỗi liên tiếp (tự reset = 0 khi có acc thành công)
-
-    math.randomseed(os.time())
-
-    AddLog("==================================================================")
-    AddLog(string.format("   KHỞI ĐỘNG ĐĂNG KÝ HÀNG LOẠT (%04d -> %04d: TỔNG %d ACC)", START_INDEX, END_INDEX, totalAccounts))
-    AddLog("   Mật khẩu: " .. PASSWORD)
-    AddLog(string.format("   Cơ chế: Thành công nghỉ %ds | Cooldown lũy tiến = %ds * (số lần thử lại + 1)", DELAY_SUCCESS, BASE_COOLDOWN))
-    AddLog("   (Mẹo: Bấm Execute thêm lần nữa bất kỳ lúc nào để DỪNG TIẾN TRÌNH)")
-    AddLog("   Thời gian bắt đầu: " .. os.date("%Y-%m-%d %H:%M:%S"))
-    AddLog("==================================================================")
-    ShowTopYellowNotice(string.format(">>> BẮT ĐẦU ĐĂNG KÝ %d ACC (%04d -> %04d) | BẤM EXEC ĐỂ DỪNG <<<", totalAccounts, START_INDEX, END_INDEX), 3.5)
-    SaveOutput()
-
-    local RegisterAccountByIndex = nil
-
-    -- Hàm đếm ngược chờ Cooldown lũy tiến = BASE_COOLDOWN * (consecutiveFailures + 1)
-    local function StartCooldownAndRetry(currentIdx, account, errMsg)
-        if not _G.Mod_BatchRegisterRunning then return end
-
-        _G.Mod_CurrentRegIndex = currentIdx
-        _G.Mod_CurrentRegAccount = account
-
-        local retryCount = consecutiveFailures + 1
-        consecutiveFailures = consecutiveFailures + 1
-
-        -- Cooldown lũy tiến: 30s * số lần thử lại
-        local waitSeconds = BASE_COOLDOWN * retryCount
-
-        AddLog("------------------------------------------------------------------")
-        AddLog(string.format(">>> [LỖI TẠI ACC %04d]: %s <<<", currentIdx, account))
-        AddLog(string.format("   - Lý do: %s", tostring(errMsg)))
-        AddLog(string.format("   - Lần lỗi liên tiếp: %d", retryCount))
-        AddLog(string.format("   - Cooldown lũy tiến: %ds (%ds * %d lần)", waitSeconds, BASE_COOLDOWN, retryCount))
-        AddLog(string.format("   - [LƯU Ý]: Nếu dừng lúc này, lần sau hãy đặt START_INDEX = %d để chạy tiếp!", currentIdx))
-        AddLog("------------------------------------------------------------------")
-        SaveOutput()
-
-        local function CountdownStep(remainSec)
-            if not _G.Mod_BatchRegisterRunning then
-                AddLog(string.format("   -> [DỪNG]: Đã hủy đếm ngược tại acc %s (Index: %d) theo lệnh người dùng!", account, currentIdx))
-                SaveOutput()
-                return
-            end
-
-            if remainSec <= 0 then
-                ShowTopYellowNotice(string.format(">>> [HẾT GIỜ]: Đang thử lại %s (Index %d | Lần %d)... <<<", account, currentIdx, retryCount), 2.5)
-                AddLog(string.format("   -> [HẾT GIỜ]: Bắt đầu thử lại %s (Index %d | Lần %d)...", account, currentIdx, retryCount))
-                SaveOutput()
-                RegisterAccountByIndex(currentIdx)
-                return
-            end
-
-            -- Hiển thị rõ: Số giây còn lại | Tài khoản đang lỗi | STT Index | Lần thử lại
-            local noticeMsg = string.format(">>> [LỖI ACC %04d | CHỜ %02ds (LẦN %d)]: %s <<<", currentIdx, remainSec, retryCount, tostring(errMsg))
-            ShowTopYellowNotice(noticeMsg, 1.2)
-
-            if _G.Timer and _G.Timer.Start then
-                _G.Timer.Start(1.0, function()
-                    CountdownStep(remainSec - 1)
-                end)
-            else
-                RegisterAccountByIndex(currentIdx)
-            end
-        end
-
-        CountdownStep(waitSeconds)
-    end
-
-    RegisterAccountByIndex = function(currentIdx)
-        -- Kiểm tra nếu người dùng đã bấm DỪNG
-        if not _G.Mod_BatchRegisterRunning then
-            AddLog(">>> [DỪNG]: Tiến trình đăng ký đã dừng theo yêu cầu người dùng! <<<")
-            SaveOutput()
-            return
-        end
-
-        -- Kiểm tra nếu đã hoàn tất toàn bộ danh sách
-        if currentIdx > END_INDEX then
-            _G.Mod_BatchRegisterRunning = false
-            _G.Mod_CurrentRegIndex = nil
-            _G.Mod_CurrentRegAccount = nil
-
-            AddLog("==================================================================")
-            AddLog(string.format(">>> HOÀN THÀNH TẤT CẢ! THÀNH CÔNG: %d/%d TÀI KHOẢN <<<", #successAccounts, totalAccounts))
-            for i, acc in ipairs(successAccounts) do
-                AddLog(string.format("   [%03d] %s | UID: %s", i, acc.account, tostring(acc.uid)))
-            end
-            AddLog("==================================================================")
-
-            local finishMsg = string.format(">>> HOÀN TẤT ĐĂNG KÝ: THÀNH CÔNG %d/%d TÀI KHOẢN! <<<", #successAccounts, totalAccounts)
-            ShowTopYellowNotice(finishMsg, 6.0)
-            SaveOutput()
-            return
-        end
-
-        local stepNum = currentIdx - START_INDEX + 1
-        local account = string.format("accvutmuvh%04d@gmail.com", currentIdx)
-
-        -- Cập nhật biến toàn cục vị trí tài khoản hiện tại
-        _G.Mod_CurrentRegIndex = currentIdx
-        _G.Mod_CurrentRegAccount = account
-
-        AddLog(string.format("\n--- [%d/%d] BẮT ĐẦU ĐĂNG KÝ: %s (Index %d) ---", stepNum, totalAccounts, account, currentIdx))
-        ShowTopYellowNotice(string.format(">>> [%d/%d] ĐANG TẠO: %s (Đã xong %d acc) <<<", stepNum, totalAccounts, account, #successAccounts), 2.5)
-        SaveOutput()
-
-        -- Mỗi lần gọi sinh ngẫu nhiên 1 Fake Device ID mới
-        local fakeEquip = GenerateRandomEquip(currentIdx + (consecutiveFailures or 0) * 1000)
-        AddLog("   -> Sinh Fake Equip mới: " .. tostring(fakeEquip))
-
-        local params = {
-            username = account,
-            pass = MD5(PASSWORD),
-            upgrade_account = "0",
-            appid = "300270",
-            equip = fakeEquip,
-            device_id = fakeEquip,
-            device_name = "SM-G975F",
-            reg_from = "1",
-            reg_type = "0",
-            ad_id = "0",
-            app_version = "1.0.0",
-            sdk_version = "1.0.7",
-            token = "",
-            package_name = "com.vnyh.gp",
-            _af = UrlEncode("appid=300270&gps_adid=&appsflyer_id="),
-            _dana_v2 = UrlEncode("terminal=android&bundle_name=MU Vĩnh Hằng&bundle_id=com.vnyh.gp&appid=300270&did=" .. fakeEquip),
-            __hw = UrlEncode("_res=1920*1080&bundle_name=MU Vĩnh Hằng&did=" .. fakeEquip)
-        }
-
-        -- Tính sign
-        local signKeys = {}
-        for k, _ in pairs(params) do
-            if k ~= "sign" and not string.find(k, "__") then
-                table.insert(signKeys, k)
-            end
-        end
-        table.sort(signKeys)
-        local signItems = {}
-        for _, k in ipairs(signKeys) do
-            table.insert(signItems, k .. "=" .. UrlEncode(tostring(params[k])))
-        end
-        params.sign = MD5(SDK_SALT .. table.concat(signItems, "&"))
-
-        -- Mã hóa XXTEA
-        local allKeys = {}
-        for k, _ in pairs(params) do table.insert(allKeys, k) end
-        table.sort(allKeys)
-        local allItems = {}
-        for _, k in ipairs(allKeys) do
-            table.insert(allItems, UrlEncode(k) .. "=" .. UrlEncode(tostring(params[k])))
-        end
-        local safeSignStr = table.concat(allItems, "&")
-
-        local t = tostring(os.time())
-        local keyStr = MD5(SDK_SIGNATURE .. t)
-        local encBytes = XXTEA_Encrypt(safeSignStr, keyStr)
-        local o_b64 = Base64Encode(encBytes)
-
-        local form = CS.UnityEngine.WWWForm()
-        form:AddField("t", t)
-        form:AddField("o", o_b64)
-
-        local headers = {
-            ["encrypt-type"] = "xxtea",
-            ["Accept"] = "application/json"
-        }
-
-        _G.Http.RequestHaveHandleArg(REG_URL, form, headers, function(text)
-            -- Kiểm tra nếu người dùng đã bấm dừng trong lúc đang chờ request mạng
-            if not _G.Mod_BatchRegisterRunning then
-                AddLog("   -> [DỪNG]: Đã nhận kết quả nhưng bỏ qua vì tiến trình đã bị dừng!")
-                SaveOutput()
-                return
-            end
-
-            if string.isNullOrEmpty(text) then
-                local errMsg = "Máy chủ không phản hồi (Timeout)"
-                AddLog("   [LỖI] " .. errMsg)
-                StartCooldownAndRetry(currentIdx, account, errMsg)
-                return
-            end
-
-            local resp = nil
-            pcall(function() resp = _G.json.decode(text) end)
-
-            if resp and (resp.ret == 0 or resp.ret == "0") and resp.data then
-                local newUid = tostring(resp.data.user_id or "N/A")
-                AddLog(string.format("   -> [THÀNH CÔNG] Đã tạo xong! UID: %s", newUid))
-                table.insert(successAccounts, { account = account, uid = newUid, token = tostring(resp.data.access_token or "") })
-
-                -- RESET SỐ LẦN LỖI LIÊN TIẾP VỀ 0 KHI CÓ ACC THÀNH CÔNG
-                consecutiveFailures = 0
-
-                local stepSuccessMsg = string.format(">>> [THÀNH CÔNG %d/%d] %s (UID: %s) <<<", stepNum, totalAccounts, account, newUid)
-                ShowTopYellowNotice(stepSuccessMsg, 2.5)
-                SaveOutput()
-
-                -- Thành công: Chờ DELAY_SUCCESS giây rồi tiến hành đăng ký tài khoản tiếp theo
-                if _G.Timer and _G.Timer.Start then
-                    _G.Timer.Start(DELAY_SUCCESS, function()
-                        if _G.Mod_BatchRegisterRunning then
-                            RegisterAccountByIndex(currentIdx + 1)
-                        end
-                    end)
-                else
-                    if _G.Mod_BatchRegisterRunning then
-                        RegisterAccountByIndex(currentIdx + 1)
-                    end
+        if createUI and not IsNil(createUI) then
+            pcall(function()
+                if createUI.SelectCareer then createUI:SelectCareer(targetCareer) end
+                if createUI.tog_archer and createUI.tog_archer.SetIsOn then createUI.tog_archer:SetIsOn(true) end
+                if createUI.InputField_Name and createUI.InputField_Name.SetInputText then
+                    createUI.InputField_Name:SetInputText(newName)
                 end
-            else
-                local errCode = resp and resp.ret or "Unknown"
-                local errMsg = resp and (resp.msg or resp.message) or "Thao tác quá nhiều"
-                AddLog(string.format("   -> [CHẠM GIỚI HẠN] ret=%s: %s", tostring(errCode), tostring(errMsg)))
-                
-                -- Gặp lỗi thao tác quá nhiều / rate limit -> Tự động đếm ngược lũy tiến rồi thử lại acc này
-                StartCooldownAndRetry(currentIdx, account, errMsg)
+                if createUI.Button_OkOnClick then
+                    AddLog("-> Kích hoạt Button_OkOnClick trực tiếp trên UI...")
+                    createUI:Button_OkOnClick()
+                end
+            end)
+        else
+            AddLog("-> Gửi gói tin ReqCreateRole trực tiếp tới server...")
+            if _G.networkRequest and _G.networkRequest.ReqCreateRole then
+                _G.networkRequest.ReqCreateRole(newName, targetSex, targetCareer)
+            elseif _G.NetManager and _G.NetManager.Send and _G.UserMessage and _G.UserMessage.ReqCreateRole then
+                _G.NetManager.Send(_G.UserMessage.ReqCreateRole, { roleName = newName, sex = targetSex, career = targetCareer })
             end
-        end)
+        end
+        SaveOutput()
+        return
     end
 
-    -- Khởi chạy đăng ký tài khoản đầu tiên
-    RegisterAccountByIndex(START_INDEX)
+    -- 3. KIỂM TRA ĐANG Ở MÀN HÌNH CHỌN NHÂN VẬT (LoginRoleUI)
+    local isAtSelectUI = false
+    local roleCount = 0
+    pcall(function()
+        if _G.LoginData and _G.LoginData.roleList then
+            roleCount = #_G.LoginData.roleList
+        end
+        if _G.UIManager and _G.UIManager.IsVisible then
+            if _G.UIManager.IsVisible("Login_LoginRoleUI") or (_G.UIID and _G.UIID.LoginRoleUI and _G.UIManager.IsVisible(_G.UIID.LoginRoleUI)) then
+                isAtSelectUI = true
+            end
+        end
+    end)
+
+    if isAtSelectUI or roleCount > 0 then
+        if roleCount > 0 then
+            AddLog(string.format("-> [CHỌN NHÂN VẬT]: Tìm thấy %d nhân vật -> Đang chọn Slot 1 để vào game...", roleCount))
+            if _G.SelectRoleByIndex then
+                _G.SelectRoleByIndex(1)
+            end
+        else
+            AddLog("-> [BỆ ĐÁ TRỐNG]: Chưa có nhân vật nào -> Tự động gọi CreateRoleAndEnterGame(1)...")
+            if _G.CreateRoleAndEnterGame then
+                _G.CreateRoleAndEnterGame(1)
+            end
+        end
+        SaveOutput()
+        return
+    end
+
+    -- 4. ĐANG Ở MÀN HÌNH SPLASH / LOGIN
+    AddLog("-> [MÀN HÌNH SPLASH / LOGIN]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server...")
+    if _G.StartAutoFarmBot then
+        _G.StartAutoFarmBot()
+    end
+    SaveOutput()
 end)
