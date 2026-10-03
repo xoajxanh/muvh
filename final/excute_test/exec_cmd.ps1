@@ -1,1 +1,4 @@
-git status --short final/modified_lua_dev_farm/
+if (Test-Path "$PSScriptRoot\diff_out.txt") {
+    Remove-Item "$PSScriptRoot\diff_out.txt" -Force
+    Write-Host "Removed temporary diff_out.txt"
+}

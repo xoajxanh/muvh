@@ -5266,6 +5266,242 @@ local function CreateModUI()
             end
             _G.Mod_GetItemDecision = Mod_GetItemDecision
 
+            -- =========================================================================
+            -- [MOD FEATURE]: BỘ LỌC BẢO HỘ & SO KHỚP MỤC TIÊU SMART TARGET / AUTO BUFF (SMART TARGET & EXCLUSION)
+            -- Mô tả:
+            -- 1. Tự động nhận diện và bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy (IsPlayerProtected).
+            -- 2. Hỗ trợ đa điều kiện (phân tách bởi ';', ',', '|', xuống dòng) và Server ID (s393, S393., 393...).
+            -- 3. HỖ TRỢ TIỀN TỐ NGOẠI LỆ '-' (VD: -Dino;s395): Token có dấu '-' được kiểm tra ĐẦU TIÊN.
+            --    Nếu mục tiêu khớp bất kỳ token ngoại lệ nào -> Lập tức bỏ qua (return false), không target!
+            -- 4. Khởi tạo ở phạm vi Mod UI để dùng chung cho Auto PK, Auto Buff và Skill Hook ngay từ Login Scene.
+            -- =========================================================================
+            local function IsPlayerProtected(role)
+                if not role or role.isDead then return false end
+                local isProt = false
+                pcall(function()
+                    local protectTime = 0
+                    if role.GetProtectTIme then
+                        protectTime = role:GetProtectTIme() or 0
+                    end
+                    if (not protectTime or protectTime == 0) and role.data then
+                        protectTime = role.data.hangUpProtectionTime or role.data.crossServerHangUpTime or 0
+                    end
+                    if (not protectTime or protectTime == 0) then
+                        protectTime = role.hangUpProtectionTime or role.crossServerHangUpTime or 0
+                    end
+
+                    local protectNum = tonumber(tostring(protectTime)) or 0
+                    if protectNum > 0 then
+                        local nowMs = tonumber(tostring((_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0)) or 0
+                        if nowMs > 0 and protectNum > nowMs then
+                            isProt = true
+                            return
+                        end
+                        local nowSec = tonumber(tostring((_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time())) or 0
+                        if protectNum > nowSec and protectNum < 1000000000000 then
+                            isProt = true
+                            return
+                        end
+                    end
+
+                    if role.killMonsterEffect then
+                        if role.killMonsterEffect.GetModelActive and role.killMonsterEffect:GetModelActive() then
+                            isProt = true
+                            return
+                        end
+                        if role.killMonsterEffect.isModelActive then
+                            isProt = true
+                            return
+                        end
+                    end
+                end)
+                return isProt
+            end
+            _G.Mod_IsPlayerProtected = IsPlayerProtected
+
+            local function isMatchSingleToken(p, token)
+                if not token or token == "" or not p then return false end
+                local cleanToken = string.match(token, "^%s*(.-)%s*$")
+                if not cleanToken or cleanToken == "" then return false end
+
+                -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
+                local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
+                    string.match(cleanToken, "^[Ss](%d+)$") or
+                    string.match(cleanToken, "^(%d+)$")
+
+                local targetNum = sId and tonumber(sId) or nil
+                if targetNum then
+                    local pSid = p.serverId or p.sid or p.serverID or p.server_id
+                    if not pSid and p.data then
+                        pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
+                    end
+                    if pSid and tonumber(pSid) == targetNum then
+                        return true
+                    end
+                end
+
+                -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
+                local strList = {}
+                local pName = ""
+                if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
+                if p.GetName then
+                    pcall(function()
+                        local n = p:GetName()
+                        if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
+                    end)
+                end
+                if p.GetUnionName then
+                    pcall(function()
+                        local u = p:GetUnionName()
+                        if u then
+                            table.insert(strList, tostring(u))
+                            table.insert(strList, "[" .. tostring(u) .. "]")
+                        end
+                    end)
+                end
+                if p.data then
+                    if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
+                    if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
+                    if p.data.unionName then
+                        table.insert(strList, tostring(p.data.unionName))
+                        table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
+                    end
+                    local dataSid = p.data.serverId or p.data.sid
+                    if dataSid then
+                        table.insert(strList, "S" .. tostring(dataSid) .. ".")
+                        table.insert(strList, "S" .. tostring(dataSid))
+                    end
+                end
+                if p.serverId then
+                    table.insert(strList, "S" .. tostring(p.serverId) .. ".")
+                    table.insert(strList, "S" .. tostring(p.serverId))
+                end
+                if p.showName then table.insert(strList, tostring(p.showName)) end
+                if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
+
+                -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
+                local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
+                if sidVal and pName ~= "" then
+                    local sValStr = tostring(sidVal)
+                    table.insert(strList, "S" .. sValStr .. "." .. pName)
+                    table.insert(strList, "S" .. sValStr .. ". " .. pName)
+                    table.insert(strList, "S" .. sValStr .. "_" .. pName)
+                    table.insert(strList, "S" .. sValStr .. " " .. pName)
+                    table.insert(strList, "[S" .. sValStr .. "]" .. pName)
+                    table.insert(strList, "[S" .. sValStr .. "] " .. pName)
+                end
+
+                if sId then
+                    local pattern1 = "s" .. sId .. "%."
+                    local pattern2 = "s" .. sId .. "_"
+                    local pattern3 = "s" .. sId
+                    for _, s in ipairs(strList) do
+                        local sLower = string.lower(s)
+                        if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
+                            return true
+                        end
+                    end
+                else
+                    local lowerInput = string.lower(cleanToken)
+                    for _, s in ipairs(strList) do
+                        if string.find(string.lower(s), lowerInput, 1, true) then
+                            return true
+                        end
+                    end
+                end
+
+                return false
+            end
+            _G.Mod_IsMatchSingleToken = isMatchSingleToken
+
+            local function parseTargetTokens(inputStr)
+                local exclusions = {}
+                local inclusions = {}
+                if not inputStr or inputStr == "" then
+                    return exclusions, inclusions
+                end
+                for token in string.gmatch(inputStr, "([^;,|\r\n]+)") do
+                    local clean = string.match(token, "^%s*(.-)%s*$")
+                    if clean and clean ~= "" then
+                        if string.sub(clean, 1, 1) == "-" then
+                            local exclToken = string.match(string.sub(clean, 2), "^%s*(.-)%s*$")
+                            if exclToken and exclToken ~= "" then
+                                table.insert(exclusions, exclToken)
+                            end
+                        else
+                            table.insert(inclusions, clean)
+                        end
+                    end
+                end
+                return exclusions, inclusions
+            end
+            _G.Mod_ParseTargetTokens = parseTargetTokens
+
+            local function isMatchLockTarget(p, lockInput)
+                if not p or p.isDead then return false end
+
+                -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
+                if IsPlayerProtected(p) then
+                    return false
+                end
+
+                if not lockInput or lockInput == "" then return true end
+
+                local exclusions, inclusions = parseTargetTokens(lockInput)
+
+                -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
+                -- Nếu có tiền tố '-' (VD: -Dino;s395): Bỏ qua toàn bộ điều kiện sau, KHÔNG target!
+                for _, exclToken in ipairs(exclusions) do
+                    if isMatchSingleToken(p, exclToken) then
+                        return false
+                    end
+                end
+
+                -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
+                -- Nếu chỉ toàn token ngoại lệ '-' -> Tất cả ai không bị ngoại lệ đều được target
+                if #inclusions == 0 then
+                    return true
+                end
+
+                -- Nếu có điều kiện chỉ định -> Phải khớp ít nhất 1 token chỉ định
+                for _, inclToken in ipairs(inclusions) do
+                    if isMatchSingleToken(p, inclToken) then
+                        return true
+                    end
+                end
+
+                return false
+            end
+            _G.Mod_IsMatchLockTarget = isMatchLockTarget
+
+            local function isMatchBuffTarget(p, buffInput)
+                if not buffInput or buffInput == "" then return true end
+                if not p or p.isDead then return false end
+
+                local exclusions, inclusions = parseTargetTokens(buffInput)
+
+                -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
+                for _, exclToken in ipairs(exclusions) do
+                    if isMatchSingleToken(p, exclToken) then
+                        return false
+                    end
+                end
+
+                -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
+                if #inclusions == 0 then
+                    return true
+                end
+
+                for _, inclToken in ipairs(inclusions) do
+                    if isMatchSingleToken(p, inclToken) then
+                        return true
+                    end
+                end
+
+                return false
+            end
+            _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
+
             _G.Mod_StartMainUpdateLoop = function()
                 _G.Mod_StartTrackedTimer("MainModUpdate", 0.1, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
@@ -5715,229 +5951,8 @@ local function CreateModUI()
                             end
                         end
                     end
+                    -- [MOD NOTE]: BỘ LỌC SMART TARGET & BẢO HỘ ĐÃ ĐƯỢC ĐỊNH NGHĨA Ở PHẠM VI NGOÀI (MOD UI SCOPE)
 
-                    -- =========================================================================
-                    -- [MOD FEATURE]: BỘ LỌC BẢO HỘ & SO KHỚP MỤC TIÊU SMART TARGET / AUTO BUFF (SMART TARGET & EXCLUSION)
-                    -- Mô tả:
-                    -- 1. Tự động nhận diện và bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy (IsPlayerProtected).
-                    -- 2. Hỗ trợ đa điều kiện (phân tách bởi ';', ',', '|', xuống dòng) và Server ID (s393, S393., 393...).
-                    -- 3. HỖ TRỢ TIỀN TỐ NGOẠI LỆ '-' (VD: -Dino;s395): Token có dấu '-' được kiểm tra ĐẦU TIÊN.
-                    --    Nếu mục tiêu khớp bất kỳ token ngoại lệ nào -> Lập tức bỏ qua (return false), không target!
-                    -- =========================================================================
-                    local function IsPlayerProtected(role)
-                        if not role or role.isDead then return false end
-
-                        local protectTime = 0
-                        if role.GetProtectTIme then
-                            protectTime = role:GetProtectTIme() or 0
-                        end
-                        if protectTime == 0 and role.data then
-                            protectTime = role.data.hangUpProtectionTime or role.data.crossServerHangUpTime or 0
-                        end
-                        if protectTime == 0 then
-                            protectTime = role.hangUpProtectionTime or role.crossServerHangUpTime or 0
-                        end
-
-                        if protectTime and protectTime > 0 then
-                            local nowMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-                            if nowMs > 0 and protectTime > nowMs then
-                                return true
-                            end
-                            local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
-                            if protectTime > nowSec and protectTime < 1000000000000 then
-                                return true
-                            end
-                        end
-
-                        if role.killMonsterEffect and role.killMonsterEffect.isModelActive then
-                            return true
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsPlayerProtected = IsPlayerProtected
-
-                    local function isMatchSingleToken(p, token)
-                        if not token or token == "" or not p then return false end
-                        local cleanToken = string.match(token, "^%s*(.-)%s*$")
-                        if not cleanToken or cleanToken == "" then return false end
-
-                        -- 1. So khớp Server ID (Ví dụ: S393., S393, s393., s393, 393)
-                        local sId = string.match(cleanToken, "^[Ss](%d+)%.$") or
-                            string.match(cleanToken, "^[Ss](%d+)$") or
-                            string.match(cleanToken, "^(%d+)$")
-
-                        local targetNum = sId and tonumber(sId) or nil
-                        if targetNum then
-                            local pSid = p.serverId or p.sid or p.serverID or p.server_id
-                            if not pSid and p.data then
-                                pSid = p.data.serverId or p.data.sid or p.data.serverID or p.data.server_id
-                            end
-                            if pSid and tonumber(pSid) == targetNum then
-                                return true
-                            end
-                        end
-
-                        -- 2. Gom tất cả chuỗi tên / server / bang hội của nhân vật
-                        local strList = {}
-                        local pName = ""
-                        if p.name then table.insert(strList, tostring(p.name)); pName = tostring(p.name) end
-                        if p.GetName then
-                            pcall(function()
-                                local n = p:GetName()
-                                if n then table.insert(strList, tostring(n)); if pName == "" then pName = tostring(n) end end
-                            end)
-                        end
-                        if p.GetUnionName then
-                            pcall(function()
-                                local u = p:GetUnionName()
-                                if u then
-                                    table.insert(strList, tostring(u))
-                                    table.insert(strList, "[" .. tostring(u) .. "]")
-                                end
-                            end)
-                        end
-                        if p.data then
-                            if p.data.name then table.insert(strList, tostring(p.data.name)); if pName == "" then pName = tostring(p.data.name) end end
-                            if p.data.showName then table.insert(strList, tostring(p.data.showName)) end
-                            if p.data.unionName then
-                                table.insert(strList, tostring(p.data.unionName))
-                                table.insert(strList, "[" .. tostring(p.data.unionName) .. "]")
-                            end
-                            local dataSid = p.data.serverId or p.data.sid
-                            if dataSid then
-                                table.insert(strList, "S" .. tostring(dataSid) .. ".")
-                                table.insert(strList, "S" .. tostring(dataSid))
-                            end
-                        end
-                        if p.serverId then
-                            table.insert(strList, "S" .. tostring(p.serverId) .. ".")
-                            table.insert(strList, "S" .. tostring(p.serverId))
-                        end
-                        if p.showName then table.insert(strList, tostring(p.showName)) end
-                        if p.zoneName then table.insert(strList, tostring(p.zoneName)) end
-
-                        -- Thêm tổ hợp Server.Tên để khớp nếu nhập liền (VD: S393.Dino hoặc [S393]Dino)
-                        local sidVal = p.serverId or p.sid or p.serverID or (p.data and (p.data.serverId or p.data.sid))
-                        if sidVal and pName ~= "" then
-                            local sValStr = tostring(sidVal)
-                            table.insert(strList, "S" .. sValStr .. "." .. pName)
-                            table.insert(strList, "S" .. sValStr .. ". " .. pName)
-                            table.insert(strList, "S" .. sValStr .. "_" .. pName)
-                            table.insert(strList, "S" .. sValStr .. " " .. pName)
-                            table.insert(strList, "[S" .. sValStr .. "]" .. pName)
-                            table.insert(strList, "[S" .. sValStr .. "] " .. pName)
-                        end
-
-                        if sId then
-                            local pattern1 = "s" .. sId .. "%."
-                            local pattern2 = "s" .. sId .. "_"
-                            local pattern3 = "s" .. sId
-                            for _, s in ipairs(strList) do
-                                local sLower = string.lower(s)
-                                if string.find(sLower, pattern1) or string.find(sLower, pattern2) or string.find(sLower, pattern3) then
-                                    return true
-                                end
-                            end
-                        else
-                            local lowerInput = string.lower(cleanToken)
-                            for _, s in ipairs(strList) do
-                                if string.find(string.lower(s), lowerInput, 1, true) then
-                                    return true
-                                end
-                            end
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsMatchSingleToken = isMatchSingleToken
-
-                    local function parseTargetTokens(inputStr)
-                        local exclusions = {}
-                        local inclusions = {}
-                        if not inputStr or inputStr == "" then
-                            return exclusions, inclusions
-                        end
-                        for token in string.gmatch(inputStr, "([^;,|\r\n]+)") do
-                            local clean = string.match(token, "^%s*(.-)%s*$")
-                            if clean and clean ~= "" then
-                                if string.sub(clean, 1, 1) == "-" then
-                                    local exclToken = string.match(string.sub(clean, 2), "^%s*(.-)%s*$")
-                                    if exclToken and exclToken ~= "" then
-                                        table.insert(exclusions, exclToken)
-                                    end
-                                else
-                                    table.insert(inclusions, clean)
-                                end
-                            end
-                        end
-                        return exclusions, inclusions
-                    end
-
-                    local function isMatchLockTarget(p, lockInput)
-                        if not p or p.isDead then return false end
-
-                        -- Bỏ qua mục tiêu đang ở trạng thái Bảo Hộ Khi Treo Máy
-                        if IsPlayerProtected(p) then
-                            return false
-                        end
-
-                        if not lockInput or lockInput == "" then return true end
-
-                        local exclusions, inclusions = parseTargetTokens(lockInput)
-
-                        -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
-                        -- Nếu có tiền tố '-' (VD: -Dino;s395): Bỏ qua toàn bộ điều kiện sau, KHÔNG target!
-                        for _, exclToken in ipairs(exclusions) do
-                            if isMatchSingleToken(p, exclToken) then
-                                return false
-                            end
-                        end
-
-                        -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
-                        -- Nếu chỉ toàn token ngoại lệ '-' -> Tất cả ai không bị ngoại lệ đều được target
-                        if #inclusions == 0 then
-                            return true
-                        end
-
-                        -- Nếu có điều kiện chỉ định -> Phải khớp ít nhất 1 token chỉ định
-                        for _, inclToken in ipairs(inclusions) do
-                            if isMatchSingleToken(p, inclToken) then
-                                return true
-                            end
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsMatchLockTarget = isMatchLockTarget
-
-                    local function isMatchBuffTarget(p, buffInput)
-                        if not buffInput or buffInput == "" then return true end
-                        if not p or p.isDead then return false end
-
-                        local exclusions, inclusions = parseTargetTokens(buffInput)
-
-                        -- BƯỚC 1: KIỂM TRA ĐIỀU KIỆN NGOẠI LỆ ĐẦU TIÊN (EXCLUSION CHECK FIRST)
-                        for _, exclToken in ipairs(exclusions) do
-                            if isMatchSingleToken(p, exclToken) then
-                                return false
-                            end
-                        end
-
-                        -- BƯỚC 2: KIỂM TRA ĐIỀU KIỆN CHỈ ĐỊNH (INCLUSION CHECK)
-                        if #inclusions == 0 then
-                            return true
-                        end
-
-                        for _, inclToken in ipairs(inclusions) do
-                            if isMatchSingleToken(p, inclToken) then
-                                return true
-                            end
-                        end
-
-                        return false
-                    end
-                    _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
 
                     -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG BUFF ĐỒNG ĐỘI (AUTO BUFF ENGINE)
@@ -6973,13 +6988,13 @@ local function CreateModUI()
 
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: KHÓA MỤC TIÊU SMART TARGET & BẢO HỘ (ĐÃ ĐƯỢC ĐỊNH NGHĨA PHÍA TRÊN)
-                    -- Mô tả: IsPlayerProtected, isMatchSingleToken, isMatchLockTarget, isMatchBuffTarget đã được khởi tạo tập trung ở đầu Timer Loop
+                    -- [MOD FEATURE]: KHÓA MỤC TIÊU SMART TARGET & BẢO HỘ (SCOPE CHECK & FALLBACK)
+                    -- Mô tả: Ưu tiên tham chiếu hàm từ Mod UI scope, fallback sang _G nếu có
                     -- =========================================================================
-                    local IsPlayerProtected = _G.Mod_IsPlayerProtected
-                    local isMatchSingleToken = _G.Mod_IsMatchSingleToken
-                    local isMatchLockTarget = _G.Mod_IsMatchLockTarget
-                    local isMatchBuffTarget = _G.Mod_IsMatchBuffTarget
+                    local IsPlayerProtected = IsPlayerProtected or _G.Mod_IsPlayerProtected
+                    local isMatchSingleToken = isMatchSingleToken or _G.Mod_IsMatchSingleToken
+                    local isMatchLockTarget = isMatchLockTarget or _G.Mod_IsMatchLockTarget
+                    local isMatchBuffTarget = isMatchBuffTarget or _G.Mod_IsMatchBuffTarget
 
                     local function IsSelfBuffOrNoTargetSkill(skillId)
                         if not skillId then return false end
@@ -7180,22 +7195,20 @@ local function CreateModUI()
                                             end
 
                                             if #_G.Mod_PK_ValidPlayers > 0 then
-                                                if _G.Mod_LockTarget_Enabled then
+                                                if _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
                                                     -- BẬT KHÓA MỤC TIÊU: CHỈ tìm và đánh mục tiêu thỏa mãn điều kiện đã nhập
-                                                    if _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= "" then
-                                                        for k in pairs(_G.Mod_PK_MatchedPlayers) do _G.Mod_PK_MatchedPlayers[k] = nil end
-                                                        for _, p in ipairs(_G.Mod_PK_ValidPlayers) do
-                                                            if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
-                                                                table.insert(_G.Mod_PK_MatchedPlayers, p)
-                                                            end
-                                                        end
-                                                        if #_G.Mod_PK_MatchedPlayers > 0 then
-                                                            table.sort(_G.Mod_PK_MatchedPlayers, modSortRole)
-                                                            target = _G.Mod_PK_MatchedPlayers[1]
+                                                    for k in pairs(_G.Mod_PK_MatchedPlayers) do _G.Mod_PK_MatchedPlayers[k] = nil end
+                                                    for _, p in ipairs(_G.Mod_PK_ValidPlayers) do
+                                                        if isMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                            table.insert(_G.Mod_PK_MatchedPlayers, p)
                                                         end
                                                     end
+                                                    if #_G.Mod_PK_MatchedPlayers > 0 then
+                                                        table.sort(_G.Mod_PK_MatchedPlayers, modSortRole)
+                                                        target = _G.Mod_PK_MatchedPlayers[1]
+                                                    end
                                                 else
-                                                    -- TẮT KHÓA MỤC TIÊU: Đánh tất cả địch không thủ hộ ở gần theo chế độ PK
+                                                    -- TẮT KHÓA MỤC TIÊU HOẶC ĐỂ TRỐNG Ô INPUT TARGET: Đánh tất cả địch không thủ hộ ở gần theo chế độ PK
                                                     table.sort(_G.Mod_PK_ValidPlayers, modSortRole)
                                                     target = _G.Mod_PK_ValidPlayers[1]
                                                 end
