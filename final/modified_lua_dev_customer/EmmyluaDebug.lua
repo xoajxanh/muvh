@@ -971,6 +971,34 @@ end
 
 local function CreateModUI()
     local status, err = pcall(function()
+        -- =========================================================================
+        -- [MOD FEATURE]: HỆ THỐNG LỆNH BÍ MẬT (SECRET COMMAND ENGINE - CUSTOMER)
+        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/pkmodeguild)
+        -- =========================================================================
+        if _G.Mod_SecretCommands == nil then
+            pcall(function()
+                _G.Mod_SecretCommands = CS.UnityEngine.PlayerPrefs.GetString("Mod_SecretCommands", "")
+            end)
+            if _G.Mod_SecretCommands == nil then _G.Mod_SecretCommands = "" end
+        end
+
+        _G.Mod_ParseSecretCommands = function(cmdStr)
+            local tbl = {}
+            if cmdStr and cmdStr ~= "" then
+                for cmd in string.gmatch(cmdStr, "%S+") do
+                    tbl[string.lower(cmd)] = true
+                end
+            end
+            _G.Mod_ActiveCommands = tbl
+        end
+
+        _G.Mod_HasSecretCommand = function(cmd)
+            if not _G.Mod_ActiveCommands then return false end
+            return _G.Mod_ActiveCommands[string.lower(cmd)] == true
+        end
+
+        _G.Mod_ParseSecretCommands(_G.Mod_SecretCommands)
+
         if _G.Mod_AutoPK_Enabled == nil then
             _G.Mod_AutoPK_Enabled = CS.UnityEngine.PlayerPrefs.GetInt(
                 "Mod_AutoPK_Enabled", 0) == 1
@@ -5467,8 +5495,11 @@ local function CreateModUI()
                         end
                     end
 
-                    -- Auto PK Guild Logic
-                    if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ ĐỘNG PK GUILD (AUTO PK GUILD)
+                    -- Mô tả: Tự động chuyển và duy trì chế độ PK Guild khi có lệnh bí mật /pkmodeguild và toggle được bật.
+                    -- =========================================================================
+                    if _G.Mod_AutoGuildPK_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
                         if _G.RoleManager.me.PKMode ~= 2 then -- 2 is Guild mode
                             local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
                             if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
@@ -8058,8 +8089,14 @@ local function CreateModUI()
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", rightColX2, currentY)
             currentY = currentY - 40
 
-            CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
-            currentY = currentY - 40
+            -- =========================================================================
+            -- [MOD FEATURE]: ẨN NÚT AUTO PK GUILD THEO SECRET COMMAND (/pkmodeguild)
+            -- Mô tả: Nút AUTO PK GUILD chỉ hiển thị khi có secret command /pkmodeguild trong hệ thống lệnh bí mật.
+            -- =========================================================================
+            if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") then
+                CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", rightColX2, currentY)
+                currentY = currentY - 40
+            end
 
             -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
             local function CreateResurrectRadioGroup(xPos, yPos, btnW)
@@ -8630,6 +8667,101 @@ local function CreateModUI()
             CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", rightColX2, currentY, 160)
             CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", rightColX2 + 170, currentY, 160)
             currentY = currentY - 40
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG NHẬP LỆNH BÍ MẬT & NÚT LOAD ĐÁY CỘT HỖ TRỢ (CUSTOMER)
+            -- Mô tả: Ô nhập lệnh bí mật và nút LOAD ở đáy cột hỗ trợ
+            -- =========================================================================
+            local secretInputGo = GameObject("SecretCommandsInput")
+            secretInputGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, secretInputGo)
+
+            local secretInputRt = secretInputGo:AddComponent(typeof(RectTransform))
+            secretInputRt.anchorMin, secretInputRt.anchorMax, secretInputRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            secretInputRt.anchoredPosition = Vector2(rightColX2, currentY)
+            secretInputRt.sizeDelta = Vector2(245, 34)
+
+            local secretBg = GameObject("Bg")
+            secretBg.transform:SetParent(secretInputGo.transform, false)
+            local secretBgRt = secretBg:AddComponent(typeof(RectTransform))
+            secretBgRt.anchorMin, secretBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            secretBgRt.sizeDelta = Vector2(0, 0)
+            local secretBgImg = secretBg:AddComponent(typeof(Image))
+            secretBgImg.color = Color(0.12, 0.12, 0.15, 0.95)
+
+            local sTxtGo = GameObject("Text")
+            sTxtGo.transform:SetParent(secretInputGo.transform, false)
+            local sTxtRt = sTxtGo:AddComponent(typeof(RectTransform))
+            sTxtRt.anchorMin, sTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            sTxtRt.offsetMin, sTxtRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
+            local sTxt = sTxtGo:AddComponent(typeof(Text))
+            sTxt.raycastTarget = false
+            sTxt.color = Color.white
+            sTxt.fontSize = 14
+            sTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then sTxt.font = defaultFont end
+
+            local phGo = GameObject("Placeholder")
+            phGo.transform:SetParent(secretInputGo.transform, false)
+            local phRt = phGo:AddComponent(typeof(RectTransform))
+            phRt.anchorMin, phRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            phRt.offsetMin, phRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
+            local phTxt = phGo:AddComponent(typeof(Text))
+            phTxt.raycastTarget = false
+            phTxt.text = "Nhập lệnh bí mật..."
+            phTxt.fontSize = 14
+            phTxt.fontStyle = CS.UnityEngine.FontStyle.Italic
+            phTxt.color = Color(0.5, 0.5, 0.5, 0.6)
+            phTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then phTxt.font = defaultFont end
+
+            local secretField = secretInputGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            secretField.textComponent = sTxt
+            secretField.placeholder = phTxt
+            secretField.text = _G.Mod_SecretCommands or ""
+
+            -- Nút [LOAD]
+            local loadBtnGo = GameObject("SecretCommandsLoadBtn")
+            loadBtnGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, loadBtnGo)
+
+            local loadBtnRt = loadBtnGo:AddComponent(typeof(RectTransform))
+            loadBtnRt.anchorMin, loadBtnRt.anchorMax, loadBtnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            loadBtnRt.anchoredPosition = Vector2(rightColX2 + 255, currentY)
+            loadBtnRt.sizeDelta = Vector2(75, 34)
+
+            local loadBtnImg = loadBtnGo:AddComponent(typeof(Image))
+            loadBtnImg.color = Color(0.15, 0.45, 0.65, 1)
+
+            local loadTxtGo = GameObject("Text")
+            loadTxtGo.transform:SetParent(loadBtnGo.transform, false)
+            local loadTxtRt = loadTxtGo:AddComponent(typeof(RectTransform))
+            loadTxtRt.anchorMin, loadTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            loadTxtRt.sizeDelta = Vector2(0, 0)
+            local loadTxt = loadTxtGo:AddComponent(typeof(Text))
+            loadTxt.raycastTarget = false
+            loadTxt.text = "LOAD"
+            loadTxt.fontSize = 15
+            loadTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            loadTxt.color = Color.white
+            loadTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then loadTxt.font = defaultFont end
+
+            local loadBtn = loadBtnGo:AddComponent(typeof(Button))
+            loadBtn.onClick:AddListener(function()
+                local val = secretField.text or ""
+                _G.Mod_SecretCommands = val
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_SecretCommands", val)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                if _G.Mod_ParseSecretCommands then
+                    _G.Mod_ParseSecretCommands(val)
+                end
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("Đã lưu lệnh bí mật! Vui lòng khởi động lại game để cập nhật menu.")
+                end
+            end)
         end
         CreateAutoBossUI()
         CreateKundunUI()

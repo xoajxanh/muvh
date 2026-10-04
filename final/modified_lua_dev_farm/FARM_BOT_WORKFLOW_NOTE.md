@@ -20,7 +20,7 @@ flowchart TD
     E --> F[Giai đoạn Tân Thủ: Lv 1 -> 9]
     F -->|Chỉ làm Quest Chính, Popup 0.05s| G[Đạt Level 10]
     
-    G --> H[Nhập 77 Mã Giftcode & Nhận Thư]
+    G --> H[Nhập 14 Mã Giftcode & Nhận Thư]
     H --> I[Giai đoạn Level 20+]
     
     I --> J[Kích hoạt Vòng Lặp Nâng Cấp 30s]
@@ -65,7 +65,7 @@ flowchart TD
 * **Hàm điều phối:** `RunAutoGiftcode()`
 * **Logic thực hiện:**
   - Khi biến `lvl >= 10` và chưa từng nhập (`not _G.Bot_HasEnteredGiftcodes`):
-  - Kích hoạt tuần tự danh sách **77 mã Giftcode**.
+  - Kích hoạt tuần tự danh sách **14 mã Giftcode** (MUVHNEWSV1-6, MU6868, MU2026, FANMUVH11, FCMUVH, MUVHVIPPRO, THGT88, BB8888, LBY888).
   - Nhập xong tự động mở hòm thư nhận toàn bộ quà tặng, ngọc, kim cương và nguyên liệu.
 
 ---

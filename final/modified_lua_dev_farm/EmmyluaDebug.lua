@@ -4723,30 +4723,12 @@ end
 _G.SolveBranchAndRewardsTasks = SolveBranchAndRewardsTasks
 
 -- =========================================================================
--- 12. [AUTO GIFTCODE & CLAIM MAIL] (NHẬP 34 MÃ VÀ NHẬN HÒM THƯ)
+-- [MOD FEATURE]: TỰ ĐỘNG NHẬP GIFTCODE & NHẬN HÒM THƯ (14 MÃ HOẠT ĐỘNG TỐT)
+-- Mô tả: Danh sách 14 mã giftcode hợp lệ đã được User kiểm tra thực tế trên Server.
 -- =========================================================================
 local GIFT_CODES = {
-    -- Nhóm Tân Thủ & Server Mới
-    "MU6868", "MUVHNEWSV1", "MUVHNEWSV2", "MUVHNEWSV3", "MUVHNEWSV4", "MUVHNEWSV5", "MUVHNEWSV6",
-    "MU1111", "MU2222", "MU3333", "MU4444", "MU5555", "MU6666", "MU7777", "MU8888", "MU9999", "FCMUVH",
-    
-    -- Nhóm MUVHFUN (11 - 99)
-    "MUVHFUN11", "MUVHFUN22", "MUVHFUN33", "MUVHFUN44", "MUVHFUN55", "MUVHFUN66", "MUVHFUN77", "MUVHFUN88", "MUVHFUN99",
-    
-    -- Nhóm MUVHVN (01 - 10)
-    "MUVHVN01", "MUVHVN02", "MUVHVN03", "MUVHVN04", "MUVHVN05", "MUVHVN06", "MUVHVN07", "MUVHVN08", "MUVHVN09", "MUVHVN10",
-    
-    -- Nhóm Đối Tác & Sự Kiện VIP
-    "TG8888", "MC8888", "BB8888", "OG8888", "MD8888", "AP8888", "LBY888", "THGT88", "MUVHVIPPRO", "MU2026",
-    
-    -- Nhóm MUVHLOVE (1 - 10)
-    "MUVHLOVE1", "MUVHLOVE2", "MUVHLOVE3", "MUVHLOVE4", "MUVHLOVE5", "MUVHLOVE6", "MUVHLOVE7", "MUVHLOVE8", "MUVHLOVE9", "MUVHLOVE10",
-    
-    -- Nhóm IUMUVH (01 - 10)
-    "IUMUVH01", "IUMUVH02", "IUMUVH03", "IUMUVH04", "IUMUVH05", "IUMUVH06", "IUMUVH07", "IUMUVH08", "IUMUVH09", "IUMUVH10",
-    
-    -- Nhóm FANMUVH (01 - 11)
-    "FANMUVH01", "FANMUVH02", "FANMUVH03", "FANMUVH04", "FANMUVH05", "FANMUVH06", "FANMUVH07", "FANMUVH08", "FANMUVH09", "FANMUVH10", "FANMUVH11"
+    "MUVHNEWSV1", "MUVHNEWSV2", "MUVHNEWSV3", "MUVHNEWSV4", "MUVHNEWSV5", "MUVHNEWSV6",
+    "MU6868", "MU2026", "FANMUVH11", "FCMUVH", "MUVHVIPPRO", "THGT88", "BB8888", "LBY888"
 }
 
 RunAutoGiftcode = function(onFinished)
@@ -7116,13 +7098,13 @@ StartNewbieQuestPipeline = function()
 
             -- =========================================================================
             -- [GIAI ĐOẠN ĐẠT LEVEL 10+]:
-            -- Kích hoạt nhập 77 mã Giftcode (chỉ chạy 1 lần khi đạt Lv 10)
+            -- Kích hoạt nhập 14 mã Giftcode (chỉ chạy 1 lần khi đạt Lv 10)
             -- =========================================================================
             if lvl >= 10 and not _G.Bot_HasEnteredGiftcodes and not _G.AutoGiftCodeRunning then
                 _G.Bot_HasEnteredGiftcodes = true
                 _G.AutoGiftCodeRunning = true
                 Log("=========================================================================")
-                Log(string.format(">>> ĐẠT LEVEL %d: BẮT ĐẦU TỰ ĐỘNG NHẬP 77 MÃ GIFTCODE VÀ GHI BÁO CÁO <<<", lvl), true)
+                Log(string.format(">>> ĐẠT LEVEL %d: BẮT ĐẦU TỰ ĐỘNG NHẬP 14 MÃ GIFTCODE VÀ GHI BÁO CÁO <<<", lvl), true)
                 Log("=========================================================================")
                 SaveOutput()
                 if RunAutoGiftcode then
@@ -7986,7 +7968,7 @@ ConnectToTargetServer = function()
                 SaveOutput()
 
                     -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần túy, chưa can thiệp gì
-                    -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã Giftcode bên trong StartNewbieQuestPipeline
+                    -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 14 mã Giftcode bên trong StartNewbieQuestPipeline
                     StartNewbieQuestPipeline()
             end)
         end)
@@ -8339,7 +8321,7 @@ _G.StartAutoFarmBot = function()
         Log(string.format(">>> [CẤP ĐỘ %d] KHỞI CHẠY VÒNG LẶP CHÍNH QUÉT VÀ CLAIM NHIỆM VỤ (1s/LẦN)! <<<", curLvl), true)
         SaveOutput()
         -- Từ Lv 1 -> 10: Tĩnh lặng làm nhiệm vụ tân thủ thuần túy, chưa can thiệp gì
-        -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 77 mã Giftcode bên trong StartNewbieQuestPipeline
+        -- Khi đạt Level 10+ sẽ tự động kích hoạt nhập 14 mã Giftcode bên trong StartNewbieQuestPipeline
         StartNewbieQuestPipeline()
     else
         -- Kiểm tra xem có đang ở màn hình Chọn Nhân Vật không

@@ -342,7 +342,7 @@ local function CreateModUI()
 
         -- =========================================================================
         -- [MOD FEATURE]: HỆ THỐNG LỆNH BÍ MẬT (SECRET COMMAND ENGINE)
-        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /autoaoe, /sieutoc)
+        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /autoaoe, /autobuff, /sieutoc, /pkmodeguild)
         -- =========================================================================
         if _G.Mod_SecretCommands == nil then
             pcall(function()
@@ -6899,8 +6899,11 @@ local function CreateModUI()
                 _G.Mod_StartTrackedTimer("BossAutoRefresh", 1.0, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                     pcall(function()
-                        -- 1. Auto PK Guild Mode nếu được kích hoạt
-                        if _G.Mod_AutoGuildPK_Enabled and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG PK GUILD (AUTO PK GUILD)
+                        -- Mô tả: Tự động chuyển và duy trì chế độ PK Guild khi có lệnh bí mật /pkmodeguild và toggle được bật.
+                        -- =========================================================================
+                        if _G.Mod_AutoGuildPK_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") and _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
                             if _G.RoleManager.me.PKMode ~= 2 then -- 2 là Guild mode
                                 local nowGuildPK = CS.UnityEngine.Time.realtimeSinceStartup
                                 if (nowGuildPK - (_G.Mod_LastGuildPKReqTime or 0)) >= 1.5 then
@@ -11149,8 +11152,14 @@ local function CreateModUI()
             CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
 
-            CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
+            -- =========================================================================
+            -- [MOD FEATURE]: ẨN NÚT AUTO PK GUILD THEO SECRET COMMAND (/pkmodeguild)
+            -- Mô tả: Nút AUTO PK GUILD chỉ hiển thị khi có secret command /pkmodeguild trong hệ thống lệnh bí mật.
+            -- =========================================================================
+            if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") then
+                CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+            end
 
             -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
             local function CreateResurrectRadioGroup(xPos, yPos, w)
