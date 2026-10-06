@@ -9,24 +9,19 @@ $convertScript = "$projectDir\convert_64_to_32.py"
 $tempLuac = "$testDir\input.luac"
 $androidPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/input.luac"
 
-$adbExe = "$projectDir\adb.exe"
+$adbExe = "$testDir\adb.exe"
+if (-not (Test-Path $adbExe)) {
+    $adbExe = "$projectDir\adb.exe"
+} 
 if (-not (Test-Path $adbExe)) {
     $adbExe = "adb"
-} 
-
-# Tự động nhận diện thiết bị Android / Giả lập
-$onlineDevs = & $adbExe devices | Where-Object { $_ -match '\tdevice$' } | ForEach-Object { ($_ -split '\t')[0] }
-$androidId = "emulator-5554"
-if ($onlineDevs.Count -gt 0) {
-    if ($onlineDevs -contains "emulator-5554") {
-        $androidId = "emulator-5554"
-    } else {
-        $androidId = $onlineDevs[0]
-    }
 }
 
+# Android Device ID do USER tu chon va quan ly
+$androidId = "emulator-5558"
+
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host ">>> BIÊN DỊCH & NẠP SCRIPT TEST VÀO ANDROID ($androidId) <<<" -ForegroundColor Cyan
+Write-Host ">>> BIEN DICH & NAP SCRIPT TEST VAO ANDROID ($androidId) <<<" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 if (-not (Test-Path $inputFile)) {
@@ -69,14 +64,14 @@ Write-Host "4. Xoa output.txt cu va day file input.luac vao $androidId..."
 & $adbExe -s $androidId push $tempLuac $androidPath
 
 Write-Host ""
-Write-Host "-> DA NẠP SCRIPT THÀNH CÔNG VÀO THIẾT BỊ $androidId!" -ForegroundColor Green
-Write-Host "   - Bạn có thể bấm nút [EXEC] màu đỏ trong game." -ForegroundColor Yellow
-Write-Host "   - Hoặc gõ 't' rồi Enter để tự động chạm [EXEC] trên màn hình." -ForegroundColor Cyan
-Write-Host "   - Hoặc bấm Enter để kéo log output.txt về xem ngay." -ForegroundColor Gray
-$choice = Read-Host "Lựa chọn [Enter=Lấy log / t=Tap EXEC]"
+Write-Host "-> DA NAP SCRIPT THANH CONG VAO THIET BI $androidId!" -ForegroundColor Green
+Write-Host "   - Ban co the bam nut [EXEC] mau do trong game." -ForegroundColor Yellow
+Write-Host "   - Hoac go 't' roi Enter de tu dong cham [EXEC] tren man hinh." -ForegroundColor Cyan
+Write-Host "   - Hoac bam Enter de keo log output.txt ve xem ngay." -ForegroundColor Gray
+$choice = Read-Host "Lua chon [Enter=Lay log / t=Tap EXEC]"
 
 if ($choice -eq 't' -or $choice -eq 'T') {
-    Write-Host "Đang chạm nút [EXEC] tại tọa độ (30, 910)..." -ForegroundColor Yellow
+    Write-Host "Dang cham nut [EXEC] tai toa do (30, 910)..." -ForegroundColor Yellow
     & $adbExe -s $androidId shell input tap 30 910
     Start-Sleep -Seconds 2
 }
@@ -88,12 +83,37 @@ $destOut = "$testDir\output.txt"
 
 if (Test-Path $destOut) {
     Write-Host ""
-    Write-Host "==================== [KẾT QUẢ OUTPUT.TXT] ====================" -ForegroundColor Green
+    Write-Host "==================== [KET QUA OUTPUT.TXT] ====================" -ForegroundColor Green
     Get-Content $destOut -Tail 40
     Write-Host "==============================================================" -ForegroundColor Green
-} else {
+}
+else {
     Write-Host "Chua co file output.txt tren thiet bi!" -ForegroundColor Yellow
 }
 
-Write-Host ""
-Pause
+while ($true) {
+    Write-Host ""
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    Write-Host "Lua chon tiep theo:" -ForegroundColor Cyan
+    Write-Host "   [Enter] / [l] : Keo log output.txt moi nhat ve xem" -ForegroundColor Green
+    Write-Host "   [t]           : Tap nut [EXEC] tai toa do (30, 910)" -ForegroundColor Yellow
+    Write-Host "   [q]           : Thoat" -ForegroundColor Gray
+    Write-Host "==========================================================" -ForegroundColor Cyan
+    $act = Read-Host "Nhap lua chon [Enter=Keo log / t=EXEC / q=Thoat]"
+    if ($act -eq 'q' -or $act -eq 'Q') { break }
+    if ($act -eq 't' -or $act -eq 'T') {
+        Write-Host "Dang cham nut [EXEC] tai toa do (30, 910)..." -ForegroundColor Yellow
+        & $adbExe -s $androidId shell input tap 30 910
+        Start-Sleep -Seconds 1
+    }
+    Write-Host "Dang lay output.txt ve..."
+    & $adbExe -s $androidId pull "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt" $destOut 2>$null
+    if (Test-Path $destOut) {
+        Write-Host ""
+        Write-Host "==================== [KET QUA OUTPUT.TXT] ====================" -ForegroundColor Green
+        Get-Content $destOut -Tail 40
+        Write-Host "==============================================================" -ForegroundColor Green
+    } else {
+        Write-Host "Chua co file output.txt tren thiet bi!" -ForegroundColor Yellow
+    }
+}

@@ -24,13 +24,12 @@ Tài liệu này dùng để dán vào prompt hoặc làm Custom Instructions kh
        (với `Cwd`: `d:\MUVH\android\mu-decompiled\final`)
      * Script `executor.ps1` sẽ tự động chạy `exec_cmd.ps1`, xuất output chuẩn UTF-8 và bắt lỗi chi tiết.
 
-2. **Quy trình tạo Script Test / Debug nhanh**:
+2. **Quy trình tạo Script Test / Debug nhanh & Quản lý Thiết bị Android**:
    - Khi USER yêu cầu viết script thử nghiệm / test / debug một logic mới (đi xuyên vật thể, hút đồ, test target, hook tạm thời...):
      * Agent CHỈ ĐƯỢC PHÉP chỉnh sửa/ghi mã nguồn Lua vào file text:
        `d:\MUVH\android\mu-decompiled\final\excute_test\input.txt`
      * Khi script test cần xuất dữ liệu kết quả, PHẢI ghi trực tiếp vào `output.txt` (tại `CS.UnityEngine.Application.persistentDataPath .. "/output.txt"` hoặc `/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt`). Tuyệt đối KHÔNG tạo file tên khác, vì `push_test.ps1` chỉ pull đúng file `output.txt` về máy.
-     * Agent TUYỆT ĐỐI KHÔNG tự ý chạy build ra file `.luac` hay chạy lệnh ADB đẩy vào thiết bị.
-     * Toàn bộ quy trình build ra `.luac` và đẩy vào thiết bị Android nào sẽ do USER tự thực hiện.
+     * **Quy tắc Push Test & Android Device**: USER tự chọn Android Device ID và tự chạy `push_test.ps1` (hoặc `Run_Push_Test.bat`) để execute. Agent không can thiệp, không tự tìm Android ID hoặc push all devices, và TUYỆT ĐỐI KHÔNG tự ý sửa đổi `push_test.ps1` theo hướng đó.
 
 3. **Môi trường code chính thức**:
    - Chỉ chỉnh sửa code chính thức trực tiếp trên `final\modified_lua_dev_client`.

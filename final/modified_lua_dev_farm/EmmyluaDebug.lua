@@ -1623,13 +1623,19 @@ local function CreateModUI()
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AccEnd", aEnd)
             CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_AccPass", aPass)
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetLevel", tLvl)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG RESET TIẾN ĐỘ VỀ ACC 1 KHI LƯU CẤU HÌNH DẢI MỚI
+            -- =========================================================================
+            _G.CurrentAccountIndex = 1
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", 1)
             CS.UnityEngine.PlayerPrefs.Save()
 
             if _G.BuildBotAccounts then _G.BuildBotAccounts() end
             UpdateServerStatusUI()
 
             if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu: %s [STT %d➔%d] (Cày Lv %d)!", pfx, aStart, aEnd, tLvl))
+                _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu: %s [STT %d➔%d] (Cày Lv %d) - Bắt đầu từ Acc 1!", pfx, aStart, aEnd, tLvl))
             end
         end
 
@@ -2312,6 +2318,7 @@ local AutoEvenEnhanceEquipments
 local AutoEvenUpgradeGems
 local AutoEquipBetterItems
 local AutoBuyPotionsIfLow
+local AutoBuyDailyDiamondGiftPacks
 local RunPeriodicUpgradeCycle
 local StartGlobal30sUpgradePipeline
 local SolveBranchAndRewardsTasks
@@ -2365,6 +2372,27 @@ local function BuildBotAccounts()
             targetServer = targetSrv,
             roles = {
                 [1] = {
+                    autoRecycleExcellence = true,
+                    autoSmeltExcellenceAccessory = true,
+                    autoSmeltSuit = true,
+                    keepGoodLines = false,
+                    maxChestBatches = 3,
+                },
+                [2] = {
+                    autoRecycleExcellence = true,
+                    autoSmeltExcellenceAccessory = true,
+                    autoSmeltSuit = true,
+                    keepGoodLines = false,
+                    maxChestBatches = 3,
+                },
+                [3] = {
+                    autoRecycleExcellence = true,
+                    autoSmeltExcellenceAccessory = true,
+                    autoSmeltSuit = true,
+                    keepGoodLines = false,
+                    maxChestBatches = 3,
+                },
+                [4] = {
                     autoRecycleExcellence = true,
                     autoSmeltExcellenceAccessory = true,
                     autoSmeltSuit = true,
@@ -2850,9 +2878,6 @@ DismissBlockers = function()
             if UIID and UIID.OnHookProfitUI then UIManager.Hide(UIID.OnHookProfitUI) end
             if UIID and UIID.AttributeAddTipsUI then UIManager.Hide(UIID.AttributeAddTipsUI) end
             if UIID and UIID.Role_AttributeUI then UIManager.Hide(UIID.Role_AttributeUI) end
-            if UIID and UIID.Equip_ZhuanyiFastUI then UIManager.Hide(UIID.Equip_ZhuanyiFastUI) end
-            if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
-            if UIID and UIID.Equip_Transfer then UIManager.Hide(UIID.Equip_Transfer) end
             if UIID and UIID.LoginRoleUI then UIManager.Hide(UIID.LoginRoleUI) end
             if UIID and UIID.LoginCreateRoleUI then UIManager.Hide(UIID.LoginCreateRoleUI) end
             if UIID and UIID.LoginUI then UIManager.Hide(UIID.LoginUI) end
@@ -2865,10 +2890,56 @@ DismissBlockers = function()
             UIManager.Hide("AutoPopUIManager")
             UIManager.Hide("DailySignUI")
             UIManager.Hide("Welfare_WelfareUI")
-            UIManager.Hide("Equip_ZhuanyiFastUI")
-            UIManager.Hide("Equip_ForgeNavUi")
-            UIManager.Hide("Equip_Transfer")
         end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: TỰ ĐỘNG HỒI SINH MIỄN PHÍ CLIENT (ALWAYS ON - BORN POINT / AN TOÀN)
+        -- Mô tả: Tự động hồi sinh miễn phí ngay lập tức tại điểm an toàn khi bị quái đánh chết,
+        --        dập tắt popup đếm lùi Role_ResurgenceUI để tiếp tục farm mà không bị kẹt.
+        -- =========================================================================
+        pcall(function()
+            local me = _G.RoleManager and _G.RoleManager.me
+            if me and (me.isDead or (me.hp and me.hp <= 0)) then
+                local nowTime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+                if not _G.Mod_LastResurrectTime or (nowTime - _G.Mod_LastResurrectTime) >= 1.0 then
+                    _G.Mod_LastResurrectTime = nowTime
+                    local mapId = 0
+                    if _G.SceneData and _G.SceneData.mapId then
+                        mapId = _G.SceneData.mapId
+                    elseif me.mapId then
+                        mapId = me.mapId
+                    end
+
+                    local isKS = (mapId == 1077) or
+                        (_G.TranScriptData and _G.TranScriptData.IsInRefineKSBattle and _G.TranScriptData.IsInRefineKSBattle())
+
+                    if _G.MeController and _G.RoleReliveType then
+                        if isKS then
+                            _G.MeController.ReqReqRelive(_G.RoleReliveType.KSBattle)
+                        else
+                            _G.MeController.ReqReqRelive(_G.RoleReliveType.BornPoint)
+                        end
+                    end
+
+                    if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                        _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                    end
+                    if _G.UIManager and _G.UIManager.Hide then
+                        _G.UIManager.Hide("Role_ResurgenceUI")
+                    end
+                    _G.Log("-> [HỒI SINH FREE]: Nhân vật bị quái tiêu diệt -> Tự động hồi sinh miễn phí tại điểm an toàn!", true)
+                end
+            else
+                if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
+                    if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
+                        _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                    end
+                end
+                if _G.UIManager and _G.UIManager.Hide then
+                    _G.UIManager.Hide("Role_ResurgenceUI")
+                end
+            end
+        end)
 
         -- =========================================================================
         -- [MOD FEATURE]: TỰ ĐỘNG NHẬN THƯỞNG / HOÀN THÀNH POPUP TỨC THÌ (<0.05S)
@@ -2951,11 +3022,45 @@ DismissBlockers = function()
             end)
         end
         
-        -- Tự động bấm Chuyển nhanh khi bảng Chuyển Trang Bị xuất hiện (Kế Thừa Cường Hóa)
-        local transferUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)))
-        if transferUI and ((transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
+        -- =========================================================================
+        -- [MOD FEATURE]: TỰ ĐỘNG BẤM "MẶC NGAY" KHI RƠI ĐỒ / THƯỞNG NHIỆM VỤ (EQUIP_TIPSUI)
+        -- Mô tả: Tự động kích hoạt nút Trang Bị Ngay lập tức, không chờ thời gian đếm ngược
+        -- =========================================================================
+        local isTipVisible = false
+        pcall(function()
+            if _G.UIManager and _G.UIManager.IsVisible then
+                if (_G.UIID and _G.UIID.EquipTIpsUI and _G.UIManager.IsVisible(_G.UIID.EquipTIpsUI)) or _G.UIManager.IsVisible("Equip_TIpsUI") then
+                    isTipVisible = true
+                end
+            end
+        end)
+        local tipUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_TIpsUI") or (_G.UIID and _G.UIID.EquipTIpsUI and _G.UIManager.GetUiByName(_G.UIID.EquipTIpsUI)))
+        if tipUI and (isTipVisible or (tipUI.root and tipUI.root.activeInHierarchy) or (tipUI.btn_quickequip and not IsObjectNil(tipUI.btn_quickequip) and tipUI.btn_quickequip.gameObject and tipUI.btn_quickequip.gameObject.activeInHierarchy)) then
             pcall(function()
-                if _G.RoleManager and _G.RoleManager.me then
+                if tipUI.Btn_quickequip then
+                    tipUI:Btn_quickequip()
+                elseif tipUI.btn_quickequipOnClick and tipUI.btn_quickequip then
+                    tipUI:btn_quickequipOnClick(tipUI.btn_quickequip)
+                end
+            end)
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: TỰ ĐỘNG BẤM CHUYỂN CƯỜNG HÓA NHANH (EQUIP_ZHUANYIFASTUI)
+        -- Mô tả: Xác nhận kế thừa cường hóa +15 sang trang bị mới ngay lập tức
+        -- =========================================================================
+        local isTransferVisible = false
+        pcall(function()
+            if _G.UIManager and _G.UIManager.IsVisible then
+                if (_G.UIID and _G.UIID.Equip_ZhuanyiFastUI and _G.UIManager.IsVisible(_G.UIID.Equip_ZhuanyiFastUI)) or _G.UIManager.IsVisible("Equip_ZhuanyiFastUI") then
+                    isTransferVisible = true
+                end
+            end
+        end)
+        local transferUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (_G.UIID and _G.UIID.Equip_ZhuanyiFastUI and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)))
+        if transferUI and (isTransferVisible or (transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id then
                     _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
                     _G.PlayerPrefs.Save()
                 end
@@ -2982,29 +3087,17 @@ DismissBlockers = function()
                         })
                     end
                 end
-                if transferUI.btn_confirmOnClick then
+                if transferUI.btn_confirmOnClick and transferUI.btn_confirm then
                     transferUI:btn_confirmOnClick(transferUI.btn_confirm)
                 end
-                if _G.UIManager then
+                if transferUI.btn_closeBgOnClick then
+                    transferUI:btn_closeBgOnClick()
+                elseif _G.UIManager then
                     if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
-                    if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
                     _G.UIManager.Hide("Equip_ZhuanyiFastUI")
-                    _G.UIManager.Hide("Equip_ForgeNavUi")
                 end
                 Log("[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới", true)
                 SaveOutput()
-            end)
-        end
-        
-        -- Tự động bấm Trang bị ngay khi nhặt được đồ xịn hơn
-        local tipUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Equip_TIpsUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Equip_TIpsUI)))
-        if tipUI and tipUI.btn_quickequip and not IsObjectNil(tipUI.btn_quickequip) and tipUI.btn_quickequip.gameObject.activeInHierarchy then
-            pcall(function()
-                if tipUI.Btn_quickequip then
-                    tipUI:Btn_quickequip()
-                elseif tipUI.btn_quickequipOnClick then
-                    tipUI:btn_quickequipOnClick(tipUI.btn_quickequip)
-                end
             end)
         end
         
@@ -3217,9 +3310,14 @@ local function IsGoodItem(item, subType, excDesList)
 end
 
 -- =========================================================================
--- [QUY TẮC LỌC TRANG BỊ THU HỒI CHUẨN CLIENT - MỞ RƯƠNG VÀNG & TÚI ĐỒ]
--- Mô tả: CHỈ thu hồi Quần áo (subType 13..17) và Vũ khí (subType 1..12, 24, 25, 56, 57, 81).
---        TUYỆT ĐỐI KHÔNG thu hồi Cánh, Nhẫn, Dây chuyền, Ngọc, Sách kỹ năng, Bình máu/mana, Rương, Vé.
+-- [MOD FEATURE]: QUY TẮC LỌC TRANG BỊ THU HỒI CHUẨN CLIENT - MỞ RƯƠNG VÀNG & TÚI ĐỒ
+-- Mô tả:
+--        1. ƯU TIÊN SỐ 1: Trang bị KHÁC HỆ PHÁI (Cross-Career - ví dụ DW nhặt đồ Cung Thủ, Chiến Binh):
+--           Xác định 100% là RÁC -> THU HỒI NGAY LẬP TỨC (Bỏ qua giữ dòng Trác Việt vì không bao giờ mặc được).
+--        2. CHỈ thu hồi Quần áo (subType 13..17) và Vũ khí / Vũ khí phụ (subType 1..12, 23..25, 56, 57, 81).
+--        3. Đồ cũ có Cường hóa thấp (intensify <= 6) không tăng lực chiến (CanUpFight = false) -> Cho phép thu hồi.
+--           Chỉ bảo vệ đồ có intensify >= 7 hoặc đồ đang mặc trên người.
+--        4. TUYỆT ĐỐI KHÔNG thu hồi Cánh, Nhẫn, Dây chuyền, Ngọc, Sách kỹ năng, Bình máu/mana, Rương, Vé.
 -- =========================================================================
 local function IsRecyclableEquipment(item)
     if not item or not item.id then return false end
@@ -3230,15 +3328,12 @@ local function IsRecyclableEquipment(item)
     local itemType = tblItem.type or 0
     local subType = tblItem.subType or 0
     local itemName = tostring(tblItem.name or item.name or "")
-    -- 0. TUYỆT ĐỐI KHÔNG THU HỒI TRANG BỊ CÓ THỂ MẶC TĂNG LỰC CHIẾN (CAN WEAR UP FIGHT)
-    if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
-        local upState = _G.RoleEquipUtility.CanUpFight(item)
-        if upState == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
-            return false
-        end
-    end
 
-    -- 1. Phải là Trang bị (type == 2 hoặc có cấu hình trong cfg_Item_equip)
+    -- 1. Bỏ qua trang bị đang mặc trên người
+    if item.bagGridIndex and item.bagGridIndex >= 100 then return false end
+    if item.isEquiped and type(item.isEquiped) == "function" and item:isEquiped() then return false end
+
+    -- 2. Phải là Trang bị (type == 2 hoặc có cấu hình trong cfg_Item_equip)
     local isEquipType = (itemType == 2) or (item.tblEquip ~= nil)
     if not isEquipType and _G.ClientTable and _G.ClientTable.cfg_Item_equipManager and itemId > 0 then
         local eq = _G.ClientTable.cfg_Item_equipManager:TryGetValue(itemId)
@@ -3246,31 +3341,71 @@ local function IsRecyclableEquipment(item)
     end
     if not isEquipType then return false end
 
-    -- 2. Phân loại theo chuẩn subtype client:
+    -- 3. Phân loại theo chuẩn subtype client:
     --    - Quần áo / Giáp trụ: 13 (Mũ), 14 (Áo), 15 (Quần), 16 (Găng), 17 (Giày)
-    --    - Vũ khí: 1..12, 24, 25, 56, 57, 81 (Kiếm, Rìu, Chùy, Giáo, Cung, Nỏ, Trượng, Khiên, v.v.)
+    --    - Vũ khí & Vũ khí phụ: 1..12, 23 (Túi tên), 24 (Bao tên cung), 25 (Bao tên nỏ), 56 (Sách phép), 57, 81
     local isArmor = (subType >= 13 and subType <= 17)
-    local isWeapon = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
+    local isWeapon = ((subType >= 1 and subType <= 12) or (subType >= 23 and subType <= 25) or subType == 56 or subType == 57 or subType == 81)
     
     -- CHỈ thu hồi Quần áo & Vũ khí, TUYỆT ĐỐI không động vào các loại khác
     if not (isArmor or isWeapon) then return false end
 
-    -- 3. Phải có giá bán thu hồi
+    -- 4. Phải có giá bán thu hồi
     if string.isNullOrEmpty(tblItem.sell) then return false end
 
-    -- 4. Bỏ qua trang bị đang mặc trên người
-    if item.bagGridIndex and item.bagGridIndex >= 100 then return false end
-    if item.isEquiped and type(item.isEquiped) == "function" and item:isEquiped() then return false end
-
-    -- 5. Bỏ qua trang bị đã được cường hóa hoặc tiến cấp
-    if item.intensify and item.intensify > 0 then return false end
-    if item.additional and item.additional > 0 then return false end
-
-    -- 6. Bỏ qua nếu là Cánh, Nhẫn, Dây chuyền, Bông tai hoặc vật phẩm đặc biệt
+    -- 5. Bỏ qua nếu là Cánh, Nhẫn, Dây chuyền, Bông tai hoặc vật phẩm đặc biệt
     if subType == 18 or subType == 19 or subType == 20 or subType == 21 or subType == 22 or subType == 26 then return false end
     if string.find(itemName, "Cánh") or string.find(itemName, "Nhẫn") or string.find(itemName, "Chuyền") then return false end
 
-    -- 7. Kiểm tra dòng Trác Việt ngon (nếu bật cấu hình giữ dòng)
+    -- 6. [MOD FEATURE]: KIỂM TRA HỆ PHÁI (CROSS-CAREER ITEM)
+    -- Nếu trang bị thuộc hệ phái khác (ví dụ DW nhặt Cung, Nỏ, Kiếm hệ khác): 100% RÁC -> THU HỒI NGAY
+    local pMe = _G.RoleManager and _G.RoleManager.me
+    local myCareer = (pMe and pMe.career) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.career) or 0
+    local isOtherCareer = false
+
+    if tblItem.career and tblItem.career ~= "0" and tblItem.career ~= "" then
+        local matchCareer = false
+        if _G.RoleEquipUtility and _G.RoleEquipUtility.CheckCareerEquip and itemId > 0 then
+            pcall(function() matchCareer = _G.RoleEquipUtility.CheckCareerEquip(itemId, myCareer) end)
+        end
+        if not matchCareer and _G.RoleUtility and _G.RoleUtility.CareerJudge and myCareer > 0 then
+            pcall(function()
+                local cList = string.split(tostring(tblItem.career), "#")
+                for _, cIdStr in ipairs(cList) do
+                    local cId = tonumber(cIdStr)
+                    if cId and _G.RoleUtility.CareerJudge(myCareer, cId) then
+                        matchCareer = true
+                        break
+                    end
+                end
+            end)
+        end
+        if not matchCareer then
+            isOtherCareer = true
+        end
+    end
+
+    if isOtherCareer then
+        -- Khác hệ phái: DW vĩnh viễn không thể mặc -> Thu hồi ngay lập tức (chỉ giữ nếu cường hóa siêu cao >= +7)
+        if item.intensify and item.intensify >= 7 then return false end
+        return true
+    end
+
+    -- 7. ĐỐI VỚI ĐỒ CÙNG HỆ PHÁI:
+    -- 7.1. TUYỆT ĐỐI KHÔNG THU HỒI TRANG BỊ CÓ THỂ MẶC TĂNG LỰC CHIẾN (CAN WEAR UP FIGHT)
+    if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
+        local upState = _G.RoleEquipUtility.CanUpFight(item)
+        if upState == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
+            return false
+        end
+    end
+
+    -- 7.2. Bỏ qua trang bị có cấp cường hóa cao (>= +7) hoặc tiến cấp cao (>= 7)
+    -- Các đồ cũ thay ra có intensify <= 6 và không tăng lực chiến -> CHO PHÉP THU HỒI để không bị kẹt túi
+    if item.intensify and item.intensify >= 7 then return false end
+    if item.additional and item.additional >= 7 then return false end
+
+    -- 7.3. Kiểm tra dòng Trác Việt ngon (nếu bật cấu hình giữ dòng)
     local activeCfg = GetActiveConfig()
     if activeCfg and activeCfg.keepGoodLines then
         local excDesList = {}
@@ -3676,8 +3811,8 @@ CreateRoleAndEnterGame = function(targetIdx)
     _G.HasCreatedRoleForTarget = true
 
     local newName = GenerateUniqueRoleName()
-    local targetCareer = 13 -- Cung Thủ (Archer)
-    local careerName = "Cung Thủ (Archer)"
+    local targetCareer = 12 -- Pháp Sư (Dark Wizard - DW)
+    local careerName = "Pháp Sư (Dark Wizard - DW)"
     local targetSex = 1 -- BẮT BUỘC 1 TRÊN TẤT CẢ CÁC HỆ (KHÔNG PHẢI 2)!
 
     Log("=========================================================================")
@@ -3731,8 +3866,8 @@ CreateRoleAndEnterGame = function(targetIdx)
             if createUI.SelectCareer then
                 createUI:SelectCareer(targetCareer)
             end
-            if createUI.tog_archer and createUI.tog_archer.SetIsOn then
-                createUI.tog_archer:SetIsOn(true)
+            if createUI.tog_magic and createUI.tog_magic.SetIsOn then
+                createUI.tog_magic:SetIsOn(true)
             end
             if createUI.InputField_Name and createUI.InputField_Name.SetInputText then
                 createUI.InputField_Name:SetInputText(newName)
@@ -3934,7 +4069,9 @@ end
 AutoRecycleBagItems = function()
     local pMe = _G.RoleManager and _G.RoleManager.me
     local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-    if curLvl < 20 then return 0 end
+    -- [QUY TẮC THU HỒI]: Chỉ thực hiện thu hồi định kỳ khi nhân vật đạt Level >= 50
+    -- Để bảo toàn toàn bộ trang bị tân thủ (như Khiên DW, Áo, Quần) tránh bị thu hồi sớm
+    if curLvl < 50 then return 0 end
 
     local recycledCount = 0
     pcall(function()
@@ -3984,17 +4121,6 @@ AutoRecycleBagItems = function()
             end
             if _G.UIID and _G.UIID.PromptTipUI and _G.UIManager and _G.UIManager.IsVisible(_G.UIID.PromptTipUI) then
                 _G.UIManager.Hide(_G.UIID.PromptTipUI)
-            end
-            -- =========================================================================
-            -- [MOD FEATURE]: ẨN TOÀN BỘ GIAO DIỆN YÊU CẦU CHUYỂN CẤP CƯỜNG HÓA KHI THU HỒI
-            -- =========================================================================
-            if _G.UIManager then
-                if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
-                if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
-                if _G.UIID and _G.UIID.Equip_Transfer then _G.UIManager.Hide(_G.UIID.Equip_Transfer) end
-                _G.UIManager.Hide("Equip_ZhuanyiFastUI")
-                _G.UIManager.Hide("Equip_ForgeNavUi")
-                _G.UIManager.Hide("Equip_Transfer")
             end
 
             Log(string.format(">>> [THU HỒI]: Đã thu hồi %d món trang bị rác <<<", recycledCount), true)
@@ -5037,15 +5163,58 @@ end
 -- =========================================================================
 -- [MOD FEATURE]: CHỌN BÃI FARM QUÁI TỐT NHẤT DỰA TRÊN PHÒNG THỦ NHÂN VẬT
 -- =========================================================================
+-- [MOD FEATURE]: DANH SÁCH BÃI QUÁI TARKAN PHÂN CẤP THEO PHÒNG THỦ (EXP X1.0 -> X4.0)
+-- Mô tả: Tarkan phân cấp rõ ràng theo 6 bậc quái (Lv150 -> Lv195).
+--        Nhân vật luôn được tính toán chọn bãi quái cao nhất mà Thủ nhân vật đáp ứng đủ!
+-- =========================================================================
+local TARKAN_MONSTER_SPOTS = {
+    { x = 166, y = 196, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 123, y = 186, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 91,  y = 202, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 75,  y = 181, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 51,  y = 170, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 35,  y = 226, name = "Quái Lv195 (EXP x4.0)", monsterLvl = 195, defenseReq = 390, efficiency = 6 },
+    { x = 110, y = 138, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 88,  y = 138, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 68,  y = 121, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 59,  y = 149, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 37,  y = 148, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 105, y = 169, name = "Quái Lv190 (EXP x3.0)", monsterLvl = 190, defenseReq = 372, efficiency = 5 },
+    { x = 94,  y = 91,  name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 65,  y = 70,  name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 63,  y = 89,  name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 33,  y = 73,  name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 37,  y = 96,  name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 28,  y = 125, name = "Quái Lv180 (EXP x2.5)", monsterLvl = 180, defenseReq = 355, efficiency = 4 },
+    { x = 118, y = 100, name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 105, y = 77,  name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 104, y = 61,  name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 87,  y = 46,  name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 126, y = 24,  name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 110, y = 43,  name = "Quái Lv170 (EXP x2.0)", monsterLvl = 170, defenseReq = 337, efficiency = 3 },
+    { x = 157, y = 81,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 148, y = 62,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 149, y = 43,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 137, y = 93,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 127, y = 74,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 128, y = 57,  name = "Quái Lv160 (EXP x1.5)", monsterLvl = 160, defenseReq = 320, efficiency = 2 },
+    { x = 162, y = 102, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+    { x = 182, y = 112, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+    { x = 201, y = 106, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+    { x = 150, y = 119, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+    { x = 164, y = 139, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+    { x = 155, y = 151, name = "Quái Lv150 (EXP x1.0)", monsterLvl = 150, defenseReq = 260, efficiency = 1 },
+}
+
 local FALLBACK_MAP_SPOTS = {
     [1003] = { x = 215, y = 45, name = "Devias (Lv 30)", defenseReq = 30 },
     [100201] = { x = 109, y = 247, name = "Dungeon 1 (Lv 60)", defenseReq = 80 },
-    [100501] = { x = 193, y = 30, name = "Lost Tower 1 (Lv 90)", defenseReq = 140 },
+    [100501] = { x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)", defenseReq = 105 },
     [100502] = { x = 193, y = 30, name = "Lost Tower 2 (Lv 110)", defenseReq = 180 },
     [100507] = { x = 193, y = 30, name = "Lost Tower 7 (Lv 140)", defenseReq = 277 },
     [1008] = { x = 74, y = 43, name = "Atlantis (Lv 100)", defenseReq = 176 },
-    [1009] = { x = 128, y = 57, name = "Tarkan (Lv 160)", defenseReq = 320 },
-    [100901] = { x = 128, y = 57, name = "Tarkan (Lv 160)", defenseReq = 320 },
+    [1009] = { x = 166, y = 196, name = "Tarkan (Quái Lv195)", defenseReq = 390 },
+    [100901] = { x = 166, y = 196, name = "Tarkan (Quái Lv195)", defenseReq = 390 },
     [1034] = { x = 85, y = 8, name = "Aida (Lv 200)", defenseReq = 390 },
     [103401] = { x = 85, y = 8, name = "Aida (Lv 200)", defenseReq = 390 },
     [1011] = { x = 15, y = 13, name = "Icarus (Lv 250)", defenseReq = 509 },
@@ -5058,16 +5227,29 @@ local FALLBACK_MAP_SPOTS = {
 
 GetBestMonsterFarmPoint = function(curMap)
     local bestPoint = nil
+    local targetMap = nil
     pcall(function()
         if not curMap or curMap == 0 then
             curMap = (_G.SceneData and _G.SceneData.mapId) or 0
         end
         if not curMap or curMap == 0 then return end
         curMap = tonumber(curMap)
+        targetMap = curMap
 
         local pointList = nil
         if _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetMonsterPointList then
             pointList = _G.ClientTable.cfg_Map_minimapManager:GetMonsterPointList(curMap)
+        end
+        if (not pointList or #pointList == 0) and _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetDic then
+            local allMiniMap = _G.ClientTable.cfg_Map_minimapManager:GetDic()
+            if allMiniMap and type(allMiniMap) == "table" then
+                pointList = {}
+                for _, v in pairs(allMiniMap) do
+                    if v and v.mid == curMap and v.position and v.Param then
+                        table.insert(pointList, v)
+                    end
+                end
+            end
         end
 
         local myDef = GetPlayerMonsterDefense()
@@ -5128,7 +5310,8 @@ GetBestMonsterFarmPoint = function(curMap)
                             defenseReq = defReq,
                             monsterLvl = mLvl,
                             efficiency = mEff,
-                            monsterId = mId
+                            monsterId = mId,
+                            mapId = curMap
                         }
 
                         if defReq > 0 and defReq < minDefVal then
@@ -5141,6 +5324,25 @@ GetBestMonsterFarmPoint = function(curMap)
                             table.insert(validPoints, ptEntry)
                         end
                     end
+                end
+            end
+        end
+
+        -- Nếu map mục tiêu là Tarkan, bổ sung danh sách bãi phân cấp chuẩn của Tarkan
+        if (curMap == 1009 or curMap == 100901) then
+            for _, spot in ipairs(TARKAN_MONSTER_SPOTS) do
+                if myDef >= spot.defenseReq then
+                    table.insert(validPoints, {
+                        id = curMap,
+                        name = "Tarkan " .. spot.name,
+                        x = spot.x,
+                        y = spot.y,
+                        defenseReq = spot.defenseReq,
+                        monsterLvl = spot.monsterLvl,
+                        efficiency = spot.efficiency or 1,
+                        monsterId = 0,
+                        mapId = curMap
+                    })
                 end
             end
         end
@@ -5160,38 +5362,227 @@ GetBestMonsterFarmPoint = function(curMap)
                 return a.defenseReq > b.defenseReq
             end)
             bestPoint = validPoints[1]
-        elseif lowestDefPoint then
-            bestPoint = lowestDefPoint
-        elseif FALLBACK_MAP_SPOTS[curMap] then
-            local fb = FALLBACK_MAP_SPOTS[curMap]
-            bestPoint = {
-                id = curMap,
-                name = fb.name,
-                x = fb.x,
-                y = fb.y,
-                defenseReq = fb.defenseReq,
-                monsterLvl = 100,
-                efficiency = 1,
-                monsterId = 0
+            targetMap = curMap
+        else
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG DÒ TÌM & LÙI MAP KHI QUÁI MAP HIỆN TẠI QUÁ SỨC
+            -- Mô tả: Nếu trong map hiện tại không có bãi nào đáp ứng (Thủ nhân vật < Thủ yêu cầu),
+            --        bot tự động quét danh sách map từ cao xuống thấp để lùi về map phù hợp với thủ!
+            -- =========================================================================
+            local MAP_STEP_DOWN_LIST = {
+                { mapId = 1009, name = "Tarkan", minDef = 260 },
+                { mapId = 100507, name = "Lost Tower 7", minDef = 277 },
+                { mapId = 1008, name = "Atlantis", minDef = 176 },
+                { mapId = 100502, name = "Lost Tower 2", minDef = 180 },
+                { mapId = 100501, name = "Lost Tower 1", minDef = 105 },
+                { mapId = 100201, name = "Dungeon 1", minDef = 80 },
+                { mapId = 1003, name = "Devias", minDef = 30 },
             }
+
+            for _, cand in ipairs(MAP_STEP_DOWN_LIST) do
+                if cand.mapId ~= curMap and myDef >= cand.minDef then
+                    local candPts = nil
+                    if _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetMonsterPointList then
+                        candPts = _G.ClientTable.cfg_Map_minimapManager:GetMonsterPointList(cand.mapId)
+                    end
+                    if (not candPts or #candPts == 0) and _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetDic then
+                        local allMiniMap = _G.ClientTable.cfg_Map_minimapManager:GetDic()
+                        if allMiniMap and type(allMiniMap) == "table" then
+                            candPts = {}
+                            for _, v in pairs(allMiniMap) do
+                                if v and v.mid == cand.mapId and v.position and v.Param then
+                                    table.insert(candPts, v)
+                                end
+                            end
+                        end
+                    end
+
+                    local candValid = {}
+                    if candPts and type(candPts) == "table" and #candPts > 0 then
+                        for _, pt in ipairs(candPts) do
+                            local coordStr = pt.position or pt.coord or ""
+                            local coords = string.split(coordStr, "#")
+                            local px = tonumber(coords[1]) or (pt.x and tonumber(pt.x)) or 0
+                            local py = tonumber(coords[2]) or (pt.y and tonumber(pt.y)) or 0
+                            local mName = pt.name or ""
+                            local mLvl = 0
+                            local lvStr = mName:match("[Ll][Vv]%.?%s*(%d+)")
+                            if lvStr then mLvl = tonumber(lvStr) or 0 end
+                            local defReq = GetDefenseRequirementForMonster(mName, mLvl)
+                            if px > 0 and py > 0 and myDef >= defReq and defReq > 0 then
+                                table.insert(candValid, {
+                                    id = pt.id or 0,
+                                    name = mName,
+                                    x = px,
+                                    y = py,
+                                    defenseReq = defReq,
+                                    monsterLvl = mLvl,
+                                    efficiency = 1,
+                                    monsterId = pt.Param or 0,
+                                    mapId = cand.mapId
+                                })
+                            end
+                        end
+                    end
+
+                    if cand.mapId == 1009 then
+                        for _, spot in ipairs(TARKAN_MONSTER_SPOTS) do
+                            if myDef >= spot.defenseReq then
+                                table.insert(candValid, {
+                                    id = cand.mapId,
+                                    name = "Tarkan " .. spot.name,
+                                    x = spot.x,
+                                    y = spot.y,
+                                    defenseReq = spot.defenseReq,
+                                    monsterLvl = spot.monsterLvl,
+                                    efficiency = spot.efficiency or 1,
+                                    monsterId = 0,
+                                    mapId = cand.mapId
+                                })
+                            end
+                        end
+                    end
+
+                    if #candValid > 0 then
+                        table.sort(candValid, function(a, b)
+                            if a.monsterLvl ~= b.monsterLvl then return a.monsterLvl > b.monsterLvl end
+                            return a.defenseReq > b.defenseReq
+                        end)
+                        bestPoint = candValid[1]
+                        targetMap = cand.mapId
+                        break
+                    elseif FALLBACK_MAP_SPOTS[cand.mapId] and myDef >= FALLBACK_MAP_SPOTS[cand.mapId].defenseReq then
+                        local fb = FALLBACK_MAP_SPOTS[cand.mapId]
+                        bestPoint = {
+                            id = cand.mapId,
+                            name = fb.name,
+                            x = fb.x,
+                            y = fb.y,
+                            defenseReq = fb.defenseReq,
+                            monsterLvl = 100,
+                            efficiency = 1,
+                            monsterId = 0,
+                            mapId = cand.mapId
+                        }
+                        targetMap = cand.mapId
+                        break
+                    end
+                end
+            end
+
+            -- Nếu vẫn chưa tìm được: fallback về điểm nhỏ nhất của map hiện tại
+            if not bestPoint then
+                if lowestDefPoint then
+                    bestPoint = lowestDefPoint
+                    targetMap = curMap
+                elseif FALLBACK_MAP_SPOTS[curMap] then
+                    local fb = FALLBACK_MAP_SPOTS[curMap]
+                    bestPoint = {
+                        id = curMap,
+                        name = fb.name,
+                        x = fb.x,
+                        y = fb.y,
+                        defenseReq = fb.defenseReq,
+                        monsterLvl = 100,
+                        efficiency = 1,
+                        monsterId = 0,
+                        mapId = curMap
+                    }
+                    targetMap = curMap
+                end
+            end
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: CỐ ĐỊNH TỌA ĐỘ VÀNG 194#106 TẠI MAP LOST TOWER 1 (BÃI LV 90)
+        -- Mô tả: Cố định vị trí đứng giữa 2 bãi quái Lv 90 để tối đa gấp đôi hiệu suất train farm,
+        --        không dịch chuyển đến tọa độ góc của riêng 1 bãi.
+        -- =========================================================================
+        if bestPoint and (targetMap == 100501 or curMap == 100501) then
+            bestPoint.x = 194
+            bestPoint.y = 106
+            bestPoint.name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)"
         end
     end)
-    return bestPoint
+    return bestPoint, (targetMap or curMap)
 end
 _G.GetBestMonsterFarmPoint = GetBestMonsterFarmPoint
+
+-- =========================================================================
+-- [MOD FEATURE]: NGẮT TÌM ĐƯỜNG & DI CHUYỂN NHẸ TẠI CHỖ (BREAK PATHFINDER JIGGLE)
+-- Mô tả: Dừng di chuyển, xóa dữ liệu PathFinder và nhích nhẹ +-1 ô để chống lag/chạy ngược về điểm hồi sinh đầu map.
+--        Kế thừa kỹ thuật Jiggle chuẩn từ hệ thống săn Boss của bản Client.
+-- =========================================================================
+local function Mod_PerformStopMoveJiggle(targetX, targetY)
+    pcall(function()
+        if _G.PathFinderManager and _G.PathFinderManager.ResetData then
+            _G.PathFinderManager.ResetData()
+        end
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me then
+            if me.StopMove then me:StopMove() end
+            if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+            if me.MoveTo then
+                local meX = targetX or (me.serverCoord and me.serverCoord.x) or (me.data and me.data.x) or (me.cellPos and me.cellPos.x) or 0
+                local meY = targetY or (me.serverCoord and me.serverCoord.y) or (me.data and me.data.y) or (me.cellPos and me.cellPos.y) or 0
+                if meX > 0 and meY > 0 then
+                    local dx = math.random(-1, 1)
+                    local dy = math.random(-1, 1)
+                    if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                    me:MoveTo({ x = meX + dx, y = meY + dy })
+                end
+            end
+        end
+    end)
+end
+_G.Mod_PerformStopMoveJiggle = Mod_PerformStopMoveJiggle
 
 -- =========================================================================
 -- [MOD FEATURE]: BAY SIÊU TỐC VỀ BÃI TRAIN / BÃI QUÁI BẰNG REQCALLFLAG (0ms INSTANT TELEPORT)
 -- Mô tả: Sử dụng ReqCallFlag để dịch chuyển tức thì (0ms) về đúng tọa độ bãi train / bãi farm
 --        tối ưu theo Phòng thủ thực tế của nhân vật, không dùng chạy bộ chậm chạp.
+--        Nếu bãi tối ưu nằm ở map khác (lùi map), tự động dùng ReqTransmit chuyển map!
 -- =========================================================================
-TeleportToBestFarmPoint = function(curMap)
-    local bestPt = GetBestMonsterFarmPoint(curMap)
+TeleportToBestFarmPoint = function(forcedMap)
+    local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+    curMap = tonumber(curMap) or 0
+    local checkMap = forcedMap or curMap
+    local bestPt, targetMap = GetBestMonsterFarmPoint(checkMap)
+    targetMap = forcedMap or targetMap or curMap
+
     if not bestPt or not bestPt.x or not bestPt.y or bestPt.x == 0 or bestPt.y == 0 then 
         return false 
     end
 
-    -- 1. Kiểm tra cự ly hiện tại tới bãi farm
+    -- 1. Nếu bãi tối ưu nằm ở Map khác -> Dùng ReqCallFlag + ReqTransmit chuyển sang Map mục tiêu
+    if targetMap ~= curMap and targetMap > 0 then
+        Log(string.format("-> [CHUYỂN MAP FARM 0ms]: Thủ hiện tại (%d) -> Dùng ReqCallFlag bay thẳng tới Map %d (%s: %d#%d)!", 
+            GetPlayerMonsterDefense(), targetMap, tostring(bestPt.name), bestPt.x, bestPt.y), true)
+        SaveOutput()
+        local lineId = (_G.SceneData and _G.SceneData.line) or 1
+        pcall(function()
+            if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                _G.networkRequest.ReqCallFlag(1, 0, targetMap, lineId, bestPt.x, bestPt.y, 0)
+            end
+            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                    type = 1,
+                    rid = 0,
+                    mapId = targetMap,
+                    line = lineId,
+                    x = bestPt.x,
+                    y = bestPt.y,
+                    hostId = 0
+                })
+            end
+            if _G.networkRequest and _G.networkRequest.ReqTransmit then
+                _G.networkRequest.ReqTransmit(targetMap, lineId, bestPt.x, bestPt.y)
+            end
+        end)
+        return true
+    end
+
+    -- 2. Kiểm tra cự ly hiện tại tới bãi farm trong cùng Map
     local pMe = _G.RoleManager and _G.RoleManager.me
     local myPos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
     if myPos and myPos.x and myPos.y then
@@ -5236,15 +5627,54 @@ TeleportToBestFarmPoint = function(curMap)
             _G.networkRequest.ReqTransmit(curMap, lineId, bestPt.x, bestPt.y)
         end
 
-        -- 2. Kích hoạt AutoFight
-        local me = _G.RoleManager and _G.RoleManager.me
-        if me then
-            if me.StopMove then me:StopMove() end
-            if me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
-            if me.SetAutoHookFight then me:SetAutoHookFight(true) end
-            if me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
-        end
-        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(true) end
+        -- Tắt AutoTask của game gốc ngay lập tức để không dắt bộ ngược về đầu map
+        pcall(function()
+            if _G.AutoTaskManage then
+                if _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+                if _G.AutoTaskManage.SetCurAutoTaskState then _G.AutoTaskManage.SetCurAutoTaskState(false) end
+                if _G.AutoTaskManage.RemoveAutoTask then _G.AutoTaskManage.RemoveAutoTask(true) end
+            end
+            if _G.TaskManager and _G.TaskManager.TaskPathStop then
+                _G.TaskManager.TaskPathStop()
+            end
+        end)
+
+        -- 2. Bước di chuyển nhẹ (Jiggle +-1 ô) sau khi bay 0.35s để đồng bộ tọa độ server và triệt tiêu lệnh chạy ngược
+        Timer.Start(0.35, function()
+            pcall(function()
+                if Mod_PerformStopMoveJiggle then
+                    Mod_PerformStopMoveJiggle(bestPt.x, bestPt.y)
+                end
+            end)
+
+            -- 3. Sau khi nhích nhẹ xong: Dừng di chuyển, chốt vị trí căn cứ tại bãi farm mới và bật AutoFight
+            Timer.Start(0.35, function()
+                pcall(function()
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me then
+                        if me.StopMove then me:StopMove() end
+                        if me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                        if me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                        if me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                    end
+                    if _G.QiJiHelperData then
+                        if CS.UnityEngine and CS.UnityEngine.Vector2Int then
+                            _G.QiJiHelperData.meCellPos = CS.UnityEngine.Vector2Int(bestPt.x, bestPt.y)
+                        end
+                        if _G.QiJiHelperData.SettingData and _G.QiJiHelperData.SettingData.ReturnHome then
+                            _G.QiJiHelperData.SettingData.ReturnHome.IsReturn = false
+                        end
+                        _G.QiJiHelperData.nextReturnHomeTime = 999999999
+                        if _G.QiJiHelperData.SetAutoFightData then
+                            _G.QiJiHelperData.SetAutoFightData(true)
+                        end
+                    end
+                    if _G.QiJiHelperController and _G.QiJiHelperController.SetReturnHome then
+                        _G.QiJiHelperController.SetReturnHome(false)
+                    end
+                end)
+            end)
+        end)
     end)
     return true
 end
@@ -5357,7 +5787,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         return
     end
     _G.AutoEvenEnhanceRunning = true
-    maxTargetLvl = maxTargetLvl or 15
+    maxTargetLvl = maxTargetLvl or 30
 
     -- Tự động mặc đồ tốt nhất trước khi cường hóa
     pcall(function()
@@ -5366,7 +5796,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         end
     end)
 
-    local targetTiers = { 5, 10, 15 }
+    local targetTiers = { 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 30 }
     local activeTiers = {}
     for _, t in ipairs(targetTiers) do
         if t <= maxTargetLvl then
@@ -5387,14 +5817,19 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         _G.Log(string.format("-> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: %d viên | Đá Linh Hồn: %d viên", blessCount, soulCount), false)
 
         local totalEnhancedCount = 0
+        local cannotEnhanceAnyMore = false
 
         for _, currentTier in ipairs(activeTiers) do
+            if cannotEnhanceAnyMore or _G.Bot_PauseTask or not _G.Bot_Running then break end
+
             local tierDone = false
             local loopCount = 0
             local maxTierLoops = 300
             local enhancedInTier = 0
+            local skippedIds = {}
 
             while not tierDone and loopCount < maxTierLoops do
+                if _G.Bot_PauseTask or not _G.Bot_Running then break end
                 loopCount = loopCount + 1
 
                 -- 1. Quét danh sách trang bị đang mặc
@@ -5404,22 +5839,35 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                     break
                 end
 
-                -- 2. Tìm trang bị có cấp nhỏ nhất (< currentTier)
+                -- 2. Tìm trang bị có cấp nhỏ nhất (< currentTier) chưa bị bỏ qua
                 local candidate = nil
                 local minLvl = 999
                 for _, eq in ipairs(equips) do
                     local curLvl = eq.item.intensify or 0
-                    if curLvl < currentTier and curLvl < minLvl then
+                    if curLvl < currentTier and curLvl < minLvl and not skippedIds[eq.id] then
                         minLvl = curLvl
                         candidate = eq
                     end
                 end
 
-                -- Nếu toàn bộ trang bị đã >= currentTier -> Hoàn thành Tier này
+                -- Nếu không còn candidate nào trong tier này:
                 if not candidate then
-                    if enhancedInTier > 0 then
-                        _G.Log(string.format(">>> [TIER +%d HOÀN THÀNH]: Tất cả trang bị đã đạt +%d! <<<", currentTier, currentTier), true)
-                        SaveOutput()
+                    local anyUnderTier = false
+                    for _, eq in ipairs(equips) do
+                        if (eq.item.intensify or 0) < currentTier then
+                            anyUnderTier = true
+                            break
+                        end
+                    end
+                    if anyUnderTier then
+                        -- Còn món dưới tier nhưng tất cả đều thiếu nguyên liệu -> Hết nguyên liệu nâng tier này và cao hơn
+                        cannotEnhanceAnyMore = true
+                        _G.Log(string.format("-> [HẾT NGUYÊN LIỆU]: Đã nâng tối đa có thể với số Đá/Vàng hiện có trong túi!"), false)
+                    else
+                        if enhancedInTier > 0 then
+                            _G.Log(string.format(">>> [TIER +%d HOÀN THÀNH]: Tất cả trang bị đã đạt +%d! <<<", currentTier, currentTier), true)
+                            SaveOutput()
+                        end
                     end
                     tierDone = true
                     break
@@ -5428,40 +5876,31 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
                 -- 3. Kiểm tra nguyên liệu của candidate
                 local canDo, reason = CanEnhanceItem(candidate.item)
                 if not canDo then
-                    _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s của món %s (+%d)!", reason, candidate.name, candidate.item.intensify or 0), false)
-                    if totalEnhancedCount > 0 then
-                        _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
-                    else
-                        _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
+                    -- Bỏ qua món này trong lượt nâng hiện tại, tiếp tục thử các món khác
+                    skippedIds[candidate.id] = true
+                else
+                    -- 4. Gửi lệnh Cường hóa món đồ candidate
+                    local curLvl = candidate.item.intensify or 0
+                    local curBless = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000091)) or 0
+                    totalEnhancedCount = totalEnhancedCount + 1
+                    enhancedInTier = enhancedInTier + 1
+                    _G.Log(string.format("-> [ĐẬP ĐỒ]: %s (Slot %d | Cấp: +%d -> +%d | Đá Chúc Phúc còn: %d)...", 
+                        candidate.name, candidate.slot, curLvl, curLvl + 1, curBless), false)
+
+                    pcall(function()
+                        if _G.MeEquipController and _G.MeEquipController.ReqEquipIntensify then
+                            _G.MeEquipController.ReqEquipIntensify(candidate.id)
+                        elseif _G.networkRequest and _G.networkRequest.ReqEquipIntensify then
+                            _G.networkRequest.ReqEquipIntensify(candidate.id)
+                        elseif _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqEquipIntensify then
+                            _G.NetManager.Send(_G.EquipMessage.ReqEquipIntensify, { equipId = candidate.id })
+                        end
+                    end)
+
+                    -- Chờ server phản hồi và cập nhật equipsData
+                    if Coroutine and Coroutine.Wait then
+                        Coroutine.Wait(0.2)
                     end
-                    SaveOutput()
-                    _G.AutoEvenEnhanceRunning = false
-                    _G.Bot_HasDoneEnhanceAfterSnowBug = true
-                    if onFinished then pcall(onFinished) end
-                    return
-                end
-
-                -- 4. Gửi lệnh Cường hóa món đồ candidate
-                local curLvl = candidate.item.intensify or 0
-                local curBless = (_G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId and _G.BagInfoData.GetItemTotalCountByItemId(6000091)) or 0
-                totalEnhancedCount = totalEnhancedCount + 1
-                enhancedInTier = enhancedInTier + 1
-                _G.Log(string.format("-> [ĐẬP ĐỒ]: %s (Slot %d | Cấp: +%d -> +%d | Đá Chúc Phúc còn: %d)...", 
-                    candidate.name, candidate.slot, curLvl, curLvl + 1, curBless), false)
-
-                pcall(function()
-                    if _G.MeEquipController and _G.MeEquipController.ReqEquipIntensify then
-                        _G.MeEquipController.ReqEquipIntensify(candidate.id)
-                    elseif _G.networkRequest and _G.networkRequest.ReqEquipIntensify then
-                        _G.networkRequest.ReqEquipIntensify(candidate.id)
-                    elseif _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqEquipIntensify then
-                        _G.NetManager.Send(_G.EquipMessage.ReqEquipIntensify, { equipId = candidate.id })
-                    end
-                end)
-
-                -- Chờ server phản hồi và cập nhật equipsData
-                if Coroutine and Coroutine.Wait then
-                    Coroutine.Wait(0.2)
                 end
             end
 
@@ -5471,7 +5910,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         end
 
         if totalEnhancedCount > 0 then
-            _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần (Đạt mốc +%d) <<<", totalEnhancedCount, maxTargetLvl), true)
+            _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần (Mục tiêu: +%d) <<<", totalEnhancedCount, maxTargetLvl), true)
         else
             _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
         end
@@ -5489,8 +5928,9 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         local curTierIdx = 1
         local totalEnhancedCount = 0
         local enhanceTimer = nil
+        local skippedIds = {}
         enhanceTimer = Timer.StartLoop(0.25, -1, function()
-            if curTierIdx > #activeTiers then
+            if _G.Bot_PauseTask or not _G.Bot_Running or curTierIdx > #activeTiers then
                 if enhanceTimer then Timer.Stop(enhanceTimer) end
                 _G.AutoEvenEnhanceRunning = false
                 _G.Bot_HasDoneEnhanceAfterSnowBug = true
@@ -5510,30 +5950,41 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
             local minLvl = 999
             for _, eq in ipairs(equips) do
                 local curLvl = eq.item.intensify or 0
-                if curLvl < currentTier and curLvl < minLvl then
+                if curLvl < currentTier and curLvl < minLvl and not skippedIds[eq.id] then
                     minLvl = curLvl
                     candidate = eq
                 end
             end
 
             if not candidate then
-                curTierIdx = curTierIdx + 1
-                return
+                local anyUnderTier = false
+                for _, eq in ipairs(equips) do
+                    if (eq.item.intensify or 0) < currentTier then
+                        anyUnderTier = true
+                        break
+                    end
+                end
+                if anyUnderTier then
+                    -- Hết nguyên liệu nâng tier này
+                    if enhanceTimer then Timer.Stop(enhanceTimer) end
+                    _G.AutoEvenEnhanceRunning = false
+                    _G.Bot_HasDoneEnhanceAfterSnowBug = true
+                    if totalEnhancedCount > 0 then
+                        _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
+                    end
+                    SaveOutput()
+                    if onFinished then pcall(onFinished) end
+                    return
+                else
+                    skippedIds = {}
+                    curTierIdx = curTierIdx + 1
+                    return
+                end
             end
 
             local canDo, reason = CanEnhanceItem(candidate.item)
             if not canDo then
-                if enhanceTimer then Timer.Stop(enhanceTimer) end
-                _G.AutoEvenEnhanceRunning = false
-                _G.Bot_HasDoneEnhanceAfterSnowBug = true
-                _G.Log(string.format("-> [DỪNG CƯỜNG HÓA]: %s!", reason), false)
-                if totalEnhancedCount > 0 then
-                    _G.Log(string.format(">>> [CƯỜNG HÓA]: Đã xử lý nâng cấp %d lần <<<", totalEnhancedCount), true)
-                else
-                    _G.Log(">>> [CƯỜNG HÓA]: Đã xử lý <<<", false)
-                end
-                SaveOutput()
-                if onFinished then pcall(onFinished) end
+                skippedIds[candidate.id] = true
                 return
             end
 
@@ -5555,39 +6006,66 @@ _G.AutoEvenEnhanceEquipments = AutoEvenEnhanceEquipments
 -- =========================================================================
 AutoEquipBetterItems = function()
     pcall(function()
-        if _G.RoleManager and _G.RoleManager.me then
+        if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id then
             _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
             _G.PlayerPrefs.Save()
         end
         
         -- 1. Bấm Trang bị ngay nếu popup đang mở
         local tipUI = _G.UIManager and _G.UIID and _G.UIID.Equip_TIpsUI and _G.UIManager.GetUiByName(_G.UIID.Equip_TIpsUI)
-        if tipUI and tipUI.btn_quickequip and not IsObjectNil(tipUI.btn_quickequip) and tipUI.btn_quickequip.gameObject.activeInHierarchy then
+        if tipUI and (tipUI.btn_quickequip and not IsObjectNil(tipUI.btn_quickequip)) then
             if tipUI.Btn_quickequip then tipUI:Btn_quickequip() end
         end
         
-        -- 2. Quét túi đồ tìm trang bị tăng lực chiến
+        -- 2. Quét túi đồ tìm trang bị tăng lực chiến hoặc có Bậc/Phẩm chất cao hơn
         if _G.BagInfoData and _G.BagInfoData.GetTotalBag and _G.RoleEquipUtility then
             local bag = _G.BagInfoData.GetTotalBag()
             if bag then
                 local equipsData = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.equipsData and _G.RoleManager.me.data.equipsData.Data
                 for _, item in pairs(bag) do
                     if item and item.id and item.tblEquip then
+                        local iName = tostring(item.tblItem and item.tblItem.name or item.name or item.id)
+                        local canPos = nil
+                        if _G.RoleEquipUtility.WearEquipIndex then
+                            canPos = _G.RoleEquipUtility.WearEquipIndex(item)
+                        end
+                        local oldEquip = equipsData and canPos and equipsData[canPos]
+
                         local canWear = false
+                        -- A. Kiểm tra tăng lực chiến thông thường
                         if _G.RoleEquipUtility.CanUpFight then
                             local state = _G.RoleEquipUtility.CanUpFight(item)
                             if state == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
                                 canWear = true
                             end
                         end
-                        if canWear then
-                            local iName = tostring(item.tblItem and item.tblItem.name or item.name or item.id)
-                            local canPos = nil
-                            if _G.RoleEquipUtility.WearEquipIndex then
-                                canPos = _G.RoleEquipUtility.WearEquipIndex(item)
+
+                        -- B. Kiểm tra Bậc (equipClass) hoặc Phẩm chất (quality) nếu CanUpFight chưa nhận diện do đồ cũ đang mang +15
+                        if not canWear then
+                            local canUse = false
+                            if _G.RoleEquipUtility and _G.RoleEquipUtility.CheckUseItem then
+                                local ok, _ = _G.RoleEquipUtility.CheckUseItem(item, (_G.CheckUseItemWay and _G.CheckUseItemWay.NotAddPoint) or 1)
+                                canUse = (ok == true)
                             end
-                            
-                            local oldEquip = equipsData and canPos and equipsData[canPos]
+                            if canUse then
+                                if not oldEquip then
+                                    -- Vị trí này đang trống (ví dụ Khiên DW hoặc Vũ khí phụ) -> Mặc ngay!
+                                    canWear = true
+                                elseif item.tblEquip and oldEquip.tblEquip then
+                                    local newClass = item.tblEquip.equipClass or 0
+                                    local oldClass = oldEquip.tblEquip.equipClass or 0
+                                    local newQuality = (item.tblItem and item.tblItem.quality) or 0
+                                    local oldQuality = (oldEquip.tblItem and oldEquip.tblItem.quality) or 0
+                                    if newClass > oldClass then
+                                        canWear = true
+                                    elseif newClass == oldClass and newQuality > oldQuality then
+                                        canWear = true
+                                    end
+                                end
+                            end
+                        end
+
+                        if canWear then
                             local isNeedTransfer = false
                             if oldEquip and _G.MeEquipController and _G.MeEquipController.IsCanTransfer then
                                 isNeedTransfer = _G.MeEquipController.IsCanTransfer(oldEquip, item, canPos)
@@ -5637,7 +6115,7 @@ AutoEquipBetterItems = function()
         
         -- 3. Xử lý popup Chuyển Trang Bị nếu còn mở
         local transferUI = _G.UIManager and _G.UIID and _G.UIID.Equip_ZhuanyiFastUI and _G.UIManager.GetUiByName(_G.UIID.Equip_ZhuanyiFastUI)
-        if transferUI and ((transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
+        if transferUI and ((transferUI.root and transferUI.root.activeInHierarchy) or (transferUI.btn_confirm and not IsObjectNil(transferUI.btn_confirm) and transferUI.btn_confirm.gameObject and transferUI.btn_confirm.gameObject.activeInHierarchy)) then
             pcall(function()
                 local oldItem = transferUI.oldItem or (_G.ForgeData and _G.ForgeData.EquipTransferMain)
                 local newItem = transferUI.newItem or (_G.ForgeData and _G.ForgeData.EquipTransferSecond)
@@ -5662,12 +6140,12 @@ AutoEquipBetterItems = function()
                         })
                     end
                 end
-                if transferUI.btn_confirmOnClick then transferUI:btn_confirmOnClick(transferUI.btn_confirm) end
-                if _G.UIManager then
+                if transferUI.btn_confirmOnClick and transferUI.btn_confirm then transferUI:btn_confirmOnClick(transferUI.btn_confirm) end
+                if transferUI.btn_closeBgOnClick then
+                    transferUI:btn_closeBgOnClick()
+                elseif _G.UIManager then
                     if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
-                    if _G.UIID and _G.UIID.Equip_ForgeNavUi then _G.UIManager.Hide(_G.UIID.Equip_ForgeNavUi) end
                     _G.UIManager.Hide("Equip_ZhuanyiFastUI")
-                    _G.UIManager.Hide("Equip_ForgeNavUi")
                 end
                 Log("[Chuyển Cường Hóa] : Đã chuyển cấp cường hóa sang trang bị mới", true)
             end)
@@ -5724,21 +6202,26 @@ local function GetAllEquippedGemsList()
         for _, equipIndex in ipairs(equipOrderList) do
             local equipIndexData = equipIndexExtraMgr:GetEquipIndexData(equipIndex)
             if equipIndexData then
-                local gListData = equipIndexData:GetGemListData()
-                if gListData then
-                    local list = gListData:GetGemList()
-                    if list then
-                        for _, gemData in pairs(list) do
-                            if gemData and gemData.stoneCellInfo and gemData.stoneCellInfo.inlayIndex then
-                                local stoneName = (gemData.stoneTbl and gemData.stoneTbl.name) or ("Huỳnh Thạch " .. tostring(gemData.stoneCellInfo.inlayIndex))
-                                local curLvl = gemData.stoneLevel or 0
-                                table.insert(gemList, {
-                                    gem = gemData,
-                                    inlayIndex = gemData.stoneCellInfo.inlayIndex,
-                                    equipIndex = equipIndex,
-                                    level = curLvl,
-                                    name = stoneName
-                                })
+                -- [QUY TẮC BẮT BUỘC]: Vị trí trang bị phải CÓ ĐỒ ĐANG MẶC thì mới nâng được Huỳnh Thạch
+                -- Tránh trường hợp slot 5 (Khiên/Vũ khí phụ) bị trống khiến Server từ chối và sinh vòng lặp vô tận
+                local equipItem = equipIndexData:GetEquipItemData()
+                if equipItem ~= nil then
+                    local gListData = equipIndexData:GetGemListData()
+                    if gListData and gListData.AnalysisState ~= false then
+                        local list = gListData:GetGemList()
+                        if list then
+                            for _, gemData in pairs(list) do
+                                if gemData and gemData.stoneCellInfo and gemData.stoneCellInfo.inlayIndex then
+                                    local stoneName = (gemData.stoneTbl and gemData.stoneTbl.name) or ("Huỳnh Thạch " .. tostring(gemData.stoneCellInfo.inlayIndex))
+                                    local curLvl = gemData.stoneLevel or 0
+                                    table.insert(gemList, {
+                                        gem = gemData,
+                                        inlayIndex = gemData.stoneCellInfo.inlayIndex,
+                                        equipIndex = equipIndex,
+                                        level = curLvl,
+                                        name = stoneName
+                                    })
+                                end
                             end
                         end
                     end
@@ -5750,10 +6233,16 @@ local function GetAllEquippedGemsList()
 end
 
 AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
+    -- Kiểm tra trạng thái Bot: nếu đã tạm dừng hoặc tắt bot thì không chạy
+    if not _G.Bot_Running or _G.Bot_PauseTask then
+        if onFinished then onFinished() end
+        return
+    end
+
     local pMe = _G.RoleManager and _G.RoleManager.me
     local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-    if curLvl <= 60 then
-        -- [QUY TẮC HUỲNH THẠCH]: Chỉ mở khóa và kích hoạt khi nhân vật đạt Level > 60
+    if curLvl < 60 then
+        -- [QUY TẮC HUỲNH THẠCH]: Chỉ mở khóa và kích hoạt khi nhân vật đạt Level >= 60
         if onFinished then onFinished() end
         return
     end
@@ -5763,6 +6252,30 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
     end
     maxTargetLvl = maxTargetLvl or 15
     _G.AutoEvenUpgradeGemsRunning = true
+
+    -- Tự động mở các rương quà/rương nguyên liệu chứa Huỳnh Thạch trong túi nếu có
+    pcall(function()
+        if _G.BagInfoData and _G.BagInfoData.GetTotalBag then
+            local bag = _G.BagInfoData.GetTotalBag()
+            if bag then
+                for _, item in pairs(bag) do
+                    if item and item.tblItem then
+                        local t = item.tblItem.type
+                        local ro = item.tblItem.rightOperate
+                        local uParam = tostring(item.tblItem.useParam or "")
+                        local iName = tostring(item.tblItem.name or "")
+                        if (t == 5 or ro == 2 or ro == 25) and (uParam:find("603501") or iName:find("Huỳnh Thạch") or iName:find("Rương Ngọc") or iName:find("Quà Cấp")) then
+                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                _G.networkRequest.ReqUseItem(item.count or 1, item.id)
+                            elseif _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                                _G.NetManager.Send(_G.BagMessage.ReqUseItem, { itemId = item.id, count = item.count or 1, clientParams = {} })
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
 
     -- Đồng bộ trạng thái Cell nếu cần
     pcall(function()
@@ -5786,21 +6299,30 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         end
     end)
 
-    Log(string.format("-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = %d | Vàng = %d", shardCount, goldCount), false)
+    Log(string.format("-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = %d | Vàng = %d", shardCount, goldCount), true)
     SaveOutput()
 
     local function DoUpgradeGemsRoutine()
         local upgradeCount = 0
         local equipIndexExtraMgr = GetEquipIndexExtraManager()
+        local attemptedCounts = {}
 
         while true do
+            -- [KIỂM TRA TẠM DỪNG]: Nếu bot bị tạm dừng hoặc tắt, ngắt vòng lặp ngay lập tức!
+            if not _G.Bot_Running or _G.Bot_PauseTask then
+                Log("-> [HUỲNH THẠCH]: Dừng tiến trình nâng ngọc do Bot tạm dừng!", false)
+                break
+            end
+
             if equipIndexExtraMgr and equipIndexExtraMgr.ResetGemCalculate then
                 equipIndexExtraMgr:ResetGemCalculate()
             end
 
             local gemList = GetAllEquippedGemsList()
             if #gemList == 0 then
-                Log("-> [HUỲNH THẠCH]: Không tìm thấy danh sách lỗ khảm Huỳnh Thạch nào!", false)
+                if upgradeCount == 0 then
+                    Log("-> [HUỲNH THẠCH]: Không tìm thấy danh sách lỗ khảm Huỳnh Thạch hợp lệ trên đồ đang mặc!", false)
+                end
                 break
             end
 
@@ -5810,7 +6332,9 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
 
             for _, entry in ipairs(gemList) do
                 local lvl = entry.level or 0
-                if lvl < maxTargetLvl and entry.gem then
+                local targetIdx = entry.inlayIndex
+                -- Bỏ qua nếu viên này đã thử 2 lần trong chu kỳ mà Server không nâng cấp thành công
+                if lvl < maxTargetLvl and entry.gem and (attemptedCounts[targetIdx] or 0) < 2 then
                     local canUp = false
                     if entry.gem.IsCanUpLevel then
                         canUp = entry.gem:IsCanUpLevel()
@@ -5840,13 +6364,15 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
                 if upgradeCount == 0 then
                     local msg = "Không có viên nào đủ điều kiện nâng cấp"
                     if #lackReason > 0 then msg = msg .. " (" .. lackReason .. ")" end
-                    Log("-> [HUỲNH THẠCH]: " .. msg, false)
+                    Log("-> [HUỲNH THẠCH]: " .. msg, true)
                 end
                 break
             end
 
             local curLvl = candidate.level or 0
             local targetIndex = candidate.inlayIndex
+            attemptedCounts[targetIndex] = (attemptedCounts[targetIndex] or 0) + 1
+
             pcall(function()
                 if _G.networkRequest and _G.networkRequest.ReqLightStoneLevelUp then
                     _G.networkRequest.ReqLightStoneLevelUp(targetIndex)
@@ -5855,11 +6381,11 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
                 end
             end)
             upgradeCount = upgradeCount + 1
-            Log(string.format("-> [NÂNG HUỲNH THẠCH]: %s (Index: %d | Lv.%d -> Lv.%d)", candidate.name, targetIndex, curLvl, curLvl + 1), false)
+            Log(string.format("-> [NÂNG HUỲNH THẠCH]: %s (Index: %d | Lv.%d -> Lv.%d)", candidate.name, targetIndex, curLvl, curLvl + 1), true)
             SaveOutput()
 
             if Coroutine and Coroutine.Wait then
-                Coroutine.Wait(0.2)
+                Coroutine.Wait(0.3)
             end
         end
 
@@ -5879,8 +6405,15 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         local upTimer = nil
         local count = 0
         local equipIndexExtraMgr = GetEquipIndexExtraManager()
+        local attemptedCounts = {}
 
         upTimer = Timer.StartLoop(0.3, -1, function()
+            if not _G.Bot_Running or _G.Bot_PauseTask then
+                if upTimer then Timer.Stop(upTimer) end
+                _G.AutoEvenUpgradeGemsRunning = false
+                return
+            end
+
             if equipIndexExtraMgr and equipIndexExtraMgr.ResetGemCalculate then
                 equipIndexExtraMgr:ResetGemCalculate()
             end
@@ -5892,7 +6425,8 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
 
             for _, entry in ipairs(gemList) do
                 local lvl = entry.level or 0
-                if lvl < maxTargetLvl and entry.gem then
+                local targetIdx = entry.inlayIndex
+                if lvl < maxTargetLvl and entry.gem and (attemptedCounts[targetIdx] or 0) < 2 then
                     local canUp = false
                     if entry.gem.IsCanUpLevel then
                         canUp = entry.gem:IsCanUpLevel()
@@ -5933,6 +6467,8 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
 
             local curLvl = candidate.level or 0
             local targetIndex = candidate.inlayIndex
+            attemptedCounts[targetIndex] = (attemptedCounts[targetIndex] or 0) + 1
+
             pcall(function()
                 if _G.networkRequest and _G.networkRequest.ReqLightStoneLevelUp then
                     _G.networkRequest.ReqLightStoneLevelUp(targetIndex)
@@ -6388,6 +6924,360 @@ pcall(function()
 end)
 
 -- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG DÙNG THẺ ĐẶC QUYỀN 120 PHÚT (ID 60011001)
+-- Mô tả: Quét túi đồ nếu tìm thấy Thẻ Đặc Quyền (120 Phút), tự động kích hoạt
+--        ngay lập tức để nhận x2 EXP và các thuộc tính buff mạnh mẽ giúp cày cấp nhanh.
+-- =========================================================================
+local function AutoUsePrivilegeCard()
+    pcall(function()
+        local foundItem = nil
+        local foundInstId = 0
+        if _G.BagInfoData and _G.BagInfoData.TotalItems then
+            for _, item in pairs(_G.BagInfoData.TotalItems) do
+                if item then
+                    local iid = item.itemId or (item.tblItem and item.tblItem.id) or (item.data and item.data.itemId) or 0
+                    if iid == 60011001 then
+                        foundItem = item
+                        foundInstId = item.id or (item.data and item.data.id) or iid
+                        break
+                    end
+                end
+            end
+        end
+
+        if foundItem and foundInstId ~= 0 then
+            Log(string.format(">>> [THẺ ĐẶC QUYỀN]: Phát hiện Thẻ Đặc Quyền 120 Phút (InstId: %s) -> Kích hoạt ngay! <<<", tostring(foundInstId)), true)
+            SaveOutput()
+
+            if _G.ItemUtility and _G.ItemUtility.UseItem then
+                _G.ItemUtility.UseItem({
+                    useItemId = foundInstId,
+                    configId = 60011001,
+                    useCount = 1,
+                    itemInfo = foundItem,
+                    useParam = (foundItem.tblItem and foundItem.tblItem.useParam) or "23#208#7200"
+                })
+            end
+
+            if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                _G.networkRequest.ReqUseItem(1, foundInstId)
+            elseif _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                _G.NetManager.Send(_G.BagMessage.ReqUseItem, { count = 1, itemId = foundInstId, clientParams = {} })
+            end
+        end
+    end)
+end
+_G.AutoUsePrivilegeCard = AutoUsePrivilegeCard
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG NHẬN PHÚC LỢI CỘNG ĐỒNG TOÀN DIỆN & HÒM THƯ (LV 30, 60, 100)
+-- Mô tả: Kiểm tra và nhận toàn bộ các mốc Phúc Lợi Cộng Đồng theo điều kiện cấp độ nhân vật:
+--        - Mốc 1 (Lv 30): Hướng Dẫn Game (Gift 2200008, CountKey 2444009) -> 250 KC + 250K Vàng
+--        - Mốc 2 (Lv 30): Liên Kết SĐT (Gift 2200005, CountKey 2444006) -> Rương Quà
+--        - Mốc 3 (Lv 100): Theo Dõi FB (Gift 2200006, CountKey 2444007) -> 250 KC + 250K Vàng
+--        - Mốc 4 (Lv 100): Tham Gia Nhóm (Gift 2200007, CountKey 2444008) -> Rương Quà
+--        Kiểm tra trực tiếp RechargeData.GetCount(countKey) == 0 để nhận từng mốc,
+--        cho phép quét lại toàn bộ tại Level 60 và 100 để không bao giờ bị bỏ sót!
+-- =========================================================================
+local COMMUNITY_WELFARE_MILESTONES = {
+    { id = 2200008, countKey = 2444009, minLvl = 30, name = "Hướng Dẫn Game (250 KC + 250K Vàng)" },
+    { id = 2200005, countKey = 2444006, minLvl = 30, name = "Liên Kết SĐT" },
+    { id = 2200006, countKey = 2444007, minLvl = 100, name = "Theo Dõi FB (250 KC + 250K Vàng)" },
+    { id = 2200007, countKey = 2444008, minLvl = 100, name = "Tham Gia Nhóm (Rương Quà)" },
+}
+
+local function AutoClaimCommunityWelfareAndMail(onFinished)
+    pcall(function()
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+
+        if curLvl < 30 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        local claimedAny = false
+        for _, m in ipairs(COMMUNITY_WELFARE_MILESTONES) do
+            if curLvl >= m.minLvl then
+                local cCount = (_G.RechargeData and _G.RechargeData.GetCount and _G.RechargeData.GetCount(m.countKey)) or 0
+                if cCount == 0 then
+                    Log(string.format(">>> [CỘNG ĐỒNG]: Cấp %d đạt mốc -> Tự động nhận Phúc Lợi: %s (GiftId: %d)! <<<", curLvl, m.name, m.id), true)
+                    SaveOutput()
+                    if _G.networkRequest and _G.networkRequest.ReqGetGift then
+                        _G.networkRequest.ReqGetGift({ m.id })
+                    elseif _G.NetManager and _G.RechargeMessage and _G.RechargeMessage.ReqGetGift then
+                        _G.NetManager.Send(_G.RechargeMessage.ReqGetGift, { id = { m.id } })
+                    end
+                    claimedAny = true
+                end
+            end
+        end
+
+        -- Sau 1.5s: Tự động đồng bộ hòm thư và nhận tất cả quà đính kèm
+        Timer.Start(1.5, function()
+            pcall(function()
+                if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailList then
+                    _G.NetManager.Send(_G.MailMessage.ReqGetMailList, {})
+                end
+            end)
+            Timer.Start(1.5, function()
+                pcall(function()
+                    if claimedAny then
+                        Log(">>> [HÒM THƯ]: Tự động nhận tất cả quà từ thư vào túi đồ (ReqGetMailItems)! <<<", true)
+                        SaveOutput()
+                    end
+                    if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailItems then
+                        _G.NetManager.Send(_G.MailMessage.ReqGetMailItems)
+                    end
+                end)
+                Timer.Start(1.5, function()
+                    if AutoBuyDailyBlessStonesFromShop then
+                        AutoBuyDailyBlessStonesFromShop(function()
+                            if AutoBuyDailyDiamondGiftPacks then
+                                AutoBuyDailyDiamondGiftPacks(onFinished)
+                            elseif onFinished then
+                                onFinished()
+                            end
+                        end)
+                    elseif AutoBuyDailyDiamondGiftPacks then
+                        AutoBuyDailyDiamondGiftPacks(onFinished)
+                    elseif onFinished then
+                        onFinished()
+                    end
+                end)
+            end)
+        end)
+    end)
+end
+_G.AutoClaimCommunityWelfareAndMail = AutoClaimCommunityWelfareAndMail
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MUA 100 ĐÁ CHÚC PHÚC SHOP VÀNG (DAILY BLESS BUY)
+-- Mô tả: Mua tối đa 100 viên Đá Chúc Phúc trong Shop Vàng (GoodId: 20101 | 500 Vàng/viên = 50.000 Vàng/ngày)
+--        để phục vụ cường hóa trang bị lên cao trong chu trình 30s upgrade.
+-- =========================================================================
+local function AutoBuyDailyBlessStonesFromShop(onFinished)
+    pcall(function()
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local roleId = tostring((pMe and pMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or "default")
+        local todayStr = os.date("%Y%m%d")
+        local prefKey = "Mod_ShopBless_Date_" .. roleId
+        local savedDate = CS.UnityEngine.PlayerPrefs.GetString(prefKey, "")
+
+        -- Kiểm tra số lần còn lại trong ngày (CountKey 2360001)
+        local remainCount = 100
+        pcall(function()
+            if _G.RefreshData and _G.RefreshData.GetLimitCount then
+                local rem = _G.RefreshData.GetLimitCount(2360001)
+                if rem ~= nil and tonumber(rem) ~= nil then
+                    remainCount = tonumber(rem)
+                end
+            end
+        end)
+
+        if savedDate == todayStr and remainCount <= 0 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- Kiểm tra số Vàng hiện có (Vàng Khoá 1000021 hoặc Vàng Thường 1000011 / 1001)
+        local curGold = 0
+        pcall(function()
+            if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                curGold = _G.BagInfoData.GetItemTotalCountByItemId(1000021) or 0
+                if curGold <= 0 then
+                    curGold = _G.BagInfoData.GetItemTotalCountByItemId(1000011) or _G.BagInfoData.GetItemTotalCountByItemId(1001) or 0
+                end
+            end
+            if curGold <= 0 and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute then
+                curGold = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.bindGold)) or 0
+                if curGold <= 0 then
+                    curGold = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.gold)) or 0
+                end
+            end
+            if curGold <= 0 and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data then
+                curGold = _G.RoleManager.me.data.bindGold or _G.RoleManager.me.data.gold or 0
+            end
+        end)
+
+        -- Cần tối thiểu 500 Vàng để mua ít nhất 1 viên
+        local buyNum = math.min(remainCount, math.floor(curGold / 500))
+        if buyNum > 100 then buyNum = 100 end
+
+        if buyNum <= 0 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        Log(string.format(">>> [SHOP VÀNG]: Tự động mua %d viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: %d Vàng)... <<<", buyNum, buyNum * 500), true)
+        SaveOutput()
+
+        -- Gửi gói tin mua trực tiếp qua NetManager / networkRequest
+        pcall(function()
+            if _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                    goodId = 20101,
+                    buyCount = buyNum
+                })
+            elseif _G.networkRequest and _G.networkRequest.ReqBuy then
+                _G.networkRequest.ReqBuy(20101, buyNum)
+            end
+        end)
+
+        CS.UnityEngine.PlayerPrefs.SetString(prefKey, todayStr)
+        CS.UnityEngine.PlayerPrefs.Save()
+
+        Timer.Start(1.0, function()
+            Log(string.format(">>> [SHOP VÀNG]: Đã mua thành công %d viên Đá Chúc Phúc vào túi đồ! <<<", buyNum), true)
+            SaveOutput()
+            if onFinished then onFinished() end
+        end)
+    end)
+end
+_G.AutoBuyDailyBlessStonesFromShop = AutoBuyDailyBlessStonesFromShop
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MUA GÓI QUÀ KIM CƯƠNG NGÀY (DAILY DIAMOND GIFT PACKS)
+-- Mô tả: Tự động mua Quà KC II (480 KC) để nhận 200 Huỳnh thạch tím, 67 hồng, 65 chúc phúc, 35 linh hồn, 4 lông vũ, 30K vàng
+--        và nếu còn dư >= 180 KC thì mua tiếp Quà KC I (180 KC) để nhận 80 tím, 27 hồng, 25 chúc phúc, 15 linh hồn, 2 lông vũ
+--        ngay khi nhận đủ KC từ gói Phúc Lợi Cộng Đồng ở Lv 100 hoặc trong chu kỳ nâng cấp 30s.
+-- =========================================================================
+AutoBuyDailyDiamondGiftPacks = function(onFinished)
+    pcall(function()
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+        if curLvl < 50 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- 1. Lấy tổng số Kim Cương hiện có (bao gồm cả KC Khóa 1000081 & KC Thường 1000050)
+        local curDiamonds = 0
+        pcall(function()
+            if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                curDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000050) or 0
+                if curDiamonds <= 0 then
+                    curDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000081) or 0
+                end
+            end
+            if curDiamonds <= 0 and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute then
+                curDiamonds = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.bindDiamond)) or 0
+                if curDiamonds <= 0 then
+                    curDiamonds = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.diamond)) or 0
+                end
+            end
+            if curDiamonds <= 0 and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data then
+                curDiamonds = _G.RoleManager.me.data.diamond_bind or _G.RoleManager.me.data.diamond or 0
+            end
+        end)
+
+        if curDiamonds < 180 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- 2. Xác định Config ID và CountKey của Quà KC II và Quà KC I
+        -- Quà KC II: goodId 220244 (hoặc 220245 nếu gem >= 210), countKey 4010316
+        -- Quà KC I:  goodId 220228 (hoặc 220229 nếu gem >= 210), countKey 4010305
+        local packKC2_Id = 220244
+        local packKC2_CountKey = 4010316
+        local packKC1_Id = 220228
+        local packKC1_CountKey = 4010305
+
+        -- Nếu hệ thống RechargeData đã có BuyPrizeData, tìm động theo Cost để tuyệt đối chính xác
+        pcall(function()
+            if _G.RechargeData and _G.RechargeData.GetNewBuyPrizeInfor then
+                local prizeItemData = _G.RechargeData.GetNewBuyPrizeInfor()
+                if prizeItemData and #prizeItemData > 0 then
+                    for _, v in ipairs(prizeItemData) do
+                        local costArray = string.split(v.cost or "", "#")
+                        local costVal = tonumber(costArray[2]) or 0
+                        if costVal == 480 then
+                            packKC2_Id = v.id or packKC2_Id
+                            packKC2_CountKey = v.countKey or packKC2_CountKey
+                        elseif costVal == 180 then
+                            packKC1_Id = v.id or packKC1_Id
+                            packKC1_CountKey = v.countKey or packKC1_CountKey
+                        end
+                    end
+                end
+            end
+        end)
+
+        local remainKC2 = 1
+        local remainKC1 = 1
+        pcall(function()
+            if _G.RechargeData and _G.RechargeData.GetBuyPrizeLimitCountData then
+                local r2 = _G.RechargeData.GetBuyPrizeLimitCountData(packKC2_CountKey)
+                if r2 ~= nil then remainKC2 = tonumber(r2) or 0 end
+                local r1 = _G.RechargeData.GetBuyPrizeLimitCountData(packKC1_CountKey)
+                if r1 ~= nil then remainKC1 = tonumber(r1) or 0 end
+            end
+        end)
+
+        -- ƯU TIÊN 1: Mua Quà KC II (480 KC)
+        if curDiamonds >= 480 and remainKC2 > 0 then
+            Log(string.format(">>> [GÓI QUÀ KC]: Đủ %d KC -> Tự động mua QUÀ KC II (GoodId: %d | Chi phí: 480 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC2_Id, remainKC2), true)
+            SaveOutput()
+
+            if _G.networkRequest and _G.networkRequest.ReqBuy then
+                _G.networkRequest.ReqBuy(packKC2_Id, 1)
+            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                    goodId = packKC2_Id,
+                    buyCount = 1
+                })
+            end
+            curDiamonds = curDiamonds - 480
+
+            -- Sau 1.2s kiểm tra xem có đủ điều kiện mua tiếp Quà KC I không
+            Timer.Start(1.2, function()
+                pcall(function()
+                    if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                        local realDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000050) or 0
+                        if realDiamonds > 0 then curDiamonds = realDiamonds end
+                    end
+
+                    if curDiamonds >= 180 and remainKC1 > 0 then
+                        Log(string.format(">>> [GÓI QUÀ KC]: Dư %d KC -> Tự động mua thêm QUÀ KC I (GoodId: %d | Chi phí: 180 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC1_Id, remainKC1), true)
+                        SaveOutput()
+
+                        if _G.networkRequest and _G.networkRequest.ReqBuy then
+                            _G.networkRequest.ReqBuy(packKC1_Id, 1)
+                        elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                                goodId = packKC1_Id,
+                                buyCount = 1
+                            })
+                        end
+                    end
+                end)
+                if onFinished then onFinished() end
+            end)
+            return
+        end
+
+        -- ƯU TIÊN 2: Nếu không đủ 480 KC nhưng đủ 180 KC -> Mua Quà KC I
+        if curDiamonds >= 180 and remainKC1 > 0 then
+            Log(string.format(">>> [GÓI QUÀ KC]: Có %d KC -> Tự động mua QUÀ KC I (GoodId: %d | Chi phí: 180 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC1_Id, remainKC1), true)
+            SaveOutput()
+
+            if _G.networkRequest and _G.networkRequest.ReqBuy then
+                _G.networkRequest.ReqBuy(packKC1_Id, 1)
+            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                    goodId = packKC1_Id,
+                    buyCount = 1
+                })
+            end
+        end
+
+        if onFinished then onFinished() end
+    end)
+end
+_G.AutoBuyDailyDiamondGiftPacks = AutoBuyDailyDiamondGiftPacks
+
+-- =========================================================================
 -- [MOD FEATURE]: VÒNG LẶP NÂNG CẤP TỔNG HỢP ĐỊNH KỲ 30S (XUYÊN SUỐT TOÀN DIỆN)
 -- Mô tả: Chạy độc lập và xuyên suốt vòng đời bot (làm tân thủ hay đã tốt nghiệp treo bãi train):
 --        1. Tự động kiểm tra mua Máu (HP) & Mana (MP) nếu dưới 100 -> Mua bù lên 500 (AutoBuyPotionsIfLow)
@@ -6411,9 +7301,34 @@ RunPeriodicUpgradeCycle = function()
     pcall(function()
         Log("[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", false)
 
+        -- 0.01. Tự động nhận thư và quà đính kèm định kỳ mỗi 30s
+        pcall(function()
+            if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailList then
+                _G.NetManager.Send(_G.MailMessage.ReqGetMailList, {})
+            end
+            if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailItems then
+                _G.NetManager.Send(_G.MailMessage.ReqGetMailItems)
+            end
+        end)
+
+        -- 0.02. Tự động kiểm tra mua 100 Đá Chúc Phúc Shop Vàng
+        if AutoBuyDailyBlessStonesFromShop then
+            AutoBuyDailyBlessStonesFromShop()
+        end
+
+        -- 0.025. Tự động kiểm tra mua Gói Quà Kim Cương Ngày (Quà KC II 480 KC, Quà KC I 180 KC)
+        if AutoBuyDailyDiamondGiftPacks then
+            AutoBuyDailyDiamondGiftPacks()
+        end
+
         -- 0. Tự động mua bù Máu & Mana nếu < 50
         if AutoBuyPotionsIfLow then
             AutoBuyPotionsIfLow(100, 500)
+        end
+
+        -- 0.05. Tự động dùng Thẻ Đặc Quyền (120 Phút) nếu có trong túi
+        if AutoUsePrivilegeCard then
+            AutoUsePrivilegeCard()
         end
 
         -- 0.1. Tự động nhận thưởng Sự kiện mở SV & Phúc lợi
@@ -6424,6 +7339,11 @@ RunPeriodicUpgradeCycle = function()
         -- 0.2. Tự động nhận quà Phúc Lợi Ngày / Cộng đồng (mỗi ngày 1 lần)
         if AutoClaimDailyWelfare then
             AutoClaimDailyWelfare()
+        end
+
+        -- 0.3. Tự động nhận quà Phúc Lợi Cộng Đồng (Hướng Dẫn Game 250 KC) & Nhận Thư
+        if AutoClaimCommunityWelfareAndMail then
+            AutoClaimCommunityWelfareAndMail()
         end
 
         -- 1. Phân bổ điểm tiềm năng
@@ -6444,8 +7364,10 @@ RunPeriodicUpgradeCycle = function()
             pcall(function()
                 DismissBlockers()
 
-                -- Thu hồi trang bị rác sau khi đã mặc đồ xịn và kế thừa xong
-                if AutoRecycleBagItems then
+                -- Thu hồi trang bị rác sau khi đã mặc đồ xịn và kế thừa xong (Chỉ kích hoạt khi Lv >= 50)
+                local pMe = _G.RoleManager and _G.RoleManager.me
+                local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+                if curLvl >= 50 and AutoRecycleBagItems then
                     AutoRecycleBagItems()
                 end
 
@@ -6454,18 +7376,19 @@ RunPeriodicUpgradeCycle = function()
                     SolveBranchAndRewardsTasks()
                 end
 
-                -- Cường hóa đều trang bị (+15) & Nâng cấp đều Huỳnh Thạch (+15, chỉ chạy khi Lv > 60)
-                local pMe = _G.RoleManager and _G.RoleManager.me
-                local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+                -- Cường hóa đều trang bị (mục tiêu mốc +30 hoặc tối đa theo nguyên liệu)
                 if not _G.AutoEvenEnhanceRunning and AutoEvenEnhanceEquipments then
-                    AutoEvenEnhanceEquipments(15, function()
-                        if curLvl > 60 and not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
-                            AutoEvenUpgradeGems(15)
-                        end
-                    end)
-                elseif curLvl > 60 and not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
-                    AutoEvenUpgradeGems(15)
+                    AutoEvenEnhanceEquipments(30)
                 end
+
+                -- Nâng cấp đều Huỳnh Thạch (mục tiêu mốc +30, chạy khi Lv >= 60)
+                Timer.Start(2.0, function()
+                    local pMe = _G.RoleManager and _G.RoleManager.me
+                    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+                    if curLvl >= 60 and not _G.AutoEvenUpgradeGemsRunning and AutoEvenUpgradeGems then
+                        AutoEvenUpgradeGems(30)
+                    end
+                end)
 
                 DismissBlockers()
             end)
@@ -6613,12 +7536,12 @@ local function StartStep5_MailAndUpgrade(onFinished)
                     -- 3. Thu hồi trang bị rác (đồ xịn có CanWearUpFight đã được bảo vệ tuyệt đối không bao giờ bị thu hồi)
                     if AutoRecycleBagItems then AutoRecycleBagItems() end
                     
-                    -- 4. Cường hóa toàn thân lên +15 & Huỳnh thạch lên +15 (nếu Lv > 60)
-                    AutoEvenEnhanceEquipments(15, function()
+                    -- 4. Cường hóa toàn thân lên mốc +30 (hoặc tối đa nguyên liệu) & Huỳnh thạch lên +30 (nếu Lv > 60)
+                    AutoEvenEnhanceEquipments(30, function()
                         local pMe = _G.RoleManager and _G.RoleManager.me
                         local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
                         if curLvl > 60 and AutoEvenUpgradeGems then
-                            AutoEvenUpgradeGems(15, function()
+                            AutoEvenUpgradeGems(30, function()
                                 Log("[Bước 5] : Hoàn tất nâng cấp trang bị toàn thân! -> Chuyển sang Bước 6: Mở rương vàng", true)
                                 SaveOutput()
                                 if onFinished then onFinished() end
@@ -6886,27 +7809,28 @@ local TASK_CONFIG_BY_ID = {
     [3288] = TASK_BEHAVIOR.LEVEL_UP, -- Cấp đạt 600
     [3295] = TASK_BEHAVIOR.LEVEL_UP, -- Cấp đạt 650
 
-    -- Nhiệm vụ Chuyển Chức (Chuyển 1, 2, 3 - Farm vật phẩm hiếm / Tarkan Sách Đế Vương 20 cuốn)
-    [21001] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 1 (Đến Tarkan Nhận Sách Đế Vương 0/20)
-    [21002] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Kiếm Sư Chuyển 1
-    [21003] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Ma Pháp Sư Chuyển 1
-    [21004] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Cung Thủ Chuyển 1
-    [21005] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 2-Giai đoạn 1
-    [210051] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 2-Giai đoạn 2
-    [21006] = TASK_BEHAVIOR.LEVEL_UP, -- Chuyển Chức - Chuyển 3
-    [21007] = TASK_BEHAVIOR.LEVEL_UP,
-    [21008] = TASK_BEHAVIOR.LEVEL_UP,
-    [21009] = TASK_BEHAVIOR.LEVEL_UP,
-    [21010] = TASK_BEHAVIOR.LEVEL_UP,
-    [21011] = TASK_BEHAVIOR.LEVEL_UP,
-    [21012] = TASK_BEHAVIOR.LEVEL_UP,
-    [21013] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 1
-    [21014] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 2
-    [21015] = TASK_BEHAVIOR.LEVEL_UP, -- Mở Chuyển 3
-    [21016] = TASK_BEHAVIOR.LEVEL_UP,
-    [21017] = TASK_BEHAVIOR.LEVEL_UP,
-    [21023] = TASK_BEHAVIOR.LEVEL_UP, -- Ma Kiếm Sư CS1
-    [21024] = TASK_BEHAVIOR.LEVEL_UP, -- Triệu Hồi Sư CS1
+    -- [MOD FEATURE]: NHIỆM VỤ CHUYỂN CHỨC (CS1, CS2, CS3 - TARKAN SÁCH ĐẾ VƯƠNG 20 CUỐN...)
+    -- Mô tả: Chuyển sang MONSTER_KILL để bot tự động truyền tống đến bãi quái map nhiệm vụ và cắm auto đánh rơi vật phẩm
+    [21001] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Chuyển 1 (Đến Tarkan Nhận Sách Đế Vương 0/20)
+    [21002] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Kiếm Sư Chuyển 1
+    [21003] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Ma Pháp Sư Chuyển 1
+    [21004] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Cung Thủ Chuyển 1
+    [21005] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Chuyển 2-Giai đoạn 1
+    [210051] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Chuyển 2-Giai đoạn 2
+    [21006] = TASK_BEHAVIOR.MONSTER_KILL, -- Chuyển Chức - Chuyển 3
+    [21007] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21008] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21009] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21010] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21011] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21012] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21013] = TASK_BEHAVIOR.MONSTER_KILL, -- Mở Chuyển 1
+    [21014] = TASK_BEHAVIOR.MONSTER_KILL, -- Mở Chuyển 2
+    [21015] = TASK_BEHAVIOR.MONSTER_KILL, -- Mở Chuyển 3
+    [21016] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21017] = TASK_BEHAVIOR.MONSTER_KILL,
+    [21023] = TASK_BEHAVIOR.MONSTER_KILL, -- Ma Kiếm Sư CS1
+    [21024] = TASK_BEHAVIOR.MONSTER_KILL, -- Triệu Hồi Sư CS1
 
     -- 2. MONSTER KILL TASKS -> GoTask 1 lần, đánh đủ số lượng
     [3060] = TASK_BEHAVIOR.MONSTER_KILL, -- Diệt Bọ Tuyết
@@ -7127,6 +8051,26 @@ StartNewbieQuestPipeline = function()
 
             AutoAddAttributePoints()
 
+            -- Quét dùng Thẻ Đặc Quyền (120 Phút) & Nhận Phúc Lợi Cộng Đồng mỗi 5s
+            if loopTickCount % 5 == 0 then
+                if AutoUsePrivilegeCard then AutoUsePrivilegeCard() end
+                if lvl >= 30 and AutoClaimCommunityWelfareAndMail then
+                    AutoClaimCommunityWelfareAndMail()
+                end
+            end
+
+            -- Kích hoạt nhận lại toàn bộ phúc lợi cộng đồng tại Level 60 và 100
+            if (lvl >= 60 and not _G.Bot_ClaimedCommunityLvl60) then
+                _G.Bot_ClaimedCommunityLvl60 = true
+                Log(">>> [MỐC LEVEL 60]: Quét nhận lại toàn bộ Phúc Lợi Cộng Đồng & Hòm Thư! <<<", true)
+                if AutoClaimCommunityWelfareAndMail then AutoClaimCommunityWelfareAndMail() end
+            end
+            if (lvl >= 100 and not _G.Bot_ClaimedCommunityLvl100) then
+                _G.Bot_ClaimedCommunityLvl100 = true
+                Log(">>> [MỐC LEVEL 100]: Quét nhận các mốc Phúc Lợi Cộng Đồng Cao Cấp (Theo dõi FB 250 KC, Tham gia Nhóm) & Hòm Thư! <<<", true)
+                if AutoClaimCommunityWelfareAndMail then AutoClaimCommunityWelfareAndMail() end
+            end
+
             -- Chu trình nâng cấp chạy định kỳ qua Global Timer, không chặn pipeline làm quest
             if _G.Mod_IsRunningInstance then
                 return
@@ -7262,15 +8206,11 @@ StartNewbieQuestPipeline = function()
                             local lowDes = string.lower(rawDes)
 
                             -- Nhận diện nhiệm vụ Cày Cấp / Tăng Cấp Đến... (cả tiếng Việt có dấu/không dấu và hoa/thường)
-                            local isLevelTask = (taskId >= 21000 and taskId <= 21999) or tType == 15 or gType == 301 or gType == 3101 
-                                or lowName:find("cấp") or lowName:find("cap") or lowName:find("level") or lowName:find("lv") 
-                                or rawName:find("Cấp") or rawName:find("Tăng") or rawName:find("Đạt") or rawName:find("Level")
-                                or lowDes:find("cấp") or lowDes:find("cap") or lowDes:find("level")
-                                or lowName:find("tarkan") or lowDes:find("tarkan")
-                                or lowName:find("đế vương") or lowDes:find("đế vương")
-                                or lowName:find("sách đế vương") or lowDes:find("sách đế vương")
-                                or lowName:find("chuyển chức") or lowName:find("chuyển 1") or lowName:find("chuyển 2") or lowName:find("chuyển 3")
-                                or lowName:find("mở chuyển") or lowName:find("chuyển sinh") or lowName:find("giai đoạn")
+                            local isLevelTask = tType == 15 or gType == 301 or gType == 3101 
+                                or lowName:find("cấp đạt") or lowName:find("cap dat") or lowName:find("đạt cấp") or lowName:find("dat cap") 
+                                or lowName:find("tăng cấp") or lowName:find("tang cap") or lowName:find("luyện cấp")
+                                or rawName:find("Cấp Đạt") or rawName:find("Đạt Cấp") or rawName:find("Tăng Cấp")
+                                or (lowName:find("mở cs") or lowName:find("mở chuyển"))
 
                             if isLevelTask then
                                 behavior = TASK_BEHAVIOR.LEVEL_UP
@@ -7327,65 +8267,62 @@ StartNewbieQuestPipeline = function()
                         -- [MOD FEATURE]: CHIẾN LƯỢC CÀY CẤP OFFLINE CHO LEVEL >= 100
                         -- Mô tả: Khi gặp nhiệm vụ yêu cầu cày cấp (LEVEL_UP) mà nhân vật đã Lv >= 100,
                         -- bot sẽ không tốn thời gian farm chay online mà vét phó bản, nâng cấp, mở rương,
-                        -- ra bãi farm tối ưu rồi đảo slot/acc để nhân vật tự treo offline lên level!
+                        -- =========================================================================
+                        -- [MOD FEATURE]: DUY TRÌ VÒNG LẶP CÀY CẤP & CẮM BÃI FARM THEO MỤC TIÊU MENU MOD
+                        -- Mô tả: Cày cấp liên tục theo mục tiêu "Cày đến: xxx" trên Menu Mod.
+                        --        Không ngắt bất kỳ Timer nào khi chưa đạt Target Level!
+                        --        Tự động bay về bãi quái khi hồi sinh an toàn, tự động lùi map nếu quái quá mạnh.
                         -- =========================================================================
                         elseif behavior == TASK_BEHAVIOR.LEVEL_UP then
-                            -- Nếu nhân vật đã ngoài Lv 100 (Lv >= 100) gặp nhiệm vụ bắt cày cấp hoặc farm dài hạn:
-                            -- Tối ưu: Vét phó bản > Nâng cấp đồ > Cắm bãi farm > Đảo slot/acc để treo offline!
-                            if lvl >= 100 then
-                                if _G.BotQuestMonitorTimer then
-                                    pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
-                                    _G.BotQuestMonitorTimer = nil
-                                end
-                                pcall(function()
-                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
-                                        _G.AutoTaskManage.SetAutoTask(false)
-                                    end
-                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetCurAutoTaskState then
-                                        _G.AutoTaskManage.SetCurAutoTaskState(false)
-                                    end
-                                    local me = _G.RoleManager and _G.RoleManager.me
-                                    if me and me.StopMove then me:StopMove() end
-                                end)
-                                Log("=========================================================================", true)
-                                Log(string.format(">>> [CHIẾN LƯỢC CÀY CẤP OFFLINE: LEVEL %d >= 100] <<<", lvl), true)
-                                Log(string.format(">>> Nhiệm vụ [%d] \"%s\" yêu cầu tăng cấp / farm dài hạn -> Bot không farm chay online!", taskId, tostring(taskName)), true)
-                                Log(">>> Tiến hành: Vét phó bản > Nâng cấp đồ > Mở rương > Cắm bãi farm > Đổi Slot/Acc treo offline! <<<", true)
-                                Log("=========================================================================", true)
-                                SaveOutput()
-
-                                CheckAndRunBloodCastleOrDemonPlaza(function()
-                                    StartStep5_MailAndUpgrade(function()
-                                        StartGoldenChestProcess(function()
-                                            TeleportToTrainMapAndFarm(function()
-                                                SwitchToNextRoleOrAccount()
-                                            end)
-                                        end)
-                                    end)
-                                end)
-                                return
-                            end
-
-                            -- Nếu nhân vật Level < 100: Cày trực tiếp online vì tân thủ lên cấp cực nhanh
                             local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
-                            
+                            curMap = tonumber(curMap) or 0
+                            local bestPt, targetMap = GetBestMonsterFarmPoint(curMap)
+                            targetMap = targetMap or curMap
+
                             local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
                             local nowSec = os.time()
                             _G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
 
-                            -- CHỈ truyền tống đến bãi cày tối ưu ĐÚNG 1 LẦN khi nhận nhiệm vụ mới hoặc sau 60s nếu bị kẹt
-                            if isNewTask or (nowSec - _G.Bot_LastFarmTeleportTime >= 60) then
+                            local isFarFromSpot = false
+                            if targetMap ~= curMap and targetMap > 0 then
+                                isFarFromSpot = true
+                            elseif bestPt and bestPt.x and bestPt.y then
+                                local pMe = _G.RoleManager and _G.RoleManager.me
+                                local pos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
+                                if pos and pos.x and pos.y then
+                                    local dist = math.sqrt((pos.x - bestPt.x)^2 + (pos.y - bestPt.y)^2)
+                                    if dist > 15 then
+                                        isFarFromSpot = true
+                                    end
+                                end
+                            end
+
+                            -- Truyền tống đến bãi cày tối ưu: khi nhận quest mới, hoặc sau khi hồi sinh/bị văng xa (>15 ô sau 3s), hoặc sau 60s nếu bị kẹt
+                            if isNewTask or (isFarFromSpot and (nowSec - _G.Bot_LastFarmTeleportTime >= 3)) or (nowSec - _G.Bot_LastFarmTeleportTime >= 60) then
                                 _G.Bot_CurrentTaskId = taskId
                                 _G.Bot_LastFarmTeleportTime = nowSec
                                 pcall(function()
-                                    local hasTele = TeleportToBestFarmPoint(curMap)
+                                    local hasTele = TeleportToBestFarmPoint(targetMap)
                                     if hasTele then
-                                        Log(string.format("[Luyện Cấp] : Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d để cày cấp (1 LẦN DUY NHẤT)!", taskId, tostring(taskName), curMap), true)
+                                        Log(string.format("[Luyện Cấp] : Nhiệm vụ [%d] \"%s\" -> Tiến vào bãi quái tối ưu Map %d (%s) để cày cấp!", 
+                                            taskId, tostring(taskName), targetMap, tostring(bestPt and bestPt.name or "")), true)
                                         SaveOutput()
                                     end
                                 end)
                             end
                             
+                            -- Vô hiệu hóa tìm đường của quest để giữ nhân vật đứng yên tại bãi cày
+                            pcall(function()
+                                if _G.AutoTaskManage then
+                                    if _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+                                    if _G.AutoTaskManage.SetCurAutoTaskState then _G.AutoTaskManage.SetCurAutoTaskState(false) end
+                                    if _G.AutoTaskManage.RemoveAutoTask then _G.AutoTaskManage.RemoveAutoTask(true) end
+                                end
+                                if _G.TaskManager and _G.TaskManager.TaskPathStop then
+                                    _G.TaskManager.TaskPathStop()
+                                end
+                            end)
+
                             -- Bật AutoFight 1 lần nếu chưa bật (tránh spam lệnh SetAutoFight mỗi tick làm ngắt chiêu)
                             pcall(function()
                                 local me = _G.RoleManager and _G.RoleManager.me
@@ -7431,7 +8368,7 @@ StartNewbieQuestPipeline = function()
                                             local hasEff = (itemCtr.eff_UI_annuikuang and itemCtr.eff_UI_annuikuang.gameObject and itemCtr.eff_UI_annuikuang.gameObject.activeSelf)
                                             local isRecommend = (itemCtr.img_is_recommend and itemCtr.img_is_recommend.gameObject and itemCtr.img_is_recommend.gameObject.activeSelf)
                                             local itemName = tostring((itemCtr.itemModelData and itemCtr.itemModelData.itemData and itemCtr.itemModelData.itemData.tblItem and itemCtr.itemModelData.itemData.tblItem.name) or "")
-                                            if hasEff or itemCtr.buyCtr.taskType or (isRecommend and (string.find(itemName, "Đa Trùng") or string.find(itemName, "Kỹ Năng") or taskId == 3030)) then
+                                            if hasEff or itemCtr.buyCtr.taskType or (isRecommend and (string.find(itemName, "Đa Trùng") or string.find(itemName, "Kỹ Năng") or string.find(itemName, "Sách") or taskId == 3030)) then
                                                 targetGoodId = sData.id
                                                 break
                                             end
@@ -7443,6 +8380,8 @@ StartNewbieQuestPipeline = function()
                                     elseif taskId == 3020 then targetGoodId = 20401 -- Kỹ Năng Chiến Binh
                                     elseif taskId == 3040 then targetGoodId = 20410
                                     elseif taskId == 3041 then targetGoodId = 20411
+                                    else
+                                        targetGoodId = 20401 -- Fallback default
                                     end
                                 end
 
@@ -7506,7 +8445,7 @@ StartNewbieQuestPipeline = function()
                                             -- Type 2 SubType 2/21: Sách kỹ năng học skill
                                             local isSkillItem = (item.tblItem.type == 3 and item.tblItem.subType == 302)
                                                              or (item.tblItem.type == 2 and (item.tblItem.subType == 2 or item.tblItem.subType == 21))
-                                                             or (item.tblItem.rightOperate == 2 and (string.find(name, "Đa Trùng") or string.find(name, "Triệu Hồi") or string.find(name, "Kỹ Năng")))
+                                                             or (item.tblItem.rightOperate == 2 and (string.find(name, "Đa Trùng") or string.find(name, "Triệu Hồi") or string.find(name, "Kỹ Năng") or string.find(name, "Sách") or string.find(name, "Cuộn")))
                                             if isSkillItem and item.tblItem.type ~= 1 then
                                                 if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                                     _G.networkRequest.ReqUseItem(1, item.id)
@@ -7626,56 +8565,152 @@ StartNewbieQuestPipeline = function()
                                 end
                             end)
 
-                            -- Thời gian watchdog chống kẹt: Nhiệm vụ diệt quái chờ 60s, đối thoại NPC chờ 20s
-                            local timeoutSec = (behavior == TASK_BEHAVIOR.MONSTER_KILL) and 60 or 20
-                            local isStuckTooLong = (nowSec - _G.Bot_LastTaskNavTime >= timeoutSec)
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TRUYỀN TỐNG TỨC THÌ CHO NHIỆM VỤ CHUYỂN SINH (CS1 - TARKAN)
+                            -- Mô tả: Dùng ReqCallFlag bay thẳng tới bãi quái Tarkan (1009: 162#102) để nhặt Sách Đế Vương.
+                            --        Nếu phát hiện nhân vật lạc sang Map khác (ví dụ Lost Tower 7), lập tức đóng popup và bay về Tarkan!
+                            -- =========================================================================
+                            local curSceneMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                            curSceneMap = tonumber(curSceneMap) or 0
+                            local taskNameStr = tostring(taskName or "")
+                            local isCS1Task = (taskId == 21001 or (taskId >= 21000 and taskId <= 21024) or string.find(taskNameStr, "Sách Đế Vương") or string.find(taskNameStr, "Tarkan"))
 
-                            -- CHỈ kích hoạt tìm đường ĐÚNG 1 LẦN khi nhận nhiệm vụ mới hoặc thực sự bị kẹt quá lâu
-                            if isNewTask or (isStuckTooLong and not isMoving and not isFighting) then
-                                _G.Bot_CurrentTaskId = taskId
-                                _G.Bot_LastTaskNavTime = nowSec
+                            if isCS1Task then
+                                _G.Bot_LastCS1TeleTime = _G.Bot_LastCS1TeleTime or 0
 
-                                Log(string.format("-> [ĐIỀU HƯỚNG TASK %s]: Bắt đầu di chuyển tới \"%s\" (1 LẦN DUY NHẤT)... ", tostring(taskId), tostring(taskName)), true)
-                                pcall(function()
-                                    if _G.DirectTask and _G.DirectTask.OpenNav then
-                                        _G.DirectTask.OpenNav(curTask)
-                                    elseif curTask.GetNavi and not string.isNullOrEmpty(curTask:GetNavi()) and _G.NavigationUtility and _G.NavigationUtility.ClickNavigation then
-                                        _G.NavigationUtility.ClickNavigation(curTask:GetNavi())
-                                    end
-                                end)
-                                pcall(function()
-                                    if _G.TaskManager and _G.TaskManager.TaskGo then
-                                        _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
-                                    end
-                                end)
-                                pcall(function()
-                                    if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
-                                        _G.AutoTaskManage.SetAutoTask(true)
-                                    end
-                                    if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
-                                        _G.AutoTaskManage.StartCurAutoTask(true)
-                                    end
-                                    local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
-                                    if taskUI and taskUI.TaskItemClick then
-                                        taskUI:TaskItemClick(taskId)
-                                    end
-                                end)
-                            end
+                                -- [MOD FEATURE]: CHỌN BÃI TỐT NHẤT TRONG TARKAN THEO PHÒNG THỦ THỰC TẾ
+                                local bestPt, _ = GetBestMonsterFarmPoint(1009)
+                                local targetX = (bestPt and bestPt.x) or 166
+                                local targetY = (bestPt and bestPt.y) or 196
+                                local spotName = (bestPt and bestPt.name) or "Tarkan (Quái Lv195 - EXP x4.0)"
+                                local defReq = (bestPt and bestPt.defenseReq) or 390
 
-                            -- Nếu là nhiệm vụ diệt quái: Bật AutoFight 1 lần nếu chưa bật
-                            if behavior == TASK_BEHAVIOR.MONSTER_KILL then
-                                pcall(function()
-                                    local me = _G.RoleManager and _G.RoleManager.me
-                                    local isAutoFightOpen = me and me.meAutoFight and me.meAutoFight.IsAutoFightOpen and me.meAutoFight:IsAutoFightOpen()
-                                    if not isAutoFightOpen then
-                                        if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
-                                        if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
-                                        if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                -- 1. Nếu đang ở sai map (ví dụ Lost Tower 7 do cổng dịch chuyển): Lập tức bay sang Tarkan
+                                if curSceneMap ~= 1009 and (nowSec - _G.Bot_LastCS1TeleTime >= 3) then
+                                    _G.Bot_LastCS1TeleTime = nowSec
+                                    _G.Bot_CurrentTaskId = taskId
+                                    _G.Bot_LastTaskNavTime = nowSec
+
+                                    Log(string.format("-> [CHUYỂN MAP CS1 TASK %d]: Thủ %d -> ReqCallFlag bay thẳng tới bãi tối ưu Tarkan: %s (Tọa độ: %d#%d | Thủ req: %d) để farm EXP & Sách Đế Vương!", 
+                                        taskId, GetPlayerMonsterDefense(), spotName, targetX, targetY, defReq), true)
+                                    SaveOutput()
+
+                                    pcall(function()
+                                        -- Đóng toàn bộ popup chặn đường
+                                        if _G.DismissBlockers then _G.DismissBlockers() end
+                                        if _G.UIManager then
+                                            if _G.UIID and _G.UIID.PromptTipUI then _G.UIManager.Hide(_G.UIID.PromptTipUI) end
+                                            _G.UIManager.Hide("PromptTipUI")
+                                            _G.UIManager.Hide("Activity_EventListUI")
+                                            _G.UIManager.Hide("Task_MonsterListUI")
+                                            _G.UIManager.Hide("Main_MapDetailUI")
+                                        end
+                                        -- Dừng di chuyển cũ
+                                        local me = _G.RoleManager and _G.RoleManager.me
+                                        if me and me.StopMove then me:StopMove() end
+                                        if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+                                        if _G.TaskManager and _G.TaskManager.TaskPathStop then _G.TaskManager.TaskPathStop() end
+
+                                        -- Gửi lệnh ReqCallFlag bay thẳng vào tọa độ bãi quái tối ưu
+                                        local lineId = (_G.SceneData and _G.SceneData.line) or 1
+                                        if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                                            _G.networkRequest.ReqCallFlag(1, 0, 1009, lineId, targetX, targetY, 0)
+                                        end
+                                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { type = 1, rid = 0, mapId = 1009, line = lineId, x = targetX, y = targetY, hostId = 0 })
+                                        end
+                                        if _G.networkRequest and _G.networkRequest.ReqTransmit then
+                                            _G.networkRequest.ReqTransmit(1009, lineId, targetX, targetY)
+                                        end
+                                    end)
+                                elseif curSceneMap == 1009 then
+                                    -- 2. Đã ở Tarkan: Kiểm tra khoảng cách tới bãi tối ưu (targetX#targetY), nếu cách xa > 20 ô thì bay lại
+                                    local pMe = _G.RoleManager and _G.RoleManager.me
+                                    local myPos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
+                                    local isFar = false
+                                    if myPos and myPos.x and myPos.y then
+                                        local dist = math.sqrt((myPos.x - targetX)^2 + (myPos.y - targetY)^2)
+                                        if dist > 20 then isFar = true end
                                     end
-                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
-                                        _G.QiJiHelperData.SetAutoFightData(true)
+                                    if (isFar or isNewTask) and (nowSec - _G.Bot_LastCS1TeleTime >= 6) then
+                                        _G.Bot_LastCS1TeleTime = nowSec
+                                        _G.Bot_CurrentTaskId = taskId
+                                        Log(string.format("-> [TARKAN CS1]: Thủ %d -> Bay về bãi tối ưu: %s (Tọa độ: %d#%d | Thủ req: %d)...", 
+                                            GetPlayerMonsterDefense(), spotName, targetX, targetY, defReq), true)
+                                        SaveOutput()
+                                        pcall(function()
+                                            local lineId = (_G.SceneData and _G.SceneData.line) or 1
+                                            if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                                                _G.networkRequest.ReqCallFlag(1, 0, 1009, lineId, targetX, targetY, 0)
+                                            end
+                                        end)
                                     end
-                                end)
+
+                                    -- Luôn bật AutoFight để đánh quái gom 20 Sách Đế Vương
+                                    pcall(function()
+                                        local me = _G.RoleManager and _G.RoleManager.me
+                                        if me then
+                                            if me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                            if me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                            if me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                        end
+                                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                            _G.QiJiHelperData.SetAutoFightData(true)
+                                        end
+                                    end)
+                                end
+                            else
+                                -- Thời gian watchdog chống kẹt: Nhiệm vụ diệt quái chờ 60s, đối thoại NPC chờ 20s
+                                local timeoutSec = (behavior == TASK_BEHAVIOR.MONSTER_KILL) and 60 or 20
+                                local isStuckTooLong = (nowSec - _G.Bot_LastTaskNavTime >= timeoutSec)
+
+                                -- CHỈ kích hoạt tìm đường ĐÚNG 1 LẦN khi nhận nhiệm vụ mới hoặc thực sự bị kẹt quá lâu
+                                if isNewTask or (isStuckTooLong and not isMoving and not isFighting) then
+                                    _G.Bot_CurrentTaskId = taskId
+                                    _G.Bot_LastTaskNavTime = nowSec
+
+                                    Log(string.format("-> [ĐIỀU HƯỚNG TASK %s]: Bắt đầu di chuyển tới \"%s\" (1 LẦN DUY NHẤT)... ", tostring(taskId), tostring(taskName)), true)
+                                    pcall(function()
+                                        if _G.DirectTask and _G.DirectTask.OpenNav then
+                                            _G.DirectTask.OpenNav(curTask)
+                                        elseif curTask.GetNavi and not string.isNullOrEmpty(curTask:GetNavi()) and _G.NavigationUtility and _G.NavigationUtility.ClickNavigation then
+                                            _G.NavigationUtility.ClickNavigation(curTask:GetNavi())
+                                        end
+                                    end)
+                                    pcall(function()
+                                        if _G.TaskManager and _G.TaskManager.TaskGo then
+                                            _G.TaskManager.TaskGo(taskId, _G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick or 0)
+                                        end
+                                    end)
+                                    pcall(function()
+                                        if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then
+                                            _G.AutoTaskManage.SetAutoTask(true)
+                                        end
+                                        if _G.AutoTaskManage and _G.AutoTaskManage.StartCurAutoTask then
+                                            _G.AutoTaskManage.StartCurAutoTask(true)
+                                        end
+                                        local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+                                        if taskUI and taskUI.TaskItemClick then
+                                            taskUI:TaskItemClick(taskId)
+                                        end
+                                    end)
+                                end
+
+                                -- Nếu là nhiệm vụ diệt quái: Bật AutoFight 1 lần nếu chưa bật
+                                if behavior == TASK_BEHAVIOR.MONSTER_KILL then
+                                    pcall(function()
+                                        local me = _G.RoleManager and _G.RoleManager.me
+                                        local isAutoFightOpen = me and me.meAutoFight and me.meAutoFight.IsAutoFightOpen and me.meAutoFight:IsAutoFightOpen()
+                                        if not isAutoFightOpen then
+                                            if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
+                                            if me and me.SetAutoHookFight then me:SetAutoHookFight(true) end
+                                            if me and me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(true) end
+                                        end
+                                        if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
+                                            _G.QiJiHelperData.SetAutoFightData(true)
+                                        end
+                                    end)
+                                end
                             end
                         end
                     end
@@ -8360,7 +9395,7 @@ _G.StartAutoFarmBot = function()
         end)
 
         if isAtCreateRole then
-            Log(">>> [PHÁT HIỆN MÀN HÌNH TẠO NHÂN VẬT]: Đang ở LoginCreateRoleUI -> Tự động tạo nhân vật Cung Thủ ở Slot 1! <<<", true)
+            Log(">>> [PHÁT HIỆN MÀN HÌNH TẠO NHÂN VẬT]: Đang ở LoginCreateRoleUI -> Tự động tạo nhân vật Pháp Sư (DW) ở Slot 1! <<<", true)
             SaveOutput()
             CreateRoleAndEnterGame(1)
             return

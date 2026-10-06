@@ -8,4 +8,5 @@
    - `modified_lua_dev_client` syncs to `modified_lua_admin` (Admin) and `modified_lua_client` (Client, `_G.Mod_IsAdmin = false`).
    - `modified_lua_dev_customer` syncs to `modified_lua_customer` (Customer, `_G.Mod_IsDev = false`, `_G.Mod_IsAdmin = false`).
 6. **Build Phase**: Only trigger the `build_and_update.ps1` script to build the APKs AFTER explicitly receiving the USER's permission to build.
+7. **Push Test & Android Device**: USER tự chọn Android Device ID và tự chạy `push_test.ps1` để execute. Agent không can thiệp, không tự tìm Android ID hoặc push all devices, và tuyệt đối không tự ý sửa đổi `push_test.ps1` theo hướng đó.
 

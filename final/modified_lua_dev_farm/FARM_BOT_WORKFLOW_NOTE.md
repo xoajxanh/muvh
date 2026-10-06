@@ -71,16 +71,18 @@ flowchart TD
 ---
 
 ### Giai đoạn 3: Đạt Level 20+ (Vòng lặp Cường hóa & Nâng cấp 30s)
-* **Hàm điều phối:** `StartGlobal30sUpgradePipeline()`, `RunPeriodicUpgradeCycle()`
-* **Chu kỳ quét:** Chạy ngầm độc lập mỗi **30 giây/lần** với 8 tác vụ tự động:
+* **Hàm điều phối:** `StartGlobal30sUpgradePipeline()`, `RunPeriodicUpgradeCycle()`, `AutoUsePrivilegeCard()`, `AutoClaimCommunityWelfareAndMail()`
+* **Chu kỳ quét:** Chạy ngầm độc lập mỗi **30 giây/lần** (kèm kiểm tra nhanh mỗi 5s) với 10 tác vụ tự động:
   1. **Mua Máu & Mana:** Kiểm tra túi đồ nếu HP/MP < 100 bình thì tự động mua bù lên 500 bình (`AutoBuyPotionsIfLow(100, 500)`).
-  2. **Nhận thưởng SV mới & Phúc lợi ngày:** Tự động claim quà tân thủ, quà điểm danh ngày.
-  3. **Phân bổ điểm tiềm năng:** Tự cộng điểm theo thuộc tính tối ưu của phái Cung Thủ (`AutoAddAttributePoints`).
-  4. **Tự động mặc đồ xịn:** So sánh lực chiến trang bị trong túi, mặc đồ cao cấp hơn và tự động bấm **Kế Thừa Cường Hóa Nhanh** (`Equip_ZhuanyiFastUI`).
-  5. **Thu hồi trang bị rác:** Tự động bán đồ trắng/lam/tím không dùng vào lò rèn BlackSmith (không cần tốn đặc quyền VIP).
-  6. **Cường hóa toàn thân:** Tự động đập đều tất cả các món đồ trên người lên mốc **+15** (`AutoEvenEnhanceEquipments(15)`).
-  7. **Huỳnh Thạch (Lv > 60):** Tự động khảm và nâng cấp ngọc Huỳnh Thạch lên mốc +15.
-  8. **Dọn dẹp màn hình:** Đóng các bảng túi đồ, bảng thông báo che khuất tầm nhìn.
+  2. **Thẻ Đặc Quyền (120 Phút):** Tự động phát hiện và cắn Thẻ Đặc Quyền (Item ID `60011001`) trong túi để nhận x2 EXP và buff mạnh mẽ (`AutoUsePrivilegeCard()`).
+  3. **Nhận thưởng SV mới & Phúc lợi ngày:** Tự động claim quà tân thủ, quà điểm danh ngày.
+  4. **Phúc Lợi Cộng Đồng (Lv >= 30):** Tự động nhận mốc Hướng Dẫn Game (Gift `2200008` nhận 250 KC + 250K Vàng), sau đó tự động kích hoạt chuỗi hòm thư gom quà về túi (`AutoClaimCommunityWelfareAndMail()`).
+  5. **Phân bổ điểm tiềm năng:** Tự cộng điểm theo thuộc tính tối ưu của phái Cung Thủ (`AutoAddAttributePoints`).
+  6. **Tự động mặc đồ xịn:** So sánh lực chiến trang bị trong túi, mặc đồ cao cấp hơn và tự động bấm **Kế Thừa Cường Hóa Nhanh** (`Equip_ZhuanyiFastUI`).
+  7. **Thu hồi trang bị rác:** Tự động bán đồ trắng/lam/tím không dùng vào lò rèn BlackSmith (không cần tốn đặc quyền VIP).
+  8. **Cường hóa toàn thân:** Tự động đập đều tất cả các món đồ trên người lên mốc **+15** (`AutoEvenEnhanceEquipments(15)`).
+  9. **Huỳnh Thạch (Lv > 60):** Tự động khảm và nâng cấp ngọc Huỳnh Thạch lên mốc +15.
+  10. **Dọn dẹp màn hình:** Đóng các bảng túi đồ, bảng thông báo che khuất tầm nhìn.
 
 ---
 
@@ -135,10 +137,11 @@ flowchart TD
 * `_G.Bot_Running`: Cờ trạng thái tổng thể của Bot (bật/tắt).
 * `_G.Bot_CurrentTaskId`: ID nhiệm vụ chính hiện tại đang thực hiện (dùng để chặn spam điều hướng).
 * `_G.Bot_LastTaskNavTime`: Timestamp lần cuối kích hoạt điều hướng (phục vụ watchdog chống kẹt).
-* `_G.Bot_HasEnteredGiftcodes`: Cờ đánh dấu đã nhập xong 77 mã Giftcode (chỉ chạy 1 lần lúc Lv 10).
+* `_G.Bot_HasEnteredGiftcodes`: Cờ đánh dấu đã nhập xong 14 mã Giftcode (chỉ chạy 1 lần lúc Lv 10).
+* `_G.ClaimedCommunityWelfare`: Bộ nhớ cache đánh dấu nhân vật đã nhận Phúc Lợi Cộng Đồng (Hướng Dẫn Game).
 * `_G.Global30sUpgradeTimer`: Timer chu kỳ nâng cấp và cường hóa 30s.
 * `_G.IsSwitchingAccount`: Cờ bảo vệ chống kích hoạt trùng lặp luồng chuyển đổi tài khoản.
-* `_G.CurrentAccountIndex`: Thứ tự tài khoản hiện tại trong danh sách nạp bot.
+* `_G.CurrentAccountIndex`: Thứ tự tài khoản hiện tại trong danh sách nạp bot (tự động reset về 1 khi Lưu Cấu Hình).
 
 ---
 
