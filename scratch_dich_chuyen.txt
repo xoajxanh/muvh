@@ -1,0 +1,49 @@
+cfg_Ui_word.lua:4 -> content = "Dịch chuyển đến NPC thu hồi để thu hồi vật phẩm "
+cfg_Ui_word.lua:507 -> content = "Thành viên Liên Minh <color=#1add1f>%s</color> triệu hồi bạn đến bên cạnh để trợ chiến, xác nhận dịch chuyển？"
+cfg_Ui_word.lua:634 -> content = "Nhấn <color=#3CD937>dịch chuyển</color> lập tức đến chỗ NPC, mở <color=#3CD937>VIP KC</color> có thể ghép bất cứ lúc nào!"
+cfg_Ui_word.lua:2604 -> content = "Nhấn <color=#3CD937>dịch chuyển</color> để đến ngay chỗ NPC"
+cfg_Ui_word.lua:2608 -> content = "Dịch chuyển"
+cfg_Ui_word.lua:2624 -> content = "<color=#dce1e5>Dịch chuyển</color>"
+cfg_Ui_word.lua:2738 -> content = "Dịch chuyển đến Tiệm NPC mua thuốc"
+cfg_Ui_word.lua:3413 -> content = "Nhấn để dịch chuyển đến vị trí đề xuất"
+cfg_Ui_word.lua:3716 -> content = "Sau khi rời trận chiến mới được dịch chuyển"
+cfg_Ui_word.lua:6176 -> content = "Thuật Dịch Chuyển Lv.2"
+cfg_Ui_word.lua:6180 -> content = "Thuật Dịch Chuyển Lv.3"
+cfg_Ui_word.lua:6184 -> content = "Thuật Dịch Chuyển Lv.4"
+cfg_Ui_word.lua:6188 -> content = "Thuật Dịch Chuyển Lv.5"
+cfg_Ui_word.lua:33064 -> content = "Dịch chuyển đến NPC Kho"
+cfg_Ui_word.lua:33792 -> content = "Thuật Dịch Chuyển Lv.6"
+cfg_Ui_word.lua:33796 -> content = "Thuật Dịch Chuyển Lv7"
+cfg_Ui_word.lua:33800 -> content = "Thuật Dịch Chuyển Lv8"
+cfg_Ui_word.lua:33804 -> content = "Thuật Dịch Chuyển Lv9"
+cfg_Ui_word.lua:33808 -> content = "Thuật Dịch Chuyển Lv10"
+cfg_Ui_word.lua:33812 -> content = "Thuật Dịch Chuyển Lv11"
+cfg_Ui_word.lua:36597 -> content = "Thuật Dịch Chuyển Lv12"
+cfg_Ui_word.lua:36601 -> content = "Thuật Dịch Chuyển Lv13"
+cfg_Ui_word.lua:36605 -> content = "Thuật Dịch Chuyển Lv14"
+cfg_Ui_word.lua:36609 -> content = "Thuật Dịch Chuyển Lv15"
+cfg_Ui_promptword.lua:4 -> content = "Dịch chuyển đến NPC Thu Hồi để thu hồi vật phẩm ",
+cfg_Ui_promptword.lua:5 -> leftButton = "<color=#dce1e5>Dịch chuyển</color>",
+cfg_Ui_promptword.lua:15 -> content = "Dịch chuyển đến NPC Ghép để ghép vật phẩm",
+cfg_Ui_promptword.lua:16 -> leftButton = "<color=#dce1e5>Dịch chuyển</color>",
+cfg_Ui_promptword.lua:47 -> content = "Dịch chuyển đến NPC Tiệm mua thuốc",
+cfg_Ui_promptword.lua:48 -> leftButton = "<color=#dce1e5>Dịch chuyển</color>",
+cfg_Ui_promptword.lua:57 -> content = "Dịch chuyển đến NPC Kho",
+cfg_Ui_promptword.lua:58 -> leftButton = "<color=#dce1e5>Dịch chuyển</color>",
+cfg_Ui_promptword.lua:80 -> content = "Xác nhận tiêu hao <color=#E8D04B>Bản Đồ Thất Lạc</color>, triệu hồi Cổng Dịch Chuyển",
+cfg_Ui_promptword.lua:86 -> content = "Dịch chuyển đến NPC Tiệm mua thuốc",
+cfg_Ui_promptword.lua:87 -> leftButton = "<color=#dce1e5>Dịch chuyển</color>",
+cfg_Ui_promptword.lua:124 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x10</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323
+cfg_Ui_promptword.lua:132 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x40</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323
+cfg_Ui_promptword.lua:140 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x100</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:148 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:238 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x2</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323>
+cfg_Ui_promptword.lua:246 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x4</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323>
+cfg_Ui_promptword.lua:254 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x6</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323>
+cfg_Ui_promptword.lua:262 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x8</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323>
+cfg_Ui_promptword.lua:398 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:406 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:414 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:422 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:430 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x200</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF232
+cfg_Ui_promptword.lua:536 -> content = "Tiêu hao <color=#E8D04B>Vé Vượt Bậc</color>, dịch chuyển vào Bí Cảnh Vượt Bậc?\n\n%s\n",

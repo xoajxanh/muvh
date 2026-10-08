@@ -1,125 +1,26 @@
-=========================================================================
-=== KHỞI ĐỘNG CHU TRÌNH BOT FARM (ACC 1/2: accvutmuvh0001@gmail.com | S452 | ROLE 1/4) ===
-Thời gian: 2026-10-07 01:59:08 | Step Delay: 1.0s
-=========================================================================
->>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<
---- [BƯỚC 2] GỬI SDK AUTH (ACC 1/2: accvutmuvh0001@gmail.com | SERVER 452 | ROLE 1/4) ---
--> [SDK] Login Thành Công! UID: 179083713778691000
---- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
--> [GAME AUTH] Thành Công!
-   - loginName: 1320:1320:179083713778691000
-   - sign: 06e93b22f1585e679f15d8eccde8fcb2
---- [BƯỚC 3] Đang tải danh sách Server... ---
--> Đã tải xong danh sách (508 servers)!
--> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 452 (ID: 452) [Nguồn: serverList (452 -> VĨNH HẰNG 452)]
---- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 452 (ID: 452) (ACC 1/2: accvutmuvh0001@gmail.com | ROLE 1/4) ---
-2. Kích hoạt kết nối Server VĨNH HẰNG 452 (ID: 452)...
-[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
-[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
--> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
-[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
->>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 1
-   [1] ID: 5945000313237912576 | Tên: Neoi74 | Level: 163
-=========================================================================
->>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Neoi74 (ID: 5945000313237912576 | Level: 163) <<<
-   Cấu hình áp dụng: Tự động Match Bãi Train theo Phòng Thủ | Rương: 3 đợt | Giữ dòng ngon: false
-=========================================================================
--> GỬI LỆNH ReqChooseRole: roleId = 5945000313237912576 (Tên: Neoi74)...
-[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
--> Level nhân vật hiện tại: 163
--> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
-=========================================================================
->>> NHÂN VẬT LEVEL 163 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
-=========================================================================
--> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
-[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa
--> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
-=========================================================================
->>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 163] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
-=========================================================================
-=========================================================================
->>> ĐẠT LEVEL 163: BẮT ĐẦU TỰ ĐỘNG NHẬP 14 MÃ GIFTCODE VÀ GHI BÁO CÁO <<<
-=========================================================================
-[GIFTCODE] Bắt đầu nhập 14 mã Giftcode...
-[GIFTCODE] Đang nhập [1/14]: MUVHNEWSV1
->>> [MỐC LEVEL 60]: Quét nhận lại toàn bộ Phúc Lợi Cộng Đồng & Hòm Thư! <<<
->>> [MỐC LEVEL 100]: Quét nhận các mốc Phúc Lợi Cộng Đồng Cao Cấp (Theo dõi FB 250 KC, Tham gia Nhóm) & Hòm Thư! <<<
--> [CHUYỂN MAP CS1 TASK 21001]: Truyền tống tức thì sang Tarkan (Map 1009: 18#86) để farm Sách Đế Vương!
--> [ĐIỀU HƯỚNG TASK 21001]: Bắt đầu di chuyển tới "Chuyển Chức-Chuyển 1" (1 LẦN DUY NHẤT)... 
-[GIFTCODE] Đang nhập [2/14]: MUVHNEWSV2
-[GIFTCODE] Đang nhập [3/14]: MUVHNEWSV3
-[GIFTCODE] Đang nhập [4/14]: MUVHNEWSV4
-[GIFTCODE] Đang nhập [5/14]: MUVHNEWSV5
-[GIFTCODE] Đang nhập [6/14]: MUVHNEWSV6
->>> [THU HỒI]: Đã thu hồi 3 món trang bị rác <<<
->>> [CƯỜNG HÓA ĐỀU] Bắt đầu nâng cấp trang bị (Mục tiêu: +30) <<<
-[GIFTCODE] Đang nhập [7/14]: MU6868
--> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: 0 viên | Đá Linh Hồn: 11 viên
-[GIFTCODE] Đang nhập [8/14]: MU2026
-[GIFTCODE] Đang nhập [9/14]: FANMUVH11
--> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 7 | Vàng = 299872
--> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
->>> [HUỲNH THẠCH]: Đã xử lý <<<
-[GIFTCODE] Đang nhập [10/14]: FCMUVH
-[GIFTCODE] Đang nhập [11/14]: MUVHVIPPRO
-[GIFTCODE] Đang nhập [12/14]: THGT88
-[GIFTCODE] Đang nhập [13/14]: BB8888
-[GIFTCODE] Đang nhập [14/14]: LBY888
--> [HẾT NGUYÊN LIỆU]: Đã nâng tối đa có thể với số Đá/Vàng hiện có trong túi!
->>> [CƯỜNG HÓA]: Đã xử lý <<<
-[GIFTCODE] Đã gửi xong tất cả mã code! Chờ 3s máy chủ gửi thư...
-[GIFTCODE] Đang đồng bộ danh sách hòm thư...
-[Phó Bản] : Hiện tại là 01:59 (Phó bản chỉ mở 10 phút đầu mỗi giờ: 00-09) -> Bỏ qua phó bản!
-[GIFTCODE] Đang nhận tất cả quà đính kèm vào túi...
-=========================================================================
->>> HOÀN TẤT NHẬP CODE & NHẬN QUÀ TÂN THỦ THÀNH CÔNG! <<<
-=========================================================================
-=========================================================================
->>> BÁO CÁO PHÂN LOẠI GIFTCODE (TỔNG: 14) <<<
-[MÃ DÙNG TỐT / CÒN HẠN (0)]: 
-[MÃ HỎNG / HẾT HẠN / ĐÃ DÙNG (25)]: 
-  - MUVHNEWSV1: >>> [GIFTCODE]: Đang nhập [1/14]: MUVHNEWSV1 <<<
-  - MUVHNEWSV1: >>> [MỐC LEVEL 60]: Quét nhận lại toàn bộ Phúc Lợi Cộng Đồng & Hòm Thư <<<
-  - MUVHNEWSV1: >>> [MỐC LEVEL 100]: Quét nhận các mốc Phúc Lợi Cộng Đồng Cao Cấp (Theo dõi FB 250 KC, Tham gia Nhóm) & Hòm Thư <<<
-  - MUVHNEWSV1: >>> [CHUYỂN MAP CS1 TASK 21001]: Truyền tống tức thì sang Tarkan (Map 1009: 18#86) để farm Sách Đế Vương <<<
-  - MUVHNEWSV1: >>> [ĐIỀU HƯỚNG TASK 21001]: Bắt đầu di chuyển tới "Chuyển Chức-Chuyển 1" (1 LẦN DUY NHẤT)... <<<
-  - MUVHNEWSV2: >>> [GIFTCODE]: Đang nhập [2/14]: MUVHNEWSV2 <<<
-  - MUVHNEWSV3: >>> [GIFTCODE]: Đang nhập [3/14]: MUVHNEWSV3 <<<
-  - MUVHNEWSV4: >>> [GIFTCODE]: Đang nhập [4/14]: MUVHNEWSV4 <<<
-  - MUVHNEWSV5: >>> [GIFTCODE]: Đang nhập [5/14]: MUVHNEWSV5 <<<
-  - MUVHNEWSV6: >>> [GIFTCODE]: Đang nhập [6/14]: MUVHNEWSV6 <<<
-  - MUVHNEWSV6: >>> [THU HỒI]: Đã thu hồi 3 món trang bị rác <<<
-  - MUVHNEWSV6: <color=#ED2E2E>Tiêu hao </color><color=#1Add1F>Trác Việt-Khiên Hồi Sinh</color>*1
-  - MUVHNEWSV6: <color=#ED2E2E>Tiêu hao </color><color=#DCE1E5>Bao Tay Thánh Linh</color>*1
-  - MUVHNEWSV6: <color=#ED2E2E>Tiêu hao </color><color=#DCE1E5>Ủng Quỷ Vương</color>*1
-  - MUVHNEWSV6: nhận Vàng132
-  - MUVHNEWSV6: nhận Vàng Khoá16
-  - MUVHNEWSV6: Nhận khi thu hồi
-  - MU6868: >>> [GIFTCODE]: Đang nhập [7/14]: MU6868 <<<
-  - MU2026: >>> [GIFTCODE]: Đang nhập [8/14]: MU2026 <<<
-  - FANMUVH11: >>> [GIFTCODE]: Đang nhập [9/14]: FANMUVH11 <<<
-  - FCMUVH: >>> [GIFTCODE]: Đang nhập [10/14]: FCMUVH <<<
-  - MUVHVIPPRO: >>> [GIFTCODE]: Đang nhập [11/14]: MUVHVIPPRO <<<
-  - THGT88: >>> [GIFTCODE]: Đang nhập [12/14]: THGT88 <<<
-  - BB8888: >>> [GIFTCODE]: Đang nhập [13/14]: BB8888 <<<
-  - LBY888: >>> [GIFTCODE]: Đang nhập [14/14]: LBY888 <<<
-=========================================================================
-[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa
-[Phó Bản] : Hiện tại là 01:59 (Phó bản chỉ mở 10 phút đầu mỗi giờ: 00-09) -> Bỏ qua phó bản!
->>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
->>> [CƯỜNG HÓA ĐỀU] Bắt đầu nâng cấp trang bị (Mục tiêu: +30) <<<
--> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: 0 viên | Đá Linh Hồn: 11 viên
--> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 7 | Vàng = 299872
--> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
->>> [HUỲNH THẠCH]: Đã xử lý <<<
->>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
->>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
--> [HẾT NGUYÊN LIỆU]: Đã nâng tối đa có thể với số Đá/Vàng hiện có trong túi!
->>> [CƯỜNG HÓA]: Đã xử lý <<<
-[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa
->>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
->>> [CƯỜNG HÓA ĐỀU] Bắt đầu nâng cấp trang bị (Mục tiêu: +30) <<<
--> [KHO NGUYÊN LIỆU] Đá Chúc Phúc: 0 viên | Đá Linh Hồn: 11 viên
--> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 7 | Vàng = 299872
--> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
->>> [HUỲNH THẠCH]: Đã xử lý <<<
+[01:58:04] [TEST TALENT] Đã tải xong Test Panel Thiên Phú Thủ Hộ (DK)!
+[01:58:11] [TEST TALENT] Gửi lệnh kích hoạt nhánh Thủ Hộ (1102)...
+[01:58:19] [TEST TALENT] Bắn packet: Tăng Phản DMG (Tầng 7 - Max) | LID: 11020100 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:21] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:27] [TEST TALENT] Bắn packet: Kháng Khống Chế Tăng (Tầng 7 - Max) | LID: 11020400 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:29] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:30] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:33] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:33] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:36] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:41] [TEST TALENT] Đã gửi yêu cầu đồng bộ lại dữ liệu Thiên Phú từ Server.
+[01:58:45] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:48] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:51] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:53] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:54] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:56] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:58:57] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:59:00] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:59:02] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:59:02] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+[01:59:02] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
+[01:59:04] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)

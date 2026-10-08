@@ -284,6 +284,10 @@ _G.SetCameraFOV = SetCameraFOV
 _G.Mod_ResetSavedModConfigs = function()
     _G.Mod_AutoFarmBoss_Config = {}
     _G.Mod_SmeltConfig = {}
+    for t = 3, 12 do
+        _G.Mod_SmeltConfig["KeepGood_C" .. t] = true
+        _G.Mod_SmeltConfig["KeepGoodTV_C" .. t] = true
+    end
     _G.Mod_AutoFarmBoss_Target = nil
     pcall(function()
         local modKeys = {
@@ -3534,7 +3538,16 @@ local function CreateModUI()
                                         end
                                     end
 
-                                    if keepGoodVar and _G.Mod_SmeltConfig[keepGoodVar] then
+                                    if keepGoodVar then
+                                        if _G.Mod_SmeltConfig and _G.Mod_SmeltConfig[keepGoodVar] == nil then
+                                            pcall(function()
+                                                _G.Mod_SmeltConfig[keepGoodVar] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. keepGoodVar, 1) == 1)
+                                            end)
+                                            if _G.Mod_SmeltConfig[keepGoodVar] == nil then _G.Mod_SmeltConfig[keepGoodVar] = true end
+                                        end
+                                    end
+
+                                    if keepGoodVar and _G.Mod_SmeltConfig and _G.Mod_SmeltConfig[keepGoodVar] then
                                         local excDesList = {}
                                         local sInfo = item.serverInfo or item.serverData or {}
                                         local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or
@@ -7389,13 +7402,9 @@ local function CreateModUI()
                 curY = curY - 26
             end
 
-            CreateTracVietRow("NHẪN", "Ring")
-            CreateTracVietRow("DÂY CHUYỀN", "Necklace")
-            CreateTracVietRow("KHUYÊN", "Earring")
-
             -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT
-            -- Mô tả: Cấu hình giữ dòng ngon độc lập cho Trang Sức Trác Việt (Nhẫn, Dây Chuyền, Khuyên)
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
+            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Trác Việt, mặc định Chọn (ON)
             -- =========================================================================
             local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
             kgTvLblGo.transform:SetParent(panelGo.transform, false)
@@ -7416,6 +7425,10 @@ local function CreateModUI()
                 CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
             end
             curY = curY - 26
+
+            CreateTracVietRow("NHẪN", "Ring")
+            CreateTracVietRow("DÂY CHUYỀN", "Necklace")
+            CreateTracVietRow("KHUYÊN", "Earring")
 
             -- Dash Line
             curY = curY - 2
@@ -7452,6 +7465,31 @@ local function CreateModUI()
             if defaultFont then title2Txt.font = defaultFont end
 
             curY = curY - 25
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON ĐỒ BỘ (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
+            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Đồ Bộ, mặc định Chọn (ON)
+            -- =========================================================================
+            local kgLblGo = GameObject("SmeltLbl_KeepGood")
+            kgLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgLblGo)
+            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
+            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgLblRt.sizeDelta = Vector2(85, btnH)
+            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
+            kgLblTxt.raycastTarget = false
+            kgLblTxt.text = "GIỮ DÒNG NGON"
+            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgLblTxt.fontSize = 10
+            kgLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGood", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+            curY = curY - 26
+
             local equipRows = {
                 { "MŨ", "Hat" },
                 { "ÁO", "Armor" },
@@ -7489,27 +7527,6 @@ local function CreateModUI()
                     CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
                 end
                 curY = curY - 24
-            end
-
-            -- GIỮ DÒNG NGON
-            curY = curY - 5
-            local kgLblGo = GameObject("SmeltLbl_KeepGood")
-            kgLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgLblGo)
-            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
-            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
-            kgLblRt.sizeDelta = Vector2(85, btnH)
-            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
-            kgLblTxt.raycastTarget = false
-            kgLblTxt.text = "GIỮ DÒNG NGON"
-            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
-            kgLblTxt.fontSize = 10
-            kgLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then kgLblTxt.font = defaultFont end
-
-            for colIdx = 1, 4 do
-                CreateSmeltToggle("KeepGood", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
             end
 
             -- Nút TÁCH NGAY (THỦ CÔNG)
@@ -7715,10 +7732,11 @@ local function CreateModUI()
                         local varName = toggleItem.prefix .. "_" .. tag
                         toggleItem.varName = varName
 
+                        local defaultVal = toggleItem.isKeepGood and 1 or 0
                         if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
                         if _G.Mod_SmeltConfig[varName] == nil then
-                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
-                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
+                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, defaultVal) == 1) end)
+                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = (defaultVal == 1) end
                         end
 
                         local function updateToggleVisual()

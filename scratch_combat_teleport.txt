@@ -1,0 +1,68 @@
+cfg_Career_transfer_return.lua:3259 -> name = "Dịch Chuyển 6",
+cfg_Career_transfer_return.lua:5909 -> name = "Dịch Chuyển 6"
+cfg_Count_count.lua:1575 -> desc = "Dịch Chuyển 6",
+cfg_Item_item.lua:79797 -> name = "Thuật Dịch Chuyển Lv.6",
+cfg_Item_item.lua:81045 -> name = "Thuật Dịch Chuyển Lv.6",
+cfg_Item_tips.lua:7622 -> content = "Mở có thể chọn tùy ý 1<color=#ff2323>Sách Kỹ Năng Lv.6 Nghề hiện tại</color>\n<color=#ff2323>Thuật Nổ Lửa Lv.6</color>\n<color=#f
+cfg_Item_tips.lua:8311 -> content = "Dịch chuyển về phía trước 6 ô, CD 60s"
+cfg_Item_tips.lua:8315 -> content = "Dịch chuyển về phía trước 6 ô, CD 30s"
+cfg_Item_tips.lua:8327 -> content = "Dịch chuyển về phía trước 6 ô, CD 60s"
+cfg_Item_tips.lua:8331 -> content = "Dịch chuyển về phía trước 6 ô, CD 30s"
+cfg_Item_tips.lua:9835 -> content = "Sử dụng sẽ khiến Dịch Chuyển tăng đến Lv6"
+cfg_Item_tips.lua:45002 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>7.5</color>s",
+cfg_Item_tips.lua:45007 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>7.15</color>s",
+cfg_Item_tips.lua:45012 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>6.8</color>s",
+cfg_Item_tips.lua:45017 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>6.45</color>s",
+cfg_Item_tips.lua:45022 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>6.1</color>s",
+cfg_Item_tips.lua:45027 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>5.75</color>s",
+cfg_Item_tips.lua:45032 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>5.4</color>s",
+cfg_Item_tips.lua:45037 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>5.05</color>s",
+cfg_Item_tips.lua:45042 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4.7</color>s",
+cfg_Item_tips.lua:45047 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4.35</color>s",
+cfg_Item_tips.lua:45052 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s",
+cfg_Item_tips.lua:45057 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 2% miễn DMG, Duy trì 1s
+cfg_Item_tips.lua:45063 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 4% miễn DMG, Duy trì 1s
+cfg_Item_tips.lua:45069 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 6% miễn DMG, Duy trì 1s
+cfg_Item_tips.lua:45075 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 8% miễn DMG, Duy trì 1s
+cfg_Item_tips.lua:45081 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 10% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45087 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 12% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45093 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 14% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45099 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 16% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45105 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 18% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45111 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 20% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45117 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 22% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45123 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 24% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45129 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 26% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45135 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 28% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45141 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 30% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45147 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 32% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45153 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 34% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45159 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 36% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45165 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#e6e600>4</color>s, Đồng thời kèm 38% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45181 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>6.8</color>s",
+cfg_Item_tips.lua:45186 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>6.45</color>s",
+cfg_Item_tips.lua:45191 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>6.1</color>s",
+cfg_Item_tips.lua:45238 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>4</color>s, Đồng thời kèm 6% miễn DMG, Duy trì 1s
+cfg_Item_tips.lua:45268 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>4</color>s, Đồng thời kèm 16% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45298 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>4</color>s, Đồng thời kèm 26% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:45328 -> content = "Dịch chuyển tức thời đến một vị trí khác phía trước bản thân, CD <color=#1add1f>4</color>s, Đồng thời kèm 36% miễn DMG, Duy trì 1
+cfg_Item_tips.lua:62180 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 1 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62187 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 2 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62194 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 3 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62201 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 4 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62208 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 5 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62215 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 6 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62222 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 7 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62229 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 8 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62236 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 9 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân thi
+cfg_Item_tips.lua:62243 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Item_tips.lua:62250 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Item_tips.lua:62257 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Item_tips.lua:62264 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Item_tips.lua:62271 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Item_tips.lua:62278 -> content = "Triệu hồi Hãm Trận Môn có thể dùng 10 lần, Khi bản thân hoặc đồng đội đi qua sẽ được dịch chuyển đến chỗ Trận Phá Ngự bản thân th
+cfg_Map_event.lua:174 -> name = "Dịch chuyển đến Miếu Thần Kalima tầng 6",
+cfg_Ui_description.lua:893 -> desc = "1, Chỉ người chơi có DMG <color=#1add1f>xếp hạng 1</color> mới có quyền sở hữu BOSS, và <color=#1add1f>nhận toàn bộ thưởng tiêu diệt
+cfg_Ui_promptword.lua:254 -> content = "Bạn có muốn tiêu hao <color=#E8D04B>Phiếu Tỷ Lệ Rơi Thánh Hoàn x6</color> để dịch chuyển đến bản đồ này không?\n\n<color=#FF2323>
+cfg_Ui_word.lua:33792 -> content = "Thuật Dịch Chuyển Lv.6"
+SceneController.lua:133 -> FloatingWordUtility.QuickMsg("Không thể dịch chuyển ở trạng thái khóa")

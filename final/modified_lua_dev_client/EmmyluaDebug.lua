@@ -3539,7 +3539,16 @@ local function CreateModUI()
                                         end
                                     end
 
-                                    if keepGoodVar and _G.Mod_SmeltConfig[keepGoodVar] then
+                                    if keepGoodVar then
+                                        if _G.Mod_SmeltConfig and _G.Mod_SmeltConfig[keepGoodVar] == nil then
+                                            pcall(function()
+                                                _G.Mod_SmeltConfig[keepGoodVar] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. keepGoodVar, 1) == 1)
+                                            end)
+                                            if _G.Mod_SmeltConfig[keepGoodVar] == nil then _G.Mod_SmeltConfig[keepGoodVar] = true end
+                                        end
+                                    end
+
+                                    if keepGoodVar and _G.Mod_SmeltConfig and _G.Mod_SmeltConfig[keepGoodVar] then
                                         local excDesList = {}
                                         local sInfo = item.serverInfo or item.serverData or {}
                                         local rawExc = item.excellence or sInfo.excellentList or sInfo.excellentInfo or
@@ -5540,8 +5549,14 @@ local function CreateModUI()
                                             end
                                         end
 
-                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
-                                            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID then
+                                            if _G.UIID.Role_ResurgenceUI then
+                                                _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                            end
+                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
+                                            if _G.Mod_IsAdmin and _G.UIID.CountDown then
+                                                _G.UIManager.Hide(_G.UIID.CountDown)
+                                            end
                                         end
                                     end)
                                 elseif _G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Enabled then
@@ -5566,8 +5581,14 @@ local function CreateModUI()
                                             end
                                         end
 
-                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID and _G.UIID.Role_ResurgenceUI then
-                                            _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                        if _G.UIManager and _G.UIManager.Hide and _G.UIID then
+                                            if _G.UIID.Role_ResurgenceUI then
+                                                _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                            end
+                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
+                                            if _G.Mod_IsAdmin and _G.UIID.CountDown then
+                                                _G.UIManager.Hide(_G.UIID.CountDown)
+                                            end
                                         end
                                     end)
                                 end
@@ -5576,9 +5597,13 @@ local function CreateModUI()
 
                         -- 3. BẢO VỆ: DẬP TẮT POPUP 3S ĐẾM LÙI KHI NHÂN VẬT ĐÃ SỐNG & BẬT AUTO FIGHT SAU HS KC
                         if not me.isDead and me.hp and me.hp > 0 then
-                            if _G.UIManager and _G.UIManager.IsVisible and _G.UIID and _G.UIID.Role_ResurgenceUI then
-                                if _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
+                            if _G.UIManager and _G.UIManager.IsVisible and _G.UIID then
+                                if _G.UIID.Role_ResurgenceUI and _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
                                     _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
+                                end
+                                -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
+                                if _G.Mod_IsAdmin and _G.UIID.CountDown and _G.UIManager.IsVisible(_G.UIID.CountDown) then
+                                    _G.UIManager.Hide(_G.UIID.CountDown)
                                 end
                             end
 
@@ -6988,7 +7013,44 @@ local function CreateModUI()
                         end
                     end)
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: CHẶN ĐỒNG HỒ ĐẾM NGƯỢC HỒI SINH 3VS3 (CHỈ ADMIN TEST)
+                    -- Mô tả: Khi Admin bật Auto Resurrect (HS Free hoặc HS KC), chặn không cho mở và tự dập tắt
+                    --        UI đếm ngược Activity_Sport3V3Dead (UIID.CountDown) trong thi đấu 3vs3.
+                    -- =========================================================================
+                    if _G.Mod_IsAdmin then
+                        pcall(function()
+                            if _G.TipUtility and not _G.Mod_HookedTipReviveCountDown then
+                                _G.Mod_HookedTipReviveCountDown = true
+                                local orig_ShowReviveCountDown = _G.TipUtility.ShowReviveCountDown
+                                if orig_ShowReviveCountDown then
+                                    _G.TipUtility.ShowReviveCountDown = function(param)
+                                        if _G.Mod_IsAdmin and (_G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Here_Enabled) then
+                                            return
+                                        end
+                                        return orig_ShowReviveCountDown(param)
+                                    end
+                                end
+                            end
 
+                            if _G.Activity_Sport3V3Dead and not _G.Mod_HookedActivitySport3V3Dead then
+                                _G.Mod_HookedActivitySport3V3Dead = true
+                                local orig_Sport3V3Dead_OnShow = _G.Activity_Sport3V3Dead.OnShow
+                                if orig_Sport3V3Dead_OnShow then
+                                    _G.Activity_Sport3V3Dead.OnShow = function(self)
+                                        if _G.Mod_IsAdmin and (_G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Here_Enabled) then
+                                            pcall(function()
+                                                if self.StopTimer then self:StopTimer() end
+                                                if self.Hide then self:Hide() end
+                                            end)
+                                            return
+                                        end
+                                        return orig_Sport3V3Dead_OnShow(self)
+                                    end
+                                end
+                            end
+                        end)
+                    end
 
                     -- =========================================================================
                     -- [MOD FEATURE]: KHÓA MỤC TIÊU SMART TARGET & BẢO HỘ (SCOPE CHECK & FALLBACK)
@@ -7246,8 +7308,9 @@ local function CreateModUI()
                 end
 
                 -- =========================================================================
-                -- [MOD FEATURE]: TỰ QUAY LẠI TỌA ĐỘ TRAIN (AUTO RETURN POSITION LOOP)
-                -- Mô tả: Định kỳ giám sát và tự động di chuyển nhân vật về tọa độ X#Y đã cài đặt.
+                -- [MOD FEATURE]: TỰ ĐỘNG QUAY LẠI TỌA ĐỘ TRAIN & FASTBACK (AUTO RETURN POS & FASTBACK)
+                -- Mô tả: Định kỳ giám sát và tự động di chuyển nhân vật về vị trí đã lưu.
+                --        Hỗ trợ lệnh bí mật /fastback truyền tống tức thì bằng ReqCallFlag (mapId;x#y).
                 -- =========================================================================
                 _G.Mod_StartReturnPosLoop = function()
                     _G.Mod_StartTrackedTimer("AutoReturnPos", 0.5, -1, function()
@@ -7257,44 +7320,99 @@ local function CreateModUI()
                                 if _G.FlyMove and _G.FlyMove.useFly then return end
                                 if _G.PathFinderManager and _G.PathFinderManager.pathFinding and _G.PathFinderManager.pathFinding.isFind then return end
                                 local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-                                if _G.Mod_AutoReturnPos_MapId and _G.Mod_AutoReturnPos_MapId > 0 and curMap ~= _G.Mod_AutoReturnPos_MapId then
-                                    return
-                                end
-                                local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                                local delay = _G.Mod_AutoReturnPosDelay or 1.0
-                                if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
-                                    _G.Mod_LastReturnPosTime = nowTime
-                                    local sx, sy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+)#(%d+)$")
-                                    if sx and sy then
-                                        local targetX, targetY = tonumber(sx), tonumber(sy)
+
+                                local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                local fMap, fx, fy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+);(%d+)#(%d+)$")
+
+                                if isFastBack and fMap and fx and fy then
+                                    -- CHẾ ĐỘ FASTBACK: TRUYỀN TỐNG NHANH BẰNG REQCALLFLAG THEO MAPID;X#Y
+                                    local targetMap = tonumber(fMap)
+                                    local targetX, targetY = tonumber(fx), tonumber(fy)
+                                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                    local delay = _G.Mod_AutoReturnPosDelay or 1.0
+                                    if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
                                         local me = _G.RoleManager and _G.RoleManager.me
                                         if me and not me.isDead then
                                             local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
                                             local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                                            if curX > 0 and curY > 0 then
-                                                local dist = math.max(math.abs(curX - targetX), math.abs(curY - targetY))
-                                                if dist > 1.5 then
-                                                    local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
-                                                    if not hasPkTarget then
-                                                        pcall(function()
-                                                            if me and me.MoveTo then
-                                                                me:MoveTo({ x = targetX, y = targetY }, 0)
-                                                            elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
-                                                                local coordStr = string.format("%d#%d", targetX, targetY)
-                                                                local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
-                                                                    (_G.Vector2 and _G.Vector2(targetX, targetY)) or { x = targetX, y = targetY }
-                                                                _G.PathFinderManager.JumpMapToMoveToPos(
-                                                                    _G.SceneData.groupId,
-                                                                    targetPosData, nil, nil, nil,
-                                                                    _G.Purpose and _G.Purpose.None or 0, nil, 1, true)
-                                                            end
-                                                        end)
+                                            local dist = math.max(math.abs(curX - targetX), math.abs(curY - targetY))
+                                            local needTeleport = (curMap ~= targetMap) or (dist > 1.5)
+                                            if needTeleport then
+                                                local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
+                                                if not hasPkTarget then
+                                                    _G.Mod_LastReturnPosTime = nowTime
+                                                    pcall(function()
+                                                        local called = false
+                                                        if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                                                            _G.networkRequest.ReqCallFlag(nil, nil, targetMap, 1, targetX, targetY)
+                                                            called = true
+                                                        end
+                                                        if not called and _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                                                mapId = targetMap,
+                                                                line = 1,
+                                                                x = targetX,
+                                                                y = targetY
+                                                            })
+                                                        end
+                                                    end)
+                                                end
+                                            else
+                                                if not _G.Mod_AutoPK_Enabled then
+                                                    if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                        if me and me.SetAutoFight then
+                                                            me:SetAutoFight("AutoFight")
+                                                        end
                                                     end
-                                                else
-                                                    if not _G.Mod_AutoPK_Enabled then
-                                                        if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
-                                                            if me and me.SetAutoFight then
-                                                                me:SetAutoFight("AutoFight")
+                                                end
+                                            end
+                                        end
+                                    end
+                                else
+                                    -- CHẾ ĐỘ CHẠY BỘ THÔNG THƯỜNG (KHI KHÔNG CÓ /FASTBACK HOẶC TỌA ĐỘ CHỈ CÓ X#Y)
+                                    if _G.Mod_AutoReturnPos_MapId and _G.Mod_AutoReturnPos_MapId > 0 and curMap ~= _G.Mod_AutoReturnPos_MapId then
+                                        return
+                                    end
+                                    local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                                    local delay = _G.Mod_AutoReturnPosDelay or 1.0
+                                    if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
+                                        _G.Mod_LastReturnPosTime = nowTime
+                                        local sx, sy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+)#(%d+)$")
+                                        if not sx then
+                                            -- Fallback nếu chuỗi có dạng mapId;x#y nhưng đang tắt /fastback
+                                            _, sx, sy = string.match(_G.Mod_AutoReturnPos_Coords, "^(%d+);(%d+)#(%d+)$")
+                                        end
+                                        if sx and sy then
+                                            local targetX, targetY = tonumber(sx), tonumber(sy)
+                                            local me = _G.RoleManager and _G.RoleManager.me
+                                            if me and not me.isDead then
+                                                local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                                                local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                                                if curX > 0 and curY > 0 then
+                                                    local dist = math.max(math.abs(curX - targetX), math.abs(curY - targetY))
+                                                    if dist > 1.5 then
+                                                        local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
+                                                        if not hasPkTarget then
+                                                            pcall(function()
+                                                                if me and me.MoveTo then
+                                                                    me:MoveTo({ x = targetX, y = targetY }, 0)
+                                                                elseif _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData and _G.SceneData.groupId then
+                                                                    local coordStr = string.format("%d#%d", targetX, targetY)
+                                                                    local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
+                                                                        (_G.Vector2 and _G.Vector2(targetX, targetY)) or { x = targetX, y = targetY }
+                                                                    _G.PathFinderManager.JumpMapToMoveToPos(
+                                                                        _G.SceneData.groupId,
+                                                                        targetPosData, nil, nil, nil,
+                                                                        _G.Purpose and _G.Purpose.None or 0, nil, 1, true)
+                                                                end
+                                                            end)
+                                                        end
+                                                    else
+                                                        if not _G.Mod_AutoPK_Enabled then
+                                                            if isMonsterNearby(15) and _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                                if me and me.SetAutoFight then
+                                                                    me:SetAutoFight("AutoFight")
+                                                                end
                                                             end
                                                         end
                                                     end
@@ -7532,6 +7650,10 @@ local function CreateModUI()
                     Grade_8 = false,
                     Grade_9Plus = false,
                 }
+                for t = 3, 12 do
+                    _G.Mod_SmeltConfig["KeepGood_C" .. t] = true
+                    _G.Mod_SmeltConfig["KeepGoodTV_C" .. t] = true
+                end
 
                 if _G.Mod_AllUIUpdaters then
                     for _, fn in ipairs(_G.Mod_AllUIUpdaters) do
@@ -10123,66 +10245,6 @@ local function CreateModUI()
             title1Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then title1Txt.font = defaultFont end
 
-            local function CreateSmeltToggle(label, varName, x, y, width, isKeepGood)
-                local btnGo = GameObject("SmeltToggle_" .. varName)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
-                local rt = btnGo:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(width or btnW, btnH)
-
-                local bg = GameObject("Bg")
-                bg.transform:SetParent(btnGo.transform, false)
-                local bgRt = bg:AddComponent(typeof(RectTransform))
-                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRt.sizeDelta = Vector2(0, 0)
-                local bgImg = bg:AddComponent(typeof(Image))
-
-                local txtGo = GameObject("Text")
-                txtGo.transform:SetParent(btnGo.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.sizeDelta = Vector2(0, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget = false
-                txt.text = label
-                txt.fontSize = fontSize
-                txt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then txt.font = defaultFont end
-
-                if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
-                if _G.Mod_SmeltConfig[varName] == nil then
-                    pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
-                    if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
-                end
-
-                local function UpdateVisual()
-                    if _G.Mod_SmeltConfig[varName] then
-                        if isKeepGood then
-                            bgImg.color = Color(0.8, 0.5, 0.1, 1) -- Cam cho Giữ Dòng Ngon
-                        else
-                            bgImg.color = Color(0.2, 0.6, 0.2, 1) -- Xanh lục cho Tách Đồ
-                        end
-                        txt.color = Color.white
-                    else
-                        bgImg.color = Color(0.25, 0.25, 0.25, 1)
-                        txt.color = Color(0.7, 0.7, 0.7, 1)
-                    end
-                end
-                UpdateVisual()
-
-                local btn = btnGo:AddComponent(typeof(Button))
-                btn.onClick:AddListener(function()
-                    _G.Mod_SmeltConfig[varName] = not _G.Mod_SmeltConfig[varName]
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Smelt_" .. varName, _G.Mod_SmeltConfig[varName] and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateVisual()
-                end)
-            end
-
             local smeltTogglePool = {}
 
             local function CreateSmeltToggle(prefix, colIdx, x, y, width, isKeepGood)
@@ -10252,13 +10314,9 @@ local function CreateModUI()
                 curY = curY - 26
             end
 
-            CreateTracVietRow("NHẪN", "Ring")
-            CreateTracVietRow("DÂY CHUYỀN", "Necklace")
-            CreateTracVietRow("KHUYÊN", "Earring")
-
             -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT
-            -- Mô tả: Cấu hình giữ dòng ngon độc lập cho Trang Sức Trác Việt (Nhẫn, Dây Chuyền, Khuyên)
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
+            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Trác Việt, mặc định Chọn (ON)
             -- =========================================================================
             local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
             kgTvLblGo.transform:SetParent(panelGo.transform, false)
@@ -10279,6 +10337,10 @@ local function CreateModUI()
                 CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
             end
             curY = curY - 26
+
+            CreateTracVietRow("NHẪN", "Ring")
+            CreateTracVietRow("DÂY CHUYỀN", "Necklace")
+            CreateTracVietRow("KHUYÊN", "Earring")
 
             -- 2. VẠCH DASHED NGĂN CÁCH
             curY = curY - 2
@@ -10315,6 +10377,30 @@ local function CreateModUI()
             if defaultFont then title2Txt.font = defaultFont end
 
             curY = curY - 25
+
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON ĐỒ BỘ (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
+            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Đồ Bộ, mặc định Chọn (ON)
+            -- =========================================================================
+            local kgLblGo = GameObject("SmeltLbl_KeepGood")
+            kgLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, kgLblGo)
+            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
+            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgLblRt.sizeDelta = Vector2(85, btnH)
+            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
+            kgLblTxt.raycastTarget = false
+            kgLblTxt.text = "GIỮ DÒNG NGON"
+            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgLblTxt.fontSize = 10
+            kgLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGood", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+            curY = curY - 26
 
             local equipRows = {
                 { "MŨ", "Hat" },
@@ -10353,27 +10439,6 @@ local function CreateModUI()
                     CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
                 end
                 curY = curY - 24
-            end
-
-            -- Hàng chọn GIỮ DÒNG NGON
-            curY = curY - 5
-            local kgLblGo = GameObject("SmeltLbl_KeepGood")
-            kgLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgLblGo)
-            local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
-            kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
-            kgLblRt.sizeDelta = Vector2(85, btnH)
-            local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
-            kgLblTxt.raycastTarget = false
-            kgLblTxt.text = "GIỮ DÒNG NGON"
-            kgLblTxt.color = Color(1, 0.6, 0.2, 1)
-            kgLblTxt.fontSize = 10
-            kgLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then kgLblTxt.font = defaultFont end
-
-            for colIdx = 1, 4 do
-                CreateSmeltToggle("KeepGood", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
             end
 
             -- Nút TÁCH NGAY thủ công
@@ -10544,10 +10609,11 @@ local function CreateModUI()
                         local varName = toggleItem.prefix .. "_" .. tag
                         toggleItem.varName = varName
 
+                        local defaultVal = toggleItem.isKeepGood and 1 or 0
                         if _G.Mod_SmeltConfig == nil then _G.Mod_SmeltConfig = {} end
                         if _G.Mod_SmeltConfig[varName] == nil then
-                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, 0) == 1) end)
-                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = false end
+                            pcall(function() _G.Mod_SmeltConfig[varName] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_Smelt_" .. varName, defaultVal) == 1) end)
+                            if _G.Mod_SmeltConfig[varName] == nil then _G.Mod_SmeltConfig[varName] = (defaultVal == 1) end
                         end
 
                         local function updateToggleVisual()
@@ -11677,19 +11743,29 @@ local function CreateModUI()
                         local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
                         local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
                         if curX > 0 and curYCoord > 0 then
-                            local coordStr = string.format("%d#%d", curX, curYCoord)
+                            local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                            local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                            local coordStr = ""
+                            if isFastBack and curMap > 0 then
+                                coordStr = string.format("%d;%d#%d", curMap, curX, curYCoord)
+                            else
+                                coordStr = string.format("%d#%d", curX, curYCoord)
+                            end
                             _G.Mod_AutoReturnPos_Coords = coordStr
                             retField.text = coordStr
                             retTxt.text = coordStr
                             CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
-                            local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)
-                            if curMap then
+                            if curMap > 0 then
                                 _G.Mod_AutoReturnPos_MapId = curMap
                                 CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_MapId", curMap)
                             end
                             CS.UnityEngine.PlayerPrefs.Save()
                             if _G.FloatingWordUtility then
-                                _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
+                                if isFastBack then
+                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí nhanh (FastBack): " .. coordStr)
+                                else
+                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
+                                end
                             end
                         end
                     end

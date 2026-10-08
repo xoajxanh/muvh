@@ -1,0 +1,7 @@
+cfg_Ui_word.lua:28 -> content = "1. Sự kiện sẽ tạo mới tổng cộng <color=#1ADD1F>5 đợt</color> quái, và sẽ xuất hiện <color=#1ADD1F>Khí Độc Đỏ</color> để thu nhỏ p
+cfg_Ui_word.lua:265 -> content = "Trong khu an toàn không thể mở tự động chiến đấu"
+cfg_Ui_word.lua:315 -> content = "Đồng đội đã vào %s, có muốn vào cùng chiến đấu không"
+cfg_Ui_word.lua:37289 -> content = "Trong chiến đấu không thể đổi Thiên Phú"
+cfg_Ui_word.lua:67857 -> content = "Cấm thay đổi chế độ chiến đấu"
+cfg_Ui_description.lua:37 -> desc = "1. Offline ở gần điểm quái, nhân vật sẽ luôn tự động chiến đấu ở điểm quái.\n2. Khi nhân vật chiến đấu ở điểm quái thì sẽ không offl
+cfg_Ui_description.lua:279 -> desc = "1, Sau khi cấp đạt Lv150 sẽ mở Trợ Thủ Treo Máy Offline, người chơi trước khi Offline cần đến Điểm Treo Máy và mở tự động chiến đấu 

@@ -18,7 +18,7 @@ if (-not (Test-Path $adbExe)) {
 }
 
 # Android Device ID do USER tu chon va quan ly
-$androidId = "emulator-5558"
+$androidId = "emulator-5566"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ">>> BIEN DICH & NAP SCRIPT TEST VAO ANDROID ($androidId) <<<" -ForegroundColor Cyan
@@ -113,7 +113,8 @@ while ($true) {
         Write-Host "==================== [KET QUA OUTPUT.TXT] ====================" -ForegroundColor Green
         Get-Content $destOut -Tail 40
         Write-Host "==============================================================" -ForegroundColor Green
-    } else {
+    }
+    else {
         Write-Host "Chua co file output.txt tren thiet bi!" -ForegroundColor Yellow
     }
 }

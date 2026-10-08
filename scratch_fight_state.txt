@@ -1,0 +1,147 @@
+Activity_GodComeTaskUI.lua:25 -> self.fightTime = self:GetControl("RootPanel/btn_Exit/fightTime")
+Activity_GodComeTaskUI.lua:26 -> self.lab_fightTimeValue = self:GetControl("RootPanel/btn_Exit/fightTime/lab_fightTimeValue")
+Activity_GodComeTaskUI.lua:145 -> self.lab_fightTimeValue:SetText(timeStr)
+Activity_RedfortTaskUI.lua:13 -> self.lab_fightState = self:GetControl("panel/subPanel/TaskPanel/lab_fightState")
+Activity_RedfortTaskUI.lua:21 -> self.lab_fightTime = self:GetControl("panel/subPanel/TaskPanel/lab_fightTime")
+Activity_RedfortTaskUI.lua:40 -> [RedFortFightState.Prepare] = {
+Activity_RedfortTaskUI.lua:43 -> [RedFortFightState.Fight] = {
+Activity_RedfortTaskUI.lua:117 -> if RedFortData.GetFightState() == RedFortFightState.Prepare then
+Activity_RedfortTaskUI.lua:119 -> elseif RedFortData.GetFightState() == RedFortFightState.Fight then
+Activity_RedfortTaskUI.lua:120 -> self:UpdateRedFortInfoInFight()
+Activity_RedfortTaskUI.lua:142 -> self:UpdateUIVisible(RedFortFightState.Prepare)
+Activity_RedfortTaskUI.lua:143 -> self.lab_fightState:SetActive(true)
+Activity_RedfortTaskUI.lua:145 -> self.lab_fightTime:SetActive(false)
+Activity_RedfortTaskUI.lua:146 -> self.lab_fightState:SetText("Giai \196\145o\225\186\161n chu\225\186\169n b\225\187\139")
+Activity_RedfortTaskUI.lua:156 -> self:UpdateRedFortInfoInFight()
+Activity_RedfortTaskUI.lua:169 -> function Activity_RedfortTaskUI:UpdateRedFortInfoInFight()
+Activity_RedfortTaskUI.lua:173 -> self:UpdateUIVisible(RedFortFightState.Fight)
+Activity_RedfortTaskUI.lua:175 -> self.lab_fightState:SetActive(false)
+Activity_RedfortTaskUI.lua:177 -> self.lab_fightTime:SetActive(true)
+Activity_RedfortTaskUI.lua:190 -> self.lab_fightTime:SetText(string.format("%02d: %02d", minutes, seconds))
+Activity_RedfortTaskUI.lua:192 -> self.lab_fightTime:SetText("00: 00")
+AutoSkillEnum.lua:20 -> AutoFightStateEnum = {
+cfg_Map_map.lua:16 -> autoFightTime = 0,
+cfg_Map_map.lua:5816 -> autoFightTime = 0,
+cfg_Map_map.lua:6188 -> autoFightTime = 0,
+cfg_Map_map.lua:19655 -> autoFightTime = 0,
+cfg_Map_map.lua:19685 -> autoFightTime = 0,
+cfg_Map_map.lua:19713 -> autoFightTime = 0,
+cfg_Map_map.lua:19742 -> autoFightTime = 0,
+cfg_Map_map.lua:19771 -> autoFightTime = 0,
+cfg_Map_map.lua:19800 -> autoFightTime = 0,
+cfg_Map_map.lua:19829 -> autoFightTime = 0,
+cfg_Map_map.lua:19858 -> autoFightTime = 0,
+cfg_Map_map.lua:19887 -> autoFightTime = 0,
+cfg_Map_map.lua:19915 -> autoFightTime = 0,
+cfg_Map_map.lua:19943 -> autoFightTime = 0,
+cfg_Map_map.lua:19971 -> autoFightTime = 0,
+cfg_Map_map.lua:19999 -> autoFightTime = 0,
+cfg_Map_map.lua:20027 -> autoFightTime = 0,
+cfg_Map_map.lua:20055 -> autoFightTime = 0,
+cfg_Map_map.lua:20085 -> autoFightTime = 0,
+cfg_Map_map.lua:20320 -> autoFightTime = 1000,
+cfg_Map_map.lua:20404 -> autoFightTime = 600000,
+cfg_Ui_word.lua:3714 -> tuoZhanChuanSong = {
+cfg_Ui_word.lua:3715 -> id = "tuoZhanChuanSong",
+DropItemManager.lua:202 -> if this.isHibitAutoDrop == true and QuickFind.LuaSceneOnHookPointDataManager():IsMainPlayerInTheOnHo
+DropItemManager.lua:209 -> if this.isHibitAutoDrop == true and ClientTable.cfg_Global_globalManager:CheckHibitAutoDropMapByCurM
+GoalUI_KalunteRuinsTemp.lua:99 -> root.lab_fightTimeValue:SetActive(true)
+GoalUI_KalunteRuinsTemp.lua:101 -> self:ShowTimer(totalTime, root.lab_fightTimeValue, 3)
+Instance_GoalUI.lua:51 -> self.lab_finishTimeValue = self:GetControl("RootPanel/AllPanel/panel/subPanel/GoalPanel/bloodCastleI
+Instance_GoalUI.lua:84 -> self.fightTime = self:GetControl("RootPanel/btn_Exit/fightTime")
+Instance_GoalUI.lua:85 -> self.lab_fightTimeValue = self:GetControl("RootPanel/btn_Exit/fightTime/lab_fightTimeValue")
+Instance_GoalUI.lua:200 -> self.lab_fightTimeValue:SetActive(false)
+Instance_GoalUI.lua:516 -> self.lab_fightTimeValue:SetActive(false)
+Instance_GoalUI.lua:759 -> self.InitTimer = self:ShowTimer(timeLeft, self.lab_fightTimeValue)
+Instance_GoalUI.lua:764 -> self.lab_fightTimeValue:SetText(timeStr)
+Instance_GoalUI.lua:768 -> self.InitTimer = self:ShowTimer(timeLeft, self.lab_fightTimeValue)
+Instance_GoalUI.lua:789 -> self.InitTimer = self:ShowRoleCountDownTimer(totalTime, self.lab_fightTimeValue, true)
+Instance_GoalUI.lua:798 -> self.lab_fightTimeValue:SetText(timeStr)
+Instance_GoalUI.lua:802 -> self.InitTimer = self:ShowTimer(timeLeft, self.lab_fightTimeValue)
+Instance_GoalUI.lua:826 -> self.InitTimer = self:ShowRoleCountDownTimer(totalTime, self.lab_fightTimeValue, true)
+Instance_GoalUI.lua:852 -> self.InitTimer = self:ShowTimer(totalTime, self.lab_fightTimeValue)
+Instance_GoalUI.lua:1029 -> self:SetCountDown(totalTime, self.lab_fightTimeValue, true)
+Instance_GoalUI.lua:1080 -> self.lab_fightTimeValue:SetActive(true)
+Instance_GoalUI.lua:1081 -> self:SetCountDown(totalTime, self.lab_fightTimeValue)
+Instance_GoalUI.lua:1138 -> self:SetCountDown(totalTime, self.lab_fightTimeValue, true)
+Instance_GoalUI.lua:1231 -> self:SetCountDown(totalTime, self.lab_fightTimeValue)
+Instance_GoalUI.lua:1365 -> self.InitTimer = self:ShowRoleCountDownTimer(serverRoleCountDownTimeData.countDownTime / 1000, self.
+Main_MainMenuUI.lua:2437 -> function Main_MainMenuUI:SetIsExpShow(_, autoFightState)
+Main_MainMenuUI.lua:2438 -> if autoFightState == AutoFightStateEnum.Pause then
+Me.lua:100 -> function Me:GetAutoFightState()
+Me.lua:101 -> return self.meAutoFight:GetAutoFightState()
+MeAutoFight.lua:1 -> MeAutoFightState = class()
+MeAutoFight.lua:3 -> function MeAutoFightState:ctor(autoFightManager)
+MeAutoFight.lua:8 -> function MeAutoFightState:InitAutoFight()
+MeAutoFight.lua:11 -> function MeAutoFightState:Start()
+MeAutoFight.lua:14 -> function MeAutoFightState:Stop()
+MeAutoFight.lua:17 -> function MeAutoFightState:IsUpdateIn()
+MeAutoFight.lua:20 -> HookAutoFightState = class(MeAutoFightState)
+MeAutoFight.lua:22 -> function HookAutoFightState:InitAutoFight()
+MeAutoFight.lua:167 -> function HookAutoFightState:Start()
+MeAutoFight.lua:180 -> function HookAutoFightState:IsUpdateIn()
+MeAutoFight.lua:184 -> function HookAutoFightState:Stop()
+MeAutoFight.lua:185 -> if self.autoFightManager:GetAutoFightState() ~= AutoFightStateEnum.Pause and not QiJiHelperData.pres
+MeAutoFight.lua:191 -> RealAutoFightState = class(MeAutoFightState)
+MeAutoFight.lua:193 -> function RealAutoFightState:InitAutoFight()
+MeAutoFight.lua:341 -> function RealAutoFightState:Start()
+MeAutoFight.lua:365 -> function RealAutoFightState:Stop()
+MeAutoFight.lua:367 -> if self.autoFightManager:GetAutoFightState() ~= AutoFightStateEnum.Pause then
+MeAutoFight.lua:372 -> function RealAutoFightState:IsUpdateIn()
+MeAutoFight.lua:376 -> CommonAutoFightState = class(MeAutoFightState)
+MeAutoFight.lua:378 -> function CommonAutoFightState:InitAutoFight()
+MeAutoFight.lua:383 -> function CommonAutoFightState:IsUseSkill()
+MeAutoFight.lua:387 -> function CommonAutoFightState:IsUpdateIn()
+MeAutoFight.lua:393 -> function CommonAutoFightState:IsAttackBoss()
+MeAutoFight.lua:411 -> function CommonAutoFightState:InitCommonPlayerAutoFight()
+MeAutoFight.lua:432 -> function CommonAutoFightState:InitCommonMonsterAutoFight()
+MeAutoFight.lua:456 -> function CommonAutoFightState:Start()
+MeAutoFight.lua:485 -> function CommonAutoFightState:Stop()
+MeAutoFight.lua:491 -> PressSkillAutoFightState = class(MeAutoFightState)
+MeAutoFight.lua:493 -> function PressSkillAutoFightState:IsNotUseSkill()
+MeAutoFight.lua:497 -> function PressSkillAutoFightState:IsReleasePressSkill()
+MeAutoFight.lua:501 -> function PressSkillAutoFightState:IsHavePlayerTarget()
+MeAutoFight.lua:505 -> function PressSkillAutoFightState:IsUpdateIn()
+MeAutoFight.lua:511 -> function PressSkillAutoFightState:InitAutoFight()
+MeAutoFight.lua:516 -> function PressSkillAutoFightState:InitSpecifyPlayerAutoFight()
+MeAutoFight.lua:538 -> function PressSkillAutoFightState:InitSpecifyMonsterAutoFight()
+MeAutoFight.lua:552 -> function PressSkillAutoFightState:IsUpdateIn()
+MeAutoFight.lua:557 -> function PressSkillAutoFightState:Start()
+MeAutoFight.lua:625 -> function PressSkillAutoFightState:Stop()
+MeAutoFight.lua:643 -> self.autoMap[AutoFightStrKey.AutoFight] = RealAutoFightState(self)
+MeAutoFight.lua:644 -> self.autoMap[AutoFightStrKey.ReleaseSkill] = CommonAutoFightState(self)
+MeAutoFight.lua:645 -> self.autoMap[AutoFightStrKey.SpecifySkill] = PressSkillAutoFightState(self)
+MeAutoFight.lua:646 -> self.autoMap[AutoFightStrKey.HookFight] = HookAutoFightState(self)
+MeAutoFight.lua:647 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:662 -> function MeAutoFight:GetAutoFightState()
+MeAutoFight.lua:663 -> local state = self.autoFightState
+MeAutoFight.lua:668 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:675 -> self.autoFightState = AutoFightStateEnum.Open
+MeAutoFight.lua:684 -> EventManager.Dispatch(Event.SetIsExpShow, self.autoFightState)
+MeAutoFight.lua:694 -> autoState = QiJiHelperData.isAutoFight and AutoFightStateEnum.Pause or AutoFightStateEnum.Close
+MeAutoFight.lua:696 -> autoState = AutoFightStateEnum.Close
+MeAutoFight.lua:698 -> if self.autoFightState ~= autoState then
+MeAutoFight.lua:699 -> self.autoFightState = autoState
+MeAutoFight.lua:700 -> EventManager.Dispatch(Event.SetIsExpShow, self.autoFightState)
+MeAutoFight.lua:711 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:724 -> self.autoFightState = autoKey == AutoFightStrKey.AutoFight and AutoFightStateEnum.Open or AutoFightS
+MeAutoFight.lua:736 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:745 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:758 -> self.autoFightState = autoKey == AutoFightStrKey.AutoFight and AutoFightStateEnum.Open or AutoFightS
+MeAutoFight.lua:767 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:780 -> self.autoFightState = isOpen and AutoFightStateEnum.Open or AutoFightStrKey.None
+MeAutoFight.lua:788 -> self.autoFightState = AutoFightStateEnum.Close
+MeAutoFight.lua:802 -> self.autoFightState = isOpen and AutoFightStateEnum.Open or AutoFightStrKey.None
+MeAutoFight.lua:807 -> self.autoFightState = AutoFightStateEnum.Close
+MeStandState.lua:32 -> local mapAutoFightTime = ClientTable.cfg_Map_mapManager:TryGetValue(SceneData.mapId, "id").autoFight
+MeStandState.lua:33 -> if not QiJiHelperData.isAutoFight and 0 < mapAutoFightTime and self:IsCanOpenAutoFight() then
+MeStandState.lua:34 -> self.mapAutoFight = Timer.Start(mapAutoFightTime, function()
+MeStandState.lua:45 -> local isPauseState = RoleManager.me:GetAutoFightState() == AutoFightStateEnum.Pause
+MeStandState.lua:48 -> local pauseAutoFightTime = isPauseState and autoTime or 0
+MeStandState.lua:49 -> if QiJiHelperData.isAutoFight and 0 < pauseAutoFightTime and self:IsCanOpenAutoFight() then
+MeStandState.lua:50 -> self.pauseAutoFight = Timer.Start(pauseAutoFightTime, function()
+RedFortData.lua:18 -> function RedFortData.GetFightState()
+RedFortData.lua:21 -> return RedFortFightState.Prepare
+RedFortData.lua:23 -> return RedFortFightState.Fight
+RedFortStateEnum.lua:1 -> RedFortFightState = {
+RoleEquipUtility.lua:1690 -> local function DoJudgeWearFightState(itemData, enoughCondition)
