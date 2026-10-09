@@ -4504,7 +4504,7 @@ local function CreateModUI()
                                 nil
                             if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
                                 _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
-                                    target.line, nil, (Purpose and Purpose.None) or 0, onArrive, 3, true)
+                                    target.line, nil, (Purpose and Purpose.None) or 0, onArrive, 0, true)
                             elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
                                 _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
                                     (Purpose and Purpose.None) or 0, onArrive)
@@ -4515,7 +4515,7 @@ local function CreateModUI()
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_BossWait = 0
                         _G.Mod_AutoFarmBoss_DidJiggle = false
-                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
 
                         -- STATE 4: WAIT & VALIDATE & COMBAT
                     elseif _G.Mod_AutoFarmBoss_State == 4 then
@@ -4542,7 +4542,7 @@ local function CreateModUI()
                             return
                         end
 
-                        -- Kiểm tra khoảng cách thực tế ô lưới hoặc sự kiện OnArrive của game
+                        -- Kiểm tra tọa độ thực tế của nhân vật
                         local px, py = nil, nil
                         if _G.RoleManager and _G.RoleManager.me then
                             local me = _G.RoleManager.me
@@ -4559,10 +4559,12 @@ local function CreateModUI()
                         end
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: QUÉT TÌM BOSS VÀ CHUYỂN COMBAT NGAY KHI VÀO TẦM
-                        -- Mô tả: Quét tìm Boss sống ngay từ xa (tầm nhận diện ~15m hoặc đã target Boss).
-                        --        Nếu phát hiện Boss sống, chuyển ngay sang State 5 (Combat) và bật AutoFight,
-                        --        không bắt nhân vật tầm xa (Cung, Phép...) phải áp sát <= 3.5m mới đánh.
+                        -- [MOD FEATURE]: ÉP CHẠY BỘ ÁP SÁT BOSS CỰ LY <= 2M TRƯỚC KHI COMBAT
+                        -- Mô tả: Quét tìm Boss trên màn hình và liên tục cập nhật tọa độ thực tế của Boss.
+                        --        Nếu khoảng cách tới Boss > 2m: Ép chạy liên tục (MoveTo), tuyệt đối
+                        --        KHÔNG đổi State và KHÔNG bật AutoFight.
+                        --        Chỉ khi cự ly <= 2m: Nếu thấy Boss sống -> Chuyển State 5 (Combat);
+                        --        nếu chưa thấy Boss -> Đón đầu chờ Boss xuất hiện tại tọa độ.
                         -- =========================================================================
                         local foundBoss = false
                         local isHighHp = false
@@ -4590,9 +4592,6 @@ local function CreateModUI()
 
                                         if maxHp > 0 then
                                             local hpPct = (role.hp / maxHp) * 100
-                                            LogMsg(string.format("Tìm thấy Boss %s - HP: %.2f%%",
-                                                tostring(target.cfg.name or ""), hpPct))
-
                                             local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
                                             if hpPct >= skipThresh or isMine or isUnowned then
                                                 isHighHp = true
@@ -4606,27 +4605,96 @@ local function CreateModUI()
                             end
                         end
 
-                        if foundBoss then
-                            -- Đã phát hiện Boss sống! Xóa ngay watchdog để không bao giờ bị giật MoveTo
-                            _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
+                        -- Cập nhật tọa độ thực tế của Boss nếu Boss đang di chuyển trên màn hình
+                        if bossRoleObj and target.currentPos then
+                            local bx = bossRoleObj.serverCoord and bossRoleObj.serverCoord.x or (bossRoleObj.cellPos and bossRoleObj.cellPos.x) or (bossRoleObj.data and bossRoleObj.data.x)
+                            local by = bossRoleObj.serverCoord and bossRoleObj.serverCoord.y or (bossRoleObj.cellPos and bossRoleObj.cellPos.y) or (bossRoleObj.data and bossRoleObj.data.y)
+                            if bx and by then
+                                target.currentPos.x = tonumber(bx) or target.currentPos.x
+                                target.currentPos.y = tonumber(by) or target.currentPos.y
+                            end
+                        end
 
-                            -- Cập nhật tọa độ thực tế của Boss nếu Boss di chuyển ra xa điểm spawn
-                            if bossRoleObj and target.currentPos then
-                                local bx = bossRoleObj.serverCoord and bossRoleObj.serverCoord.x or (bossRoleObj.cellPos and bossRoleObj.cellPos.x) or (bossRoleObj.data and bossRoleObj.data.x)
-                                local by = bossRoleObj.serverCoord and bossRoleObj.serverCoord.y or (bossRoleObj.cellPos and bossRoleObj.cellPos.y) or (bossRoleObj.data and bossRoleObj.data.y)
-                                if bx and by then
-                                    target.currentPos.x = tonumber(bx) or target.currentPos.x
-                                    target.currentPos.y = tonumber(by) or target.currentPos.y
+                        -- Tính khoảng cách thực tế giữa nhân vật và tọa độ mục tiêu Boss
+                        local targetPos = target.currentPos
+                        local dist = 9999
+                        if px and py and targetPos and targetPos.x and targetPos.y then
+                            local dx = px - targetPos.x
+                            local dy = py - targetPos.y
+                            dist = math.sqrt(dx * dx + dy * dy)
+                        end
+
+                        -- ĐIỀU KIỆN 1: NẾU CÒN CÁCH TỌA ĐỘ BOSS > 2M -> ÉP CHẠY BẰNG CHẾT, KHÔNG ĐỔI STATE, KHÔNG ĐỨNG IM!
+                        if dist > 2.0 then
+                            _G.Mod_AutoFarmBoss_BossWait = 0
+
+                            -- Đảm bảo AutoFight không bị bật sớm làm ngắt chuyển động chạy bộ
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
+                                if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
+                                if _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
+                            end
+
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            local isMoving = false
+                            if me and me.IsMoving then
+                                isMoving = me:IsMoving()
+                            end
+
+                            -- Nếu nhân vật đứng im (không di chuyển) HOẶC định kỳ 0.6s -> Lập tức ép gửi lại lệnh MoveTo
+                            local lastMoveTime = _G.Mod_AutoFarmBoss_LastForceMoveTime or 0
+                            local needForceMove = (not isMoving) or ((nowRealtime - lastMoveTime) >= 0.6)
+
+                            if needForceMove and me and (not me.hp or me.hp > 0) then
+                                _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
+                                if target and target.currentPos then
+                                    local moved = false
+                                    if me and me.MoveTo then
+                                        local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
+                                        me:MoveTo(cellPos, 0, function(status)
+                                            _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                        end)
+                                        moved = true
+                                    end
+                                    if not moved then
+                                        local targetVector = Vector2(target.currentPos.x, target.currentPos.y)
+                                        if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                                            _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
+                                                target.line, nil, (Purpose and Purpose.None) or 0, function()
+                                                    _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                end, 0, true)
+                                        elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
+                                            _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
+                                                (Purpose and Purpose.None) or 0, function()
+                                                    _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                end)
+                                        end
+                                    end
                                 end
                             end
 
+                            -- Giữ nhịp kiểm tra nhanh (0.3s) để nhân vật bám sát và không bị trễ nhịp
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                            return
+                        end
+
+                        -- ĐIỀU KIỆN 2: KHI ĐÃ TIẾP CẬN CỰ LY <= 2M
+                        _G.Mod_AutoFarmBoss_LastForceMoveTime = nil
+
+                        -- Trường hợp A: Tìm thấy Boss sống ở cự ly <= 2m -> Xử lý Combat hoặc KS
+                        if foundBoss then
+                            local maxHp = bossRoleObj and (bossRoleObj.maxHp or bossRoleObj.maxHP or bossRoleObj.hp) or 1
+                            local hpPct = bossRoleObj and ((bossRoleObj.hp / maxHp) * 100) or 100
+
                             if isHighHp then
-                                if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                     _G.RoleManager.me:SetAutoFight("AutoFight")
                                 end
-                                SetBossState(5, "Tìm thấy Boss hợp lệ -> Combat")
+                                SetBossState(5, "Đã áp sát Boss <= 2m -> Combat")
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
-                                LogMsg("Đủ điều kiện, Bật Auto Fight")
+                                LogMsg(string.format("Đã áp sát Boss %s cự ly %.1fm (<= 2m) - HP: %.2f%%. Bật Auto Fight!",
+                                    tostring(target.cfg.name or ""), dist, hpPct))
                             else
                                 local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
                                 LogMsg(string.format("Boss bị Ks (HP < %d%%). Bỏ qua 6 phút", skipThresh))
@@ -4639,91 +4707,25 @@ local function CreateModUI()
                             return
                         end
 
-                        -- Chưa tìm thấy Boss trên màn hình -> Kiểm tra khoảng cách tới tọa độ chỉ định
-                        local targetPos = target.currentPos
-                        local dist = 9999
-                        if px and py and targetPos and targetPos.x and targetPos.y then
-                            local dx = px - targetPos.x
-                            local dy = py - targetPos.y
-                            dist = math.sqrt(dx * dx + dy * dy)
-                        end
-
-                        local hasArrived = (dist <= 1.5)
-
-                        if not hasArrived then
-                            -- Chưa tới nơi và chưa thấy Boss: Tiếp tục duy trì di chuyển!
-                            _G.Mod_AutoFarmBoss_BossWait = 0
-
-                            -- =========================================================================
-                            -- [MOD FEATURE]: TỰ ĐỘNG CHẠY TIẾP KHI DỪNG DI CHUYỂN TRONG AUTO BOSS
-                            -- Mô tả: Kiểm tra nếu nhân vật dừng di chuyển (IsMoving == false) liên tục >= 3s,
-                            --        tự động gọi lại lệnh MoveTo để tiếp tục chạy tới tọa độ Boss chỉ định.
-                            -- =========================================================================
-                            local me = _G.RoleManager and _G.RoleManager.me
-                            local isMoving = false
-                            if me and me.IsMoving then
-                                isMoving = me:IsMoving()
+                        -- Trường hợp B: Đã tới tọa độ cự ly <= 2m nhưng chưa thấy Boss -> Đón đầu chờ Boss xuất hiện
+                        _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
+                        if _G.Mod_AutoFarmBoss_BossWait <= 20 then
+                            if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
+                                LogMsg(string.format("[ĐÓN ĐẦU] Đã tới tọa độ %s (cách %.1fm), đang chờ Boss %s xuất hiện (%ds/20s)...",
+                                    target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "",
+                                    dist,
+                                    target.cfg.name or "",
+                                    _G.Mod_AutoFarmBoss_BossWait))
                             end
-
-                            if isMoving then
-                                _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
-                            else
-                                if me and (not me.hp or me.hp > 0) then
-                                    _G.Mod_AutoFarmBoss_StopMoveStartTime = _G.Mod_AutoFarmBoss_StopMoveStartTime or nowRealtime
-                                    if (nowRealtime - _G.Mod_AutoFarmBoss_StopMoveStartTime) >= 3.0 then
-                                        _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
-                                        if target and target.currentPos then
-                                            LogMsg(string.format("Nhân vật dừng di chuyển > 3s (cách tọa độ Boss %s %.1fm). Tự động tiếp tục chạy tới Boss...", tostring(target.cfg and target.cfg.name or ""), dist))
-                                            local moved = false
-                                            if me and me.MoveTo then
-                                                local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
-                                                me:MoveTo(cellPos, 0, function(status)
-                                                    _G.Mod_AutoFarmBoss_ArrivedAtPos = true
-                                                end)
-                                                moved = true
-                                            end
-                                            if not moved then
-                                                local targetVector = Vector2(target.currentPos.x, target.currentPos.y)
-                                                if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
-                                                    _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
-                                                        target.line, nil, (Purpose and Purpose.None) or 0, function()
-                                                            _G.Mod_AutoFarmBoss_ArrivedAtPos = true
-                                                        end, 3, true)
-                                                elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
-                                                    _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
-                                                        (Purpose and Purpose.None) or 0, function()
-                                                            _G.Mod_AutoFarmBoss_ArrivedAtPos = true
-                                                        end)
-                                                end
-                                            end
-                                        end
-                                    end
-                                end
-                            end
-
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
-                            return
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         else
-                            -- Đã tới cự ly <= 3.5m nhưng không thấy Boss -> Đang đứng đón đầu chờ Boss xuất hiện
-                            _G.Mod_AutoFarmBoss_StopMoveStartTime = nil
-                            _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
-                            if _G.Mod_AutoFarmBoss_BossWait <= 20 then
-                                if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
-                                    LogMsg(string.format("[ĐÓN ĐẦU] Đã tới tọa độ %s, đang chờ Boss %s xuất hiện (%ds/20s)...",
-                                        target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "",
-                                        target.cfg.name or "",
-                                        _G.Mod_AutoFarmBoss_BossWait))
-                                end
-                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
-                            else
-                                LogMsg(string.format("Đã đứng chờ 20s tại tọa độ %s nhưng Boss không xuất hiện. Trở về State 1...",
-                                    target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
-                                _G.Mod_AutoFarmBoss_BossWait = 0
-                                _G.Mod_AutoFarmBoss_Target = nil
-                                SetBossState(1, "Chờ Boss quá 20s không thấy")
-                                _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
-                            end
+                            LogMsg(string.format("Đã đứng chờ 20s tại tọa độ %s nhưng Boss không xuất hiện. Trở về State 1...",
+                                target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
+                            _G.Mod_AutoFarmBoss_BossWait = 0
+                            _G.Mod_AutoFarmBoss_Target = nil
+                            SetBossState(1, "Chờ Boss quá 20s không thấy")
+                            _G.Mod_AutoFarmBoss_TargetWait = 0
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         end
 
                         -- STATE 5: COMBAT
@@ -6313,9 +6315,11 @@ local function CreateModUI()
 
             local function UpdateLabel(overrideCount)
                 local extra = ""
-                if varName == "AutoPick_Enabled" then
-                    extra = " (" .. tostring(_G.AutoPick_Count or 0) .. ")"
-                elseif varName == "Mod_AutoOpenGoldenChest_Enabled" then
+                -- =========================================================================
+                -- [MOD FEATURE]: ẨN SỐ ĐẾM ITEM CHO TỰ ĐỘNG NHẶT (CUSTOMER)
+                -- Mô tả: Không hiển thị số lượng item đã nhặt (AutoPick_Count) đằng sau nút TỰ ĐỘNG NHẶT
+                -- =========================================================================
+                if varName == "Mod_AutoOpenGoldenChest_Enabled" then
                     local totalOddCount = overrideCount
                     if not totalOddCount then
                         pcall(function()
