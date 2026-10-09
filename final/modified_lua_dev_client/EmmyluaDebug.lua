@@ -7184,7 +7184,7 @@ local function CreateModUI()
                     _G.Mod_PK_MatchedPlayers = _G.Mod_PK_MatchedPlayers or {}
 
                     _G.Mod_StartPKScanLoop = function()
-                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.4, -1, function()
+                        _G.Mod_StartTrackedTimer("AutoPKScan", 0.1, -1, function()
                             if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                             pcall(function()
                                 if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
