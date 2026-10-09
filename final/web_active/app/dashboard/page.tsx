@@ -13,6 +13,7 @@ import {
   Clock,
   ChevronRight,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
+  const [selectedSaleId, setSelectedSaleId] = useState('ALL');
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -34,15 +36,20 @@ export default function DashboardPage() {
       .then((resData) => {
         if (resData?.user) {
           setUser(resData.user);
-          loadDashboardData();
+          loadDashboardData('ALL');
         }
       })
       .catch(() => router.push('/login'));
   }, [router]);
 
-  const loadDashboardData = async () => {
+  // =========================================================================
+  // [MOD FEATURE]: TẢI DỮ LIỆU DASHBOARD THEO BỘ LỌC SALE
+  // Mô tả: Cho phép Admin lọc dashboard theo từng Sale hoặc xem toàn hệ thống
+  // =========================================================================
+  const loadDashboardData = async (saleId = selectedSaleId) => {
     try {
-      const res = await fetch('/api/dashboard');
+      const url = saleId && saleId !== 'ALL' ? `/api/dashboard?saleId=${saleId}` : '/api/dashboard';
+      const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -52,6 +59,11 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSaleFilterChange = (saleId: string) => {
+    setSelectedSaleId(saleId);
+    loadDashboardData(saleId);
   };
 
   if (loading || !user) {
@@ -95,6 +107,8 @@ export default function DashboardPage() {
     ? `${linePathD} L ${points[points.length - 1].x} 190 L ${points[0].x} 190 Z`
     : '';
 
+  const activeSaleName = data?.salesList?.find((s: any) => s.id === selectedSaleId)?.displayName;
+
   return (
     <div className="flex min-h-screen bg-[#0b0f19]">
       <Sidebar userRole={user.role} />
@@ -104,60 +118,112 @@ export default function DashboardPage() {
 
         <main className="p-6 md:p-8 space-y-8 flex-1 overflow-y-auto">
           {/* Header Action Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                Tổng Quan Quản Trị
+                {user.role === 'ADMIN' ? 'Tổng Quan Quản Trị' : 'Dashboard Doanh Số'}
                 <Sparkles className="w-5 h-5 text-cyan-400" />
               </h1>
               <p className="text-xs text-slate-400 mt-1">
-                Theo dõi doanh thu, số lượng token kích hoạt và cảnh báo hết hạn
+                {user.role === 'ADMIN'
+                  ? 'Theo dõi doanh thu toàn hệ thống, từng nhân viên Sale và cảnh báo hết hạn'
+                  : 'Theo dõi doanh số cá nhân, số lượng token kích hoạt và khách hàng sắp hết hạn'}
               </p>
             </div>
 
-            <Link
-              href="/tokens/create"
-              className="px-5 py-2.5 gradient-button text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 self-start sm:self-auto hover:scale-105 transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              TẠO TOKEN MỚI
-            </Link>
+            <div className="flex flex-wrap items-center gap-3">
+              {/* ========================================================================= */}
+              {/* [MOD FEATURE]: BỘ LỌC DOANH SỐ THEO NHÂN VIÊN SALE DÀNH CHO ADMIN */}
+              {/* ========================================================================= */}
+              {user.role === 'ADMIN' && data?.salesList && data.salesList.length > 0 && (
+                <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-700/80 px-3 py-1.5 rounded-xl shadow-sm">
+                  <Users className="w-4 h-4 text-cyan-400" />
+                  <span className="text-xs text-slate-300 font-medium whitespace-nowrap">Xem theo:</span>
+                  <select
+                    value={selectedSaleId}
+                    onChange={(e) => handleSaleFilterChange(e.target.value)}
+                    className="bg-slate-800 text-slate-100 text-xs font-semibold rounded-lg px-2.5 py-1.5 border border-slate-700 focus:outline-none focus:border-cyan-500 cursor-pointer"
+                  >
+                    <option value="ALL">Toàn Hệ Thống (Tất Cả)</option>
+                    {data.salesList.map((s: any) => (
+                      <option key={s.id} value={s.id}>
+                        {s.displayName} ({s.username}) - {s.role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <Link
+                href="/tokens/create"
+                className="px-5 py-2.5 gradient-button text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 hover:scale-105 transition"
+              >
+                <PlusCircle className="w-4 h-4" />
+                TẠO TOKEN MỚI
+              </Link>
+            </div>
           </div>
+
+          {/* Active Filter Indicator for Admin */}
+          {user.role === 'ADMIN' && selectedSaleId !== 'ALL' && (
+            <div className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-cyan-950/40 border border-cyan-500/30 text-xs text-cyan-300">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>
+                  Đang xem báo cáo số liệu của nhân viên:{' '}
+                  <strong className="text-white font-bold">{activeSaleName || 'Nhân viên'}</strong>
+                </span>
+              </div>
+              <button
+                onClick={() => handleSaleFilterChange('ALL')}
+                className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-2.5 py-1 rounded-lg border border-slate-700 transition"
+              >
+                Trở về Toàn hệ thống
+              </button>
+            </div>
+          )}
 
           {/* KPI Summary Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {/* Card 1: Tổng Doanh Thu */}
+            {/* ========================================================================= */}
+            {/* [MOD FEATURE]: CARD 1: DOANH THU THÁNG NÀY (CHÍNH) - TỔNG DOANH THU (PHỤ) */}
+            {/* Mô tả: Đổi thông tin tháng này làm nổi bật chính, tổng tích lũy hiển thị nhỏ bên dưới */}
+            {/* ========================================================================= */}
             <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
                 <DollarSign className="w-16 h-16 text-cyan-400" />
               </div>
               <div className="flex items-center gap-3 text-cyan-400 text-xs font-semibold uppercase tracking-wider mb-2">
                 <DollarSign className="w-4 h-4" />
-                Tổng Doanh Thu
+                Doanh Thu Tháng Này
               </div>
               <div className="text-2xl font-black text-white">
-                {summary.totalRevenue.toLocaleString('vi-VN')} <span className="text-xs font-medium text-slate-400">VNĐ</span>
+                {summary.monthRevenue.toLocaleString('vi-VN')} <span className="text-xs font-medium text-slate-400">VNĐ</span>
               </div>
-              <div className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-                Tháng này: <span className="text-slate-200 font-semibold">{summary.monthRevenue.toLocaleString('vi-VN')} VNĐ</span>
+              <div className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-cyan-400" />
+                Tổng tích lũy: <span className="text-slate-200 font-semibold">{summary.totalRevenue.toLocaleString('vi-VN')} VNĐ</span>
               </div>
             </div>
 
-            {/* Card 2: Tổng Token Đã Tạo */}
+            {/* ========================================================================= */}
+            {/* [MOD FEATURE]: CARD 2: TOKEN THÁNG NÀY (CHÍNH) - TỔNG TOKEN (PHỤ) */}
+            {/* Mô tả: Đổi số lượng token tháng này làm nổi bật chính, tổng token hiển thị nhỏ bên dưới */}
+            {/* ========================================================================= */}
             <div className="glass-card p-6 rounded-2xl relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
                 <Key className="w-16 h-16 text-indigo-400" />
               </div>
               <div className="flex items-center gap-3 text-indigo-400 text-xs font-semibold uppercase tracking-wider mb-2">
                 <Key className="w-4 h-4" />
-                Tổng Token Đã Tạo
+                Token Tháng Này
               </div>
               <div className="text-2xl font-black text-white">
-                {summary.totalTokens} <span className="text-xs font-medium text-slate-400">Tokens</span>
+                {summary.monthTokens} <span className="text-xs font-medium text-slate-400">Tokens</span>
               </div>
-              <div className="text-xs text-slate-400 mt-2">
-                Tháng này: <span className="text-slate-200 font-semibold">{summary.monthTokens} tokens</span> mới
+              <div className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 inline-block"></span>
+                Tổng tích lũy: <span className="text-slate-200 font-semibold">{summary.totalTokens} tokens</span> đã tạo
               </div>
             </div>
 
@@ -308,6 +374,112 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+
+          {/* ========================================================================= */}
+          {/* [MOD FEATURE]: BẢNG THỐNG KÊ HIỆU SUẤT TỪNG NHÂN VIÊN SALE DÀNH CHO ADMIN */}
+          {/* Mô tả: Bảng tổng hợp số lượng token và doanh thu theo từng Sale */}
+          {/* ========================================================================= */}
+          {user.role === 'ADMIN' && data?.salesStats && data.salesStats.length > 0 && (
+            <div className="glass-card p-6 rounded-2xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-bold text-slate-100 text-base flex items-center gap-2">
+                    <Users className="w-4 h-4 text-cyan-400" />
+                    Thống Kê Doanh Số Từng Nhân Viên
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Bảng so sánh hiệu suất bán hàng tháng này và tổng tích lũy của từng tài khoản
+                  </p>
+                </div>
+                <Link
+                  href="/users"
+                  className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 self-start sm:self-auto"
+                >
+                  Quản lý tài khoản <ChevronRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-slate-300">
+                  <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
+                    <tr>
+                      <th className="py-3 px-4">Nhân Viên</th>
+                      <th className="py-3 px-4">Tài Khoản</th>
+                      <th className="py-3 px-4">Vai Trò</th>
+                      <th className="py-3 px-4 text-center">Token Tháng Này</th>
+                      <th className="py-3 px-4">Doanh Thu Tháng</th>
+                      <th className="py-3 px-4 text-center">Tổng Token</th>
+                      <th className="py-3 px-4">Tổng Doanh Thu</th>
+                      <th className="py-3 px-4 text-right">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {data.salesStats.map((sale: any) => {
+                      const isCurrentFiltered = selectedSaleId === sale.userId;
+                      return (
+                        <tr
+                          key={sale.userId}
+                          className={`transition ${
+                            isCurrentFiltered ? 'bg-cyan-500/10' : 'hover:bg-slate-800/40'
+                          }`}
+                        >
+                          <td className="py-3.5 px-4 font-bold text-white whitespace-nowrap">
+                            {sale.displayName}
+                          </td>
+                          <td className="py-3.5 px-4 font-mono text-slate-400">
+                            {sale.username}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                                sale.role === 'ADMIN'
+                                  ? 'bg-amber-500/10 text-amber-300 border-amber-500/30'
+                                  : 'bg-cyan-500/10 text-cyan-300 border-cyan-500/30'
+                              }`}
+                            >
+                              {sale.role}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-bold text-indigo-300">
+                            {sale.monthTokens}
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-emerald-400 whitespace-nowrap">
+                            {sale.monthRevenue.toLocaleString('vi-VN')} đ
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-medium text-slate-300">
+                            {sale.totalTokens}
+                          </td>
+                          <td className="py-3.5 px-4 font-semibold text-slate-200 whitespace-nowrap">
+                            {sale.totalRevenue.toLocaleString('vi-VN')} đ
+                          </td>
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5">
+                              <button
+                                onClick={() => handleSaleFilterChange(sale.userId)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                                  isCurrentFiltered
+                                    ? 'bg-cyan-500 text-slate-950 font-bold'
+                                    : 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700'
+                                }`}
+                              >
+                                {isCurrentFiltered ? 'Đang lọc' : 'Lọc Dashboard'}
+                              </button>
+                              <Link
+                                href={`/tokens?createdBy=${sale.userId}`}
+                                className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                              >
+                                Xem Token
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           {/* Recently Created Tokens */}
           <div className="glass-card p-6 rounded-2xl space-y-4">

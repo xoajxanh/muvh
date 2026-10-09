@@ -63,25 +63,34 @@ export async function GET(req: NextRequest) {
     // [MOD FEATURE]: XỬ LÝ TOKEN PHỤ (Kế thừa trạng thái & hạn dùng của Token Cha)
     // =========================================================================
     if (token.parentId && token.parent) {
+      const isDeviceSub = token.parent.deviceSnMd5 !== token.deviceSnMd5;
+      const parentLabel = isDeviceSub
+        ? `Mã máy chính: ${token.parent.deviceSnMd5}`
+        : `UID chính: ${token.parent.characterUid}`;
+
       if (token.parent.isDeleted) {
         return NextResponse.json({
-          error: 'Token cha liên kết đã bị thu hồi hoặc xóa bởi quản trị viên',
+          error: `Token chính liên kết (${parentLabel}) đã bị thu hồi hoặc xóa bởi quản trị viên`,
           status: 'DELETED',
           isDeleted: true,
           isSubToken: true,
+          subTokenType: isDeviceSub ? 'DEVICE' : 'CHARACTER',
           parentCharacterUid: token.parent.characterUid,
+          parentDeviceSnMd5: token.parent.deviceSnMd5,
         }, { status: 403 });
       }
 
       const parentExpireAt = new Date(token.parent.expireAt);
       if (parentExpireAt < now) {
         return NextResponse.json({
-          error: `Token cha liên kết (UID: ${token.parent.characterUid}) đã hết hạn sử dụng. Vui lòng gia hạn Token chính!`,
+          error: `Token chính liên kết (${parentLabel}) đã hết hạn sử dụng. Vui lòng gia hạn Token máy chính!`,
           status: 'EXPIRED',
           isExpired: true,
           expireAt: token.parent.expireAt,
           isSubToken: true,
+          subTokenType: isDeviceSub ? 'DEVICE' : 'CHARACTER',
           parentCharacterUid: token.parent.characterUid,
+          parentDeviceSnMd5: token.parent.deviceSnMd5,
         }, { status: 403 });
       }
 

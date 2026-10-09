@@ -33,8 +33,16 @@ export async function GET(req: NextRequest) {
     ];
   }
 
-  if (createdBy.trim() !== '') {
-    whereClause.createdById = createdBy.trim();
+  // =========================================================================
+  // [MOD FEATURE]: PHÂN QUYỀN TRUY VẤN TOKEN THEO USER ROLE
+  // Mô tả: SALE chỉ xem được token do chính mình tạo; ADMIN có thể xem tất cả hoặc lọc theo Sale
+  // =========================================================================
+  if (session.role === 'SALE') {
+    whereClause.createdById = session.userId;
+  } else if (session.role === 'ADMIN') {
+    if (createdBy.trim() !== '' && createdBy.trim() !== 'ALL') {
+      whereClause.createdById = createdBy.trim();
+    }
   }
 
   const now = new Date();
@@ -60,8 +68,8 @@ export async function GET(req: NextRequest) {
       include: {
         vipPackage: { select: { id: true, name: true } },
         createdBy: { select: { id: true, username: true, displayName: true } },
-        parent: { select: { id: true, characterUid: true, customerName: true, expireAt: true, isDeleted: true } },
-        children: { select: { id: true, characterUid: true, customerName: true, expireAt: true, isDeleted: true } },
+        parent: { select: { id: true, characterUid: true, deviceSnMd5: true, customerName: true, expireAt: true, isDeleted: true } },
+        children: { select: { id: true, characterUid: true, deviceSnMd5: true, customerName: true, expireAt: true, isDeleted: true } },
         _count: { select: { notes: true, children: true } },
       },
       orderBy: { createdAt: 'desc' },
@@ -117,6 +125,8 @@ export async function POST(req: NextRequest) {
       price,
       isCustom,
       parentCharacterUid,
+      parentDeviceSnMd5,
+      subTokenType,
     } = body;
 
     if (!deviceSnMd5 || !characterUid || !durationDays) {
@@ -124,14 +134,19 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================================
-    // [MOD FEATURE]: XỬ LÝ LIÊN KẾT TOKEN CHA (PARENT TOKEN)
+    // [MOD FEATURE]: XỬ LÝ LIÊN KẾT TOKEN CHA (PARENT TOKEN: NV PHỤ & MÁY PHỤ)
+    // Mô tả: Hỗ trợ 2 loại Token phụ thuộc:
+    // 1. Token Nhân Vật Phụ (cùng máy, khác UID -> query theo parentCharacterUid + deviceSnMd5)
+    // 2. Token Máy Phụ (khác máy, cùng UID -> query theo parentDeviceSnMd5 + characterUid)
     // =========================================================================
     let parentId: string | null = null;
     let parentToken: any = null;
-    if (parentCharacterUid && String(parentCharacterUid).trim() !== '') {
+    let subTokenTag = '';
+
+    if (subTokenType === 'CHARACTER' || (parentCharacterUid && String(parentCharacterUid).trim() !== '')) {
       const cleanParentUid = String(parentCharacterUid).trim();
       if (cleanParentUid === characterUid.trim()) {
-        return NextResponse.json({ error: 'Token không thể tự chọn chính mình làm Token cha!' }, { status: 400 });
+        return NextResponse.json({ error: 'Token Nhân vật phụ không thể tự chọn chính mình làm Token cha!' }, { status: 400 });
       }
 
       parentToken = await prisma.token.findFirst({
@@ -145,11 +160,37 @@ export async function POST(req: NextRequest) {
 
       if (!parentToken) {
         return NextResponse.json({
-          error: `Không tìm thấy Token cha với UID [${cleanParentUid}] trên thiết bị này! Vui lòng kiểm tra lại.`,
+          error: `Không tìm thấy Token cha với UID [${cleanParentUid}] trên cùng thiết bị này! Vui lòng kiểm tra lại.`,
         }, { status: 400 });
       }
 
       parentId = parentToken.id;
+      subTokenTag = ` [TOKEN NV PHỤ của UID: ${parentToken.characterUid}]`;
+    } else if (subTokenType === 'DEVICE' || (parentDeviceSnMd5 && String(parentDeviceSnMd5).trim() !== '')) {
+      const cleanParentDeviceSn = String(parentDeviceSnMd5).trim();
+      if (cleanParentDeviceSn === deviceSnMd5.trim()) {
+        return NextResponse.json({
+          error: 'Mã máy chính không được trùng với mã máy phụ hiện tại! (Nếu cùng máy, vui lòng chọn Token Nhân Vật Phụ).',
+        }, { status: 400 });
+      }
+
+      parentToken = await prisma.token.findFirst({
+        where: {
+          deviceSnMd5: cleanParentDeviceSn,
+          characterUid: characterUid.trim(),
+          isDeleted: false,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!parentToken) {
+        return NextResponse.json({
+          error: `Không tìm thấy Token máy chính nào với Mã máy [${cleanParentDeviceSn}] và UID nhân vật [${characterUid.trim()}]! Vui lòng kiểm tra lại.`,
+        }, { status: 400 });
+      }
+
+      parentId = parentToken.id;
+      subTokenTag = ` [TOKEN MÁY PHỤ của Máy chính: ${parentToken.deviceSnMd5}]`;
     }
 
     const duration = parentToken ? parentToken.durationDays : Number(durationDays);
@@ -226,7 +267,6 @@ export async function POST(req: NextRequest) {
 
     // Create Audit Log Note
     const testTag = Boolean(isTest) ? ' [TEST]' : '';
-    const subTokenTag = parentToken ? ` [TOKEN PHỤ của UID: ${parentToken.characterUid}]` : '';
     const initialNoteDetail = `Khởi tạo Token${testTag}${subTokenTag} mới cho Khách hàng [${customerName ? customerName.trim() : 'Chưa nhập'}], thiết bị [${tokenParams.deviceSnMd5}], UID nhân vật [${tokenParams.characterUid}], thời hạn ${duration} ngày, giá ${Number(price || 0).toLocaleString('vi-VN')} VNĐ.`;
     await prisma.tokenNote.create({
       data: {

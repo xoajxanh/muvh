@@ -23,6 +23,7 @@ import {
   Link2,
   GitFork,
   PlusCircle,
+  Smartphone,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -47,8 +48,9 @@ export default function TokenDetailPage() {
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [isCustom, setIsCustom] = useState(false);
   const [durationDays, setDurationDays] = useState(30);
-  const [isSubToken, setIsSubToken] = useState(false);
+  const [subTokenType, setSubTokenType] = useState<'NONE' | 'CHARACTER' | 'DEVICE'>('NONE');
   const [parentCharacterUid, setParentCharacterUid] = useState('');
+  const [parentDeviceSnMd5, setParentDeviceSnMd5] = useState('');
   const [fovMin, setFovMin] = useState(20);
   const [fovMax, setFovMax] = useState(90);
   const [bossRefreshMin, setBossRefreshMin] = useState(1);
@@ -130,11 +132,20 @@ export default function TokenDetailPage() {
           setIsCustom(tok.isCustom);
           setDurationDays(tok.durationDays);
           if (tok.parent) {
-            setIsSubToken(true);
-            setParentCharacterUid(tok.parent.characterUid);
+            const isDevSub = tok.parent.deviceSnMd5 !== tok.deviceSnMd5;
+            if (isDevSub) {
+              setSubTokenType('DEVICE');
+              setParentDeviceSnMd5(tok.parent.deviceSnMd5);
+              setParentCharacterUid('');
+            } else {
+              setSubTokenType('CHARACTER');
+              setParentCharacterUid(tok.parent.characterUid);
+              setParentDeviceSnMd5('');
+            }
           } else {
-            setIsSubToken(false);
+            setSubTokenType('NONE');
             setParentCharacterUid('');
+            setParentDeviceSnMd5('');
           }
           setFovMin(tok.fovMin);
           setFovMax(tok.fovMax);
@@ -232,8 +243,13 @@ export default function TokenDetailPage() {
       return;
     }
 
-    if (isSubToken && !parentCharacterUid.trim()) {
-      setToast({ message: 'Vui lòng nhập UID Token Cha cho Token phụ!', type: 'error' });
+    if (subTokenType === 'CHARACTER' && !parentCharacterUid.trim()) {
+      setToast({ message: 'Vui lòng nhập UID Token Cha cho Token nhân vật phụ!', type: 'error' });
+      return;
+    }
+
+    if (subTokenType === 'DEVICE' && !parentDeviceSnMd5.trim()) {
+      setToast({ message: 'Vui lòng nhập Mã thiết bị (MD5) Token máy chính cho Token máy phụ!', type: 'error' });
       return;
     }
 
@@ -274,7 +290,9 @@ export default function TokenDetailPage() {
         price: Number(price),
         isCustom,
         noteDetail: noteDetail.trim() || 'Cập nhật thông số token',
-        parentCharacterUid: isSubToken ? parentCharacterUid.trim() : '',
+        subTokenType,
+        parentCharacterUid: subTokenType === 'CHARACTER' ? parentCharacterUid.trim() : '',
+        parentDeviceSnMd5: subTokenType === 'DEVICE' ? parentDeviceSnMd5.trim() : '',
       };
 
       const res = await fetch(`/api/tokens/${tokenId}`, {
@@ -398,32 +416,60 @@ export default function TokenDetailPage() {
           </div>
 
           {/* Sub-Token Indicator Banner */}
-          {token.parent && (
-            <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-indigo-200 text-xs shadow-lg shadow-indigo-950/20">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 shrink-0 text-indigo-300">
-                  <Link2 className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="font-bold text-white text-sm flex items-center gap-2">
-                    TOKEN PHỤ (LIÊN KẾT THEO TOKEN CHA)
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
-                      VĨNH VIỄN
-                    </span>
+          {token.parent && (() => {
+            const isDeviceSub = token.parent.deviceSnMd5 !== token.deviceSnMd5;
+            return isDeviceSub ? (
+              <div className="p-4 rounded-2xl bg-sky-950/40 border border-sky-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sky-200 text-xs shadow-lg shadow-sky-950/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-sky-500/20 border border-sky-500/30 shrink-0 text-sky-300">
+                    <Smartphone className="w-5 h-5" />
                   </div>
-                  <p className="text-slate-300 mt-0.5">
-                    Token này kế thừa trạng thái & hạn dùng từ Token Cha (UID: <span className="font-mono text-cyan-300 font-bold">{token.parent.characterUid}</span> - Hết hạn: <span className="text-amber-300 font-semibold">{new Date(token.parent.expireAt).toLocaleDateString('vi-VN')}</span>). Khi Token cha gia hạn, token phụ này sẽ tự động được sử dụng tiếp.
-                  </p>
+                  <div>
+                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                      TOKEN MÁY PHỤ (LIÊN KẾT THEO TOKEN MÁY CHÍNH)
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 font-black">
+                        MÁY PHỤ
+                      </span>
+                    </div>
+                    <p className="text-slate-300 mt-0.5">
+                      Token này kế thừa trạng thái & hạn dùng từ Token Máy Chính (Mã MD5: <span className="font-mono text-cyan-300 font-bold">{token.parent.deviceSnMd5}</span> - Hết hạn: <span className="text-amber-300 font-semibold">{new Date(token.parent.expireAt).toLocaleDateString('vi-VN')}</span>). Khi Token máy chính gia hạn, token máy phụ này sẽ tự động được sử dụng tiếp.
+                    </p>
+                  </div>
                 </div>
+                <Link
+                  href={`/tokens/${token.parent.id}`}
+                  className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition shadow-sm whitespace-nowrap"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Xem Token Máy Chính
+                </Link>
               </div>
-              <Link
-                href={`/tokens/${token.parent.id}`}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition shadow-sm whitespace-nowrap"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Xem Token Cha
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-indigo-200 text-xs shadow-lg shadow-indigo-950/20">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 shrink-0 text-indigo-300">
+                    <Link2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                      TOKEN NHÂN VẬT PHỤ (LIÊN KẾT THEO TOKEN CHA)
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                        NV PHỤ
+                      </span>
+                    </div>
+                    <p className="text-slate-300 mt-0.5">
+                      Token này kế thừa trạng thái & hạn dùng từ Token Cha (UID: <span className="font-mono text-cyan-300 font-bold">{token.parent.characterUid}</span> - Hết hạn: <span className="text-amber-300 font-semibold">{new Date(token.parent.expireAt).toLocaleDateString('vi-VN')}</span>). Khi Token cha gia hạn, token phụ này sẽ tự động được sử dụng tiếp.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  href={`/tokens/${token.parent.id}`}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto transition shadow-sm whitespace-nowrap"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Xem Token Cha
+                </Link>
+              </div>
+            );
+          })()}
 
           {/* Expiration Alert Banner */}
           {isExpired && !isDeleted && (
@@ -599,54 +645,125 @@ export default function TokenDetailPage() {
                     </label>
                   </div>
 
-                  {/* Sub-Token (Token Phụ) Toggle & Parent UID */}
-                  <div className="p-3.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-3">
-                    <label className="flex items-center gap-2 cursor-pointer w-max">
-                      <input
-                        type="checkbox"
-                        checked={isSubToken}
-                        onChange={(e) => {
-                          setIsSubToken(e.target.checked);
-                          if (!e.target.checked) setParentCharacterUid('');
-                        }}
-                        className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
-                      />
-                      <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
-                          TOKEN PHỤ
+                  {/* ========================================================================= */}
+                  {/* [MOD FEATURE]: EDIT TÙY CHỌN TOKEN NHÂN VẬT PHỤ & TOKEN MÁY PHỤ */}
+                  {/* ========================================================================= */}
+                  <div className="p-4 bg-slate-900/70 border border-slate-800 rounded-xl space-y-4">
+                    {/* Option 1: Token Nhân Vật Phụ */}
+                    <div className="space-y-2.5">
+                      <label className="flex items-center gap-2 cursor-pointer w-max">
+                        <input
+                          type="checkbox"
+                          checked={subTokenType === 'CHARACTER'}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSubTokenType('CHARACTER');
+                              setParentDeviceSnMd5('');
+                            } else {
+                              setSubTokenType('NONE');
+                              setParentCharacterUid('');
+                            }
+                          }}
+                          className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
+                        />
+                        <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                            TOKEN NV PHỤ
+                          </span>
+                          Gắn làm Token Nhân Vật Phụ (Cùng máy - Khác UID, kế thừa theo Token Cha)
                         </span>
-                        Gắn làm Token Phụ (Kế thừa trạng thái vĩnh viễn theo Token Cha)
-                      </span>
-                    </label>
+                      </label>
 
-                    {isSubToken && (
-                      <div className="pt-2 border-t border-indigo-500/20 space-y-2">
-                        <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
-                          UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
-                        </label>
-                        <div className="relative flex items-center">
-                          <input
-                            type="text"
-                            value={parentCharacterUid}
-                            onChange={(e) => setParentCharacterUid(e.target.value)}
-                            placeholder="Dán UID của Token Cha vào đây..."
-                            className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
-                            className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
-                            title="Dán nhanh từ Clipboard"
-                          >
-                            <ClipboardPaste className="w-3.5 h-3.5" />
-                            <span className="hidden sm:inline">Paste</span>
-                          </button>
+                      {subTokenType === 'CHARACTER' && (
+                        <div className="pt-2 border-t border-indigo-500/20 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
+                              UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
+                            </label>
+                            <span className="text-[11px] text-slate-400">Phải dùng chung Mã MD5 thiết bị ở trên</span>
+                          </div>
+                          <div className="relative flex items-center">
+                            <input
+                              type="text"
+                              value={parentCharacterUid}
+                              onChange={(e) => setParentCharacterUid(e.target.value)}
+                              placeholder="Dán UID của Token Cha vào đây..."
+                              className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
+                              className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                              title="Dán nhanh từ Clipboard"
+                            >
+                              <ClipboardPaste className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Paste</span>
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
+                            💡 Token nhân vật phụ sẽ hưởng theo ngày hết hạn của Token cha và tự mở lại khi cha được gia hạn.
+                          </p>
                         </div>
-                        <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
-                          💡 Token phụ sẽ hưởng theo ngày hết hạn của Token cha và tự mở lại khi cha được gia hạn.
-                        </p>
-                      </div>
-                    )}
+                      )}
+                    </div>
+
+                    {/* Option 2: Token Máy Phụ */}
+                    <div className="space-y-2.5 pt-3 border-t border-slate-800">
+                      <label className="flex items-center gap-2 cursor-pointer w-max">
+                        <input
+                          type="checkbox"
+                          checked={subTokenType === 'DEVICE'}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSubTokenType('DEVICE');
+                              setParentCharacterUid('');
+                            } else {
+                              setSubTokenType('NONE');
+                              setParentDeviceSnMd5('');
+                            }
+                          }}
+                          className="rounded bg-slate-900 border-slate-800 text-sky-500 focus:ring-sky-500"
+                        />
+                        <span className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/40 font-black">
+                            TOKEN MÁY PHỤ
+                          </span>
+                          Gắn làm Token Máy Phụ (Khác máy - Chung UID nhân vật, kế thừa theo Máy Chính)
+                        </span>
+                      </label>
+
+                      {subTokenType === 'DEVICE' && (
+                        <div className="pt-2 border-t border-sky-500/20 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs font-semibold text-sky-200 flex items-center gap-1">
+                              Mã Thiết Bị (MD5) Token Máy Chính <span className="text-rose-400">*</span>
+                            </label>
+                            <span className="text-[11px] text-slate-400">Mã máy chính đang chạy UID [{characterUid}]</span>
+                          </div>
+                          <div className="relative flex items-center">
+                            <input
+                              type="text"
+                              value={parentDeviceSnMd5}
+                              onChange={(e) => setParentDeviceSnMd5(e.target.value)}
+                              placeholder="Dán Mã MD5 của Token Máy Chính vào đây..."
+                              className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-sky-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-sky-400 transition"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handlePasteClipboard(setParentDeviceSnMd5, 'Mã MD5 Máy Chính')}
+                              className="absolute right-1.5 p-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                              title="Dán nhanh từ Clipboard"
+                            >
+                              <ClipboardPaste className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline">Paste</span>
+                            </button>
+                          </div>
+                          <p className="text-[11px] text-sky-300/80 leading-relaxed italic">
+                            💡 Token máy phụ sẽ bị ăn theo thời hạn sử dụng và trạng thái Active/Expired của Token máy chính.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Change VIP Package Template Selector */}
@@ -1095,110 +1212,214 @@ export default function TokenDetailPage() {
           </div>
 
           {/* ========================================================================= */}
-          {/* [MOD FEATURE]: DANH SÁCH TOKEN PHỤ LIÊN KẾT (CHILD SUB-TOKENS) */}
+          {/* [MOD FEATURE]: DANH SÁCH TOKEN CON LIÊN KẾT (NV PHỤ & MÁY PHỤ) */}
           {/* ========================================================================= */}
-          {!token.parent && (
-            <div className="glass-card p-6 rounded-2xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
-                <div>
-                  <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-indigo-400 flex items-center gap-2">
-                    <GitFork className="w-4 h-4" /> Danh Sách Token Phụ Liên Kết ({token.children?.length || 0})
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    Các tài khoản clone / phụ chạy trên cùng thiết bị này và hưởng thời hạn vĩnh viễn theo Token này
-                  </p>
-                </div>
+          {!token.parent && (() => {
+            const charChildren = token.children?.filter((c: any) => c.deviceSnMd5 === token.deviceSnMd5) || [];
+            const deviceChildren = token.children?.filter((c: any) => c.deviceSnMd5 !== token.deviceSnMd5) || [];
 
-                <Link
-                  href={`/tokens/create?parentUid=${token.characterUid}&sn=${token.deviceSnMd5}&cust=${encodeURIComponent(token.customerName || '')}`}
-                  className="px-3.5 py-1.5 gradient-button text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto hover:opacity-95 transition shadow-sm"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" /> + Thêm Token Phụ Mới
-                </Link>
-              </div>
+            return (
+              <div className="space-y-6">
+                {/* 1. Danh Sách Token Nhân Vật Phụ (Cùng Máy) */}
+                <div className="glass-card p-6 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                    <div>
+                      <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-indigo-400 flex items-center gap-2">
+                        <GitFork className="w-4 h-4" /> Danh Sách Token Nhân Vật Phụ ({charChildren.length})
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Các tài khoản clone / phụ chạy trên cùng thiết bị này và hưởng thời hạn theo Token chính
+                      </p>
+                    </div>
 
-              {token.children && token.children.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
-                      <tr>
-                        <th className="py-3 px-4">Trạng Thái</th>
-                        <th className="py-3 px-4">UID Nhân Vật Phụ</th>
-                        <th className="py-3 px-4">Khách Hàng</th>
-                        <th className="py-3 px-4">Ngày Tạo</th>
-                        <th className="py-3 px-4 text-right">Chi Tiết</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-800/60">
-                      {token.children.map((child: any) => {
-                        const childActive = !child.isDeleted && !isExpired;
-                        return (
-                          <tr
-                            key={child.id}
-                            onClick={() => router.push(`/tokens/${child.id}`)}
-                            className="hover:bg-slate-800/50 cursor-pointer transition"
-                          >
-                            <td className="py-3 px-4 whitespace-nowrap">
-                              {child.isDeleted ? (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
-                                  ĐÃ XÓA
-                                </span>
-                              ) : childActive ? (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                  HOẠT ĐỘNG
-                                </span>
-                              ) : (
-                                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
-                                  HẾT HẠN (THEO CHA)
-                                </span>
-                              )}
-                              {child.isTest && (
-                                <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
-                                  TEST
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 font-mono font-bold text-cyan-300">
-                              {child.characterUid}
-                            </td>
-                            <td className="py-3 px-4 text-slate-200">
-                              {child.customerName || <span className="text-slate-500 italic">Chưa nhập</span>}
-                            </td>
-                            <td className="py-3 px-4 text-slate-400">
-                              {new Date(child.createdAt).toLocaleDateString('vi-VN')}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  router.push(`/tokens/${child.id}`);
-                                }}
-                                className="px-3 py-1.5 bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-cyan-500/40 transition inline-flex items-center gap-1.5"
-                              >
-                                <ExternalLink className="w-3.5 h-3.5" /> Xem Chi Tiết
-                              </button>
-                            </td>
+                    <Link
+                      href={`/tokens/create?subType=character&parentUid=${token.characterUid}&sn=${token.deviceSnMd5}&cust=${encodeURIComponent(token.customerName || '')}`}
+                      className="px-3.5 py-1.5 gradient-button text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto hover:opacity-95 transition shadow-sm"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> + Thêm Token Nhân Vật Phụ
+                    </Link>
+                  </div>
+
+                  {charChildren.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-slate-300">
+                        <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
+                          <tr>
+                            <th className="py-3 px-4">Trạng Thái</th>
+                            <th className="py-3 px-4">UID Nhân Vật Phụ</th>
+                            <th className="py-3 px-4">Khách Hàng</th>
+                            <th className="py-3 px-4">Ngày Tạo</th>
+                            <th className="py-3 px-4 text-right">Chi Tiết</th>
                           </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {charChildren.map((child: any) => {
+                            const childActive = !child.isDeleted && !isExpired;
+                            return (
+                              <tr
+                                key={child.id}
+                                onClick={() => router.push(`/tokens/${child.id}`)}
+                                className="hover:bg-slate-800/50 cursor-pointer transition"
+                              >
+                                <td className="py-3 px-4 whitespace-nowrap">
+                                  {child.isDeleted ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
+                                      ĐÃ XÓA
+                                    </span>
+                                  ) : childActive ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                      HOẠT ĐỘNG
+                                    </span>
+                                  ) : (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                      HẾT HẠN (THEO CHA)
+                                    </span>
+                                  )}
+                                  {child.isTest && (
+                                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                      TEST
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 font-mono font-bold text-cyan-300">
+                                  {child.characterUid}
+                                </td>
+                                <td className="py-3 px-4 text-slate-200">
+                                  {child.customerName || <span className="text-slate-500 italic">Chưa nhập</span>}
+                                </td>
+                                <td className="py-3 px-4 text-slate-400">
+                                  {new Date(child.createdAt).toLocaleDateString('vi-VN')}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/tokens/${child.id}`);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-800 hover:bg-cyan-600/30 text-cyan-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-cyan-500/40 transition inline-flex items-center gap-1.5"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" /> Xem Chi Tiết
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="py-6 px-4 text-center space-y-2 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl">
+                      <p className="text-xs font-semibold text-slate-300">Chưa có Token Nhân Vật Phụ nào</p>
+                      <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                        Bấm nút &quot;+ Thêm Token Nhân Vật Phụ&quot; để cấp quyền chơi thêm nhân vật clone trên cùng thiết bị này.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="py-8 px-4 text-center space-y-3 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl">
-                  <div className="w-10 h-10 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center mx-auto text-indigo-400">
-                    <GitFork className="w-5 h-5" />
+
+                {/* 2. Danh Sách Token Máy Phụ (Khác Máy) */}
+                <div className="glass-card p-6 rounded-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+                    <div>
+                      <h3 className="font-bold text-slate-100 text-sm uppercase tracking-wider text-sky-400 flex items-center gap-2">
+                        <Smartphone className="w-4 h-4" /> Danh Sách Token Máy Phụ ({deviceChildren.length})
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Các thiết bị phụ khác chạy chung UID nhân vật ({token.characterUid}) và hưởng thời hạn theo Token máy chính này
+                      </p>
+                    </div>
+
+                    <Link
+                      href={`/tokens/create?subType=device&parentSn=${token.deviceSnMd5}&uid=${token.characterUid}&cust=${encodeURIComponent(token.customerName || '')}`}
+                      className="px-3.5 py-1.5 bg-sky-600/80 hover:bg-sky-600 text-white text-xs font-semibold rounded-xl flex items-center gap-1.5 self-start sm:self-auto hover:opacity-95 transition shadow-sm"
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" /> + Thêm Token Máy Phụ
+                    </Link>
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-slate-200">Chưa có Token Phụ nào được liên kết với Token này</p>
-                    <p className="text-[11px] text-slate-500 mt-1 max-w-md mx-auto">
-                      Khi khách hàng muốn chơi thêm tài khoản clone/phụ trên cùng máy này, hãy bấm nút &quot;Thêm Token Phụ Mới&quot; bên trên để cấp token vĩnh viễn ăn theo token chính này.
-                    </p>
-                  </div>
+
+                  {deviceChildren.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs text-slate-300">
+                        <thead className="bg-slate-900/80 uppercase text-slate-400 border-b border-slate-800 text-[11px] whitespace-nowrap">
+                          <tr>
+                            <th className="py-3 px-4">Trạng Thái</th>
+                            <th className="py-3 px-4">Mã Thiết Bị Máy Phụ (MD5)</th>
+                            <th className="py-3 px-4">UID Nhân Vật</th>
+                            <th className="py-3 px-4">Khách Hàng</th>
+                            <th className="py-3 px-4">Ngày Tạo</th>
+                            <th className="py-3 px-4 text-right">Chi Tiết</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {deviceChildren.map((child: any) => {
+                            const childActive = !child.isDeleted && !isExpired;
+                            return (
+                              <tr
+                                key={child.id}
+                                onClick={() => router.push(`/tokens/${child.id}`)}
+                                className="hover:bg-slate-800/50 cursor-pointer transition"
+                              >
+                                <td className="py-3 px-4 whitespace-nowrap">
+                                  {child.isDeleted ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-950/80 text-rose-300 border border-rose-500/40">
+                                      ĐÃ XÓA
+                                    </span>
+                                  ) : childActive ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                                      HOẠT ĐỘNG
+                                    </span>
+                                  ) : (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                      HẾT HẠN (THEO MÁY CHÍNH)
+                                    </span>
+                                  )}
+                                  {child.isTest && (
+                                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">
+                                      TEST
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 font-mono font-bold text-sky-300">
+                                  {child.deviceSnMd5}
+                                </td>
+                                <td className="py-3 px-4 font-mono text-slate-200">
+                                  {child.characterUid}
+                                </td>
+                                <td className="py-3 px-4 text-slate-200">
+                                  {child.customerName || <span className="text-slate-500 italic">Chưa nhập</span>}
+                                </td>
+                                <td className="py-3 px-4 text-slate-400">
+                                  {new Date(child.createdAt).toLocaleDateString('vi-VN')}
+                                </td>
+                                <td className="py-3 px-4 text-right">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      router.push(`/tokens/${child.id}`);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-800 hover:bg-sky-600/30 text-sky-300 rounded-lg text-xs font-semibold border border-slate-700 hover:border-sky-500/40 transition inline-flex items-center gap-1.5"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" /> Xem Chi Tiết
+                                  </button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="py-6 px-4 text-center space-y-2 bg-slate-900/40 border border-dashed border-slate-800 rounded-xl">
+                      <p className="text-xs font-semibold text-slate-300">Chưa có Token Máy Phụ nào</p>
+                      <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+                        Bấm nút &quot;+ Thêm Token Máy Phụ&quot; để cấp token cho thiết bị thứ 2 chạy cùng UID nhân vật này.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
+              </div>
+            );
+          })()}
         </main>
       </div>
     </div>

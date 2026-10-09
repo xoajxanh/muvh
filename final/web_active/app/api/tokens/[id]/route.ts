@@ -52,6 +52,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Token không tồn tại' }, { status: 404 });
   }
 
+  // =========================================================================
+  // [MOD FEATURE]: KIỂM TRA QUYỀN XEM CHI TIẾT TOKEN
+  // =========================================================================
+  if (session.role === 'SALE' && token.createdById !== session.userId) {
+    return NextResponse.json({ error: 'Bạn không có quyền xem Token của nhân viên khác!' }, { status: 403 });
+  }
+
   const now = new Date();
   let effectiveExpireAt = token.expireAt;
   let isExpired = new Date(token.expireAt) < now;
@@ -92,6 +99,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     const existingToken = await prisma.token.findUnique({ where: { id } });
     if (!existingToken) {
       return NextResponse.json({ error: 'Token không tồn tại' }, { status: 404 });
+    }
+
+    // =========================================================================
+    // [MOD FEATURE]: KIỂM TRA QUYỀN CHỈNH SỬA TOKEN
+    // =========================================================================
+    if (session.role === 'SALE' && existingToken.createdById !== session.userId) {
+      return NextResponse.json({ error: 'Bạn không có quyền chỉnh sửa Token của nhân viên khác!' }, { status: 403 });
     }
 
     const body = await req.json();
@@ -163,21 +177,26 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       isCustom,
       noteDetail,
       parentCharacterUid,
+      parentDeviceSnMd5,
+      subTokenType,
     } = body;
 
     // =========================================================================
-    // [MOD FEATURE]: CẬP NHẬT LIÊN KẾT TOKEN CHA (PARENT TOKEN)
+    // [MOD FEATURE]: CẬP NHẬT LIÊN KẾT TOKEN CHA (NV PHỤ & MÁY PHỤ)
     // =========================================================================
     let newParentId: string | null | undefined = undefined;
-    if (parentCharacterUid !== undefined) {
-      if (!parentCharacterUid || String(parentCharacterUid).trim() === '') {
+    const targetSn = (deviceSnMd5 !== undefined ? deviceSnMd5 : existingToken.deviceSnMd5).trim();
+    const targetUid = (characterUid !== undefined ? characterUid : existingToken.characterUid).trim();
+
+    if (subTokenType === 'NONE') {
+      newParentId = null;
+    } else if (subTokenType === 'CHARACTER' || (parentCharacterUid !== undefined && parentCharacterUid.trim() !== '')) {
+      const cleanParentUid = String(parentCharacterUid || '').trim();
+      if (!cleanParentUid) {
         newParentId = null;
       } else {
-        const cleanParentUid = String(parentCharacterUid).trim();
-        const targetSn = (deviceSnMd5 !== undefined ? deviceSnMd5 : existingToken.deviceSnMd5).trim();
-        const targetUid = (characterUid !== undefined ? characterUid : existingToken.characterUid).trim();
         if (cleanParentUid === targetUid) {
-          return NextResponse.json({ error: 'Token không thể tự nhận chính mình làm Token cha!' }, { status: 400 });
+          return NextResponse.json({ error: 'Token Nhân vật phụ không thể tự nhận chính mình làm Token cha!' }, { status: 400 });
         }
 
         const foundParent = await prisma.token.findFirst({
@@ -199,12 +218,51 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
         newParentId = foundParent.id;
       }
+    } else if (subTokenType === 'DEVICE' || (parentDeviceSnMd5 !== undefined && parentDeviceSnMd5.trim() !== '')) {
+      const cleanParentSn = String(parentDeviceSnMd5 || '').trim();
+      if (!cleanParentSn) {
+        newParentId = null;
+      } else {
+        if (cleanParentSn === targetSn) {
+          return NextResponse.json({
+            error: 'Mã máy chính không được trùng với mã máy phụ hiện tại! (Nếu cùng máy, vui lòng chọn Token Nhân Vật Phụ).',
+          }, { status: 400 });
+        }
+
+        const foundParent = await prisma.token.findFirst({
+          where: {
+            deviceSnMd5: cleanParentSn,
+            characterUid: targetUid,
+            isDeleted: false,
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (!foundParent) {
+          return NextResponse.json({
+            error: `Không tìm thấy Token máy chính nào với Mã máy [${cleanParentSn}] và UID nhân vật [${targetUid}]! Vui lòng kiểm tra lại.`,
+          }, { status: 400 });
+        }
+        if (foundParent.id === id) {
+          return NextResponse.json({ error: 'Token không thể tự nhận chính mình làm Token cha!' }, { status: 400 });
+        }
+        newParentId = foundParent.id;
+      }
+    } else if (parentCharacterUid === '' || parentDeviceSnMd5 === '') {
+      newParentId = null;
     }
 
     const newDuration = durationDays !== undefined ? Number(durationDays) : existingToken.durationDays;
-    // Tính hạn sử dụng luôn căn cứ từ thời điểm khởi tạo Token (createdAt) thay vì thời điểm sửa
+    // Tính hạn sử dụng: Nếu là token con, kế thừa từ cha; nếu độc lập, tính từ createdAt
     const baseCreatedAt = new Date(existingToken.createdAt);
-    const expireAt = new Date(baseCreatedAt.getTime() + newDuration * 86400 * 1000);
+    let expireAt = new Date(baseCreatedAt.getTime() + newDuration * 86400 * 1000);
+    const effectiveParentId = newParentId !== undefined ? newParentId : existingToken.parentId;
+    if (effectiveParentId) {
+      const pTok = await prisma.token.findUnique({ where: { id: effectiveParentId } });
+      if (pTok) {
+        expireAt = new Date(pTok.expireAt);
+      }
+    }
     const expireAtUnix = Math.floor(expireAt.getTime() / 1000);
 
     let telegramsList: string[];
@@ -321,6 +379,13 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     const token = await prisma.token.findUnique({ where: { id } });
     if (!token) {
       return NextResponse.json({ error: 'Token không tồn tại' }, { status: 404 });
+    }
+
+    // =========================================================================
+    // [MOD FEATURE]: KIỂM TRA QUYỀN XÓA TOKEN
+    // =========================================================================
+    if (session.role === 'SALE' && token.createdById !== session.userId) {
+      return NextResponse.json({ error: 'Bạn không có quyền xóa Token của nhân viên khác!' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);

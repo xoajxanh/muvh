@@ -34,8 +34,9 @@ export default function TokenCreatePage() {
   const [durationDays, setDurationDays] = useState(30);
   const [price, setPrice] = useState(300000);
   const [isCustom, setIsCustom] = useState(false);
-  const [isSubToken, setIsSubToken] = useState(false);
+  const [subTokenType, setSubTokenType] = useState<'NONE' | 'CHARACTER' | 'DEVICE'>('NONE');
   const [parentCharacterUid, setParentCharacterUid] = useState('');
+  const [parentDeviceSnMd5, setParentDeviceSnMd5] = useState('');
 
   // Detailed Config Parameters
   const [fovMin, setFovMin] = useState(20);
@@ -62,16 +63,25 @@ export default function TokenCreatePage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
+      const subType = params.get('subType');
       const pUid = params.get('parentUid');
+      const pSn = params.get('parentSn');
       const sn = params.get('sn');
+      const uid = params.get('uid');
       const cust = params.get('cust');
-      if (pUid) {
-        setIsSubToken(true);
-        setParentCharacterUid(pUid);
-      }
-      if (sn) {
+
+      if (subType === 'device' || pSn) {
+        setSubTokenType('DEVICE');
+        if (pSn) setParentDeviceSnMd5(pSn);
+        if (uid) setCharacterUid(uid);
+      } else if (subType === 'character' || pUid) {
+        setSubTokenType('CHARACTER');
+        if (pUid) setParentCharacterUid(pUid);
+        if (sn) setDeviceSnMd5(sn);
+      } else if (sn) {
         setDeviceSnMd5(sn);
       }
+
       if (cust) {
         try {
           setCustomerName(decodeURIComponent(cust));
@@ -186,18 +196,22 @@ export default function TokenCreatePage() {
       setToast({ message: 'Vui lòng nhập Mã thiết bị MD5 và UID Nhân vật', type: 'error' });
       return;
     }
-
-    if (isSubToken && !parentCharacterUid.trim()) {
-      setToast({ message: 'Vui lòng nhập UID Token Cha cho Token phụ!', type: 'error' });
-      return;
-    }
-
     setSubmitting(true);
     try {
+      if (subTokenType === 'CHARACTER') {
+        if (!parentCharacterUid.trim()) {
+          throw new Error('Vui lòng nhập UID Token Cha (Nhân vật chính)!');
+        }
+      } else if (subTokenType === 'DEVICE') {
+        if (!parentDeviceSnMd5.trim()) {
+          throw new Error('Vui lòng nhập Mã thiết bị (MD5) của Token Máy Chính!');
+        }
+      }
+
       const payload = {
         deviceSnMd5: deviceSnMd5.trim(),
         characterUid: characterUid.trim(),
-        customerName: customerName.trim() || null,
+        customerName: customerName.trim(),
         isTest,
         packageId: isCustom ? null : selectedPackageId,
         durationDays: Number(durationDays),
@@ -215,10 +229,13 @@ export default function TokenCreatePage() {
         activeTabAdvanced,
         activeTabAutofarm,
         characterReincarnation: Number(characterReincarnation),
+        characterReincarnationSecondary: Number(characterReincarnationSecondary),
         adminTelegrams: selectedTelegrams,
         price: Number(price),
         isCustom,
-        parentCharacterUid: isSubToken ? parentCharacterUid.trim() : null,
+        subTokenType,
+        parentCharacterUid: subTokenType === 'CHARACTER' ? parentCharacterUid.trim() : null,
+        parentDeviceSnMd5: subTokenType === 'DEVICE' ? parentDeviceSnMd5.trim() : null,
       };
 
       const res = await fetch('/api/tokens', {
@@ -391,60 +408,131 @@ export default function TokenCreatePage() {
                   </label>
                 </div>
 
-                {/* Sub-Token (Token Phụ) Option */}
-                <div className="pt-3 border-t border-slate-800/80 space-y-3">
-                  <label className="flex items-center gap-2 cursor-pointer w-max">
-                    <input
-                      type="checkbox"
-                      checked={isSubToken}
-                      onChange={(e) => {
-                        setIsSubToken(e.target.checked);
-                        if (!e.target.checked) setParentCharacterUid('');
-                      }}
-                      className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
-                    />
-                    <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
-                        TOKEN PHỤ
-                      </span>
-                      Gắn làm Token Phụ (Kế thừa hạn dùng & trạng thái vĩnh viễn theo Token Cha)
-                    </span>
-                  </label>
-
-                  {isSubToken && (
-                    <div className="p-3.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-2.5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                        <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
-                          UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
-                        </label>
-                        <span className="text-[11px] text-slate-400">
-                          Phải dùng chung Mã thiết bị MD5 ở trên
+                {/* ========================================================================= */}
+                {/* [MOD FEATURE]: TÙY CHỌN TOKEN NHÂN VẬT PHỤ & TOKEN MÁY PHỤ */}
+                {/* ========================================================================= */}
+                <div className="pt-3 border-t border-slate-800/80 space-y-4">
+                  {/* Option 1: Token Nhân Vật Phụ (Cùng Máy - Khác UID) */}
+                  <div className="space-y-2.5">
+                    <label className="flex items-center gap-2 cursor-pointer w-max">
+                      <input
+                        type="checkbox"
+                        checked={subTokenType === 'CHARACTER'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSubTokenType('CHARACTER');
+                            setParentDeviceSnMd5('');
+                          } else {
+                            setSubTokenType('NONE');
+                            setParentCharacterUid('');
+                          }
+                        }}
+                        className="rounded bg-slate-900 border-slate-800 text-indigo-500 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 font-black">
+                          TOKEN NV PHỤ
                         </span>
+                        Gắn làm Token Nhân Vật Phụ (Cùng máy - Khác UID, kế thừa hạn dùng theo Token Cha)
+                      </span>
+                    </label>
+
+                    {subTokenType === 'CHARACTER' && (
+                      <div className="p-3.5 bg-indigo-950/30 border border-indigo-500/30 rounded-xl space-y-2.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <label className="text-xs font-semibold text-indigo-200 flex items-center gap-1">
+                            UID Token Cha (Nhân vật chính) <span className="text-rose-400">*</span>
+                          </label>
+                          <span className="text-[11px] text-slate-400">
+                            Phải dùng chung Mã thiết bị MD5 ở trên
+                          </span>
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={parentCharacterUid}
+                            onChange={(e) => setParentCharacterUid(e.target.value)}
+                            placeholder="Dán UID của Token Cha vào đây (Ví dụ: 1008592)..."
+                            className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
+                            required={subTokenType === 'CHARACTER'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
+                            className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                            title="Dán nhanh từ Clipboard"
+                          >
+                            <ClipboardPaste className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Paste</span>
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
+                          💡 Token nhân vật phụ sẽ tự động Active khi Token cha còn hạn và tự hết hạn khi Token cha hết hạn (không cần nạp ngày cho token phụ).
+                        </p>
                       </div>
-                      <div className="relative flex items-center">
-                        <input
-                          type="text"
-                          value={parentCharacterUid}
-                          onChange={(e) => setParentCharacterUid(e.target.value)}
-                          placeholder="Dán UID của Token Cha vào đây (Ví dụ: 1008592)..."
-                          className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-indigo-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-indigo-400 transition"
-                          required={isSubToken}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handlePasteClipboard(setParentCharacterUid, 'UID Token Cha')}
-                          className="absolute right-1.5 p-1.5 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
-                          title="Dán nhanh từ Clipboard"
-                        >
-                          <ClipboardPaste className="w-3.5 h-3.5" />
-                          <span className="hidden sm:inline">Paste</span>
-                        </button>
+                    )}
+                  </div>
+
+                  {/* Option 2: Token Máy Phụ (Khác Máy - Chung UID Nhân Vật) */}
+                  <div className="space-y-2.5 pt-2 border-t border-slate-800/60">
+                    <label className="flex items-center gap-2 cursor-pointer w-max">
+                      <input
+                        type="checkbox"
+                        checked={subTokenType === 'DEVICE'}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSubTokenType('DEVICE');
+                            setParentCharacterUid('');
+                          } else {
+                            setSubTokenType('NONE');
+                            setParentDeviceSnMd5('');
+                          }
+                        }}
+                        className="rounded bg-slate-900 border-slate-800 text-sky-500 focus:ring-sky-500"
+                      />
+                      <span className="text-xs font-bold text-sky-300 flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/40 font-black">
+                          TOKEN MÁY PHỤ
+                        </span>
+                        Gắn làm Token Máy Phụ (Khác máy - Chung UID nhân vật, kế thừa hạn dùng theo Token Máy Chính)
+                      </span>
+                    </label>
+
+                    {subTokenType === 'DEVICE' && (
+                      <div className="p-3.5 bg-sky-950/30 border border-sky-500/30 rounded-xl space-y-2.5">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                          <label className="text-xs font-semibold text-sky-200 flex items-center gap-1">
+                            Mã Thiết Bị (MD5) Token Máy Chính <span className="text-rose-400">*</span>
+                          </label>
+                          <span className="text-[11px] text-slate-400">
+                            Mã máy chính đang chạy cùng UID nhân vật [{characterUid || 'chưa nhập UID'}]
+                          </span>
+                        </div>
+                        <div className="relative flex items-center">
+                          <input
+                            type="text"
+                            value={parentDeviceSnMd5}
+                            onChange={(e) => setParentDeviceSnMd5(e.target.value)}
+                            placeholder="Dán Mã MD5 của Token Máy Chính vào đây..."
+                            className="w-full h-10 pr-14 pl-3 bg-slate-900/90 border border-sky-500/40 rounded-xl text-xs font-mono text-cyan-200 placeholder-slate-500 focus:outline-none focus:border-sky-400 transition"
+                            required={subTokenType === 'DEVICE'}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handlePasteClipboard(setParentDeviceSnMd5, 'Mã MD5 Máy Chính')}
+                            className="absolute right-1.5 p-1.5 bg-sky-600/30 hover:bg-sky-600/50 text-sky-300 rounded-lg text-xs flex items-center gap-1 font-medium transition"
+                            title="Dán nhanh từ Clipboard"
+                          >
+                            <ClipboardPaste className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Paste</span>
+                          </button>
+                        </div>
+                        <p className="text-[11px] text-sky-300/80 leading-relaxed italic">
+                          💡 Token máy phụ sẽ bị ăn theo thời hạn sử dụng và trạng thái Active/Expired của Token máy chính (khi máy chính hết hạn thì máy phụ cũng hết hạn).
+                        </p>
                       </div>
-                      <p className="text-[11px] text-indigo-300/80 leading-relaxed italic">
-                        💡 Token phụ sẽ tự động Active khi Token cha còn hạn và tự hết hạn khi Token cha hết hạn (không cần nạp ngày cho token phụ).
-                      </p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -792,9 +880,13 @@ export default function TokenCreatePage() {
                   <div className="flex justify-between py-1.5 border-b border-slate-800">
                     <span className="text-slate-400">Loại Token:</span>
                     <span className="font-semibold text-xs">
-                      {isSubToken ? (
+                      {subTokenType === 'CHARACTER' ? (
                         <span className="text-indigo-400 font-bold">
-                          Token Phụ (UID Cha: {parentCharacterUid || '...'})
+                          Token NV Phụ (UID Cha: {parentCharacterUid || '...'})
+                        </span>
+                      ) : subTokenType === 'DEVICE' ? (
+                        <span className="text-sky-400 font-bold">
+                          Token Máy Phụ (Máy chính: {parentDeviceSnMd5 ? parentDeviceSnMd5.substring(0, 10) + '...' : '...'})
                         </span>
                       ) : (
                         <span className="text-cyan-400 font-bold">Token Chính / Độc Lập</span>

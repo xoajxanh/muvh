@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Link2,
   GitFork,
+  Users,
+  Smartphone,
 } from 'lucide-react';
 
 export default function TokensPage() {
@@ -31,6 +33,8 @@ export default function TokensPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [createdByFilter, setCreatedByFilter] = useState('ALL');
+  const [usersList, setUsersList] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Pagination State
@@ -39,6 +43,10 @@ export default function TokensPage() {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
   useEffect(() => {
+    const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    const initialCreatedBy = urlParams?.get('createdBy') || 'ALL';
+    setCreatedByFilter(initialCreatedBy);
+
     fetch('/api/auth/me')
       .then((res) => {
         if (!res.ok) {
@@ -50,16 +58,36 @@ export default function TokensPage() {
       .then((resData) => {
         if (resData?.user) {
           setUser(resData.user);
-          fetchTokens(search, statusFilter, 1, limit);
+          if (resData.user.role === 'ADMIN') {
+            fetch('/api/users')
+              .then((r) => r.json())
+              .then((uData) => {
+                if (uData?.users) setUsersList(uData.users);
+              })
+              .catch(console.error);
+          }
+          fetchTokens(search, statusFilter, initialCreatedBy, 1, limit);
         }
       })
       .catch(() => router.push('/login'));
   }, [router]);
 
-  const fetchTokens = async (searchQuery: string, status: string, currentPage = page, currentLimit = limit) => {
+  // =========================================================================
+  // [MOD FEATURE]: PHÂN QUYỀN TRUY VẤN VÀ LỌC TOKEN THEO SALE
+  // =========================================================================
+  const fetchTokens = async (
+    searchQuery: string,
+    status: string,
+    createdBy = createdByFilter,
+    currentPage = page,
+    currentLimit = limit
+  ) => {
     setLoading(true);
     try {
-      const url = `/api/tokens?search=${encodeURIComponent(searchQuery)}&status=${status}&page=${currentPage}&limit=${currentLimit}`;
+      let url = `/api/tokens?search=${encodeURIComponent(searchQuery)}&status=${status}&page=${currentPage}&limit=${currentLimit}`;
+      if (createdBy && createdBy !== 'ALL') {
+        url += `&createdBy=${encodeURIComponent(createdBy)}`;
+      }
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
@@ -79,25 +107,31 @@ export default function TokensPage() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    fetchTokens(search, statusFilter, 1, limit);
+    fetchTokens(search, statusFilter, createdByFilter, 1, limit);
   };
 
   const handleStatusChange = (newStatus: string) => {
     setStatusFilter(newStatus);
     setPage(1);
-    fetchTokens(search, newStatus, 1, limit);
+    fetchTokens(search, newStatus, createdByFilter, 1, limit);
+  };
+
+  const handleCreatedByChange = (newCreatedBy: string) => {
+    setCreatedByFilter(newCreatedBy);
+    setPage(1);
+    fetchTokens(search, statusFilter, newCreatedBy, 1, limit);
   };
 
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit);
     setPage(1);
-    fetchTokens(search, statusFilter, 1, newLimit);
+    fetchTokens(search, statusFilter, createdByFilter, 1, newLimit);
   };
 
   const handlePageChange = (newPage: number) => {
     if (newPage < 1 || newPage > pagination.totalPages) return;
     setPage(newPage);
-    fetchTokens(search, statusFilter, newPage, limit);
+    fetchTokens(search, statusFilter, createdByFilter, newPage, limit);
   };
 
   const handleCopyText = (text: string, label: string) => {
@@ -126,7 +160,7 @@ export default function TokensPage() {
       }
 
       setToast({ message: json.message || 'Xóa Token thành công!', type: 'success' });
-      fetchTokens(search, statusFilter, page, limit);
+      fetchTokens(search, statusFilter, createdByFilter, page, limit);
     } catch (e: any) {
       setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
     }
@@ -149,7 +183,7 @@ export default function TokensPage() {
       }
 
       setToast({ message: 'Đã khôi phục Token thành công!', type: 'success' });
-      fetchTokens(search, statusFilter, page, limit);
+      fetchTokens(search, statusFilter, createdByFilter, page, limit);
     } catch (e: any) {
       setToast({ message: e.message || 'Có lỗi xảy ra', type: 'error' });
     }
@@ -176,26 +210,48 @@ export default function TokensPage() {
       );
     } else if (tok.parentId || tok.parent) {
       // =======================================================================
-      // [MOD FEATURE]: HIỂN THỊ CỜ TOKEN PHỤ
+      // [MOD FEATURE]: HIỂN THỊ CỜ TOKEN PHỤ (NV PHỤ & MÁY PHỤ)
       // =======================================================================
       const parentActive = tok.parent && !tok.parent.isDeleted && new Date(tok.parent.expireAt) >= now;
-      mainBadge = (
-        <div className="flex flex-col gap-1">
-          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 w-max shadow-sm shadow-indigo-500/10">
-            <Link2 className="w-3 h-3 text-indigo-400" /> TOKEN PHỤ
-          </span>
-          {tok.parent?.characterUid && (
-            <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
-              UID Cha: <span className="text-cyan-300 font-bold">{tok.parent.characterUid}</span>
-              {parentActive ? (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" title="Token cha đang Active" />
-              ) : (
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" title="Token cha đã hết hạn" />
-              )}
+      const isDeviceSub = tok.parent ? tok.parent.deviceSnMd5 !== tok.deviceSnMd5 : false;
+
+      if (isDeviceSub) {
+        mainBadge = (
+          <div className="flex flex-col gap-1">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-sky-500/20 text-sky-300 border border-sky-500/40 flex items-center gap-1 w-max shadow-sm shadow-sky-500/10">
+              <Smartphone className="w-3 h-3 text-sky-400" /> TOKEN MÁY PHỤ
             </span>
-          )}
-        </div>
-      );
+            {tok.parent?.deviceSnMd5 && (
+              <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                Máy chính: <span className="text-cyan-300 font-bold" title={tok.parent.deviceSnMd5}>{tok.parent.deviceSnMd5.substring(0, 8)}...</span>
+                {parentActive ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" title="Token máy chính đang Active" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" title="Token máy chính đã hết hạn" />
+                )}
+              </span>
+            )}
+          </div>
+        );
+      } else {
+        mainBadge = (
+          <div className="flex flex-col gap-1">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 flex items-center gap-1 w-max shadow-sm shadow-indigo-500/10">
+              <Link2 className="w-3 h-3 text-indigo-400" /> TOKEN NV PHỤ
+            </span>
+            {tok.parent?.characterUid && (
+              <span className="text-[10px] text-slate-400 font-mono flex items-center gap-1">
+                UID Cha: <span className="text-cyan-300 font-bold">{tok.parent.characterUid}</span>
+                {parentActive ? (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" title="Token cha đang Active" />
+                ) : (
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block" title="Token cha đã hết hạn" />
+                )}
+              </span>
+            )}
+          </div>
+        );
+      }
     } else {
       const exp = new Date(tok.expireAt);
       if (exp < now) {
@@ -291,6 +347,26 @@ export default function TokensPage() {
               />
             </form>
 
+            {/* Filter by Creator for Admin */}
+            {user.role === 'ADMIN' && usersList.length > 0 && (
+              <div className="flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-3 py-2 rounded-xl shrink-0">
+                <Users className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="text-[11px] text-slate-400 whitespace-nowrap">Người tạo:</span>
+                <select
+                  value={createdByFilter}
+                  onChange={(e) => handleCreatedByChange(e.target.value)}
+                  className="bg-slate-800 text-slate-200 text-[11px] font-semibold rounded-lg px-2.5 py-1 border border-slate-700 focus:outline-none focus:border-cyan-500 cursor-pointer"
+                >
+                  <option value="ALL">Tất cả nhân viên</option>
+                  {usersList.map((u: any) => (
+                    <option key={u.id} value={u.id}>
+                      {u.displayName} ({u.username})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto">
               {filterOptions.map((filter) => (
                 <button
@@ -356,16 +432,25 @@ export default function TokensPage() {
                             </span>
                           </td>
                           <td className="py-3.5 px-4 font-medium text-slate-200 whitespace-nowrap">
-                            {tok.parent ? (
-                              <div className="flex flex-col">
-                                <span className="text-indigo-300 font-semibold flex items-center gap-1">
-                                  <Link2 className="w-3 h-3" /> Theo Token Cha
-                                </span>
-                                <span className="text-[10px] text-slate-400">
-                                  Hết hạn: {new Date(tok.parent.expireAt).toLocaleDateString('vi-VN')}
-                                </span>
-                              </div>
-                            ) : (
+                            {tok.parent ? (() => {
+                              const isDeviceSub = tok.parent.deviceSnMd5 !== tok.deviceSnMd5;
+                              return (
+                                <div className="flex flex-col">
+                                  {isDeviceSub ? (
+                                    <span className="text-sky-300 font-semibold flex items-center gap-1">
+                                      <Smartphone className="w-3 h-3" /> Theo Máy Chính
+                                    </span>
+                                  ) : (
+                                    <span className="text-indigo-300 font-semibold flex items-center gap-1">
+                                      <Link2 className="w-3 h-3" /> Theo Token Cha
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-slate-400">
+                                    Hết hạn: {new Date(tok.parent.expireAt).toLocaleDateString('vi-VN')}
+                                  </span>
+                                </div>
+                              );
+                            })() : (
                               <span>{new Date(tok.expireAt).toLocaleDateString('vi-VN')} ({tok.durationDays}d)</span>
                             )}
                           </td>

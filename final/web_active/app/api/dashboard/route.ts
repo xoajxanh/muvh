@@ -12,11 +12,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const saleId = searchParams.get('saleId');
+
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const notTestWhere = { isTest: false, isDeleted: false };
+  // =========================================================================
+  // [MOD FEATURE]: PHÂN QUYỀN VÀ LỌC DỮ LIỆU DASHBOARD THEO SALE
+  // Mô tả: Phân quyền dữ liệu dashboard: nếu là SALE chỉ xem số liệu cá nhân;
+  // nếu là ADMIN mặc định xem tổng toàn sàn hoặc có thể chọn lọc theo từng Sale.
+  // =========================================================================
+  let targetUserId: string | null = null;
+  if (session.role === 'SALE') {
+    targetUserId = session.userId;
+  } else if (session.role === 'ADMIN' && saleId && saleId !== 'ALL') {
+    targetUserId = saleId;
+  }
+
+  const notTestWhere: any = { isTest: false, isDeleted: false };
+  if (targetUserId) {
+    notTestWhere.createdById = targetUserId;
+  }
 
   const [
     totalRevenueAgg,
@@ -39,6 +57,7 @@ export async function GET(req: NextRequest) {
     }),
     prisma.token.count({ where: { ...notTestWhere, expireAt: { lt: now } } }),
     prisma.token.findMany({
+      where: notTestWhere,
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
@@ -73,6 +92,56 @@ export async function GET(req: NextRequest) {
     });
   }
 
+  // =========================================================================
+  // [MOD FEATURE]: THỐNG KÊ DOANH SỐ TỪNG NHÂN VIÊN CHO ADMIN
+  // Mô tả: Truy vấn danh sách và chỉ số hiệu suất của từng tài khoản nhân viên
+  // =========================================================================
+  let salesStats: any[] = [];
+  let salesList: any[] = [];
+
+  if (session.role === 'ADMIN') {
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, displayName: true, role: true },
+      orderBy: { displayName: 'asc' },
+    });
+    salesList = users;
+
+    salesStats = await Promise.all(
+      users.map(async (u) => {
+        const [uTotalRev, uTotalCount, uMonthRev, uMonthCount] = await Promise.all([
+          prisma.token.aggregate({
+            where: { isTest: false, isDeleted: false, createdById: u.id },
+            _sum: { price: true },
+          }),
+          prisma.token.count({
+            where: { isTest: false, isDeleted: false, createdById: u.id },
+          }),
+          prisma.token.aggregate({
+            where: { isTest: false, isDeleted: false, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
+            _sum: { price: true },
+          }),
+          prisma.token.count({
+            where: { isTest: false, isDeleted: false, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
+          }),
+        ]);
+
+        return {
+          userId: u.id,
+          username: u.username,
+          displayName: u.displayName,
+          role: u.role,
+          totalRevenue: uTotalRev._sum.price || 0,
+          totalTokens: uTotalCount,
+          monthRevenue: uMonthRev._sum.price || 0,
+          monthTokens: uMonthCount,
+        };
+      })
+    );
+
+    // Sắp xếp theo doanh thu tháng giảm dần
+    salesStats.sort((a, b) => b.monthRevenue - a.monthRevenue || b.totalRevenue - a.totalRevenue);
+  }
+
   return NextResponse.json({
     summary: {
       totalRevenue: totalRevenueAgg._sum.price || 0,
@@ -84,5 +153,8 @@ export async function GET(req: NextRequest) {
     },
     monthlyChartData,
     recentTokens,
+    salesStats,
+    salesList,
+    selectedSaleId: targetUserId || 'ALL',
   });
 }
