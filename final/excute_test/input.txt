@@ -1,398 +1,239 @@
 -- =========================================================================
--- [MOD FEATURE]: TEST BYPASS THIÊN PHÚ BẬC THẦY (DK - NHÁNH THỦ HỘ)
--- Mô tả: Kịch bản kiểm thử bypass điều kiện cây kỹ năng Thiên Phú Bậc Thầy
---        trên nhân vật Chiến Binh (DK) - Nhánh Thủ Hộ (type = 1102).
---        Bắn trực tiếp gói ReqUpGrandMasterSkill của các skill tầng cao/tầng cuối
---        (yêu cầu 20~30 điểm) khi nhân vật chưa đáp ứng điều kiện tiên quyết.
+-- [SCRIPT TEST]: AUTO SPAM CHAT ĐA KÊNH (LIÊN SERVER, GẦN, THẾ GIỚI, TẤT CẢ)
 -- =========================================================================
+-- [CẤU HÌNH KÊNH CHAT]:
+--   1 : Liên Server (CROSS_REALM)
+--   2 : Gần (LOCAL)
+--   3 : Thế Giới (WORLD)
+--   4 : Guild (GUILD)
+--   5 : Đội (TEAM)
+--   8 : Cả 2 kênh (Liên Server + Gần)
+--   9 : Tất cả (Gửi đồng thời: Liên Server + Gần + Thế Giới)
+-- =========================================================================
+local CHAT_CHANNEL_OPTION = 8 -- <<-- ĐỔI SỐ Ở ĐÂY: 1 (Lsv), 2 (Gần), 3 (Thế giới), 8 (Lsv + Gần), 9 (Tất cả)
 
 local function AppendLog(msg)
     pcall(function()
+        local paths = {
+            "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+        }
+        if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
+            local p2 = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+            if p2 ~= paths[1] then table.insert(paths, p2) end
+        end
         local line = string.format("[%s] %s\r\n", os.date("%H:%M:%S"), tostring(msg))
-        local f = io.open("/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt", "a")
-        if f then
-            f:write(line)
-            f:close()
+        for _, p in ipairs(paths) do
+            local f = io.open(p, "a")
+            if f then
+                f:write(line)
+                f:close()
+            end
         end
     end)
 end
 
-local ok, err = pcall(function()
-    -- 0. DỌN DẸP PHIÊN BẢN CŨ NẾU ĐANG CHẠY
-    if _G.TestTalent_CleanUp then
-        pcall(_G.TestTalent_CleanUp)
-    end
-
-    local GameObject = CS.UnityEngine.GameObject
-    local RectTransform = CS.UnityEngine.RectTransform
-    local Vector2 = CS.UnityEngine.Vector2
-    local Color = CS.UnityEngine.Color
-    local Image = CS.UnityEngine.UI.Image
-    local Text = CS.UnityEngine.UI.Text
-    local Button = CS.UnityEngine.UI.Button
-    local TextAnchor = CS.UnityEngine.TextAnchor
-
-    -- Lấy font chuẩn từ UI có sẵn hoặc built-in
-    local defaultFont = nil
+local function NotifyMsg(msg)
+    AppendLog(msg)
     pcall(function()
-        local modTxtGo = GameObject.Find("ModText")
-        if modTxtGo then
-            local t = modTxtGo:GetComponent(typeof(Text))
-            if t and t.font then defaultFont = t.font end
-        end
-        if not defaultFont and CS.UnityEngine.Resources then
-            defaultFont = CS.UnityEngine.Resources.GetBuiltinResource(typeof(CS.UnityEngine.Font), "Arial.ttf")
-        end
-    end)
-
-    local function NotifyMsg(msg)
-        AppendLog("[TEST TALENT] " .. tostring(msg))
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
             _G.FloatingWordUtility.QuickMsg(tostring(msg))
         end
+    end)
+end
+
+-- =========================================================================
+-- 1. NẾU ĐANG CHẠY -> BẤM LẦN NỮA SẼ DỪNG (TOGGLE STOP)
+-- =========================================================================
+if _G.Mod_AutoSpamChat_Running then
+    _G.Mod_AutoSpamChat_Running = false
+    if _G.Mod_AutoSpamChat_Timer then
+        pcall(function()
+            if _G.Timer and _G.Timer.Stop then
+                _G.Timer.Stop(_G.Mod_AutoSpamChat_Timer)
+            end
+        end)
+        _G.Mod_AutoSpamChat_Timer = nil
     end
+    _G.Mod_AutoSpamChat_CurrentIndex = nil
+    NotifyMsg("[AUTO CHAT] ĐÃ DỪNG gửi tin nhắn!")
+    return
+end
 
-    -- =========================================================================
-    -- THÔNG TIN CẤU HÌNH NHÁNH THỦ HỘ (DK - TYPE 1102)
-    -- =========================================================================
-    local SUBTYPE_THU_HO = 1102
+-- =========================================================================
+-- 2. DANH SÁCH LỜI BÀI HÁT & LẤY TUẦN TỰ
+-- =========================================================================
+local SPAM_LIST = {
+    "Chiều một mình trên phố năm xưa",
+    "Lạc bước giữa đêm đông người",
+    "Rồi một ngày anh bỗng đi qua",
+    "Sưởi ấm con tim lẻ loi.",
+    "Nụ cười và ánh mắt đam mê",
+    "Trái tim đôi ta không rời",
+    "Con thuyền không còn xa bến",
+    "Con thuyền không còn theo sóng, mãi xa mù khơi.",
+    "Lòng ngập ngừng nói tiếng yêu anh",
+    "Lời yêu ấy thiết tha chân thành",
+    "Còn gì bằng sánh bước bên nhau",
+    "Cùng ngắm ánh trăng và ngàn sao.",
+    "Cuộc tình ngọt ngào em đã trao anh",
+    "Làm trái tim em đổi thay",
+    "Niềm hạnh phúc em đang có anh",
+    "Khiến em ngỡ ngàng.",
+    "Phố xa đêm đông người, đêm tình yêu dưới trăng",
+    "Thấp thoáng bao đôi nhân tình, đang đùa vui đắm say",
+    "Cành hồng trao tay đến tay, rộn ràng nghe tim ngất ngây",
+    "Tình này trao anh, thề mãi không bao giờ phai.",
+    "Ước chi trăng đừng tàn, soi tình yêu chúng ta",
+    "Những ánh sao băng qua trời, xin lặng im lung linh",
+    "Thì thầm em nói với anh một lời",
+    "Anh có biết được trái tim em yêu mình anh."
+}
 
-    -- Danh sách các node cần test vượt tầng
-    local TEST_TARGETS = {
-        {
-            name = "Tăng Phản DMG (Tầng 7 - Max)",
-            group = 110201,
-            baseId = 11020100,
-            needPoint = 30,
-            tier = "Tầng 7 (Yêu cầu 30 điểm)"
-        },
-        {
-            name = "Kháng Khống Chế Tăng (Tầng 7 - Max)",
-            group = 110204,
-            baseId = 11020400,
-            needPoint = 30,
-            tier = "Tầng 7 (Yêu cầu 30 điểm)"
-        },
-        {
-            name = "Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400)",
-            group = 110210,
-            baseId = 11021000,
-            needPoint = 20,
-            tier = "Tầng 5 (Yêu cầu 20 điểm + Skill)"
-        },
-        {
-            name = "Chống Đỡ (Tầng 4)",
-            group = 110208,
-            baseId = 11020800,
-            needPoint = 15,
-            tier = "Tầng 4 (Yêu cầu 15 điểm)"
+_G.Mod_AutoSpamChat_CurrentIndex = 0
+local countSent = 0
+
+local function GetSequentialSpamText()
+    if #SPAM_LIST == 0 then return "" end
+    _G.Mod_AutoSpamChat_CurrentIndex = (_G.Mod_AutoSpamChat_CurrentIndex or 0) + 1
+    if _G.Mod_AutoSpamChat_CurrentIndex > #SPAM_LIST then
+        _G.Mod_AutoSpamChat_CurrentIndex = 1
+    end
+    return SPAM_LIST[_G.Mod_AutoSpamChat_CurrentIndex]
+end
+
+-- =========================================================================
+-- 3. XÁC ĐỊNH DANH SÁCH KÊNH CẦN BẮN GÓI TIN THEO OPTION
+-- =========================================================================
+local function GetTargetChannels(option)
+    local Enum = _G.ChatChannelEnum or {}
+    local CROSS_REALM = Enum.CROSS_REALM or 2050002
+    local LOCAL = Enum.LOCAL or 2050005
+    local WORLD = Enum.WORLD or 2050001
+    local GUILD = Enum.GUILD or 2050003
+    local TEAM = Enum.TEAM or 2050004
+
+    if option == 1 then
+        return { { id = CROSS_REALM, name = "Liên Server" } }
+    elseif option == 2 then
+        return { { id = LOCAL, name = "Gần" } }
+    elseif option == 3 then
+        return { { id = WORLD, name = "Thế Giới" } }
+    elseif option == 4 then
+        return { { id = GUILD, name = "Guild" } }
+    elseif option == 5 then
+        return { { id = TEAM, name = "Đội" } }
+    elseif option == 8 then
+        return {
+            { id = CROSS_REALM, name = "Liên Server" },
+            { id = LOCAL, name = "Gần" }
         }
+    elseif option == 9 then
+        return {
+            { id = CROSS_REALM, name = "Liên Server" },
+            { id = LOCAL, name = "Gần" },
+            { id = WORLD, name = "Thế Giới" }
+        }
+    else
+        return { { id = LOCAL, name = "Gần" } }
+    end
+end
+
+-- =========================================================================
+-- 4. HÀM GỬI CHAT THEO KÊNH
+-- =========================================================================
+local function SendChatToChannel(channelId, channelName, text)
+    local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id)
+        or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or 0
+
+    local textData = {
+        inputData = {},
+        message = text
     }
 
-    -- =========================================================================
-    -- HOOK LẮNG NGHE PHẢN HỒI TỪ SERVER
-    -- =========================================================================
-    local lastSentSkillId = nil
-    local lastSentName = nil
-    local waitingResponse = false
+    local isSent = false
 
-    -- Lưu hàm gốc của netMsgPreprocessing[22019] để không làm hỏng game
-    local original_22019 = _G.netMsgPreprocessing and _G.netMsgPreprocessing[22019]
-    _G.TestTalent_Original_22019 = original_22019
+    -- Cách 1: Bắn qua EventManager (Luồng chuẩn của game, tự format qua ChatController)
+    if _G.EventManager and _G.Event and _G.Event.Chat_ReqChat then
+        local msg = {
+            chatType = channelId,
+            textData = textData,
+            toRoleId = myId
+        }
+        _G.EventManager.Dispatch(_G.Event.Chat_ReqChat, msg)
+        isSent = true
+    end
 
-    if _G.netMsgPreprocessing then
-        _G.netMsgPreprocessing[22019] = function(msgID, tblData)
-            pcall(function()
-                if tblData and tblData.grandMasterSkill then
-                    local skillId = tblData.grandMasterSkill.skillId
-                    local groupId = tblData.grandMasterSkill.skillGroupId
-                    local msg = string.format("🎉 [THÀNH CÔNG!] Server CHẤP THUẬN tăng cấp Skill ID: %s (Group: %s)!", tostring(skillId), tostring(groupId))
-                    NotifyMsg(msg)
-                    if _G.TestTalent_UpdateStatus then
-                        _G.TestTalent_UpdateStatus("🎉 THÀNH CÔNG! Server chấp thuận tăng cấp ID: " .. tostring(skillId), Color(0.2, 0.9, 0.3, 1))
-                    end
-                    waitingResponse = false
-                end
-            end)
-            if original_22019 then
-                original_22019(msgID, tblData)
+    -- Cách 2 (Dự phòng): Bắn trực tiếp qua NetManager gói ChatMessage.ReqChat
+    if not isSent and _G.NetManager and _G.ChatMessage and _G.ChatMessage.ReqChat then
+        local chatJson = ""
+        if _G.json and _G.json.encode then
+            chatJson = _G.json.encode(textData)
+        else
+            chatJson = string.format("{\"inputData\":{},\"message\":\"%s\"}", text)
+        end
+
+        _G.NetManager.Send(_G.ChatMessage.ReqChat, {
+            chatType = channelId,
+            chatMsg = chatJson,
+            toRoleId = myId
+        })
+        isSent = true
+    end
+
+    return isSent
+end
+
+local function SendAutoChat()
+    if not _G.Mod_AutoSpamChat_Running then return end
+
+    local success, err = pcall(function()
+        local currentText = GetSequentialSpamText()
+        local channels = GetTargetChannels(CHAT_CHANNEL_OPTION)
+        countSent = countSent + 1
+
+        for _, ch in ipairs(channels) do
+            local ok = SendChatToChannel(ch.id, ch.name, currentText)
+            if ok then
+                AppendLog(string.format("[AUTO CHAT #%d] [%s] [Câu %d/%d]: \"%s\"", countSent, ch.name, _G.Mod_AutoSpamChat_CurrentIndex, #SPAM_LIST, currentText))
+            else
+                AppendLog(string.format("[AUTO CHAT LOI] Không thể gửi tới kênh %s!", ch.name))
             end
-        end
-    end
-
-    -- =========================================================================
-    -- HÀM THỰC THI GỬI LỆNH TĂNG CẤP SKILL
-    -- =========================================================================
-    local function SendUpgradeSkill(target)
-        if not target then return end
-
-        local dataMgr = _G.QuickFind and _G.QuickFind.MasterDataMgr and _G.QuickFind.MasterDataMgr()
-        local surplusPoint = 0
-        local curEnabled = 0
-        local usedPoint = 0
-
-        if dataMgr then
-            surplusPoint = dataMgr:GetPointByMasterTalentType(SUBTYPE_THU_HO) or 0
-            curEnabled = dataMgr:GetCurEnableSubType() or 0
-            usedPoint = (dataMgr:CurUsedPointDic() and dataMgr:CurUsedPointDic()[SUBTYPE_THU_HO]) or 0
-        end
-
-        -- Lấy LID hiện tại của skill (nếu đã học thì lấy cấp tiếp theo, nếu chưa học lấy baseId)
-        local sendLid = target.baseId
-        if dataMgr then
-            local skillData = dataMgr:GetSkillDataBySkillGroup(target.group)
-            if skillData and skillData.lid then
-                sendLid = skillData.lid
-            end
-        end
-
-        local infoText = string.format("Bắn packet: %s | LID: %s | Nhánh: %s | Điểm dư: %d | Điểm đã dùng: %d", 
-            target.name, tostring(sendLid), tostring(SUBTYPE_THU_HO), surplusPoint, usedPoint)
-        NotifyMsg(infoText)
-
-        if _G.TestTalent_UpdateStatus then
-            _G.TestTalent_UpdateStatus("Đang gửi packet: " .. target.name .. "...", Color(1, 0.8, 0.2, 1))
-        end
-
-        lastSentSkillId = sendLid
-        lastSentName = target.name
-        waitingResponse = true
-
-        -- GỬI LỆNH TRỰC TIẾP LÊN SERVER
-        pcall(function()
-            if _G.networkRequest and _G.networkRequest.ReqUpGrandMasterSkill then
-                _G.networkRequest.ReqUpGrandMasterSkill(SUBTYPE_THU_HO, sendLid)
-            end
-        end)
-
-        -- Hẹn giờ kiểm tra phản hồi sau 2.5s
-        if _G.Timer and _G.Timer.Start then
-            _G.Timer.Start(2.5, function()
-                if waitingResponse then
-                    waitingResponse = false
-                    local warn = "⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)"
-                    NotifyMsg(warn)
-                    if _G.TestTalent_UpdateStatus then
-                        _G.TestTalent_UpdateStatus("⚠️ Server không phản hồi 22019 (Chặn hoặc thiếu điểm)", Color(1, 0.4, 0.4, 1))
-                    end
-                end
-            end)
-        end
-    end
-
-    -- =========================================================================
-    -- HÀM KÍCH HOẠT NHÁNH THỦ HỘ
-    -- =========================================================================
-    local function EnableThuHoBranch()
-        NotifyMsg("Gửi lệnh kích hoạt nhánh Thủ Hộ (1102)...")
-        if _G.TestTalent_UpdateStatus then
-            _G.TestTalent_UpdateStatus("Đang kích hoạt nhánh Thủ Hộ...", Color(1, 0.8, 0.2, 1))
-        end
-        pcall(function()
-            if _G.networkRequest and _G.networkRequest.ReqEnableGrandMasterTalent then
-                -- enableType 0 hoặc 1
-                _G.networkRequest.ReqEnableGrandMasterTalent(SUBTYPE_THU_HO, 1)
-            end
-        end)
-    end
-
-    -- =========================================================================
-    -- KHỞI TẠO GIAO DIỆN TEST UI TRÊN MÀN HÌNH
-    -- =========================================================================
-    local root = GameObject.Find("UIRoot") or GameObject.Find("Canvas")
-    if not root then
-        NotifyMsg("Không tìm thấy UIRoot hoặc Canvas!")
-        return
-    end
-
-    local panelGo = GameObject("TestTalentPanel")
-    panelGo.transform:SetParent(root.transform, false)
-    local panelRt = panelGo:AddComponent(typeof(RectTransform))
-    panelRt.anchorMin = Vector2(0.5, 0.5)
-    panelRt.anchorMax = Vector2(0.5, 0.5)
-    panelRt.pivot = Vector2(0.5, 0.5)
-    panelRt.anchoredPosition = Vector2(0, 30)
-    panelRt.sizeDelta = Vector2(480, 430)
-
-    -- Nền panel
-    local panelImg = panelGo:AddComponent(typeof(Image))
-    panelImg.color = Color(0.08, 0.08, 0.12, 0.95)
-
-    -- 1. Tiêu đề
-    local titleGo = GameObject("TestTalentTitle")
-    titleGo.transform:SetParent(panelGo.transform, false)
-    local titleRt = titleGo:AddComponent(typeof(RectTransform))
-    titleRt.anchorMin = Vector2(0, 1)
-    titleRt.anchorMax = Vector2(1, 1)
-    titleRt.pivot = Vector2(0.5, 1)
-    titleRt.anchoredPosition = Vector2(0, -10)
-    titleRt.sizeDelta = Vector2(-20, 32)
-
-    local titleTxt = titleGo:AddComponent(typeof(Text))
-    titleTxt.raycastTarget = false
-    titleTxt.color = Color(1, 0.85, 0.2, 1)
-    titleTxt.fontSize = 17
-    titleTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
-    titleTxt.alignment = TextAnchor.MiddleCenter
-    titleTxt.text = "⚔️ TEST BYPASS THIÊN PHÚ: THỦ HỘ (DK)"
-    if defaultFont then titleTxt.font = defaultFont end
-
-    -- 2. Khung trạng thái
-    local statusGo = GameObject("TestTalentStatus")
-    statusGo.transform:SetParent(panelGo.transform, false)
-    local statusRt = statusGo:AddComponent(typeof(RectTransform))
-    statusRt.anchorMin = Vector2(0, 1)
-    statusRt.anchorMax = Vector2(1, 1)
-    statusRt.pivot = Vector2(0.5, 1)
-    statusRt.anchoredPosition = Vector2(0, -45)
-    statusRt.sizeDelta = Vector2(-30, 48)
-
-    local statusTxt = statusGo:AddComponent(typeof(Text))
-    statusTxt.raycastTarget = false
-    statusTxt.color = Color(0.8, 0.9, 1, 1)
-    statusTxt.fontSize = 13
-    statusTxt.alignment = TextAnchor.MiddleCenter
-    if defaultFont then statusTxt.font = defaultFont end
-
-    local function RefreshStatusDisplay()
-        local dataMgr = _G.QuickFind and _G.QuickFind.MasterDataMgr and _G.QuickFind.MasterDataMgr()
-        local curEnabled = 0
-        local surplusPoint = 0
-        local usedPoint = 0
-        local level = 0
-        if dataMgr then
-            curEnabled = dataMgr:GetCurEnableSubType() or 0
-            surplusPoint = dataMgr:GetPointByMasterTalentType(SUBTYPE_THU_HO) or 0
-            usedPoint = (dataMgr:CurUsedPointDic() and dataMgr:CurUsedPointDic()[SUBTYPE_THU_HO]) or 0
-            level = dataMgr:GetLevel() or 0
-        end
-        local isThuHoActive = (curEnabled == SUBTYPE_THU_HO)
-        local activeStr = isThuHoActive and "<color=#33FF33>[ĐÃ DÙNG]</color>" or "<color=#FF5555>[CHƯA DÙNG]</color>"
-        statusTxt.text = string.format("Cấp TP: %d | Nhánh Thủ Hộ: %s\nĐiểm Nghề Dư: <color=#FFFF33>%d</color> | Điểm Đã Cộng: <color=#33FFFF>%d</color>",
-            level, activeStr, surplusPoint, usedPoint)
-    end
-    RefreshStatusDisplay()
-
-    _G.TestTalent_UpdateStatus = function(msg, col)
-        pcall(function()
-            if statusTxt and not CS.UnityEngine.Object.op_Equality(statusTxt, nil) then
-                statusTxt.text = msg
-                if col then statusTxt.color = col end
-            end
-        end)
-    end
-
-    -- 3. Tạo các nút bấm tương tác
-    local btnStartY = -105
-    local btnHeight = 44
-    local btnSpacing = 8
-
-    -- Nút kích hoạt nhánh
-    local function CreateButton(name, yPos, text, color, onClick)
-        local btnGo = GameObject(name)
-        btnGo.transform:SetParent(panelGo.transform, false)
-        local btnRt = btnGo:AddComponent(typeof(RectTransform))
-        btnRt.anchorMin = Vector2(0, 1)
-        btnRt.anchorMax = Vector2(1, 1)
-        btnRt.pivot = Vector2(0.5, 1)
-        btnRt.anchoredPosition = Vector2(0, yPos)
-        btnRt.sizeDelta = Vector2(-30, btnHeight)
-
-        local btnImg = btnGo:AddComponent(typeof(Image))
-        btnImg.color = color
-
-        local txtGo = GameObject(name .. "_Txt")
-        txtGo.transform:SetParent(btnGo.transform, false)
-        local txtRt = txtGo:AddComponent(typeof(RectTransform))
-        txtRt.anchorMin = Vector2(0, 0)
-        txtRt.anchorMax = Vector2(1, 1)
-        txtRt.sizeDelta = Vector2(0, 0)
-
-        local txt = txtGo:AddComponent(typeof(Text))
-        txt.raycastTarget = false
-        txt.color = Color.white
-        txt.fontSize = 14
-        txt.fontStyle = CS.UnityEngine.FontStyle.Bold
-        txt.alignment = TextAnchor.MiddleCenter
-        txt.text = text
-        if defaultFont then txt.font = defaultFont end
-
-        local btn = btnGo:AddComponent(typeof(Button))
-        btn.onClick:AddListener(function()
-            pcall(onClick)
-        end)
-        return btnGo
-    end
-
-    local currentY = btnStartY
-
-    -- Nút 1: Kích Hoạt Nhánh Thủ Hộ
-    CreateButton("BtnEnableBranch", currentY, "🛡️ [1] KÍCH HOẠT NHÁNH THỦ HỘ (BẮT BUỘC)", Color(0.18, 0.42, 0.65, 1), function()
-        EnableThuHoBranch()
-    end)
-    currentY = currentY - (btnHeight + btnSpacing)
-
-    -- Nút 2: Bypass Tầng Cuối (Phản DMG - 30đ)
-    CreateButton("BtnBypassPhanDMG", currentY, "⚡ [TEST] HỌC VƯỢT TẦNG 7: TĂNG PHẢN DMG (30đ)", Color(0.72, 0.22, 0.15, 1), function()
-        SendUpgradeSkill(TEST_TARGETS[1])
-    end)
-    currentY = currentY - (btnHeight + btnSpacing)
-
-    -- Nút 3: Bypass Tầng Cuối (Kháng Khống Chế - 30đ)
-    CreateButton("BtnBypassKhangKC", currentY, "⚡ [TEST] HỌC VƯỢT TẦNG 7: KHÁNG KHỐNG CHẾ (30đ)", Color(0.72, 0.22, 0.15, 1), function()
-        SendUpgradeSkill(TEST_TARGETS[2])
-    end)
-    currentY = currentY - (btnHeight + btnSpacing)
-
-    -- Nút 4: Bypass Tầng 5 (Đỡ Giảm DMG - 20đ)
-    CreateButton("BtnBypassDoDMG", currentY, "⚡ [TEST] HỌC VƯỢT TẦNG 5: ĐỠ GIẢM DMG (20đ)", Color(0.65, 0.45, 0.15, 1), function()
-        SendUpgradeSkill(TEST_TARGETS[3])
-    end)
-    currentY = currentY - (btnHeight + btnSpacing)
-
-    -- Nút 5: Làm mới dữ liệu
-    CreateButton("BtnRefreshInfo", currentY, "🔄 LÀM MỚI DỮ LIỆU & ĐIỂM SỐ", Color(0.25, 0.28, 0.32, 1), function()
-        if _G.networkRequest and _G.networkRequest.ReqGrandMasterInfo then
-            _G.networkRequest.ReqGrandMasterInfo()
-        end
-        RefreshStatusDisplay()
-        NotifyMsg("Đã gửi yêu cầu đồng bộ lại dữ liệu Thiên Phú từ Server.")
-    end)
-    currentY = currentY - (btnHeight + btnSpacing)
-
-    -- Nút 6: Đóng Panel
-    CreateButton("BtnClosePanel", currentY, "✖ ĐÓNG BẢNG TEST", Color(0.35, 0.15, 0.15, 1), function()
-        if _G.TestTalent_CleanUp then
-            _G.TestTalent_CleanUp()
         end
     end)
 
-    -- =========================================================================
-    -- HÀM DỌN DẸP TOÀN BỘ KHI ĐÓNG HOẶC CHẠY LẠI
-    -- =========================================================================
-    _G.TestTalent_CleanUp = function()
-        pcall(function()
-            -- Phục hồi lại hook 22019
-            if _G.netMsgPreprocessing and _G.TestTalent_Original_22019 then
-                _G.netMsgPreprocessing[22019] = _G.TestTalent_Original_22019
-                _G.TestTalent_Original_22019 = nil
-            end
-
-            -- Hủy UI GameObject
-            if panelGo and not CS.UnityEngine.Object.op_Equality(panelGo, nil) then
-                CS.UnityEngine.GameObject.Destroy(panelGo)
-            end
-        end)
-        _G.TestTalent_CleanUp = nil
+    if not success then
+        AppendLog("[AUTO CHAT ERROR]: " .. tostring(err))
     end
+end
 
-    NotifyMsg("Đã tải xong Test Panel Thiên Phú Thủ Hộ (DK)!")
-end)
+-- =========================================================================
+-- 5. KHỞI CHẠY TIẾN TRÌNH LẶP MỖI 5 GIÂY
+-- =========================================================================
+_G.Mod_AutoSpamChat_Running = true
 
-if not ok then
-    local errText = "[TEST TALENT ERROR]: " .. tostring(err)
-    AppendLog(errText)
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg(errText)
-    end
+-- Lấy danh sách tên kênh để hiển thị toast
+local chNameList = {}
+for _, ch in ipairs(GetTargetChannels(CHAT_CHANNEL_OPTION)) do
+    table.insert(chNameList, ch.name)
+end
+local chNamesStr = table.concat(chNameList, "+")
+
+-- Gửi ngay câu đầu tiên
+SendAutoChat()
+NotifyMsg(string.format("[AUTO CHAT] ĐÃ BẬT! Kênh: [%s] | 5s/câu (Execute lại để tắt)", chNamesStr))
+
+-- Lặp lại mỗi 5.0 giây qua Timer của game
+if _G.Timer and _G.Timer.StartLoopForever then
+    _G.Mod_AutoSpamChat_Timer = _G.Timer.StartLoopForever(5.0, function()
+        SendAutoChat()
+    end)
+elseif _G.Coroutine and _G.Coroutine.Start then
+    _G.Mod_AutoSpamChat_Coroutine = _G.Coroutine.Start(function()
+        while _G.Mod_AutoSpamChat_Running do
+            _G.Coroutine.Wait(5.0)
+            if _G.Mod_AutoSpamChat_Running then
+                SendAutoChat()
+            end
+        end
+    end)
 end

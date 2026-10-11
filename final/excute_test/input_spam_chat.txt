@@ -1,0 +1,234 @@
+-- =========================================================================
+-- [SCRIPT TEST]: AUTO SPAM CHAT ĐA KÊNH (LIÊN SERVER, GẦN, THẾ GIỚI, TẤT CẢ)
+-- =========================================================================
+-- [CẤU HÌNH KÊNH CHAT]:
+--   1 : Liên Server (CROSS_REALM)
+--   2 : Gần (LOCAL)
+--   3 : Thế Giới (WORLD)
+--   4 : Guild (GUILD)
+--   5 : Đội (TEAM)
+--   8 : Cả 2 kênh (Liên Server + Gần)
+--   9 : Tất cả (Gửi đồng thời: Liên Server + Gần + Thế Giới)
+-- =========================================================================
+local CHAT_CHANNEL_OPTION = 8 -- <<-- ĐỔI SỐ Ở ĐÂY: 1 (Lsv), 2 (Gần), 3 (Thế giới), 8 (Lsv + Gần), 9 (Tất cả)
+
+local function AppendLog(msg)
+    pcall(function()
+        local paths = {
+            "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+        }
+        if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
+            local p2 = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+            if p2 ~= paths[1] then table.insert(paths, p2) end
+        end
+        local line = string.format("[%s] %s\r\n", os.date("%H:%M:%S"), tostring(msg))
+        for _, p in ipairs(paths) do
+            local f = io.open(p, "a")
+            if f then
+                f:write(line)
+                f:close()
+            end
+        end
+    end)
+end
+
+local function NotifyMsg(msg)
+    AppendLog(msg)
+    pcall(function()
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(tostring(msg))
+        end
+    end)
+end
+
+-- =========================================================================
+-- 1. NẾU ĐANG CHẠY -> BẤM LẦN NỮA SẼ DỪNG (TOGGLE STOP)
+-- =========================================================================
+if _G.Mod_AutoSpamChat_Running then
+    _G.Mod_AutoSpamChat_Running = false
+    if _G.Mod_AutoSpamChat_Timer then
+        pcall(function()
+            if _G.Timer and _G.Timer.Stop then
+                _G.Timer.Stop(_G.Mod_AutoSpamChat_Timer)
+            end
+        end)
+        _G.Mod_AutoSpamChat_Timer = nil
+    end
+    _G.Mod_AutoSpamChat_CurrentIndex = nil
+    NotifyMsg("[AUTO CHAT] ĐÃ DỪNG gửi tin nhắn!")
+    return
+end
+
+-- =========================================================================
+-- 2. DANH SÁCH LỜI BÀI HÁT & LẤY TUẦN TỰ
+-- =========================================================================
+local SPAM_LIST = {
+    "Chiều một mình trên phố năm xưa",
+    "Lạc bước giữa đêm đông người",
+    "Rồi một ngày anh bỗng đi qua",
+    "Sưởi ấm con tim lẻ loi.",
+    "Nụ cười và ánh mắt đam mê",
+    "Trái tim đôi ta không rời",
+    "Con thuyền không còn xa bến",
+    "Con thuyền không còn theo sóng, mãi xa mù khơi.",
+    "Lòng ngập ngừng nói tiếng yêu anh",
+    "Lời yêu ấy thiết tha chân thành",
+    "Còn gì bằng sánh bước bên nhau",
+    "Cùng ngắm ánh trăng và ngàn sao.",
+    "Cuộc tình ngọt ngào em đã trao anh",
+    "Làm trái tim em đổi thay",
+    "Niềm hạnh phúc em đang có anh",
+    "Khiến em ngỡ ngàng.",
+    "Phố xa đêm đông người, đêm tình yêu dưới trăng",
+    "Thấp thoáng bao đôi nhân tình, đang đùa vui đắm say",
+    "Cành hồng trao tay đến tay, rộn ràng nghe tim ngất ngây",
+    "Tình này trao anh, thề mãi không bao giờ phai.",
+    "Ước chi trăng đừng tàn, soi tình yêu chúng ta",
+    "Những ánh sao băng qua trời, xin lặng im lung linh",
+    "Thì thầm em nói với anh một lời",
+    "Anh có biết được trái tim em yêu mình anh."
+}
+
+_G.Mod_AutoSpamChat_CurrentIndex = 0
+local countSent = 0
+
+local function GetSequentialSpamText()
+    if #SPAM_LIST == 0 then return "" end
+    _G.Mod_AutoSpamChat_CurrentIndex = (_G.Mod_AutoSpamChat_CurrentIndex or 0) + 1
+    if _G.Mod_AutoSpamChat_CurrentIndex > #SPAM_LIST then
+        _G.Mod_AutoSpamChat_CurrentIndex = 1
+    end
+    return SPAM_LIST[_G.Mod_AutoSpamChat_CurrentIndex]
+end
+
+-- =========================================================================
+-- 3. XÁC ĐỊNH DANH SÁCH KÊNH CẦN BẮN GÓI TIN THEO OPTION
+-- =========================================================================
+local function GetTargetChannels(option)
+    local Enum = _G.ChatChannelEnum or {}
+    local CROSS_REALM = Enum.CROSS_REALM or 2050002
+    local LOCAL = Enum.LOCAL or 2050005
+    local WORLD = Enum.WORLD or 2050001
+    local GUILD = Enum.GUILD or 2050003
+    local TEAM = Enum.TEAM or 2050004
+
+    if option == 1 then
+        return { { id = CROSS_REALM, name = "Liên Server" } }
+    elseif option == 2 then
+        return { { id = LOCAL, name = "Gần" } }
+    elseif option == 3 then
+        return { { id = WORLD, name = "Thế Giới" } }
+    elseif option == 4 then
+        return { { id = GUILD, name = "Guild" } }
+    elseif option == 5 then
+        return { { id = TEAM, name = "Đội" } }
+    elseif option == 9 then
+        return {
+            { id = CROSS_REALM, name = "Liên Server" },
+            { id = LOCAL, name = "Gần" },
+            { id = WORLD, name = "Thế Giới" }
+        }
+    else
+        return { { id = LOCAL, name = "Gần" } }
+    end
+end
+
+-- =========================================================================
+-- 4. HÀM GỬI CHAT THEO KÊNH
+-- =========================================================================
+local function SendChatToChannel(channelId, channelName, text)
+    local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id)
+        or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or 0
+
+    local textData = {
+        inputData = {},
+        message = text
+    }
+
+    local isSent = false
+
+    -- Cách 1: Bắn qua EventManager (Luồng chuẩn của game, tự format qua ChatController)
+    if _G.EventManager and _G.Event and _G.Event.Chat_ReqChat then
+        local msg = {
+            chatType = channelId,
+            textData = textData,
+            toRoleId = myId
+        }
+        _G.EventManager.Dispatch(_G.Event.Chat_ReqChat, msg)
+        isSent = true
+    end
+
+    -- Cách 2 (Dự phòng): Bắn trực tiếp qua NetManager gói ChatMessage.ReqChat
+    if not isSent and _G.NetManager and _G.ChatMessage and _G.ChatMessage.ReqChat then
+        local chatJson = ""
+        if _G.json and _G.json.encode then
+            chatJson = _G.json.encode(textData)
+        else
+            chatJson = string.format("{\"inputData\":{},\"message\":\"%s\"}", text)
+        end
+
+        _G.NetManager.Send(_G.ChatMessage.ReqChat, {
+            chatType = channelId,
+            chatMsg = chatJson,
+            toRoleId = myId
+        })
+        isSent = true
+    end
+
+    return isSent
+end
+
+local function SendAutoChat()
+    if not _G.Mod_AutoSpamChat_Running then return end
+
+    local success, err = pcall(function()
+        local currentText = GetSequentialSpamText()
+        local channels = GetTargetChannels(CHAT_CHANNEL_OPTION)
+        countSent = countSent + 1
+
+        for _, ch in ipairs(channels) do
+            local ok = SendChatToChannel(ch.id, ch.name, currentText)
+            if ok then
+                AppendLog(string.format("[AUTO CHAT #%d] [%s] [Câu %d/%d]: \"%s\"", countSent, ch.name, _G.Mod_AutoSpamChat_CurrentIndex, #SPAM_LIST, currentText))
+            else
+                AppendLog(string.format("[AUTO CHAT LOI] Không thể gửi tới kênh %s!", ch.name))
+            end
+        end
+    end)
+
+    if not success then
+        AppendLog("[AUTO CHAT ERROR]: " .. tostring(err))
+    end
+end
+
+-- =========================================================================
+-- 5. KHỞI CHẠY TIẾN TRÌNH LẶP MỖI 5 GIÂY
+-- =========================================================================
+_G.Mod_AutoSpamChat_Running = true
+
+-- Lấy danh sách tên kênh để hiển thị toast
+local chNameList = {}
+for _, ch in ipairs(GetTargetChannels(CHAT_CHANNEL_OPTION)) do
+    table.insert(chNameList, ch.name)
+end
+local chNamesStr = table.concat(chNameList, "+")
+
+-- Gửi ngay câu đầu tiên
+SendAutoChat()
+NotifyMsg(string.format("[AUTO CHAT] ĐÃ BẬT! Kênh: [%s] | 5s/câu (Execute lại để tắt)", chNamesStr))
+
+-- Lặp lại mỗi 5.0 giây qua Timer của game
+if _G.Timer and _G.Timer.StartLoopForever then
+    _G.Mod_AutoSpamChat_Timer = _G.Timer.StartLoopForever(5.0, function()
+        SendAutoChat()
+    end)
+elseif _G.Coroutine and _G.Coroutine.Start then
+    _G.Mod_AutoSpamChat_Coroutine = _G.Coroutine.Start(function()
+        while _G.Mod_AutoSpamChat_Running do
+            _G.Coroutine.Wait(5.0)
+            if _G.Mod_AutoSpamChat_Running then
+                SendAutoChat()
+            end
+        end
+    end)
+end

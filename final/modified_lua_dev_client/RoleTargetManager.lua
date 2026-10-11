@@ -52,6 +52,13 @@ local function IsSummonOrFriendly(role)
 end
 
 function RoleTargetManager.IsCanAttackMonster(role)
+  -- =========================================================================
+  -- [MOD FEATURE]: CHẶN ĐÁNH QUÁI KHI BẬT AUTO HUNT
+  -- Mô tả: Khi Auto Hunt bật, chặn toàn bộ việc chọn và tấn công quái/boss
+  -- =========================================================================
+  if _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive() then
+    return false
+  end
   if not role or role.isDead then
     return false
   end

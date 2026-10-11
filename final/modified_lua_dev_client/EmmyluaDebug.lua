@@ -368,6 +368,24 @@ local function CreateModUI()
 
         _G.Mod_ParseSecretCommands(_G.Mod_SecretCommands)
 
+        -- =========================================================================
+        -- [MOD FEATURE]: KHỞI TẠO BIẾN AUTO HUNT (SECRET COMMAND /autohunt)
+        -- Mô tả: Biến toàn cục và hàm kiểm tra trạng thái hoạt động của chế độ Auto Hunt.
+        -- =========================================================================
+        if _G.Mod_AutoHunt_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoHunt_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoHunt_Enabled", 0) == 1
+            end)
+            if _G.Mod_AutoHunt_Enabled == nil then _G.Mod_AutoHunt_Enabled = false end
+        end
+        _G.Mod_IsAutoHuntActive = function()
+            return (_G.Mod_AutoHunt_Enabled == true)
+        end
+        _G.Mod_AutoHunt_KundunActive = false
+        _G.Mod_AutoHunt_KundunTargetMap = nil
+        _G.Mod_LastAncientReqTime = 0
+        _G.Mod_LastKunTeleportTime = 0
+
         if _G.Mod_DisableVisuals == nil then
             pcall(function()
                 _G.Mod_DisableVisuals = CS.UnityEngine.PlayerPrefs.GetInt("Mod_DisableVisuals", 0) == 1
@@ -1507,6 +1525,149 @@ local function CreateModUI()
         -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C3-C12 (BOSS WATCHER & CONFIG)
         -- Mô tả: Cấu hình chuẩn cho Auto Boss và cấu hình chi tiết đa vị trí riêng cho Tab Thông Tin Boss Cơ Bản.
         -- =========================================================================
+        -- =========================================================================
+        -- [MOD FEATURE]: TỌA ĐỘ CHUẨN CỔNG TRUYỀN TỐNG BOSS C3-C12 CHO REQCALLFLAG
+        -- Mô tả: Ánh xạ 100% transferId của Boss Trang Sức, Thí Luyện, Luyện Ngục sang tọa độ (x, y)
+        --        từ cfg_Map_transfer để phục vụ ReqCallFlag bay thẳng trong Auto Hunt & Boss Watcher.
+        -- =========================================================================
+        local Mod_BossTransferCoords = {
+            [105203101] = { x = 197, y = 151 },
+            [105203102] = { x = 85, y = 54 },
+            [105204101] = { x = 197, y = 151 },
+            [105204102] = { x = 85, y = 54 },
+            [105205101] = { x = 197, y = 151 },
+            [105205102] = { x = 85, y = 54 },
+            [105206101] = { x = 197, y = 151 },
+            [105206102] = { x = 85, y = 54 },
+            [105207101] = { x = 197, y = 151 },
+            [105207102] = { x = 85, y = 54 },
+            [105208101] = { x = 197, y = 151 },
+            [105208102] = { x = 85, y = 54 },
+            [105209101] = { x = 197, y = 151 },
+            [105209102] = { x = 85, y = 54 },
+            [105210101] = { x = 197, y = 151 },
+            [105210102] = { x = 85, y = 54 },
+            [105211101] = { x = 197, y = 151 },
+            [105211102] = { x = 85, y = 54 },
+            [105212101] = { x = 197, y = 151 },
+            [105212102] = { x = 85, y = 54 },
+            [10640201] = { x = 100, y = 146 },
+            [10640202] = { x = 68, y = 84 },
+            [10640203] = { x = 206, y = 152 },
+            [10640301] = { x = 190, y = 88 },
+            [10640302] = { x = 192, y = 44 },
+            [10640303] = { x = 44, y = 92 },
+            [10640401] = { x = 90, y = 98 },
+            [10640402] = { x = 158, y = 78 },
+            [10640403] = { x = 126, y = 234 },
+            [10640501] = { x = 144, y = 72 },
+            [10640502] = { x = 208, y = 38 },
+            [10640503] = { x = 92, y = 196 },
+            [10640601] = { x = 132, y = 140 },
+            [10640602] = { x = 88, y = 66 },
+            [10640603] = { x = 112, y = 36 },
+            [10640701] = { x = 100, y = 146 },
+            [10640702] = { x = 68, y = 84 },
+            [10640703] = { x = 206, y = 152 },
+            [10640801] = { x = 190, y = 88 },
+            [10640802] = { x = 192, y = 44 },
+            [10640803] = { x = 44, y = 92 },
+            [10640901] = { x = 90, y = 98 },
+            [10640902] = { x = 158, y = 78 },
+            [10640903] = { x = 126, y = 234 },
+            [10641001] = { x = 90, y = 98 },
+            [10641002] = { x = 158, y = 78 },
+            [10641003] = { x = 126, y = 234 },
+            [10641101] = { x = 90, y = 98 },
+            [10641102] = { x = 158, y = 78 },
+            [10641103] = { x = 126, y = 234 },
+            [106701101] = { x = 150, y = 101 },
+            [106701102] = { x = 115, y = 107 },
+            [106701103] = { x = 146, y = 120 },
+            [106701104] = { x = 138, y = 147 },
+            [106701105] = { x = 108, y = 150 },
+            [106702101] = { x = 150, y = 101 },
+            [106702102] = { x = 115, y = 107 },
+            [106702103] = { x = 146, y = 120 },
+            [106702104] = { x = 138, y = 147 },
+            [106702105] = { x = 108, y = 150 },
+            [106703101] = { x = 150, y = 101 },
+            [106703103] = { x = 146, y = 120 },
+            [106703104] = { x = 108, y = 150 },
+            [106704101] = { x = 150, y = 101 },
+            [106704102] = { x = 146, y = 120 },
+            [106704103] = { x = 108, y = 150 },
+            [106705101] = { x = 150, y = 101 },
+            [106705102] = { x = 115, y = 107 },
+            [106705103] = { x = 146, y = 120 },
+            [106705104] = { x = 138, y = 147 },
+            [106705105] = { x = 108, y = 150 },
+            [106706101] = { x = 150, y = 101 },
+            [106706102] = { x = 146, y = 120 },
+            [106706103] = { x = 108, y = 150 },
+            [106707101] = { x = 150, y = 101 },
+            [106707102] = { x = 146, y = 120 },
+            [106707103] = { x = 108, y = 150 },
+            [106708101] = { x = 150, y = 101 },
+            [106708102] = { x = 146, y = 120 },
+            [106708103] = { x = 108, y = 150 },
+            [106709101] = { x = 150, y = 101 },
+            [106709102] = { x = 146, y = 120 },
+            [106709103] = { x = 108, y = 150 },
+            [106710101] = { x = 150, y = 101 },
+            [106710102] = { x = 146, y = 120 },
+            [106710103] = { x = 108, y = 150 },
+        }
+        _G.Mod_BossTransferCoords = Mod_BossTransferCoords
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HÀM LẤY TỌA ĐỘ VÀ SỐ LƯỢNG VỊ TRÍ BOSS (GET BOSS SPOT)
+        -- Mô tả: Trả về (posX, posY) và số điểm boss (1 hoặc 2) cho bất kỳ boss nào
+        -- =========================================================================
+        local function GetBossSpotCoord(cfg, spotIdx)
+            spotIdx = spotIdx or 1
+            if cfg.spots and cfg.spots[spotIdx] then
+                return cfg.spots[spotIdx].x, cfg.spots[spotIdx].y
+            end
+            if spotIdx == 1 and cfg.posX and cfg.posY then
+                return cfg.posX, cfg.posY
+            end
+            local tId = nil
+            if cfg.transferIds and cfg.transferIds[spotIdx] then
+                tId = cfg.transferIds[spotIdx]
+            elseif spotIdx == 1 and cfg.transferId then
+                tId = cfg.transferId
+            end
+            if tId then
+                if Mod_BossTransferCoords and Mod_BossTransferCoords[tId] then
+                    return Mod_BossTransferCoords[tId].x, Mod_BossTransferCoords[tId].y
+                end
+                if _G.ClientTable and _G.ClientTable.cfg_Map_transferManager then
+                    local tData = _G.ClientTable.cfg_Map_transferManager:TryGetValue(tId)
+                    if tData and tData.position then
+                        local parts = string.split(tData.position, "_")
+                        if parts and #parts >= 2 then
+                            local px, py = tonumber(parts[1]), tonumber(parts[2])
+                            if px and py then return px, py end
+                        end
+                    end
+                end
+            end
+            return nil, nil
+        end
+        _G.GetBossSpotCoord = GetBossSpotCoord
+
+        local function GetBossSpotCount(cfg)
+            if cfg.spots and #cfg.spots > 0 then
+                return #cfg.spots
+            end
+            if cfg.transferIds and #cfg.transferIds > 0 then
+                return #cfg.transferIds
+            end
+            return 1
+        end
+        _G.GetBossSpotCount = GetBossSpotCount
+
         -- 1. Cấu hình Chuẩn & Đa Vị Trí (Dành cho Auto Boss & Tab Thông Tin Boss C3-C12)
         _G.Mod_MapsConfig_c3 = {
             {
@@ -2124,12 +2285,17 @@ local function CreateModUI()
 
                     local spotIdx = spotIndex or 1
                     local targetX, targetY = nil, nil
-                    if cfg.spots and cfg.spots[spotIdx] then
-                        targetX = cfg.spots[spotIdx].x
-                        targetY = cfg.spots[spotIdx].y
-                    elseif cfg.posX and cfg.posY then
-                        targetX = cfg.posX
-                        targetY = cfg.posY
+                    if _G.GetBossSpotCoord then
+                        targetX, targetY = _G.GetBossSpotCoord(cfg, spotIdx)
+                    end
+                    if not targetX or not targetY then
+                        if cfg.spots and cfg.spots[spotIdx] then
+                            targetX = cfg.spots[spotIdx].x
+                            targetY = cfg.spots[spotIdx].y
+                        elseif cfg.posX and cfg.posY then
+                            targetX = cfg.posX
+                            targetY = cfg.posY
+                        end
                     end
 
                     local targetTransferId = nil
@@ -3150,14 +3316,23 @@ local function CreateModUI()
 
             _G.Mod_AutoFarmBoss_Ignore = _G.Mod_AutoFarmBoss_Ignore or {}
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀM IN LOG ĐIỀU KHIỂN (LOGMSG DEBUG TOGGLE)
+            -- Mô tả: Mặc định ẩn toàn bộ Log nổi trên màn hình để giao diện sạch sẽ;
+            --        chỉ hiện khi có cờ _G.Mod_DebugLog_Enabled = true hoặc có lệnh bí mật /debug.
+            -- =========================================================================
             local function LogMsg(msg)
-                -- if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                --     _G.FloatingWordUtility.QuickMsg(tostring(msg))
-                -- end
-                -- if _G.WriteLog then
-                --     _G.WriteLog("[Mod AutoBoss] " .. tostring(msg))
-                -- end
+                local showDebug = (_G.Mod_DebugLog_Enabled == true) or (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/debug"))
+                if showDebug and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    pcall(function()
+                        _G.FloatingWordUtility.QuickMsg(tostring(msg))
+                    end)
+                end
+                if _G.WriteLog then
+                    pcall(function() _G.WriteLog("[Mod AutoBoss] " .. tostring(msg)) end)
+                end
             end
+            _G.LogMsg = LogMsg
 
             local function GetMapName(mapId)
                 if not mapId then return "Unknown" end
@@ -3756,7 +3931,8 @@ local function CreateModUI()
             -- Mô tả: FSM điều khiển tự đổi map, tìm boss, di chuyển, xả combo, chờ nhặt đồ.
             -- =========================================================================
             _G.Mod_AutoFarmBoss_Update = function()
-                if not _G.Mod_AutoFarmBoss_Enabled then
+                local isAutoHuntActive = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                if not _G.Mod_AutoFarmBoss_Enabled and not isAutoHuntActive then
                     if _G.Mod_AutoFarmBoss_State ~= 0 then
                         _G.Mod_AutoFarmBoss_State = 0
                         _G.Mod_AutoFarmBoss_Target = nil
@@ -3768,7 +3944,7 @@ local function CreateModUI()
                                 _G.RoleManager.me:StopMove()
                             end
                         end)
-                        LogMsg("Đã TẮT Auto Farm.")
+                        LogMsg("Đã TẮT Auto Farm & Auto Hunt.")
                     end
                     if _G.Mod_AutoHH_Enabled then
                         pcall(function()
@@ -3878,6 +4054,30 @@ local function CreateModUI()
                 local currentMapId = _G.SceneData and _G.SceneData.mapId
                 local currentSec = _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime() or os.time()
                 local nowRealtime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.clock()
+
+                -- LOG TRẠNG THÁI FSM RA MÀN HÌNH ĐỊNH KỲ MỖI 2.5S
+                local nowLogTime = CS.UnityEngine.Time.realtimeSinceStartup
+                if nowLogTime - (_G.Mod_LastFSMStatusLogTime or 0) >= 2.5 then
+                    _G.Mod_LastFSMStatusLogTime = nowLogTime
+                    local isHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                    local kunStatus = _G.Mod_AutoHunt_KundunActive and ("KUN:" .. (_G.Mod_AutoHunt_CurrentKunName or tostring(_G.Mod_AutoHunt_KundunTargetMap))) or "NoKun"
+                    local tgtName = _G.Mod_AutoFarmBoss_Target and (_G.Mod_AutoFarmBoss_Target.cfg and _G.Mod_AutoFarmBoss_Target.cfg.name or "HasTgt") or "None"
+                    local stStr = string.format("[FSM S:%d] %s | %s | Tgt:%s | Map:%s",
+                        _G.Mod_AutoFarmBoss_State or 0,
+                        isHunt and "HUNT" or "FARM",
+                        kunStatus,
+                        tgtName,
+                        tostring(currentMapId or 0))
+                    LogMsg(stStr)
+                end
+
+                -- =========================================================================
+                -- [MOD FEATURE]: TẠM DỪNG AUTO BOSS KHI ĐANG CANH KUNDUN (KUNDUN PRIORITY INTERRUPT)
+                -- Mô tả: Khi Kundun xuất hiện, Auto Boss nhường quyền 100% cho Auto PK canh điểm hồi sinh Kundun.
+                -- =========================================================================
+                if _G.Mod_AutoHunt_KundunActive then
+                    return
+                end
 
 
 
@@ -4090,6 +4290,14 @@ local function CreateModUI()
                 local status, err = pcall(function()
                     -- STATE 0: BOOT & COMBAT CHECK
                     if _G.Mod_AutoFarmBoss_State == 0 then
+                        local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if isAutoHunt then
+                            LogMsg("[Auto Hunt] Bắt đầu tuần tra điểm Boss...")
+                            _G.Mod_AutoFarmBoss_State = 2
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
+                            return
+                        end
+
                         local foundCombatBoss = nil
                         if _G.RoleManager and _G.RoleManager.GetRolesByType then
                             local monsterRoles = _G.RoleManager.GetRolesByType(2)
@@ -4186,35 +4394,38 @@ local function CreateModUI()
 
                         -- STATE 2: FETCH DATA & FIND TARGET
                     elseif _G.Mod_AutoFarmBoss_State == 2 then
-                        if currentSec > (_G.Mod_AutoFarmBoss_NextReqTime or 0) then
-                            LogMsg("Gửi yêu cầu lấy Data Boss từ Server...")
-                            if _G.NetManager and _G.MapMessage then
-                                _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
-                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
-                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
-                                _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 1 })
-                                _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 2 })
-                                _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 3 })
+                        local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if not isAutoHunt then
+                            if currentSec > (_G.Mod_AutoFarmBoss_NextReqTime or 0) then
+                                LogMsg("Gửi yêu cầu lấy Data Boss từ Server...")
+                                if _G.NetManager and _G.MapMessage then
+                                    _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
+                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                                    _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 1 })
+                                    _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 2 })
+                                    _G.NetManager.Send(_G.MapMessage.ReqBossStateByType, { type = 3 })
+                                end
+                                _G.Mod_AutoFarmBoss_NextReqTime = currentSec + 15
+                                _G.Mod_AutoFarmBoss_ReqSentTime = currentSec
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
+                                return
                             end
-                            _G.Mod_AutoFarmBoss_NextReqTime = currentSec + 15
-                            _G.Mod_AutoFarmBoss_ReqSentTime = currentSec
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
-                            return
-                        end
 
-                        if _G.Mod_MapBosses ~= _G.Mod_LastMapBossesRef then
-                            _G.Mod_LastMapBossesRef = _G.Mod_MapBosses
-                            _G.Mod_MapBosses_UpdateTime = currentSec
-                        end
+                            if _G.Mod_MapBosses ~= _G.Mod_LastMapBossesRef then
+                                _G.Mod_LastMapBossesRef = _G.Mod_MapBosses
+                                _G.Mod_MapBosses_UpdateTime = currentSec
+                            end
 
-                        local timeSinceReq = currentSec - (_G.Mod_AutoFarmBoss_ReqSentTime or 0)
-                        local dataFresh = (_G.Mod_MapBosses_UpdateTime and _G.Mod_MapBosses_UpdateTime >= (_G.Mod_AutoFarmBoss_ReqSentTime or 0))
+                            local timeSinceReq = currentSec - (_G.Mod_AutoFarmBoss_ReqSentTime or 0)
+                            local dataFresh = (_G.Mod_MapBosses_UpdateTime and _G.Mod_MapBosses_UpdateTime >= (_G.Mod_AutoFarmBoss_ReqSentTime or 0))
 
-                        if not dataFresh and timeSinceReq < 10 then
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
-                            return
-                        elseif not dataFresh then
-                            LogMsg("Server phản hồi chậm. Bắt buộc dùng Data cũ...")
+                            if not dataFresh and timeSinceReq < 10 then
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                return
+                            elseif not dataFresh then
+                                LogMsg("Server phản hồi chậm. Bắt buộc dùng Data cũ...")
+                            end
                         end
 
                         local bestBoss = nil
@@ -4223,7 +4434,157 @@ local function CreateModUI()
 
                         local candidates = {}
 
-                        local function CheckConfig(mapsConfig, tierIndex)
+                        if isAutoHunt then
+                            -- =========================================================================
+                            -- [MOD FEATURE]: THU THẬP DANH SÁCH TUẦN TRA AUTO HUNT THEO ƯU TIÊN VÀ TÁCH VỊ TRÍ
+                            -- Mô tả:
+                            -- 1. Ưu tiên: Hoang Dã (Cột 3 > 2 > 1) -> Trang Sức (Cột 2 > 1) -> Thí Luyện (Cột 3 > 2 > 1) -> Luyện Ngục (Cột 3 > 2 > 1)
+                            -- 2. Boss có 2 vị trí (spots > 1 hoặc transferIds > 1): Tách thành 2 mục tiêu riêng [Boss 1] và [Boss 2]
+                            -- 3. Mỗi vị trí có tọa độ (x, y) chuẩn lấy qua GetBossSpotCoord
+                            -- 4. Quản lý ignoreKey riêng biệt theo từng vị trí (cfg.id .. "_" .. mapId .. "_" .. spotIdx)
+                            -- 5. Khi hết toàn bộ danh sách: Tự động reset ignore để bắt đầu vòng tuần tra mới ngay lập tức
+                            -- =========================================================================
+                            local huntOrder = 0
+
+                            local availableTiers = (GetAvailableTiers and GetAvailableTiers()) or {}
+                            local tiers = {}
+                            for i = #availableTiers, 1, -1 do
+                                table.insert(tiers, availableTiers[i])
+                            end
+                            if #tiers == 0 then
+                                local p = _G.Mod_Config_Reincarnation_Primary or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
+                                tiers = { "C" .. tostring(p) }
+                            end
+
+                            local mapTypeRules = {
+                                [1] = { name = "Hoang Dã", cols = { 3, 2, 1 } },
+                                [2] = { name = "Trang Sức", cols = { 2, 1 } },
+                                [3] = { name = "Thí Luyện", cols = { 3, 2, 1 } },
+                                [4] = { name = "Luyện Ngục", cols = { 3, 2, 1 } },
+                            }
+
+                            local function BuildHuntCandidatesList(ignoreFilter)
+                                local list = {}
+                                local totalBossChecked = 0
+                                for _, tTag in ipairs(tiers) do
+                                    local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tTag)
+                                    if mapsConfig then
+                                        for mIdx = 1, math.min(#mapsConfig, 4) do
+                                            local mapCfg = mapsConfig[mIdx]
+                                            local rule = mapTypeRules[mIdx]
+                                            if mapCfg and mapCfg.bosses and rule then
+                                                local colMap = {}
+                                                for _, b in ipairs(mapCfg.bosses) do
+                                                    if not b.isExitBtn then
+                                                        local c = b.col or 1
+                                                        if not colMap[c] then colMap[c] = {} end
+                                                        table.insert(colMap[c], b)
+                                                    end
+                                                end
+
+                                                for _, targetCol in ipairs(rule.cols) do
+                                                    local bList = colMap[targetCol]
+                                                    if bList then
+                                                        for _, cfg in ipairs(bList) do
+                                                            if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
+                                                                _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
+                                                            end
+
+                                                            if _G.Mod_AutoFarmBoss_Config[cfg.id] then
+                                                                local numSpots = GetBossSpotCount and GetBossSpotCount(cfg) or 1
+                                                                local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
+                                                                local bestLine = (bossData and bossData.lineNums and bossData.lineNums[1]) or 1
+
+                                                                for sIdx = 1, numSpots do
+                                                                    totalBossChecked = totalBossChecked + 1
+                                                                    local posX, posY = (GetBossSpotCoord and GetBossSpotCoord(cfg, sIdx))
+                                                                    if not posX or not posY then
+                                                                        if cfg.posX and cfg.posY then
+                                                                            posX, posY = cfg.posX, cfg.posY
+                                                                        elseif cfg.transferIds and cfg.transferIds[sIdx] and _G.Mod_BossTransferCoords and _G.Mod_BossTransferCoords[cfg.transferIds[sIdx]] then
+                                                                            posX = _G.Mod_BossTransferCoords[cfg.transferIds[sIdx]].x
+                                                                            posY = _G.Mod_BossTransferCoords[cfg.transferIds[sIdx]].y
+                                                                        elseif cfg.transferId and _G.Mod_BossTransferCoords and _G.Mod_BossTransferCoords[cfg.transferId] then
+                                                                            posX = _G.Mod_BossTransferCoords[cfg.transferId].x
+                                                                            posY = _G.Mod_BossTransferCoords[cfg.transferId].y
+                                                                        end
+                                                                    end
+
+                                                                    if posX and posY then
+                                                                        local ignoreKey = cfg.id .. "_" .. mapCfg.mapId .. "_" .. sIdx
+                                                                        local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
+                                                                        if (not ignoreFilter) or (currentSec > ignoreUntil) then
+                                                                            huntOrder = huntOrder + 1
+                                                                            local spotSuffix = ""
+                                                                            if numSpots > 1 then
+                                                                                spotSuffix = string.format(" [Boss %d]", sIdx)
+                                                                            end
+                                                                            table.insert(list, {
+                                                                                name = cfg.name .. spotSuffix,
+                                                                                id = cfg.id,
+                                                                                score = 1000000 - huntOrder,
+                                                                                isAlive = true,
+                                                                                wait = 0,
+                                                                                mapName = mapCfg.title or GetMapName(mapCfg.mapId),
+                                                                                mapId = mapCfg.mapId,
+                                                                                spotIdx = sIdx,
+                                                                                posX = posX,
+                                                                                posY = posY,
+                                                                                ignoreKey = ignoreKey,
+                                                                                obj = {
+                                                                                    cfg = cfg,
+                                                                                    mapCfg = mapCfg,
+                                                                                    line = bestLine,
+                                                                                    spotIdx = sIdx,
+                                                                                    currentPosX = posX,
+                                                                                    currentPosY = posY,
+                                                                                    ignoreKey = ignoreKey,
+                                                                                    isAutoHuntSpot = true,
+                                                                                    isAlive = true,
+                                                                                    wait = 0
+                                                                                }
+                                                                            })
+                                                                        end
+                                                                    end
+                                                                end
+                                                            end
+                                                        end
+                                                    end
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                                return list, totalBossChecked
+                            end
+
+                            local huntList, totalChecked = BuildHuntCandidatesList(true)
+                            if #huntList == 0 and totalChecked > 0 then
+                                _G.Mod_AutoFarmBoss_Ignore = {}
+                                huntOrder = 0
+                                huntList, totalChecked = BuildHuntCandidatesList(true)
+                                if #huntList == 0 then
+                                    huntList, totalChecked = BuildHuntCandidatesList(false)
+                                end
+                            end
+                            if totalChecked == 0 then
+                                local nowWarn = CS.UnityEngine.Time.realtimeSinceStartup
+                                if nowWarn - (_G.Mod_LastNoBossWarnTime or 0) >= 3.0 then
+                                    _G.Mod_LastNoBossWarnTime = nowWarn
+                                    LogMsg("[Auto Hunt] Chưa tick chọn Boss nào trong Tab Auto Boss! Hãy tick chọn Boss cần hunt.")
+                                end
+                            elseif #huntList > 0 then
+                                local nowInfo = CS.UnityEngine.Time.realtimeSinceStartup
+                                if nowInfo - (_G.Mod_LastHuntInfoTime or 0) >= 4.0 then
+                                    _G.Mod_LastHuntInfoTime = nowInfo
+                                    LogMsg(string.format("[Auto Hunt] Đã chọn %d Boss | Có %d điểm tuần tra.", totalChecked, #huntList))
+                                end
+                            end
+                            candidates = huntList
+                        else
+                            local autoHuntOrder = 0
+
+                            local function CheckConfig(mapsConfig, tierIndex)
                             if not mapsConfig then return end
                             for mIdx, mapCfg in ipairs(mapsConfig) do
                                 -- Map type priority: Hoang Dã (mIdx=1) > Trang Sức (mIdx=2) > Tháp/Cánh (mIdx=3) > Luyện Ngục (mIdx=4)
@@ -4231,6 +4592,7 @@ local function CreateModUI()
 
                                 if mapCfg.bosses then
                                     for bIdx, cfg in ipairs(mapCfg.bosses) do
+                                        autoHuntOrder = autoHuntOrder + 1
                                         if _G.Mod_AutoFarmBoss_Config[cfg.id] == nil then
                                             _G.Mod_AutoFarmBoss_Config[cfg.id] = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_" .. cfg.id, 0) == 1
                                         end
@@ -4238,87 +4600,109 @@ local function CreateModUI()
                                             local ignoreKey = cfg.id .. "_" .. mapCfg.mapId
                                             local ignoreUntil = _G.Mod_AutoFarmBoss_Ignore[ignoreKey] or 0
                                             if currentSec > ignoreUntil then
-                                                -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
-                                                local colVal = cfg.col or 1
-                                                local colPriority = math.min(colVal, 3) * 100
+                                                if isAutoHunt then
+                                                    -- =========================================================================
+                                                    -- [MOD FEATURE]: TUẦN TRA ĐIỂM BOSS LIÊN TỤC THEO THỨ TỰ (AUTO HUNT JUMP LOOP)
+                                                    -- Mô tả: Khi Auto Hunt bật, không quan tâm trạng thái sống/chết của Boss,
+                                                    --        cứ đúng thứ tự lựa chọn của người chơi mà lập tức nhảy tới điểm Boss.
+                                                    -- =========================================================================
+                                                    local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
+                                                    local bestLine = (bossData and bossData.lineNums and bossData.lineNums[1]) or 1
+                                                    local huntOrderScore = 1000000 - autoHuntOrder
 
-                                                local bossData = mapBosses[mapCfg.mapId] and
-                                                    mapBosses[mapCfg.mapId][cfg.id]
-                                                if bossData then
-                                                    local bestLine = nil
-                                                    local isAlive = false
-                                                    local respawnWait = 9999
+                                                    table.insert(candidates, {
+                                                        name = cfg.name,
+                                                        id = cfg.id,
+                                                        score = huntOrderScore,
+                                                        isAlive = true,
+                                                        wait = 0,
+                                                        mapName = mapCfg.title or GetMapName(mapCfg.mapId),
+                                                        mapId = mapCfg.mapId,
+                                                        obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = true, wait = 0 }
+                                                    })
+                                                else
+                                                    -- Col priority: Col 3 (LV cao nhất) = +300, Col 2 = +200, Col 1 = +100
+                                                    local colVal = cfg.col or 1
+                                                    local colPriority = math.min(colVal, 3) * 100
 
-                                                    for _, lineNum in ipairs(bossData.lineNums) do
-                                                        local totalAlive = bossData.aliveCount[lineNum] or 0
-                                                        local deadList = bossData.deadTimes[lineNum] or {}
+                                                    local bossData = mapBosses[mapCfg.mapId] and
+                                                        mapBosses[mapCfg.mapId][cfg.id]
+                                                    if bossData then
+                                                        local bestLine = nil
+                                                        local isAlive = false
+                                                        local respawnWait = 9999
 
-                                                        -- =========================================================================
-                                                        -- [MOD FEATURE]: TÍNH TOÁN totalAlive CHO BOSS ĐA CỔNG (TRANSFERIDS > 1)
-                                                        -- Mô tả: Chỉ áp dụng riêng cho Boss có nhiều transferIds (như Luyện Ngục).
-                                                        --        So sánh số Cổng (transferIds) với số Cổng đang có thời gian hồi sinh.
-                                                        --        Nếu số Cổng chết < tổng Cổng, tức là vẫn còn Cổng sống (totalAlive > 0).
-                                                        -- =========================================================================
-                                                        if cfg.transferIds and #cfg.transferIds > 1 then
-                                                            local bStates = (bossData.bossStates and bossData.bossStates[lineNum]) or {}
-                                                            local deadCount = 0
-                                                            for _, tId in ipairs(cfg.transferIds) do
-                                                                for _, s in ipairs(bStates) do
-                                                                    if s.transferId and s.transferId == tId and s.reliveTime and s.reliveTime > currentSec then
-                                                                        deadCount = deadCount + 1
-                                                                        break
+                                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                                            local totalAlive = bossData.aliveCount[lineNum] or 0
+                                                            local deadList = bossData.deadTimes[lineNum] or {}
+
+                                                            -- =========================================================================
+                                                            -- [MOD FEATURE]: TÍNH TOÁN totalAlive CHO BOSS ĐA CỔNG (TRANSFERIDS > 1)
+                                                            -- Mô tả: Chỉ áp dụng riêng cho Boss có nhiều transferIds (như Luyện Ngục).
+                                                            --        So sánh số Cổng (transferIds) với số Cổng đang có thời gian hồi sinh.
+                                                            --        Nếu số Cổng chết < tổng Cổng, tức là vẫn còn Cổng sống (totalAlive > 0).
+                                                            -- =========================================================================
+                                                            if cfg.transferIds and #cfg.transferIds > 1 then
+                                                                local bStates = (bossData.bossStates and bossData.bossStates[lineNum]) or {}
+                                                                local deadCount = 0
+                                                                for _, tId in ipairs(cfg.transferIds) do
+                                                                    for _, s in ipairs(bStates) do
+                                                                        if s.transferId and s.transferId == tId and s.reliveTime and s.reliveTime > currentSec then
+                                                                            deadCount = deadCount + 1
+                                                                            break
+                                                                        end
                                                                     end
                                                                 end
-                                                            end
-                                                            if deadCount == 0 and #bStates > 0 then
-                                                                for _, rt in ipairs(deadList) do
-                                                                    if rt > currentSec then deadCount = deadCount + 1 end
+                                                                if deadCount == 0 and #bStates > 0 then
+                                                                    for _, rt in ipairs(deadList) do
+                                                                        if rt > currentSec then deadCount = deadCount + 1 end
+                                                                    end
+                                                                end
+                                                                if deadCount < #cfg.transferIds then
+                                                                    totalAlive = math.max(totalAlive, #cfg.transferIds - deadCount)
+                                                                else
+                                                                    totalAlive = 0
                                                                 end
                                                             end
-                                                            if deadCount < #cfg.transferIds then
-                                                                totalAlive = math.max(totalAlive, #cfg.transferIds - deadCount)
-                                                            else
-                                                                totalAlive = 0
-                                                            end
-                                                        end
 
-                                                        if totalAlive > 0 then
-                                                            bestLine = lineNum
-                                                            isAlive = true
-                                                            respawnWait = 0
-                                                            break
-                                                        end
-
-                                                        if not isAlive and #deadList > 0 then
-                                                            local rt = deadList[1]
-                                                            if rt <= currentSec + 30 then
+                                                            if totalAlive > 0 then
                                                                 bestLine = lineNum
-                                                                respawnWait = math.max(0, rt - currentSec)
+                                                                isAlive = true
+                                                                respawnWait = 0
                                                                 break
                                                             end
-                                                        end
-                                                    end
 
-                                                    if bestLine then
-                                                        local aliveScore = isAlive and 1000000 or 0
-                                                        local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
-                                                        local tierScore = tierIndex * 100000
-                                                        local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
-
-                                                        if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
-                                                            finalScore = finalScore + 5000
+                                                            if not isAlive and #deadList > 0 then
+                                                                local rt = deadList[1]
+                                                                if rt <= currentSec + 30 then
+                                                                    bestLine = lineNum
+                                                                    respawnWait = math.max(0, rt - currentSec)
+                                                                    break
+                                                                end
+                                                            end
                                                         end
 
-                                                        table.insert(candidates, {
-                                                            name = cfg.name,
-                                                            id = cfg.id,
-                                                            score = finalScore,
-                                                            isAlive = isAlive,
-                                                            wait = respawnWait,
-                                                            mapName = mapCfg.title or GetMapName(mapCfg.mapId),
-                                                            mapId = mapCfg.mapId,
-                                                            obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
-                                                        })
+                                                        if bestLine then
+                                                            local aliveScore = isAlive and 1000000 or 0
+                                                            local waitScore = (not isAlive) and math.max(0, (30 - respawnWait) * 100) or 0
+                                                            local tierScore = tierIndex * 100000
+                                                            local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
+
+                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
+                                                                finalScore = finalScore + 5000
+                                                            end
+
+                                                            table.insert(candidates, {
+                                                                name = cfg.name,
+                                                                id = cfg.id,
+                                                                score = finalScore,
+                                                                isAlive = isAlive,
+                                                                wait = respawnWait,
+                                                                mapName = mapCfg.title or GetMapName(mapCfg.mapId),
+                                                                mapId = mapCfg.mapId,
+                                                                obj = { cfg = cfg, mapCfg = mapCfg, line = bestLine, isAlive = isAlive, wait = respawnWait }
+                                                            })
+                                                        end
                                                     end
                                                 end
                                             end
@@ -4328,9 +4712,10 @@ local function CreateModUI()
                             end
                         end
 
-                        if GetAvailableTiers then
-                            for tIdx, tTag in ipairs(GetAvailableTiers()) do
-                                CheckConfig(GetMapsConfigByTier(tTag), tIdx)
+                            if GetAvailableTiers then
+                                for tIdx, tTag in ipairs(GetAvailableTiers()) do
+                                    CheckConfig(GetMapsConfigByTier(tTag), tIdx)
+                                end
                             end
                         end
 
@@ -4345,9 +4730,14 @@ local function CreateModUI()
                                     .mapName, c.score, st))
                             end
                         else
-                            LogMsg("--- Không có Boss phù hợp Farm ---")
-                            local countConfig = 0
-                            local countNoData = 0
+                            if isAutoHunt then
+                                LogMsg("[Auto Hunt] Đang làm mới chu trình tuần tra Boss...")
+                                _G.Mod_AutoFarmBoss_Ignore = {}
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                            else
+                                LogMsg("--- Không có Boss phù hợp Farm ---")
+                                local countConfig = 0
+                                local countNoData = 0
                             local function DebugConfig(mapsConfig)
                                 if not mapsConfig then return end
                                 for _, mapCfg in ipairs(mapsConfig) do
@@ -4411,12 +4801,15 @@ local function CreateModUI()
                                 end
                             end
                         end
+                    end
 
-                        if bestBoss then
+                    if bestBoss then
                             _G.Mod_AutoFarmBoss_Target = bestBoss
                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                            if bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 3) then
-                                LogMsg(string.format("Bắt đầu săn: %s (Map: %s)", bestBoss.cfg.name,
+                            if isAutoHunt or bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 3) then
+                                LogMsg(string.format("%s: %s (Map: %s)",
+                                    isAutoHunt and "[Auto Hunt] Tuần tra Boss" or "Bắt đầu săn",
+                                    bestBoss.cfg.name,
                                     GetMapName(bestBoss.mapCfg.mapId)))
                                 _G.Mod_AutoFarmBoss_Target = bestBoss
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
@@ -4425,23 +4818,28 @@ local function CreateModUI()
                                 -- [MOD FEATURE]: KHỞI TẠO VỊ TRÍ/CỔNG BAN ĐẦU CHO BOSS (BOSS 1 ĐẦU TIÊN)
                                 -- Mô tả: Chọn vị trí 1 / cổng 1 ban đầu, luôn chuyển sang State 3 để bay đến mục tiêu
                                 -- =========================================================================
-                                bestBoss.currentPosX = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].x) or bestBoss.cfg.posX
-                                bestBoss.currentPosY = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].y) or bestBoss.cfg.posY
-                                bestBoss.currentTransferId = (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 and bestBoss.cfg.transferIds[1]) or bestBoss.cfg.transferId
+                                if not isAutoHunt then
+                                    bestBoss.currentPosX = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].x) or bestBoss.cfg.posX
+                                    bestBoss.currentPosY = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].y) or bestBoss.cfg.posY
+                                    bestBoss.currentTransferId = (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 and bestBoss.cfg.transferIds[1]) or bestBoss.cfg.transferId
 
-                                bestBoss.cfg.posX = bestBoss.currentPosX
-                                bestBoss.cfg.posY = bestBoss.currentPosY
-                                bestBoss.cfg.transferId = bestBoss.currentTransferId
-                                bestBoss.triedSecondSpot = false
+                                    bestBoss.cfg.posX = bestBoss.currentPosX
+                                    bestBoss.cfg.posY = bestBoss.currentPosY
+                                    bestBoss.cfg.transferId = bestBoss.currentTransferId
+                                    bestBoss.triedSecondSpot = false
+                                else
+                                    bestBoss.cfg.posX = bestBoss.currentPosX
+                                    bestBoss.cfg.posY = bestBoss.currentPosY
+                                end
 
                                 local isCallFlag = (bestBoss.cfg.useCallFlag and bestBoss.cfg.posX and bestBoss.cfg.posY)
                                 local currentLine = _G.SceneData and _G.SceneData.lineIndex or 1
                                 _G.Mod_TrainArrivedAtPos = false
 
                                 local hasMultiple = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 1) or (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 1)
-                                if hasMultiple or isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
+                                if isAutoHunt or hasMultiple or isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
                                     _G.Mod_AutoFarmBoss_State = 3
-                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + (isAutoHunt and 0.2 or 1.0)
                                 else
                                     _G.Mod_AutoFarmBoss_State = 4
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
@@ -4451,6 +4849,11 @@ local function CreateModUI()
                                     bestBoss.wait))
                                 _G.Mod_AutoFarmBoss_Target = nil
                                 if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
+
+                                if isAutoHunt then
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                end
 
                                 if bestBoss.wait and bestBoss.wait > 5 and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                                     local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
@@ -4469,7 +4872,10 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_Target = nil
                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
 
-                            if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                            if isAutoHunt then
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            elseif _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
                                 local isStillReturning, isChangingMap = Mod_PerformAutoTrainAndSmelt()
                                 if isChangingMap then
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
@@ -4499,6 +4905,49 @@ local function CreateModUI()
                         local target = _G.Mod_AutoFarmBoss_Target
                         if not target then
                             _G.Mod_AutoFarmBoss_State = 1
+                            return
+                        end
+
+                        local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if isAutoHunt then
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TRUYỀN TỐNG AUTO HUNT BẰNG REQCALLFLAG (100% REQCALLFLAG)
+                            -- Mô tả: Dùng ReqCallFlag bay thẳng tới (mapId, line, targetX, targetY) của từng điểm Boss.
+                            --        Không phụ thuộc cổng dịch chuyển, không bị kẹt trong phó bản, không qua Lorencia.
+                            -- =========================================================================
+                            local targetX = target.currentPosX or target.cfg.posX
+                            local targetY = target.currentPosY or target.cfg.posY
+                            local targetMap = target.mapCfg.mapId
+                            local targetLine = target.line or 1
+
+                            LogMsg(string.format("[Auto Hunt] Bay tới %s%s (Map %s: %d, %d)...",
+                                tostring(target.cfg.name),
+                                target.spotIdx and (" [Boss " .. target.spotIdx .. "]") or "",
+                                GetMapName(targetMap), targetX or 0, targetY or 0))
+
+                            local called = false
+                            if _G.networkRequest and _G.networkRequest.ReqCallFlag and targetX and targetY then
+                                pcall(function()
+                                    _G.networkRequest.ReqCallFlag(nil, nil, targetMap, targetLine, targetX, targetY)
+                                    called = true
+                                end)
+                            end
+                            if not called and _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag and targetX and targetY then
+                                pcall(function()
+                                    _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                        mapId = targetMap,
+                                        line = targetLine,
+                                        x = targetX,
+                                        y = targetY
+                                    })
+                                    called = true
+                                end)
+                            end
+
+                            _G.Mod_AutoFarmBoss_State = 4
+                            _G.Mod_AutoFarmBoss_TargetWait = 0
+                            _G.Mod_AutoFarmBoss_DidJiggle = false
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.2
                             return
                         end
 
@@ -4557,11 +5006,13 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_TargetWait = (_G.Mod_AutoFarmBoss_TargetWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_TargetWait > 3 then
                                 LogMsg("Lỗi: Không thể bay tới Map Boss. Bỏ qua điểm này 60s")
-                                _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 60
+                                local igKey = target.ignoreKey or (target.cfg.id .. "_" .. target.mapCfg.mapId .. "_" .. (target.spotIdx or 1))
+                                _G.Mod_AutoFarmBoss_Ignore[igKey] = currentSec + 60
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                _G.Mod_AutoFarmBoss_State = 1
+                                local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                                _G.Mod_AutoFarmBoss_State = isAutoHunt and 2 or 1
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + (isAutoHunt and 0.2 or 1.0)
                             else
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
@@ -4592,6 +5043,74 @@ local function CreateModUI()
                         if _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight then
                             _G.RoleManager.me
                                 :SetAutoTaskFight("None")
+                        end
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: CHẾ ĐỘ AUTO HUNT TẠI BÃI BOSS (STATE 4: QUÉT MỤC TIÊU PK)
+                        -- Mô tả: Khi Auto Hunt bật qua secret command /autohunt:
+                        --        - Luôn duy trì chế độ PK Toàn Bộ (param = 3)
+                        --        - Bỏ qua kiểm tra máu & sở hữu Boss, không đánh Boss
+                        --        - Quét người chơi theo Khóa Mục Tiêu (nếu trống/tắt thì PK ALL)
+                        --        - Nếu không có mục tiêu: Lập tức nhảy sang Boss khác không chờ đợi
+                        --        - Nếu có mục tiêu: Khóa mục tiêu, xả skill PK và chuyển sang State 5
+                        -- =========================================================================
+                        local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if isAutoHunt then
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            if me then
+                                if me.PKMode ~= 3 and _G.NetManager and _G.RoleMessage and _G.RoleMessage.ReqSetPKMode then
+                                    _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 3 })
+                                end
+
+                                local scanRange = (_G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0) and _G.Mod_CustomAttackRange or 20
+                                local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, scanRange, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                                local validTargets = {}
+                                local useLock = _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= ""
+
+                                if players and #players > 0 then
+                                    for _, p in ipairs(players) do
+                                        local isProt = (_G.Mod_IsPlayerProtected and _G.Mod_IsPlayerProtected(p)) or false
+                                        if p and not p.isDead and (p.hp and p.hp > 0) and not isProt then
+                                            if useLock then
+                                                if _G.Mod_IsMatchLockTarget and _G.Mod_IsMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                    table.insert(validTargets, p)
+                                                end
+                                            else
+                                                table.insert(validTargets, p)
+                                            end
+                                        end
+                                    end
+                                end
+
+                                if #validTargets > 0 then
+                                    table.sort(validTargets, function(a, b)
+                                        local distA = (a and a.tempPathFindingDistance) or 9999
+                                        local distB = (b and b.tempPathFindingDistance) or 9999
+                                        return distA < distB
+                                    end)
+                                    local tgt = validTargets[1]
+                                    if me.SetTarget then me:SetTarget(tgt) else me.TargetAvatar = tgt end
+                                    if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                    _G.Mod_AutoHunt_NoTargetStartTime = nil
+                                    _G.Mod_AutoFarmBoss_State = 5
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    local pName = tgt.name or (tgt.data and tgt.data.name) or "Người chơi"
+                                    local spotStr = target.spotIdx and (" [Boss " .. target.spotIdx .. "]") or ""
+                                    LogMsg(string.format("[Auto Hunt] Thấy mục tiêu %s tại %s%s! Khóa mục tiêu và bắt đầu PK...", tostring(pName), tostring(target.cfg.name or ""), spotStr))
+                                    return
+                                else
+                                    local spotStr = target.spotIdx and (" [Boss " .. target.spotIdx .. "]") or ""
+                                    LogMsg(string.format("[Auto Hunt] Không tìm thấy mục tiêu tại %s%s. Bỏ qua và chuyển ngay sang điểm tiếp theo!", tostring(target.cfg.name or ""), spotStr))
+                                    local igKey = target.ignoreKey or (target.cfg.id .. "_" .. target.mapCfg.mapId .. "_" .. (target.spotIdx or 1))
+                                    _G.Mod_AutoFarmBoss_Ignore[igKey] = currentSec + 60
+                                    _G.Mod_AutoFarmBoss_Target = nil
+                                    _G.Mod_AutoHunt_NoTargetStartTime = nil
+                                    _G.Mod_AutoFarmBoss_State = 2
+                                    _G.Mod_AutoFarmBoss_TargetWait = 0
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
+                                    return
+                                end
+                            end
                         end
 
                         local foundBoss = false
@@ -4708,6 +5227,126 @@ local function CreateModUI()
                         if not target then
                             _G.Mod_AutoFarmBoss_State = 1
                             return
+                        end
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: CHẾ ĐỘ AUTO HUNT TẠI BÃI BOSS (STATE 5: COMBAT PK & 5S TIMEOUT)
+                        -- Mô tả: Khi Auto Hunt bật:
+                        --        - Duy trì PK Toàn Bộ (param = 3) và ReleaseSkill vào người chơi
+                        --        - Chặn đánh quái/Boss
+                        --        - Nếu mục tiêu chết/biến mất: Tìm mục tiêu khác, nếu hết người thì chờ 5s rồi rút về Lorencia
+                        -- =========================================================================
+                        local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if isAutoHunt then
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            if not me or me.isDead or (me.hp and me.hp <= 0) then
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                return
+                            end
+
+                            -- Luôn duy trì chế độ PK Toàn Bộ
+                            if me.PKMode ~= 3 and _G.NetManager and _G.RoleMessage and _G.RoleMessage.ReqSetPKMode then
+                                _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 3 })
+                            end
+
+                            -- Chặn game tự chuyển sang đánh quái
+                            if me.isAutoFight == "AutoFight" and me.SetAutoFight then
+                                me:SetAutoFight("ReleaseSkill")
+                            end
+                            if me.isAutoTaskFight and me.isAutoTaskFight ~= "None" and me.SetAutoTaskFight then
+                                me:SetAutoTaskFight("None")
+                            end
+
+                            local scanRange = (_G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0) and _G.Mod_CustomAttackRange or 20
+                            local useLock = _G.Mod_LockTarget_Enabled and _G.Mod_LockTarget_Name and _G.Mod_LockTarget_Name ~= ""
+
+                            -- Kiểm tra mục tiêu hiện tại
+                            local curTgt = me.TargetAvatar
+                            local isCurTgtValid = false
+                            if curTgt and not curTgt.isDead and curTgt.hp and curTgt.hp > 0 and curTgt.RoleType == 1 then
+                                local isProt = (_G.Mod_IsPlayerProtected and _G.Mod_IsPlayerProtected(curTgt)) or false
+                                if not isProt then
+                                    if useLock then
+                                        if _G.Mod_IsMatchLockTarget and _G.Mod_IsMatchLockTarget(curTgt, _G.Mod_LockTarget_Name) then
+                                            isCurTgtValid = true
+                                        end
+                                    else
+                                        isCurTgtValid = true
+                                    end
+                                end
+                            end
+
+                            if isCurTgtValid then
+                                _G.Mod_AutoHunt_NoTargetStartTime = nil
+                                if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            end
+
+                            -- Mục tiêu hiện tại không còn hợp lệ / đã chết / biến mất
+                            if curTgt then
+                                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                            end
+
+                            -- Quét tìm mục tiêu mới xung quanh bãi boss
+                            local players = _G.RoleManager.GetRolesByTypeAndRangeAlive(1, scanRange, _G.RoleTargetManager and _G.RoleTargetManager.GetCanAttackRole)
+                            local validTargets = {}
+                            if players and #players > 0 then
+                                for _, p in ipairs(players) do
+                                    local isProt = (_G.Mod_IsPlayerProtected and _G.Mod_IsPlayerProtected(p)) or false
+                                    if p and not p.isDead and (p.hp and p.hp > 0) and not isProt then
+                                        if useLock then
+                                            if _G.Mod_IsMatchLockTarget and _G.Mod_IsMatchLockTarget(p, _G.Mod_LockTarget_Name) then
+                                                table.insert(validTargets, p)
+                                            end
+                                        else
+                                            table.insert(validTargets, p)
+                                        end
+                                    end
+                                end
+                            end
+
+                            if #validTargets > 0 then
+                                _G.Mod_AutoHunt_NoTargetStartTime = nil
+                                table.sort(validTargets, function(a, b)
+                                    local distA = (a and a.tempPathFindingDistance) or 9999
+                                    local distB = (b and b.tempPathFindingDistance) or 9999
+                                    return distA < distB
+                                end)
+                                local newTgt = validTargets[1]
+                                if me.SetTarget then me:SetTarget(newTgt) else me.TargetAvatar = newTgt end
+                                if me.SetAutoFight then me:SetAutoFight("ReleaseSkill") end
+                                local pName = newTgt.name or (newTgt.data and newTgt.data.name) or "Người chơi"
+                                LogMsg(string.format("[Auto Hunt] Đổi sang mục tiêu %s. Tiếp tục PK...", tostring(pName)))
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            end
+
+                            -- Không còn mục tiêu nào: đếm thời gian chờ 5s
+                            if not _G.Mod_AutoHunt_NoTargetStartTime then
+                                _G.Mod_AutoHunt_NoTargetStartTime = nowRealtime
+                                LogMsg("[Auto Hunt] Mục tiêu đã chết hoặc biến mất. Đang chờ 5s xem có mục tiêu mới không...")
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            end
+
+                            if nowRealtime - _G.Mod_AutoHunt_NoTargetStartTime >= 5.0 then
+                                local spotStr = target.spotIdx and (" [Boss " .. target.spotIdx .. "]") or ""
+                                LogMsg(string.format("[Auto Hunt] Hết 5s chờ không còn mục tiêu tại %s%s. Nhảy tiếp sang điểm khác!", tostring(target.cfg.name or ""), spotStr))
+                                local igKey = target.ignoreKey or (target.cfg.id .. "_" .. target.mapCfg.mapId .. "_" .. (target.spotIdx or 1))
+                                _G.Mod_AutoFarmBoss_Ignore[igKey] = currentSec + 60
+                                _G.Mod_AutoHunt_NoTargetStartTime = nil
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                if me.SetAutoFight then me:SetAutoFight("None") end
+                                if me.SetTarget then me:SetTarget(nil) else me.TargetAvatar = nil end
+                                _G.Mod_AutoFarmBoss_State = 2
+                                _G.Mod_AutoFarmBoss_TargetWait = 0
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.1
+                                return
+                            else
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            end
                         end
 
                         -- Đảm bảo chỉ tắt Auto Task Fight nếu nó đang bật (để không bị nháy liên tục)
@@ -7290,11 +7929,22 @@ local function CreateModUI()
                                                 _G.RoleManager.me:SetAutoFight("ReleaseSkill")
                                             end
                                         else
-                                            -- Hết đối thủ người chơi: CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange)
-                                            if isMonsterNearby(scanRange) then
-                                                if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
-                                                    if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
-                                                        _G.RoleManager.me:SetAutoFight("AutoFight")
+                                            -- Hết đối thủ người chơi:
+                                            local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                                            if not isAutoHunt then
+                                                -- CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange)
+                                                if isMonsterNearby(scanRange) then
+                                                    if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
+                                                        if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                                            _G.RoleManager.me:SetAutoFight("AutoFight")
+                                                        end
+                                                    end
+                                                end
+                                            else
+                                                -- Khi Auto Hunt BẬT: TUYỆT ĐỐI KHÔNG ĐÁNH QUÁI khi không có mục tiêu người chơi
+                                                if _G.RoleManager.me and _G.RoleManager.me.isAutoFight == "AutoFight" then
+                                                    if _G.RoleManager.me.SetAutoFight then
+                                                        _G.RoleManager.me:SetAutoFight("None")
                                                     end
                                                 end
                                             end
@@ -7427,6 +8077,204 @@ local function CreateModUI()
                 end
                 _G.Mod_StartReturnPosLoop()
 
+                -- =========================================================================
+                -- [MOD FEATURE]: TỰ ĐỘNG CANH & DÍ KUNDUN TRONG AUTO HUNT (KUNDUN AUTO HUNT WATCHER)
+                -- Mô tả: Chạy liên tục mỗi 0.5s khi Auto Hunt bật (kích hoạt bằng secret command /autohunt).
+                --        Tự động quét trạng thái Thánh Cốt (C4-C12, Map 250001) & Phù Văn (C6-C12, Map 270001).
+                --        Ưu tiên Thánh Cốt > Phù Văn.
+                --        Khi có Kundun xuất hiện:
+                --        - Tạm dừng Auto Boss
+                --        - Bật Auto PK (PK ON), bật Khóa Mục Tiêu, chuyển PK Mode ALL (3)
+                --        - Dùng ReqCallFlag bay lên điểm hồi sinh (110, 18) của map Kundun để Auto PK tự quét và dí
+                --        Khi hết Kundun:
+                --        - Bay về bãi train qua Mod_PerformAutoTrainAndSmelt()
+                --        - Tiếp tục vòng tuần tra Auto Boss như bình thường.
+                -- =========================================================================
+                _G.Mod_StartAutoHuntKundunLoop = function()
+                    _G.Mod_StartTrackedTimer("AutoHunt_KundunWatcher", 0.5, -1, function()
+                        if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+                        pcall(function()
+                            local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                            if not isAutoHunt then
+                                if _G.Mod_AutoHunt_KundunActive then
+                                    _G.Mod_AutoHunt_KundunActive = false
+                                    _G.Mod_AutoHunt_KundunTargetMap = nil
+                                end
+                                return
+                            end
+
+                            local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+
+                            -- 1. Gửi gói tin cập nhật dữ liệu Kundun định kỳ 1.5s
+                            if nowRealtime - (_G.Mod_LastAncientReqTime or 0) >= 1.5 then
+                                _G.Mod_LastAncientReqTime = nowRealtime
+                                pcall(function()
+                                    if _G.networkRequest and _G.networkRequest.ReqAncientBossInfo then
+                                        _G.networkRequest.ReqAncientBossInfo(16)
+                                        _G.networkRequest.ReqAncientBossInfo(17)
+                                    elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqAncientBossInfo then
+                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                                        _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                                    end
+                                end)
+                            end
+
+                            -- 2. Quét trạng thái Kundun xuất hiện theo chuẩn INFO KUNDUN BOSS
+                            -- Thánh Cốt (type 16): C4 limit 40, C5-C12 limit 70 (count >= limit hoặc isSatisfy == true là hiện)
+                            local hasHolySkeleton = false
+                            local holyTier = nil
+                            local holyMapId = nil
+
+                            if _G.SceneData and _G.SceneData.GetAncientBossData then
+                                for tier = 4, 12 do
+                                    local bossId = 20201000 + tier
+                                    local limit = (tier == 4) and 40 or 70
+                                    local count = 0
+                                    local isSatisfy, info = _G.SceneData:GetAncientBossData(16, bossId)
+                                    if isSatisfy == true then
+                                        count = limit
+                                    elseif isSatisfy == false and info and info.count then
+                                        count = info.count
+                                    end
+
+                                    if count >= limit or isSatisfy == true then
+                                        hasHolySkeleton = true
+                                        holyTier = tier
+                                        holyMapId = (info and info.mapId) or ((tier <= 4) and 250002 or 250001)
+                                        break
+                                    end
+                                end
+                            end
+
+                            -- Phù Văn (type 17): C6 limit 200, C7 limit 300, C8 limit 400, C9-C12 limit 500
+                            -- Chỉ xét Phù Văn nếu không có Thánh Cốt (Ưu tiên Thánh Cốt)
+                            local hasRune = false
+                            local runeTier = nil
+                            local runeMapId = nil
+
+                            if not hasHolySkeleton and _G.SceneData and _G.SceneData.GetAncientBossData then
+                                for tier = 6, 12 do
+                                    local bossId = 20211000 + tier
+                                    local limit = (tier >= 9) and 500 or (tier == 8 and 400 or (tier == 7 and 300 or 200))
+                                    local count = 0
+                                    local isSatisfy, info = _G.SceneData:GetAncientBossData(17, bossId)
+                                    if isSatisfy == true then
+                                        count = limit
+                                    elseif isSatisfy == false and info and info.count then
+                                        count = info.count
+                                    end
+
+                                    if count >= limit or isSatisfy == true then
+                                        hasRune = true
+                                        runeTier = tier
+                                        runeMapId = (info and info.mapId) or 270001
+                                        break
+                                    end
+                                end
+                            end
+
+                            local targetKunMap = nil
+                            local targetKunName = nil
+                            if hasHolySkeleton then
+                                targetKunMap = holyMapId
+                                targetKunName = string.format("Thánh Cốt C%d", holyTier)
+                            elseif hasRune then
+                                targetKunMap = runeMapId
+                                targetKunName = string.format("Phù Văn C%d", runeTier)
+                            end
+                            _G.Mod_AutoHunt_CurrentKunName = targetKunName
+
+                            -- 3. Xử lý khi CÓ KUNDUN
+                            if targetKunMap then
+                                if not _G.Mod_AutoHunt_KundunActive then
+                                    LogMsg(string.format("[Auto Hunt] PHÁT HIỆN %s XUẤT HIỆN! Bay tới hồi sinh (110, 18)...", targetKunName))
+                                end
+                                _G.Mod_AutoHunt_KundunActive = true
+                                _G.Mod_AutoHunt_KundunTargetMap = targetKunMap
+
+                                -- Bật Auto PK
+                                if not _G.Mod_AutoPK_Enabled then
+                                    _G.Mod_AutoPK_Enabled = true
+                                    pcall(function()
+                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPK_Enabled", 1)
+                                        CS.UnityEngine.PlayerPrefs.Save()
+                                    end)
+                                    if _G.ModUpdateFloatingPKBtn then _G.ModUpdateFloatingPKBtn() end
+                                end
+
+                                -- Bật Khóa Mục Tiêu
+                                _G.Mod_LockTarget_Enabled = true
+
+                                -- Luôn duy trì PK Mode ALL (3)
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and me.PKMode ~= 3 and _G.NetManager and _G.RoleMessage and _G.RoleMessage.ReqSetPKMode then
+                                    _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 3 })
+                                end
+
+                                -- Kiểm tra nếu chưa ở đúng map Kundun hoặc cách xa điểm hồi sinh (110, 18)
+                                local curMapId = _G.SceneData and _G.SceneData.mapId or 0
+                                local curGroupId = _G.SceneData and _G.SceneData.groupId or 0
+                                local isInKunMap = (curMapId == targetKunMap or curGroupId == targetKunMap)
+
+                                local needTeleport = not isInKunMap
+                                if isInKunMap and me and me.position then
+                                    local myX = me.position.x
+                                    local myZ = me.position.z or me.position.y or 0
+                                    local distToBorn = math.sqrt((myX - 110)^2 + (myZ - 18)^2)
+                                    if distToBorn > 8.0 then
+                                        needTeleport = true
+                                    end
+                                end
+
+                                if needTeleport then
+                                    if nowRealtime - (_G.Mod_LastKunTeleportTime or 0) >= 1.5 then
+                                        _G.Mod_LastKunTeleportTime = nowRealtime
+                                        LogMsg(string.format("[Auto Hunt] ReqCallFlag bay tới %s Map %d (110, 18)...", targetKunName, targetKunMap))
+
+                                        -- Thoát phó bản cũ nếu đang ở phó bản
+                                        if ExitDungeon then ExitDungeon() end
+
+                                        pcall(function()
+                                            if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+                                                _G.networkRequest.ReqCallFlag(nil, nil, targetKunMap, 1, 110, 18)
+                                            end
+                                            if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                                _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                                    mapId = targetKunMap,
+                                                    line = 1,
+                                                    x = 110,
+                                                    y = 18
+                                                })
+                                            end
+                                        end)
+                                    end
+                                end
+                                return
+                            end
+
+                            -- 4. Xử lý khi HẾT KUNDUN (Transition từ có sang không)
+                            if not targetKunMap and _G.Mod_AutoHunt_KundunActive then
+                                _G.Mod_AutoHunt_KundunActive = false
+                                _G.Mod_AutoHunt_KundunTargetMap = nil
+                                _G.Mod_AutoHunt_CurrentKunName = nil
+                                LogMsg("[Auto Hunt] Hết Kundun! Quay về bãi train tiếp tục Auto Boss...")
+
+                                -- Quay về bãi train
+                                if _G.Mod_PerformAutoTrainAndSmelt then
+                                    pcall(_G.Mod_PerformAutoTrainAndSmelt)
+                                end
+
+                                -- Khôi phục Auto Boss
+                                _G.Mod_AutoFarmBoss_State = 2
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                _G.Mod_AutoFarmBoss_TargetWait = 0
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                            end
+                        end)
+                    end)
+                end
+                _G.Mod_StartAutoHuntKundunLoop()
+
         local function SaveFOV(fov)
             pcall(function()
                 _G.SavedFOV = fov
@@ -7555,7 +8403,7 @@ local function CreateModUI()
                     "Mod_AutoPick_Bone_Hon", "Mod_AutoPick_Bone_Cot",
                     "Mod_GameSettingsSnapshot",
                     "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
-                    "Mod_TeleNotify_Enabled", "Mod_AutoBoss_SkipHpPct"
+                    "Mod_TeleNotify_Enabled", "Mod_AutoBoss_SkipHpPct", "Mod_AutoHunt_Enabled"
                 }
                 for _, key in ipairs(modKeys) do
                     CS.UnityEngine.PlayerPrefs.DeleteKey(key)
@@ -7624,6 +8472,8 @@ local function CreateModUI()
                 _G.Mod_AutoFarmBoss_EnterHiddenMap = false
                 _G.Mod_AutoFarmBoss_Config = {}
                 _G.Mod_AutoBoss_SkipHpPct = 90
+                _G.Mod_AutoHunt_Enabled = false
+                _G.Mod_AutoHunt_NoTargetStartTime = nil
                 _G.Mod_AutoPick_Limit = 0
                 _G.RunSpeedMultiplier = 1.0
                 _G.AtkSpeedMultiplier = 1.0
@@ -8725,6 +9575,15 @@ local function CreateModUI()
                 if varName == "Mod_DisableVisuals" or varName == "AutoPick_Enabled" then
                     if _G.Mod_ApplyDisableVisualsState then
                         pcall(_G.Mod_ApplyDisableVisualsState)
+                    end
+                end
+
+                if varName == "Mod_AutoHunt_Enabled" and _G[varName] then
+                    if _G.NetManager and _G.RoleMessage and _G.RoleMessage.ReqSetPKMode then
+                        _G.NetManager.Send(_G.RoleMessage.ReqSetPKMode, { param = 3 })
+                    end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT AUTO HUNT (CHẾ ĐỘ PK TOÀN BỘ)!")
                     end
                 end
 
@@ -9898,6 +10757,7 @@ local function CreateModUI()
                     _G.Mod_AutoFarmBoss_State = 0
                     _G.Mod_AutoFarmBoss_Target = nil
                     _G.Mod_AutoFarmBoss_WaitTime = 0
+                    _G.Mod_AutoHunt_NoTargetStartTime = nil
                     pcall(function()
                         if _G.PathFinderManager and _G.PathFinderManager.ResetData then
                             _G.PathFinderManager.ResetData()
@@ -11224,6 +12084,15 @@ local function CreateModUI()
             -- =========================================================================
             if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") then
                 CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+            end
+
+            -- =========================================================================
+            -- [MOD FEATURE]: ẨN NÚT AUTO HUNT THEO SECRET COMMAND (/autohunt)
+            -- Mô tả: Nút AUTO HUNT chỉ hiển thị khi có secret command /autohunt trong hệ thống lệnh bí mật.
+            -- =========================================================================
+            if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autohunt") then
+                CreateToggle("AUTO HUNT", "Mod_AutoHunt_Enabled", btnX, curY, btnW, nil, contentGo, 35)
                 curY = curY - 45
             end
 
