@@ -6150,6 +6150,23 @@ local function CreateModUI()
             end
             _G.Mod_IsMatchBuffTarget = isMatchBuffTarget
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀM THOÁT PHÓ BẢN KUNDUN VỀ LORENCIA KHI BẬT /FASTBACK
+            -- Mô tả: Gửi lệnh thoát phó bản về Lorencia để giải phóng trạng thái chiến đấu (Combat State).
+            -- =========================================================================
+            local function Mod_ExitKundunToLorencia()
+                pcall(function()
+                    if _G.TranScriptController then
+                        if _G.TranScriptController.ReqExitInstance then _G.TranScriptController.ReqExitInstance() end
+                        if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
+                    end
+                    if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqExitInstance then
+                        _G.NetManager.Send(_G.MapMessage.ReqExitInstance)
+                    end
+                end)
+            end
+            _G.Mod_ExitKundunToLorencia = Mod_ExitKundunToLorencia
+
             _G.Mod_StartMainUpdateLoop = function()
                 _G.Mod_StartTrackedTimer("MainModUpdate", 0.1, -1, function()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
@@ -6220,6 +6237,19 @@ local function CreateModUI()
                                             end
                                         end
 
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: TỰ ĐỘNG THOÁT PHÓ BẢN KUNDUN VỀ LORENCIA KHI HỒI SINH FREE VÀ BẬT /FASTBACK
+                                        -- Mô tả: Nếu đang trong map Kundun (250001, 270001, 250002) và bật chế độ /fastback,
+                                        --        sau khi hồi sinh Free sẽ lập tức thoát phó bản về Lorencia để giải phóng
+                                        --        trạng thái chiến đấu (Combat State), giúp /fastback truyền tống mượt mà.
+                                        -- =========================================================================
+                                        local isKundunMap = (mapId == 250001 or mapId == 270001 or mapId == 250002)
+                                        local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                        if isKundunMap and isFastBack then
+                                            _G.Mod_PendingKundunFastBackExit = true
+                                            Mod_ExitKundunToLorencia()
+                                        end
+
                                         if _G.UIManager and _G.UIManager.Hide and _G.UIID then
                                             if _G.UIID.Role_ResurgenceUI then
                                                 _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
@@ -6243,6 +6273,18 @@ local function CreateModUI()
                                 -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
                                 if _G.Mod_IsAdmin and _G.UIID.CountDown and _G.UIManager.IsVisible(_G.UIID.CountDown) then
                                     _G.UIManager.Hide(_G.UIID.CountDown)
+                                end
+                            end
+
+                            -- [MOD FEATURE]: TIẾP TỤC THOÁT PHÓ BẢN KUNDUN NẾU NHÂN VẬT VỪA SỐNG DẬY CÒN KẸT Ở KUNDUN
+                            if _G.Mod_PendingKundunFastBackExit then
+                                local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                local isKundunMap = (curMap == 250001 or curMap == 270001 or curMap == 250002)
+                                local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                if isKundunMap and isFastBack then
+                                    Mod_ExitKundunToLorencia()
+                                else
+                                    _G.Mod_PendingKundunFastBackExit = false
                                 end
                             end
 
@@ -7688,6 +7730,33 @@ local function CreateModUI()
                                     end
                                 end
                             end
+
+                            -- =========================================================================
+                            -- [MOD FEATURE]: HOOK ME CONTROLLER HỒI SINH FREE TRONG KUNDUN VỀ LORENCIA
+                            -- Mô tả: Bắt sự kiện bấm tay hoặc gọi ReqReqRelive(BornPoint) trong map Kundun khi bật /fastback
+                            -- =========================================================================
+                            if _G.MeController and not _G.Mod_HookedMeController_ReliveKundun then
+                                _G.Mod_HookedMeController_ReliveKundun = true
+                                local orig_ReqReqRelive = _G.MeController.ReqReqRelive
+                                if orig_ReqReqRelive then
+                                    _G.MeController.ReqReqRelive = function(reliveType)
+                                        orig_ReqReqRelive(reliveType)
+                                        pcall(function()
+                                            if _G.RoleReliveType and reliveType == _G.RoleReliveType.BornPoint then
+                                                local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                                local isKundunMap = (curMap == 250001 or curMap == 270001 or curMap == 250002)
+                                                local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                                if isKundunMap and isFastBack then
+                                                    _G.Mod_PendingKundunFastBackExit = true
+                                                    if _G.Mod_ExitKundunToLorencia then
+                                                        _G.Mod_ExitKundunToLorencia()
+                                                    end
+                                                end
+                                            end
+                                        end)
+                                    end
+                                end
+                            end
                         end)
                     end
 
@@ -7991,6 +8060,7 @@ local function CreateModUI()
                                                 local hasPkTarget = me.TargetAvatar and not me.TargetAvatar.isDead
                                                 if not hasPkTarget then
                                                     _G.Mod_LastReturnPosTime = nowTime
+                                                    if me.StopMove then me:StopMove() end
                                                     pcall(function()
                                                         local called = false
                                                         if _G.networkRequest and _G.networkRequest.ReqCallFlag then

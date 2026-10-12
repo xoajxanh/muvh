@@ -4371,6 +4371,45 @@ local function CreateModUI()
                         if _G.Mod_AutoFarmBoss_ReqIconSentMap ~= currentMapId then
                             _G.Mod_AutoFarmBoss_ReqIconSentMap = currentMapId
 
+                            -- =========================================================================
+                            -- [MOD FEATURE]: JIGGLE +-1 Ô & RESET PATHFINDER KHI VỪA VÀO MAP BOSS
+                            -- Mô tả: Ngay khi vừa truyền tống vào Map Boss / đổi Line, xóa sạch lộ trình
+                            --        tìm đường cũ của PathFinder, dừng chuyển động và nhích nhẹ +-1 ô để
+                            --        đồng bộ tọa độ, tránh hiện tượng bị game kéo ngược về điểm hồi sinh.
+                            -- =========================================================================
+                            pcall(function()
+                                if _G.PathFinderManager then
+                                    if _G.PathFinderManager.ResetData then _G.PathFinderManager.ResetData() end
+                                    if _G.PathFinderManager.pathFinding then
+                                        _G.PathFinderManager.pathFinding.isFind = false
+                                        _G.PathFinderManager.pathFinding.curPath = nil
+                                    end
+                                end
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me then
+                                    if me.StopMove then me:StopMove() end
+                                    if me.SetAutoFight then me:SetAutoFight("None") end
+                                    if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+                                    if me.MoveTo then
+                                        local meCell = me.cellPos or me.serverCoord
+                                        local meX = meCell and meCell.x or (me.data and me.data.x) or 0
+                                        local meY = meCell and meCell.y or (me.data and me.data.y) or 0
+                                        if meX > 0 and meY > 0 then
+                                            local dx = math.random(-1, 1)
+                                            local dy = math.random(-1, 1)
+                                            if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                                            local targetCell = (CS.UnityEngine.Vector2Int and CS.UnityEngine.Vector2Int(meX + dx, meY + dy))
+                                                or (_G.Vector2Int and _G.Vector2Int(meX + dx, meY + dy))
+                                                or { x = meX + dx, y = meY + dy }
+                                            me:MoveTo(targetCell, 0)
+                                        end
+                                    end
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                    _G.QiJiHelperData.SetAutoFightData(false)
+                                end
+                            end)
+
                             if _G.SceneData and _G.SceneData.SetMiniMapData then
                                 pcall(function()
                                     _G.SceneData.SetMiniMapData(_G.SceneData.mapId or target.mapCfg.mapId,
@@ -4382,7 +4421,7 @@ local function CreateModUI()
                                 pcall(function() _G.NetManager.Send(_G.MapMessage.ReqBossIcon) end)
                             end
 
-                            LogMsg(string.format("Đã tới Map %s! Đang xin dữ liệu Minimap trạng thái Boss...",
+                            LogMsg(string.format("Đã tới Map %s (Jiggle xóa lag)! Đang xin dữ liệu Minimap trạng thái Boss...",
                                 GetMapName(target.mapCfg.mapId)))
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
                             return
@@ -4631,6 +4670,9 @@ local function CreateModUI()
                             -- Đảm bảo AutoFight không bị bật sớm làm ngắt chuyển động chạy bộ
                             if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
                                 if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                            end
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight then
+                                _G.RoleManager.me:SetAutoTaskFight("None")
                             end
                             if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
                                 if _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end

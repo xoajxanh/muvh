@@ -5208,11 +5208,12 @@ local TARKAN_MONSTER_SPOTS = {
 
 local FALLBACK_MAP_SPOTS = {
     [1003] = { x = 215, y = 45, name = "Devias (Lv 30)", defenseReq = 30 },
-    [100201] = { x = 109, y = 247, name = "Dungeon 1 (Lv 60)", defenseReq = 80 },
+    [100201] = { x = 66, y = 236, name = "Dungeon 1 (Bãi Đôi: 66#236)", defenseReq = 80 },
     [100501] = { x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)", defenseReq = 105 },
-    [100502] = { x = 193, y = 30, name = "Lost Tower 2 (Lv 110)", defenseReq = 180 },
+    [100502] = { x = 183, y = 233, name = "Lost Tower 2 (Bãi Đôi: 183#233)", defenseReq = 180 },
     [100507] = { x = 193, y = 30, name = "Lost Tower 7 (Lv 140)", defenseReq = 277 },
-    [1008] = { x = 74, y = 43, name = "Atlantis (Lv 100)", defenseReq = 176 },
+    [1008] = { x = 34, y = 162, name = "Atlantis (Bãi Đôi: 34#162)", defenseReq = 176 },
+    [100801] = { x = 34, y = 162, name = "Atlantis (Bãi Đôi: 34#162)", defenseReq = 176 },
     [1009] = { x = 166, y = 196, name = "Tarkan (Quái Lv195)", defenseReq = 390 },
     [100901] = { x = 166, y = 196, name = "Tarkan (Quái Lv195)", defenseReq = 390 },
     [1034] = { x = 85, y = 8, name = "Aida (Lv 200)", defenseReq = 390 },
@@ -5494,14 +5495,33 @@ GetBestMonsterFarmPoint = function(curMap)
         end
 
         -- =========================================================================
-        -- [MOD FEATURE]: CỐ ĐỊNH TỌA ĐỘ VÀNG 194#106 TẠI MAP LOST TOWER 1 (BÃI LV 90)
-        -- Mô tả: Cố định vị trí đứng giữa 2 bãi quái Lv 90 để tối đa gấp đôi hiệu suất train farm,
+        -- [MOD FEATURE]: CỐ ĐỊNH TỌA ĐỘ VÀNG TẠI CÁC BÃI ĐÔI TỐI ƯU EXP
+        -- Mô tả: Cố định vị trí đứng giữa các bãi quái để tối đa gấp đôi hiệu suất train farm,
         --        không dịch chuyển đến tọa độ góc của riêng 1 bãi.
+        --        - Dungeon 1 (100201): 66#236
+        --        - Lost Tower 1 (100501): 194#106
+        --        - Lost Tower 2 (100502): 183#233
+        --        - Atlantis (1008 / 100801): 34#162
         -- =========================================================================
-        if bestPoint and (targetMap == 100501 or curMap == 100501) then
-            bestPoint.x = 194
-            bestPoint.y = 106
-            bestPoint.name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)"
+        if bestPoint then
+            local m = targetMap or curMap
+            if m == 100201 or curMap == 100201 or targetMap == 100201 then
+                bestPoint.x = 66
+                bestPoint.y = 236
+                bestPoint.name = "Dungeon 1 (Bãi Đôi: 66#236)"
+            elseif m == 100501 or curMap == 100501 or targetMap == 100501 then
+                bestPoint.x = 194
+                bestPoint.y = 106
+                bestPoint.name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)"
+            elseif m == 100502 or curMap == 100502 or targetMap == 100502 then
+                bestPoint.x = 183
+                bestPoint.y = 233
+                bestPoint.name = "Lost Tower 2 (Bãi Đôi: 183#233)"
+            elseif m == 1008 or m == 100801 or curMap == 1008 or targetMap == 1008 or curMap == 100801 or targetMap == 100801 then
+                bestPoint.x = 34
+                bestPoint.y = 162
+                bestPoint.name = "Atlantis (Bãi Đôi: 34#162)"
+            end
         end
     end)
     return bestPoint, (targetMap or curMap)
