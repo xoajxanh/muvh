@@ -4554,6 +4554,8 @@ local function CreateModUI()
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_BossWait = 0
                         _G.Mod_AutoFarmBoss_DidJiggle = false
+                        _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
+                        _G.Mod_AutoFarmBoss_LastTargetPos = target.currentPos and { x = target.currentPos.x, y = target.currentPos.y }
                         _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
 
                         -- STATE 4: WAIT & VALIDATE & COMBAT
@@ -4684,13 +4686,34 @@ local function CreateModUI()
                                 isMoving = me:IsMoving()
                             end
 
-                            -- Nếu nhân vật đứng im (không di chuyển) HOẶC định kỳ 0.6s -> Lập tức ép gửi lại lệnh MoveTo
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TỐI ƯU TẦN SUẤT ÉP MOVETO KHI CHẠY BỘ TỚI BOSS
+                            -- Mô tả: Khi nhân vật ĐANG DI CHUYỂN (isMoving == true), để PathFinder tự
+                            --        dẫn đường mượt mà, chỉ định kỳ 4.0s mới gửi lại MoveTo (heartbeat
+                            --        chống kẹt). Tránh bị giằng co / lặp đường tại các khúc cua/ngã rẽ
+                            --        (như 122#104 Hoang Dã C9).
+                            --        Khi nhân vật ĐANG ĐỨNG IM (isMoving == false), gửi lại sau 1.0s.
+                            --        Nếu Boss di chuyển lệch > 2m so với đích cũ, cập nhật MoveTo ngay.
+                            -- =========================================================================
                             local lastMoveTime = _G.Mod_AutoFarmBoss_LastForceMoveTime or 0
-                            local needForceMove = (not isMoving) or ((nowRealtime - lastMoveTime) >= 0.6)
+                            local moveCooldown = isMoving and 4.0 or 1.0
+                            local needForceMove = (nowRealtime - lastMoveTime) >= moveCooldown
+
+                            -- Nếu Boss di chuyển trên màn hình lệch > 2m so với đích cũ -> Ép cập nhật sớm
+                            if not needForceMove and target and target.currentPos and _G.Mod_AutoFarmBoss_LastTargetPos then
+                                local lPos = _G.Mod_AutoFarmBoss_LastTargetPos
+                                local cPos = target.currentPos
+                                local tdx = (cPos.x or 0) - (lPos.x or 0)
+                                local tdy = (cPos.y or 0) - (lPos.y or 0)
+                                if (tdx * tdx + tdy * tdy) > 4.0 then
+                                    needForceMove = true
+                                end
+                            end
 
                             if needForceMove and me and (not me.hp or me.hp > 0) then
                                 _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
                                 if target and target.currentPos then
+                                    _G.Mod_AutoFarmBoss_LastTargetPos = { x = target.currentPos.x, y = target.currentPos.y }
                                     local moved = false
                                     if me and me.MoveTo then
                                         local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
@@ -4723,6 +4746,7 @@ local function CreateModUI()
 
                         -- ĐIỀU KIỆN 2: KHI ĐÃ TIẾP CẬN CỰ LY <= 2M
                         _G.Mod_AutoFarmBoss_LastForceMoveTime = nil
+                        _G.Mod_AutoFarmBoss_LastTargetPos = nil
 
                         -- Trường hợp A: Tìm thấy Boss sống ở cự ly <= 2m -> Xử lý Combat hoặc KS
                         if foundBoss then

@@ -1,26 +1,6 @@
-[01:58:04] [TEST TALENT] Đã tải xong Test Panel Thiên Phú Thủ Hộ (DK)!
-[01:58:11] [TEST TALENT] Gửi lệnh kích hoạt nhánh Thủ Hộ (1102)...
-[01:58:19] [TEST TALENT] Bắn packet: Tăng Phản DMG (Tầng 7 - Max) | LID: 11020100 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:21] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:27] [TEST TALENT] Bắn packet: Kháng Khống Chế Tăng (Tầng 7 - Max) | LID: 11020400 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:29] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:30] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:33] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:33] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:36] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:41] [TEST TALENT] Đã gửi yêu cầu đồng bộ lại dữ liệu Thiên Phú từ Server.
-[01:58:45] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:48] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:51] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:53] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:54] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:56] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:58:57] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:58:59] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:59:00] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:59:02] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:59:02] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
-[01:59:02] [TEST TALENT] Bắn packet: Đỡ Giảm DMG (Tầng 5 - Cần Skill 120400) | LID: 11021000 | Nhánh: 1102 | Điểm dư: 6 | Điểm đã dùng: 0
-[01:59:04] [TEST TALENT] ⚠️ Sau 2.5s không nhận được gói 22019 (Server có thể đã chặn hoặc không đủ điểm/chưa active nhánh)
+=== [BẮT ĐẦU] TEST JUMP VÀO MAP 2101000 (TỌA ĐỘ 36#222) ===
+[*] Vị trí hiện tại: Map 100502 | Kênh 1 | Tọa độ (183, 233)
+[*] Trạng thái InTranscript: false
+[+] Đang gửi ReqTransferTransmit (transferId: 210100001)...
+[+] Đang gửi ReqTransmit (mapId: 2101000, x: 36, y: 222)...
+>>> Đã thực thi xong toàn bộ lệnh Jump Map! Đang chờ Server phản hồi...

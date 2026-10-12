@@ -1678,8 +1678,154 @@ local function CreateModUI()
         RenderServerGrid(savedStart, savedEnd)
 
         -- =========================================================================
-        -- [MOD FEATURE]: NÚT THỰC THI CHÍNH Ở ĐÁY PANEL (BOTTOM BOT CONTROLLER)
+        -- [MOD FEATURE]: BỘ NÚT ĐIỀU HƯỚNG ACC (PREV/NEXT), START/PAUSE & LOCK BOSS TT ĐÁY PANEL
+        -- Mô tả: Thanh điều khiển 5 nút cân đối dưới đáy panel (Width 780, Height 42):
+        --        [◀ PREV] [NEXT ▶] ---- [▶ BẮT ĐẦU] ---- [LOCK BOSS TT] [THOÁT PB]
         -- =========================================================================
+
+        -- 1. Hàm chuyển đổi Account thủ công (Kèm dọn sạch cache TaskData tránh đè quest)
+        local function SwitchAccountManual(delta)
+            local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
+            local curAccIdx = _G.CurrentAccountIndex or 1
+            local targetAccIdx = curAccIdx + delta
+
+            if targetAccIdx < 1 then
+                targetAccIdx = 1
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đang ở Acc đầu tiên [1/%d]!", totalAccs))
+                end
+                return
+            elseif targetAccIdx > totalAccs then
+                targetAccIdx = totalAccs
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đang ở Acc cuối cùng [%d/%d]!", totalAccs, totalAccs))
+                end
+                return
+            end
+
+            _G.CurrentAccountIndex = targetAccIdx
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", targetAccIdx)
+            CS.UnityEngine.PlayerPrefs.Save()
+
+            if _G.Mod_UpdateServerStatusUI then _G.Mod_UpdateServerStatusUI() end
+            if UpdateServerStatusUI then UpdateServerStatusUI() end
+
+            local targetAcc = (_G.BotAccounts and _G.BotAccounts[targetAccIdx]) or {}
+            local email = targetAcc.account or "Unknown"
+
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(string.format("Chuyển sang Acc [%d/%d]: %s", targetAccIdx, totalAccs, email))
+            end
+
+            -- Gỡ sạch hoàn toàn dữ liệu & trạng thái nhiệm vụ cũ trước khi sang tài khoản mới
+            pcall(function()
+                local clearFunc = _G.ClearAllTaskDataAndState or ClearAllTaskDataAndState
+                if clearFunc then clearFunc() end
+            end)
+
+            -- Reset trạng thái tài khoản và chuẩn bị chu trình đăng nhập mới
+            _G.CurrentRoleIndex = 1
+            _G.TargetRoleIndex = 1
+            _G.HasCreatedRoleForTarget = false
+            _G.IsRoleCreating = false
+            _G.Bot_IsInGameWorld = false
+            _G.IsSwitchingAccount = false
+
+            -- ĐĂNG XUẤT RA MÀN HÌNH LOGIN VÀ TỰ ĐỘNG ĐĂNG NHẬP VÀO ACC MỚI
+            pcall(function()
+                local logoutFunc = _G.ForceLogoutToLogin or ForceLogoutToLogin
+                local loginFunc = _G.StartFullLoginProcess or StartFullLoginProcess
+                local dismissFunc = _G.DismissBlockers or DismissBlockers
+                local tObj = _G.Timer or Timer
+
+                if logoutFunc then
+                    logoutFunc()
+                    if tObj and tObj.Start then
+                        tObj.Start(2.5, function()
+                            if dismissFunc then dismissFunc() end
+                            if loginFunc then
+                                loginFunc()
+                            end
+                        end)
+                    end
+                end
+            end)
+        end
+        _G.SwitchAccountManual = SwitchAccountManual
+
+        -- ---------------------------------------------------------------------
+        -- NÚT 1: ◀ PREV (Chuyển về Account trước)
+        -- ---------------------------------------------------------------------
+        local btnPrevGo = GameObject("BtnPrevAcc")
+        btnPrevGo.transform:SetParent(panelGo.transform, false)
+        local bpRt = btnPrevGo:AddComponent(typeof(RectTransform))
+        bpRt.anchorMin = Vector2(0, 0)
+        bpRt.anchorMax = Vector2(0, 0)
+        bpRt.pivot = Vector2(0, 0)
+        bpRt.anchoredPosition = Vector2(15, 14)
+        bpRt.sizeDelta = Vector2(100, 42)
+
+        local bpImg = btnPrevGo:AddComponent(typeof(Image))
+        bpImg.color = Color(0.20, 0.42, 0.72, 1)
+        bpImg.raycastTarget = true
+
+        local bpTxtGo = GameObject("Text")
+        bpTxtGo.transform:SetParent(btnPrevGo.transform, false)
+        local bptRt = bpTxtGo:AddComponent(typeof(RectTransform))
+        bptRt.anchorMin, bptRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        bptRt.sizeDelta = Vector2(0, 0)
+        local bpTxt = bpTxtGo:AddComponent(typeof(Text))
+        bpTxt.text = "<b>◀ PREV</b>"
+        bpTxt.color = Color.white
+        bpTxt.fontSize = 15
+        bpTxt.alignment = TextAnchor.MiddleCenter
+        bpTxt.raycastTarget = false
+        if defaultFont then bpTxt.font = defaultFont end
+
+        local bpBtn = btnPrevGo:AddComponent(typeof(Button))
+        bpBtn.targetGraphic = bpImg
+        bpBtn.onClick:AddListener(function()
+            SwitchAccountManual(-1)
+        end)
+
+        -- ---------------------------------------------------------------------
+        -- NÚT 2: NEXT ▶ (Chuyển sang Account tiếp theo)
+        -- ---------------------------------------------------------------------
+        local btnNextGo = GameObject("BtnNextAcc")
+        btnNextGo.transform:SetParent(panelGo.transform, false)
+        local bnRt = btnNextGo:AddComponent(typeof(RectTransform))
+        bnRt.anchorMin = Vector2(0, 0)
+        bnRt.anchorMax = Vector2(0, 0)
+        bnRt.pivot = Vector2(0, 0)
+        bnRt.anchoredPosition = Vector2(123, 14)
+        bnRt.sizeDelta = Vector2(100, 42)
+
+        local bnImg = btnNextGo:AddComponent(typeof(Image))
+        bnImg.color = Color(0.20, 0.42, 0.72, 1)
+        bnImg.raycastTarget = true
+
+        local bnTxtGo = GameObject("Text")
+        bnTxtGo.transform:SetParent(btnNextGo.transform, false)
+        local bntRt = bnTxtGo:AddComponent(typeof(RectTransform))
+        bntRt.anchorMin, bntRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        bntRt.sizeDelta = Vector2(0, 0)
+        local bnTxt = bnTxtGo:AddComponent(typeof(Text))
+        bnTxt.text = "<b>NEXT ▶</b>"
+        bnTxt.color = Color.white
+        bnTxt.fontSize = 15
+        bnTxt.alignment = TextAnchor.MiddleCenter
+        bnTxt.raycastTarget = false
+        if defaultFont then bnTxt.font = defaultFont end
+
+        local bnBtn = btnNextGo:AddComponent(typeof(Button))
+        bnBtn.targetGraphic = bnImg
+        bnBtn.onClick:AddListener(function()
+            SwitchAccountManual(1)
+        end)
+
+        -- ---------------------------------------------------------------------
+        -- NÚT 3: START / PAUSE Ở CHÍNH GIỮA (Rút gọn nhãn)
+        -- ---------------------------------------------------------------------
         local btmBotBtnGo = GameObject("BottomBotActionBtn")
         btmBotBtnGo.transform:SetParent(panelGo.transform, false)
         local bbbRt = btmBotBtnGo:AddComponent(typeof(RectTransform))
@@ -1687,7 +1833,7 @@ local function CreateModUI()
         bbbRt.anchorMax = Vector2(0.5, 0)
         bbbRt.pivot = Vector2(0.5, 0)
         bbbRt.anchoredPosition = Vector2(0, 14)
-        bbbRt.sizeDelta = Vector2(360, 44)
+        bbbRt.sizeDelta = Vector2(160, 42)
 
         local bbbImg = btmBotBtnGo:AddComponent(typeof(Image))
         bbbImg.color = Color(0.18, 0.62, 0.18, 1)
@@ -1698,10 +1844,11 @@ local function CreateModUI()
         local bbbtRt = bbbTxtGo:AddComponent(typeof(RectTransform))
         bbbtRt.anchorMin = Vector2(0, 0)
         bbbtRt.anchorMax = Vector2(1, 1)
+        bbbtRt.sizeDelta = Vector2(0, 0)
         local bbbTxt = bbbTxtGo:AddComponent(typeof(Text))
-        bbbTxt.text = "▶ BẮT ĐẦU CHẠY FARM BOT (START)"
+        bbbTxt.text = "<b>▶ BẮT ĐẦU</b>"
         bbbTxt.color = Color.white
-        bbbTxt.fontSize = 17
+        bbbTxt.fontSize = 16
         bbbTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
         bbbTxt.alignment = TextAnchor.MiddleCenter
         bbbTxt.raycastTarget = false
@@ -1710,10 +1857,10 @@ local function CreateModUI()
         _G.ModUpdatePanelBotBtn = function()
             if bbbTxt and not bbbTxt:Equals(nil) and bbbImg and not bbbImg:Equals(nil) then
                 if _G.Bot_Running then
-                    bbbTxt.text = "⏸ TẠM DỪNG FARM BOT (PAUSE)"
-                    bbbImg.color = Color(0.85, 0.2, 0.2, 1)
+                    bbbTxt.text = "<b>⏸ TẠM DỪNG</b>"
+                    bbbImg.color = Color(0.85, 0.20, 0.20, 1)
                 else
-                    bbbTxt.text = "▶ BẮT ĐẦU CHẠY FARM BOT (START)"
+                    bbbTxt.text = "<b>▶ BẮT ĐẦU</b>"
                     bbbImg.color = Color(0.18, 0.62, 0.18, 1)
                 end
             end
@@ -1731,17 +1878,97 @@ local function CreateModUI()
             if _G.ModUpdatePanelBotBtn then _G.ModUpdatePanelBotBtn() end
         end)
 
-        -- =========================================================================
-        -- [MOD FEATURE]: NÚT THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD (FARM)
-        -- =========================================================================
+        -- ---------------------------------------------------------------------
+        -- [MOD FEATURE]: NÚT 4: FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1)
+        -- Mô tả: Tự động lặp chu trình vào Room Boss Phúc Lợi Tầng 1, phát hiện
+        --        Nữ Hoàng Băng Giá Lv80, auto đánh và đếm số lượng boss tiêu diệt.
+        -- ---------------------------------------------------------------------
+        local farmKcBtnGo = GameObject("BtnFarmKC")
+        farmKcBtnGo.transform:SetParent(panelGo.transform, false)
+        local fkcRt = farmKcBtnGo:AddComponent(typeof(RectTransform))
+        fkcRt.anchorMin = Vector2(1, 0)
+        fkcRt.anchorMax = Vector2(1, 0)
+        fkcRt.pivot = Vector2(1, 0)
+        fkcRt.anchoredPosition = Vector2(-128, 14)
+        fkcRt.sizeDelta = Vector2(130, 42)
+
+        local fkcImg = farmKcBtnGo:AddComponent(typeof(Image))
+        fkcImg.color = Color(0.85, 0.50, 0.05, 1)
+        fkcImg.raycastTarget = true
+
+        local fkcTxtGo = GameObject("Text")
+        fkcTxtGo.transform:SetParent(farmKcBtnGo.transform, false)
+        local fkctRt = fkcTxtGo:AddComponent(typeof(RectTransform))
+        fkctRt.anchorMin, fkctRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        fkctRt.sizeDelta = Vector2(0, 0)
+        local fkcTxt = fkcTxtGo:AddComponent(typeof(Text))
+        fkcTxt.text = "<b>Farm KC</b>"
+        fkcTxt.color = Color.white
+        fkcTxt.fontSize = 14
+        fkcTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        fkcTxt.alignment = TextAnchor.MiddleCenter
+        fkcTxt.raycastTarget = false
+        if defaultFont then fkcTxt.font = defaultFont end
+
+        _G.Mod_FarmKCActive = false
+        _G.Mod_FarmKCCount = 0
+
+        _G.UpdateFarmKCBtnUI = function()
+            pcall(function()
+                if not fkcTxt or fkcTxt:Equals(nil) or not fkcImg or fkcImg:Equals(nil) then return end
+                if _G.Mod_FarmKCActive then
+                    fkcImg.color = Color(0.12, 0.65, 0.45, 1)
+                    if _G.Mod_FarmKCCount and _G.Mod_FarmKCCount > 0 then
+                        fkcTxt.text = string.format("<b>Farm KC (%d)</b>", _G.Mod_FarmKCCount)
+                    else
+                        fkcTxt.text = "<b>Farm KC</b>"
+                    end
+                else
+                    fkcImg.color = Color(0.85, 0.50, 0.05, 1)
+                    fkcTxt.text = "<b>Farm KC</b>"
+                end
+            end)
+        end
+
+        local fkcBtn = farmKcBtnGo:AddComponent(typeof(Button))
+        fkcBtn.targetGraphic = fkcImg
+        fkcBtn.onClick:AddListener(function()
+            _G.Mod_FarmKCActive = not _G.Mod_FarmKCActive
+            if _G.Mod_FarmKCActive then
+                _G.Mod_FarmKCCount = 0
+                if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT TỰ ĐỘNG FARM KIM CƯƠNG (LV >= 200)!")
+                end
+                local me = _G.RoleManager and _G.RoleManager.me
+                local curLvl = tonumber((me and me.level) or (me and me.data and me.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+                if curLvl >= 200 and _G.StartFarmKCRoutine then
+                    _G.StartFarmKCRoutine()
+                end
+                if not _G.Global30sUpgradeTimer and _G.StartGlobal30sUpgradePipeline then
+                    _G.StartGlobal30sUpgradePipeline()
+                end
+            else
+                if _G.StopFarmKCRoutine then _G.StopFarmKCRoutine() end
+                _G.Mod_FarmKCCount = 0
+                if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT FARM KIM CƯƠNG (RESET ĐẾM VỀ 0)!")
+                end
+            end
+        end)
+
+        -- ---------------------------------------------------------------------
+        -- NÚT 5: THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD
+        -- ---------------------------------------------------------------------
         local exitPbBtnGo = GameObject("ExitDungeonGlobalBtn")
         exitPbBtnGo.transform:SetParent(panelGo.transform, false)
         local epbRt = exitPbBtnGo:AddComponent(typeof(RectTransform))
         epbRt.anchorMin = Vector2(1, 0)
         epbRt.anchorMax = Vector2(1, 0)
         epbRt.pivot = Vector2(1, 0)
-        epbRt.anchoredPosition = Vector2(-20, 14)
-        epbRt.sizeDelta = Vector2(140, 44)
+        epbRt.anchoredPosition = Vector2(-15, 14)
+        epbRt.sizeDelta = Vector2(105, 42)
 
         local epbImg = exitPbBtnGo:AddComponent(typeof(Image))
         epbImg.color = Color(0.8, 0.15, 0.15, 0.95)
@@ -1755,7 +1982,7 @@ local function CreateModUI()
         local epbTxt = epbTxtGo:AddComponent(typeof(Text))
         epbTxt.raycastTarget = false
         epbTxt.text = "<color=#FFFFFF><b>THOÁT PB</b></color>"
-        epbTxt.fontSize = 16
+        epbTxt.fontSize = 15
         epbTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then epbTxt.font = defaultFont end
 
@@ -2313,6 +2540,7 @@ local SwitchToNextRoleOrAccount
 local SelectRoleByIndex
 local ForceLogoutToLogin
 local DismissBlockers
+local ClearAllTaskDataAndState
 local RunAutoGiftcode
 local AutoEvenEnhanceEquipments
 local AutoEvenUpgradeGems
@@ -2621,15 +2849,28 @@ local function XXTEA_Encrypt(dataStr, keyStr)
 end
 
 -- =========================================================================
--- 3. FOV & SPEED HACK (FOV = 65 MẶC ĐỊNH TOÀN GAME, SPEED = 2.0X CHUẨN KHÔNG NHÂN DỒN)
+-- 3. FOV, SPEED HACK & PHẠM VI PHÁT HIỆN ĐỊCH / QUÁI (KILLMONSTERSCOPE = 10 Ô)
+-- Mô tả: FOV = 65 mặc định toàn game, Speed = 2.0x chuẩn chống nhân dồn,
+--        Phạm vi phát hiện địch / quái KillMonsterScope mặc định = 10 ô (thay vì 8 ô gốc)
+--        giúp nhân vật tìm và tiêu diệt quái từ khoảng cách xa hơn rất nhiều, tăng tốc độ farm.
 -- =========================================================================
 _G.GLOBAL_FOV = 65
 _G.GLOBAL_SPEED_MULT = 2.0
+_G.GLOBAL_KILL_MONSTER_SCOPE = 10
+_G.Mod_CustomAttackRange = 10
 
 local function ApplyFovAndSpeed()
     pcall(function()
         local targetFov = _G.GLOBAL_FOV or 65
         _G.RunSpeedMultiplier = _G.GLOBAL_SPEED_MULT or 2.0
+
+        -- Mặc định thiết lập phạm vi phát hiện quái / địch là 10 ô
+        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+            local targetScope = _G.GLOBAL_KILL_MONSTER_SCOPE or 10
+            if _G.QiJiHelperData.SettingData.KillMonsterScope ~= targetScope then
+                _G.QiJiHelperData.SettingData.KillMonsterScope = targetScope
+            end
+        end
 
         if CS and CS.UnityEngine and CS.UnityEngine.Camera and CS.UnityEngine.Camera.main then
             CS.UnityEngine.Camera.main.fieldOfView = targetFov
@@ -2724,7 +2965,7 @@ local function ApplyFovAndSpeed()
     end)
 end
 
--- Timer duy trì liên tục FOV = 65 không bao giờ bị mất khi đổi map
+-- Timer duy trì liên tục FOV = 65 và KillMonsterScope = 10 không bao giờ bị mất khi đổi map
 if not _G.Mod_FOV_TimerStarted then
     _G.Mod_FOV_TimerStarted = true
     pcall(function()
@@ -2739,6 +2980,14 @@ if not _G.Mod_FOV_TimerStarted then
                     if _G.MainCamera and _G.MainCamera.camera and math.abs(_G.MainCamera.camera.fieldOfView - targetFov) > 0.5 then
                         _G.MainCamera.camera.fieldOfView = targetFov
                     end
+
+                    -- Duy trì KillMonsterScope = 10 ô
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                        local targetScope = _G.GLOBAL_KILL_MONSTER_SCOPE or 10
+                        if _G.QiJiHelperData.SettingData.KillMonsterScope ~= targetScope then
+                            _G.QiJiHelperData.SettingData.KillMonsterScope = targetScope
+                        end
+                    end
                 end)
             end)
         elseif _G.Timer and _G.Timer.StartLoop then
@@ -2751,6 +3000,14 @@ if not _G.Mod_FOV_TimerStarted then
                     end
                     if _G.MainCamera and _G.MainCamera.camera and math.abs(_G.MainCamera.camera.fieldOfView - targetFov) > 0.5 then
                         _G.MainCamera.camera.fieldOfView = targetFov
+                    end
+
+                    -- Duy trì KillMonsterScope = 10 ô
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                        local targetScope = _G.GLOBAL_KILL_MONSTER_SCOPE or 10
+                        if _G.QiJiHelperData.SettingData.KillMonsterScope ~= targetScope then
+                            _G.QiJiHelperData.SettingData.KillMonsterScope = targetScope
+                        end
                     end
                 end)
             end)
@@ -2890,6 +3147,83 @@ DismissBlockers = function()
             UIManager.Hide("AutoPopUIManager")
             UIManager.Hide("DailySignUI")
             UIManager.Hide("Welfare_WelfareUI")
+            -- Đóng sạch popup "Nhận thưởng" to giữa màn hình (Tip_RewardTipUI)
+            local rewardTipUI = UIManager.GetUiByName and (UIManager.GetUiByName("Tip_RewardTipUI") or (UIID and UIID.Tip_RewardTipUI and UIManager.GetUiByName(UIID.Tip_RewardTipUI)))
+            local isRewardVisible = false
+            pcall(function()
+                if rewardTipUI then
+                    isRewardVisible = (rewardTipUI.visible == true)
+                        or (UIManager.IsVisible and (UIManager.IsVisible("Tip_RewardTipUI") or (UIID and UIID.Tip_RewardTipUI and UIManager.IsVisible(UIID.Tip_RewardTipUI))))
+                        or (rewardTipUI.root and rewardTipUI.root.gameObject and rewardTipUI.root.gameObject.activeInHierarchy)
+                        or (rewardTipUI.Panel_Tip and rewardTipUI.Panel_Tip.gameObject and rewardTipUI.Panel_Tip.gameObject.activeInHierarchy)
+                end
+            end)
+            if rewardTipUI and isRewardVisible then
+                pcall(function()
+                    if rewardTipUI.CloseTime then rewardTipUI:CloseTime() end
+                    if rewardTipUI.Panel_TipOnClick and rewardTipUI.Panel_Tip then
+                        rewardTipUI:Panel_TipOnClick(rewardTipUI.Panel_Tip)
+                    end
+                    if rewardTipUI.root and rewardTipUI.root.gameObject then
+                        rewardTipUI.root.gameObject:SetActive(false)
+                    end
+                end)
+            end
+            if UIID and UIID.Tip_RewardTipUI then UIManager.Hide(UIID.Tip_RewardTipUI) end
+            UIManager.Hide("Tip_RewardTipUI")
+
+            -- =========================================================================
+            -- [MOD FEATURE]: TỰ ĐỘNG ĐÓNG TÚI ĐỒ (BAG_3DBAGINFOUI) & CÁC PANEL LÒ RÈN LIÊN QUAN
+            -- Mô tả: Khi không thao tác hoặc bot đang auto farm/chạy quest, tự động đóng giao diện
+            --        Túi Đồ, Kho, Tiệm, Thu Hồi, Lò Rèn để không che khuất màn hình quan sát.
+            -- =========================================================================
+            local bagUI = UIManager.GetUiByName and (UIManager.GetUiByName("Bag_3DBagInfoUI") or (UIID and UIID.NewBagInfoUI and UIManager.GetUiByName(UIID.NewBagInfoUI)))
+            local isBagVisible = false
+            pcall(function()
+                if bagUI then
+                    isBagVisible = (bagUI.visible == true)
+                        or (UIManager.IsVisible and (UIManager.IsVisible("Bag_3DBagInfoUI") or (UIID and UIID.NewBagInfoUI and UIManager.IsVisible(UIID.NewBagInfoUI))))
+                        or (bagUI.root and bagUI.root.gameObject and bagUI.root.gameObject.activeInHierarchy)
+                end
+            end)
+            if bagUI and isBagVisible then
+                pcall(function()
+                    if bagUI.Button_CloseBagOnClick and bagUI.Button_CloseBag then
+                        bagUI:Button_CloseBagOnClick(bagUI.Button_CloseBag)
+                    elseif bagUI.btn_closeBgOnClick then
+                        bagUI:btn_closeBgOnClick()
+                    end
+                end)
+            end
+
+            if UIID and UIID.NewBagInfoUI then UIManager.Hide(UIID.NewBagInfoUI) end
+            UIManager.Hide("Bag_3DBagInfoUI")
+            if UIID and UIID.AppearBagInfoUI then UIManager.Hide(UIID.AppearBagInfoUI) end
+            UIManager.Hide("Bag_AppearBagInfoUI")
+            if UIID and UIID.AppearBagLookUI then UIManager.Hide(UIID.AppearBagLookUI) end
+            UIManager.Hide("Bag_AppearBagLookUI")
+            if UIID and UIID.BagWarehouseUI then UIManager.Hide(UIID.BagWarehouseUI) end
+            UIManager.Hide("Bag_WarehouseInfoUI")
+            if UIID and UIID.BagSellInfoUI then UIManager.Hide(UIID.BagSellInfoUI) end
+            UIManager.Hide("Bag_SellInfoUI")
+            if UIID and UIID.BagShopInfoUI then UIManager.Hide(UIID.BagShopInfoUI) end
+            UIManager.Hide("Bag_ShopInfoUI")
+            if UIID and UIID.Bag_EquipInfoUI then UIManager.Hide(UIID.Bag_EquipInfoUI) end
+            UIManager.Hide("Bag_EquipInfoUI")
+            if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
+            UIManager.Hide("Equip_ForgeNavUi")
+            if UIID and UIID.Equip_IntensifyUI then UIManager.Hide(UIID.Equip_IntensifyUI) end
+            UIManager.Hide("Equip_IntensifyUI")
+            if UIID and UIID.Equip_StoneUI then UIManager.Hide(UIID.Equip_StoneUI) end
+            UIManager.Hide("Equip_StoneUI")
+            if UIID and UIID.Equip_Decompose then UIManager.Hide(UIID.Equip_Decompose) end
+            UIManager.Hide("Equip_Decompose")
+            if UIID and UIID.Equip_Transfer then UIManager.Hide(UIID.Equip_Transfer) end
+            UIManager.Hide("Equip_Transfer")
+            if UIID and UIID.Equip_ZhuijiaUI then UIManager.Hide(UIID.Equip_ZhuijiaUI) end
+            UIManager.Hide("Equip_ZhuijiaUI")
+            if UIID and UIID.Commercialization_FirstActivityUI then UIManager.Hide(UIID.Commercialization_FirstActivityUI) end
+            UIManager.Hide("Commercialization_FirstActivityUI")
         end
 
         -- =========================================================================
@@ -3131,6 +3465,25 @@ DismissBlockers = function()
             end)
         end
 
+        -- Tự động bấm "Dùng ngay" (Skill_TIpsUI) hoặc đóng để không che màn hình
+        local skillTipUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Skill_TIpsUI") or (_G.UIID and _G.UIID.SkillTIpsUI and _G.UIManager.GetUiByName(_G.UIID.SkillTIpsUI)))
+        if skillTipUI and ((skillTipUI.visible == true) or (skillTipUI.root and skillTipUI.root.gameObject and skillTipUI.root.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if skillTipUI.btn_quickeuseOnClick and skillTipUI.btn_quickeuse then
+                    skillTipUI:btn_quickeuseOnClick(skillTipUI.btn_quickeuse)
+                elseif skillTipUI.btn_closeOnClick and skillTipUI.btn_close then
+                    skillTipUI:btn_closeOnClick(skillTipUI.btn_close)
+                else
+                    _G.UIManager.Hide("Skill_TIpsUI")
+                end
+            end)
+        end
+        if _G.TipData and _G.TipData.CloseItemData and _G.TipShowSort then
+            _G.TipData.CloseItemData(_G.TipShowSort.use)
+            _G.TipData.CloseItemData(_G.TipShowSort.equip)
+            _G.TipData.CloseItemData(_G.TipShowSort.auction)
+        end
+
         if CS and CS.MuInterface and CS.MuInterface.Instance and CS.MuInterface.Instance.HideView then
             CS.MuInterface.Instance:HideView()
         end
@@ -3139,6 +3492,115 @@ DismissBlockers = function()
         end
     end)
 end
+_G.DismissBlockers = DismissBlockers
+
+-- =========================================================================
+-- [MOD FEATURE]: GỠ SẠCH DỮ LIỆU & TRẠNG THÁI NHIỆM VỤ KHI ĐỔI TÀI KHOẢN (CLEAN TASK STATE)
+-- Mô tả: Xóa sạch 100% TaskData, TaskManager, AutoTaskManage, HUD Task_TaskUI và các bộ đệm
+--        nhiệm vụ của bot trước khi logout / chuyển sang acc mới để chống lag / kẹt quest.
+-- =========================================================================
+ClearAllTaskDataAndState = function()
+    Log("-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ cũ trước khi đổi tài khoản...", true)
+    
+    -- 1. Dọn sạch hệ thống TaskData phía Client
+    pcall(function()
+        if _G.TaskData then
+            if _G.TaskData.SwitchRole then _G.TaskData.SwitchRole() end
+            if _G.TaskData.Reset then _G.TaskData.Reset() end
+            _G.TaskData.AllTasks = {}
+            _G.TaskData.mainTasks = {}
+            _G.TaskData.branchTasks = {}
+            _G.TaskData.rewardsTasks = {}
+            _G.TaskData.activeTasks = {}
+            _G.TaskData.monsterTasks = {}
+            _G.TaskData.starTasks = {}
+            _G.TaskData.counterpartTask = {}
+            _G.TaskData.skillBooksTasks = {}
+            _G.TaskData.periodicalTasks = {}
+            _G.TaskData.transferTask = {}
+            _G.TaskData.completedTasksCount = {}
+            _G.TaskData.allMonsterLevel = {}
+            _G.TaskData.allUnionTasks = {}
+            _G.TaskData.levelBossTaskId = nil
+            _G.TaskData.StarTaskCount = nil
+        end
+    end)
+
+    -- 2. Dọn sạch TaskManager, AutoTaskManage, DirectTask, LookForTask
+    pcall(function()
+        if _G.TaskManager then
+            if _G.TaskManager.SwitchRole then _G.TaskManager.SwitchRole() end
+            if _G.TaskManager.TaskPathStop then _G.TaskManager.TaskPathStop() end
+            _G.TaskManager.curTask = nil
+            _G.TaskManager.clickTask = nil
+        end
+        if _G.AutoTaskManage then
+            if _G.AutoTaskManage.StopAutoTask then _G.AutoTaskManage.StopAutoTask() end
+            if _G.AutoTaskManage.OnReset then _G.AutoTaskManage.OnReset() end
+            _G.AutoTaskManage.taskChange = false
+            _G.AutoTaskManage.autoTask = false
+            _G.AutoTaskManage.curRoleOperate = false
+            _G.AutoTaskManage.curAutoTask = nil
+            _G.AutoTaskManage.curAutoTaskState = nil
+            _G.AutoTaskManage.autoTaskStack = {}
+            if _G.AutoTaskManage.RemoveAutoTask then _G.AutoTaskManage.RemoveAutoTask(true) end
+        end
+        if _G.DirectTask and _G.DirectTask.SwitchRole then _G.DirectTask.SwitchRole() end
+        if _G.LookForTask and _G.LookForTask.SwitchRole then _G.LookForTask.SwitchRole() end
+        if _G.TaskController then
+            if _G.TaskController.OnGamePlayLeave then _G.TaskController.OnGamePlayLeave() end
+            _G.TaskController.curTask = nil
+        end
+    end)
+
+    -- 3. Reset tìm đường và dừng nhân vật
+    pcall(function()
+        if _G.PathFinderManager and _G.PathFinderManager.pathFinding and _G.PathFinderManager.pathFinding.Reset then
+            _G.PathFinderManager.pathFinding.Reset()
+        end
+        if _G.RoleManager and _G.RoleManager.me then
+            if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
+            if _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
+                _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight)
+            end
+        end
+    end)
+
+    -- 4. Xóa trắng HUD Task_TaskUI và bảng nhiệm vụ LeftTopPanel
+    pcall(function()
+        local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Task_TaskUI") or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI)))
+        if taskUI then
+            if taskUI.CleanTaskReminder then taskUI:CleanTaskReminder() end
+            if taskUI.RemoveTime then taskUI:RemoveTime() end
+            if taskUI.RemoveNaviGuideTime then taskUI:RemoveNaviGuideTime() end
+            if taskUI.taskItemTemp and taskUI.taskItemTemp.RemoveKTable then
+                taskUI.taskItemTemp:RemoveKTable()
+            end
+        end
+        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.Task_Update then
+            _G.EventManager.Dispatch(_G.Event.Task_Update, nil)
+        end
+        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.TaskData_Update then
+            _G.EventManager.Dispatch(_G.Event.TaskData_Update, nil)
+        end
+    end)
+
+    -- 5. Xóa toàn bộ bộ đệm nhiệm vụ & trạng thái của Bot
+    _G.Bot_CurrentTaskId = nil
+    _G.Bot_LastTaskNavTime = 0
+    _G.Bot_TaskRetryCount = 0
+    _G.ClaimedTaskCooldown = {}
+    _G.BranchTaskCooldown = {}
+    _G.ClaimedOpeningGiftsCache = {}
+    _G.Bot_LevelMilestonesClaimed = {}
+    _G.ClaimedDailyWelfareIds = {}
+    _G.Mod_HasPurchasedDailyPackToday = false
+    _G.Mod_HasPurchasedExpPotion = false
+    _G.Mod_Count180Bought = 0
+    _G.Bot_HasDoneEnhanceAfterSnowBug = nil
+    SaveOutput()
+end
+_G.ClearAllTaskDataAndState = ClearAllTaskDataAndState
 
 ForceLogoutToLogin = function()
     Log("--- [CLEAN LOGOUT] ĐĂNG XUẤT RA MÀN HÌNH LOGIN ---", true)
@@ -3146,6 +3608,9 @@ ForceLogoutToLogin = function()
     _G.IsRoleCreating = false
     _G.HasCreatedRoleForTarget = false
     
+    -- GỠ SẠCH DỮ LIỆU & TRẠNG THÁI NHIỆM VỤ CŨ TRƯỚC KHI THỰC HIỆN LOGOUT
+    ClearAllTaskDataAndState()
+
     -- Dừng toàn bộ các timer đang chạy
     pcall(function()
         if _G.BotQuestMonitorTimer then Timer.Stop(_G.BotQuestMonitorTimer); _G.BotQuestMonitorTimer = nil end
@@ -3215,6 +3680,7 @@ ForceLogoutToLogin = function()
     end)
     SaveOutput()
 end
+_G.ForceLogoutToLogin = ForceLogoutToLogin
 
 -- =========================================================================
 -- 6. LỌC ĐỒ & THU HỒI / TÁCH TRANG BỊ
@@ -5210,7 +5676,7 @@ local FALLBACK_MAP_SPOTS = {
     [1003] = { x = 215, y = 45, name = "Devias (Lv 30)", defenseReq = 30 },
     [100201] = { x = 66, y = 236, name = "Dungeon 1 (Bãi Đôi: 66#236)", defenseReq = 80 },
     [100501] = { x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)", defenseReq = 105 },
-    [100502] = { x = 183, y = 233, name = "Lost Tower 2 (Bãi Đôi: 183#233)", defenseReq = 180 },
+    [100502] = { x = 171, y = 231, name = "Lost Tower 2 (Bãi Đôi: 171#231)", defenseReq = 180 },
     [100507] = { x = 193, y = 30, name = "Lost Tower 7 (Lv 140)", defenseReq = 277 },
     [1008] = { x = 34, y = 162, name = "Atlantis (Bãi Đôi: 34#162)", defenseReq = 176 },
     [100801] = { x = 34, y = 162, name = "Atlantis (Bãi Đôi: 34#162)", defenseReq = 176 },
@@ -5500,7 +5966,7 @@ GetBestMonsterFarmPoint = function(curMap)
         --        không dịch chuyển đến tọa độ góc của riêng 1 bãi.
         --        - Dungeon 1 (100201): 66#236
         --        - Lost Tower 1 (100501): 194#106
-        --        - Lost Tower 2 (100502): 183#233
+        --        - Lost Tower 2 (100502): 171#231
         --        - Atlantis (1008 / 100801): 34#162
         -- =========================================================================
         if bestPoint then
@@ -5514,9 +5980,9 @@ GetBestMonsterFarmPoint = function(curMap)
                 bestPoint.y = 106
                 bestPoint.name = "Lost Tower 1 (Giữa 2 Bãi Lv 90: 194#106)"
             elseif m == 100502 or curMap == 100502 or targetMap == 100502 then
-                bestPoint.x = 183
-                bestPoint.y = 233
-                bestPoint.name = "Lost Tower 2 (Bãi Đôi: 183#233)"
+                bestPoint.x = 171
+                bestPoint.y = 231
+                bestPoint.name = "Lost Tower 2 (Bãi Đôi: 171#231)"
             elseif m == 1008 or m == 100801 or curMap == 1008 or targetMap == 1008 or curMap == 100801 or targetMap == 100801 then
                 bestPoint.x = 34
                 bestPoint.y = 162
@@ -6611,8 +7077,8 @@ end
 
 _G.LastPotionBuyTime = _G.LastPotionBuyTime or 0
 AutoBuyPotionsIfLow = function(targetMinCount, targetRefillCount)
-    targetMinCount = targetMinCount or 100
-    targetRefillCount = targetRefillCount or 500
+    targetMinCount = targetMinCount or 50
+    targetRefillCount = targetRefillCount or 100
 
     local nowSec = os.time()
     if nowSec - _G.LastPotionBuyTime < 180 then
@@ -6990,6 +7456,264 @@ end
 _G.AutoUsePrivilegeCard = AutoUsePrivilegeCard
 
 -- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG DÙNG THUỐC TĂNG EXP (12H / 1 NGÀY / 7 NGÀY / 30 PHÚT) & MỞ HỘP QUÀ MỞ SV
+-- Mô tả: 
+--   1. Quét mở Hộp Quà Mở SV 1 (ID 5000040) và các rương/hộp quà sự kiện mở SV.
+--   2. Quét sử dụng Thuốc Tăng EXP 12 Giờ (ID 3000407) và các loại thuốc tăng EXP (3000404 -> 3000407).
+--   3. Đồng thời hỗ trợ quét theo tên chứa 'Thuốc Tăng EXP' để đảm bảo không bỏ sót bất kỳ loại thuốc nào.
+--   4. Gửi đồng thời qua cả 4 kênh dispatch chuẩn của game:
+--      - networkRequest.ReqUseItem(count, instId, {})
+--      - NetManager.Send(BagMessage.ReqUseItem, { count = count, itemId = instId, clientParams = {} })
+--      - BagInfoController.UseItemReq(count, instId, {}, configId)
+--      - ItemUtility.UseItem({ useCount = count, useItemId = instId, configId = configId, params = {} })
+--   5. Bắn FloatingWordUtility.QuickMsg lên màn hình để User nhận biết bot đã cắn thuốc.
+-- =========================================================================
+local function AutoUseExpMedicine()
+    pcall(function()
+        if not _G.BagInfoData then return end
+        local totalItems = _G.BagInfoData.TotalItems
+        if not totalItems then return end
+
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+        if curLvl < 20 then return end
+
+        local function DispatchUse(it, cfgId, itName)
+            local instId = it.id or (it.data and it.data.id) or (it.serverInfo and it.serverInfo.id) or cfgId
+            local cnt = it.count or 1
+            Log(string.format(">>> [DÙNG VẬT PHẨM]: Tự động kích hoạt %s (ConfigId: %s | InstId: %s | Count: %s)! <<<", tostring(itName), tostring(cfgId), tostring(instId), tostring(cnt)), true)
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(string.format(">>> Đã cắn %s! <<<", tostring(itName)))
+            end
+            SaveOutput()
+
+            -- Cách 1: networkRequest.ReqUseItem (Kênh chuẩn giao tiếp network của Client MU)
+            pcall(function()
+                if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                    _G.networkRequest.ReqUseItem(cnt, instId, {})
+                end
+            end)
+
+            -- Cách 2: NetManager.Send BagMessage.ReqUseItem (Gói protobuf trực tiếp tới server)
+            pcall(function()
+                if _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                    _G.NetManager.Send(_G.BagMessage.ReqUseItem, {
+                        count = cnt,
+                        itemId = instId,
+                        clientParams = {}
+                    })
+                end
+            end)
+
+            -- Cách 3: BagInfoController.UseItemReq (Controller túi đồ của game)
+            pcall(function()
+                if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                    _G.BagInfoController.UseItemReq(cnt, instId, {}, cfgId)
+                end
+            end)
+
+            -- Cách 4: ItemUtility.UseItem (Utility mô phỏng click dùng item của UI, không truyền useParam để tránh bị redirect mở UI TipPanel)
+            pcall(function()
+                if _G.ItemUtility and _G.ItemUtility.UseItem then
+                    _G.ItemUtility.UseItem({
+                        useCount = cnt,
+                        useItemId = instId,
+                        configId = cfgId,
+                        itemInfo = it,
+                        params = {}
+                    })
+                end
+            end)
+        end
+
+        -- Bước 1: Quét mở Hộp Quà Mở SV (ID 5000040, 5000041) nếu có
+        local foundBox = false
+        for _, rawItem in pairs(totalItems) do
+            local item = (rawItem and rawItem.itemData) or rawItem
+            if item then
+                local iid = tonumber(item.itemId or (item.tblItem and item.tblItem.id) or 0)
+                local iname = tostring((item.tblItem and item.tblItem.name) or "")
+                if iid == 5000040 or iid == 5000041 or iname:find("Quà KC Sự Kiện Mở Server") then
+                    DispatchUse(item, iid, iname ~= "" and iname or "Hộp Quà Mở SV")
+                    foundBox = true
+                end
+            end
+        end
+
+        -- Nếu vừa mở hộp quà, sau 1.2s kích hoạt lại để cắn ngay thuốc EXP vừa rơi ra
+        if foundBox and _G.Timer and _G.Timer.Start then
+            _G.Timer.Start(1.2, function()
+                if AutoUseExpMedicine then AutoUseExpMedicine() end
+            end)
+        end
+
+        -- Bước 2: Dùng Thuốc Tăng EXP (3000407: 12h, 3000404 -> 3000406, hoặc tên chứa Thuốc Tăng EXP)
+        for _, rawItem in pairs(totalItems) do
+            local item = (rawItem and rawItem.itemData) or rawItem
+            if item then
+                local iid = tonumber(item.itemId or (item.tblItem and item.tblItem.id) or 0)
+                local iname = tostring((item.tblItem and item.tblItem.name) or "")
+                local isExpMed = false
+                if iid >= 3000404 and iid <= 3000407 then
+                    isExpMed = true
+                elseif iname:find("Thuốc Tăng EXP") or iname:find("Thuốc EXP") then
+                    isExpMed = true
+                end
+
+                if isExpMed then
+                    DispatchUse(item, iid, iname ~= "" and iname or ("Thuốc Tăng EXP " .. tostring(iid)))
+                    break
+                end
+            end
+        end
+    end)
+end
+_G.AutoUseExpMedicine = AutoUseExpMedicine
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MUA GÓI QUÀ THUỐC MỞ SERVER (120 KC - LEVEL >= 60)
+-- Mô tả: Khi nhân vật đạt Level >= 60 ở server mới:
+--        1. Kiểm tra gói "Quà Thuốc" (GoodId: 110001, giá 120 KC, giới hạn 1 lần)
+--        2. Tự động mua gói 110001 bằng 120 KC (chứa Thuốc Tăng EXP 12h +30% EXP, 5 ngọc tím, 5 ngọc xanh, 5000 vàng)
+--        3. Tự động nhận thư (ReqGetMailList, ReqGetMailItems)
+--        4. Tự động mở hộp quà và kích hoạt ngay Thuốc Tăng EXP (12 giờ)
+--        5. Đảm bảo tối ưu lượng EXP nhận được trước khi đạt Level 100 để mua các gói KC khác!
+-- =========================================================================
+local function AutoBuyNewServerExpMedicinePack(onFinished)
+    pcall(function()
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = tonumber((pMe and pMe.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+
+        -- Chỉ áp dụng khi đạt từ Level 60 đến dưới Level 120 (Sau Lv 120 ngừng mua hoàn toàn)
+        if curLvl < 60 or curLvl >= 120 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        local roleId = tostring((pMe and pMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or "default")
+        local prefKey = "Mod_BoughtOpenServerExpPack_" .. roleId
+        local boughtPref = CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 0) == 1
+
+        -- Kiểm tra số lần đã mua qua RefreshData (CountKey 4010501)
+        local countKey = 4010501
+        local alreadyBought = boughtPref
+        pcall(function()
+            if _G.RefreshData and _G.RefreshData.TotalRefreshTbl and _G.RefreshData.TotalRefreshTbl[countKey] then
+                if (_G.RefreshData.TotalRefreshTbl[countKey].count or 0) >= 1 then
+                    alreadyBought = true
+                end
+            end
+            if not alreadyBought and _G.RefreshData and _G.RefreshData.GetLimitCount then
+                local lim = _G.RefreshData.GetLimitCount(countKey)
+                if lim ~= nil and tonumber(lim) <= 0 then
+                    alreadyBought = true
+                end
+            end
+        end)
+
+        if alreadyBought then
+            if not boughtPref then
+                CS.UnityEngine.PlayerPrefs.SetInt(prefKey, 1)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end
+            -- Đã mua rồi -> Vẫn gọi AutoUseExpMedicine để đảm bảo nếu bình EXP còn trong túi thì cắn ngay!
+            if AutoUseExpMedicine then AutoUseExpMedicine() end
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- Kiểm tra số dư Kim Cương (cần >= 120 KC)
+        local curDiamonds = 0
+        pcall(function()
+            if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                curDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000050) or 0
+                if curDiamonds <= 0 then
+                    curDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000081) or 0
+                end
+            end
+            if curDiamonds <= 0 and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute then
+                curDiamonds = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.bindDiamond)) or 0
+                if curDiamonds <= 0 then
+                    curDiamonds = (_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.diamond)) or 0
+                end
+            end
+            if curDiamonds <= 0 and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data then
+                curDiamonds = _G.RoleManager.me.data.diamond_bind or _G.RoleManager.me.data.diamond or 0
+            end
+        end)
+
+        if curDiamonds < 120 then
+            -- Chưa đủ 120 KC, chờ nhận đủ KC
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- Thực hiện mua gói Quà Thuốc mở SV (GoodId: 110001)
+        Log(string.format(">>> [QUÀ MỞ SV]: Cấp %d (Đủ %d KC) -> Tự động mua Quà Thuốc 120 KC (Thuốc Tăng EXP 12h)! <<<", curLvl, curDiamonds), true)
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(string.format(">>> Mua Quà Thuốc Mở SV 120 KC (Cấp %d)! <<<", curLvl))
+        end
+        SaveOutput()
+
+        -- Gửi truy vấn mở tab để server đồng bộ
+        pcall(function()
+            if _G.NetManager and _G.CommerceMessage and _G.CommerceMessage.ReqGetCommercialActivityInfo then
+                _G.NetManager.Send(_G.CommerceMessage.ReqGetCommercialActivityInfo, {
+                    icon = (_G.CommercializeActivityTab and _G.CommercializeActivityTab.Opening_service) or 1,
+                    groupId = 100
+                })
+            end
+        end)
+
+        -- Gửi gói tin mua gói quà
+        pcall(function()
+            if _G.networkRequest and _G.networkRequest.ReqBuy then
+                _G.networkRequest.ReqBuy(110001, 1)
+            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
+                    goodId = 110001,
+                    buyCount = 1
+                })
+            end
+        end)
+
+        CS.UnityEngine.PlayerPrefs.SetInt(prefKey, 1)
+        CS.UnityEngine.PlayerPrefs.Save()
+
+        -- Sau khi mua: Kiểm tra túi đồ & hòm thư qua nhiều nhịp (1.5s, 3.0s, 4.5s) để mở hộp và cắn thuốc EXP chắc chắn 100%
+        Timer.Start(1.5, function()
+            pcall(function()
+                if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailList then
+                    _G.NetManager.Send(_G.MailMessage.ReqGetMailList, {})
+                end
+                if _G.networkRequest and _G.networkRequest.ReqBagInfo then
+                    _G.networkRequest.ReqBagInfo()
+                end
+            end)
+            if AutoUseExpMedicine then AutoUseExpMedicine() end
+
+            Timer.Start(1.5, function()
+                pcall(function()
+                    Log(">>> [HÒM THƯ]: Tự động nhận quà Quà Thuốc mở SV từ thư vào túi đồ! <<<", true)
+                    SaveOutput()
+                    if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailItems then
+                        _G.NetManager.Send(_G.MailMessage.ReqGetMailItems)
+                    end
+                end)
+                if AutoUseExpMedicine then AutoUseExpMedicine() end
+
+                Timer.Start(1.5, function()
+                    if AutoUseExpMedicine then AutoUseExpMedicine() end
+                    if onFinished then onFinished() end
+                end)
+            end)
+        end)
+    end)
+end
+_G.AutoBuyNewServerExpMedicinePack = AutoBuyNewServerExpMedicinePack
+
+
+-- =========================================================================
 -- [MOD FEATURE]: TỰ ĐỘNG NHẬN PHÚC LỢI CỘNG ĐỒNG TOÀN DIỆN & HÒM THƯ (LV 30, 60, 100)
 -- Mô tả: Kiểm tra và nhận toàn bộ các mốc Phúc Lợi Cộng Đồng theo điều kiện cấp độ nhân vật:
 --        - Mốc 1 (Lv 30): Hướng Dẫn Game (Gift 2200008, CountKey 2444009) -> 250 KC + 250K Vàng
@@ -7051,18 +7775,26 @@ local function AutoClaimCommunityWelfareAndMail(onFinished)
                     end
                 end)
                 Timer.Start(1.5, function()
-                    if AutoBuyDailyBlessStonesFromShop then
-                        AutoBuyDailyBlessStonesFromShop(function()
-                            if AutoBuyDailyDiamondGiftPacks then
-                                AutoBuyDailyDiamondGiftPacks(onFinished)
-                            elseif onFinished then
-                                onFinished()
-                            end
-                        end)
-                    elseif AutoBuyDailyDiamondGiftPacks then
-                        AutoBuyDailyDiamondGiftPacks(onFinished)
-                    elseif onFinished then
-                        onFinished()
+                    local proceedWithShopAndDiamondPacks = function()
+                        if AutoBuyDailyBlessStonesFromShop then
+                            AutoBuyDailyBlessStonesFromShop(function()
+                                if AutoBuyDailyDiamondGiftPacks then
+                                    AutoBuyDailyDiamondGiftPacks(onFinished)
+                                elseif onFinished then
+                                    onFinished()
+                                end
+                            end)
+                        elseif AutoBuyDailyDiamondGiftPacks then
+                            AutoBuyDailyDiamondGiftPacks(onFinished)
+                        elseif onFinished then
+                            onFinished()
+                        end
+                    end
+
+                    if AutoBuyNewServerExpMedicinePack then
+                        AutoBuyNewServerExpMedicinePack(proceedWithShopAndDiamondPacks)
+                    else
+                        proceedWithShopAndDiamondPacks()
                     end
                 end)
             end)
@@ -7157,21 +7889,72 @@ end
 _G.AutoBuyDailyBlessStonesFromShop = AutoBuyDailyBlessStonesFromShop
 
 -- =========================================================================
--- [MOD FEATURE]: TỰ ĐỘNG MUA GÓI QUÀ KIM CƯƠNG NGÀY (DAILY DIAMOND GIFT PACKS)
--- Mô tả: Tự động mua Quà KC II (480 KC) để nhận 200 Huỳnh thạch tím, 67 hồng, 65 chúc phúc, 35 linh hồn, 4 lông vũ, 30K vàng
---        và nếu còn dư >= 180 KC thì mua tiếp Quà KC I (180 KC) để nhận 80 tím, 27 hồng, 25 chúc phúc, 15 linh hồn, 2 lông vũ
---        ngay khi nhận đủ KC từ gói Phúc Lợi Cộng Đồng ở Lv 100 hoặc trong chu kỳ nâng cấp 30s.
+-- [MOD FEATURE]: TỰ ĐỘNG MUA GÓI QUÀ KIM CƯƠNG 180 KC (GIỚI HẠN MUA & KHÓA GÓI 480 KC)
+-- Mô tả: 
+--   1. Gói 480 KC: KHÓA HOÀN TOÀN, không mua.
+--   2. Mốc Level 65 -> 99: Mua ĐÚNG 1 LẦN gói 180 KC sau khi đã mua gói thuốc EXP.
+--   3. Mốc Level 100 -> 119: Mua THÊM 1 LẦN NỮA gói 180 KC (tổng tối đa 2 lần).
+--   4. Mốc Level >= 120: DỪNG HOÀN TOÀN, không bao giờ mua nữa để tránh hôm sau login bị trừ KC.
 -- =========================================================================
 AutoBuyDailyDiamondGiftPacks = function(onFinished)
     pcall(function()
         local pMe = _G.RoleManager and _G.RoleManager.me
-        local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-        if curLvl < 50 then
+        local curLvl = tonumber((pMe and pMe.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+
+        -- Chỉ áp dụng trong khoảng Level 65 <= curLvl < 120 (Sau Lv 120 dừng hoàn toàn)
+        if curLvl < 65 or curLvl >= 120 then
             if onFinished then onFinished() end
             return
         end
 
-        -- 1. Lấy tổng số Kim Cương hiện có (bao gồm cả KC Khóa 1000081 & KC Thường 1000050)
+        local roleId = tostring((pMe and pMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or "default")
+        local buyCountKey = "Mod_Bought180PackCount_" .. roleId
+        local bought180Count = CS.UnityEngine.PlayerPrefs.GetInt(buyCountKey, 0)
+
+        -- Kiểm tra giới hạn mua theo mốc cấp độ:
+        -- + Mốc Lv 65 -> 99: Chỉ mua tối đa 1 lần
+        -- + Mốc Lv 100 -> 119: Cho phép mua thêm 1 lần (tổng tối đa 2 lần)
+        if curLvl < 100 and bought180Count >= 1 then
+            if onFinished then onFinished() end
+            return
+        end
+        if curLvl >= 100 and bought180Count >= 2 then
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- Điều kiện tiên quyết: Phải đã mua thành công Gói Quà Thuốc Mở Server (120 KC) trước!
+        local hasBoughtExpPack = false
+        pcall(function()
+            local prefKey = "Mod_BoughtOpenServerExpPack_" .. roleId
+            if CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 0) == 1 then
+                hasBoughtExpPack = true
+            end
+            if not hasBoughtExpPack and _G.RefreshData and _G.RefreshData.TotalRefreshTbl and _G.RefreshData.TotalRefreshTbl[4010501] then
+                if (_G.RefreshData.TotalRefreshTbl[4010501].count or 0) >= 1 then
+                    hasBoughtExpPack = true
+                end
+            end
+            if not hasBoughtExpPack and _G.RefreshData and _G.RefreshData.GetLimitCount then
+                local lim = _G.RefreshData.GetLimitCount(4010501)
+                if lim ~= nil and tonumber(lim) <= 0 then
+                    hasBoughtExpPack = true
+                end
+            end
+            if not hasBoughtExpPack and _G.BagInfoData and _G.BagInfoData.GetFirstItemTblByConfigId then
+                if _G.BagInfoData.GetFirstItemTblByConfigId(3000407) or _G.BagInfoData.GetFirstItemTblByConfigId(5000040) then
+                    hasBoughtExpPack = true
+                end
+            end
+        end)
+
+        if not hasBoughtExpPack then
+            -- Chưa mua thành công gói thuốc 120 KC -> Giữ KC để ưu tiên mua gói thuốc trước!
+            if onFinished then onFinished() end
+            return
+        end
+
+        -- 1. Lấy tổng số Kim Cương hiện có
         local curDiamonds = 0
         pcall(function()
             if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
@@ -7196,15 +7979,10 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
             return
         end
 
-        -- 2. Xác định Config ID và CountKey của Quà KC II và Quà KC I
-        -- Quà KC II: goodId 220244 (hoặc 220245 nếu gem >= 210), countKey 4010316
-        -- Quà KC I:  goodId 220228 (hoặc 220229 nếu gem >= 210), countKey 4010305
-        local packKC2_Id = 220244
-        local packKC2_CountKey = 4010316
+        -- 2. Xác định Config ID và CountKey của Quà KC I (180 KC). GÓI 480 KC BỊ KHÓA HOÀN TOÀN!
         local packKC1_Id = 220228
         local packKC1_CountKey = 4010305
 
-        -- Nếu hệ thống RechargeData đã có BuyPrizeData, tìm động theo Cost để tuyệt đối chính xác
         pcall(function()
             if _G.RechargeData and _G.RechargeData.GetNewBuyPrizeInfor then
                 local prizeItemData = _G.RechargeData.GetNewBuyPrizeInfor()
@@ -7212,10 +7990,7 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
                     for _, v in ipairs(prizeItemData) do
                         local costArray = string.split(v.cost or "", "#")
                         local costVal = tonumber(costArray[2]) or 0
-                        if costVal == 480 then
-                            packKC2_Id = v.id or packKC2_Id
-                            packKC2_CountKey = v.countKey or packKC2_CountKey
-                        elseif costVal == 180 then
+                        if costVal == 180 then
                             packKC1_Id = v.id or packKC1_Id
                             packKC1_CountKey = v.countKey or packKC1_CountKey
                         end
@@ -7224,62 +7999,21 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
             end
         end)
 
-        local remainKC2 = 1
         local remainKC1 = 1
         pcall(function()
             if _G.RechargeData and _G.RechargeData.GetBuyPrizeLimitCountData then
-                local r2 = _G.RechargeData.GetBuyPrizeLimitCountData(packKC2_CountKey)
-                if r2 ~= nil then remainKC2 = tonumber(r2) or 0 end
                 local r1 = _G.RechargeData.GetBuyPrizeLimitCountData(packKC1_CountKey)
                 if r1 ~= nil then remainKC1 = tonumber(r1) or 0 end
             end
         end)
 
-        -- ƯU TIÊN 1: Mua Quà KC II (480 KC)
-        if curDiamonds >= 480 and remainKC2 > 0 then
-            Log(string.format(">>> [GÓI QUÀ KC]: Đủ %d KC -> Tự động mua QUÀ KC II (GoodId: %d | Chi phí: 480 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC2_Id, remainKC2), true)
-            SaveOutput()
-
-            if _G.networkRequest and _G.networkRequest.ReqBuy then
-                _G.networkRequest.ReqBuy(packKC2_Id, 1)
-            elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
-                _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
-                    goodId = packKC2_Id,
-                    buyCount = 1
-                })
-            end
-            curDiamonds = curDiamonds - 480
-
-            -- Sau 1.2s kiểm tra xem có đủ điều kiện mua tiếp Quà KC I không
-            Timer.Start(1.2, function()
-                pcall(function()
-                    if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
-                        local realDiamonds = _G.BagInfoData.GetItemTotalCountByItemId(1000050) or 0
-                        if realDiamonds > 0 then curDiamonds = realDiamonds end
-                    end
-
-                    if curDiamonds >= 180 and remainKC1 > 0 then
-                        Log(string.format(">>> [GÓI QUÀ KC]: Dư %d KC -> Tự động mua thêm QUÀ KC I (GoodId: %d | Chi phí: 180 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC1_Id, remainKC1), true)
-                        SaveOutput()
-
-                        if _G.networkRequest and _G.networkRequest.ReqBuy then
-                            _G.networkRequest.ReqBuy(packKC1_Id, 1)
-                        elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
-                            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, {
-                                goodId = packKC1_Id,
-                                buyCount = 1
-                            })
-                        end
-                    end
-                end)
-                if onFinished then onFinished() end
-            end)
-            return
-        end
-
-        -- ƯU TIÊN 2: Nếu không đủ 480 KC nhưng đủ 180 KC -> Mua Quà KC I
+        -- 3. Mua Quà KC I (180 KC):
         if curDiamonds >= 180 and remainKC1 > 0 then
-            Log(string.format(">>> [GÓI QUÀ KC]: Có %d KC -> Tự động mua QUÀ KC I (GoodId: %d | Chi phí: 180 KC | Còn lại: %d lần)! <<<", curDiamonds, packKC1_Id, remainKC1), true)
+            local nextCount = bought180Count + 1
+            Log(string.format(">>> [GÓI QUÀ KC]: Cấp %d (Có %d KC) -> Tự động mua QUÀ KC I lần %d (GoodId: %d | Chi phí: 180 KC)! <<<", curLvl, curDiamonds, nextCount, packKC1_Id), true)
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(string.format(">>> Mua Quà KC I 180 KC (Lần %d/2)! <<<", nextCount))
+            end
             SaveOutput()
 
             if _G.networkRequest and _G.networkRequest.ReqBuy then
@@ -7290,6 +8024,9 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
                     buyCount = 1
                 })
             end
+
+            CS.UnityEngine.PlayerPrefs.SetInt(buyCountKey, nextCount)
+            CS.UnityEngine.PlayerPrefs.Save()
         end
 
         if onFinished then onFinished() end
@@ -7312,7 +8049,8 @@ _G.AutoBuyDailyDiamondGiftPacks = AutoBuyDailyDiamondGiftPacks
 _G.Global30sUpgradeTimer = _G.Global30sUpgradeTimer or nil
 
 RunPeriodicUpgradeCycle = function()
-    if not _G.Bot_Running or _G.Bot_PauseTask then return end
+    if not _G.Bot_Running and not _G.Mod_FarmKCActive then return end
+    if _G.Bot_PauseTask and not _G.Mod_FarmKCActive then return end
 
     local pMe = _G.RoleManager and _G.RoleManager.me
     local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
@@ -7321,13 +8059,14 @@ RunPeriodicUpgradeCycle = function()
     pcall(function()
         Log("[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", false)
 
-        -- 0.01. Tự động nhận thư và quà đính kèm định kỳ mỗi 30s
+        -- 0.01. Tự động nhận thư và quà đính kèm định kỳ mỗi 30s (luôn chạy kể cả Farm KC)
         pcall(function()
-            if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailList then
-                _G.NetManager.Send(_G.MailMessage.ReqGetMailList, {})
+            if _G.NetManager and _G.MailMessage then
+                if _G.MailMessage.ReqGetMailList then _G.NetManager.Send(_G.MailMessage.ReqGetMailList, {}) end
+                if _G.MailMessage.ReqGetMailItems then _G.NetManager.Send(_G.MailMessage.ReqGetMailItems) end
             end
-            if _G.NetManager and _G.MailMessage and _G.MailMessage.ReqGetMailItems then
-                _G.NetManager.Send(_G.MailMessage.ReqGetMailItems)
+            if _G.MailController and _G.MailController.ReqGetMailItems then
+                _G.MailController.ReqGetMailItems()
             end
         end)
 
@@ -7336,19 +8075,29 @@ RunPeriodicUpgradeCycle = function()
             AutoBuyDailyBlessStonesFromShop()
         end
 
-        -- 0.025. Tự động kiểm tra mua Gói Quà Kim Cương Ngày (Quà KC II 480 KC, Quà KC I 180 KC)
-        if AutoBuyDailyDiamondGiftPacks then
+        -- 0.025. Tự động kiểm tra mua Gói Quà Kim Cương Ngày (Chỉ mua khi KHÔNG ở chế độ Farm KC)
+        if not _G.Mod_FarmKCActive and AutoBuyDailyDiamondGiftPacks then
             AutoBuyDailyDiamondGiftPacks()
         end
 
-        -- 0. Tự động mua bù Máu & Mana nếu < 50
+        -- 0. Tự động mua bù Máu & Mana nếu < 100 -> Mua bù lên 200 bình (theo yêu cầu USER)
         if AutoBuyPotionsIfLow then
-            AutoBuyPotionsIfLow(100, 500)
+            AutoBuyPotionsIfLow(100, 200)
         end
 
         -- 0.05. Tự động dùng Thẻ Đặc Quyền (120 Phút) nếu có trong túi
         if AutoUsePrivilegeCard then
             AutoUsePrivilegeCard()
+        end
+
+        -- 0.06. Tự động dùng Thuốc Tăng EXP 12 Giờ (ID 3000407) & Mở Hộp Quà Mở SV (ID 5000040)
+        if AutoUseExpMedicine then
+            AutoUseExpMedicine()
+        end
+
+        -- 0.07. Tự động mua Quà Thuốc Mở SV (Chỉ mua khi KHÔNG ở chế độ Farm KC)
+        if not _G.Mod_FarmKCActive and AutoBuyNewServerExpMedicinePack then
+            AutoBuyNewServerExpMedicinePack()
         end
 
         -- 0.1. Tự động nhận thưởng Sự kiện mở SV & Phúc lợi
@@ -7424,13 +8173,239 @@ StartGlobal30sUpgradePipeline = function()
     end
 
     _G.Global30sUpgradeTimer = Timer.StartLoop(30.0, -1, function()
-        if not _G.Bot_Running or _G.Bot_PauseTask then return end
+        if not _G.Bot_Running and not _G.Mod_FarmKCActive then return end
+        if _G.Bot_PauseTask and not _G.Mod_FarmKCActive then return end
         RunPeriodicUpgradeCycle()
     end)
     Log("-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!", true)
     SaveOutput()
 end
 _G.StartGlobal30sUpgradePipeline = StartGlobal30sUpgradePipeline
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1 - LV >= 200)
+-- Mô tả: Tự động vào Room Boss Phúc Lợi Tầng 1 (2101000), phát hiện Nữ Hoàng
+--        Băng Giá Lv80 (210100100), auto đánh, đếm số boss tiêu diệt,
+--        nhặt đồ rơi, lặp lại liên tục; nếu room trống thì đổi room ngay.
+-- =========================================================================
+_G.Mod_FarmKCActive = _G.Mod_FarmKCActive or false
+_G.Mod_FarmKCCount = _G.Mod_FarmKCCount or 0
+_G.Mod_FarmKCRunning = false
+_G.Mod_FarmKCTimer = nil
+
+local function DoEnterSecretRoom(callback)
+    if DismissBlockers then DismissBlockers() end
+    Log("[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...", false)
+
+    pcall(function()
+        if networkRequest then
+            if networkRequest.ReqGetBossMapAndCount then networkRequest.ReqGetBossMapAndCount() end
+            if networkRequest.ReqInstanceCoolDown then networkRequest.ReqInstanceCoolDown(1106) end
+            if networkRequest.ReqBossStateByType and MonsterBossType then
+                networkRequest.ReqBossStateByType(MonsterBossType.secretBoss)
+            end
+        end
+    end)
+
+    pcall(function()
+        if UIManager and UIID and UIID.Instance_BossUI then
+            UIManager.Show(UIID.Instance_BossUI, { openFirstTab = 7, Monsterid = 210100100 })
+        end
+    end)
+
+    local timerObj = _G.Timer or Timer
+    if timerObj and timerObj.Start then
+        timerObj.Start(0.4, function()
+            pcall(function()
+                local bossUI = UIManager and UIManager.GetUI and UIID and UIManager.GetUI(UIID.Instance_BossUI)
+                local secretTemp = bossUI and bossUI.secretBossTemplate
+
+                if secretTemp and secretTemp.EnterSecret then
+                    secretTemp:EnterSecret(210100001, { "31", "222" })
+                else
+                    if PathFinderManager and PathFinderManager.FlyTransferScene then
+                        PathFinderManager.FlyTransferScene(210100001)
+                    end
+                end
+
+                if UIManager and UIID and UIID.Instance_BossUI then
+                    UIManager.Hide(UIID.Instance_BossUI)
+                end
+            end)
+
+            if callback then
+                timerObj.Start(2.2, callback)
+            end
+        end)
+    else
+        pcall(function()
+            if PathFinderManager and PathFinderManager.FlyTransferScene then
+                PathFinderManager.FlyTransferScene(210100001)
+            end
+        end)
+        if callback then callback() end
+    end
+end
+_G.DoEnterSecretRoom = DoEnterSecretRoom
+
+local function FindBossNuHoangBangGia()
+    if RoleManager and RoleManager.GetMonsterRoleByConfigId then
+        local list = RoleManager.GetMonsterRoleByConfigId({ 210100100, 210100101 })
+        if list and #list > 0 then
+            for _, m in ipairs(list) do
+                if m and m.hp and m.hp > 0 then
+                    return m
+                end
+            end
+        end
+    end
+
+    if RoleManager and RoleManager.GetRolesByType and ERoleType and ERoleType.Monster then
+        local mTable = RoleManager.GetRolesByType(ERoleType.Monster)
+        if mTable then
+            for _, m in pairs(mTable) do
+                if m and m.hp and m.hp > 0 then
+                    local cfgId = (m.GetConfigId and m:GetConfigId()) or (m.data and (m.data.monsterId or m.data.configId))
+                    local mName = tostring(m.name or (m.data and m.data.name) or "")
+                    if cfgId == 210100100 or cfgId == 210100101 or string.find(mName, "Nữ Hoàng") or string.find(mName, "Băng Giá") or string.find(mName, "Nu Hoang") then
+                        return m
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
+end
+_G.FindBossNuHoangBangGia = FindBossNuHoangBangGia
+
+local farmKcState = "INIT"
+local farmKcStateTime = 0
+local activeFarmBoss = nil
+
+local function FarmKCStepLoop()
+    if not _G.Mod_FarmKCActive then
+        if _G.StopFarmKCRoutine then _G.StopFarmKCRoutine() end
+        return
+    end
+
+    if DismissBlockers then DismissBlockers() end
+
+    farmKcStateTime = farmKcStateTime + 0.5
+
+    if farmKcState == "INIT" then
+        farmKcState = "WAIT_MAP"
+        farmKcStateTime = 0
+        activeFarmBoss = nil
+        DoEnterSecretRoom(function()
+            farmKcState = "CHECK_BOSS"
+            farmKcStateTime = 0
+        end)
+
+    elseif farmKcState == "CHECK_BOSS" then
+        local boss = FindBossNuHoangBangGia()
+        if boss and boss.hp and boss.hp > 0 then
+            activeFarmBoss = boss
+            _G.Mod_FarmKCCount = _G.Mod_FarmKCCount + 1
+            farmKcState = "FIGHTING"
+            farmKcStateTime = 0
+
+            if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
+
+            Log(string.format(">>> [FARM KC #%d]: PHÁT HIỆN NỮ HOÀNG BĂNG GIÁ! BẮT ĐẦU ĐÁNH! <<<", _G.Mod_FarmKCCount), true)
+
+            pcall(function()
+                if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
+                    RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
+                end
+            end)
+            SaveOutput()
+        else
+            Log("[Farm KC] Không có Boss trong Room! Chuyển Room khác ngay...", false)
+            farmKcState = "WAIT_MAP"
+            farmKcStateTime = 0
+            DoEnterSecretRoom(function()
+                farmKcState = "CHECK_BOSS"
+                farmKcStateTime = 0
+            end)
+        end
+
+    elseif farmKcState == "FIGHTING" then
+        local isAlive = false
+        if activeFarmBoss then
+            pcall(function()
+                if activeFarmBoss.hp and activeFarmBoss.hp > 0 and not activeFarmBoss.isDead then
+                    isAlive = true
+                end
+            end)
+        end
+
+        if not isAlive or farmKcStateTime >= 45.0 then
+            Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 1.5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Mod_FarmKCCount), true)
+            farmKcState = "LOOTING"
+            farmKcStateTime = 0
+            SaveOutput()
+        else
+            if math.floor(farmKcStateTime) % 3 == 0 then
+                pcall(function()
+                    if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
+                        RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
+                    end
+                end)
+            end
+        end
+
+    elseif farmKcState == "LOOTING" then
+        if farmKcStateTime >= 1.5 then
+            Log("[Farm KC] Đã nhặt xong! Kích hoạt vào Room mới...", false)
+            farmKcState = "WAIT_MAP"
+            farmKcStateTime = 0
+            activeFarmBoss = nil
+            DoEnterSecretRoom(function()
+                farmKcState = "CHECK_BOSS"
+                farmKcStateTime = 0
+            end)
+        end
+
+    elseif farmKcState == "WAIT_MAP" then
+        if farmKcStateTime >= 6.0 then
+            farmKcState = "CHECK_BOSS"
+            farmKcStateTime = 0
+        end
+    end
+end
+
+_G.StartFarmKCRoutine = function()
+    if _G.Mod_FarmKCRunning and _G.Mod_FarmKCTimer then return end
+    _G.Mod_FarmKCRunning = true
+    farmKcState = "INIT"
+    farmKcStateTime = 0
+    activeFarmBoss = nil
+
+    Log("=========================================================================", true)
+    Log(string.format(">>> BẮT ĐẦU CHU TRÌNH TỰ ĐỘNG FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1) <<<"), true)
+    Log("=========================================================================", true)
+
+    if _G.Mod_FarmKCTimer then
+        pcall(function() Timer.Stop(_G.Mod_FarmKCTimer) end)
+        _G.Mod_FarmKCTimer = nil
+    end
+
+    _G.Mod_FarmKCTimer = Timer.StartLoop(0.5, -1, function()
+        pcall(FarmKCStepLoop)
+    end)
+    SaveOutput()
+end
+
+_G.StopFarmKCRoutine = function()
+    _G.Mod_FarmKCRunning = false
+    if _G.Mod_FarmKCTimer then
+        pcall(function() Timer.Stop(_G.Mod_FarmKCTimer) end)
+        _G.Mod_FarmKCTimer = nil
+    end
+    Log("[-] ĐÃ DỪNG CHU TRÌNH FARM KIM CƯƠNG!", true)
+    SaveOutput()
+end
 
 -- =========================================================================
 -- 13. [AUTO NHIỆM VỤ TÂN THỦ - QUÉT CAO TỐC 1s/LẦN & LƯU FLOW TIẾN ĐỘ QUEST]
@@ -7702,7 +8677,7 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
     -- Kiểm tra khung giờ mở phó bản: Chỉ mở trong 10 phút đầu mỗi khung giờ (phút 00 -> 09)
     local curHour = tonumber(os.date("%H")) or 0
     local curMinute = tonumber(os.date("%M")) or 0
-    if curMinute >= 10 then
+    if curMinute >= 15 then
         Log(string.format("[Phó Bản] : Hiện tại là %02d:%02d (Phó bản chỉ mở 10 phút đầu mỗi giờ: 00-09) -> Bỏ qua phó bản!", curHour, curMinute), false)
         if onFinished then onFinished() end
         return
@@ -7959,6 +8934,7 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
         _G.Bot_IsInGameWorld = false
 
         Timer.Start(1.5, function()
+            if ClearAllTaskDataAndState then ClearAllTaskDataAndState() end
             ForceLogoutToLogin()
             Timer.Start(3.0, function()
                 _G.IsSwitchingAccount = false
@@ -8027,6 +9003,14 @@ StartNewbieQuestPipeline = function()
             local lvl = (me and me.level) or (me and me.data and me.data.level) or 1
             local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
 
+            -- KIỂM TRA MỤC TIÊU FARM KIM CƯƠNG (NẾU BẬT NÚT FARM KC VÀ LV >= 200):
+            if _G.Mod_FarmKCActive and lvl >= 200 then
+                if not _G.Mod_FarmKCRunning and _G.StartFarmKCRoutine then
+                    _G.StartFarmKCRoutine()
+                end
+                return
+            end
+
             -- KIỂM TRA MỤC TIÊU CẤP ĐỘ FARM BOT (MẶC ĐỊNH LV 50):
             if lvl >= targetLvl then
                 _G.OnAccountReachLevelGoal(lvl, targetLvl)
@@ -8071,19 +9055,31 @@ StartNewbieQuestPipeline = function()
 
             AutoAddAttributePoints()
 
-            -- Quét dùng Thẻ Đặc Quyền (120 Phút) & Nhận Phúc Lợi Cộng Đồng mỗi 5s
+            -- Quét dùng Thẻ Đặc Quyền & Thuốc Tăng EXP & Nhận Phúc Lợi Cộng Đồng mỗi 5s
             if loopTickCount % 5 == 0 then
                 if AutoUsePrivilegeCard then AutoUsePrivilegeCard() end
+                if AutoUseExpMedicine then AutoUseExpMedicine() end
                 if lvl >= 30 and AutoClaimCommunityWelfareAndMail then
                     AutoClaimCommunityWelfareAndMail()
                 end
             end
 
-            -- Kích hoạt nhận lại toàn bộ phúc lợi cộng đồng tại Level 60 và 100
+            -- Kích hoạt nhận lại toàn bộ phúc lợi cộng đồng tại Level 60, 70 và 100
             if (lvl >= 60 and not _G.Bot_ClaimedCommunityLvl60) then
                 _G.Bot_ClaimedCommunityLvl60 = true
                 Log(">>> [MỐC LEVEL 60]: Quét nhận lại toàn bộ Phúc Lợi Cộng Đồng & Hòm Thư! <<<", true)
                 if AutoClaimCommunityWelfareAndMail then AutoClaimCommunityWelfareAndMail() end
+            end
+            if (lvl >= 60 and not _G.Bot_ClaimedOpenServerPackLvl60) then
+                _G.Bot_ClaimedOpenServerPackLvl60 = true
+                Log(">>> [MỐC LEVEL 60]: Kích hoạt kiểm tra Quà Mở SV (Quà Thuốc 120 KC - Thuốc Tăng EXP 12h)! <<<", true)
+                if AutoBuyNewServerExpMedicinePack then AutoBuyNewServerExpMedicinePack() end
+                if AutoUseExpMedicine then AutoUseExpMedicine() end
+            end
+            if (lvl >= 65 and not _G.Bot_ClaimedDiamondPackLvl65) then
+                _G.Bot_ClaimedDiamondPackLvl65 = true
+                Log(">>> [MỐC LEVEL 65]: Kích hoạt kiểm tra Quà Phúc Lợi Kim Cương I (180 KC)! <<<", true)
+                if AutoBuyDailyDiamondGiftPacks then AutoBuyDailyDiamondGiftPacks() end
             end
             if (lvl >= 100 and not _G.Bot_ClaimedCommunityLvl100) then
                 _G.Bot_ClaimedCommunityLvl100 = true
@@ -9280,6 +10276,7 @@ StartFullLoginProcess = function()
         end)
     end)
 end
+_G.StartFullLoginProcess = StartFullLoginProcess
 
 -- =========================================================================
 -- [MOD FEATURE]: BỘ ĐIỀU KHIỂN TRUNG TÂM BOT FARM & TEST TRIGGER (EXECUTE ADMIN)

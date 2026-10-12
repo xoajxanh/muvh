@@ -1,239 +1,455 @@
 -- =========================================================================
--- [SCRIPT TEST]: AUTO SPAM CHAT ĐA KÊNH (LIÊN SERVER, GẦN, THẾ GIỚI, TẤT CẢ)
+-- [SCRIPT TEST]: THỬ NGHIỆM KỊCH BẢN FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1)
+-- Mô tả:
+--   1. Tự động đóng sạch sẽ các Popup / Tooltip che màn hình:
+--      + Popup "Nhận thưởng" giữa màn hình (Tip_RewardTipUI)
+--      + Tooltip "Dùng ngay" góc phải dưới (Skill_TIpsUI) -> Tự bấm dùng luôn
+--      + Tooltip "Mặc ngay" (Equip_TIpsUI) -> Tự bấm mặc luôn
+--   2. Gọi DoEnterSecretRoom() vào Room Boss Phúc Lợi Tầng 1
+--   3. Kiểm tra Boss Nữ Hoàng Băng Giá Lv80 (ID 210100100):
+--      + Có Boss: Tăng biến đếm boss +1, bật Auto đánh, chờ boss chết, nhặt đồ
+--      + Không có Boss (hoặc Boss chết xong): Lập tức gọi DoEnterSecretRoom() tạo room mới
+--   4. Lặp lại liên tục cho đến khi đặt _G.Test_FarmKCActive = false
 -- =========================================================================
--- [CẤU HÌNH KÊNH CHAT]:
---   1 : Liên Server (CROSS_REALM)
---   2 : Gần (LOCAL)
---   3 : Thế Giới (WORLD)
---   4 : Guild (GUILD)
---   5 : Đội (TEAM)
---   8 : Cả 2 kênh (Liên Server + Gần)
---   9 : Tất cả (Gửi đồng thời: Liên Server + Gần + Thế Giới)
--- =========================================================================
-local CHAT_CHANNEL_OPTION = 8 -- <<-- ĐỔI SỐ Ở ĐÂY: 1 (Lsv), 2 (Gần), 3 (Thế giới), 8 (Lsv + Gần), 9 (Tất cả)
 
-local function AppendLog(msg)
+local output = {}
+local function Log(msg)
+    table.insert(output, msg)
+    if FloatingWordUtility and FloatingWordUtility.QuickMsg then
+        pcall(FloatingWordUtility.QuickMsg, msg)
+    end
+end
+
+local function SaveOutput()
     pcall(function()
-        local paths = {
-            "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-        }
-        if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
-            local p2 = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-            if p2 ~= paths[1] then table.insert(paths, p2) end
+        local path = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+        local content = table.concat(output, "\n")
+        CS.System.IO.File.WriteAllText(path, content)
+    end)
+end
+
+-- =========================================================================
+-- 1. HÀM DỌN DẸP SẠCH TOÀN BỘ POPUP / TOOLTIP CHE MÀN HÌNH
+-- =========================================================================
+local function CleanAllTooltips()
+    pcall(function()
+        -- 1.1. Đóng sạch Popup "Nhận thưởng" to giữa màn hình (Tip_RewardTipUI)
+        local rewardTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Tip_RewardTipUI") or (UIID and UIID.Tip_RewardTipUI and UIManager.GetUiByName(UIID.Tip_RewardTipUI)))
+        if rewardTipUI and ((rewardTipUI.visible == true) or (rewardTipUI.root and rewardTipUI.root.gameObject and rewardTipUI.root.gameObject.activeInHierarchy)) then
+            if rewardTipUI.CloseTime then rewardTipUI:CloseTime() end
+            if rewardTipUI.Panel_TipOnClick and rewardTipUI.Panel_Tip then
+                rewardTipUI:Panel_TipOnClick(rewardTipUI.Panel_Tip)
+            end
+            if rewardTipUI.root and rewardTipUI.root.gameObject then
+                rewardTipUI.root.gameObject:SetActive(false)
+            end
         end
-        local line = string.format("[%s] %s\r\n", os.date("%H:%M:%S"), tostring(msg))
-        for _, p in ipairs(paths) do
-            local f = io.open(p, "a")
-            if f then
-                f:write(line)
-                f:close()
+        if UIManager then
+            UIManager.Hide("Tip_RewardTipUI")
+            if UIID and UIID.Tip_RewardTipUI then UIManager.Hide(UIID.Tip_RewardTipUI) end
+        end
+
+        -- 1.1B. Tự động đóng Túi Đồ (Bag_3DBagInfoUI) & Lò Rèn / Thu Hồi nếu đang mở
+        local bagUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Bag_3DBagInfoUI") or (UIID and UIID.NewBagInfoUI and UIManager.GetUiByName(UIID.NewBagInfoUI)))
+        if bagUI and ((bagUI.visible == true) or (bagUI.root and bagUI.root.gameObject and bagUI.root.gameObject.activeInHierarchy)) then
+            if bagUI.Button_CloseBagOnClick and bagUI.Button_CloseBag then
+                bagUI:Button_CloseBagOnClick(bagUI.Button_CloseBag)
+            elseif bagUI.btn_closeBgOnClick then
+                bagUI:btn_closeBgOnClick()
+            end
+        end
+        if UIManager then
+            if UIID and UIID.NewBagInfoUI then UIManager.Hide(UIID.NewBagInfoUI) end
+            UIManager.Hide("Bag_3DBagInfoUI")
+            if UIID and UIID.BagWarehouseUI then UIManager.Hide(UIID.BagWarehouseUI) end
+            UIManager.Hide("Bag_WarehouseInfoUI")
+            if UIID and UIID.BagSellInfoUI then UIManager.Hide(UIID.BagSellInfoUI) end
+            UIManager.Hide("Bag_SellInfoUI")
+            if UIID and UIID.BagShopInfoUI then UIManager.Hide(UIID.BagShopInfoUI) end
+            UIManager.Hide("Bag_ShopInfoUI")
+            if UIID and UIID.Bag_EquipInfoUI then UIManager.Hide(UIID.Bag_EquipInfoUI) end
+            UIManager.Hide("Bag_EquipInfoUI")
+            if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
+            UIManager.Hide("Equip_ForgeNavUi")
+            if UIID and UIID.Commercialization_FirstActivityUI then UIManager.Hide(UIID.Commercialization_FirstActivityUI) end
+            UIManager.Hide("Commercialization_FirstActivityUI")
+        end
+
+        -- 1.2. Xử lý Tooltip "Dùng ngay" rương/thuốc góc phải dưới (Skill_TIpsUI)
+        local skillTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Skill_TIpsUI") or (UIID and UIID.SkillTIpsUI and UIManager.GetUiByName(UIID.SkillTIpsUI)))
+        if skillTipUI and ((skillTipUI.visible == true) or (skillTipUI.root and skillTipUI.root.gameObject and skillTipUI.root.gameObject.activeInHierarchy)) then
+            if skillTipUI.btn_quickeuseOnClick and skillTipUI.btn_quickeuse then
+                skillTipUI:btn_quickeuseOnClick(skillTipUI.btn_quickeuse)
+            elseif skillTipUI.btn_closeOnClick and skillTipUI.btn_close then
+                skillTipUI:btn_closeOnClick(skillTipUI.btn_close)
+            else
+                UIManager.Hide("Skill_TIpsUI")
+            end
+        end
+
+        -- 1.3. Xử lý Tooltip "Mặc ngay" trang bị (Equip_TIpsUI)
+        local equipTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Equip_TIpsUI") or (UIID and UIID.EquipTIpsUI and UIManager.GetUiByName(UIID.EquipTIpsUI)))
+        if equipTipUI and ((equipTipUI.visible == true) or (equipTipUI.root and equipTipUI.root.gameObject and equipTipUI.root.gameObject.activeInHierarchy)) then
+            if equipTipUI.btn_quickequipOnClick and equipTipUI.btn_quickequip then
+                equipTipUI:btn_quickequipOnClick(equipTipUI.btn_quickequip)
+            elseif equipTipUI.Btn_quickequip then
+                equipTipUI:Btn_quickequip()
+            else
+                UIManager.Hide("Equip_TIpsUI")
+            end
+        end
+
+        -- 1.4. Đóng popup Chuyển Cường Hóa nếu có
+        local transferUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (UIID and UIID.Equip_ZhuanyiFastUI and UIManager.GetUiByName(UIID.Equip_ZhuanyiFastUI)))
+        if transferUI and ((transferUI.visible == true) or (transferUI.root and transferUI.root.gameObject and transferUI.root.gameObject.activeInHierarchy)) then
+            if transferUI.btn_confirmOnClick and transferUI.btn_confirm then
+                transferUI:btn_confirmOnClick(transferUI.btn_confirm)
+            else
+                UIManager.Hide("Equip_ZhuanyiFastUI")
+            end
+        end
+
+        -- 1.5. Xóa bộ đệm cache tooltip của hệ thống
+        if TipData and TipData.CloseItemData and TipShowSort then
+            TipData.CloseItemData(TipShowSort.use)
+            TipData.CloseItemData(TipShowSort.equip)
+            TipData.CloseItemData(TipShowSort.auction)
+        end
+    end)
+end
+
+-- =========================================================================
+-- 1.6. HÀM GỠ SẠCH DỮ LIỆU & TRẠNG THÁI NHIỆM VỤ CŨ (CLEAN TASK STATE)
+-- =========================================================================
+local function ClearAllTaskDataAndState()
+    Log("-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ cũ...")
+    pcall(function()
+        if TaskData then
+            if TaskData.SwitchRole then TaskData.SwitchRole() end
+            if TaskData.Reset then TaskData.Reset() end
+            TaskData.AllTasks = {}
+            TaskData.mainTasks = {}
+            TaskData.branchTasks = {}
+            TaskData.rewardsTasks = {}
+            TaskData.activeTasks = {}
+            TaskData.monsterTasks = {}
+            TaskData.starTasks = {}
+            TaskData.counterpartTask = {}
+            TaskData.skillBooksTasks = {}
+            TaskData.periodicalTasks = {}
+            TaskData.transferTask = {}
+            TaskData.completedTasksCount = {}
+            TaskData.allMonsterLevel = {}
+            TaskData.allUnionTasks = {}
+            TaskData.levelBossTaskId = nil
+            TaskData.StarTaskCount = nil
+        end
+    end)
+    pcall(function()
+        if TaskManager then
+            if TaskManager.SwitchRole then TaskManager.SwitchRole() end
+            if TaskManager.TaskPathStop then TaskManager.TaskPathStop() end
+            TaskManager.curTask = nil
+            TaskManager.clickTask = nil
+        end
+        if AutoTaskManage then
+            if AutoTaskManage.StopAutoTask then AutoTaskManage.StopAutoTask() end
+            if AutoTaskManage.OnReset then AutoTaskManage.OnReset() end
+            AutoTaskManage.taskChange = false
+            AutoTaskManage.autoTask = false
+            AutoTaskManage.curRoleOperate = false
+            AutoTaskManage.curAutoTask = nil
+            AutoTaskManage.curAutoTaskState = nil
+            AutoTaskManage.autoTaskStack = {}
+            if AutoTaskManage.RemoveAutoTask then AutoTaskManage.RemoveAutoTask(true) end
+        end
+        if DirectTask and DirectTask.SwitchRole then DirectTask.SwitchRole() end
+        if LookForTask and LookForTask.SwitchRole then LookForTask.SwitchRole() end
+        if TaskController then
+            if TaskController.OnGamePlayLeave then TaskController.OnGamePlayLeave() end
+            TaskController.curTask = nil
+        end
+    end)
+    pcall(function()
+        if PathFinderManager and PathFinderManager.pathFinding and PathFinderManager.pathFinding.Reset then
+            PathFinderManager.pathFinding.Reset()
+        end
+        if RoleManager and RoleManager.me then
+            if RoleManager.me.StopMove then RoleManager.me:StopMove() end
+            if RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
+                RoleManager.me:SetAutoTaskFight(AutoFightStrKey.UnAutoFight)
             end
         end
     end)
-end
-
-local function NotifyMsg(msg)
-    AppendLog(msg)
     pcall(function()
-        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg(tostring(msg))
+        local taskUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Task_TaskUI") or (UIID and UIID.TaskUI and UIManager.GetUiByName(UIID.TaskUI)))
+        if taskUI then
+            if taskUI.CleanTaskReminder then taskUI:CleanTaskReminder() end
+            if taskUI.RemoveTime then taskUI:RemoveTime() end
+            if taskUI.RemoveNaviGuideTime then taskUI:RemoveNaviGuideTime() end
+            if taskUI.taskItemTemp and taskUI.taskItemTemp.RemoveKTable then
+                taskUI.taskItemTemp:RemoveKTable()
+            end
+        end
+        if EventManager and EventManager.Dispatch and Event and Event.Task_Update then
+            EventManager.Dispatch(Event.Task_Update, nil)
+        end
+        if EventManager and EventManager.Dispatch and Event and Event.TaskData_Update then
+            EventManager.Dispatch(Event.TaskData_Update, nil)
         end
     end)
+    _G.Bot_CurrentTaskId = nil
+    _G.Bot_LastTaskNavTime = 0
+    _G.Bot_TaskRetryCount = 0
+    _G.ClaimedTaskCooldown = {}
+    _G.BranchTaskCooldown = {}
+    _G.ClaimedOpeningGiftsCache = {}
+    _G.Bot_LevelMilestonesClaimed = {}
+    _G.ClaimedDailyWelfareIds = {}
+    _G.Mod_HasPurchasedDailyPackToday = false
+    _G.Mod_HasPurchasedExpPotion = false
+    _G.Mod_Count180Bought = 0
+    _G.Bot_HasDoneEnhanceAfterSnowBug = nil
+    SaveOutput()
+end
+_G.ClearAllTaskDataAndState = ClearAllTaskDataAndState
+
+-- =========================================================================
+-- 2. HÀM TÌM KIẾM BOSS NỮ HOÀNG BĂNG GIÁ LV80
+-- =========================================================================
+local function FindBossNuHoangBangGia()
+    -- Cách 1: Qua RoleManager.GetMonsterRoleByConfigId
+    if RoleManager and RoleManager.GetMonsterRoleByConfigId then
+        local list = RoleManager.GetMonsterRoleByConfigId({ 210100100, 210100101 })
+        if list and #list > 0 then
+            for _, m in ipairs(list) do
+                if m and m.hp and m.hp > 0 then
+                    return m
+                end
+            end
+        end
+    end
+
+    -- Cách 2: Quét toàn bộ Monster trong Scene
+    if RoleManager and RoleManager.GetRolesByType and ERoleType and ERoleType.Monster then
+        local mTable = RoleManager.GetRolesByType(ERoleType.Monster)
+        if mTable then
+            for _, m in pairs(mTable) do
+                if m and m.hp and m.hp > 0 then
+                    local cfgId = (m.GetConfigId and m:GetConfigId()) or (m.data and (m.data.monsterId or m.data.configId))
+                    local mName = tostring(m.name or (m.data and m.data.name) or "")
+                    if cfgId == 210100100 or cfgId == 210100101 or string.find(mName, "Nữ Hoàng") or string.find(mName, "Băng Giá") or string.find(mName, "Nu Hoang") then
+                        return m
+                    end
+                end
+            end
+        end
+    end
+
+    return nil
 end
 
 -- =========================================================================
--- 1. NẾU ĐANG CHẠY -> BẤM LẦN NỮA SẼ DỪNG (TOGGLE STOP)
+-- 3. HÀM VÀO ROOM BOSS PHÚC LỢI TẦNG 1 (CHUẨN FLOW UI USER TEST)
 -- =========================================================================
-if _G.Mod_AutoSpamChat_Running then
-    _G.Mod_AutoSpamChat_Running = false
-    if _G.Mod_AutoSpamChat_Timer then
-        pcall(function()
-            if _G.Timer and _G.Timer.Stop then
-                _G.Timer.Stop(_G.Mod_AutoSpamChat_Timer)
+local function DoEnterSecretRoom(callback)
+    CleanAllTooltips()
+    Log("[Room] Đang kích hoạt vào Room Boss Phúc Lợi Tầng 1...")
+
+    pcall(function()
+        if networkRequest then
+            if networkRequest.ReqGetBossMapAndCount then networkRequest.ReqGetBossMapAndCount() end
+            if networkRequest.ReqInstanceCoolDown then networkRequest.ReqInstanceCoolDown(1106) end
+            if networkRequest.ReqBossStateByType and MonsterBossType then
+                networkRequest.ReqBossStateByType(MonsterBossType.secretBoss)
+            end
+        end
+    end)
+
+    pcall(function()
+        if UIManager and UIID and UIID.Instance_BossUI then
+            UIManager.Show(UIID.Instance_BossUI, { openFirstTab = 7, Monsterid = 210100100 })
+        end
+    end)
+
+    local timerObj = _G.Timer or Timer
+    if timerObj and timerObj.Start then
+        timerObj.Start(0.4, function()
+            pcall(function()
+                local bossUI = UIManager and UIManager.GetUI and UIID and UIManager.GetUI(UIID.Instance_BossUI)
+                local secretTemp = bossUI and bossUI.secretBossTemplate
+
+                if secretTemp and secretTemp.EnterSecret then
+                    secretTemp:EnterSecret(210100001, { "31", "222" })
+                else
+                    if PathFinderManager and PathFinderManager.FlyTransferScene then
+                        PathFinderManager.FlyTransferScene(210100001)
+                    end
+                end
+
+                if UIManager and UIID and UIID.Instance_BossUI then
+                    UIManager.Hide(UIID.Instance_BossUI)
+                end
+            end)
+
+            if callback then
+                timerObj.Start(2.2, callback)
             end
         end)
-        _G.Mod_AutoSpamChat_Timer = nil
-    end
-    _G.Mod_AutoSpamChat_CurrentIndex = nil
-    NotifyMsg("[AUTO CHAT] ĐÃ DỪNG gửi tin nhắn!")
-    return
-end
-
--- =========================================================================
--- 2. DANH SÁCH LỜI BÀI HÁT & LẤY TUẦN TỰ
--- =========================================================================
-local SPAM_LIST = {
-    "Chiều một mình trên phố năm xưa",
-    "Lạc bước giữa đêm đông người",
-    "Rồi một ngày anh bỗng đi qua",
-    "Sưởi ấm con tim lẻ loi.",
-    "Nụ cười và ánh mắt đam mê",
-    "Trái tim đôi ta không rời",
-    "Con thuyền không còn xa bến",
-    "Con thuyền không còn theo sóng, mãi xa mù khơi.",
-    "Lòng ngập ngừng nói tiếng yêu anh",
-    "Lời yêu ấy thiết tha chân thành",
-    "Còn gì bằng sánh bước bên nhau",
-    "Cùng ngắm ánh trăng và ngàn sao.",
-    "Cuộc tình ngọt ngào em đã trao anh",
-    "Làm trái tim em đổi thay",
-    "Niềm hạnh phúc em đang có anh",
-    "Khiến em ngỡ ngàng.",
-    "Phố xa đêm đông người, đêm tình yêu dưới trăng",
-    "Thấp thoáng bao đôi nhân tình, đang đùa vui đắm say",
-    "Cành hồng trao tay đến tay, rộn ràng nghe tim ngất ngây",
-    "Tình này trao anh, thề mãi không bao giờ phai.",
-    "Ước chi trăng đừng tàn, soi tình yêu chúng ta",
-    "Những ánh sao băng qua trời, xin lặng im lung linh",
-    "Thì thầm em nói với anh một lời",
-    "Anh có biết được trái tim em yêu mình anh."
-}
-
-_G.Mod_AutoSpamChat_CurrentIndex = 0
-local countSent = 0
-
-local function GetSequentialSpamText()
-    if #SPAM_LIST == 0 then return "" end
-    _G.Mod_AutoSpamChat_CurrentIndex = (_G.Mod_AutoSpamChat_CurrentIndex or 0) + 1
-    if _G.Mod_AutoSpamChat_CurrentIndex > #SPAM_LIST then
-        _G.Mod_AutoSpamChat_CurrentIndex = 1
-    end
-    return SPAM_LIST[_G.Mod_AutoSpamChat_CurrentIndex]
-end
-
--- =========================================================================
--- 3. XÁC ĐỊNH DANH SÁCH KÊNH CẦN BẮN GÓI TIN THEO OPTION
--- =========================================================================
-local function GetTargetChannels(option)
-    local Enum = _G.ChatChannelEnum or {}
-    local CROSS_REALM = Enum.CROSS_REALM or 2050002
-    local LOCAL = Enum.LOCAL or 2050005
-    local WORLD = Enum.WORLD or 2050001
-    local GUILD = Enum.GUILD or 2050003
-    local TEAM = Enum.TEAM or 2050004
-
-    if option == 1 then
-        return { { id = CROSS_REALM, name = "Liên Server" } }
-    elseif option == 2 then
-        return { { id = LOCAL, name = "Gần" } }
-    elseif option == 3 then
-        return { { id = WORLD, name = "Thế Giới" } }
-    elseif option == 4 then
-        return { { id = GUILD, name = "Guild" } }
-    elseif option == 5 then
-        return { { id = TEAM, name = "Đội" } }
-    elseif option == 8 then
-        return {
-            { id = CROSS_REALM, name = "Liên Server" },
-            { id = LOCAL, name = "Gần" }
-        }
-    elseif option == 9 then
-        return {
-            { id = CROSS_REALM, name = "Liên Server" },
-            { id = LOCAL, name = "Gần" },
-            { id = WORLD, name = "Thế Giới" }
-        }
     else
-        return { { id = LOCAL, name = "Gần" } }
+        pcall(function()
+            if PathFinderManager and PathFinderManager.FlyTransferScene then
+                PathFinderManager.FlyTransferScene(210100001)
+            end
+        end)
+        if callback then callback() end
     end
 end
 
 -- =========================================================================
--- 4. HÀM GỬI CHAT THEO KÊNH
+-- 4. VÒNG LẶP STATE MACHINE FARM KIM CƯƠNG LIÊN TỤC
 -- =========================================================================
-local function SendChatToChannel(channelId, channelName, text)
-    local myId = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id)
-        or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or 0
+_G.Test_FarmKCActive = true
+_G.Test_FarmKCCount = _G.Test_FarmKCCount or 0
 
-    local textData = {
-        inputData = {},
-        message = text
-    }
+-- Dừng timer cũ nếu đang chạy
+if _G.Test_FarmKCTimer then
+    pcall(function() Timer.Stop(_G.Test_FarmKCTimer) end)
+    _G.Test_FarmKCTimer = nil
+end
 
-    local isSent = false
+local currentState = "INIT"  -- "INIT", "WAIT_MAP", "CHECK_BOSS", "FIGHTING", "LOOTING"
+local stateTime = 0
+local activeBoss = nil
 
-    -- Cách 1: Bắn qua EventManager (Luồng chuẩn của game, tự format qua ChatController)
-    if _G.EventManager and _G.Event and _G.Event.Chat_ReqChat then
-        local msg = {
-            chatType = channelId,
-            textData = textData,
-            toRoleId = myId
-        }
-        _G.EventManager.Dispatch(_G.Event.Chat_ReqChat, msg)
-        isSent = true
+local function StepLoop()
+    if not _G.Test_FarmKCActive then
+        Log("[-] ĐÃ DỪNG VÒNG LẶP FARM KIM CƯƠNG!")
+        if _G.Test_FarmKCTimer then
+            Timer.Stop(_G.Test_FarmKCTimer)
+            _G.Test_FarmKCTimer = nil
+        end
+        SaveOutput()
+        return
     end
 
-    -- Cách 2 (Dự phòng): Bắn trực tiếp qua NetManager gói ChatMessage.ReqChat
-    if not isSent and _G.NetManager and _G.ChatMessage and _G.ChatMessage.ReqChat then
-        local chatJson = ""
-        if _G.json and _G.json.encode then
-            chatJson = _G.json.encode(textData)
+    -- Luôn dọn sạch các tooltip hiện lên màn hình
+    CleanAllTooltips()
+
+    stateTime = stateTime + 0.5
+
+    if currentState == "INIT" then
+        currentState = "WAIT_MAP"
+        stateTime = 0
+        activeBoss = nil
+        DoEnterSecretRoom(function()
+            currentState = "CHECK_BOSS"
+            stateTime = 0
+        end)
+
+    elseif currentState == "CHECK_BOSS" then
+        local boss = FindBossNuHoangBangGia()
+        if boss and boss.hp and boss.hp > 0 then
+            activeBoss = boss
+            _G.Test_FarmKCCount = _G.Test_FarmKCCount + 1
+            currentState = "FIGHTING"
+            stateTime = 0
+
+            Log(string.format(">>> [FARM KC #%d]: PHÁT HIỆN NỮ HOÀNG BĂNG GIÁ! BẮT ĐẦU ĐÁNH! <<<", _G.Test_FarmKCCount))
+            
+            -- Bật Auto đánh boss
+            pcall(function()
+                if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
+                    RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
+                end
+            end)
+            SaveOutput()
         else
-            chatJson = string.format("{\"inputData\":{},\"message\":\"%s\"}", text)
+            -- Không có boss trong Room -> Vào lại Room mới ngay lập tức!
+            Log("[-] Không có Boss trong Room! Đang chuyển Room khác ngay...")
+            currentState = "WAIT_MAP"
+            stateTime = 0
+            DoEnterSecretRoom(function()
+                currentState = "CHECK_BOSS"
+                stateTime = 0
+            end)
         end
 
-        _G.NetManager.Send(_G.ChatMessage.ReqChat, {
-            chatType = channelId,
-            chatMsg = chatJson,
-            toRoleId = myId
-        })
-        isSent = true
-    end
+    elseif currentState == "FIGHTING" then
+        -- Kiểm tra tình trạng Boss
+        local isAlive = false
+        if activeBoss then
+            pcall(function()
+                if activeBoss.hp and activeBoss.hp > 0 and not activeBoss.isDead then
+                    isAlive = true
+                end
+            end)
+        end
 
-    return isSent
-end
-
-local function SendAutoChat()
-    if not _G.Mod_AutoSpamChat_Running then return end
-
-    local success, err = pcall(function()
-        local currentText = GetSequentialSpamText()
-        local channels = GetTargetChannels(CHAT_CHANNEL_OPTION)
-        countSent = countSent + 1
-
-        for _, ch in ipairs(channels) do
-            local ok = SendChatToChannel(ch.id, ch.name, currentText)
-            if ok then
-                AppendLog(string.format("[AUTO CHAT #%d] [%s] [Câu %d/%d]: \"%s\"", countSent, ch.name, _G.Mod_AutoSpamChat_CurrentIndex, #SPAM_LIST, currentText))
-            else
-                AppendLog(string.format("[AUTO CHAT LOI] Không thể gửi tới kênh %s!", ch.name))
+        if not isAlive or stateTime >= 45.0 then
+            Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 1.5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Test_FarmKCCount))
+            currentState = "LOOTING"
+            stateTime = 0
+            SaveOutput()
+        else
+            -- Đảm bảo AutoFight vẫn chạy trong lúc đánh
+            if math.floor(stateTime) % 3 == 0 then
+                pcall(function()
+                    if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
+                        RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
+                    end
+                end)
             end
         end
-    end)
 
-    if not success then
-        AppendLog("[AUTO CHAT ERROR]: " .. tostring(err))
+    elseif currentState == "LOOTING" then
+        -- Chờ 1.5s nhặt đồ rơi
+        if stateTime >= 1.5 then
+            Log("[+] Nhặt xong! Kích hoạt vào Room mới...")
+            currentState = "WAIT_MAP"
+            stateTime = 0
+            activeBoss = nil
+            DoEnterSecretRoom(function()
+                currentState = "CHECK_BOSS"
+                stateTime = 0
+            end)
+        end
+
+    elseif currentState == "WAIT_MAP" then
+        -- Watchdog phòng trường hợp chuyển map quá 6s
+        if stateTime >= 6.0 then
+            Log("[Watchdog] Vào room quá 6s, thử kích hoạt lại...")
+            currentState = "CHECK_BOSS"
+            stateTime = 0
+        end
     end
 end
 
 -- =========================================================================
--- 5. KHỞI CHẠY TIẾN TRÌNH LẶP MỖI 5 GIÂY
+-- KHỞI CHẠY TIMER QUÉT MỖI 0.5 GIÂY
 -- =========================================================================
-_G.Mod_AutoSpamChat_Running = true
+Log("=== KHỞI CHẠY THỬ NGHIỆM FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1) ===")
+Log("Ghi chú: Để DỪNG farm, hãy chạy script với: _G.Test_FarmKCActive = false")
+CleanAllTooltips()
+ClearAllTaskDataAndState()
 
--- Lấy danh sách tên kênh để hiển thị toast
-local chNameList = {}
-for _, ch in ipairs(GetTargetChannels(CHAT_CHANNEL_OPTION)) do
-    table.insert(chNameList, ch.name)
-end
-local chNamesStr = table.concat(chNameList, "+")
-
--- Gửi ngay câu đầu tiên
-SendAutoChat()
-NotifyMsg(string.format("[AUTO CHAT] ĐÃ BẬT! Kênh: [%s] | 5s/câu (Execute lại để tắt)", chNamesStr))
-
--- Lặp lại mỗi 5.0 giây qua Timer của game
-if _G.Timer and _G.Timer.StartLoopForever then
-    _G.Mod_AutoSpamChat_Timer = _G.Timer.StartLoopForever(5.0, function()
-        SendAutoChat()
-    end)
-elseif _G.Coroutine and _G.Coroutine.Start then
-    _G.Mod_AutoSpamChat_Coroutine = _G.Coroutine.Start(function()
-        while _G.Mod_AutoSpamChat_Running do
-            _G.Coroutine.Wait(5.0)
-            if _G.Mod_AutoSpamChat_Running then
-                SendAutoChat()
+-- Nếu nhân vật đang có nhiệm vụ chính (ví dụ Đối thoại Cố Vấn Huyền Anh), tự động kích hoạt điều hướng chạy ngay
+pcall(function()
+    if TaskData and TaskData.GetOrderMainTask then
+        local mTask = TaskData.GetOrderMainTask()
+        if mTask and mTask.taskId then
+            Log(string.format("-> [AUTO NAV]: Tự động kích hoạt lại nhiệm vụ: %s (%s)", tostring(mTask.taskId), tostring(mTask:GetName() or "")))
+            if TaskManager and TaskManager.TaskGo then
+                TaskManager.TaskGo(mTask.taskId, 0)
+            end
+            if AutoTaskManage and AutoTaskManage.StartCurAutoTask then
+                AutoTaskManage.StartCurAutoTask(true)
             end
         end
-    end)
-end
+    end
+end)
+SaveOutput()
+
+_G.Test_FarmKCTimer = Timer.StartLoop(0.5, -1, function()
+    pcall(StepLoop)
+end)
