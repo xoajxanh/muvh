@@ -18,7 +18,7 @@ if (-not (Test-Path $adbExe)) {
 }
 
 # Android Device ID do USER tu chon va quan ly
-$androidId = "emulator-5558"
+$androidId = "emulator-5556"
 
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host ">>> BIEN DICH & NAP SCRIPT TEST VAO ANDROID ($androidId) <<<" -ForegroundColor Cyan

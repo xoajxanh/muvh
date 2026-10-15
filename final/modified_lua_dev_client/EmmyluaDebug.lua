@@ -203,6 +203,7 @@ _G.Mod_DoSystemFreshCleanup = function()
         if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
         if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
         if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
+        if _G.ModUpdateFloatingSummonerBtn then pcall(_G.ModUpdateFloatingSummonerBtn) end
 
         -- 8. Thông báo thành công
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -311,6 +312,18 @@ local function CreateModUI()
                 _G.Mod_TowerCheck_DkHpBuff_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_DkHpBuff_Enabled", 1) == 1)
             end)
             if _G.Mod_TowerCheck_DkHpBuff_Enabled == nil then _G.Mod_TowerCheck_DkHpBuff_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_PhaNgu_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_PhaNgu_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_PhaNgu_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_PhaNgu_Enabled == nil then _G.Mod_TowerCheck_PhaNgu_Enabled = true end
+        end
+        if _G.Mod_TowerCheck_NhiepHon_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_NhiepHon_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_NhiepHon_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_NhiepHon_Enabled == nil then _G.Mod_TowerCheck_NhiepHon_Enabled = true end
         end
         if _G.Mod_AutoBuff_Enabled == nil then
             pcall(function()
@@ -535,6 +548,667 @@ local function CreateModUI()
         if not _G.Mod_AnStats_Loaded then
             _G.Mod_LoadAnStats()
             _G.Mod_AnStats_Loaded = true
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: 1-TOUCH QUICK SWITCH PVP | PVE CHO THUẬT SĨ (SUMMONER)
+        -- Mô tả: Chuyển đổi 1 chạm giữa Mode PVP (Trí Tuệ + Cuồng Bạo + Preset Skill + Thánh Cốt + Phù Văn PVP)
+        --        và Mode PVE (Vượt Qua + Ám Hồn Khúc + Preset Skill + Thánh Cốt + Phù Văn PVE).
+        --        Kích hoạt qua Secret Command: /summode hoặc /summod.
+        -- =========================================================================
+        if _G.Mod_SummonerMode_Current == nil then
+            pcall(function()
+                _G.Mod_SummonerMode_Current = CS.UnityEngine.PlayerPrefs.GetString("Mod_SummonerMode_Current", "PVP")
+            end)
+            if _G.Mod_SummonerMode_Current == nil or _G.Mod_SummonerMode_Current == "" then
+                _G.Mod_SummonerMode_Current = "PVP"
+            end
+        end
+
+        _G.Mod_IsSummonerCareer = function()
+            local isSum = false
+            pcall(function()
+                if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
+                    local attr = _G.QuickFind.LuaMainPlayerViewAttrData()
+                    if attr and attr.GetBaseCareer and _G.ERoleCareer then
+                        isSum = (attr:GetBaseCareer() == _G.ERoleCareer.SummonMagician)
+                    end
+                end
+                if not isSum and _G.ViewData and _G.ViewData.meData and _G.RoleUtility and _G.ERoleCareer then
+                    isSum = (_G.RoleUtility.GetBasicCareer(_G.ViewData.meData.career) == _G.ERoleCareer.SummonMagician)
+                end
+                if not isSum and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.career and _G.RoleUtility and _G.ERoleCareer then
+                    isSum = (_G.RoleUtility.GetBasicCareer(_G.RoleManager.me.career) == _G.ERoleCareer.SummonMagician)
+                end
+            end)
+            return isSum
+        end
+
+        _G.Mod_IsSummonerModeActive = function()
+            if not _G.Mod_HasSecretCommand then return false end
+            local hasCmd = _G.Mod_HasSecretCommand("/summode") or _G.Mod_HasSecretCommand("/summod")
+            if not hasCmd then return false end
+            return _G.Mod_IsSummonerCareer()
+        end
+
+        _G.Mod_GetSummonerSkillByLevel = function(baseSkillId)
+            local cfg = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(baseSkillId)
+            local groupId = cfg and cfg.groupId
+            if not groupId then return baseSkillId, 1, 0 end
+
+            local info = _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills and _G.ViewData.meData.skills[groupId]
+            if info and info.sid then
+                local actualCfg = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(info.sid)
+                return info.sid, (actualCfg and actualCfg.level or 1), groupId
+            end
+
+            local me = _G.RoleManager and _G.RoleManager.me
+            local rInfo = me and me.skills and me.skills[groupId]
+            if rInfo and rInfo.sid then
+                local actualCfg = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(rInfo.sid)
+                return rInfo.sid, (actualCfg and actualCfg.level or 1), groupId
+            end
+
+            return baseSkillId, 1, groupId
+        end
+
+        _G.Mod_GetFormSkillRemainCD = function(groupId)
+            local me = _G.RoleManager and _G.RoleManager.me
+            if not me or not me.cd or not me.cd[groupId] then return 0 end
+            local endTime = me.cd[groupId].endTime or 0
+            local nowTime = _G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime() or 0
+            if endTime > nowTime then
+                return math.ceil((endTime - nowTime) / 1000)
+            end
+            return 0
+        end
+
+        _G.Mod_SaveSummonerPreset = function(targetMode)
+            targetMode = targetMode or _G.Mod_SummonerMode_Current or "PVP"
+            local roleId = tostring(_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id or 0)
+            if roleId == "0" then return end
+
+            -- 1. Lưu 7 ô skill HUD
+            local skills = {}
+            if _G.SkillSettingData and _G.SkillSettingData.skill_pan_all then
+                for i = 1, 7 do
+                    skills[i] = _G.SkillSettingData.skill_pan_all[i] or 0
+                end
+            end
+            local skillStr = table.concat(skills, ",")
+            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumSkillPreset_%s_%s", roleId, targetMode), skillStr)
+
+            -- 2. Lưu Thánh Cốt & Thánh Hồn
+            local bones = {}
+            local mgr = nil
+            pcall(function()
+                if _G.gameMgr and _G.gameMgr.GetAvatarManager then
+                    local avMgr = _G.gameMgr:GetAvatarManager()
+                    local p = avMgr and avMgr:GetMainPlayer()
+                    if p and p.GetSacredBoneDataMgr then mgr = p:GetSacredBoneDataMgr() end
+                end
+            end)
+            if not mgr and _G.SacredBoneManager and _G.SacredBoneManager.SacredBoneEquipData then
+                mgr = _G.SacredBoneManager
+            end
+
+            if mgr and mgr.SacredBoneEquipData then
+                for pos = 1, 7 do
+                    local equipData = mgr.SacredBoneEquipData[pos]
+                    if equipData and equipData.SacredBoneData then
+                        for hole = 1, 7 do
+                            local holeData = equipData.SacredBoneData[hole]
+                            if holeData and holeData.SacredBoneEquip and holeData.SacredBoneEquip.ItemInfo then
+                                local itemInfo = holeData.SacredBoneEquip.ItemInfo
+                                local uid = tostring(itemInfo.id or 0)
+                                local itemId = tostring(holeData.SacredBoneEquip.ItemId or itemInfo.itemId or 0)
+                                table.insert(bones, string.format("%d#%d#%s#%s", pos, hole, uid, itemId))
+                            end
+                        end
+                    end
+                end
+            end
+            local boneStr = table.concat(bones, ";")
+            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumBonePreset_%s_%s", roleId, targetMode), boneStr)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: LƯU 7 Ô PHÙ VĂN THEO ITEMID (CHỐNG RƠI RỚT PRESET)
+            -- Mô tả: Lưu cấu hình phù văn theo ItemId (không lưu UID tĩnh vì server tạo UID động).
+            -- =========================================================================
+            local runes = {}
+            local runeMgr = nil
+            pcall(function()
+                if _G.QuickFind and _G.QuickFind.GetNewRuneDataManager then
+                    runeMgr = _G.QuickFind.GetNewRuneDataManager()
+                elseif QuickFind and QuickFind.GetNewRuneDataManager then
+                    runeMgr = QuickFind.GetNewRuneDataManager()
+                end
+            end)
+            if runeMgr and runeMgr.GetAllServerRuneData then
+                local allHoles = runeMgr:GetAllServerRuneData()
+                for hole = 1, 7 do
+                    local slotData = allHoles[hole]
+                    local rItem = slotData and slotData.runeItem
+                    if rItem and rItem.itemId and rItem.itemId ~= 0 then
+                        table.insert(runes, string.format("%d#%d", hole, rItem.itemId))
+                    end
+                end
+            end
+            local runeStr = table.concat(runes, ";")
+            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumRunePreset_%s_%s", roleId, targetMode), runeStr)
+            CS.UnityEngine.PlayerPrefs.Save()
+
+            local msg = string.format("Đã ghi nhớ Preset [%s] thành công!\n(7 Skill + %d Thánh Cốt/Hồn + %d Phù Văn)", targetMode, #bones, #runes)
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(msg)
+            elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+                _G.CommonTipManage.ShowTips(msg)
+            end
+        end
+
+        _G.ModUpdateSaveBoneSkillBtnLabel = function()
+            local curMode = _G.Mod_SummonerMode_Current or "PVP"
+            if _G.Mod_SaveBoneSkillTxt then
+                pcall(function()
+                    _G.Mod_SaveBoneSkillTxt.text = string.format("GHI NHỚ PRESET (%s)", curMode)
+                end)
+            end
+            if _G.Mod_SaveBoneSkillImg then
+                pcall(function()
+                    _G.Mod_SaveBoneSkillImg.color = (curMode == "PVE") and Color(0.18, 0.48, 0.72, 1) or Color(0.72, 0.28, 0.18, 1)
+                end)
+            end
+        end
+
+        _G.Mod_ApplySummonerPreset = function(targetMode)
+            local roleId = tostring(_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id or 0)
+            if roleId == "0" then return end
+
+            -- 1. Nạp 7 ô skill HUD
+            local skillStr = CS.UnityEngine.PlayerPrefs.GetString(string.format("Mod_SumSkillPreset_%s_%s", roleId, targetMode), "")
+            if skillStr and skillStr ~= "" and _G.SkillSettingData and _G.SkillSettingData.skill_pan_all then
+                local parts = string.split(skillStr, ",")
+                for i = 1, math.min(7, #parts) do
+                    local sid = tonumber(parts[i]) or 0
+                    _G.SkillSettingData.skill_pan_all[i] = sid
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt(roleId .. _G.SkillSettingData.SKILL_PAN_ALL .. i, sid)
+                    end)
+                end
+                pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
+                local skillUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Main_MainSkillUI")
+                if skillUI and skillUI.ShowSkillBtn then
+                    pcall(function() skillUI:ShowSkillBtn() end)
+                end
+            end
+
+            -- 2. Nạp Thánh Cốt & Thánh Hồn
+            local boneStr = CS.UnityEngine.PlayerPrefs.GetString(string.format("Mod_SumBonePreset_%s_%s", roleId, targetMode), "")
+            local boneMgr = nil
+            pcall(function()
+                if _G.gameMgr and _G.gameMgr.GetAvatarManager then
+                    local avMgr = _G.gameMgr:GetAvatarManager()
+                    local p = avMgr and avMgr:GetMainPlayer()
+                    if p and p.GetSacredBoneDataMgr then boneMgr = p:GetSacredBoneDataMgr() end
+                end
+            end)
+            if not boneMgr and _G.SacredBoneManager and _G.SacredBoneManager.SacredBoneEquipData then
+                boneMgr = _G.SacredBoneManager
+            end
+
+            local reqInlay = (_G.networkRequest and _G.networkRequest.ReqHolyBoneInlay) or (_G.NetworkRequest_Holybone and _G.NetworkRequest_Holybone.ReqHolyBoneInlay)
+            if not reqInlay and networkRequest and networkRequest.ReqHolyBoneInlay then
+                reqInlay = networkRequest.ReqHolyBoneInlay
+            end
+
+            if boneStr and boneStr ~= "" and boneMgr and reqInlay then
+                -- Helper: Tìm item trong túi đồ bằng UID (so sánh tostring để chuẩn xác giữa uint64 userdata và string)
+                local function FindBagItemByUid(targetUidStr)
+                    if not boneMgr.SacredBoneBagItemData then return nil end
+                    for _, v in pairs(boneMgr.SacredBoneBagItemData) do
+                        if v and v.ItemInfo and v.ItemInfo.id then
+                            if tostring(v.ItemInfo.id) == targetUidStr then
+                                return v
+                            end
+                        end
+                    end
+                    return nil
+                end
+
+                -- Helper: Tìm item đang đeo trên người bằng UID
+                local function FindEquippedItemByUid(targetUidStr)
+                    if not boneMgr.SacredBoneEquipData then return nil end
+                    for p = 1, 7 do
+                        local eq = boneMgr.SacredBoneEquipData[p]
+                        if eq and eq.SacredBoneData then
+                            for h = 1, 7 do
+                                local hData = eq.SacredBoneData[h]
+                                if hData and hData.SacredBoneEquip and hData.SacredBoneEquip.ItemInfo then
+                                    if tostring(hData.SacredBoneEquip.ItemInfo.id) == targetUidStr then
+                                        return hData.SacredBoneEquip, p, h
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    return nil
+                end
+
+                local items = string.split(boneStr, ";")
+                local swapQueue = {}
+
+                for _, itemStr in ipairs(items) do
+                    pcall(function()
+                        local subParts = string.split(itemStr, "#")
+                        if #subParts >= 3 then
+                            local targetPos = tonumber(subParts[1])
+                            local targetHole = tonumber(subParts[2])
+                            local targetUid = tostring(subParts[3])
+
+                            -- Lấy UID hiện tại ở đúng slot đích
+                            local curUid = nil
+                            if boneMgr.SacredBoneEquipData and boneMgr.SacredBoneEquipData[targetPos] and boneMgr.SacredBoneEquipData[targetPos].SacredBoneData then
+                                local curHole = boneMgr.SacredBoneEquipData[targetPos].SacredBoneData[targetHole]
+                                if curHole and curHole.SacredBoneEquip and curHole.SacredBoneEquip.ItemInfo then
+                                    curUid = tostring(curHole.SacredBoneEquip.ItemInfo.id or 0)
+                                end
+                            end
+
+                            -- Nếu slot đích chưa đúng UID mong muốn
+                            if curUid ~= targetUid then
+                                -- Ưu tiên 1: Tìm trong túi đồ
+                                local bagItem = FindBagItemByUid(targetUid)
+                                if bagItem and bagItem.ItemInfo and bagItem.ItemInfo.id then
+                                    table.insert(swapQueue, {
+                                        pos = targetPos,
+                                        hole = targetHole,
+                                        uniqueId = bagItem.ItemInfo.id
+                                    })
+                                else
+                                    -- Ưu tiên 2: Tìm trên người (nếu đang khảm ở vị trí khác)
+                                    local eqItem, eqPos, eqHole = FindEquippedItemByUid(targetUid)
+                                    if eqItem and eqItem.ItemInfo and eqItem.ItemInfo.id then
+                                        if eqPos ~= targetPos or eqHole ~= targetHole then
+                                            -- Tháo khỏi slot cũ trước
+                                            table.insert(swapQueue, {
+                                                pos = eqPos,
+                                                hole = eqHole,
+                                                uniqueId = 0
+                                            })
+                                            -- Sau đó khảm vào slot mới
+                                            table.insert(swapQueue, {
+                                                pos = targetPos,
+                                                hole = targetHole,
+                                                uniqueId = eqItem.ItemInfo.id
+                                            })
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end)
+                end
+
+                -- Thực thi gửi lệnh khảm Hồn Cốt
+                if #swapQueue > 0 then
+                    local queueIdx = 1
+                    if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerBoneSwapQueue") end
+                    if _G.Mod_StartTrackedTimer then
+                        _G.Mod_StartTrackedTimer("SummonerBoneSwapQueue", 0.04, -1, function()
+                            -- Mỗi nhịp xử lý 2 món để vừa nhanh vừa không nghẽn mạng
+                            for _ = 1, 2 do
+                                if queueIdx > #swapQueue then
+                                    if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerBoneSwapQueue") end
+                                    return
+                                end
+                                local step = swapQueue[queueIdx]
+                                queueIdx = queueIdx + 1
+                                if step and reqInlay then
+                                    pcall(function()
+                                        reqInlay(step.pos, step.hole, step.uniqueId)
+                                    end)
+                                end
+                            end
+                        end)
+                    else
+                        for _, step in ipairs(swapQueue) do
+                            pcall(function()
+                                reqInlay(step.pos, step.hole, step.uniqueId)
+                            end)
+                        end
+                    end
+                end
+            end
+
+            -- =========================================================================
+            -- [MOD FEATURE]: NẠP PRESET PHÙ VĂN HANDSHAKE (CHỐNG RƠI RỚT 100%)
+            -- Mô tả: Tháo và khảm tuần tự từng ô theo ItemId, xác nhận phản hồi từ Server
+            --       (Handshake) trước khi chuyển sang ô tiếp theo. Quét lại túi đồ theo
+            --       thời gian thực, đảm bảo nạp đủ 7/7 ô phù văn chuẩn xác tuyệt đối.
+            -- =========================================================================
+            local runeStr = CS.UnityEngine.PlayerPrefs.GetString(string.format("Mod_SumRunePreset_%s_%s", roleId, targetMode), "")
+            if runeStr and runeStr ~= "" then
+                local runeMgr = nil
+                pcall(function()
+                    if _G.QuickFind and _G.QuickFind.GetNewRuneDataManager then
+                        runeMgr = _G.QuickFind.GetNewRuneDataManager()
+                    elseif QuickFind and QuickFind.GetNewRuneDataManager then
+                        runeMgr = QuickFind.GetNewRuneDataManager()
+                    end
+                end)
+
+                local reqImplant = (_G.networkRequest and _G.networkRequest.ReqImplantRune) or (networkRequest and networkRequest.ReqImplantRune)
+                local timerObj = _G.Timer or Timer
+
+                if runeMgr and runeMgr.GetAllServerRuneData and reqImplant and timerObj then
+                    local targetHoles = {}
+                    local runeEntries = string.split(runeStr, ";")
+                    for _, rStr in ipairs(runeEntries) do
+                        local parts = string.split(rStr, "#")
+                        if #parts >= 2 then
+                            local h = tonumber(parts[1])
+                            local itemId = 0
+                            if #parts == 2 then
+                                itemId = tonumber(parts[2]) or 0
+                            else
+                                itemId = tonumber(parts[3]) or 0
+                                if itemId == 0 then itemId = tonumber(parts[2]) or 0 end
+                            end
+                            if h and h >= 1 and h <= 7 and itemId > 0 then
+                                targetHoles[h] = itemId
+                            end
+                        end
+                    end
+
+                    local function GetAvailableBagRunes()
+                        local list = {}
+                        local bagRunes = (runeMgr.GetBagAllRunes and runeMgr:GetBagAllRunes()) or {}
+                        for _, rData in ipairs(bagRunes) do
+                            local uid = rData.id or (rData.serverData and rData.serverData.id) or 0
+                            local itemId = rData.itemId or (rData.serverData and rData.serverData.itemId) or (rData.tblItem and rData.tblItem.id) or 0
+                            if uid ~= 0 and itemId ~= 0 then
+                                table.insert(list, { uid = uid, itemId = itemId })
+                            end
+                        end
+                        if #list == 0 and _G.BagInfoData and _G.BagInfoData.TotalItems then
+                            for _, v in pairs(_G.BagInfoData.TotalItems) do
+                                if v and v.itemId and (v.itemId >= 190100000 and v.itemId <= 190400000) then
+                                    table.insert(list, { uid = v.id, itemId = v.itemId })
+                                end
+                            end
+                        end
+                        return list
+                    end
+
+                    local function RefreshRuneUI()
+                        pcall(function()
+                            local runeUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Bag_RunesNewUI")
+                            if runeUI and runeUI.visible and runeUI.Refresh then runeUI:Refresh() end
+                            local inlayUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Equip_RunesInlayNewUI")
+                            if inlayUI and inlayUI.visible and inlayUI.Refresh then inlayUI:Refresh() end
+                        end)
+                    end
+
+                    local allData = runeMgr:GetAllServerRuneData()
+                    local needUninlay = {}
+                    local needInlay = {}
+
+                    for h = 1, 7 do
+                        local slot = allData[h]
+                        local rItem = slot and slot.runeItem
+                        local curItemId = (rItem and rItem.itemId and rItem.itemId ~= 0) and rItem.itemId or 0
+                        local expItemId = targetHoles[h] or 0
+
+                        if curItemId ~= expItemId then
+                            if curItemId ~= 0 then
+                                table.insert(needUninlay, h)
+                            end
+                            if expItemId ~= 0 then
+                                table.insert(needInlay, { hole = h, itemId = expItemId })
+                            end
+                        end
+                    end
+
+                    if #needUninlay == 0 and #needInlay == 0 then
+                        RefreshRuneUI()
+                    else
+                        local function ProcessUninlay(index, doneCallback)
+                            if index > #needUninlay then
+                                timerObj.Start(0.25, function()
+                                    if doneCallback then doneCallback() end
+                                end)
+                                return
+                            end
+
+                            local h = needUninlay[index]
+                            pcall(function() reqImplant(h, 0) end)
+
+                            local elapsed = 0
+                            local function CheckEmpty()
+                                timerObj.Start(0.1, function()
+                                    elapsed = elapsed + 0.1
+                                    local curSlot = runeMgr:GetAllServerRuneData()[h]
+                                    local curR = curSlot and curSlot.runeItem
+                                    local isClean = (curR == nil or curR.itemId == nil or curR.itemId == 0)
+
+                                    if isClean or elapsed >= 0.8 then
+                                        ProcessUninlay(index + 1, doneCallback)
+                                    else
+                                        CheckEmpty()
+                                    end
+                                end)
+                            end
+                            CheckEmpty()
+                        end
+
+                        local function ProcessInlay(index, doneCallback)
+                            if index > #needInlay then
+                                if doneCallback then doneCallback() end
+                                return
+                            end
+
+                            local req = needInlay[index]
+                            local currentBag = GetAvailableBagRunes()
+                            local chosenRune = nil
+
+                            for _, b in ipairs(currentBag) do
+                                if b.itemId == req.itemId then
+                                    chosenRune = b
+                                    break
+                                end
+                            end
+
+                            if not chosenRune then
+                                ProcessInlay(index + 1, doneCallback)
+                                return
+                            end
+
+                            pcall(function() reqImplant(req.hole, chosenRune.uid) end)
+
+                            local elapsed = 0
+                            local function CheckInlaid()
+                                timerObj.Start(0.12, function()
+                                    elapsed = elapsed + 0.12
+                                    local curSlot = runeMgr:GetAllServerRuneData()[req.hole]
+                                    local curR = curSlot and curSlot.runeItem
+                                    local curId = (curR and curR.itemId and curR.itemId ~= 0) and curR.itemId or 0
+
+                                    if curId == req.itemId then
+                                        timerObj.Start(0.1, function()
+                                            ProcessInlay(index + 1, doneCallback)
+                                        end)
+                                    elseif elapsed >= 1.2 then
+                                        ProcessInlay(index + 1, doneCallback)
+                                    else
+                                        CheckInlaid()
+                                    end
+                                end)
+                            end
+                            CheckInlaid()
+                        end
+
+                        if #needUninlay > 0 then
+                            ProcessUninlay(1, function()
+                                ProcessInlay(1, function()
+                                    RefreshRuneUI()
+                                end)
+                            end)
+                        else
+                            ProcessInlay(1, function()
+                                RefreshRuneUI()
+                            end)
+                        end
+                    end
+                end
+            end
+        end
+
+        _G.Mod_SwitchSummonerMode = function()
+            local curMode = _G.Mod_SummonerMode_Current or "PVP"
+            local nextMode = (curMode == "PVP") and "PVE" or "PVP"
+
+            local cuongBaoId, _, cuongBaoGroup = _G.Mod_GetSummonerSkillByLevel(16020101)
+            local amHonId, _, amHonGroup = _G.Mod_GetSummonerSkillByLevel(16090101)
+
+            local targetTalent = (nextMode == "PVE") and 1602 or 1601
+            local targetTalentName = (nextMode == "PVE") and "Vượt Qua" or "Trí Tuệ"
+            local targetSkillId = (nextMode == "PVE") and amHonId or cuongBaoId
+            local targetSkillGroup = (nextMode == "PVE") and amHonGroup or cuongBaoGroup
+            local targetSkillName = (nextMode == "PVE") and "Ám Hồn Khúc" or "Thuật Cuồng Bạo"
+
+            -- Kiểm tra Cooldown CD của skill Form trước
+            local remainCD = _G.Mod_GetFormSkillRemainCD(targetSkillGroup)
+            if remainCD > 0 then
+                local tip = string.format("Kỹ năng [%s] đang hồi chiêu (%d giây)! Chưa thể chuyển.", targetSkillName, remainCD)
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(tip)
+                elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+                    _G.CommonTipManage.ShowTips(tip)
+                end
+                return
+            end
+
+            local me = _G.RoleManager and _G.RoleManager.me
+            if not me then return end
+
+            -- 1. Lưu & tạm ngắt trạng thái AutoFight nếu có
+            local wasAutoFight = false
+            local prevAutoKey = "None"
+            pcall(function()
+                if me.meAutoFight then prevAutoKey = me.meAutoFight.autoKey or "None" end
+                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
+                    wasAutoFight = true
+                elseif prevAutoKey ~= "None" and (_G.AutoFightStrKey and prevAutoKey ~= _G.AutoFightStrKey.None) then
+                    wasAutoFight = true
+                end
+            end)
+
+            if wasAutoFight then
+                if me.StopMoveImmediate then me:StopMoveImmediate() end
+                if me.ClearTarget then me:ClearTarget() end
+            end
+
+            -- 2. Dùng Skill Form trước
+            pcall(function()
+                if _G.QiJiHelperData then _G.QiJiHelperData.SetPressSkill(targetSkillId) end
+
+                local skillUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Main_MainSkillUI")
+                if skillUI and skillUI.SummonerBtnSkill then
+                    skillUI.SummonerBtnSkill.skillId = targetSkillId
+                    skillUI.SummonerBtnSkill.groupId = targetSkillGroup
+                    if skillUI.Button_OnSkillClick then
+                        skillUI:Button_OnSkillClick(skillUI.SummonerBtnSkill)
+                    end
+                end
+
+                local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(targetSkillId)
+                local tblAction = tblSkill and _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
+                local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                local dir = me.dir or 0
+                if _G.SkillMgr and _G.SkillMgr.SendSkillMessage and tblSkill and tblAction then
+                    _G.SkillMgr.SendSkillMessage(tblSkill, tblAction, 0, coord)
+                end
+                if _G.SkillMgr and _G.SkillMgr.ReqCastSkill then
+                    _G.SkillMgr.ReqCastSkill(targetSkillId, 0, coord, dir)
+                end
+                if skillUI and skillUI.SetBtnSkill then skillUI:SetBtnSkill() end
+            end)
+
+            -- 3. Đổi Thiên Phú
+            pcall(function()
+                if _G.networkRequest and _G.networkRequest.ReqEnableGrandMasterTalent then
+                    _G.networkRequest.ReqEnableGrandMasterTalent(targetTalent)
+                end
+                local mgr = _G.QuickFind and _G.QuickFind.MasterDataMgr and _G.QuickFind.MasterDataMgr()
+                if mgr then mgr.mEnableSubType = targetTalent end
+                if _G.EventManager and _G.Event and _G.Event.NewSwitchMasterCarrerChanged then
+                    _G.EventManager.Dispatch(_G.Event.NewSwitchMasterCarrerChanged)
+                end
+
+                if _G.MasterSkill_newMainUI and not _G.MasterSkill_newMainUI._hasFixedSwitchVisual then
+                    _G.MasterSkill_newMainUI._hasFixedSwitchVisual = true
+                    local oldOnShow = _G.MasterSkill_newMainUI.OnShow
+                    _G.MasterSkill_newMainUI.OnShow = function(self)
+                        oldOnShow(self)
+                        pcall(function()
+                            if self.NewSwitchMasterCarrerChangedCallBack then self:NewSwitchMasterCarrerChangedCallBack() end
+                        end)
+                    end
+                end
+                local mainUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("MasterSkill_newMainUI")
+                if mainUI and mainUI.visible and mainUI.NewSwitchMasterCarrerChangedCallBack then
+                    mainUI:NewSwitchMasterCarrerChangedCallBack()
+                end
+            end)
+
+            -- 4. Nạp Preset Skill & Thánh Cốt
+            pcall(function() _G.Mod_ApplySummonerPreset(nextMode) end)
+
+            -- 5. Khôi phục AutoFight nếu ban đầu đang bật
+            if wasAutoFight then
+                pcall(function()
+                    local resumeKey = "AutoFight"
+                    if _G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight then
+                        resumeKey = (prevAutoKey ~= "None" and prevAutoKey ~= _G.AutoFightStrKey.None) and prevAutoKey or _G.AutoFightStrKey.AutoFight
+                    end
+                    if _G.QiJiHelperData then _G.QiJiHelperData.isAutoFight = true end
+                    if me.SetAutoFight then me:SetAutoFight(resumeKey) end
+                    if _G.AutoTaskManage and _G.AutoTaskManage.SetCurRoleOperate then
+                        _G.AutoTaskManage.SetCurRoleOperate(_G.AutoTaskOperateType.AutoFight)
+                    end
+                    local menuUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Main_MainMenuUI")
+                    if menuUI and menuUI.RefreshAutoFight then menuUI:RefreshAutoFight() end
+                end)
+            end
+
+            -- 6. Cập nhật Mode hiện tại & UI nút
+            _G.Mod_SummonerMode_Current = nextMode
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_SummonerMode_Current", nextMode)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if _G.ModUpdateFloatingSummonerBtn then _G.ModUpdateFloatingSummonerBtn() end
+            if _G.ModUpdateSaveBoneSkillBtnLabel then _G.ModUpdateSaveBoneSkillBtnLabel() end
+
+            local notify = string.format("Đã chuyển sang Mode [%s] (%s | %s)!", 
+                nextMode, targetTalentName, targetSkillName)
+            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(notify)
+            elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+                _G.CommonTipManage.ShowTips(notify)
+            end
+        end
+
+        -- Hook tự động làm sáng icon Thiên Phú khi mở bảng
+        if _G.MasterSkill_newMainUI and not _G.MasterSkill_newMainUI._hasFixedSwitchVisual then
+            _G.MasterSkill_newMainUI._hasFixedSwitchVisual = true
+            local oldOnShow = _G.MasterSkill_newMainUI.OnShow
+            _G.MasterSkill_newMainUI.OnShow = function(self)
+                oldOnShow(self)
+                pcall(function()
+                    if self.NewSwitchMasterCarrerChangedCallBack then self:NewSwitchMasterCarrerChangedCallBack() end
+                end)
+            end
         end
 
         -- =========================================================================
@@ -1300,6 +1974,104 @@ local function CreateModUI()
                 end
             end
         end)
+
+        -- =========================================================================
+        -- [MOD FEATURE]: PHÍM TẮT NỔI PVP | PVE CHO THUẬT SĨ (FLOATING SUMMONER MODE BTN)
+        -- Mô tả: Nút nổi trên HUD (60x60) chuyển đổi 1 chạm giữa Mode PVP và PVE.
+        --        Tự động xám mờ và đếm lùi khi Form đang Cooldown.
+        --        Kích hoạt khi Secret Command: /summode hoặc /summod.
+        -- =========================================================================
+        local sumBtnGo = GameObject("FloatingSummonerModeBtn")
+        _G.Mod_FloatingSummonerModeBtnGo = sumBtnGo
+        sumBtnGo.transform:SetParent(modRoot.transform, false)
+        local sumRt = sumBtnGo:AddComponent(typeof(RectTransform))
+        sumRt.anchorMin = Vector2(0, 0)
+        sumRt.anchorMax = Vector2(0, 0)
+        sumRt.pivot = Vector2(0, 0)
+        sumRt.anchoredPosition = Vector2(1, 330)
+        sumRt.sizeDelta = Vector2(60, 60)
+        _G.Mod_FloatingSummonerModeRt = sumRt
+
+        local sumImg = sumBtnGo:AddComponent(typeof(Image))
+        sumImg.color = (_G.Mod_SummonerMode_Current == "PVE") and Color(0.15, 0.55, 0.85, 0.95) or Color(0.85, 0.28, 0.15, 0.95)
+
+        local sumTxtGo = GameObject("SumModeTxt")
+        sumTxtGo.transform:SetParent(sumBtnGo.transform, false)
+        local sumTxtRt = sumTxtGo:AddComponent(typeof(RectTransform))
+        sumTxtRt.anchorMin = Vector2(0, 0)
+        sumTxtRt.anchorMax = Vector2(1, 1)
+        sumTxtRt.sizeDelta = Vector2(0, 0)
+        local sumTxt = sumTxtGo:AddComponent(typeof(Text))
+        sumTxt.text = _G.Mod_SummonerMode_Current or "PVP"
+        sumTxt.color = Color.white
+        sumTxt.fontSize = 17
+        sumTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then sumTxt.font = defaultFont end
+
+        _G.ModUpdateFloatingHUDPositions = function()
+            local curY = 150
+            if pkRt then
+                pkRt.anchoredPosition = Vector2(1, curY)
+                curY = curY + 90
+            end
+            if execBtnGo and execBtnGo.activeSelf and execRt then
+                execRt.anchoredPosition = Vector2(1, curY)
+                curY = curY + 90
+            end
+            if sumBtnGo and sumBtnGo.activeSelf and sumRt then
+                sumRt.anchoredPosition = Vector2(1, curY)
+            end
+        end
+
+        _G.ModUpdateFloatingSummonerBtn = function()
+            if not sumBtnGo or not sumImg or not sumTxt then return end
+            local isAct = _G.Mod_IsSummonerModeActive and _G.Mod_IsSummonerModeActive()
+            sumBtnGo:SetActive(isAct == true)
+            if not isAct then
+                if _G.ModUpdateFloatingHUDPositions then _G.ModUpdateFloatingHUDPositions() end
+                return
+            end
+
+            local curMode = _G.Mod_SummonerMode_Current or "PVP"
+            local nextSkillGroup = (curMode == "PVP") and 16090100 or 16020100
+            local remainCD = _G.Mod_GetFormSkillRemainCD and _G.Mod_GetFormSkillRemainCD(nextSkillGroup) or 0
+
+            if remainCD > 0 then
+                sumImg.color = Color(0.35, 0.35, 0.38, 0.88)
+                sumTxt.text = string.format("%s\n%ds", curMode, remainCD)
+                sumTxt.fontSize = 13
+                sumTxt.color = Color(0.95, 0.95, 0.65, 1)
+            else
+                if curMode == "PVE" then
+                    sumImg.color = Color(0.15, 0.55, 0.85, 0.95)
+                else
+                    sumImg.color = Color(0.85, 0.28, 0.15, 0.95)
+                end
+                sumTxt.text = curMode
+                sumTxt.fontSize = 17
+                sumTxt.color = Color.white
+            end
+
+            if _G.ModUpdateFloatingHUDPositions then _G.ModUpdateFloatingHUDPositions() end
+            if _G.ModUpdateSaveBoneSkillBtnLabel then _G.ModUpdateSaveBoneSkillBtnLabel() end
+        end
+
+        local sumBtnComp = sumBtnGo:AddComponent(typeof(Button))
+        sumBtnComp.onClick:AddListener(function()
+            if _G.Mod_SwitchSummonerMode then
+                _G.Mod_SwitchSummonerMode()
+            end
+        end)
+
+        _G.ModUpdateFloatingSummonerBtn()
+
+        if _G.Mod_StartTrackedTimer then
+            _G.Mod_StartTrackedTimer("SummonerModeCooldownScan", 0.5, -1, function()
+                if _G.ModUpdateFloatingSummonerBtn then
+                    _G.ModUpdateFloatingSummonerBtn()
+                end
+            end)
+        end
 
         local panelGo = GameObject("ModMenuPanel")
         panelGo.transform:SetParent(modRoot.transform, false)
@@ -2675,11 +3447,15 @@ local function CreateModUI()
             if _G.Event.Role_OnMeCreated then
                 _G.EventManager.Regist(_G.Event.Role_OnMeCreated, function()
                     ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+                    if _G.ModUpdateFloatingSummonerBtn then pcall(_G.ModUpdateFloatingSummonerBtn) end
+                    if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
                 end)
             end
             if _G.Event.Load_PreLoadEnd then
                 _G.EventManager.Regist(_G.Event.Load_PreLoadEnd, function()
                     ApplyAttackRangeMultiplier(_G.Mod_CustomAttackRangeMultiplier)
+                    if _G.ModUpdateFloatingSummonerBtn then pcall(_G.ModUpdateFloatingSummonerBtn) end
+                    if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
                 end)
             end
         end
@@ -3264,6 +4040,18 @@ local function CreateModUI()
                         _G.Mod_TowerMovingTargetY = nil
                         _G.Mod_TowerLastMoveCallTime = 0
                         LogMsg(string.format("[TOWER_BOSS] Đã áp sát Boss tháp tại (%d,%d) (cự ly %.1fm)! Bật Auto Fight.", targetX, targetY, dist))
+
+                        -- KÍCH HOẠT TRẬN PHÁ NGỰ KHI ÁP SÁT BOSS THÁP (CỰ LY <= 1.5M)
+                        if _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_TowerCheck_PhaNgu_Enabled and not _G.Mod_TowerCastPhaNguDone then
+                            _G.Mod_TowerCastPhaNguDone = true
+                            if _G.Mod_CastSkillByGroup then
+                                _G.Mod_CastSkillByGroup(16130100, 16130101, targetRole, true)
+                            end
+                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                _G.FloatingWordUtility.QuickMsg("[THÁP] Đã áp sát Boss -> Kích hoạt Trận Phá Ngự!")
+                            end
+                        end
+
                         return true -- Đã hoàn thành tiếp cận
                     else
                         -- Đang ở xa Boss (> 1.5m):
@@ -6334,11 +7122,13 @@ local function CreateModUI()
                             _G.Mod_TowerSkillsCastDone = false
                             _G.Mod_TowerCastLimitDone = false
                             _G.Mod_TowerCastAngelDone = false
+                            _G.Mod_TowerCastPhaNguDone = false
                             _G.Mod_TowerCastStartTime = 0
                             _G.Mod_TowerAutoFightStarted = false
                             _G.Mod_TowerMovingTargetX = nil
                             _G.Mod_TowerMovingTargetY = nil
                             _G.Mod_TowerLastMoveCallTime = 0
+                            _G.Mod_LastNhiepHonCastTime = 0
                         end
 
                         local remainSec, rawTimeTxt = nil, nil
@@ -6443,9 +7233,85 @@ local function CreateModUI()
                         end
 
                         -- 2. Tiếp cận Boss tháp (nếu bật AUTO THÁP và TIẾP CẬN BOSS THÁP)
+                        local me = _G.RoleManager and _G.RoleManager.me
                         if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_AutoApproachTowerBoss and not _G.Mod_ApproachTowerBoss_Done then
                             if _G.Mod_ApproachTowerBoss and _G.Mod_ApproachTowerBoss() then
                                 _G.Mod_ApproachTowerBoss_Done = true
+                            end
+                        end
+
+                        -- 3. Kích hoạt Trận Phá Ngự khi ở gần Boss (nếu chưa dùng và cự ly <= 1.8m)
+                        if me and not me.isDead and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_TowerCheck_PhaNgu_Enabled and not _G.Mod_TowerCastPhaNguDone then
+                            local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+                            if monsterRoles then
+                                local myX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                                local myY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                                if myX > 0 and myY > 0 then
+                                    for _, r in pairs(monsterRoles) do
+                                        if r and not r.isDead and r.hp and r.hp > 0 and not r.isSummon then
+                                            local rx = r.serverCoord and r.serverCoord.x or (r.cellPos and r.cellPos.x) or 0
+                                            local ry = r.serverCoord and r.serverCoord.y or (r.cellPos and r.cellPos.y) or 0
+                                            if rx > 0 and ry > 0 then
+                                                local d = math.sqrt((myX - rx) * (myX - rx) + (myY - ry) * (myY - ry))
+                                                if d <= 1.8 then
+                                                    _G.Mod_TowerCastPhaNguDone = true
+                                                    if _G.Mod_CastSkillByGroup then
+                                                        _G.Mod_CastSkillByGroup(16130100, 16130101, r, true)
+                                                    end
+                                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                        _G.FloatingWordUtility.QuickMsg("[THÁP] Đã ở gần Boss -> Kích hoạt Trận Phá Ngự!")
+                                                    end
+                                                    break
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        -- 4. TỰ ĐỘNG KÍCH HOẠT NHIẾP HỒN CHÚ KHI MÁU <= 25% TRONG THÁP
+                        if me and not me.isDead and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_TowerCheck_NhiepHon_Enabled then
+                            local maxHp = me.maxHp or (me.data and me.data.maxHp) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.maxHp) or 0
+                            local curHp = me.hp or (me.data and me.data.hp) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.hp) or 0
+                            if maxHp > 0 and curHp > 0 then
+                                local hpPct = (curHp / maxHp) * 100
+                                if hpPct <= 25 then
+                                    local nowReal = CS.UnityEngine.Time.realtimeSinceStartup
+                                    if (nowReal - (_G.Mod_LastNhiepHonCastTime or 0)) >= 1.5 then
+                                        local nhiepHonCd = 0
+                                        local cdData = me.cd and (me.cd[26020100] or me.cd[26020101])
+                                        if cdData then
+                                            local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+                                            if cdData.endTime and cdData.endTime > serverTime then
+                                                nhiepHonCd = math.ceil((cdData.endTime - serverTime) / 1000)
+                                            end
+                                        end
+
+                                        if nhiepHonCd <= 0 then
+                                            _G.Mod_LastNhiepHonCastTime = nowReal
+                                            local tgtRole = me.TargetAvatar or me.curTarget or (me.data and me.data.lockTarget)
+                                            if not tgtRole or tgtRole.isDead or (tgtRole.hp and tgtRole.hp <= 0) then
+                                                local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+                                                if monsterRoles then
+                                                    for _, r in pairs(monsterRoles) do
+                                                        if r and not r.isDead and r.hp and r.hp > 0 and not r.isSummon then
+                                                            tgtRole = r
+                                                            break
+                                                        end
+                                                    end
+                                                end
+                                            end
+
+                                            if tgtRole and _G.Mod_CastSkillByGroup then
+                                                _G.Mod_CastSkillByGroup(26020100, 26020101, tgtRole, false)
+                                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                                    _G.FloatingWordUtility.QuickMsg(string.format("[NHIẾP HỒN] Máu %.0f%% <= 25%% -> Kích hoạt Nhiếp Hồn Chú hồi máu!", hpPct))
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
                             end
                         end
                     else
@@ -6457,11 +7323,13 @@ local function CreateModUI()
                             _G.Mod_TowerSkillsCastDone = false
                             _G.Mod_TowerCastLimitDone = false
                             _G.Mod_TowerCastAngelDone = false
+                            _G.Mod_TowerCastPhaNguDone = false
                             _G.Mod_TowerCastStartTime = 0
                             _G.Mod_TowerAutoFightStarted = false
                             _G.Mod_TowerMovingTargetX = nil
                             _G.Mod_TowerMovingTargetY = nil
                             _G.Mod_TowerLastMoveCallTime = 0
+                            _G.Mod_LastNhiepHonCastTime = 0
                             pcall(function()
                                 local me = _G.RoleManager and _G.RoleManager.me
                                 if me and me.SetAutoFight then me:SetAutoFight("None") end
@@ -6518,7 +7386,19 @@ local function CreateModUI()
                             local needAtk   = checkSkill and (_G.Mod_TowerCheck_ElfAtkBuff_Enabled == true)
                             local needDef   = checkSkill and (_G.Mod_TowerCheck_ElfDefBuff_Enabled == true)
                             local needHp    = checkSkill and (_G.Mod_TowerCheck_DkHpBuff_Enabled == true)
+                            local needPhaNgu = checkSkill and (_G.Mod_TowerCheck_PhaNgu_Enabled == true)
+                            local needNhiepHon = checkSkill and (_G.Mod_TowerCheck_NhiepHon_Enabled == true)
                             local needAnyBuff = needAtk or needDef or needHp
+
+                            local hasPhaNgu = false
+                            local hasNhiepHon = false
+                            pcall(function()
+                                local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
+                                if meSkills then
+                                    if meSkills[16130100] then hasPhaNgu = true end
+                                    if meSkills[26020100] then hasNhiepHon = true end
+                                end
+                            end)
 
                             local meId = me.id or (me.data and me.data.id) or 0
                             local hasAtk, hasDef, hasHp, atkRem, defRem, hpRem = false, false, false, 0, 0, 0
@@ -6550,7 +7430,7 @@ local function CreateModUI()
                                         end
                                     end
                                 else
-                                    -- 1.2. Đã đủ buff (hoặc không yêu cầu buff). Kiểm tra Cực Hạn & Gai
+                                    -- 1.2. Đã đủ buff (hoặc không yêu cầu buff). Kiểm tra Cực Hạn, Gai, Phá Ngự & Nhiếp Hồn
                                     local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
                                     local missingSkills = {}
 
@@ -6577,6 +7457,32 @@ local function CreateModUI()
                                             end
                                             if cdSec <= 0 then cdSec = 1 end
                                             table.insert(missingSkills, string.format("Gai (%ds)", cdSec))
+                                        end
+                                    end
+
+                                    if needPhaNgu and hasPhaNgu then
+                                        local phaNguCd = me.cd and (me.cd[16130100] or me.cd[16130101])
+                                        local isPhaNguReady = (not phaNguCd) or (not phaNguCd.endTime) or (phaNguCd.endTime <= serverTime)
+                                        if not isPhaNguReady then
+                                            local cdSec = 0
+                                            if phaNguCd and phaNguCd.endTime and phaNguCd.endTime > serverTime then
+                                                cdSec = math.ceil((phaNguCd.endTime - serverTime) / 1000)
+                                            end
+                                            if cdSec <= 0 then cdSec = 1 end
+                                            table.insert(missingSkills, string.format("Phá Ngự (%ds)", cdSec))
+                                        end
+                                    end
+
+                                    if needNhiepHon and hasNhiepHon then
+                                        local nhiepHonCd = me.cd and (me.cd[26020100] or me.cd[26020101])
+                                        local isNhiepHonReady = (not nhiepHonCd) or (not nhiepHonCd.endTime) or (nhiepHonCd.endTime <= serverTime)
+                                        if not isNhiepHonReady then
+                                            local cdSec = 0
+                                            if nhiepHonCd and nhiepHonCd.endTime and nhiepHonCd.endTime > serverTime then
+                                                cdSec = math.ceil((nhiepHonCd.endTime - serverTime) / 1000)
+                                            end
+                                            if cdSec <= 0 then cdSec = 1 end
+                                            table.insert(missingSkills, string.format("Nhiếp Hồn (%ds)", cdSec))
                                         end
                                     end
 
@@ -7587,6 +8493,15 @@ local function CreateModUI()
                     if _G.ModUpdateCountText then
                         pcall(_G.ModUpdateCountText)
                     end
+
+                    -- Tự động quét và hiển thị nút nổi Summoner Mode (PVP | PVE) & đếm lùi CD
+                    local nowReal = CS.UnityEngine.Time.realtimeSinceStartup
+                    if not _G.Mod_LastSummonerScanTime or (nowReal - _G.Mod_LastSummonerScanTime) >= 0.5 then
+                        _G.Mod_LastSummonerScanTime = nowReal
+                        if _G.ModUpdateFloatingSummonerBtn then
+                            pcall(_G.ModUpdateFloatingSummonerBtn)
+                        end
+                    end
                 end)
             end
             _G.Mod_StartMainUpdateLoop()
@@ -8510,6 +9425,8 @@ local function CreateModUI()
                 _G.Mod_TowerCheck_ElfAtkBuff_Enabled = true
                 _G.Mod_TowerCheck_ElfDefBuff_Enabled = true
                 _G.Mod_TowerCheck_DkHpBuff_Enabled = true
+                _G.Mod_TowerCheck_PhaNgu_Enabled = true
+                _G.Mod_TowerCheck_NhiepHon_Enabled = true
                 _G.Mod_AutoBuff_Enabled = false
                 _G.Mod_AutoAOE_Enabled = false
                 _G.Mod_AutoChallengeTower_Count = 0
@@ -9157,6 +10074,7 @@ local function CreateModUI()
                     panelGo:SetActive(isExpanded)
                     if isExpanded then
                         UpdateFOVLabel()
+                        if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
                         RefreshMainTabs()
                         if _G.NetManager and _G.MapMessage then
                             _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
@@ -11952,13 +12870,18 @@ local function CreateModUI()
                     local _, txtElfDef = CreateToggle("BUFF THỦ", "Mod_TowerCheck_ElfDefBuff_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 35
 
-                    -- Hàng 3: BUFF MÁU (DK Ánh Sinh Mệnh, chiếm 1/2 hàng)
+                    -- Hàng 3: BUFF MÁU & PHÁ NGỰ
                     local _, txtDkHp = CreateToggle("BUFF MÁU", "Mod_TowerCheck_DkHpBuff_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    local _, txtPhaNgu = CreateToggle("PHÁ NGỰ", "Mod_TowerCheck_PhaNgu_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    curY = curY - 35
+
+                    -- Hàng 4: NHIẾP HỒN (<25%)
+                    local _, txtNhiepHon = CreateToggle("NHIẾP HỒN (<25%)", "Mod_TowerCheck_NhiepHon_Enabled", btnX, curY, btnW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 40
 
                     -- =========================================================================
                     -- [MOD FEATURE]: REAL-TIME CẬP NHẬT COOLDOWN & THỜI LƯỢNG BUFF TRÊN CÁC NÚT CHECK SKILL
-                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai)
+                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai, Phá Ngự, Nhiếp Hồn)
                     --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu.
                     --        Khi Auto Tháp hoặc Check Skill Tháp tắt -> Reset text về mặc định sạch sẽ.
                     -- =========================================================================
@@ -11968,6 +12891,8 @@ local function CreateModUI()
                         if txtElfAtk and txtElfAtk.text ~= "BUFF CÔNG" then txtElfAtk.text = "BUFF CÔNG" end
                         if txtElfDef and txtElfDef.text ~= "BUFF THỦ" then txtElfDef.text = "BUFF THỦ" end
                         if txtDkHp and txtDkHp.text ~= "BUFF MÁU" then txtDkHp.text = "BUFF MÁU" end
+                        if txtPhaNgu and txtPhaNgu.text ~= "PHÁ NGỰ" then txtPhaNgu.text = "PHÁ NGỰ" end
+                        if txtNhiepHon and txtNhiepHon.text ~= "NHIẾP HỒN (<25%)" then txtNhiepHon.text = "NHIẾP HỒN (<25%)" end
                     end
 
                     _G.Mod_UpdateTowerSkillButtons = function()
@@ -12063,6 +12988,30 @@ local function CreateModUI()
                         end
                         if not _G.Mod_TowerCheck_DkHpBuff_Enabled and txtDkHp and txtDkHp.text ~= "BUFF MÁU" then
                             txtDkHp.text = "BUFF MÁU"
+                        end
+
+                        -- 6. Phá Ngự CD
+                        if txtPhaNgu and txtPhaNgu.gameObject and txtPhaNgu.gameObject.activeInHierarchy then
+                            if _G.Mod_TowerCheck_PhaNgu_Enabled then
+                                local cdMsg = me.cd and (me.cd[16130100] or me.cd[16130101])
+                                local cd = GetCdSeconds(cdMsg)
+                                local newTxt = (cd > 0) and ("PHÁ NGỰ (" .. cd .. "s)") or "PHÁ NGỰ"
+                                if txtPhaNgu.text ~= newTxt then txtPhaNgu.text = newTxt end
+                            else
+                                if txtPhaNgu.text ~= "PHÁ NGỰ" then txtPhaNgu.text = "PHÁ NGỰ" end
+                            end
+                        end
+
+                        -- 7. Nhiếp Hồn CD
+                        if txtNhiepHon and txtNhiepHon.gameObject and txtNhiepHon.gameObject.activeInHierarchy then
+                            if _G.Mod_TowerCheck_NhiepHon_Enabled then
+                                local cdMsg = me.cd and (me.cd[26020100] or me.cd[26020101])
+                                local cd = GetCdSeconds(cdMsg)
+                                local newTxt = (cd > 0) and ("NHIẾP HỒN (" .. cd .. "s)") or "NHIẾP HỒN (<25%)"
+                                if txtNhiepHon.text ~= newTxt then txtNhiepHon.text = newTxt end
+                            else
+                                if txtNhiepHon.text ~= "NHIẾP HỒN (<25%)" then txtNhiepHon.text = "NHIẾP HỒN (<25%)" end
+                            end
                         end
                     end
                 end
@@ -12718,6 +13667,78 @@ local function CreateModUI()
             CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
             curY = curY - 45
 
+            -- =========================================================================
+            -- [MOD FEATURE]: NÚT GHI NHỚ PRESET (SKILL, HỒN CỐT & PHÙ VĂN) TRONG CỘT HỖ TRỢ
+            -- =========================================================================
+            if _G.Mod_IsSummonerModeActive and _G.Mod_IsSummonerModeActive() then
+                curY = curY - 5
+                local halfW = math.floor((btnW - 8) / 2)
+
+                -- Nút 1: GHI NHỚ PRESET PVP (Màu đỏ cam)
+                local savePvpBtnGo = GameObject("SavePresetPvpBtn")
+                savePvpBtnGo.transform:SetParent(contentGo.transform, false)
+                local savePvpRt = savePvpBtnGo:AddComponent(typeof(RectTransform))
+                savePvpRt.anchorMin, savePvpRt.anchorMax, savePvpRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                savePvpRt.anchoredPosition = Vector2(btnX, curY)
+                savePvpRt.sizeDelta = Vector2(halfW, 35)
+
+                local savePvpImg = savePvpBtnGo:AddComponent(typeof(Image))
+                savePvpImg.color = Color(0.72, 0.28, 0.18, 1)
+
+                local savePvpTxtGo = GameObject("Text")
+                savePvpTxtGo.transform:SetParent(savePvpBtnGo.transform, false)
+                local savePvpTxtRt = savePvpTxtGo:AddComponent(typeof(RectTransform))
+                savePvpTxtRt.anchorMin, savePvpTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                savePvpTxtRt.sizeDelta = Vector2(0, 0)
+                local savePvpTxt = savePvpTxtGo:AddComponent(typeof(Text))
+                savePvpTxt.raycastTarget = false
+                savePvpTxt.text = "GHI NHỚ PVP"
+                savePvpTxt.fontSize = 11
+                savePvpTxt.color = Color.white
+                savePvpTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then savePvpTxt.font = defaultFont end
+
+                local savePvpBtn = savePvpBtnGo:AddComponent(typeof(Button))
+                savePvpBtn.onClick:AddListener(function()
+                    if _G.Mod_SaveSummonerPreset then
+                        _G.Mod_SaveSummonerPreset("PVP")
+                    end
+                end)
+
+                -- Nút 2: GHI NHỚ PRESET PVE (Màu xanh lam)
+                local savePveBtnGo = GameObject("SavePresetPveBtn")
+                savePveBtnGo.transform:SetParent(contentGo.transform, false)
+                local savePveRt = savePveBtnGo:AddComponent(typeof(RectTransform))
+                savePveRt.anchorMin, savePveRt.anchorMax, savePveRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                savePveRt.anchoredPosition = Vector2(btnX + halfW + 8, curY)
+                savePveRt.sizeDelta = Vector2(halfW, 35)
+
+                local savePveImg = savePveBtnGo:AddComponent(typeof(Image))
+                savePveImg.color = Color(0.18, 0.48, 0.72, 1)
+
+                local savePveTxtGo = GameObject("Text")
+                savePveTxtGo.transform:SetParent(savePveBtnGo.transform, false)
+                local savePveTxtRt = savePveTxtGo:AddComponent(typeof(RectTransform))
+                savePveTxtRt.anchorMin, savePveTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                savePveTxtRt.sizeDelta = Vector2(0, 0)
+                local savePveTxt = savePveTxtGo:AddComponent(typeof(Text))
+                savePveTxt.raycastTarget = false
+                savePveTxt.text = "GHI NHỚ PVE"
+                savePveTxt.fontSize = 11
+                savePveTxt.color = Color.white
+                savePveTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then savePveTxt.font = defaultFont end
+
+                local savePveBtn = savePveBtnGo:AddComponent(typeof(Button))
+                savePveBtn.onClick:AddListener(function()
+                    if _G.Mod_SaveSummonerPreset then
+                        _G.Mod_SaveSummonerPreset("PVE")
+                    end
+                end)
+
+                curY = curY - 45
+            end
+
                 -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
                 contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
             end
@@ -12801,7 +13822,6 @@ local function CreateModUI()
             loadTxt.raycastTarget = false
             loadTxt.text = "LOAD"
             loadTxt.fontSize = 14
-            loadTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
             loadTxt.color = Color.white
             loadTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then loadTxt.font = defaultFont end
@@ -12819,6 +13839,9 @@ local function CreateModUI()
                 end
                 if _G.ModRebuildKundunHoTroContent then
                     _G.ModRebuildKundunHoTroContent()
+                end
+                if _G.ModUpdateFloatingSummonerBtn then
+                    _G.ModUpdateFloatingSummonerBtn()
                 end
             end)
         end
@@ -13041,6 +14064,9 @@ local function CreateModUI()
                     UpdateExecToggleLabel()
                     if _G.Mod_FloatingExecBtnGo then
                         _G.Mod_FloatingExecBtnGo:SetActive(_G.Mod_IsAdmin == true and _G.Mod_ExecBtn_Visible == true)
+                    end
+                    if _G.ModUpdateFloatingHUDPositions then
+                        _G.ModUpdateFloatingHUDPositions()
                     end
                 end)
 
@@ -14655,6 +15681,7 @@ local function CreateModUI()
             pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModMainTab", _G.ModMainTab) end)
             UpdateTabColors()
             RefreshMainTabs()
+            if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
             if _G.ModUpdateKundunUI then pcall(_G.ModUpdateKundunUI) end
         end)
 

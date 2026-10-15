@@ -1137,6 +1137,17 @@ local function CreateModUI()
         panelRt.anchoredPosition = Vector2(75, 45)
         panelRt.sizeDelta = Vector2(780, 590)
 
+        -- Khởi tạo Scale từ PlayerPrefs (mặc định x1.0)
+        if _G.Mod_MenuScale == nil then
+            pcall(function()
+                _G.Mod_MenuScale = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_MenuScale", 1.0)
+            end)
+            if _G.Mod_MenuScale == nil or _G.Mod_MenuScale <= 0 then
+                _G.Mod_MenuScale = 1.0
+            end
+        end
+        panelGo.transform.localScale = CS.UnityEngine.Vector3(_G.Mod_MenuScale, _G.Mod_MenuScale, 1)
+
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0.08, 0.08, 0.08, 0.96)
         panelImg.raycastTarget = true
@@ -1292,7 +1303,7 @@ local function CreateModUI()
         bsaTxt.text = "LƯU CẤU HÌNH"
         bsaTxt.color = Color.white
         bsaTxt.fontSize = 14
-        bsaTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        bsaTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bsaTxt.alignment = TextAnchor.MiddleCenter
         bsaTxt.raycastTarget = false
         if defaultFont then bsaTxt.font = defaultFont end
@@ -1343,7 +1354,7 @@ local function CreateModUI()
         buTxt.text = "CẬP NHẬT"
         buTxt.color = Color.white
         buTxt.fontSize = 14
-        buTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        buTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         buTxt.alignment = TextAnchor.MiddleCenter
         buTxt.raycastTarget = false
         if defaultFont then buTxt.font = defaultFont end
@@ -1371,7 +1382,7 @@ local function CreateModUI()
         bnTxt.text = "CHỌN MỚI NHẤT"
         bnTxt.color = Color.white
         bnTxt.fontSize = 13
-        bnTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        bnTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bnTxt.alignment = TextAnchor.MiddleCenter
         bnTxt.raycastTarget = false
         if defaultFont then bnTxt.font = defaultFont end
@@ -1399,7 +1410,7 @@ local function CreateModUI()
         brTxt.text = "RESET VỀ ACC 1"
         brTxt.color = Color.white
         brTxt.fontSize = 13
-        brTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        brTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         brTxt.alignment = TextAnchor.MiddleCenter
         brTxt.raycastTarget = false
         if defaultFont then brTxt.font = defaultFont end
@@ -1505,7 +1516,7 @@ local function CreateModUI()
                         tile.img.color = Color(0.12, 0.72, 0.22, 1.0)
                         tile.txt.color = Color.white
                         tile.txt.text = "★S" .. sId
-                        tile.txt.fontStyle = CS.UnityEngine.FontStyle.Bold
+                        tile.txt.fontStyle = CS.UnityEngine.FontStyle.Normal
                     else
                         tile.img.color = Color(0.22, 0.22, 0.22, 1.0)
                         tile.txt.color = Color(0.75, 0.75, 0.75, 1.0)
@@ -1578,7 +1589,7 @@ local function CreateModUI()
                 tTxt.text = isSelected and ("★S" .. sId) or ("S" .. sId)
                 tTxt.color = isSelected and Color.white or Color(0.75, 0.75, 0.75, 1)
                 tTxt.fontSize = 13
-                tTxt.fontStyle = isSelected and CS.UnityEngine.FontStyle.Bold or CS.UnityEngine.FontStyle.Normal
+                tTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
                 tTxt.alignment = TextAnchor.MiddleCenter
                 tTxt.raycastTarget = false
                 if defaultFont then tTxt.font = defaultFont end
@@ -1678,13 +1689,15 @@ local function CreateModUI()
         RenderServerGrid(savedStart, savedEnd)
 
         -- =========================================================================
-        -- [MOD FEATURE]: BỘ NÚT ĐIỀU HƯỚNG ACC (PREV/NEXT), START/PAUSE & LOCK BOSS TT ĐÁY PANEL
-        -- Mô tả: Thanh điều khiển 5 nút cân đối dưới đáy panel (Width 780, Height 42):
-        --        [◀ PREV] [NEXT ▶] ---- [▶ BẮT ĐẦU] ---- [LOCK BOSS TT] [THOÁT PB]
+        -- [MOD FEATURE]: BỘ NÚT ĐIỀU HƯỚNG ACC (PREV/NEXT), LOGIN, START/PAUSE, FARM KC & THOÁT PB
+        -- Mô tả: Thanh điều khiển 6 nút cân đối dưới đáy panel (Width 780, Height 42):
+        --        [◀ PREV] [NEXT ▶] [LOGIN] [▶ BẮT ĐẦU] [Farm KC] [THOÁT PB]
+        --        PREV/NEXT chỉ chọn acc chuyển đổi giao diện mục tiêu, KHÔNG đăng xuất.
+        --        Nút LOGIN thực hiện đăng xuất & đăng nhập vào tài khoản đang chọn.
         -- =========================================================================
 
-        -- 1. Hàm chuyển đổi Account thủ công (Kèm dọn sạch cache TaskData tránh đè quest)
-        local function SwitchAccountManual(delta)
+        -- 1. Hàm chuyển đổi chỉ định Account (chỉ chuyển mục tiêu chọn acc, KHÔNG logout)
+        local function SelectAccountIndex(delta)
             local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
             local curAccIdx = _G.CurrentAccountIndex or 1
             local targetAccIdx = curAccIdx + delta
@@ -1694,27 +1707,39 @@ local function CreateModUI()
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                     _G.FloatingWordUtility.QuickMsg(string.format("Đang ở Acc đầu tiên [1/%d]!", totalAccs))
                 end
-                return
             elseif targetAccIdx > totalAccs then
                 targetAccIdx = totalAccs
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                     _G.FloatingWordUtility.QuickMsg(string.format("Đang ở Acc cuối cùng [%d/%d]!", totalAccs, totalAccs))
                 end
-                return
-            end
+            else
+                _G.CurrentAccountIndex = targetAccIdx
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", targetAccIdx)
+                CS.UnityEngine.PlayerPrefs.Save()
 
-            _G.CurrentAccountIndex = targetAccIdx
-            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", targetAccIdx)
-            CS.UnityEngine.PlayerPrefs.Save()
+                local targetAcc = (_G.BotAccounts and _G.BotAccounts[targetAccIdx]) or {}
+                local email = targetAcc.account or "Unknown"
+
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đã chọn Acc [%d/%d]: %s", targetAccIdx, totalAccs, email))
+                end
+            end
 
             if _G.Mod_UpdateServerStatusUI then _G.Mod_UpdateServerStatusUI() end
             if UpdateServerStatusUI then UpdateServerStatusUI() end
+        end
+        _G.SelectAccountIndex = SelectAccountIndex
+        _G.SwitchAccountManual = SelectAccountIndex
 
-            local targetAcc = (_G.BotAccounts and _G.BotAccounts[targetAccIdx]) or {}
+        -- 2. Hàm thực hiện đăng nhập vào đúng Account đang được chọn
+        local function LoginCurrentSelectedAccount()
+            local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
+            local curAccIdx = _G.CurrentAccountIndex or 1
+            local targetAcc = (_G.BotAccounts and _G.BotAccounts[curAccIdx]) or {}
             local email = targetAcc.account or "Unknown"
 
             if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                _G.FloatingWordUtility.QuickMsg(string.format("Chuyển sang Acc [%d/%d]: %s", targetAccIdx, totalAccs, email))
+                _G.FloatingWordUtility.QuickMsg(string.format("Đang đăng nhập Acc [%d/%d]: %s...", curAccIdx, totalAccs, email))
             end
 
             -- Gỡ sạch hoàn toàn dữ liệu & trạng thái nhiệm vụ cũ trước khi sang tài khoản mới
@@ -1731,7 +1756,7 @@ local function CreateModUI()
             _G.Bot_IsInGameWorld = false
             _G.IsSwitchingAccount = false
 
-            -- ĐĂNG XUẤT RA MÀN HÌNH LOGIN VÀ TỰ ĐỘNG ĐĂNG NHẬP VÀO ACC MỚI
+            -- ĐĂNG XUẤT RA MÀN HÌNH LOGIN VÀ TỰ ĐỘNG ĐĂNG NHẬP VÀO ACC ĐANG CHỌN
             pcall(function()
                 local logoutFunc = _G.ForceLogoutToLogin or ForceLogoutToLogin
                 local loginFunc = _G.StartFullLoginProcess or StartFullLoginProcess
@@ -1751,10 +1776,11 @@ local function CreateModUI()
                 end
             end)
         end
-        _G.SwitchAccountManual = SwitchAccountManual
+        _G.LoginCurrentSelectedAccount = LoginCurrentSelectedAccount
+
 
         -- ---------------------------------------------------------------------
-        -- NÚT 1: ◀ PREV (Chuyển về Account trước)
+        -- NÚT 1: ◀ PREV (Chọn lùi về Account trước)
         -- ---------------------------------------------------------------------
         local btnPrevGo = GameObject("BtnPrevAcc")
         btnPrevGo.transform:SetParent(panelGo.transform, false)
@@ -1763,7 +1789,7 @@ local function CreateModUI()
         bpRt.anchorMax = Vector2(0, 0)
         bpRt.pivot = Vector2(0, 0)
         bpRt.anchoredPosition = Vector2(15, 14)
-        bpRt.sizeDelta = Vector2(100, 42)
+        bpRt.sizeDelta = Vector2(85, 42)
 
         local bpImg = btnPrevGo:AddComponent(typeof(Image))
         bpImg.color = Color(0.20, 0.42, 0.72, 1)
@@ -1775,9 +1801,10 @@ local function CreateModUI()
         bptRt.anchorMin, bptRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         bptRt.sizeDelta = Vector2(0, 0)
         local bpTxt = bpTxtGo:AddComponent(typeof(Text))
-        bpTxt.text = "<b>◀ PREV</b>"
+        bpTxt.text = "◀ PREV"
         bpTxt.color = Color.white
         bpTxt.fontSize = 15
+        bpTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bpTxt.alignment = TextAnchor.MiddleCenter
         bpTxt.raycastTarget = false
         if defaultFont then bpTxt.font = defaultFont end
@@ -1785,11 +1812,11 @@ local function CreateModUI()
         local bpBtn = btnPrevGo:AddComponent(typeof(Button))
         bpBtn.targetGraphic = bpImg
         bpBtn.onClick:AddListener(function()
-            SwitchAccountManual(-1)
+            SelectAccountIndex(-1)
         end)
 
         -- ---------------------------------------------------------------------
-        -- NÚT 2: NEXT ▶ (Chuyển sang Account tiếp theo)
+        -- NÚT 2: NEXT ▶ (Chọn tiến sang Account tiếp theo)
         -- ---------------------------------------------------------------------
         local btnNextGo = GameObject("BtnNextAcc")
         btnNextGo.transform:SetParent(panelGo.transform, false)
@@ -1797,8 +1824,8 @@ local function CreateModUI()
         bnRt.anchorMin = Vector2(0, 0)
         bnRt.anchorMax = Vector2(0, 0)
         bnRt.pivot = Vector2(0, 0)
-        bnRt.anchoredPosition = Vector2(123, 14)
-        bnRt.sizeDelta = Vector2(100, 42)
+        bnRt.anchoredPosition = Vector2(108, 14)
+        bnRt.sizeDelta = Vector2(85, 42)
 
         local bnImg = btnNextGo:AddComponent(typeof(Image))
         bnImg.color = Color(0.20, 0.42, 0.72, 1)
@@ -1810,9 +1837,10 @@ local function CreateModUI()
         bntRt.anchorMin, bntRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         bntRt.sizeDelta = Vector2(0, 0)
         local bnTxt = bnTxtGo:AddComponent(typeof(Text))
-        bnTxt.text = "<b>NEXT ▶</b>"
+        bnTxt.text = "NEXT ▶"
         bnTxt.color = Color.white
         bnTxt.fontSize = 15
+        bnTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bnTxt.alignment = TextAnchor.MiddleCenter
         bnTxt.raycastTarget = false
         if defaultFont then bnTxt.font = defaultFont end
@@ -1820,20 +1848,56 @@ local function CreateModUI()
         local bnBtn = btnNextGo:AddComponent(typeof(Button))
         bnBtn.targetGraphic = bnImg
         bnBtn.onClick:AddListener(function()
-            SwitchAccountManual(1)
+            SelectAccountIndex(1)
         end)
 
         -- ---------------------------------------------------------------------
-        -- NÚT 3: START / PAUSE Ở CHÍNH GIỮA (Rút gọn nhãn)
+        -- NÚT 3: LOGIN (Đăng nhập vào Account đang chọn)
+        -- ---------------------------------------------------------------------
+        local btnLoginGo = GameObject("BtnLoginAcc")
+        btnLoginGo.transform:SetParent(panelGo.transform, false)
+        local blRt = btnLoginGo:AddComponent(typeof(RectTransform))
+        blRt.anchorMin = Vector2(0, 0)
+        blRt.anchorMax = Vector2(0, 0)
+        blRt.pivot = Vector2(0, 0)
+        blRt.anchoredPosition = Vector2(203, 14)
+        blRt.sizeDelta = Vector2(110, 42)
+
+        local blImg = btnLoginGo:AddComponent(typeof(Image))
+        blImg.color = Color(0.15, 0.55, 0.65, 1)
+        blImg.raycastTarget = true
+
+        local blTxtGo = GameObject("Text")
+        blTxtGo.transform:SetParent(btnLoginGo.transform, false)
+        local bltRt = blTxtGo:AddComponent(typeof(RectTransform))
+        bltRt.anchorMin, bltRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        bltRt.sizeDelta = Vector2(0, 0)
+        local blTxt = blTxtGo:AddComponent(typeof(Text))
+        blTxt.text = "LOGIN"
+        blTxt.color = Color.white
+        blTxt.fontSize = 15
+        blTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        blTxt.alignment = TextAnchor.MiddleCenter
+        blTxt.raycastTarget = false
+        if defaultFont then blTxt.font = defaultFont end
+
+        local blBtn = btnLoginGo:AddComponent(typeof(Button))
+        blBtn.targetGraphic = blImg
+        blBtn.onClick:AddListener(function()
+            LoginCurrentSelectedAccount()
+        end)
+
+        -- ---------------------------------------------------------------------
+        -- NÚT 4: START / PAUSE Ở BÊN PHẢI NÚT LOGIN
         -- ---------------------------------------------------------------------
         local btmBotBtnGo = GameObject("BottomBotActionBtn")
         btmBotBtnGo.transform:SetParent(panelGo.transform, false)
         local bbbRt = btmBotBtnGo:AddComponent(typeof(RectTransform))
-        bbbRt.anchorMin = Vector2(0.5, 0)
-        bbbRt.anchorMax = Vector2(0.5, 0)
-        bbbRt.pivot = Vector2(0.5, 0)
-        bbbRt.anchoredPosition = Vector2(0, 14)
-        bbbRt.sizeDelta = Vector2(160, 42)
+        bbbRt.anchorMin = Vector2(0, 0)
+        bbbRt.anchorMax = Vector2(0, 0)
+        bbbRt.pivot = Vector2(0, 0)
+        bbbRt.anchoredPosition = Vector2(323, 14)
+        bbbRt.sizeDelta = Vector2(145, 42)
 
         local bbbImg = btmBotBtnGo:AddComponent(typeof(Image))
         bbbImg.color = Color(0.18, 0.62, 0.18, 1)
@@ -1846,10 +1910,10 @@ local function CreateModUI()
         bbbtRt.anchorMax = Vector2(1, 1)
         bbbtRt.sizeDelta = Vector2(0, 0)
         local bbbTxt = bbbTxtGo:AddComponent(typeof(Text))
-        bbbTxt.text = "<b>▶ BẮT ĐẦU</b>"
+        bbbTxt.text = "▶ BẮT ĐẦU"
         bbbTxt.color = Color.white
-        bbbTxt.fontSize = 16
-        bbbTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        bbbTxt.fontSize = 15
+        bbbTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bbbTxt.alignment = TextAnchor.MiddleCenter
         bbbTxt.raycastTarget = false
         if defaultFont then bbbTxt.font = defaultFont end
@@ -1857,10 +1921,10 @@ local function CreateModUI()
         _G.ModUpdatePanelBotBtn = function()
             if bbbTxt and not bbbTxt:Equals(nil) and bbbImg and not bbbImg:Equals(nil) then
                 if _G.Bot_Running then
-                    bbbTxt.text = "<b>⏸ TẠM DỪNG</b>"
+                    bbbTxt.text = "⏸ TẠM DỪNG"
                     bbbImg.color = Color(0.85, 0.20, 0.20, 1)
                 else
-                    bbbTxt.text = "<b>▶ BẮT ĐẦU</b>"
+                    bbbTxt.text = "▶ BẮT ĐẦU"
                     bbbImg.color = Color(0.18, 0.62, 0.18, 1)
                 end
             end
@@ -1879,18 +1943,18 @@ local function CreateModUI()
         end)
 
         -- ---------------------------------------------------------------------
-        -- [MOD FEATURE]: NÚT 4: FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1)
+        -- [MOD FEATURE]: NÚT 5: FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1)
         -- Mô tả: Tự động lặp chu trình vào Room Boss Phúc Lợi Tầng 1, phát hiện
         --        Nữ Hoàng Băng Giá Lv80, auto đánh và đếm số lượng boss tiêu diệt.
         -- ---------------------------------------------------------------------
         local farmKcBtnGo = GameObject("BtnFarmKC")
         farmKcBtnGo.transform:SetParent(panelGo.transform, false)
         local fkcRt = farmKcBtnGo:AddComponent(typeof(RectTransform))
-        fkcRt.anchorMin = Vector2(1, 0)
-        fkcRt.anchorMax = Vector2(1, 0)
-        fkcRt.pivot = Vector2(1, 0)
-        fkcRt.anchoredPosition = Vector2(-128, 14)
-        fkcRt.sizeDelta = Vector2(130, 42)
+        fkcRt.anchorMin = Vector2(0, 0)
+        fkcRt.anchorMax = Vector2(0, 0)
+        fkcRt.pivot = Vector2(0, 0)
+        fkcRt.anchoredPosition = Vector2(478, 14)
+        fkcRt.sizeDelta = Vector2(135, 42)
 
         local fkcImg = farmKcBtnGo:AddComponent(typeof(Image))
         fkcImg.color = Color(0.85, 0.50, 0.05, 1)
@@ -1902,10 +1966,10 @@ local function CreateModUI()
         fkctRt.anchorMin, fkctRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         fkctRt.sizeDelta = Vector2(0, 0)
         local fkcTxt = fkcTxtGo:AddComponent(typeof(Text))
-        fkcTxt.text = "<b>Farm KC</b>"
+        fkcTxt.text = "Farm KC"
         fkcTxt.color = Color.white
         fkcTxt.fontSize = 14
-        fkcTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+        fkcTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         fkcTxt.alignment = TextAnchor.MiddleCenter
         fkcTxt.raycastTarget = false
         if defaultFont then fkcTxt.font = defaultFont end
@@ -1919,13 +1983,13 @@ local function CreateModUI()
                 if _G.Mod_FarmKCActive then
                     fkcImg.color = Color(0.12, 0.65, 0.45, 1)
                     if _G.Mod_FarmKCCount and _G.Mod_FarmKCCount > 0 then
-                        fkcTxt.text = string.format("<b>Farm KC (%d)</b>", _G.Mod_FarmKCCount)
+                        fkcTxt.text = string.format("Farm KC (%d)", _G.Mod_FarmKCCount)
                     else
-                        fkcTxt.text = "<b>Farm KC</b>"
+                        fkcTxt.text = "Farm KC"
                     end
                 else
                     fkcImg.color = Color(0.85, 0.50, 0.05, 1)
-                    fkcTxt.text = "<b>Farm KC</b>"
+                    fkcTxt.text = "Farm KC"
                 end
             end)
         end
@@ -1938,11 +2002,13 @@ local function CreateModUI()
                 _G.Mod_FarmKCCount = 0
                 if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT TỰ ĐỘNG FARM KIM CƯƠNG (LV >= 200)!")
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT TỰ ĐỘNG FARM KIM CƯƠNG!")
                 end
-                local me = _G.RoleManager and _G.RoleManager.me
-                local curLvl = tonumber((me and me.level) or (me and me.data and me.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-                if curLvl >= 200 and _G.StartFarmKCRoutine then
+                -- =========================================================================
+                -- [MOD FEATURE]: KÍCH HOẠT FARM KIM CƯƠNG NGAY KHI BẤM NÚT (KHÔNG GIỚI HẠN LEVEL)
+                -- Mô tả: Do User chủ động bật, lập tức chạy chu trình vào Secret Room săn Boss Phúc Lợi Tầng 1
+                -- =========================================================================
+                if _G.StartFarmKCRoutine then
                     _G.StartFarmKCRoutine()
                 end
                 if not _G.Global30sUpgradeTimer and _G.StartGlobal30sUpgradePipeline then
@@ -1959,16 +2025,16 @@ local function CreateModUI()
         end)
 
         -- ---------------------------------------------------------------------
-        -- NÚT 5: THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD
+        -- NÚT 6: THOÁT PB Ở GÓC PHẢI DƯỚI MENU MOD
         -- ---------------------------------------------------------------------
         local exitPbBtnGo = GameObject("ExitDungeonGlobalBtn")
         exitPbBtnGo.transform:SetParent(panelGo.transform, false)
         local epbRt = exitPbBtnGo:AddComponent(typeof(RectTransform))
-        epbRt.anchorMin = Vector2(1, 0)
-        epbRt.anchorMax = Vector2(1, 0)
-        epbRt.pivot = Vector2(1, 0)
-        epbRt.anchoredPosition = Vector2(-15, 14)
-        epbRt.sizeDelta = Vector2(105, 42)
+        epbRt.anchorMin = Vector2(0, 0)
+        epbRt.anchorMax = Vector2(0, 0)
+        epbRt.pivot = Vector2(0, 0)
+        epbRt.anchoredPosition = Vector2(623, 14)
+        epbRt.sizeDelta = Vector2(142, 42)
 
         local epbImg = exitPbBtnGo:AddComponent(typeof(Image))
         epbImg.color = Color(0.8, 0.15, 0.15, 0.95)
@@ -1981,8 +2047,9 @@ local function CreateModUI()
         epbtRt.sizeDelta = Vector2(0, 0)
         local epbTxt = epbTxtGo:AddComponent(typeof(Text))
         epbTxt.raycastTarget = false
-        epbTxt.text = "<color=#FFFFFF><b>THOÁT PB</b></color>"
+        epbTxt.text = "<color=#FFFFFF>THOÁT PB</color>"
         epbTxt.fontSize = 15
+        epbTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         epbTxt.alignment = TextAnchor.MiddleCenter
         if defaultFont then epbTxt.font = defaultFont end
 
@@ -2006,6 +2073,72 @@ local function CreateModUI()
         end)
         exitPbBtnGo:SetActive(true)
         exitPbBtnGo.transform:SetAsLastSibling()
+
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT ZOOM DỌC BÁM MÉP PHẢI PANEL FARM BOT
+        -- Mô tả: Thu phóng kích thước menu theo chu kỳ: x1.0 -> x1.2 -> x1.5 -> x1.0
+        -- =========================================================================
+        local zoomBtnGo = GameObject("ZoomVerticalBtn")
+        zoomBtnGo.transform:SetParent(panelGo.transform, false)
+
+        local zoomRt = zoomBtnGo:AddComponent(typeof(RectTransform))
+        zoomRt.anchorMin, zoomRt.anchorMax, zoomRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+        zoomRt.anchoredPosition = Vector2(0, 0)
+        zoomRt.sizeDelta = Vector2(28, 120)
+
+        local zoomImg = zoomBtnGo:AddComponent(typeof(Image))
+
+        local zoomTxtGo = GameObject("Text")
+        zoomTxtGo.transform:SetParent(zoomBtnGo.transform, false)
+        local zoomTxtRt = zoomTxtGo:AddComponent(typeof(RectTransform))
+        zoomTxtRt.anchorMin, zoomTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        zoomTxtRt.sizeDelta = Vector2(0, 0)
+        local zoomTxt = zoomTxtGo:AddComponent(typeof(Text))
+        zoomTxt.raycastTarget = false
+        zoomTxt.fontSize = 12
+        zoomTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        zoomTxt.alignment = TextAnchor.MiddleCenter
+        if defaultFont then zoomTxt.font = defaultFont end
+
+        local function UpdateZoomVisuals()
+            local cur = _G.Mod_MenuScale or 1.0
+            if math.abs(cur - 1.2) < 0.05 then
+                zoomImg.color = Color(0.15, 0.45, 0.65, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.2"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            elseif math.abs(cur - 1.5) < 0.05 then
+                zoomImg.color = Color(0.75, 0.45, 0.1, 0.95)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.5"
+                zoomTxt.color = Color(1, 1, 1, 1)
+            else
+                zoomImg.color = Color(0.2, 0.2, 0.2, 0.9)
+                zoomTxt.text = "Z\nO\nO\nM\n\n1.0"
+                zoomTxt.color = Color(0.8, 0.8, 0.8, 1)
+            end
+            panelGo.transform.localScale = CS.UnityEngine.Vector3(cur, cur, 1)
+        end
+        UpdateZoomVisuals()
+
+        local zoomBtn = zoomBtnGo:AddComponent(typeof(Button))
+        zoomBtn.targetGraphic = zoomImg
+        zoomBtn.onClick:AddListener(function()
+            local cur = _G.Mod_MenuScale or 1.0
+            local nextScale = 1.0
+            if math.abs(cur - 1.0) < 0.05 then
+                nextScale = 1.2
+            elseif math.abs(cur - 1.2) < 0.05 then
+                nextScale = 1.5
+            else
+                nextScale = 1.0
+            end
+            _G.Mod_MenuScale = nextScale
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetFloat("Mod_MenuScale", nextScale)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            UpdateZoomVisuals()
+        end)
+        zoomBtnGo.transform:SetAsLastSibling()
 
         end)
     if not status then
@@ -2296,7 +2429,7 @@ _G.Mod_ShowTopNotice = function(msg, duration)
             end
             if font then txt.font = font end
             txt.fontSize = 24
-            txt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            txt.fontStyle = CS.UnityEngine.FontStyle.Normal
             txt.alignment = CS.UnityEngine.TextAnchor.MiddleCenter
             txt.color = CS.UnityEngine.Color(1.0, 0.88, 0.1, 1.0) -- Màu vàng kim rực sáng
 
@@ -3400,6 +3533,31 @@ DismissBlockers = function()
                 end
                 local oldItem = transferUI.oldItem or (_G.ForgeData and _G.ForgeData.EquipTransferMain)
                 local newItem = transferUI.newItem or (_G.ForgeData and _G.ForgeData.EquipTransferSecond)
+                
+                -- =========================================================================
+                -- [MOD FEATURE]: KIỂM TRA ĐIỀU KIỆN MẶC CỦA ĐỒ MỚI (CHỐNG CỞI TRUỒNG KHI THIẾU ĐIỂM)
+                -- Mô tả: Nếu món đồ mới chưa đủ điểm Sức Mạnh, Thân Pháp, Năng Lượng để mặc ngay,
+                --        tuyệt đối không chuyển cường hóa, đóng ngay popup để giữ nguyên đồ cũ trên người!
+                -- =========================================================================
+                local canWearNewItem = false
+                if newItem and _G.RoleEquipUtility and _G.RoleEquipUtility.CheckUseItem then
+                    local ok, _ = _G.RoleEquipUtility.CheckUseItem(newItem, (_G.CheckUseItemWay and _G.CheckUseItemWay.NotAddPoint) or 1)
+                    if ok == true then
+                        canWearNewItem = true
+                    end
+                end
+
+                if not canWearNewItem then
+                    if transferUI.btn_closeBgOnClick then
+                        transferUI:btn_closeBgOnClick()
+                    elseif _G.UIManager then
+                        if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
+                        _G.UIManager.Hide("Equip_ZhuanyiFastUI")
+                    end
+                    Log("[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!", false)
+                    return
+                end
+
                 if oldItem and newItem and oldItem.id and newItem.id and _G.NetManager and _G.EquipMessage then
                     local intensifyMaxLevel, addMaxLevel = 15, 15
                     pcall(function()
@@ -3465,7 +3623,7 @@ DismissBlockers = function()
             end)
         end
 
-        -- Tự động bấm "Dùng ngay" (Skill_TIpsUI) hoặc đóng để không che màn hình
+        -- Tự động bấm "Dùng ngay" (Skill_TIpsUI & Item_TIpsUI) hoặc đóng để không che màn hình
         local skillTipUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Skill_TIpsUI") or (_G.UIID and _G.UIID.SkillTIpsUI and _G.UIManager.GetUiByName(_G.UIID.SkillTIpsUI)))
         if skillTipUI and ((skillTipUI.visible == true) or (skillTipUI.root and skillTipUI.root.gameObject and skillTipUI.root.gameObject.activeInHierarchy)) then
             pcall(function()
@@ -3475,6 +3633,23 @@ DismissBlockers = function()
                     skillTipUI:btn_closeOnClick(skillTipUI.btn_close)
                 else
                     _G.UIManager.Hide("Skill_TIpsUI")
+                end
+            end)
+        end
+
+        local itemTipUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Item_TIpsUI") or (_G.UIID and _G.UIID.ItemTipUI and _G.UIManager.GetUiByName(_G.UIID.ItemTipUI)))
+        if itemTipUI and ((itemTipUI.visible == true) or (itemTipUI.root and itemTipUI.root.gameObject and itemTipUI.root.gameObject.activeInHierarchy)) then
+            pcall(function()
+                if itemTipUI.btn_quickeuseOnClick and itemTipUI.btn_quickeuse then
+                    itemTipUI:btn_quickeuseOnClick(itemTipUI.btn_quickeuse)
+                elseif itemTipUI.btn_quickuseOnClick and itemTipUI.btn_quickuse then
+                    itemTipUI:btn_quickuseOnClick(itemTipUI.btn_quickuse)
+                elseif itemTipUI.btn_useOnClick and itemTipUI.btn_use then
+                    itemTipUI:btn_useOnClick(itemTipUI.btn_use)
+                elseif itemTipUI.btn_closeOnClick and itemTipUI.btn_close then
+                    itemTipUI:btn_closeOnClick(itemTipUI.btn_close)
+                else
+                    _G.UIManager.Hide("Item_TIpsUI")
                 end
             end)
         end
@@ -6306,7 +6481,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         local cannotEnhanceAnyMore = false
 
         for _, currentTier in ipairs(activeTiers) do
-            if cannotEnhanceAnyMore or _G.Bot_PauseTask or not _G.Bot_Running then break end
+            if cannotEnhanceAnyMore or _G.Bot_PauseTask or (not _G.Bot_Running and not _G.Mod_FarmKCActive) then break end
 
             local tierDone = false
             local loopCount = 0
@@ -6315,7 +6490,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
             local skippedIds = {}
 
             while not tierDone and loopCount < maxTierLoops do
-                if _G.Bot_PauseTask or not _G.Bot_Running then break end
+                if _G.Bot_PauseTask or (not _G.Bot_Running and not _G.Mod_FarmKCActive) then break end
                 loopCount = loopCount + 1
 
                 -- 1. Quét danh sách trang bị đang mặc
@@ -6416,7 +6591,7 @@ AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
         local enhanceTimer = nil
         local skippedIds = {}
         enhanceTimer = Timer.StartLoop(0.25, -1, function()
-            if _G.Bot_PauseTask or not _G.Bot_Running or curTierIdx > #activeTiers then
+            if _G.Bot_PauseTask or (not _G.Bot_Running and not _G.Mod_FarmKCActive) or curTierIdx > #activeTiers then
                 if enhanceTimer then Timer.Stop(enhanceTimer) end
                 _G.AutoEvenEnhanceRunning = false
                 _G.Bot_HasDoneEnhanceAfterSnowBug = true
@@ -6496,6 +6671,14 @@ AutoEquipBetterItems = function()
             _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
             _G.PlayerPrefs.Save()
         end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: ƯU TIÊN PHÂN BỔ ĐIỂM TIỀM NĂNG TRƯỚC KHI QUÉT TRANG BỊ
+        -- Mô tả: Phân bổ sạch điểm tiềm năng còn tồn trước để nhân vật đạt chỉ số tối đa
+        -- =========================================================================
+        if AutoAddAttributePoints then
+            pcall(AutoAddAttributePoints)
+        end
         
         -- 1. Bấm Trang bị ngay nếu popup đang mở
         local tipUI = _G.UIManager and _G.UIID and _G.UIID.Equip_TIpsUI and _G.UIManager.GetUiByName(_G.UIID.Equip_TIpsUI)
@@ -6518,22 +6701,48 @@ AutoEquipBetterItems = function()
                         local oldEquip = equipsData and canPos and equipsData[canPos]
 
                         local canWear = false
-                        -- A. Kiểm tra tăng lực chiến thông thường
-                        if _G.RoleEquipUtility.CanUpFight then
-                            local state = _G.RoleEquipUtility.CanUpFight(item)
-                            if state == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
-                                canWear = true
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: KIỂM TRA ĐỦ ĐIỂM THUỘC TÍNH TRƯỚC KHI MẶC / CHUYỂN CƯỜNG HÓA
+                        -- Mô tả: Chỉ cho phép mặc nếu nhân vật thực sự đủ điểm (CheckUseItem == true).
+                        --        Nếu thiếu điểm (Sức mạnh, Thân pháp, Năng lượng...) -> Tuyệt đối bỏ qua!
+                        -- =========================================================================
+                        local isPointEnoughToWear = false
+                        if _G.RoleEquipUtility and _G.RoleEquipUtility.CheckUseItem then
+                            local ok, _ = _G.RoleEquipUtility.CheckUseItem(item, (_G.CheckUseItemWay and _G.CheckUseItemWay.NotAddPoint) or 1)
+                            if ok == true then
+                                isPointEnoughToWear = true
+                            end
+                        else
+                            isPointEnoughToWear = true
+                        end
+
+                        -- Kiểm tra trực tiếp các chỉ số yêu cầu của item để đảm bảo an toàn tuyệt đối
+                        if isPointEnoughToWear then
+                            local tItem = item.tblItem or (item.GetTblItem and item:GetTblItem())
+                            if tItem and _G.ViewData and _G.ViewData.meData and _G.EAttributeType then
+                                local myStr = _G.ViewData.meData:GetAttribute(_G.EAttributeType.strength) or 0
+                                local myAgi = _G.ViewData.meData:GetAttribute(_G.EAttributeType.agility) or 0
+                                local myEne = _G.ViewData.meData:GetAttribute(_G.EAttributeType.energy) or 0
+                                if (tItem.needStrength and tItem.needStrength > 0 and myStr < tItem.needStrength) or
+                                   (tItem.needAgility and tItem.needAgility > 0 and myAgi < tItem.needAgility) or
+                                   (tItem.needEnergy and tItem.needEnergy > 0 and myEne < tItem.needEnergy) then
+                                    isPointEnoughToWear = false
+                                end
                             end
                         end
 
-                        -- B. Kiểm tra Bậc (equipClass) hoặc Phẩm chất (quality) nếu CanUpFight chưa nhận diện do đồ cũ đang mang +15
-                        if not canWear then
-                            local canUse = false
-                            if _G.RoleEquipUtility and _G.RoleEquipUtility.CheckUseItem then
-                                local ok, _ = _G.RoleEquipUtility.CheckUseItem(item, (_G.CheckUseItemWay and _G.CheckUseItemWay.NotAddPoint) or 1)
-                                canUse = (ok == true)
+                        if isPointEnoughToWear then
+                            -- A. Kiểm tra tăng lực chiến thông thường
+                            if _G.RoleEquipUtility.CanUpFight then
+                                local state = _G.RoleEquipUtility.CanUpFight(item)
+                                if state == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
+                                    canWear = true
+                                end
                             end
-                            if canUse then
+
+                            -- B. Kiểm tra Bậc (equipClass) hoặc Phẩm chất (quality) nếu CanUpFight chưa nhận diện do đồ cũ đang mang +15
+                            if not canWear then
                                 if not oldEquip then
                                     -- Vị trí này đang trống (ví dụ Khiên DW hoặc Vũ khí phụ) -> Mặc ngay!
                                     canWear = true
@@ -6605,6 +6814,22 @@ AutoEquipBetterItems = function()
             pcall(function()
                 local oldItem = transferUI.oldItem or (_G.ForgeData and _G.ForgeData.EquipTransferMain)
                 local newItem = transferUI.newItem or (_G.ForgeData and _G.ForgeData.EquipTransferSecond)
+
+                local canWearNewItem = false
+                if newItem and _G.RoleEquipUtility and _G.RoleEquipUtility.CheckUseItem then
+                    local ok, _ = _G.RoleEquipUtility.CheckUseItem(newItem, (_G.CheckUseItemWay and _G.CheckUseItemWay.NotAddPoint) or 1)
+                    if ok == true then canWearNewItem = true end
+                end
+                if not canWearNewItem then
+                    if transferUI.btn_closeBgOnClick then transferUI:btn_closeBgOnClick()
+                    elseif _G.UIManager then
+                        if _G.UIID and _G.UIID.Equip_ZhuanyiFastUI then _G.UIManager.Hide(_G.UIID.Equip_ZhuanyiFastUI) end
+                        _G.UIManager.Hide("Equip_ZhuanyiFastUI")
+                    end
+                    Log("[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!", false)
+                    return
+                end
+
                 if oldItem and newItem and oldItem.id and newItem.id and _G.NetManager and _G.EquipMessage then
                     local intensifyMaxLevel, addMaxLevel = 15, 15
                     pcall(function()
@@ -6719,8 +6944,8 @@ local function GetAllEquippedGemsList()
 end
 
 AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
-    -- Kiểm tra trạng thái Bot: nếu đã tạm dừng hoặc tắt bot thì không chạy
-    if not _G.Bot_Running or _G.Bot_PauseTask then
+    -- Kiểm tra trạng thái Bot: nếu đã tạm dừng hoặc tắt bot (và không ở chế độ Farm KC) thì không chạy
+    if (not _G.Bot_Running and not _G.Mod_FarmKCActive) or _G.Bot_PauseTask then
         if onFinished then onFinished() end
         return
     end
@@ -6794,8 +7019,8 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         local attemptedCounts = {}
 
         while true do
-            -- [KIỂM TRA TẠM DỪNG]: Nếu bot bị tạm dừng hoặc tắt, ngắt vòng lặp ngay lập tức!
-            if not _G.Bot_Running or _G.Bot_PauseTask then
+            -- [KIỂM TRA TẠM DỪNG]: Nếu bot bị tạm dừng hoặc tắt (và không ở Farm KC), ngắt vòng lặp ngay lập tức!
+            if (not _G.Bot_Running and not _G.Mod_FarmKCActive) or _G.Bot_PauseTask then
                 Log("-> [HUỲNH THẠCH]: Dừng tiến trình nâng ngọc do Bot tạm dừng!", false)
                 break
             end
@@ -6894,7 +7119,7 @@ AutoEvenUpgradeGems = function(maxTargetLvl, onFinished)
         local attemptedCounts = {}
 
         upTimer = Timer.StartLoop(0.3, -1, function()
-            if not _G.Bot_Running or _G.Bot_PauseTask then
+            if (not _G.Bot_Running and not _G.Mod_FarmKCActive) or _G.Bot_PauseTask then
                 if upTimer then Timer.Stop(upTimer) end
                 _G.AutoEvenUpgradeGemsRunning = false
                 return
@@ -8057,7 +8282,7 @@ RunPeriodicUpgradeCycle = function()
     if curLvl < 20 then return end
 
     pcall(function()
-        Log("[Chu Kỳ Nâng Cấp] : Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", false)
+        Log("[Chu Kỳ Nâng Cấp 30s]: Kiểm tra Máu/Mana, Điểm, Mặc đồ & Cường hóa", true)
 
         -- 0.01. Tự động nhận thư và quà đính kèm định kỳ mỗi 30s (luôn chạy kể cả Farm KC)
         pcall(function()
@@ -8179,6 +8404,9 @@ StartGlobal30sUpgradePipeline = function()
     end)
     Log("-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!", true)
     SaveOutput()
+
+    -- Thực thi ngay lập tức 1 chu kỳ đầu tiên không cần chờ 30 giây
+    RunPeriodicUpgradeCycle()
 end
 _G.StartGlobal30sUpgradePipeline = StartGlobal30sUpgradePipeline
 
@@ -8193,10 +8421,64 @@ _G.Mod_FarmKCCount = _G.Mod_FarmKCCount or 0
 _G.Mod_FarmKCRunning = false
 _G.Mod_FarmKCTimer = nil
 
+-- =========================================================================
+-- [MOD FEATURE]: VÀO ROOM BOSS PHÚC LỢI TẦNG 1 & VỀ LORENCIA (FARM KC TỐI ƯU)
+-- Mô tả: Tự động về Lorencia (1001: 141#123) chỉ dùng ReqCallFlag (bỏ ReqTransmit),
+--        Jiggle 1-2 nhịp +-1 ô chống lag, dãn thời gian nghỉ 10s trước khi vào room mới,
+--        sau khi diệt boss chờ 5s nhặt đồ, quét quái trong secret room tần suất 3s/lần.
+-- =========================================================================
+local function JiggleLorencia(targetX, targetY)
+    pcall(function()
+        if PathFinderManager and PathFinderManager.MoveToPos then
+            PathFinderManager.MoveToPos(1001, Vector2(targetX, targetY))
+        elseif networkRequest and networkRequest.ReqMove then
+            local sTime = (Time and Time.GetServerTime and Time.GetServerTime()) or 0
+            networkRequest.ReqMove(targetX, targetY, 1, sTime, 0)
+        end
+        if RoleManager and RoleManager.me and RoleManager.me.base and RoleManager.me.base.LineMoveTo then
+            RoleManager.me.base:LineMoveTo(Vector2(targetX, targetY), 1)
+        end
+    end)
+end
+
+local function ReturnToLorencia()
+    Log("[Farm KC] Thoát phó bản & CallFlag về Lorencia (141#123)...", true)
+    SaveOutput()
+
+    -- 1. Thoát phó bản cũ
+    pcall(function()
+        if TranScriptData and TranScriptData.InTranscript then
+            if TranScriptController and TranScriptController.ReqExitInstance then
+                TranScriptController.ReqExitInstance()
+            elseif networkRequest and networkRequest.ReqExitInstance then
+                networkRequest.ReqExitInstance()
+            end
+        end
+    end)
+
+    -- 2. CallFlag về Lorencia 141#123 (CHỈ DÙNG ReqCallFlag, KHÔNG dùng ReqTransmit)
+    local lineId = (_G.SceneData and _G.SceneData.line) or 1
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+            _G.networkRequest.ReqCallFlag(1, 0, 1001, lineId, 141, 123, 0)
+        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                type = 1,
+                rid = 0,
+                mapId = 1001,
+                line = lineId,
+                x = 141,
+                y = 123,
+                hostId = 0
+            })
+        end
+    end)
+end
+
 local function DoEnterSecretRoom(callback)
     if DismissBlockers then DismissBlockers() end
-    Log("[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...", false)
 
+    Log("[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...", false)
     pcall(function()
         if networkRequest then
             if networkRequest.ReqGetBossMapAndCount then networkRequest.ReqGetBossMapAndCount() end
@@ -8215,7 +8497,7 @@ local function DoEnterSecretRoom(callback)
 
     local timerObj = _G.Timer or Timer
     if timerObj and timerObj.Start then
-        timerObj.Start(0.4, function()
+        timerObj.Start(0.6, function()
             pcall(function()
                 local bossUI = UIManager and UIManager.GetUI and UIID and UIManager.GetUI(UIID.Instance_BossUI)
                 local secretTemp = bossUI and bossUI.secretBossTemplate
@@ -8234,7 +8516,7 @@ local function DoEnterSecretRoom(callback)
             end)
 
             if callback then
-                timerObj.Start(2.2, callback)
+                timerObj.Start(2.5, callback)
             end
         end)
     else
@@ -8282,6 +8564,7 @@ _G.FindBossNuHoangBangGia = FindBossNuHoangBangGia
 local farmKcState = "INIT"
 local farmKcStateTime = 0
 local activeFarmBoss = nil
+local lastBossCheckTime = 0
 
 local function FarmKCStepLoop()
     if not _G.Mod_FarmKCActive then
@@ -8297,9 +8580,11 @@ local function FarmKCStepLoop()
         farmKcState = "WAIT_MAP"
         farmKcStateTime = 0
         activeFarmBoss = nil
+        lastBossCheckTime = 0
         DoEnterSecretRoom(function()
             farmKcState = "CHECK_BOSS"
             farmKcStateTime = 0
+            lastBossCheckTime = 0
         end)
 
     elseif farmKcState == "CHECK_BOSS" then
@@ -8309,6 +8594,7 @@ local function FarmKCStepLoop()
             _G.Mod_FarmKCCount = _G.Mod_FarmKCCount + 1
             farmKcState = "FIGHTING"
             farmKcStateTime = 0
+            lastBossCheckTime = 0
 
             if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
 
@@ -8321,32 +8607,31 @@ local function FarmKCStepLoop()
             end)
             SaveOutput()
         else
-            Log("[Farm KC] Không có Boss trong Room! Chuyển Room khác ngay...", false)
-            farmKcState = "WAIT_MAP"
+            Log("[Farm KC] Phòng trống (Chưa có Boss)! Về Lorencia nghỉ trước khi vào lại...", false)
+            farmKcState = "REST_LORENCIA"
             farmKcStateTime = 0
-            DoEnterSecretRoom(function()
-                farmKcState = "CHECK_BOSS"
-                farmKcStateTime = 0
-            end)
+            ReturnToLorencia()
         end
 
     elseif farmKcState == "FIGHTING" then
-        local isAlive = false
-        if activeFarmBoss then
-            pcall(function()
-                if activeFarmBoss.hp and activeFarmBoss.hp > 0 and not activeFarmBoss.isDead then
-                    isAlive = true
-                end
-            end)
-        end
+        -- Tần suất quét trạng thái sống/chết của quái là mỗi 3s
+        if farmKcStateTime - lastBossCheckTime >= 3.0 or farmKcStateTime >= 45.0 then
+            lastBossCheckTime = farmKcStateTime
+            local isAlive = false
+            if activeFarmBoss then
+                pcall(function()
+                    if activeFarmBoss.hp and activeFarmBoss.hp > 0 and not activeFarmBoss.isDead then
+                        isAlive = true
+                    end
+                end)
+            end
 
-        if not isAlive or farmKcStateTime >= 45.0 then
-            Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 1.5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Mod_FarmKCCount), true)
-            farmKcState = "LOOTING"
-            farmKcStateTime = 0
-            SaveOutput()
-        else
-            if math.floor(farmKcStateTime) % 3 == 0 then
+            if not isAlive or farmKcStateTime >= 45.0 then
+                Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Mod_FarmKCCount), true)
+                farmKcState = "LOOTING"
+                farmKcStateTime = 0
+                SaveOutput()
+            else
                 pcall(function()
                     if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
                         RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
@@ -8356,14 +8641,33 @@ local function FarmKCStepLoop()
         end
 
     elseif farmKcState == "LOOTING" then
-        if farmKcStateTime >= 1.5 then
-            Log("[Farm KC] Đã nhặt xong! Kích hoạt vào Room mới...", false)
-            farmKcState = "WAIT_MAP"
+        -- Chờ 5s sau khi diệt Boss để nhặt KC và vật phẩm rơi
+        if farmKcStateTime >= 5.0 then
+            Log("[Farm KC] Đã nhặt xong 5s! Trở về Lorencia (141#123) nghỉ 10s...", false)
+            farmKcState = "REST_LORENCIA"
             farmKcStateTime = 0
             activeFarmBoss = nil
+            ReturnToLorencia()
+        end
+
+    elseif farmKcState == "REST_LORENCIA" then
+        -- Sau khi về Lorencia: Jiggle 1-2 nhịp +-1 ô cho đỡ lag, nghỉ 10s trước khi vào lại
+        if farmKcStateTime >= 2.0 and farmKcStateTime < 2.6 then
+            -- Jiggle nhịp 1: bước sang 142#123
+            JiggleLorencia(142, 123)
+        elseif farmKcStateTime >= 5.0 and farmKcStateTime < 5.6 then
+            -- Jiggle nhịp 2: bước về 141#123
+            JiggleLorencia(141, 123)
+        end
+
+        if farmKcStateTime >= 10.0 then
+            Log("[Farm KC] Đã nghỉ đủ 10s tại Lorencia! Kích hoạt vào Secret Room mới...", false)
+            farmKcState = "WAIT_MAP"
+            farmKcStateTime = 0
             DoEnterSecretRoom(function()
                 farmKcState = "CHECK_BOSS"
                 farmKcStateTime = 0
+                lastBossCheckTime = 0
             end)
         end
 
@@ -8371,6 +8675,7 @@ local function FarmKCStepLoop()
         if farmKcStateTime >= 6.0 then
             farmKcState = "CHECK_BOSS"
             farmKcStateTime = 0
+            lastBossCheckTime = 0
         end
     end
 end
@@ -8394,6 +8699,14 @@ _G.StartFarmKCRoutine = function()
     _G.Mod_FarmKCTimer = Timer.StartLoop(0.5, -1, function()
         pcall(FarmKCStepLoop)
     end)
+
+    -- Tự động kích hoạt chu trình nâng cấp 30s chạy song song cùng Farm KC
+    if StartGlobal30sUpgradePipeline then
+        StartGlobal30sUpgradePipeline()
+    elseif _G.StartGlobal30sUpgradePipeline then
+        _G.StartGlobal30sUpgradePipeline()
+    end
+
     SaveOutput()
 end
 
@@ -8651,8 +8964,12 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
                         local mx, my = 0, 0
                         if me.Position then mx, my = me.Position.x or 0, me.Position.y or 0 end
                         if inBC then
-                            local dist = math.sqrt((mx - 14)^2 + (my - 33)^2)
-                            if dist > 3 and me.MoveTo then me:MoveTo({ x = 14, y = 33 }, 0) end
+                            -- =========================================================================
+                            -- [MOD FEATURE]: TỌA ĐỘ TÂM CHIẾN ĐẤU HUYẾT LÂU (BLOOD CASTLE: 14#25)
+                            -- Mô tả: Di chuyển tới vị trí 14#25 để phá cổng và đánh quái tối ưu
+                            -- =========================================================================
+                            local dist = math.sqrt((mx - 14)^2 + (my - 25)^2)
+                            if dist > 3 and me.MoveTo then me:MoveTo({ x = 14, y = 25 }, 0) end
                         elseif inDS then
                             local cx, cy = 137, 167
                             if curLvl >= 150 then cx, cy = 135, 97 end
@@ -9003,8 +9320,11 @@ StartNewbieQuestPipeline = function()
             local lvl = (me and me.level) or (me and me.data and me.data.level) or 1
             local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
 
-            -- KIỂM TRA MỤC TIÊU FARM KIM CƯƠNG (NẾU BẬT NÚT FARM KC VÀ LV >= 200):
-            if _G.Mod_FarmKCActive and lvl >= 200 then
+            -- =========================================================================
+            -- [MOD FEATURE]: ƯU TIÊN TUYỆT ĐỐI CHẾ ĐỘ FARM KIM CƯƠNG KHI BẬT NÚT FARM KC
+            -- Mô tả: Tạm dừng toàn bộ chu trình làm quest chính để tập trung săn Boss Phúc Lợi Tầng 1
+            -- =========================================================================
+            if _G.Mod_FarmKCActive then
                 if not _G.Mod_FarmKCRunning and _G.StartFarmKCRoutine then
                     _G.StartFarmKCRoutine()
                 end

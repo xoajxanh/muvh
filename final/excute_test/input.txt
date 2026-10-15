@@ -1,455 +1,322 @@
 -- =========================================================================
--- [SCRIPT TEST]: THỬ NGHIỆM KỊCH BẢN FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1)
--- Mô tả:
---   1. Tự động đóng sạch sẽ các Popup / Tooltip che màn hình:
---      + Popup "Nhận thưởng" giữa màn hình (Tip_RewardTipUI)
---      + Tooltip "Dùng ngay" góc phải dưới (Skill_TIpsUI) -> Tự bấm dùng luôn
---      + Tooltip "Mặc ngay" (Equip_TIpsUI) -> Tự bấm mặc luôn
---   2. Gọi DoEnterSecretRoom() vào Room Boss Phúc Lợi Tầng 1
---   3. Kiểm tra Boss Nữ Hoàng Băng Giá Lv80 (ID 210100100):
---      + Có Boss: Tăng biến đếm boss +1, bật Auto đánh, chờ boss chết, nhặt đồ
---      + Không có Boss (hoặc Boss chết xong): Lập tức gọi DoEnterSecretRoom() tạo room mới
---   4. Lặp lại liên tục cho đến khi đặt _G.Test_FarmKCActive = false
+-- [MOD FEATURE]: TEST CƠ CHẾ NẠP PHÙ VĂN CHUẨN XÁC 100% (STATE-DRIVEN HANDSHAKE)
+-- Mô tả: Cơ chế khảm theo phản hồi thực tế từ Server (Handshake):
+--       Khảm từng ô -> Chờ Server xác nhận ô đó thành công -> Mới khảm ô tiếp theo!
+--       Tự động quét lại túi đồ theo thời gian thực trước mỗi ô.
+--       Không phụ thuộc timer mù, chống lag mạng, chống rơi rớt 100%!
 -- =========================================================================
 
-local output = {}
-local function Log(msg)
-    table.insert(output, msg)
-    if FloatingWordUtility and FloatingWordUtility.QuickMsg then
-        pcall(FloatingWordUtility.QuickMsg, msg)
+local outputPath = nil
+local function GetOutputPath()
+    if outputPath then return outputPath end
+    if CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
+        outputPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+        return outputPath
     end
+    outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+    return outputPath
 end
 
-local function SaveOutput()
+local function SafeLog(msg)
     pcall(function()
-        local path = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-        local content = table.concat(output, "\n")
-        CS.System.IO.File.WriteAllText(path, content)
+        local path = GetOutputPath()
+        local f = io.open(path, "a")
+        if f then
+            f:write(tostring(msg) .. "\n")
+            f:close()
+        end
     end)
 end
 
--- =========================================================================
--- 1. HÀM DỌN DẸP SẠCH TOÀN BỘ POPUP / TOOLTIP CHE MÀN HÌNH
--- =========================================================================
-local function CleanAllTooltips()
+-- Khởi tạo file log sạch
+pcall(function()
+    local path = GetOutputPath()
+    local f = io.open(path, "w")
+    if f then
+        f:write("=========================================================================\n")
+        f:write(">>> THỬ NGHIỆM CƠ CHẾ NẠP PHÙ VĂN HANDSHAKE (CHỐNG RƠI RỚT 100%) <<<\n")
+        f:write(string.format("Thời gian: %s\n", os.date and os.date("%Y/%m/%d %H:%M:%S") or "now"))
+        f:write("=========================================================================\n")
+        f:close()
+    end
+end)
+
+local function Log(msg) SafeLog(msg) end
+
+local runeMgr = nil
+pcall(function()
+    if _G.QuickFind and _G.QuickFind.GetNewRuneDataManager then
+        runeMgr = _G.QuickFind.GetNewRuneDataManager()
+    elseif QuickFind and QuickFind.GetNewRuneDataManager then
+        runeMgr = QuickFind.GetNewRuneDataManager()
+    end
+end)
+
+if not runeMgr or not runeMgr.GetAllServerRuneData then
+    Log("ERROR: Không tìm thấy NewRuneDataManager!")
+    return
+end
+
+local function ReqImplant(h, uid)
     pcall(function()
-        -- 1.1. Đóng sạch Popup "Nhận thưởng" to giữa màn hình (Tip_RewardTipUI)
-        local rewardTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Tip_RewardTipUI") or (UIID and UIID.Tip_RewardTipUI and UIManager.GetUiByName(UIID.Tip_RewardTipUI)))
-        if rewardTipUI and ((rewardTipUI.visible == true) or (rewardTipUI.root and rewardTipUI.root.gameObject and rewardTipUI.root.gameObject.activeInHierarchy)) then
-            if rewardTipUI.CloseTime then rewardTipUI:CloseTime() end
-            if rewardTipUI.Panel_TipOnClick and rewardTipUI.Panel_Tip then
-                rewardTipUI:Panel_TipOnClick(rewardTipUI.Panel_Tip)
-            end
-            if rewardTipUI.root and rewardTipUI.root.gameObject then
-                rewardTipUI.root.gameObject:SetActive(false)
-            end
+        if _G.networkRequest and _G.networkRequest.ReqImplantRune then
+            _G.networkRequest.ReqImplantRune(h, uid)
+        elseif networkRequest and networkRequest.ReqImplantRune then
+            networkRequest.ReqImplantRune(h, uid)
+        elseif _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqImplantRune then
+            _G.NetManager.Send(_G.EquipMessage.ReqImplantRune, { index = h, itemId = uid })
         end
-        if UIManager then
-            UIManager.Hide("Tip_RewardTipUI")
-            if UIID and UIID.Tip_RewardTipUI then UIManager.Hide(UIID.Tip_RewardTipUI) end
-        end
+    end)
+end
 
-        -- 1.1B. Tự động đóng Túi Đồ (Bag_3DBagInfoUI) & Lò Rèn / Thu Hồi nếu đang mở
-        local bagUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Bag_3DBagInfoUI") or (UIID and UIID.NewBagInfoUI and UIManager.GetUiByName(UIID.NewBagInfoUI)))
-        if bagUI and ((bagUI.visible == true) or (bagUI.root and bagUI.root.gameObject and bagUI.root.gameObject.activeInHierarchy)) then
-            if bagUI.Button_CloseBagOnClick and bagUI.Button_CloseBag then
-                bagUI:Button_CloseBagOnClick(bagUI.Button_CloseBag)
-            elseif bagUI.btn_closeBgOnClick then
-                bagUI:btn_closeBgOnClick()
+local function RefreshRuneUI()
+    pcall(function()
+        local runeUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Bag_RunesNewUI")
+        if runeUI and runeUI.visible and runeUI.Refresh then
+            runeUI:Refresh()
+        end
+        local inlayUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Equip_RunesInlayNewUI")
+        if inlayUI and inlayUI.visible and inlayUI.Refresh then
+            inlayUI:Refresh()
+        end
+    end)
+end
+
+local function QuickMsg(msg)
+    pcall(function()
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(msg)
+        elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+            _G.CommonTipManage.ShowTips(msg)
+        end
+    end)
+end
+
+local runeNames = {
+    [190100010] = "Phù Văn Đỏ Lv10",
+    [190100009] = "Phù Văn Đỏ Lv9",
+    [190200010] = "Phù Văn Lam Lv10",
+    [190300010] = "Phù Văn Lục Lv10",
+    [190300009] = "Phù Văn Lục Lv9",
+}
+
+local timerObj = _G.Timer or Timer
+
+-- Helper: Lấy danh sách ngọc trong túi theo thời gian thực
+local function GetAvailableBagRunes()
+    local list = {}
+    local bagRunes = (runeMgr.GetBagAllRunes and runeMgr:GetBagAllRunes()) or {}
+    for _, rData in ipairs(bagRunes) do
+        local uid = rData.id or (rData.serverData and rData.serverData.id) or 0
+        local itemId = rData.itemId or (rData.serverData and rData.serverData.itemId) or (rData.tblItem and rData.tblItem.id) or 0
+        if uid ~= 0 and itemId ~= 0 then
+            table.insert(list, { uid = uid, itemId = itemId })
+        end
+    end
+    if #list == 0 and _G.BagInfoData and _G.BagInfoData.TotalItems then
+        for _, v in pairs(_G.BagInfoData.TotalItems) do
+            if v and v.itemId and (v.itemId >= 190100000 and v.itemId <= 190400000) then
+                table.insert(list, { uid = v.id, itemId = v.itemId })
             end
         end
-        if UIManager then
-            if UIID and UIID.NewBagInfoUI then UIManager.Hide(UIID.NewBagInfoUI) end
-            UIManager.Hide("Bag_3DBagInfoUI")
-            if UIID and UIID.BagWarehouseUI then UIManager.Hide(UIID.BagWarehouseUI) end
-            UIManager.Hide("Bag_WarehouseInfoUI")
-            if UIID and UIID.BagSellInfoUI then UIManager.Hide(UIID.BagSellInfoUI) end
-            UIManager.Hide("Bag_SellInfoUI")
-            if UIID and UIID.BagShopInfoUI then UIManager.Hide(UIID.BagShopInfoUI) end
-            UIManager.Hide("Bag_ShopInfoUI")
-            if UIID and UIID.Bag_EquipInfoUI then UIManager.Hide(UIID.Bag_EquipInfoUI) end
-            UIManager.Hide("Bag_EquipInfoUI")
-            if UIID and UIID.Equip_ForgeNavUi then UIManager.Hide(UIID.Equip_ForgeNavUi) end
-            UIManager.Hide("Equip_ForgeNavUi")
-            if UIID and UIID.Commercialization_FirstActivityUI then UIManager.Hide(UIID.Commercialization_FirstActivityUI) end
-            UIManager.Hide("Commercialization_FirstActivityUI")
-        end
+    end
+    return list
+end
 
-        -- 1.2. Xử lý Tooltip "Dùng ngay" rương/thuốc góc phải dưới (Skill_TIpsUI)
-        local skillTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Skill_TIpsUI") or (UIID and UIID.SkillTIpsUI and UIManager.GetUiByName(UIID.SkillTIpsUI)))
-        if skillTipUI and ((skillTipUI.visible == true) or (skillTipUI.root and skillTipUI.root.gameObject and skillTipUI.root.gameObject.activeInHierarchy)) then
-            if skillTipUI.btn_quickeuseOnClick and skillTipUI.btn_quickeuse then
-                skillTipUI:btn_quickeuseOnClick(skillTipUI.btn_quickeuse)
-            elseif skillTipUI.btn_closeOnClick and skillTipUI.btn_close then
-                skillTipUI:btn_closeOnClick(skillTipUI.btn_close)
+-- =========================================================================
+-- [CƠ CHẾ NẠP PRESET BẬC THẦY: STATE-DRIVEN HANDSHAKE]
+-- 1. Phân tích ô cần tháo & ô cần khảm.
+-- 2. Tháo tuần tự từng ô sai, chờ Server xác nhận ô đã trống.
+-- 3. Khảm từng ô: Quét túi đồ thời gian thực -> Gửi lệnh khảm ->
+--    Chờ Server xác nhận ô đó ĐÃ CÓ ĐÚNG NGỌC -> Mới khảm ô tiếp theo!
+-- =========================================================================
+local function HandshakeApplyRunePreset(targetConfig, onFinished)
+    local allData = runeMgr:GetAllServerRuneData()
+    local needUninlay = {}
+    local needInlay = {}
+
+    Log("\n--- [BƯỚC 1: PHÂN TÍCH SO SÁNH 7 Ô VỚI PRESET MỤC TIÊU] ---")
+    for h = 1, 7 do
+        local slot = allData[h]
+        local rItem = slot and slot.runeItem
+        local curItemId = (rItem and rItem.itemId and rItem.itemId ~= 0) and rItem.itemId or 0
+        local expItemId = targetConfig[h] or 0
+
+        if curItemId == expItemId and expItemId ~= 0 then
+            Log(string.format("  Ô [%d]: Đã đúng ngọc (%s) -> GIỮ NGUYÊN", h, runeNames[curItemId] or tostring(curItemId)))
+        else
+            if curItemId ~= 0 then
+                table.insert(needUninlay, h)
+                Log(string.format("  Ô [%d]: Đang có %s (Cần %s) -> Cần tháo", h, runeNames[curItemId] or tostring(curItemId), runeNames[expItemId] or tostring(expItemId)))
             else
-                UIManager.Hide("Skill_TIpsUI")
+                Log(string.format("  Ô [%d]: Đang TRỐNG (Cần %s) -> Cần khảm", h, runeNames[expItemId] or tostring(expItemId)))
             end
-        end
-
-        -- 1.3. Xử lý Tooltip "Mặc ngay" trang bị (Equip_TIpsUI)
-        local equipTipUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Equip_TIpsUI") or (UIID and UIID.EquipTIpsUI and UIManager.GetUiByName(UIID.EquipTIpsUI)))
-        if equipTipUI and ((equipTipUI.visible == true) or (equipTipUI.root and equipTipUI.root.gameObject and equipTipUI.root.gameObject.activeInHierarchy)) then
-            if equipTipUI.btn_quickequipOnClick and equipTipUI.btn_quickequip then
-                equipTipUI:btn_quickequipOnClick(equipTipUI.btn_quickequip)
-            elseif equipTipUI.Btn_quickequip then
-                equipTipUI:Btn_quickequip()
-            else
-                UIManager.Hide("Equip_TIpsUI")
-            end
-        end
-
-        -- 1.4. Đóng popup Chuyển Cường Hóa nếu có
-        local transferUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Equip_ZhuanyiFastUI") or (UIID and UIID.Equip_ZhuanyiFastUI and UIManager.GetUiByName(UIID.Equip_ZhuanyiFastUI)))
-        if transferUI and ((transferUI.visible == true) or (transferUI.root and transferUI.root.gameObject and transferUI.root.gameObject.activeInHierarchy)) then
-            if transferUI.btn_confirmOnClick and transferUI.btn_confirm then
-                transferUI:btn_confirmOnClick(transferUI.btn_confirm)
-            else
-                UIManager.Hide("Equip_ZhuanyiFastUI")
-            end
-        end
-
-        -- 1.5. Xóa bộ đệm cache tooltip của hệ thống
-        if TipData and TipData.CloseItemData and TipShowSort then
-            TipData.CloseItemData(TipShowSort.use)
-            TipData.CloseItemData(TipShowSort.equip)
-            TipData.CloseItemData(TipShowSort.auction)
-        end
-    end)
-end
-
--- =========================================================================
--- 1.6. HÀM GỠ SẠCH DỮ LIỆU & TRẠNG THÁI NHIỆM VỤ CŨ (CLEAN TASK STATE)
--- =========================================================================
-local function ClearAllTaskDataAndState()
-    Log("-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ cũ...")
-    pcall(function()
-        if TaskData then
-            if TaskData.SwitchRole then TaskData.SwitchRole() end
-            if TaskData.Reset then TaskData.Reset() end
-            TaskData.AllTasks = {}
-            TaskData.mainTasks = {}
-            TaskData.branchTasks = {}
-            TaskData.rewardsTasks = {}
-            TaskData.activeTasks = {}
-            TaskData.monsterTasks = {}
-            TaskData.starTasks = {}
-            TaskData.counterpartTask = {}
-            TaskData.skillBooksTasks = {}
-            TaskData.periodicalTasks = {}
-            TaskData.transferTask = {}
-            TaskData.completedTasksCount = {}
-            TaskData.allMonsterLevel = {}
-            TaskData.allUnionTasks = {}
-            TaskData.levelBossTaskId = nil
-            TaskData.StarTaskCount = nil
-        end
-    end)
-    pcall(function()
-        if TaskManager then
-            if TaskManager.SwitchRole then TaskManager.SwitchRole() end
-            if TaskManager.TaskPathStop then TaskManager.TaskPathStop() end
-            TaskManager.curTask = nil
-            TaskManager.clickTask = nil
-        end
-        if AutoTaskManage then
-            if AutoTaskManage.StopAutoTask then AutoTaskManage.StopAutoTask() end
-            if AutoTaskManage.OnReset then AutoTaskManage.OnReset() end
-            AutoTaskManage.taskChange = false
-            AutoTaskManage.autoTask = false
-            AutoTaskManage.curRoleOperate = false
-            AutoTaskManage.curAutoTask = nil
-            AutoTaskManage.curAutoTaskState = nil
-            AutoTaskManage.autoTaskStack = {}
-            if AutoTaskManage.RemoveAutoTask then AutoTaskManage.RemoveAutoTask(true) end
-        end
-        if DirectTask and DirectTask.SwitchRole then DirectTask.SwitchRole() end
-        if LookForTask and LookForTask.SwitchRole then LookForTask.SwitchRole() end
-        if TaskController then
-            if TaskController.OnGamePlayLeave then TaskController.OnGamePlayLeave() end
-            TaskController.curTask = nil
-        end
-    end)
-    pcall(function()
-        if PathFinderManager and PathFinderManager.pathFinding and PathFinderManager.pathFinding.Reset then
-            PathFinderManager.pathFinding.Reset()
-        end
-        if RoleManager and RoleManager.me then
-            if RoleManager.me.StopMove then RoleManager.me:StopMove() end
-            if RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
-                RoleManager.me:SetAutoTaskFight(AutoFightStrKey.UnAutoFight)
-            end
-        end
-    end)
-    pcall(function()
-        local taskUI = UIManager and UIManager.GetUiByName and (UIManager.GetUiByName("Task_TaskUI") or (UIID and UIID.TaskUI and UIManager.GetUiByName(UIID.TaskUI)))
-        if taskUI then
-            if taskUI.CleanTaskReminder then taskUI:CleanTaskReminder() end
-            if taskUI.RemoveTime then taskUI:RemoveTime() end
-            if taskUI.RemoveNaviGuideTime then taskUI:RemoveNaviGuideTime() end
-            if taskUI.taskItemTemp and taskUI.taskItemTemp.RemoveKTable then
-                taskUI.taskItemTemp:RemoveKTable()
-            end
-        end
-        if EventManager and EventManager.Dispatch and Event and Event.Task_Update then
-            EventManager.Dispatch(Event.Task_Update, nil)
-        end
-        if EventManager and EventManager.Dispatch and Event and Event.TaskData_Update then
-            EventManager.Dispatch(Event.TaskData_Update, nil)
-        end
-    end)
-    _G.Bot_CurrentTaskId = nil
-    _G.Bot_LastTaskNavTime = 0
-    _G.Bot_TaskRetryCount = 0
-    _G.ClaimedTaskCooldown = {}
-    _G.BranchTaskCooldown = {}
-    _G.ClaimedOpeningGiftsCache = {}
-    _G.Bot_LevelMilestonesClaimed = {}
-    _G.ClaimedDailyWelfareIds = {}
-    _G.Mod_HasPurchasedDailyPackToday = false
-    _G.Mod_HasPurchasedExpPotion = false
-    _G.Mod_Count180Bought = 0
-    _G.Bot_HasDoneEnhanceAfterSnowBug = nil
-    SaveOutput()
-end
-_G.ClearAllTaskDataAndState = ClearAllTaskDataAndState
-
--- =========================================================================
--- 2. HÀM TÌM KIẾM BOSS NỮ HOÀNG BĂNG GIÁ LV80
--- =========================================================================
-local function FindBossNuHoangBangGia()
-    -- Cách 1: Qua RoleManager.GetMonsterRoleByConfigId
-    if RoleManager and RoleManager.GetMonsterRoleByConfigId then
-        local list = RoleManager.GetMonsterRoleByConfigId({ 210100100, 210100101 })
-        if list and #list > 0 then
-            for _, m in ipairs(list) do
-                if m and m.hp and m.hp > 0 then
-                    return m
-                end
+            if expItemId ~= 0 then
+                table.insert(needInlay, { hole = h, itemId = expItemId })
             end
         end
     end
 
-    -- Cách 2: Quét toàn bộ Monster trong Scene
-    if RoleManager and RoleManager.GetRolesByType and ERoleType and ERoleType.Monster then
-        local mTable = RoleManager.GetRolesByType(ERoleType.Monster)
-        if mTable then
-            for _, m in pairs(mTable) do
-                if m and m.hp and m.hp > 0 then
-                    local cfgId = (m.GetConfigId and m:GetConfigId()) or (m.data and (m.data.monsterId or m.data.configId))
-                    local mName = tostring(m.name or (m.data and m.data.name) or "")
-                    if cfgId == 210100100 or cfgId == 210100101 or string.find(mName, "Nữ Hoàng") or string.find(mName, "Băng Giá") or string.find(mName, "Nu Hoang") then
-                        return m
-                    end
-                end
-            end
-        end
-    end
-
-    return nil
-end
-
--- =========================================================================
--- 3. HÀM VÀO ROOM BOSS PHÚC LỢI TẦNG 1 (CHUẨN FLOW UI USER TEST)
--- =========================================================================
-local function DoEnterSecretRoom(callback)
-    CleanAllTooltips()
-    Log("[Room] Đang kích hoạt vào Room Boss Phúc Lợi Tầng 1...")
-
-    pcall(function()
-        if networkRequest then
-            if networkRequest.ReqGetBossMapAndCount then networkRequest.ReqGetBossMapAndCount() end
-            if networkRequest.ReqInstanceCoolDown then networkRequest.ReqInstanceCoolDown(1106) end
-            if networkRequest.ReqBossStateByType and MonsterBossType then
-                networkRequest.ReqBossStateByType(MonsterBossType.secretBoss)
-            end
-        end
-    end)
-
-    pcall(function()
-        if UIManager and UIID and UIID.Instance_BossUI then
-            UIManager.Show(UIID.Instance_BossUI, { openFirstTab = 7, Monsterid = 210100100 })
-        end
-    end)
-
-    local timerObj = _G.Timer or Timer
-    if timerObj and timerObj.Start then
-        timerObj.Start(0.4, function()
-            pcall(function()
-                local bossUI = UIManager and UIManager.GetUI and UIID and UIManager.GetUI(UIID.Instance_BossUI)
-                local secretTemp = bossUI and bossUI.secretBossTemplate
-
-                if secretTemp and secretTemp.EnterSecret then
-                    secretTemp:EnterSecret(210100001, { "31", "222" })
-                else
-                    if PathFinderManager and PathFinderManager.FlyTransferScene then
-                        PathFinderManager.FlyTransferScene(210100001)
-                    end
-                end
-
-                if UIManager and UIID and UIID.Instance_BossUI then
-                    UIManager.Hide(UIID.Instance_BossUI)
-                end
-            end)
-
-            if callback then
-                timerObj.Start(2.2, callback)
-            end
-        end)
-    else
-        pcall(function()
-            if PathFinderManager and PathFinderManager.FlyTransferScene then
-                PathFinderManager.FlyTransferScene(210100001)
-            end
-        end)
-        if callback then callback() end
-    end
-end
-
--- =========================================================================
--- 4. VÒNG LẶP STATE MACHINE FARM KIM CƯƠNG LIÊN TỤC
--- =========================================================================
-_G.Test_FarmKCActive = true
-_G.Test_FarmKCCount = _G.Test_FarmKCCount or 0
-
--- Dừng timer cũ nếu đang chạy
-if _G.Test_FarmKCTimer then
-    pcall(function() Timer.Stop(_G.Test_FarmKCTimer) end)
-    _G.Test_FarmKCTimer = nil
-end
-
-local currentState = "INIT"  -- "INIT", "WAIT_MAP", "CHECK_BOSS", "FIGHTING", "LOOTING"
-local stateTime = 0
-local activeBoss = nil
-
-local function StepLoop()
-    if not _G.Test_FarmKCActive then
-        Log("[-] ĐÃ DỪNG VÒNG LẶP FARM KIM CƯƠNG!")
-        if _G.Test_FarmKCTimer then
-            Timer.Stop(_G.Test_FarmKCTimer)
-            _G.Test_FarmKCTimer = nil
-        end
-        SaveOutput()
+    if #needUninlay == 0 and #needInlay == 0 then
+        Log("\n-> Tất cả 7 ô Phù Văn đã hoàn toàn chính xác! Không cần thao tác gì thêm.")
+        RefreshRuneUI()
+        if onFinished then onFinished() end
         return
     end
 
-    -- Luôn dọn sạch các tooltip hiện lên màn hình
-    CleanAllTooltips()
-
-    stateTime = stateTime + 0.5
-
-    if currentState == "INIT" then
-        currentState = "WAIT_MAP"
-        stateTime = 0
-        activeBoss = nil
-        DoEnterSecretRoom(function()
-            currentState = "CHECK_BOSS"
-            stateTime = 0
-        end)
-
-    elseif currentState == "CHECK_BOSS" then
-        local boss = FindBossNuHoangBangGia()
-        if boss and boss.hp and boss.hp > 0 then
-            activeBoss = boss
-            _G.Test_FarmKCCount = _G.Test_FarmKCCount + 1
-            currentState = "FIGHTING"
-            stateTime = 0
-
-            Log(string.format(">>> [FARM KC #%d]: PHÁT HIỆN NỮ HOÀNG BĂNG GIÁ! BẮT ĐẦU ĐÁNH! <<<", _G.Test_FarmKCCount))
-            
-            -- Bật Auto đánh boss
-            pcall(function()
-                if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
-                    RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
-                end
+    -- Hàm tháo tuần tự có Handshake
+    local function ProcessUninlay(index, doneCallback)
+        if index > #needUninlay then
+            -- Chờ thêm 0.3s để túi đồ cập nhật đầy đủ các viên vừa tháo
+            timerObj.Start(0.3, function()
+                if doneCallback then doneCallback() end
             end)
-            SaveOutput()
-        else
-            -- Không có boss trong Room -> Vào lại Room mới ngay lập tức!
-            Log("[-] Không có Boss trong Room! Đang chuyển Room khác ngay...")
-            currentState = "WAIT_MAP"
-            stateTime = 0
-            DoEnterSecretRoom(function()
-                currentState = "CHECK_BOSS"
-                stateTime = 0
-            end)
+            return
         end
 
-    elseif currentState == "FIGHTING" then
-        -- Kiểm tra tình trạng Boss
-        local isAlive = false
-        if activeBoss then
-            pcall(function()
-                if activeBoss.hp and activeBoss.hp > 0 and not activeBoss.isDead then
-                    isAlive = true
+        local h = needUninlay[index]
+        Log(string.format("  -> [Tháo %d/%d]: Gửi lệnh tháo Ô [%d]...", index, #needUninlay, h))
+        ReqImplant(h, 0)
+
+        -- Polling chờ server xác nhận ô h đã trống (tối đa 1s)
+        local elapsed = 0
+        local function CheckEmpty()
+            timerObj.Start(0.1, function()
+                elapsed = elapsed + 0.1
+                local curSlot = runeMgr:GetAllServerRuneData()[h]
+                local curR = curSlot and curSlot.runeItem
+                local isClean = (curR == nil or curR.itemId == nil or curR.itemId == 0)
+
+                if isClean or elapsed >= 0.8 then
+                    ProcessUninlay(index + 1, doneCallback)
+                else
+                    CheckEmpty()
                 end
             end)
         end
+        CheckEmpty()
+    end
 
-        if not isAlive or stateTime >= 45.0 then
-            Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 1.5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Test_FarmKCCount))
-            currentState = "LOOTING"
-            stateTime = 0
-            SaveOutput()
-        else
-            -- Đảm bảo AutoFight vẫn chạy trong lúc đánh
-            if math.floor(stateTime) % 3 == 0 then
-                pcall(function()
-                    if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
-                        RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
-                    end
-                end)
+    -- Hàm khảm tuần tự có Handshake (Từng ô một, kiểm tra Server confirm mới đi tiếp)
+    local function ProcessInlay(index, doneCallback)
+        if index > #needInlay then
+            if doneCallback then doneCallback() end
+            return
+        end
+
+        local req = needInlay[index]
+        local currentBag = GetAvailableBagRunes()
+        local chosenRune = nil
+
+        -- Tìm viên ngọc có itemId khớp trong túi đồ
+        for _, b in ipairs(currentBag) do
+            if b.itemId == req.itemId then
+                chosenRune = b
+                break
             end
         end
 
-    elseif currentState == "LOOTING" then
-        -- Chờ 1.5s nhặt đồ rơi
-        if stateTime >= 1.5 then
-            Log("[+] Nhặt xong! Kích hoạt vào Room mới...")
-            currentState = "WAIT_MAP"
-            stateTime = 0
-            activeBoss = nil
-            DoEnterSecretRoom(function()
-                currentState = "CHECK_BOSS"
-                stateTime = 0
-            end)
+        if not chosenRune then
+            Log(string.format("  [!] Ô [%d]: Cần %s nhưng trong túi đồ hiện tại KHÔNG CÓ! (Bỏ qua ô này)", req.hole, runeNames[req.itemId] or tostring(req.itemId)))
+            ProcessInlay(index + 1, doneCallback)
+            return
         end
 
-    elseif currentState == "WAIT_MAP" then
-        -- Watchdog phòng trường hợp chuyển map quá 6s
-        if stateTime >= 6.0 then
-            Log("[Watchdog] Vào room quá 6s, thử kích hoạt lại...")
-            currentState = "CHECK_BOSS"
-            stateTime = 0
+        Log(string.format("  -> [Khảm %d/%d]: Ô [%d] <- %s (UID: %s)", index, #needInlay, req.hole, runeNames[req.itemId] or "Rune", tostring(chosenRune.uid)))
+        ReqImplant(req.hole, chosenRune.uid)
+
+        -- Polling kiểm tra Server xác nhận ô req.hole đã nhận ngọc (tối đa 1.2s)
+        local elapsed = 0
+        local function CheckInlaid()
+            timerObj.Start(0.12, function()
+                elapsed = elapsed + 0.12
+                local curSlot = runeMgr:GetAllServerRuneData()[req.hole]
+                local curR = curSlot and curSlot.runeItem
+                local curId = (curR and curR.itemId and curR.itemId ~= 0) and curR.itemId or 0
+
+                if curId == req.itemId then
+                    -- Server đã xác nhận khảm thành công! Dừng lại 0.1s rồi sang ô kế
+                    timerObj.Start(0.1, function()
+                        ProcessInlay(index + 1, doneCallback)
+                    end)
+                elseif elapsed >= 1.2 then
+                    Log(string.format("  [!] Hết thời gian chờ phản hồi Ô [%d], chuyển tiếp...", req.hole))
+                    ProcessInlay(index + 1, doneCallback)
+                else
+                    CheckInlaid()
+                end
+            end)
         end
+        CheckInlaid()
+    end
+
+    -- Bắt đầu quy trình
+    if #needUninlay > 0 then
+        Log(string.format("\n--- [BƯỚC 2: TIẾN HÀNH THÁO %d Ô SAI (HANDSHAKE)] ---", #needUninlay))
+        ProcessUninlay(1, function()
+            Log(string.format("\n--- [BƯỚC 3: TIẾN HÀNH KHẢM %d Ô (HANDSHAKE)] ---", #needInlay))
+            ProcessInlay(1, function()
+                RefreshRuneUI()
+                if onFinished then onFinished() end
+            end)
+        end)
+    else
+        Log("\n--- [BƯỚC 2: KHÔNG CÓ Ô NÀO CẦN THÁO] ---")
+        Log(string.format("\n--- [BƯỚC 3: TIẾN HÀNH KHẢM %d Ô (HANDSHAKE)] ---", #needInlay))
+        ProcessInlay(1, function()
+            RefreshRuneUI()
+            if onFinished then onFinished() end
+        end)
     end
 end
 
 -- =========================================================================
--- KHỞI CHẠY TIMER QUÉT MỖI 0.5 GIÂY
+-- [CẤU HÌNH MỤC TIÊU CỦA USER]: ĐẦY ĐỦ 7/7 Ô
 -- =========================================================================
-Log("=== KHỞI CHẠY THỬ NGHIỆM FARM KIM CƯƠNG (BOSS PHÚC LỢI TẦNG 1) ===")
-Log("Ghi chú: Để DỪNG farm, hãy chạy script với: _G.Test_FarmKCActive = false")
-CleanAllTooltips()
-ClearAllTaskDataAndState()
+local targetConfig = {
+    [1] = 190100010, -- Đỏ Lv10
+    [2] = 190300010, -- Lục Lv10
+    [3] = 190300009, -- Lục Lv9
+    [4] = 190300010, -- Lục Lv10
+    [5] = 190200010, -- Lam Lv10
+    [6] = 190200010, -- Lam Lv10
+    [7] = 190100009, -- Đỏ Lv9
+}
 
--- Nếu nhân vật đang có nhiệm vụ chính (ví dụ Đối thoại Cố Vấn Huyền Anh), tự động kích hoạt điều hướng chạy ngay
-pcall(function()
-    if TaskData and TaskData.GetOrderMainTask then
-        local mTask = TaskData.GetOrderMainTask()
-        if mTask and mTask.taskId then
-            Log(string.format("-> [AUTO NAV]: Tự động kích hoạt lại nhiệm vụ: %s (%s)", tostring(mTask.taskId), tostring(mTask:GetName() or "")))
-            if TaskManager and TaskManager.TaskGo then
-                TaskManager.TaskGo(mTask.taskId, 0)
-            end
-            if AutoTaskManage and AutoTaskManage.StartCurAutoTask then
-                AutoTaskManage.StartCurAutoTask(true)
-            end
+QuickMsg("BẮT ĐẦU: Chạy cơ chế nạp Handshake (xác nhận từng ô)...")
+Log("\n>>> BẮT ĐẦU QUY TRÌNH NẠP PRESET HANDSHAKE <<<")
+
+HandshakeApplyRunePreset(targetConfig, function()
+    timerObj.Start(0.3, function()
+        RefreshRuneUI()
+        local finalData = runeMgr:GetAllServerRuneData()
+        local matchCount = 0
+
+        Log("\n=========================================================================")
+        Log(">>> KẾT QUẢ KIỂM TRA SAU KHI NẠP BẰNG CƠ CHẾ HANDSHAKE <<<")
+        Log("=========================================================================")
+
+        for h = 1, 7 do
+            local s = finalData[h]
+            local r = s and s.runeItem
+            local curId = (r and r.itemId and r.itemId ~= 0) and r.itemId or 0
+            local expId = targetConfig[h] or 0
+            local isMatch = (curId == expId and expId ~= 0)
+            if isMatch then matchCount = matchCount + 1 end
+            Log(string.format("  Ô [%d]: %s (ItemId: %d) | Mục tiêu: %s -> %s",
+                h, runeNames[curId] or "TRỐNG", curId, runeNames[expId] or "TRỐNG",
+                isMatch and "CHÍNH XÁC 100%" or "CHƯA KHỚP"))
         end
-    end
-end)
-SaveOutput()
 
-_G.Test_FarmKCTimer = Timer.StartLoop(0.5, -1, function()
-    pcall(StepLoop)
+        Log("-------------------------------------------------------------------------")
+        Log(string.format("TỔNG KẾT: Khớp chuẩn xác %d / 7 ô Phù Văn!", matchCount))
+        if matchCount == 7 then
+            QuickMsg("THÀNH CÔNG RỰC RỠ: KHỚP ĐỦ 7/7 Ô PHÙ VĂN!")
+            Log(">>> ĐÁNH GIÁ: CƠ CHẾ HANDSHAKE ĐẠT ĐỘ CHÍNH XÁC TUYỆT ĐỐI 7/7 Ô (100%)! <<<")
+        else
+            QuickMsg(string.format("Kết quả: Khớp %d/7 ô Phù Văn!", matchCount))
+            Log(string.format(">>> CẢNH BÁO: Còn %d ô chưa khớp. <<<", 7 - matchCount))
+        end
+        Log("=========================================================================\n")
+    end)
 end)
