@@ -313,6 +313,16 @@ local function CreateModUI()
             end)
             if _G.Mod_TowerCheck_DkHpBuff_Enabled == nil then _G.Mod_TowerCheck_DkHpBuff_Enabled = true end
         end
+        -- =========================================================================
+        -- [MOD FEATURE]: TÙY CHỌN CHECK HỒI SINH (ĐẠI THIÊN SỨ PHÙ HỘ)
+        -- Mô tả: Tự động lưu và khôi phục trạng thái bật/tắt của tùy chọn Hồi Sinh.
+        -- =========================================================================
+        if _G.Mod_TowerCheck_HoiSinh_Enabled == nil then
+            pcall(function()
+                _G.Mod_TowerCheck_HoiSinh_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_HoiSinh_Enabled", 1) == 1)
+            end)
+            if _G.Mod_TowerCheck_HoiSinh_Enabled == nil then _G.Mod_TowerCheck_HoiSinh_Enabled = true end
+        end
         if _G.Mod_TowerCheck_PhaNgu_Enabled == nil then
             pcall(function()
                 _G.Mod_TowerCheck_PhaNgu_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_PhaNgu_Enabled", 1) == 1)
@@ -475,6 +485,30 @@ local function CreateModUI()
                 _G.Mod_AutoReturnPos_MapId = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoReturnPos_MapId", 0)
             end)
         end
+        if _G.Mod_TrainCoord == nil then
+            pcall(function()
+                _G.Mod_TrainCoord = CS.UnityEngine.PlayerPrefs.GetString("Mod_TrainCoord", "")
+            end)
+            if _G.Mod_TrainCoord == nil then _G.Mod_TrainCoord = "" end
+        end
+        if _G.Mod_AutoBoss_SkipHpPct == nil then
+            pcall(function()
+                _G.Mod_AutoBoss_SkipHpPct = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_SkipHpPct", 90)
+            end)
+            if _G.Mod_AutoBoss_SkipHpPct == nil then _G.Mod_AutoBoss_SkipHpPct = 90 end
+        end
+        if _G.Mod_LockTarget_Enabled == nil then
+            pcall(function()
+                _G.Mod_LockTarget_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) == 1)
+            end)
+            if _G.Mod_LockTarget_Enabled == nil then _G.Mod_LockTarget_Enabled = false end
+        end
+        if _G.Mod_LockTarget_Name == nil then
+            pcall(function()
+                _G.Mod_LockTarget_Name = CS.UnityEngine.PlayerPrefs.GetString("Mod_LockTarget_Name", "")
+            end)
+            if _G.Mod_LockTarget_Name == nil then _G.Mod_LockTarget_Name = "" end
+        end
 
         -- =========================================================================
         -- [MOD FEATURE]: THỐNG KÊ SĂN BOSS & ĐI MAP ẨN (FARM STATS & PERSISTENCE)
@@ -625,7 +659,7 @@ local function CreateModUI()
 
         _G.Mod_SaveSummonerPreset = function(targetMode)
             targetMode = targetMode or _G.Mod_SummonerMode_Current or "PVP"
-            local roleId = tostring(_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id or 0)
+            local roleId = tostring((_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or 0)
             if roleId == "0" then return end
 
             -- 1. Lưu 7 ô skill HUD
@@ -636,9 +670,12 @@ local function CreateModUI()
                 end
             end
             local skillStr = table.concat(skills, ",")
-            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumSkillPreset_%s_%s", roleId, targetMode), skillStr)
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumSkillPreset_%s_%s", roleId, targetMode), skillStr)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
 
-            -- 2. Lưu Thánh Cốt & Thánh Hồn
+            -- 2. Lưu Thánh Cốt (SacredBone / HolySkeleton: 7 bộ vị x 7 lỗ)
             local bones = {}
             local mgr = nil
             pcall(function()
@@ -669,11 +706,13 @@ local function CreateModUI()
                 end
             end
             local boneStr = table.concat(bones, ";")
-            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumBonePreset_%s_%s", roleId, targetMode), boneStr)
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumBonePreset_%s_%s", roleId, targetMode), boneStr)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
 
             -- =========================================================================
             -- [MOD FEATURE]: LƯU 7 Ô PHÙ VĂN THEO ITEMID (CHỐNG RƠI RỚT PRESET)
-            -- Mô tả: Lưu cấu hình phù văn theo ItemId (không lưu UID tĩnh vì server tạo UID động).
             -- =========================================================================
             local runes = {}
             local runeMgr = nil
@@ -695,10 +734,54 @@ local function CreateModUI()
                 end
             end
             local runeStr = table.concat(runes, ";")
-            CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumRunePreset_%s_%s", roleId, targetMode), runeStr)
-            CS.UnityEngine.PlayerPrefs.Save()
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumRunePreset_%s_%s", roleId, targetMode), runeStr)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
 
-            local msg = string.format("Đã ghi nhớ Preset [%s] thành công!\n(7 Skill + %d Thánh Cốt/Hồn + %d Phù Văn)", targetMode, #bones, #runes)
+            -- =========================================================================
+            -- [MOD FEATURE]: LƯU TRANG BỊ THÁNH HỒN (HOLY SPIRIT: CÁN CÂN, SÁCH CỦA 7 THIÊN SỨ)
+            -- Mô tả: Lưu danh sách vật phẩm Thánh Hồn đang mặc theo vị trí (2200001-2200107)
+            -- =========================================================================
+            local holySpirits = {}
+            pcall(function()
+                local suitMgr = nil
+                if _G.gameMgr and _G.gameMgr.GetAvatarManager then
+                    local p = _G.gameMgr:GetAvatarManager():GetMainPlayer()
+                    if p and p.GetEquipManager then
+                        suitMgr = p:GetEquipManager():GetSuitManager()
+                    end
+                end
+                local shenghunSuit = nil
+                if suitMgr and _G.EquipCellType and _G.EquipCellType.SHENGHUN then
+                    shenghunSuit = suitMgr:GetSingleSuit(_G.EquipCellType.SHENGHUN)
+                end
+                if shenghunSuit and shenghunSuit.EquipList then
+                    for _, v in pairs(shenghunSuit.EquipList) do
+                        local eq = v.equipData
+                        if eq and eq.bagGridIndex and eq.itemId and eq.itemId ~= 0 then
+                            table.insert(holySpirits, string.format("%d#%d#%s", eq.bagGridIndex, eq.itemId, tostring(eq.id or 0)))
+                        end
+                    end
+                end
+
+                if #holySpirits == 0 and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.equipsData and _G.ViewData.meData.equipsData.Data then
+                    for pos, eq in pairs(_G.ViewData.meData.equipsData.Data) do
+                        if pos and ((pos >= 2200001 and pos <= 2200007) or (pos >= 2200101 and pos <= 2200107)) then
+                            if eq and eq.itemId and eq.itemId ~= 0 then
+                                table.insert(holySpirits, string.format("%d#%d#%s", pos, eq.itemId, tostring(eq.id or 0)))
+                            end
+                        end
+                    end
+                end
+            end)
+            local hsStr = table.concat(holySpirits, ";")
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetString(string.format("Mod_SumHolySpiritPreset_%s_%s", roleId, targetMode), hsStr)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            local msg = string.format("Đã ghi nhớ Preset [%s] thành công!\n(7 Skill + %d Thánh Cốt + %d Thánh Hồn + %d Phù Văn)", targetMode, #bones, #holySpirits, #runes)
             if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                 _G.FloatingWordUtility.QuickMsg(msg)
             elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
@@ -721,7 +804,7 @@ local function CreateModUI()
         end
 
         _G.Mod_ApplySummonerPreset = function(targetMode)
-            local roleId = tostring(_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id or 0)
+            local roleId = tostring((_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id) or 0)
             if roleId == "0" then return end
 
             -- 1. Nạp 7 ô skill HUD
@@ -742,7 +825,7 @@ local function CreateModUI()
                 end
             end
 
-            -- 2. Nạp Thánh Cốt & Thánh Hồn
+            -- 2. Nạp Thánh Cốt (SacredBone / HolySkeleton: Cốt chính Hole 1 theo ItemId, Hồn phụ Hole 2..7 theo UID)
             local boneStr = CS.UnityEngine.PlayerPrefs.GetString(string.format("Mod_SumBonePreset_%s_%s", roleId, targetMode), "")
             local boneMgr = nil
             pcall(function()
@@ -762,9 +845,23 @@ local function CreateModUI()
             end
 
             if boneStr and boneStr ~= "" and boneMgr and reqInlay then
-                -- Helper: Tìm item trong túi đồ bằng UID (so sánh tostring để chuẩn xác giữa uint64 userdata và string)
+                -- Helper 1: Tìm item trong túi đồ theo ItemId (cho Cốt chính Hole 1)
+                local function FindBagItemByItemId(targetItemId)
+                    if not boneMgr.SacredBoneBagItemData or not targetItemId or targetItemId <= 0 then return nil end
+                    for _, v in pairs(boneMgr.SacredBoneBagItemData) do
+                        if v and v.ItemInfo then
+                            local bId = tonumber(v.ItemId or v.ItemInfo.itemId or 0)
+                            if bId == targetItemId then
+                                return v
+                            end
+                        end
+                    end
+                    return nil
+                end
+
+                -- Helper 2: Tìm item trong túi đồ theo UID (cho Hồn phụ Hole 2..7)
                 local function FindBagItemByUid(targetUidStr)
-                    if not boneMgr.SacredBoneBagItemData then return nil end
+                    if not boneMgr.SacredBoneBagItemData or not targetUidStr or targetUidStr == "" or targetUidStr == "0" then return nil end
                     for _, v in pairs(boneMgr.SacredBoneBagItemData) do
                         if v and v.ItemInfo and v.ItemInfo.id then
                             if tostring(v.ItemInfo.id) == targetUidStr then
@@ -775,9 +872,29 @@ local function CreateModUI()
                     return nil
                 end
 
-                -- Helper: Tìm item đang đeo trên người bằng UID
+                -- Helper 3: Tìm item đang đeo trên người theo ItemId (cho Cốt chính Hole 1)
+                local function FindEquippedItemByItemId(targetItemId)
+                    if not boneMgr.SacredBoneEquipData or not targetItemId or targetItemId <= 0 then return nil end
+                    for p = 1, 7 do
+                        local eq = boneMgr.SacredBoneEquipData[p]
+                        if eq and eq.SacredBoneData then
+                            for h = 1, 7 do
+                                local hData = eq.SacredBoneData[h]
+                                if hData and hData.SacredBoneEquip and hData.SacredBoneEquip.ItemInfo then
+                                    local bId = tonumber(hData.SacredBoneEquip.ItemId or hData.SacredBoneEquip.ItemInfo.itemId or 0)
+                                    if bId == targetItemId then
+                                        return hData.SacredBoneEquip, p, h
+                                    end
+                                end
+                            end
+                        end
+                    end
+                    return nil
+                end
+
+                -- Helper 4: Tìm item đang đeo trên người theo UID (cho Hồn phụ Hole 2..7)
                 local function FindEquippedItemByUid(targetUidStr)
-                    if not boneMgr.SacredBoneEquipData then return nil end
+                    if not boneMgr.SacredBoneEquipData or not targetUidStr or targetUidStr == "" or targetUidStr == "0" then return nil end
                     for p = 1, 7 do
                         local eq = boneMgr.SacredBoneEquipData[p]
                         if eq and eq.SacredBoneData then
@@ -804,43 +921,71 @@ local function CreateModUI()
                             local targetPos = tonumber(subParts[1])
                             local targetHole = tonumber(subParts[2])
                             local targetUid = tostring(subParts[3])
+                            local targetItemId = tonumber(subParts[4] or 0)
 
-                            -- Lấy UID hiện tại ở đúng slot đích
+                            -- Lấy ItemId & UID hiện tại ở đúng slot đích
                             local curUid = nil
+                            local curItemId = 0
                             if boneMgr.SacredBoneEquipData and boneMgr.SacredBoneEquipData[targetPos] and boneMgr.SacredBoneEquipData[targetPos].SacredBoneData then
                                 local curHole = boneMgr.SacredBoneEquipData[targetPos].SacredBoneData[targetHole]
                                 if curHole and curHole.SacredBoneEquip and curHole.SacredBoneEquip.ItemInfo then
                                     curUid = tostring(curHole.SacredBoneEquip.ItemInfo.id or 0)
+                                    curItemId = tonumber(curHole.SacredBoneEquip.ItemId or curHole.SacredBoneEquip.ItemInfo.itemId or 0)
                                 end
                             end
 
-                            -- Nếu slot đích chưa đúng UID mong muốn
-                            if curUid ~= targetUid then
-                                -- Ưu tiên 1: Tìm trong túi đồ
-                                local bagItem = FindBagItemByUid(targetUid)
-                                if bagItem and bagItem.ItemInfo and bagItem.ItemInfo.id then
-                                    table.insert(swapQueue, {
-                                        pos = targetPos,
-                                        hole = targetHole,
-                                        uniqueId = bagItem.ItemInfo.id
-                                    })
-                                else
-                                    -- Ưu tiên 2: Tìm trên người (nếu đang khảm ở vị trí khác)
-                                    local eqItem, eqPos, eqHole = FindEquippedItemByUid(targetUid)
-                                    if eqItem and eqItem.ItemInfo and eqItem.ItemInfo.id then
-                                        if eqPos ~= targetPos or eqHole ~= targetHole then
-                                            -- Tháo khỏi slot cũ trước
-                                            table.insert(swapQueue, {
-                                                pos = eqPos,
-                                                hole = eqHole,
-                                                uniqueId = 0
-                                            })
-                                            -- Sau đó khảm vào slot mới
-                                            table.insert(swapQueue, {
-                                                pos = targetPos,
-                                                hole = targetHole,
-                                                uniqueId = eqItem.ItemInfo.id
-                                            })
+                            if targetHole == 1 then
+                                -- =========================================================
+                                -- [A] CỐT CHÍNH (HOLE 1 - LORDSOUL): ĐỐI CHIẾU THEO ITEMID
+                                -- =========================================================
+                                local isAlreadyMatched = false
+                                if targetItemId > 0 and curItemId == targetItemId then
+                                    isAlreadyMatched = true
+                                elseif targetItemId == 0 and curUid and curUid == targetUid then
+                                    isAlreadyMatched = true
+                                end
+
+                                if not isAlreadyMatched then
+                                    -- 1. Tìm trong túi theo ItemId trước, fallback UID
+                                    local bagItem = (targetItemId > 0 and FindBagItemByItemId(targetItemId)) or FindBagItemByUid(targetUid)
+                                    if bagItem and bagItem.ItemInfo and bagItem.ItemInfo.id then
+                                        table.insert(swapQueue, {
+                                            pos = targetPos,
+                                            hole = targetHole,
+                                            uniqueId = bagItem.ItemInfo.id
+                                        })
+                                    else
+                                        -- 2. Tìm trên người nếu đang khảm ở vị trí khác
+                                        local eqItem, eqPos, eqHole = (targetItemId > 0 and FindEquippedItemByItemId(targetItemId)) or FindEquippedItemByUid(targetUid)
+                                        if eqItem and eqItem.ItemInfo and eqItem.ItemInfo.id then
+                                            if eqPos ~= targetPos or eqHole ~= targetHole then
+                                                table.insert(swapQueue, { pos = eqPos, hole = eqHole, uniqueId = 0 })
+                                                table.insert(swapQueue, { pos = targetPos, hole = targetHole, uniqueId = eqItem.ItemInfo.id })
+                                            end
+                                        end
+                                    end
+                                end
+                            else
+                                -- =========================================================
+                                -- [B] HỒN PHỤ (HOLE 2..7): ĐỐI CHIẾU CHUẨN XÁC THEO UID GỐC
+                                -- =========================================================
+                                if curUid ~= targetUid then
+                                    -- 1. Tìm trong túi theo UID
+                                    local bagItem = FindBagItemByUid(targetUid)
+                                    if bagItem and bagItem.ItemInfo and bagItem.ItemInfo.id then
+                                        table.insert(swapQueue, {
+                                            pos = targetPos,
+                                            hole = targetHole,
+                                            uniqueId = bagItem.ItemInfo.id
+                                        })
+                                    else
+                                        -- 2. Tìm trên người theo UID
+                                        local eqItem, eqPos, eqHole = FindEquippedItemByUid(targetUid)
+                                        if eqItem and eqItem.ItemInfo and eqItem.ItemInfo.id then
+                                            if eqPos ~= targetPos or eqHole ~= targetHole then
+                                                table.insert(swapQueue, { pos = eqPos, hole = eqHole, uniqueId = 0 })
+                                                table.insert(swapQueue, { pos = targetPos, hole = targetHole, uniqueId = eqItem.ItemInfo.id })
+                                            end
                                         end
                                     end
                                 end
@@ -854,20 +999,17 @@ local function CreateModUI()
                     local queueIdx = 1
                     if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerBoneSwapQueue") end
                     if _G.Mod_StartTrackedTimer then
-                        _G.Mod_StartTrackedTimer("SummonerBoneSwapQueue", 0.04, -1, function()
-                            -- Mỗi nhịp xử lý 2 món để vừa nhanh vừa không nghẽn mạng
-                            for _ = 1, 2 do
-                                if queueIdx > #swapQueue then
-                                    if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerBoneSwapQueue") end
-                                    return
-                                end
-                                local step = swapQueue[queueIdx]
-                                queueIdx = queueIdx + 1
-                                if step and reqInlay then
-                                    pcall(function()
-                                        reqInlay(step.pos, step.hole, step.uniqueId)
-                                    end)
-                                end
+                        _G.Mod_StartTrackedTimer("SummonerBoneSwapQueue", 0.08, -1, function()
+                            if queueIdx > #swapQueue then
+                                if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerBoneSwapQueue") end
+                                return
+                            end
+                            local step = swapQueue[queueIdx]
+                            queueIdx = queueIdx + 1
+                            if step and reqInlay then
+                                pcall(function()
+                                    reqInlay(step.pos, step.hole, step.uniqueId)
+                                end)
                             end
                         end)
                     else
@@ -878,6 +1020,124 @@ local function CreateModUI()
                         end
                     end
                 end
+            end
+
+            -- =========================================================================
+            -- [MOD FEATURE]: NẠP PRESET TRANG BỊ THÁNH HỒN (CÁN CÂN, SÁCH 7 THIÊN SỨ)
+            -- Mô tả: Tự động đối chiếu 14 vị trí Thánh Hồn (2200001-2200007 & 2200101-2200107).
+            --        Mặc trang bị nếu preset có món, và THÁO RA nếu preset là trống.
+            -- =========================================================================
+            local hsStr = CS.UnityEngine.PlayerPrefs.GetString(string.format("Mod_SumHolySpiritPreset_%s_%s", roleId, targetMode), "")
+            if hsStr and hsStr ~= "" then
+                pcall(function()
+                    local reqPutOn = (_G.MeEquipController and _G.MeEquipController.ReqPutOnTheEquip)
+                    local reqTakeOff = (_G.MeEquipController and _G.MeEquipController.ReqTakeOffTheEquip)
+                    local sendNet = _G.NetManager and _G.NetManager.Send
+                    local putOnMsg = _G.EquipMessage and _G.EquipMessage.ReqPutOnTheEquip
+                    local takeOffMsg = _G.EquipMessage and _G.EquipMessage.ReqTakeOffTheEquip
+
+                    local bagItems = (_G.BagInfoData and _G.BagInfoData.GetTotalBag and _G.BagInfoData.GetTotalBag()) or {}
+                    local currentEquips = (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.equipsData and _G.ViewData.meData.equipsData.Data) or {}
+
+                    -- 1. Parse preset thành map: targetHolySpirits[pos] = itemId
+                    local targetHolySpirits = {}
+                    local hsEntries = string.split(hsStr, ";")
+                    for _, entry in ipairs(hsEntries) do
+                        local parts = string.split(entry, "#")
+                        if #parts >= 2 then
+                            local pos = tonumber(parts[1])
+                            local targetItemId = tonumber(parts[2])
+                            if pos and targetItemId and targetItemId > 0 then
+                                targetHolySpirits[pos] = targetItemId
+                            end
+                        end
+                    end
+
+                    -- 2. Quét toàn diện 14 slot Thánh Hồn (Tầng 1: 2200001-2200007, Tầng 2: 2200101-2200107)
+                    local allHsSlots = {
+                        2200001, 2200002, 2200003, 2200004, 2200005, 2200006, 2200007,
+                        2200101, 2200102, 2200103, 2200104, 2200105, 2200106, 2200107
+                    }
+
+                    local hsQueue = {}
+                    for _, pos in ipairs(allHsSlots) do
+                        local curEq = currentEquips[pos]
+                        local curItemId = (curEq and curEq.itemId and curEq.itemId ~= 0) and curEq.itemId or 0
+                        local expectedItemId = targetHolySpirits[pos] or 0
+
+                        if curItemId ~= expectedItemId then
+                            if expectedItemId == 0 then
+                                -- THÁO RA vì slot này trong preset là trống (ví dụ: đã tháo Cân)
+                                if curItemId ~= 0 then
+                                    table.insert(hsQueue, { action = "TAKEOFF", pos = pos })
+                                end
+                            else
+                                -- MẶC VÀO
+                                local foundBagItem = nil
+                                for _, bItem in pairs(bagItems) do
+                                    if bItem and bItem.itemId == expectedItemId then
+                                        foundBagItem = bItem
+                                        break
+                                    end
+                                end
+                                if foundBagItem then
+                                    table.insert(hsQueue, { action = "PUTON", pos = pos, item = foundBagItem })
+                                end
+                            end
+                        end
+                    end
+
+                    -- 3. Thực thi hàng đợi tháo / mặc Thánh Hồn
+                    if #hsQueue > 0 then
+                        local hsIdx = 1
+                        if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerHolySpiritSwapQueue") end
+                        if _G.Mod_StartTrackedTimer then
+                            _G.Mod_StartTrackedTimer("SummonerHolySpiritSwapQueue", 0.08, -1, function()
+                                if hsIdx > #hsQueue then
+                                    if _G.Mod_StopTimer then _G.Mod_StopTimer("SummonerHolySpiritSwapQueue") end
+                                    return
+                                end
+                                local step = hsQueue[hsIdx]
+                                hsIdx = hsIdx + 1
+                                if step then
+                                    pcall(function()
+                                        if step.action == "TAKEOFF" then
+                                            if reqTakeOff then
+                                                reqTakeOff(step.pos)
+                                            elseif sendNet and takeOffMsg then
+                                                sendNet(takeOffMsg, { position = step.pos })
+                                            end
+                                        elseif step.action == "PUTON" then
+                                            if sendNet and putOnMsg then
+                                                sendNet(putOnMsg, { position = step.pos, equipId = step.item.id })
+                                            elseif reqPutOn then
+                                                reqPutOn(step.pos, step.item)
+                                            end
+                                        end
+                                    end)
+                                end
+                            end)
+                        else
+                            for _, step in ipairs(hsQueue) do
+                                pcall(function()
+                                    if step.action == "TAKEOFF" then
+                                        if reqTakeOff then
+                                            reqTakeOff(step.pos)
+                                        elseif sendNet and takeOffMsg then
+                                            sendNet(takeOffMsg, { position = step.pos })
+                                        end
+                                    elseif step.action == "PUTON" then
+                                        if sendNet and putOnMsg then
+                                            sendNet(putOnMsg, { position = step.pos, equipId = step.item.id })
+                                        elseif reqPutOn then
+                                            reqPutOn(step.pos, step.item)
+                                        end
+                                    end
+                                end)
+                            end
+                        end
+                    end
+                end)
             end
 
             -- =========================================================================
@@ -1076,16 +1336,22 @@ local function CreateModUI()
             local targetSkillGroup = (nextMode == "PVE") and amHonGroup or cuongBaoGroup
             local targetSkillName = (nextMode == "PVE") and "Ám Hồn Khúc" or "Thuật Cuồng Bạo"
 
-            -- Kiểm tra Cooldown CD của skill Form trước
-            local remainCD = _G.Mod_GetFormSkillRemainCD(targetSkillGroup)
-            if remainCD > 0 then
-                local tip = string.format("Kỹ năng [%s] đang hồi chiêu (%d giây)! Chưa thể chuyển.", targetSkillName, remainCD)
+            -- =========================================================================
+            -- [MOD FEATURE]: TÁCH BIỆT SKILL FORM - KHÔNG CHẶN CHUYỂN MODE KHI CD
+            -- Mô tả: Cứ bấm nút là 100% chuyển Mode (PVP <-> PVE), đổi Thiên Phú và Preset.
+            --        Nếu skill Form đang hồi chiêu: Bắn thông báo đỏ giữa màn hình để người
+            --        chơi biết và tự bấm tay sau khi hết hồi chiêu.
+            -- =========================================================================
+            local remainCD = _G.Mod_GetFormSkillRemainCD and _G.Mod_GetFormSkillRemainCD(targetSkillGroup) or 0
+            local canCastFormSkill = (remainCD <= 0)
+
+            if not canCastFormSkill then
+                local warnTip = string.format("<color=#FF3333>Chưa đổi được trạng thái [%s] (Kỹ năng đang hồi chiêu %d giây)!</color>", targetSkillName, remainCD)
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg(tip)
+                    _G.FloatingWordUtility.QuickMsg(warnTip)
                 elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
-                    _G.CommonTipManage.ShowTips(tip)
+                    _G.CommonTipManage.ShowTips(warnTip)
                 end
-                return
             end
 
             local me = _G.RoleManager and _G.RoleManager.me
@@ -1108,33 +1374,35 @@ local function CreateModUI()
                 if me.ClearTarget then me:ClearTarget() end
             end
 
-            -- 2. Dùng Skill Form trước
-            pcall(function()
-                if _G.QiJiHelperData then _G.QiJiHelperData.SetPressSkill(targetSkillId) end
+            -- 2. Dùng Skill Form nếu không bị CD
+            if canCastFormSkill then
+                pcall(function()
+                    if _G.QiJiHelperData then _G.QiJiHelperData.SetPressSkill(targetSkillId) end
 
-                local skillUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Main_MainSkillUI")
-                if skillUI and skillUI.SummonerBtnSkill then
-                    skillUI.SummonerBtnSkill.skillId = targetSkillId
-                    skillUI.SummonerBtnSkill.groupId = targetSkillGroup
-                    if skillUI.Button_OnSkillClick then
-                        skillUI:Button_OnSkillClick(skillUI.SummonerBtnSkill)
+                    local skillUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Main_MainSkillUI")
+                    if skillUI and skillUI.SummonerBtnSkill then
+                        skillUI.SummonerBtnSkill.skillId = targetSkillId
+                        skillUI.SummonerBtnSkill.groupId = targetSkillGroup
+                        if skillUI.Button_OnSkillClick then
+                            skillUI:Button_OnSkillClick(skillUI.SummonerBtnSkill)
+                        end
                     end
-                end
 
-                local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(targetSkillId)
-                local tblAction = tblSkill and _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
-                local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
-                local dir = me.dir or 0
-                if _G.SkillMgr and _G.SkillMgr.SendSkillMessage and tblSkill and tblAction then
-                    _G.SkillMgr.SendSkillMessage(tblSkill, tblAction, 0, coord)
-                end
-                if _G.SkillMgr and _G.SkillMgr.ReqCastSkill then
-                    _G.SkillMgr.ReqCastSkill(targetSkillId, 0, coord, dir)
-                end
-                if skillUI and skillUI.SetBtnSkill then skillUI:SetBtnSkill() end
-            end)
+                    local tblSkill = _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager and _G.ClientTable.cfg_Skill_skillManager:TryGetValue(targetSkillId)
+                    local tblAction = tblSkill and _G.ConfigManager and _G.ConfigManager.GetConfig("cfg_actionLogic", tblSkill.actionId, "groupId")
+                    local coord = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                    local dir = me.dir or 0
+                    if _G.SkillMgr and _G.SkillMgr.SendSkillMessage and tblSkill and tblAction then
+                        _G.SkillMgr.SendSkillMessage(tblSkill, tblAction, 0, coord)
+                    end
+                    if _G.SkillMgr and _G.SkillMgr.ReqCastSkill then
+                        _G.SkillMgr.ReqCastSkill(targetSkillId, 0, coord, dir)
+                    end
+                    if skillUI and skillUI.SetBtnSkill then skillUI:SetBtnSkill() end
+                end)
+            end
 
-            -- 3. Đổi Thiên Phú
+            -- 3. Đổi Thiên Phú (LUÔN ĐỔI)
             pcall(function()
                 if _G.networkRequest and _G.networkRequest.ReqEnableGrandMasterTalent then
                     _G.networkRequest.ReqEnableGrandMasterTalent(targetTalent)
@@ -1161,7 +1429,7 @@ local function CreateModUI()
                 end
             end)
 
-            -- 4. Nạp Preset Skill & Thánh Cốt
+            -- 4. Nạp Preset Skill, Thánh Cốt, Thánh Hồn & Phù Văn (LUÔN NẠP)
             pcall(function() _G.Mod_ApplySummonerPreset(nextMode) end)
 
             -- 5. Khôi phục AutoFight nếu ban đầu đang bật
@@ -1190,8 +1458,7 @@ local function CreateModUI()
             if _G.ModUpdateFloatingSummonerBtn then _G.ModUpdateFloatingSummonerBtn() end
             if _G.ModUpdateSaveBoneSkillBtnLabel then _G.ModUpdateSaveBoneSkillBtnLabel() end
 
-            local notify = string.format("Đã chuyển sang Mode [%s] (%s | %s)!", 
-                nextMode, targetTalentName, targetSkillName)
+            local notify = string.format("Đã chuyển sang Mode [%s] (%s)!", nextMode, targetTalentName)
             if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                 _G.FloatingWordUtility.QuickMsg(notify)
             elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
@@ -7270,13 +7537,13 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 4. TỰ ĐỘNG KÍCH HOẠT NHIẾP HỒN CHÚ KHI MÁU <= 25% TRONG THÁP
+                        -- 4. TỰ ĐỘNG KÍCH HOẠT NHIẾP HỒN CHÚ KHI MÁU <= 35% TRONG THÁP
                         if me and not me.isDead and _G.Mod_AutoTower_CheckSkill_Enabled and _G.Mod_TowerCheck_NhiepHon_Enabled then
                             local maxHp = me.maxHp or (me.data and me.data.maxHp) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.maxHp) or 0
                             local curHp = me.hp or (me.data and me.data.hp) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.hp) or 0
                             if maxHp > 0 and curHp > 0 then
                                 local hpPct = (curHp / maxHp) * 100
-                                if hpPct <= 25 then
+                                if hpPct <= 35 then
                                     local nowReal = CS.UnityEngine.Time.realtimeSinceStartup
                                     if (nowReal - (_G.Mod_LastNhiepHonCastTime or 0)) >= 1.5 then
                                         local nhiepHonCd = 0
@@ -7306,7 +7573,7 @@ local function CreateModUI()
                                             if tgtRole and _G.Mod_CastSkillByGroup then
                                                 _G.Mod_CastSkillByGroup(26020100, 26020101, tgtRole, false)
                                                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                                    _G.FloatingWordUtility.QuickMsg(string.format("[NHIẾP HỒN] Máu %.0f%% <= 25%% -> Kích hoạt Nhiếp Hồn Chú hồi máu!", hpPct))
+                                                    _G.FloatingWordUtility.QuickMsg(string.format("[NHIẾP HỒN] Máu %.0f%% <= 35%% -> Kích hoạt Nhiếp Hồn Chú hồi máu!", hpPct))
                                                 end
                                             end
                                         end
@@ -7386,15 +7653,18 @@ local function CreateModUI()
                             local needAtk   = checkSkill and (_G.Mod_TowerCheck_ElfAtkBuff_Enabled == true)
                             local needDef   = checkSkill and (_G.Mod_TowerCheck_ElfDefBuff_Enabled == true)
                             local needHp    = checkSkill and (_G.Mod_TowerCheck_DkHpBuff_Enabled == true)
+                            local needHoiSinh = checkSkill and (_G.Mod_TowerCheck_HoiSinh_Enabled == true)
                             local needPhaNgu = checkSkill and (_G.Mod_TowerCheck_PhaNgu_Enabled == true)
                             local needNhiepHon = checkSkill and (_G.Mod_TowerCheck_NhiepHon_Enabled == true)
                             local needAnyBuff = needAtk or needDef or needHp
 
+                            local hasHoiSinh = false
                             local hasPhaNgu = false
                             local hasNhiepHon = false
                             pcall(function()
                                 local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
                                 if meSkills then
+                                    if meSkills[10200100] then hasHoiSinh = true end
                                     if meSkills[16130100] then hasPhaNgu = true end
                                     if meSkills[26020100] then hasNhiepHon = true end
                                 end
@@ -7457,6 +7727,33 @@ local function CreateModUI()
                                             end
                                             if cdSec <= 0 then cdSec = 1 end
                                             table.insert(missingSkills, string.format("Gai (%ds)", cdSec))
+                                        end
+                                    end
+
+                                    -- Kiểm tra Hồi Sinh (Đại Thiên Sứ Phù Hộ 10200100): chỉ sẵn sàng khi CD dưới 5s và chưa kích hoạt buff
+                                    if needHoiSinh then
+                                        local isHoiSinhBuffActive = false
+                                        local meId = me.id or (me.data and me.data.id) or 0
+                                        if _G.BuffData and _G.BuffData.BuffDic and _G.BuffData.BuffDic[meId] then
+                                            for _, b in ipairs(_G.BuffData.BuffDic[meId]) do
+                                                if b.buffConfig and (b.buffConfig.buffGroup == 53010101 or (b.buffCId and b.buffCId >= 53010101 and b.buffCId <= 53010131)) then
+                                                    isHoiSinhBuffActive = true
+                                                    break
+                                                end
+                                            end
+                                        end
+
+                                        if isHoiSinhBuffActive then
+                                            table.insert(missingSkills, "Hồi Sinh (Đang kích hoạt)")
+                                        else
+                                            local cdData = me.cd and (me.cd[10200100] or me.cd[10200101])
+                                            local cdSec = 0
+                                            if cdData and cdData.endTime and cdData.endTime > serverTime then
+                                                cdSec = math.ceil((cdData.endTime - serverTime) / 1000)
+                                            end
+                                            if cdSec > 5 then
+                                                table.insert(missingSkills, string.format("Hồi Sinh (%ds)", cdSec))
+                                            end
                                         end
                                     end
 
@@ -9425,6 +9722,7 @@ local function CreateModUI()
                 _G.Mod_TowerCheck_ElfAtkBuff_Enabled = true
                 _G.Mod_TowerCheck_ElfDefBuff_Enabled = true
                 _G.Mod_TowerCheck_DkHpBuff_Enabled = true
+                _G.Mod_TowerCheck_HoiSinh_Enabled = true
                 _G.Mod_TowerCheck_PhaNgu_Enabled = true
                 _G.Mod_TowerCheck_NhiepHon_Enabled = true
                 _G.Mod_AutoBuff_Enabled = false
@@ -12870,18 +13168,19 @@ local function CreateModUI()
                     local _, txtElfDef = CreateToggle("BUFF THỦ", "Mod_TowerCheck_ElfDefBuff_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 35
 
-                    -- Hàng 3: BUFF MÁU & PHÁ NGỰ
+                    -- Hàng 3: BUFF MÁU & HỒI SINH
                     local _, txtDkHp = CreateToggle("BUFF MÁU", "Mod_TowerCheck_DkHpBuff_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
-                    local _, txtPhaNgu = CreateToggle("PHÁ NGỰ", "Mod_TowerCheck_PhaNgu_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    local _, txtHoiSinh = CreateToggle("HỒI SINH", "Mod_TowerCheck_HoiSinh_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 35
 
-                    -- Hàng 4: NHIẾP HỒN (<25%)
-                    local _, txtNhiepHon = CreateToggle("NHIẾP HỒN (<25%)", "Mod_TowerCheck_NhiepHon_Enabled", btnX, curY, btnW, nil, contentGo, 30, 11, loadBlueColor)
+                    -- Hàng 4: PHÁ NGỰ & NHIẾP HỒN (<35%)
+                    local _, txtPhaNgu = CreateToggle("PHÁ NGỰ", "Mod_TowerCheck_PhaNgu_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
+                    local _, txtNhiepHon = CreateToggle("NHIẾP HỒN (<35%)", "Mod_TowerCheck_NhiepHon_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 40
 
                     -- =========================================================================
                     -- [MOD FEATURE]: REAL-TIME CẬP NHẬT COOLDOWN & THỜI LƯỢNG BUFF TRÊN CÁC NÚT CHECK SKILL
-                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai, Phá Ngự, Nhiếp Hồn)
+                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai, Hồi Sinh, Phá Ngự, Nhiếp Hồn)
                     --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu.
                     --        Khi Auto Tháp hoặc Check Skill Tháp tắt -> Reset text về mặc định sạch sẽ.
                     -- =========================================================================
@@ -12891,8 +13190,9 @@ local function CreateModUI()
                         if txtElfAtk and txtElfAtk.text ~= "BUFF CÔNG" then txtElfAtk.text = "BUFF CÔNG" end
                         if txtElfDef and txtElfDef.text ~= "BUFF THỦ" then txtElfDef.text = "BUFF THỦ" end
                         if txtDkHp and txtDkHp.text ~= "BUFF MÁU" then txtDkHp.text = "BUFF MÁU" end
+                        if txtHoiSinh and txtHoiSinh.text ~= "HỒI SINH" then txtHoiSinh.text = "HỒI SINH" end
                         if txtPhaNgu and txtPhaNgu.text ~= "PHÁ NGỰ" then txtPhaNgu.text = "PHÁ NGỰ" end
-                        if txtNhiepHon and txtNhiepHon.text ~= "NHIẾP HỒN (<25%)" then txtNhiepHon.text = "NHIẾP HỒN (<25%)" end
+                        if txtNhiepHon and txtNhiepHon.text ~= "NHIẾP HỒN (<35%)" then txtNhiepHon.text = "NHIẾP HỒN (<35%)" end
                     end
 
                     _G.Mod_UpdateTowerSkillButtons = function()
@@ -12990,7 +13290,19 @@ local function CreateModUI()
                             txtDkHp.text = "BUFF MÁU"
                         end
 
-                        -- 6. Phá Ngự CD
+                        -- 6. Hồi Sinh CD (Đại Thiên Sứ Phù Hộ 10200100)
+                        if txtHoiSinh and txtHoiSinh.gameObject and txtHoiSinh.gameObject.activeInHierarchy then
+                            if _G.Mod_TowerCheck_HoiSinh_Enabled then
+                                local cdMsg = me.cd and me.cd[10200100]
+                                local cd = GetCdSeconds(cdMsg)
+                                local newTxt = (cd > 0) and ("HỒI SINH (" .. cd .. "s)") or "HỒI SINH"
+                                if txtHoiSinh.text ~= newTxt then txtHoiSinh.text = newTxt end
+                            else
+                                if txtHoiSinh.text ~= "HỒI SINH" then txtHoiSinh.text = "HỒI SINH" end
+                            end
+                        end
+
+                        -- 7. Phá Ngự CD
                         if txtPhaNgu and txtPhaNgu.gameObject and txtPhaNgu.gameObject.activeInHierarchy then
                             if _G.Mod_TowerCheck_PhaNgu_Enabled then
                                 local cdMsg = me.cd and (me.cd[16130100] or me.cd[16130101])
@@ -13002,15 +13314,15 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 7. Nhiếp Hồn CD
+                        -- 8. Nhiếp Hồn CD
                         if txtNhiepHon and txtNhiepHon.gameObject and txtNhiepHon.gameObject.activeInHierarchy then
                             if _G.Mod_TowerCheck_NhiepHon_Enabled then
                                 local cdMsg = me.cd and (me.cd[26020100] or me.cd[26020101])
                                 local cd = GetCdSeconds(cdMsg)
-                                local newTxt = (cd > 0) and ("NHIẾP HỒN (" .. cd .. "s)") or "NHIẾP HỒN (<25%)"
+                                local newTxt = (cd > 0) and ("NHIẾP HỒN (" .. cd .. "s)") or "NHIẾP HỒN (<35%)"
                                 if txtNhiepHon.text ~= newTxt then txtNhiepHon.text = newTxt end
                             else
-                                if txtNhiepHon.text ~= "NHIẾP HỒN (<25%)" then txtNhiepHon.text = "NHIẾP HỒN (<25%)" end
+                                if txtNhiepHon.text ~= "NHIẾP HỒN (<35%)" then txtNhiepHon.text = "NHIẾP HỒN (<35%)" end
                             end
                         end
                     end

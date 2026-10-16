@@ -1,1 +1,1 @@
-git status
+# Ready for next test command

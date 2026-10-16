@@ -1,33 +1,125 @@
 =========================================================================
->>> THỬ NGHIỆM CƠ CHẾ NẠP PHÙ VĂN THÔNG MINH (CHỐNG RƠI RỚT 100%) <<<
-Thời gian: 2026/10/15 00:12:09
+>>> DANH SÁCH TOP 50 BẢNG XẾP HẠNG THỰC LỰC (TỔNG HỢP) TẠI SERVER <<<
+Thời gian trích xuất: 2026/10/15 23:34:23
+Tổng số người trong BXH: 50
 =========================================================================
 
->>> BẮT ĐẦU QUY TRÌNH NẠP PRESET MỤC TIÊU (7/7 Ô) <<<
-
---- [BƯỚC 1: SO SÁNH TRẠNG THÁI HIỆN TẠI VỚI PRESET MỤC TIÊU] ---
-  Ô [1]: Đã đúng ngọc (Phù Văn Đỏ Lv10) -> GIỮ NGUYÊN
-  Ô [2]: Đã đúng ngọc (Phù Văn Lục Lv10) -> GIỮ NGUYÊN
-  Ô [3]: Đã đúng ngọc (Phù Văn Lục Lv9) -> GIỮ NGUYÊN
-  Ô [4]: Đã đúng ngọc (Phù Văn Lục Lv10) -> GIỮ NGUYÊN
-  Ô [5]: Đã đúng ngọc (Phù Văn Lam Lv10) -> GIỮ NGUYÊN
-  Ô [6]: Đã đúng ngọc (Phù Văn Lam Lv10) -> GIỮ NGUYÊN
-  Ô [7]: Đã đúng ngọc (Phù Văn Đỏ Lv9) -> GIỮ NGUYÊN
-
--> Tất cả 7 ô Phù Văn đã hoàn toàn chính xác theo Preset! Không cần thao tác gì thêm.
-
-=========================================================================
->>> KẾT QUẢ KIỂM TRA SAU KHI NẠP BẰNG SMARTAPPLYRUNES <<<
-=========================================================================
-  Ô [1]: Phù Văn Đỏ Lv10 (ItemId: 190100010) | Mục tiêu: Phù Văn Đỏ Lv10 -> CHÍNH XÁC 100%
-  Ô [2]: Phù Văn Lục Lv10 (ItemId: 190300010) | Mục tiêu: Phù Văn Lục Lv10 -> CHÍNH XÁC 100%
-  Ô [3]: Phù Văn Lục Lv9 (ItemId: 190300009) | Mục tiêu: Phù Văn Lục Lv9 -> CHÍNH XÁC 100%
-  Ô [4]: Phù Văn Lục Lv10 (ItemId: 190300010) | Mục tiêu: Phù Văn Lục Lv10 -> CHÍNH XÁC 100%
-  Ô [5]: Phù Văn Lam Lv10 (ItemId: 190200010) | Mục tiêu: Phù Văn Lam Lv10 -> CHÍNH XÁC 100%
-  Ô [6]: Phù Văn Lam Lv10 (ItemId: 190200010) | Mục tiêu: Phù Văn Lam Lv10 -> CHÍNH XÁC 100%
-  Ô [7]: Phù Văn Đỏ Lv9 (ItemId: 190100009) | Mục tiêu: Phù Văn Đỏ Lv9 -> CHÍNH XÁC 100%
 -------------------------------------------------------------------------
-TỔNG KẾT: Khớp chuẩn xác 7 / 7 ô Phù Văn!
->>> ĐÁNH GIÁ: Cơ chế nạp mới hoạt động HOÀN HẢO 100%, KHÔNG CÒN RƠI RỚT! <<<
-=========================================================================
+1. CHUỖI TÊN COPY NHANH (Dùng paste thẳng vào ô Khóa Mục Tiêu / Mod):
+-------------------------------------------------------------------------
+NgốBabe;Dino;Munn;Wind;GAM3LOL;BT;TLinh;chị2;Ferrari;TMO;CứcChym;IllIIl;Nắngcực;Bảo;Mắm;VânBae;Shine;Dâu;Bố393;XD666;LanAnh;PeNgheo;BeNgheo;Rush;Bụi;HeoSua;MrSiTTT;Vampire;HeyBae;HeoSữa;ChupPi;Trân;anhba;Vân;Anhlong;Balala;BabyBus;Anggel;DK;Lunatic;Kjng;GiaHan;Útđen;Bin90;Loren;tttimmy;Dark01;mrsi;VanYeng;RedM00n
 
+-------------------------------------------------------------------------
+2. DANH SÁCH TÊN RIÊNG BIỆT (Dễ copy từng người):
+-------------------------------------------------------------------------
+ 1. NgốBabe
+ 2. Dino
+ 3. Munn
+ 4. Wind
+ 5. GAM3LOL
+ 6. BT
+ 7. TLinh
+ 8. chị2
+ 9. Ferrari
+10. TMO
+11. CứcChym
+12. IllIIl
+13. Nắngcực
+14. Bảo
+15. Mắm
+16. VânBae
+17. Shine
+18. Dâu
+19. Bố393
+20. XD666
+21. LanAnh
+22. PeNgheo
+23. BeNgheo
+24. Rush
+25. Bụi
+26. HeoSua
+27. MrSiTTT
+28. Vampire
+29. HeyBae
+30. HeoSữa
+31. ChupPi
+32. Trân
+33. anhba
+34. Vân
+35. Anhlong
+36. Balala
+37. BabyBus
+38. Anggel
+39. DK
+40. Lunatic
+41. Kjng
+42. GiaHan
+43. Útđen
+44. Bin90
+45. Loren
+46. tttimmy
+47. Dark01
+48. mrsi
+49. VanYeng
+50. RedM00n
+
+-------------------------------------------------------------------------
+3. BẢNG CHI TIẾT THÔNG TIN TOP 50:
+-------------------------------------------------------------------------
+Hạng | Tên Nhân Vật         | Phái        | Lực Chiến | Cấp  | Guild              | RoleID
+-----------------------------------------------------------------------------------------------
+1    | NgốBabe                | Triệu Hồi Sư | 22148828     | 4248   | Russian            | 5944968961162621988
+2    | Dino                     | Triệu Hồi Sư | 15528402     | 4211   | Russian            | 5944968961162558483
+3    | Munn                     | Ma Kiếm Sĩ | 11824663     | 3862   | Russian            | 5944968961162516489
+4    | Wind                     | Ma Pháp Sư | 11079533     | 3892   | Russian            | 5944969511038812292
+5    | GAM3LOL                  | Cung Thủ   | 5331789      | 3571   | Lọ Đế         | 5944968961210784829
+6    | BT                       | Kiếm Sĩ   | 4474289      | 3309   | Russian            | 5944968961213649947
+7    | TLinh                    | Ma Pháp Sư | 4372835      | 3241   | Russian            | 5944968961210539392
+8    | chị2                   | Cung Thủ   | 3831397      | 2988   | Russian            | 5944968961236248663
+9    | Ferrari                  | Cung Thủ   | 3504080      | 3096   | Russian            | 5944969511019520031
+10   | TMO                      | Triệu Hồi Sư | 3098305      | 3135   | Russian            | 5944969511042742328
+11   | CứcChym                | Triệu Hồi Sư | 2744627      | 2883   | (Trống)          | 5944969511115286545
+12   | IllIIl                   | Ma Kiếm Sĩ | 2573838      | 2899   | Lọ Đế         | 5944968961205013737
+13   | Nắngcực              | Ma Kiếm Sĩ | 2407645      | 2955   | Russian            | 5944969511045860535
+14   | Bảo                    | Cung Thủ   | 2404221      | 2991   | Lọ Đế         | 5944968961164322940
+15   | Mắm                    | Cung Thủ   | 2309165      | 2970   | Russian            | 5944969511006756868
+16   | VânBae                  | Triệu Hồi Sư | 2302266      | 2946   | Russian            | 5944969511007187982
+17   | Shine                    | Cung Thủ   | 2159996      | 3029   | Russian            | 5944968961195523251
+18   | Dâu                     | Ma Kiếm Sĩ | 1962541      | 2916   | Russian            | 5944968961241597230
+19   | Bố393                  | Kiếm Sĩ   | 1855416      | 2866   | Lọ Đế         | 5944968961185953800
+20   | XD666                    | Cung Thủ   | 1807131      | 2888   | Russian            | 5944969511006734336
+21   | LanAnh                   | Triệu Hồi Sư | 1738578      | 2859   | Russian            | 5944969511038275664
+22   | PeNgheo                  | Ma Kiếm Sĩ | 1518980      | 2770   | Russian            | 5944968961222334745
+23   | BeNgheo                  | Ma Kiếm Sĩ | 1472172      | 2658   | Russian            | 5944968961194449924
+24   | Rush                     | Ma Kiếm Sĩ | 1442126      | 2701   | Russian            | 5944968961190603971
+25   | Bụi                    | Ma Kiếm Sĩ | 1432209      | 2682   | Russian            | 5944968961220394275
+26   | HeoSua                   | Cung Thủ   | 1340294      | 2624   | Russian            | 5944968961214789751
+27   | MrSiTTT                  | Kiếm Sĩ   | 1267394      | 2728   | Russian            | 5944968961184238663
+28   | Vampire                  | Cung Thủ   | 1233716      | 2625   | Russian            | 5944968961184408660
+29   | HeyBae                   | Kiếm Sĩ   | 1024714      | 2310   | Russian            | 5944969511023798320
+30   | HeoSữa                 | Ma Pháp Sư | 973860       | 2445   | Russian            | 5944968961176065156
+31   | ChupPi                   | Cung Thủ   | 972113       | 2500   | Russian            | 5944968961188697170
+32   | Trân                    | Cung Thủ   | 934062       | 2509   | Russian            | 5944968961248232791
+33   | anhba                    | Cung Thủ   | 897721       | 2475   | Russian            | 5944968961165852879
+34   | Vân                     | Ma Pháp Sư | 858038       | 2509   | Russian            | 5944969511007691984
+35   | Anhlong                  | Ma Pháp Sư | 826186       | 2615   | Lọ Đế         | 5944968961220929812
+36   | Balala                   | Cung Thủ   | 770749       | 2400   | Russian            | 5944968961220677769
+37   | BabyBus                  | Cung Thủ   | 689452       | 2392   | Russian            | 5944969511045643377
+38   | Anggel                   | Kiếm Sĩ   | 684125       | 2165   | Russian            | 5944968961183465653
+39   | DK                       | Kiếm Sĩ   | 618321       | 2282   | Russian            | 5944968961180299342
+40   | Lunatic                  | Cung Thủ   | 616667       | 2303   | Russian            | 5944968961162437632
+41   | Kjng                     | Ma Kiếm Sĩ | 593834       | 2241   | (Trống)          | 5944969511056798849
+42   | GiaHan                   | Cung Thủ   | 591481       | 2112   | (Trống)          | 5944968961179826254
+43   | Útđen                  | Cung Thủ   | 526622       | 2271   | Russian            | 5944968961234997254
+44   | Bin90                    | Cung Thủ   | 522005       | 2096   | Russian            | 5944969511007997098
+45   | Loren                    | Cung Thủ   | 465794       | 2365   | Thần             | 5944969513594243106
+46   | tttimmy                  | Kiếm Sĩ   | 454873       | 2086   | Russian            | 5944968961226096959
+47   | Dark01                   | Cung Thủ   | 446234       | 2174   | Russian            | 5944969511056368679
+48   | mrsi                     | Triệu Hồi Sư | 437669       | 2092   | Russian            | 5944968961206386875
+49   | VanYeng                  | Ma Pháp Sư | 428613       | 2107   | (Trống)          | 5944969511061937376
+50   | RedM00n                  | Ma Kiếm Sĩ | 428517       | 2092   | (Trống)          | 5944969511006976055
+-----------------------------------------------------------------------------------------------
+
+=========================================================================
+>>> KẾT THÚC DANH SÁCH TOP 50! <<<
+=========================================================================

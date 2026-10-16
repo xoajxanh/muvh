@@ -1,322 +1,253 @@
 -- =========================================================================
--- [MOD FEATURE]: TEST CƠ CHẾ NẠP PHÙ VĂN CHUẨN XÁC 100% (STATE-DRIVEN HANDSHAKE)
--- Mô tả: Cơ chế khảm theo phản hồi thực tế từ Server (Handshake):
---       Khảm từng ô -> Chờ Server xác nhận ô đó thành công -> Mới khảm ô tiếp theo!
---       Tự động quét lại túi đồ theo thời gian thực trước mỗi ô.
---       Không phụ thuộc timer mù, chống lag mạng, chống rơi rớt 100%!
+-- [SCRIPT]: TRÍCH XUẤT DANH SÁCH 50 NGƯỜI CHƠI BẢNG XẾP HẠNG THỰC LỰC SERVER
+-- Mô tả: Lấy danh sách Top 50 BXH Thực Lực (Tổng Hợp) và xuất ra output.txt
 -- =========================================================================
 
-local outputPath = nil
-local function GetOutputPath()
-    if outputPath then return outputPath end
-    if CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
-        outputPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-        return outputPath
+local function FormatCareer(careerId)
+    local basic = 0
+    if _G.RoleUtility and _G.RoleUtility.GetBasicCareer then
+        basic = _G.RoleUtility.GetBasicCareer(careerId or 0)
+    else
+        basic = (careerId or 0) % 10 + 10
     end
-    outputPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-    return outputPath
+    if basic == 11 then return "Kiếm Sĩ"
+    elseif basic == 12 then return "Ma Pháp Sư"
+    elseif basic == 13 then return "Cung Thủ"
+    elseif basic == 14 then return "Ma Kiếm Sĩ"
+    elseif basic == 15 then return "Thánh Đạo Sư"
+    elseif basic == 16 then return "Triệu Hồi Sư"
+    else return "Khác (" .. tostring(careerId) .. ")"
+    end
 end
 
-local function SafeLog(msg)
+local function WriteOutputFile(content)
+    local path = ""
     pcall(function()
-        local path = GetOutputPath()
-        local f = io.open(path, "a")
-        if f then
-            f:write(tostring(msg) .. "\n")
-            f:close()
+        path = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+    end)
+    if path == "" then
+        path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+    end
+
+    local success = false
+    -- Cách 1: Ghi qua C# File UTF-8
+    pcall(function()
+        if CS.System and CS.System.IO and CS.System.IO.File and CS.System.Text and CS.System.Text.Encoding then
+            CS.System.IO.File.WriteAllText(path, content, CS.System.Text.Encoding.UTF8)
+            success = true
         end
     end)
-end
 
--- Khởi tạo file log sạch
-pcall(function()
-    local path = GetOutputPath()
-    local f = io.open(path, "w")
-    if f then
-        f:write("=========================================================================\n")
-        f:write(">>> THỬ NGHIỆM CƠ CHẾ NẠP PHÙ VĂN HANDSHAKE (CHỐNG RƠI RỚT 100%) <<<\n")
-        f:write(string.format("Thời gian: %s\n", os.date and os.date("%Y/%m/%d %H:%M:%S") or "now"))
-        f:write("=========================================================================\n")
-        f:close()
+    -- Cách 2: Ghi qua io.open chuẩn Lua
+    if not success then
+        pcall(function()
+            local f = io.open(path, "w")
+            if f then
+                f:write(content)
+                f:close()
+                success = true
+            end
+        end)
     end
-end)
+    return success, path
+end
 
-local function Log(msg) SafeLog(msg) end
-
-local runeMgr = nil
-pcall(function()
-    if _G.QuickFind and _G.QuickFind.GetNewRuneDataManager then
-        runeMgr = _G.QuickFind.GetNewRuneDataManager()
-    elseif QuickFind and QuickFind.GetNewRuneDataManager then
-        runeMgr = QuickFind.GetNewRuneDataManager()
+local function ProcessRankList(ranks)
+    if not ranks or #ranks == 0 then
+        -- Thử duyệt nếu ranks là map key number
+        local temp = {}
+        for k, v in pairs(ranks) do
+            if type(k) == "number" and type(v) == "table" then
+                table.insert(temp, v)
+            end
+        end
+        ranks = temp
     end
-end)
 
-if not runeMgr or not runeMgr.GetAllServerRuneData then
-    Log("ERROR: Không tìm thấy NewRuneDataManager!")
-    return
-end
-
-local function ReqImplant(h, uid)
-    pcall(function()
-        if _G.networkRequest and _G.networkRequest.ReqImplantRune then
-            _G.networkRequest.ReqImplantRune(h, uid)
-        elseif networkRequest and networkRequest.ReqImplantRune then
-            networkRequest.ReqImplantRune(h, uid)
-        elseif _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqImplantRune then
-            _G.NetManager.Send(_G.EquipMessage.ReqImplantRune, { index = h, itemId = uid })
-        end
-    end)
-end
-
-local function RefreshRuneUI()
-    pcall(function()
-        local runeUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Bag_RunesNewUI")
-        if runeUI and runeUI.visible and runeUI.Refresh then
-            runeUI:Refresh()
-        end
-        local inlayUI = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Equip_RunesInlayNewUI")
-        if inlayUI and inlayUI.visible and inlayUI.Refresh then
-            inlayUI:Refresh()
-        end
-    end)
-end
-
-local function QuickMsg(msg)
-    pcall(function()
+    local total = #ranks
+    local limit = math.min(total, 50)
+    if limit == 0 then
+        local msg = "Không tìm thấy dữ liệu xếp hạng nào trong bộ nhớ!"
+        WriteOutputFile(msg)
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
             _G.FloatingWordUtility.QuickMsg(msg)
-        elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
-            _G.CommonTipManage.ShowTips(msg)
         end
-    end)
-end
-
-local runeNames = {
-    [190100010] = "Phù Văn Đỏ Lv10",
-    [190100009] = "Phù Văn Đỏ Lv9",
-    [190200010] = "Phù Văn Lam Lv10",
-    [190300010] = "Phù Văn Lục Lv10",
-    [190300009] = "Phù Văn Lục Lv9",
-}
-
-local timerObj = _G.Timer or Timer
-
--- Helper: Lấy danh sách ngọc trong túi theo thời gian thực
-local function GetAvailableBagRunes()
-    local list = {}
-    local bagRunes = (runeMgr.GetBagAllRunes and runeMgr:GetBagAllRunes()) or {}
-    for _, rData in ipairs(bagRunes) do
-        local uid = rData.id or (rData.serverData and rData.serverData.id) or 0
-        local itemId = rData.itemId or (rData.serverData and rData.serverData.itemId) or (rData.tblItem and rData.tblItem.id) or 0
-        if uid ~= 0 and itemId ~= 0 then
-            table.insert(list, { uid = uid, itemId = itemId })
-        end
-    end
-    if #list == 0 and _G.BagInfoData and _G.BagInfoData.TotalItems then
-        for _, v in pairs(_G.BagInfoData.TotalItems) do
-            if v and v.itemId and (v.itemId >= 190100000 and v.itemId <= 190400000) then
-                table.insert(list, { uid = v.id, itemId = v.itemId })
-            end
-        end
-    end
-    return list
-end
-
--- =========================================================================
--- [CƠ CHẾ NẠP PRESET BẬC THẦY: STATE-DRIVEN HANDSHAKE]
--- 1. Phân tích ô cần tháo & ô cần khảm.
--- 2. Tháo tuần tự từng ô sai, chờ Server xác nhận ô đã trống.
--- 3. Khảm từng ô: Quét túi đồ thời gian thực -> Gửi lệnh khảm ->
---    Chờ Server xác nhận ô đó ĐÃ CÓ ĐÚNG NGỌC -> Mới khảm ô tiếp theo!
--- =========================================================================
-local function HandshakeApplyRunePreset(targetConfig, onFinished)
-    local allData = runeMgr:GetAllServerRuneData()
-    local needUninlay = {}
-    local needInlay = {}
-
-    Log("\n--- [BƯỚC 1: PHÂN TÍCH SO SÁNH 7 Ô VỚI PRESET MỤC TIÊU] ---")
-    for h = 1, 7 do
-        local slot = allData[h]
-        local rItem = slot and slot.runeItem
-        local curItemId = (rItem and rItem.itemId and rItem.itemId ~= 0) and rItem.itemId or 0
-        local expItemId = targetConfig[h] or 0
-
-        if curItemId == expItemId and expItemId ~= 0 then
-            Log(string.format("  Ô [%d]: Đã đúng ngọc (%s) -> GIỮ NGUYÊN", h, runeNames[curItemId] or tostring(curItemId)))
-        else
-            if curItemId ~= 0 then
-                table.insert(needUninlay, h)
-                Log(string.format("  Ô [%d]: Đang có %s (Cần %s) -> Cần tháo", h, runeNames[curItemId] or tostring(curItemId), runeNames[expItemId] or tostring(expItemId)))
-            else
-                Log(string.format("  Ô [%d]: Đang TRỐNG (Cần %s) -> Cần khảm", h, runeNames[expItemId] or tostring(expItemId)))
-            end
-            if expItemId ~= 0 then
-                table.insert(needInlay, { hole = h, itemId = expItemId })
-            end
-        end
-    end
-
-    if #needUninlay == 0 and #needInlay == 0 then
-        Log("\n-> Tất cả 7 ô Phù Văn đã hoàn toàn chính xác! Không cần thao tác gì thêm.")
-        RefreshRuneUI()
-        if onFinished then onFinished() end
         return
     end
 
-    -- Hàm tháo tuần tự có Handshake
-    local function ProcessUninlay(index, doneCallback)
-        if index > #needUninlay then
-            -- Chờ thêm 0.3s để túi đồ cập nhật đầy đủ các viên vừa tháo
-            timerObj.Start(0.3, function()
-                if doneCallback then doneCallback() end
-            end)
-            return
-        end
-
-        local h = needUninlay[index]
-        Log(string.format("  -> [Tháo %d/%d]: Gửi lệnh tháo Ô [%d]...", index, #needUninlay, h))
-        ReqImplant(h, 0)
-
-        -- Polling chờ server xác nhận ô h đã trống (tối đa 1s)
-        local elapsed = 0
-        local function CheckEmpty()
-            timerObj.Start(0.1, function()
-                elapsed = elapsed + 0.1
-                local curSlot = runeMgr:GetAllServerRuneData()[h]
-                local curR = curSlot and curSlot.runeItem
-                local isClean = (curR == nil or curR.itemId == nil or curR.itemId == 0)
-
-                if isClean or elapsed >= 0.8 then
-                    ProcessUninlay(index + 1, doneCallback)
-                else
-                    CheckEmpty()
-                end
-            end)
-        end
-        CheckEmpty()
+    local out = {}
+    local function addLine(fmt, ...)
+        local str = select("#", ...) > 0 and string.format(fmt, ...) or tostring(fmt)
+        table.insert(out, str)
     end
 
-    -- Hàm khảm tuần tự có Handshake (Từng ô một, kiểm tra Server confirm mới đi tiếp)
-    local function ProcessInlay(index, doneCallback)
-        if index > #needInlay then
-            if doneCallback then doneCallback() end
-            return
-        end
+    addLine("=========================================================================")
+    addLine(">>> DANH SÁCH TOP %d BẢNG XẾP HẠNG THỰC LỰC (TỔNG HỢP) TẠI SERVER <<<", limit)
+    addLine("Thời gian trích xuất: %s", os.date and os.date("%Y/%m/%d %H:%M:%S") or "now")
+    addLine("Tổng số người trong BXH: %d", total)
+    addLine("=========================================================================\n")
 
-        local req = needInlay[index]
-        local currentBag = GetAvailableBagRunes()
-        local chosenRune = nil
+    -- 1. Chuỗi copy nhanh 1 dòng (cách nhau bằng dấu chấm phẩy ;)
+    local nameList = {}
+    for i = 1, limit do
+        local item = ranks[i]
+        local name = item.name or item.roleName or ("Player_" .. tostring(i))
+        table.insert(nameList, name)
+    end
+    local fastCopyStr = table.concat(nameList, ";")
 
-        -- Tìm viên ngọc có itemId khớp trong túi đồ
-        for _, b in ipairs(currentBag) do
-            if b.itemId == req.itemId then
-                chosenRune = b
-                break
-            end
-        end
+    addLine("-------------------------------------------------------------------------")
+    addLine("1. CHUỖI TÊN COPY NHANH (Dùng paste thẳng vào ô Khóa Mục Tiêu / Mod):")
+    addLine("-------------------------------------------------------------------------")
+    addLine("%s\n", fastCopyStr)
 
-        if not chosenRune then
-            Log(string.format("  [!] Ô [%d]: Cần %s nhưng trong túi đồ hiện tại KHÔNG CÓ! (Bỏ qua ô này)", req.hole, runeNames[req.itemId] or tostring(req.itemId)))
-            ProcessInlay(index + 1, doneCallback)
-            return
-        end
+    -- 2. Danh sách tên theo từng dòng
+    addLine("-------------------------------------------------------------------------")
+    addLine("2. DANH SÁCH TÊN RIÊNG BIỆT (Dễ copy từng người):")
+    addLine("-------------------------------------------------------------------------")
+    for i = 1, limit do
+        local item = ranks[i]
+        local name = item.name or item.roleName or ""
+        addLine("%2d. %s", i, name)
+    end
+    addLine("")
 
-        Log(string.format("  -> [Khảm %d/%d]: Ô [%d] <- %s (UID: %s)", index, #needInlay, req.hole, runeNames[req.itemId] or "Rune", tostring(chosenRune.uid)))
-        ReqImplant(req.hole, chosenRune.uid)
+    -- 3. Bảng chi tiết đầy đủ thông tin
+    addLine("-------------------------------------------------------------------------")
+    addLine("3. BẢNG CHI TIẾT THÔNG TIN TOP %d:", limit)
+    addLine("-------------------------------------------------------------------------")
+    addLine(string.format("%-4s | %-24s | %-12s | %-12s | %-6s | %-18s | %s", "Hạng", "Tên Nhân Vật", "Phái", "Lực Chiến", "Cấp", "Guild", "RoleID"))
+    addLine(string.rep("-", 95))
 
-        -- Polling kiểm tra Server xác nhận ô req.hole đã nhận ngọc (tối đa 1.2s)
-        local elapsed = 0
-        local function CheckInlaid()
-            timerObj.Start(0.12, function()
-                elapsed = elapsed + 0.12
-                local curSlot = runeMgr:GetAllServerRuneData()[req.hole]
-                local curR = curSlot and curSlot.runeItem
-                local curId = (curR and curR.itemId and curR.itemId ~= 0) and curR.itemId or 0
+    for i = 1, limit do
+        local item = ranks[i]
+        local name = item.name or item.roleName or ""
+        local careerStr = FormatCareer(item.career)
+        local fight = item.fightValue or 0
+        local level = item.level or 0
+        local guild = (item.unionName and item.unionName ~= "") and item.unionName or "(Trống)"
+        local lid = tostring(item.lid or item.id or 0)
 
-                if curId == req.itemId then
-                    -- Server đã xác nhận khảm thành công! Dừng lại 0.1s rồi sang ô kế
-                    timerObj.Start(0.1, function()
-                        ProcessInlay(index + 1, doneCallback)
-                    end)
-                elseif elapsed >= 1.2 then
-                    Log(string.format("  [!] Hết thời gian chờ phản hồi Ô [%d], chuyển tiếp...", req.hole))
-                    ProcessInlay(index + 1, doneCallback)
-                else
-                    CheckInlaid()
-                end
-            end)
-        end
-        CheckInlaid()
+        addLine(string.format("%-4d | %-24s | %-12s | %-12s | %-6s | %-18s | %s", i, name, careerStr, tostring(fight), tostring(level), guild, lid))
     end
 
-    -- Bắt đầu quy trình
-    if #needUninlay > 0 then
-        Log(string.format("\n--- [BƯỚC 2: TIẾN HÀNH THÁO %d Ô SAI (HANDSHAKE)] ---", #needUninlay))
-        ProcessUninlay(1, function()
-            Log(string.format("\n--- [BƯỚC 3: TIẾN HÀNH KHẢM %d Ô (HANDSHAKE)] ---", #needInlay))
-            ProcessInlay(1, function()
-                RefreshRuneUI()
-                if onFinished then onFinished() end
-            end)
-        end)
-    else
-        Log("\n--- [BƯỚC 2: KHÔNG CÓ Ô NÀO CẦN THÁO] ---")
-        Log(string.format("\n--- [BƯỚC 3: TIẾN HÀNH KHẢM %d Ô (HANDSHAKE)] ---", #needInlay))
-        ProcessInlay(1, function()
-            RefreshRuneUI()
-            if onFinished then onFinished() end
-        end)
+    addLine(string.rep("-", 95))
+    addLine("\n=========================================================================")
+    addLine(">>> KẾT THÚC DANH SÁCH TOP %d! <<<", limit)
+    addLine("=========================================================================")
+
+    local fullContent = table.concat(out, "\n")
+    local ok, filePath = WriteOutputFile(fullContent)
+
+    -- Lưu vào biến toàn cục để tiện dùng trong game
+    _G.Mod_LastRankTop50 = nameList
+    _G.Mod_LastRankTop50Str = fastCopyStr
+    _G.Mod_LastRankTopData = ranks
+
+    local tipMsg = string.format("Đã lấy thành công danh sách %d người chơi BXH vào output.txt!", limit)
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(tipMsg)
+    elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+        _G.CommonTipManage.ShowTips(tipMsg)
     end
 end
 
 -- =========================================================================
--- [CẤU HÌNH MỤC TIÊU CỦA USER]: ĐẦY ĐỦ 7/7 Ô
+-- LOGIC TÌM VÀ TRUY VẤN DỮ LIỆU BXH THỰC LỰC
 -- =========================================================================
-local targetConfig = {
-    [1] = 190100010, -- Đỏ Lv10
-    [2] = 190300010, -- Lục Lv10
-    [3] = 190300009, -- Lục Lv9
-    [4] = 190300010, -- Lục Lv10
-    [5] = 190200010, -- Lam Lv10
-    [6] = 190200010, -- Lam Lv10
-    [7] = 190100009, -- Đỏ Lv9
-}
+local foundRanks = nil
 
-QuickMsg("BẮT ĐẦU: Chạy cơ chế nạp Handshake (xác nhận từng ô)...")
-Log("\n>>> BẮT ĐẦU QUY TRÌNH NẠP PRESET HANDSHAKE <<<")
-
-HandshakeApplyRunePreset(targetConfig, function()
-    timerObj.Start(0.3, function()
-        RefreshRuneUI()
-        local finalData = runeMgr:GetAllServerRuneData()
-        local matchCount = 0
-
-        Log("\n=========================================================================")
-        Log(">>> KẾT QUẢ KIỂM TRA SAU KHI NẠP BẰNG CƠ CHẾ HANDSHAKE <<<")
-        Log("=========================================================================")
-
-        for h = 1, 7 do
-            local s = finalData[h]
-            local r = s and s.runeItem
-            local curId = (r and r.itemId and r.itemId ~= 0) and r.itemId or 0
-            local expId = targetConfig[h] or 0
-            local isMatch = (curId == expId and expId ~= 0)
-            if isMatch then matchCount = matchCount + 1 end
-            Log(string.format("  Ô [%d]: %s (ItemId: %d) | Mục tiêu: %s -> %s",
-                h, runeNames[curId] or "TRỐNG", curId, runeNames[expId] or "TRỐNG",
-                isMatch and "CHÍNH XÁC 100%" or "CHƯA KHỚP"))
+-- Cách 1: Lấy trực tiếp từ UI nếu đang mở
+pcall(function()
+    local ui = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Rank_ListInfoUI")
+    if ui and ui.GetRankData then
+        local d = ui:GetRankData()
+        if d and #d > 0 then
+            foundRanks = d
         end
-
-        Log("-------------------------------------------------------------------------")
-        Log(string.format("TỔNG KẾT: Khớp chuẩn xác %d / 7 ô Phù Văn!", matchCount))
-        if matchCount == 7 then
-            QuickMsg("THÀNH CÔNG RỰC RỠ: KHỚP ĐỦ 7/7 Ô PHÙ VĂN!")
-            Log(">>> ĐÁNH GIÁ: CƠ CHẾ HANDSHAKE ĐẠT ĐỘ CHÍNH XÁC TUYỆT ĐỐI 7/7 Ô (100%)! <<<")
-        else
-            QuickMsg(string.format("Kết quả: Khớp %d/7 ô Phù Văn!", matchCount))
-            Log(string.format(">>> CẢNH BÁO: Còn %d ô chưa khớp. <<<", 7 - matchCount))
-        end
-        Log("=========================================================================\n")
-    end)
+    end
 end)
+
+-- Cách 2: Lấy từ RankListData.RankListAll[RANKTYPE.fight]
+if not foundRanks or #foundRanks == 0 then
+    pcall(function()
+        if _G.RankListData and _G.RankListData.RankListAll then
+            local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
+            local fightTable = _G.RankListData.RankListAll[fightType]
+            if fightTable then
+                -- Ưu tiên career All (-1 hoặc 0)
+                if fightTable[-1] and #fightTable[-1] > 0 then
+                    foundRanks = fightTable[-1]
+                elseif fightTable[0] and #fightTable[0] > 0 then
+                    foundRanks = fightTable[0]
+                else
+                    -- Duyệt tất cả các key để tìm bảng nhiều phần tử nhất
+                    local maxLen = 0
+                    local best = nil
+                    for k, v in pairs(fightTable) do
+                        if type(v) == "table" and #v > maxLen then
+                            maxLen = #v
+                            best = v
+                        end
+                    end
+                    if best then foundRanks = best end
+                end
+            end
+        end
+    end)
+end
+
+-- Nếu đã có dữ liệu trong bộ nhớ -> Xuất ngay lập tức!
+if foundRanks and #foundRanks > 0 then
+    ProcessRankList(foundRanks)
+else
+    -- Nếu chưa có dữ liệu (chưa mở BXH bao giờ) -> Gửi yêu cầu lên Server và đợi phản hồi
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg("Đang gửi yêu cầu lấy dữ liệu BXH Thực Lực từ Server...")
+    end
+
+    pcall(function()
+        local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
+        local careerAll = (_G.ERoleCareer and _G.ERoleCareer.All) or -1
+
+        if _G.networkRequest and _G.networkRequest.ReqQueryRanks then
+            _G.networkRequest.ReqQueryRanks(fightType, careerAll)
+        elseif _G.NetManager and _G.RankMessage and _G.RankMessage.ReqQueryRanks then
+            _G.NetManager.Send(_G.RankMessage.ReqQueryRanks, { rankType = fightType, career = careerAll })
+        end
+    end)
+
+    -- Đợi 0.8 giây cho Server trả gói tin về
+    local timerObj = _G.Timer or Timer
+    if timerObj and timerObj.Start then
+        timerObj.Start(0.8, function()
+            local delayedRanks = nil
+            pcall(function()
+                local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
+                if _G.RankListData and _G.RankListData.RankListAll and _G.RankListData.RankListAll[fightType] then
+                    local fTable = _G.RankListData.RankListAll[fightType]
+                    delayedRanks = fTable[-1] or fTable[0]
+                    if not delayedRanks or #delayedRanks == 0 then
+                        for k, v in pairs(fTable) do
+                            if type(v) == "table" and #v > 0 then
+                                delayedRanks = v
+                                break
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if delayedRanks and #delayedRanks > 0 then
+                ProcessRankList(delayedRanks)
+            else
+                WriteOutputFile("Chưa nhận được phản hồi dữ liệu BXH từ Server. Vui lòng mở bảng BXH trong game lên một lần rồi chạy lại script!")
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("Chưa có dữ liệu BXH. Hãy mở bảng BXH trong game rồi chạy lại!")
+                end
+            end
+        end)
+    else
+        WriteOutputFile("Đã gửi yêu cầu tới server. Hãy mở bảng BXH và chạy lại script để lấy danh sách.")
+    end
+end

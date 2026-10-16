@@ -8,7 +8,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Refresh PATH tu Registry de tu dong nhan dien Python/Java vua moi cai dat ma khong can mo lai console
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-$version = "191"
+$version = "195"
 # Tu dong xac dinh thu muc goc (Git Root Directory)
 $rootDir = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path "$rootDir\.git")) {
@@ -76,7 +76,12 @@ New-Item -ItemType Directory -Force -Path $tempBuildDir | Out-Null
 
 $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 
-# Function thuc hien build cho 1 task APK
+# =========================================================================
+# [MOD FEATURE]: HỆ THỐNG XỬ LÝ BUILD TASK CÔ LẬP & DỌN DẸP SẠCH FILE TẠM
+# Mô tả: Tự động reset và dọn dẹp sạch sẽ toàn bộ thư mục/file trung gian
+#        (compiled_lua, new_lua, new_bundles, temp_build) trước và sau mỗi task,
+#        bắt lỗi ExitCode nghiêm ngặt cho WinRAR, Java Signer và kiểm tra copy.
+# =========================================================================
 function Build-ApkTask {
     param (
         [string]$Ver,
@@ -84,33 +89,49 @@ function Build-ApkTask {
         [string]$TargetFolder
     )
     $tempApkPath = "$tempBuildDir\$OutputApkName"
+    $compiledDir = Join-Path $rootDir "final\compiled_lua"
+    $newLuaDir = Join-Path $rootDir "final\new_lua"
+    $newBundlesDir = Join-Path $rootDir "final\new_bundles"
+    $packedFile = Join-Path $newLuaDir "lua.mu2"
 
     Write-Host ""
     Write-Host "==========================================================" -ForegroundColor Cyan
     Write-Host "   BUILDING $OutputApkName (Version: $Ver)" -ForegroundColor Yellow
     Write-Host "==========================================================" -ForegroundColor Cyan
 
+    # 0. Don dep moi truong truoc khi build de tranh de chong file giua cac ban
+    if (Test-Path $tempApkPath) {
+        Remove-Item -Path $tempApkPath -Force -ErrorAction SilentlyContinue
+    }
+    if (Test-Path $compiledDir) {
+        Remove-Item -Path $compiledDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    New-Item -ItemType Directory -Force -Path $compiledDir | Out-Null
+
+    if (Test-Path $newLuaDir) {
+        Remove-Item -Path $newLuaDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    New-Item -ItemType Directory -Force -Path $newLuaDir | Out-Null
+
+    if (Test-Path $newBundlesDir) {
+        Remove-Item -Path $newBundlesDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    New-Item -ItemType Directory -Force -Path $newBundlesDir | Out-Null
+
     # A. Compile & Pack Lua
     Write-Host "1. Bien dich LUA cho $Ver..."
-    $compiledDir = Join-Path $rootDir "final\compiled_lua"
-    if (Test-Path $compiledDir) {
-        Get-ChildItem -Path $compiledDir -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-    }
-    else {
-        New-Item -ItemType Directory -Force -Path $compiledDir | Out-Null
-    }
     $luaSrc = Join-Path $rootDir "final\modified_lua_$Ver"
     if (-not (Test-Path $luaSrc -PathType Container)) {
         Write-Host "[LOI] Thu muc ma nguon Lua khong hop le hoac khong ton tai: $luaSrc" -ForegroundColor Red
         Pause
-        exit
+        exit 1
     }
     $env:LUA_SRC_DIR = $luaSrc
     python compile_lua.py
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[LOI] Bien dich Lua that bai cho version: $Ver" -ForegroundColor Red
         Pause
-        exit
+        exit 1
     }
 
     Write-Host "2. Dong goi LUA Bundle cho $Ver..."
@@ -118,14 +139,13 @@ function Build-ApkTask {
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[LOI] Dong goi LUA bundle that bai cho version: $Ver" -ForegroundColor Red
         Pause
-        exit
+        exit 1
     }
 
-    $packedFile = Join-Path $rootDir "final\new_lua\lua.mu2"
     if (-not (Test-Path $packedFile)) {
         Write-Host "[LOI] Khong tim thay file bundle da dong goi: $packedFile" -ForegroundColor Red
         Pause
-        exit
+        exit 1
     }
     
     # B. Clone fresh from MU_base.apk to temp folder
@@ -135,8 +155,6 @@ function Build-ApkTask {
     # C. Update bundles.txt
     $hash = (Get-FileHash $packedFile -Algorithm MD5).Hash.ToLower()
     $size = (Get-Item $packedFile).Length
-    $newBundlesDir = Join-Path $rootDir "final\new_bundles"
-    New-Item -ItemType Directory -Force -Path $newBundlesDir | Out-Null
     $bundlesSrc = (Join-Path $rootDir "test_apk\bundles.txt") -replace '\\', '/'
     $bundlesDst = (Join-Path $newBundlesDir "bundles.txt") -replace '\\', '/'
     python -c "
@@ -154,16 +172,31 @@ with open('$bundlesDst', 'w', encoding='utf-8') as f:
     # D. Inject with WinRAR
     Write-Host "4. Injecting lua.mu2 & bundles.txt into $OutputApkName..."
     $argsLua = "a -m0 -ep -o+ -ibck -inul -apassets\Bundles `"$tempApkPath`" `"$packedFile`""
-    Start-Process -FilePath $winrar -ArgumentList $argsLua -Wait
+    $pLua = Start-Process -FilePath $winrar -ArgumentList $argsLua -Wait -PassThru -NoNewWindow
+    if ($pLua.ExitCode -ne 0) {
+        Write-Host "[LOI] WinRAR inject lua.mu2 that bai! (ExitCode: $($pLua.ExitCode))" -ForegroundColor Red
+        Pause
+        exit 1
+    }
 
     $newBundlesFile = Join-Path $newBundlesDir "bundles.txt"
     $argsBundles = "a -m0 -ep -o+ -ibck -inul -apassets `"$tempApkPath`" `"$newBundlesFile`""
-    Start-Process -FilePath $winrar -ArgumentList $argsBundles -Wait
+    $pBundles = Start-Process -FilePath $winrar -ArgumentList $argsBundles -Wait -PassThru -NoNewWindow
+    if ($pBundles.ExitCode -ne 0) {
+        Write-Host "[LOI] WinRAR inject bundles.txt that bai! (ExitCode: $($pBundles.ExitCode))" -ForegroundColor Red
+        Pause
+        exit 1
+    }
 
     # E. Sign APK in temp folder
     Write-Host "5. Tu dong Ky APK tren PC voi uber-apk-signer..." -ForegroundColor Cyan
     $signArgs = @("-jar", $signerJar, "-a", $tempApkPath, "--allowResign", "--overwrite")
-    Start-Process -FilePath "java" -ArgumentList $signArgs -Wait -NoNewWindow
+    $pSign = Start-Process -FilePath "java" -ArgumentList $signArgs -Wait -PassThru -NoNewWindow
+    if ($pSign.ExitCode -ne 0) {
+        Write-Host "[LOI] uber-apk-signer ky that bai cho $OutputApkName! (ExitCode: $($pSign.ExitCode))" -ForegroundColor Red
+        Pause
+        exit 1
+    }
     Write-Host "-> Da Ky chu ky thanh cong cho $OutputApkName!" -ForegroundColor Green
 
     # F. Deploy truc tiep sang thu muc release PC
@@ -172,8 +205,31 @@ with open('$bundlesDst', 'w', encoding='utf-8') as f:
         New-Item -ItemType Directory -Force -Path $TargetFolder | Out-Null
     }
     $destPath = Join-Path $TargetFolder $OutputApkName
+    if (Test-Path $destPath) {
+        Remove-Item -Path $destPath -Force -ErrorAction SilentlyContinue
+    }
     Copy-Item -Path $tempApkPath -Destination $destPath -Force
+    
+    # Kiem tra xac nhan copy thanh cong va khop dung luong
+    if (-not (Test-Path $destPath)) {
+        Write-Host "[LOI] Khong the sao chep sang: $destPath (Co the file dang bi khoa boi gia lap hoac chuong trinh khac)!" -ForegroundColor Red
+        Pause
+        exit 1
+    }
+    $srcSize = (Get-Item $tempApkPath).Length
+    $dstSize = (Get-Item $destPath).Length
+    if ($srcSize -ne $dstSize) {
+        Write-Host "[LOI] Dung luong file sau khi sao chep bi lech! ($srcSize != $dstSize)" -ForegroundColor Red
+        Pause
+        exit 1
+    }
     Write-Host "-> Da sao chep thanh cong sang PC: $destPath" -ForegroundColor Green
+
+    # G. Don dep sach se ngay sau task nay de tranh anh huong toi task tiep theo
+    Remove-Item -Path $tempApkPath -Force -ErrorAction SilentlyContinue
+    if (Test-Path $compiledDir) { Remove-Item -Path $compiledDir -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $newLuaDir) { Remove-Item -Path $newLuaDir -Recurse -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $newBundlesDir) { Remove-Item -Path $newBundlesDir -Recurse -Force -ErrorAction SilentlyContinue }
 }
 
 # 3. Thuc hien quy trinh build theo che do
@@ -278,12 +334,12 @@ if ($choice -eq 5 -or $choice -eq 4) {
 Write-Host ""
 Write-Host "Don dep file tam..." -ForegroundColor Gray
 Remove-Item -Path $tempBuildDir -Recurse -Force -ErrorAction SilentlyContinue
-if (Test-Path "final\compiled_lua") {
-    Get-ChildItem -Path "final\compiled_lua" -Recurse | Remove-Item -Force -Recurse -ErrorAction SilentlyContinue
-}
-if (Test-Path "final\new_bundles") {
-    Remove-Item -Path "final\new_bundles" -Recurse -Force -ErrorAction SilentlyContinue
-}
+$finalCompiled = Join-Path $rootDir "final\compiled_lua"
+$finalNewLua = Join-Path $rootDir "final\new_lua"
+$finalNewBundles = Join-Path $rootDir "final\new_bundles"
+if (Test-Path $finalCompiled) { Remove-Item -Path $finalCompiled -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $finalNewLua) { Remove-Item -Path $finalNewLua -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $finalNewBundles) { Remove-Item -Path $finalNewBundles -Recurse -Force -ErrorAction SilentlyContinue }
 
 Write-Host ""
 Write-Host "==========================================================" -ForegroundColor Green
