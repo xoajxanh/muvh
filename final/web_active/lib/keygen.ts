@@ -89,3 +89,77 @@ export function decryptAndVerifyToken(base64Token: string): { valid: boolean; co
     return { valid: false, error: err.message || 'Token decryption failed' };
   }
 }
+
+// =========================================================================
+// [MOD FEATURE]: TẠO TOKEN SVIP THEO QUY TẮC KEYGEN.PS1
+// Mô tả: Đóng gói chuỗi "$DeviceCode|$UID|$MainTier|$SubTier|$Duration|$unixTime"
+//        Ký MD5 với MUVH_SECRET_SALT_XOAI và Base64 Encode
+// =========================================================================
+
+export interface SvipTokenConfigParams {
+  deviceSnMd5: string;
+  characterUid: string;
+  mainTier?: number;
+  subTier?: number;
+  durationDays: number;
+  startTimeUnix: number; // Unix timestamp in seconds
+}
+
+export function generateSvipEncryptedToken(params: SvipTokenConfigParams): { tokenData: string; signature: string; encryptedToken: string } {
+  const devCode = params.deviceSnMd5.trim();
+  const uid = params.characterUid.trim();
+  const main = Number(params.mainTier) || 8;
+  const sub = Number(params.subTier) || 7;
+  const dur = Number(params.durationDays);
+  const durStr = dur === 0.000694444 ? "0.000694444" : String(dur);
+  const time = Math.floor(params.startTimeUnix);
+
+  const tokenData = `${devCode}|${uid}|${main}|${sub}|${durStr}|${time}`;
+  const secretSalt = process.env.MOD_SECRET_SALT || "MUVH_SECRET_SALT_XOAI";
+  
+  // MD5 signature of tokenData + secretSalt (no pipe between unixTime and salt)
+  const signature = crypto.createHash('md5').update(tokenData + secretSalt).digest('hex').toLowerCase();
+  
+  const finalString = `${tokenData}|${signature}`;
+  const encryptedToken = Buffer.from(finalString, 'utf-8').toString('base64');
+
+  return {
+    tokenData,
+    signature,
+    encryptedToken,
+  };
+}
+
+export function decryptAndVerifySvipToken(base64Token: string): { valid: boolean; data?: any; error?: string } {
+  try {
+    const decoded = Buffer.from(base64Token, 'base64').toString('utf-8');
+    const parts = decoded.split('|');
+    if (parts.length < 7) {
+      return { valid: false, error: 'Định dạng Token SVIP không hợp lệ' };
+    }
+
+    const [deviceCode, uid, mainTier, subTier, duration, startTime, signature] = parts;
+    const tokenData = `${deviceCode}|${uid}|${mainTier}|${subTier}|${duration}|${startTime}`;
+    const secretSalt = process.env.MOD_SECRET_SALT || "MUVH_SECRET_SALT_XOAI";
+    const expectedSig = crypto.createHash('md5').update(tokenData + secretSalt).digest('hex').toLowerCase();
+
+    if (signature.toLowerCase() !== expectedSig) {
+      return { valid: false, error: 'Chữ ký Token không hợp lệ' };
+    }
+
+    return {
+      valid: true,
+      data: {
+        deviceCode,
+        uid,
+        mainTier: Number(mainTier),
+        subTier: Number(subTier),
+        duration: Number(duration),
+        startTime: Number(startTime),
+      },
+    };
+  } catch (err: any) {
+    return { valid: false, error: err.message || 'Giải mã Token thất bại' };
+  }
+}
+

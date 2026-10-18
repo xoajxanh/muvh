@@ -136,6 +136,57 @@ local function Mod_GetCharacterUID()
     return uid
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: TRÍCH XUẤT THÔNG TIN NHÂN VẬT & MÁY CHỦ CHO CUSTOMER
+-- Mô tả: Lấy tên nhân vật, máy chủ để ghi nhận lịch sử đăng nhập thiết bị
+-- =========================================================================
+local function Mod_GetCharacterRoleName()
+    local roleName = ""
+    pcall(function()
+        if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.name then
+            roleName = tostring(_G.ViewData.meData.name)
+        elseif _G.RoleManager and _G.RoleManager.me then
+            local me = _G.RoleManager.me
+            if me.name and me.name ~= "" then
+                roleName = tostring(me.name)
+            elseif me.data and me.data.name and me.data.name ~= "" then
+                roleName = tostring(me.data.name)
+            end
+        elseif _G.LoginData and _G.LoginData.roleName and _G.LoginData.roleName ~= "" then
+            roleName = tostring(_G.LoginData.roleName)
+        end
+    end)
+    return roleName
+end
+_G.Mod_GetCharacterRoleName = Mod_GetCharacterRoleName
+
+local function Mod_GetServerName()
+    local serverName = ""
+    pcall(function()
+        if _G.LoginData then
+            if _G.LoginData.GetServerName then
+                serverName = tostring(_G.LoginData.GetServerName())
+            elseif _G.LoginData.server_name then
+                serverName = tostring(_G.LoginData.server_name)
+            elseif _G.LoginData.serverName then
+                serverName = tostring(_G.LoginData.serverName)
+            end
+        end
+    end)
+    return serverName
+end
+_G.Mod_GetServerName = Mod_GetServerName
+
+local function Mod_UrlEncode(str)
+    if not str then return "" end
+    str = string.gsub(tostring(str), "\n", "\r\n")
+    str = string.gsub(str, "([^%w%-_%.~])", function(c)
+        return string.format("%%%02X", string.byte(c))
+    end)
+    return str
+end
+_G.Mod_UrlEncode = Mod_UrlEncode
+
 local function Mod_DecryptPayload(payloadB64)
     if _G.WriteLog then
         _G.WriteLog("[ActiveCheck] [BUOC 4.1] Giai ma Base64 Envelope, Do dai = " ..
@@ -428,10 +479,18 @@ local function Mod_ApplyConfig(config)
     if _G.RefreshMainTabs then _G.RefreshMainTabs() end
 end
 
-local function Mod_FetchRemotePayloadFromAPI(callback)
+local function Mod_FetchRemotePayloadFromAPI(isInitialLogin, callback)
     local serialMD5 = Mod_GetDeviceSerialMD5()
     local uid = Mod_GetCharacterUID()
-    local url = API_BASE_URL .. "?sn=" .. tostring(serialMD5) .. "&uid=" .. tostring(uid)
+    local roleName = Mod_GetCharacterRoleName()
+    local serverName = Mod_GetServerName()
+    local isLoginParam = isInitialLogin and "1" or "0"
+
+    local url = API_BASE_URL .. "?sn=" .. tostring(serialMD5) ..
+                "&uid=" .. tostring(uid) ..
+                "&name=" .. Mod_UrlEncode(roleName) ..
+                "&server=" .. Mod_UrlEncode(serverName) ..
+                "&isLogin=" .. isLoginParam
 
     if _G.WriteLog then
         _G.WriteLog("[ActiveCheck] [BUOC 1] Gui request API: " .. tostring(url))
@@ -480,9 +539,13 @@ end
 
 local lastCheckTime = 0
 local isCheckingAPI = false
-local function Mod_UpdatePeriodicCheck(onFinish)
+local function Mod_UpdatePeriodicCheck(isInitialLogin, onFinish)
+    if type(isInitialLogin) == "function" then
+        onFinish = isInitialLogin
+        isInitialLogin = false
+    end
     local now = os.time()
-    if not onFinish and (now - lastCheckTime < 60) then return end
+    if not isInitialLogin and not onFinish and (now - lastCheckTime < 60) then return end
     if isCheckingAPI then
         if onFinish then onFinish(false, _G.Mod_IsActive, _G.Mod_ActiveStatusMsg) end
         return
@@ -490,7 +553,7 @@ local function Mod_UpdatePeriodicCheck(onFinish)
     lastCheckTime = now
     isCheckingAPI = true
 
-    Mod_FetchRemotePayloadFromAPI(function(isSuccess, remotePayload)
+    Mod_FetchRemotePayloadFromAPI(isInitialLogin == true, function(isSuccess, remotePayload)
         isCheckingAPI = false
         _G.Mod_HasFetchedConfig = true
 
@@ -554,7 +617,7 @@ _G.Mod_CheckActiveConfigNow = function(onFinish)
     lastCheckTime = 0
     isCheckingAPI = false
     _G.Mod_RawConfigPayload = ""
-    Mod_UpdatePeriodicCheck(onFinish)
+    Mod_UpdatePeriodicCheck(true, onFinish)
 end
 
 function EmmyluaDebug.InitEmmyluaDebug(obj)

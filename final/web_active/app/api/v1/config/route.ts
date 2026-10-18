@@ -15,15 +15,40 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sn = searchParams.get('sn');
     const uid = searchParams.get('uid');
+    const roleName = searchParams.get('name') || searchParams.get('roleName') || '';
+    const serverName = searchParams.get('server') || searchParams.get('serverName') || '';
+    const isLogin = searchParams.get('isLogin') === '1';
 
     if (!sn || !uid) {
       return NextResponse.json({ error: 'Thiếu tham số sn (Serial MD5) hoặc uid (Character ID)' }, { status: 400 });
     }
 
+    const cleanSn = sn.trim();
+    const cleanUid = uid.trim();
+
+    const recordLoginHistory = async (status: 'SUCCESS' | 'FAILED') => {
+      if (!isLogin) return;
+      try {
+        await prisma.deviceLoginHistory.create({
+          data: {
+            deviceSnMd5: cleanSn,
+            characterUid: cleanUid,
+            characterName: roleName.trim() || null,
+            serverName: serverName.trim() || null,
+            status,
+            type: 'CUSTOMER',
+          },
+        });
+      } catch (err) {
+        console.error('[History] Failed to record customer login history:', err);
+      }
+    };
+
     const token = await prisma.token.findFirst({
       where: {
-        deviceSnMd5: sn.trim(),
-        characterUid: uid.trim(),
+        deviceSnMd5: cleanSn,
+        characterUid: cleanUid,
+        type: { not: 'SVIP' },
         isDeleted: false,
       },
       include: {
@@ -36,12 +61,15 @@ export async function GET(req: NextRequest) {
       // Kiểm tra xem có token đã bị xóa hay không để báo lỗi chính xác
       const deletedToken = await prisma.token.findFirst({
         where: {
-          deviceSnMd5: sn.trim(),
-          characterUid: uid.trim(),
+          deviceSnMd5: cleanSn,
+          characterUid: cleanUid,
+          type: { not: 'SVIP' },
           isDeleted: true,
         },
         orderBy: { createdAt: 'desc' },
       });
+
+      await recordLoginHistory('FAILED');
 
       if (deletedToken) {
         return NextResponse.json({
@@ -69,6 +97,7 @@ export async function GET(req: NextRequest) {
         : `UID chính: ${token.parent.characterUid}`;
 
       if (token.parent.isDeleted) {
+        await recordLoginHistory('FAILED');
         return NextResponse.json({
           error: `Token chính liên kết (${parentLabel}) đã bị thu hồi hoặc xóa bởi quản trị viên`,
           status: 'DELETED',
@@ -82,6 +111,7 @@ export async function GET(req: NextRequest) {
 
       const parentExpireAt = new Date(token.parent.expireAt);
       if (parentExpireAt < now) {
+        await recordLoginHistory('FAILED');
         return NextResponse.json({
           error: `Token chính liên kết (${parentLabel}) đã hết hạn sử dụng. Vui lòng gia hạn Token máy chính!`,
           status: 'EXPIRED',
@@ -127,6 +157,8 @@ export async function GET(req: NextRequest) {
         adminTelegrams: parsedTelegrams,
       });
 
+      await recordLoginHistory('SUCCESS');
+
       return NextResponse.json({
         success: true,
         status: 'ACTIVE',
@@ -143,6 +175,7 @@ export async function GET(req: NextRequest) {
     // XỬ LÝ TOKEN ĐỘC LẬP / TOKEN CHÍNH
     // =========================================================================
     if (new Date(token.expireAt) < now) {
+      await recordLoginHistory('FAILED');
       return NextResponse.json({
         error: 'Token bản quyền đã hết hạn sử dụng',
         status: 'EXPIRED',
@@ -151,6 +184,8 @@ export async function GET(req: NextRequest) {
         isSubToken: false,
       }, { status: 403 });
     }
+
+    await recordLoginHistory('SUCCESS');
 
     return NextResponse.json({
       success: true,

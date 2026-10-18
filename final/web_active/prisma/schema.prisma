@@ -73,6 +73,7 @@ model Token {
   isTest                  Boolean     @default(false)
   isDeleted               Boolean     @default(false)
   deletedAt               DateTime?
+  type                    String      @default("CUSTOMER") // "CUSTOMER" | "SVIP"
   encryptedToken          String      @db.NVarChar(Max)
   createdById             String
   createdBy               User        @relation("UserTokens", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -85,6 +86,7 @@ model Token {
   children                Token[]     @relation("ParentChildTokens")
 
   @@index([deviceSnMd5, characterUid])
+  @@index([type])
 }
 
 model TokenNote {
@@ -119,4 +121,19 @@ model MessageTemplate {
   createdBy   User     @relation("UserMessageTemplates", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model DeviceLoginHistory {
+  id            String   @id @default(uuid())
+  deviceSnMd5   String
+  characterUid  String
+  characterName String?
+  serverName    String?
+  status        String   // "SUCCESS" | "FAILED"
+  type          String   @default("CUSTOMER") // "CUSTOMER" | "SVIP"
+  createdAt     DateTime @default(now())
+
+  @@index([deviceSnMd5])
+  @@index([createdAt])
+  @@index([type])
 }

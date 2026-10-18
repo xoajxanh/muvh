@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
   const limit = Math.max(1, parseInt(searchParams.get('limit') || '20', 10));
   const skip = (page - 1) * limit;
 
-  const whereClause: any = {};
+  const whereClause: any = {
+    type: { not: 'SVIP' },
+  };
 
   if (search.trim() !== '') {
     whereClause.OR = [
@@ -238,6 +240,7 @@ export async function POST(req: NextRequest) {
         characterUid: tokenParams.characterUid,
         customerName: customerName ? String(customerName).trim() : null,
         isTest: Boolean(isTest ?? false),
+        type: 'CUSTOMER',
         packageId: packageId || null,
         durationDays: duration,
         expireAt,

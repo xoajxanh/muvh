@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote } from 'lucide-react';
+import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote, Crown, History } from 'lucide-react';
 
 interface SidebarProps {
   userRole?: 'ADMIN' | 'SALE';
@@ -14,7 +14,11 @@ export default function Sidebar({ userRole }: SidebarProps) {
 
   const navItems = [
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Quản Lý Token', href: '/tokens', icon: Key },
+    { label: 'Token Customer', href: '/tokens', icon: Key },
+    { label: 'Token SVIP', href: '/svip-tokens', icon: Crown },
+    ...(userRole === 'ADMIN'
+      ? [{ label: 'Lịch Sử Thiết Bị', href: '/history', icon: History }]
+      : []),
     { label: 'Mẫu Tin Nhắn', href: '/templates', icon: MessageSquareQuote },
     { label: 'Gói Cước VIP', href: '/packages', icon: Package },
     { label: 'Telegram CSKH', href: '/telegrams', icon: Send },

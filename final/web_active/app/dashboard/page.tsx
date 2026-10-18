@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Sparkles,
   Users,
+  Crown,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -23,6 +24,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [selectedSaleId, setSelectedSaleId] = useState('ALL');
+  const [activeTab, setActiveTab] = useState<'CUSTOMER' | 'SVIP'>('CUSTOMER');
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -36,20 +38,23 @@ export default function DashboardPage() {
       .then((resData) => {
         if (resData?.user) {
           setUser(resData.user);
-          loadDashboardData('ALL');
+          loadDashboardData('ALL', 'CUSTOMER');
         }
       })
       .catch(() => router.push('/login'));
   }, [router]);
 
   // =========================================================================
-  // [MOD FEATURE]: TẢI DỮ LIỆU DASHBOARD THEO BỘ LỌC SALE
-  // Mô tả: Cho phép Admin lọc dashboard theo từng Sale hoặc xem toàn hệ thống
+  // [MOD FEATURE]: TẢI DỮ LIỆU DASHBOARD THEO TAB (CUSTOMER / SVIP) VÀ SALE
+  // Mô tả: Hỗ trợ 2 tab Customer và SVIP với cấu trúc và thống kê độc lập
   // =========================================================================
-  const loadDashboardData = async (saleId = selectedSaleId) => {
+  const loadDashboardData = async (saleId = selectedSaleId, tab = activeTab) => {
     try {
-      const url = saleId && saleId !== 'ALL' ? `/api/dashboard?saleId=${saleId}` : '/api/dashboard';
-      const res = await fetch(url);
+      setLoading(true);
+      const params = new URLSearchParams({ type: tab });
+      if (saleId && saleId !== 'ALL') params.append('saleId', saleId);
+
+      const res = await fetch(`/api/dashboard?${params.toString()}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -63,7 +68,12 @@ export default function DashboardPage() {
 
   const handleSaleFilterChange = (saleId: string) => {
     setSelectedSaleId(saleId);
-    loadDashboardData(saleId);
+    loadDashboardData(saleId, activeTab);
+  };
+
+  const handleTabChange = (tab: 'CUSTOMER' | 'SVIP') => {
+    setActiveTab(tab);
+    loadDashboardData(selectedSaleId, tab);
   };
 
   if (loading || !user) {
@@ -155,13 +165,46 @@ export default function DashboardPage() {
               )}
 
               <Link
-                href="/tokens/create"
-                className="px-5 py-2.5 gradient-button text-white text-sm font-semibold rounded-xl shadow-lg shadow-cyan-500/20 flex items-center gap-2 hover:scale-105 transition"
+                href={activeTab === 'CUSTOMER' ? '/tokens/create' : '/svip-tokens'}
+                className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow-lg flex items-center gap-2 hover:scale-105 transition-all ${
+                  activeTab === 'CUSTOMER'
+                    ? 'gradient-button text-white shadow-cyan-500/20'
+                    : 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
+                }`}
               >
                 <PlusCircle className="w-4 h-4" />
-                TẠO TOKEN MỚI
+                {activeTab === 'CUSTOMER' ? 'TẠO TOKEN MỚI' : 'TẠO TOKEN SVIP'}
               </Link>
             </div>
+          </div>
+
+          {/* ========================================================================= */}
+          {/* [MOD FEATURE]: 2-TAB DASHBOARD: CUSTOMER VS SVIP */}
+          {/* Mô tả: Chuyển đổi linh hoạt giữa Dashboard Customer và Dashboard SVIP Client */}
+          {/* ========================================================================= */}
+          <div className="flex items-center gap-2 p-1.5 bg-slate-900/90 border border-slate-800 rounded-2xl w-fit shadow-md">
+            <button
+              onClick={() => handleTabChange('CUSTOMER')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'CUSTOMER'
+                  ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Khách Customer</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('SVIP')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${
+                activeTab === 'SVIP'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+              }`}
+            >
+              <Crown className="w-4 h-4 text-slate-950" />
+              <span>Khách SVIP (Client)</span>
+            </button>
           </div>
 
           {/* Active Filter Indicator for Admin */}

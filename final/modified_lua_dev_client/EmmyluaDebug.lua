@@ -2362,32 +2362,50 @@ local function CreateModUI()
         _G.AutoBossUIList = {}
         _G.AdminUIList = {}
 
+        -- =========================================================================
+        -- [MOD FEATURE]: PHÂN QUYỀN VÀ HIỂN THỊ TAB THEO TRẠNG THÁI ĐĂNG NHẬP
+        -- Mô tả: Khi chưa login nhân vật: Admin chỉ hiện tab ADMIN; Client ẩn 3 tab chức năng.
+        --        Khi đã login vào nhân vật: Kích hoạt các tab Cơ bản, Nâng cao, Auto Boss.
+        -- =========================================================================
         local function RefreshMainTabs()
+            local isCharInGame = (_G.Mod_IsCharacterLoggedIn and _G.Mod_IsCharacterLoggedIn()) or false
+
+            -- Nếu chưa đăng nhập nhân vật mà là Admin: Ép tab về ADMIN
+            if _G.Mod_IsAdmin and not isCharInGame then
+                _G.ModMainTab = "ADMIN"
+            end
+
+            -- Cập nhật ẩn/hiện nút Tab Header nếu đã được tạo
+            if _G.Mod_UpdateTabHeaderVisibility then
+                pcall(_G.Mod_UpdateTabHeaderVisibility)
+            end
+
             for _, go in ipairs(_G.CoBanUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "CO_BAN") end
+                if go and not go:Equals(nil) then go:SetActive(isCharInGame and _G.ModMainTab == "CO_BAN") end
             end
             for _, go in ipairs(_G.NangCaoUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "NANG_CAO") end
+                if go and not go:Equals(nil) then go:SetActive(isCharInGame and _G.ModMainTab == "NANG_CAO") end
             end
             for _, go in ipairs(_G.AutoBossUIList) do
-                if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "AUTO_BOSS") end
+                if go and not go:Equals(nil) then go:SetActive(isCharInGame and _G.ModMainTab == "AUTO_BOSS") end
             end
             if _G.Mod_IsAdmin then
                 for _, go in ipairs(_G.AdminUIList) do
                     if go and not go:Equals(nil) then go:SetActive(_G.ModMainTab == "ADMIN") end
                 end
             end
-            if _G.ModRefreshAutoBossConfigUI then
+            if isCharInGame and _G.ModRefreshAutoBossConfigUI then
                 _G.ModRefreshAutoBossConfigUI()
             end
-            if _G.ModMainTab == "CO_BAN" then
+            if isCharInGame and _G.ModMainTab == "CO_BAN" then
                 if _G.ModUpdateCountText then _G.ModUpdateCountText() end
                 if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
             end
-            if _G.ModMainTab == "NANG_CAO" then
+            if isCharInGame and _G.ModMainTab == "NANG_CAO" then
                 if _G.ModUpdateKundunUI then _G.ModUpdateKundunUI() end
             end
         end
+        _G.RefreshMainTabs = RefreshMainTabs
 
         local btnComp = btnGo:AddComponent(typeof(Button))
 
@@ -9610,21 +9628,332 @@ local function CreateModUI()
         end
         _G.Mod_GetDeviceCode = Mod_GetDeviceCode
 
-        local _lastAuthCheckTime = 0
-        local _cachedAuthResult = false
         -- =========================================================================
-        -- [MOD FEATURE]: HỆ THỐNG XÁC THỰC BẢN QUYỀN / KEY MOD (AUTH & LICENSE SYSTEM)
-        -- Mô tả: Kiểm tra mã bản quyền token, xóa sạch cấu hình nếu hết hạn hoặc chưa kích hoạt.
+        -- [MOD FEATURE]: NHẬN DIỆN THÔNG TIN NHÂN VẬT & SERVER (ROLE & SERVER DETECTOR)
+        -- Mô tả: Lấy Tên nhân vật (RoleName) và Tên Server phục vụ xác thực & ghi nhận lịch sử đăng nhập
+        -- =========================================================================
+        local function Mod_GetCharacterRoleName()
+            local name = ""
+            pcall(function()
+                if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.name then
+                    name = tostring(_G.ViewData.meData.name)
+                end
+                if name == "" and _G.RoleManager and _G.RoleManager.me then
+                    if _G.RoleManager.me.name and tostring(_G.RoleManager.me.name) ~= "" then
+                        name = tostring(_G.RoleManager.me.name)
+                    end
+                    if name == "" and _G.RoleManager.me.data and _G.RoleManager.me.data.name then
+                        name = tostring(_G.RoleManager.me.data.name)
+                    end
+                end
+                if name == "" and _G.LoginData and _G.LoginData.roleName and tostring(_G.LoginData.roleName) ~= "" then
+                    name = tostring(_G.LoginData.roleName)
+                end
+            end)
+            return name
+        end
+        _G.Mod_GetCharacterRoleName = Mod_GetCharacterRoleName
+
+        local function Mod_GetServerName()
+            local sName = ""
+            pcall(function()
+                if _G.LoginData and _G.LoginData.GetServerName then
+                    sName = tostring(_G.LoginData.GetServerName())
+                end
+                if sName == "" and _G.LoginData and _G.LoginData.server_name then
+                    sName = tostring(_G.LoginData.server_name)
+                end
+            end)
+            return sName
+        end
+        _G.Mod_GetServerName = Mod_GetServerName
+
+        local function Mod_IsCharacterLoggedIn()
+            local uid = Mod_GetCharacterUID()
+            local name = Mod_GetCharacterRoleName()
+            return (uid ~= "" and name ~= "")
+        end
+        _G.Mod_IsCharacterLoggedIn = Mod_IsCharacterLoggedIn
+
+        -- =========================================================================
+        -- [MOD FEATURE]: XÁC THỰC BẢN QUYỀN ONLINE SVIP (ONLINE AUTH & HISTORY LOGGING)
+        -- Mô tả: Gửi thông tin thiết bị (MD5), UID, Tên nhân vật, Server lên API /api/v1/svip/config.
+        --        Hỗ trợ cờ isLogin để ghi nhận lịch sử đăng nhập mà không làm phình DB khi check định kỳ.
+        -- =========================================================================
+        local SVIP_API_URL = "http://g3events.asia/api/v1/svip/config"
+
+        local function Mod_UrlEncode(str)
+            if not str then return "" end
+            str = string.gsub(tostring(str), "\n", "\r\n")
+            str = string.gsub(str, "([^%w%-_%.~])", function(c)
+                return string.format("%%%02X", string.byte(c))
+            end)
+            return str
+        end
+        _G.Mod_UrlEncode = Mod_UrlEncode
+
+        local function Mod_ParseJSON(str)
+            if not str or str == "" then return nil end
+            local function parseValue(valStr)
+                valStr = string.gsub(valStr, "^%s*(.-)%s*$", "%1")
+                if valStr == "true" then return true end
+                if valStr == "false" then return false end
+                if valStr == "null" then return nil end
+                if string.sub(valStr, 1, 1) == '"' and string.sub(valStr, -1) == '"' then
+                    return string.sub(valStr, 2, -2)
+                end
+                local num = tonumber(valStr)
+                if num then return num end
+                return valStr
+            end
+            local result = {}
+            for k, v in string.gmatch(str, '"([^"]+)":%s*([^,{}%]]+)') do
+                result[k] = parseValue(v)
+            end
+            return result
+        end
+        _G.Mod_ParseJSON = Mod_ParseJSON
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HÀM BĂM MD5 & GIẢI MÃ BASE64 TOKEN BẢN QUYỀN
+        -- Mô tả: Phục vụ giải mã và kiểm tra chữ ký số bản quyền SVIP / Token Mod
+        -- =========================================================================
+        local function Mod_GetMD5(str)
+            local status, res = pcall(function()
+                return string.lower(tostring(CS.PCUtility.Md5(str)))
+            end)
+            return status and res or "ERROR_MD5"
+        end
+        _G.Mod_GetMD5 = Mod_GetMD5
+
+        local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        local b64lut = {}
+        for i = 1, #b64chars do
+            b64lut[string.byte(b64chars, i)] = i - 1
+        end
+
+        local function Mod_Base64Decode(data)
+            if not data or data == "" then return "" end
+            data = string.gsub(data, "^%s*(.-)%s*$", "%1")
+            local status, res = pcall(function()
+                local bytes = CS.System.Convert.FromBase64String(data)
+                return CS.System.Text.Encoding.UTF8:GetString(bytes)
+            end)
+            if status and res and res ~= "" then return res end
+
+            local status2, res2 = pcall(function()
+                data = string.gsub(data, '[^' .. b64chars .. '=]', '')
+                local bitTable = {}
+                for i = 1, #data do
+                    local char = string.sub(data, i, i)
+                    if char == '=' then break end
+                    local val = b64lut[string.byte(char)]
+                    if val then
+                        for j = 5, 0, -1 do
+                            table.insert(bitTable, (math.floor(val / (2 ^ j)) % 2 == 1 and '1' or '0'))
+                        end
+                    end
+                end
+                local result = {}
+                for i = 1, #bitTable - 7, 8 do
+                    local chunk = table.concat(bitTable, '', i, i + 7)
+                    local byteVal = 0
+                    for j = 1, 8 do
+                        if string.sub(chunk, j, j) == '1' then
+                            byteVal = byteVal + 2 ^ (8 - j)
+                        end
+                    end
+                    table.insert(result, string.char(byteVal))
+                end
+                return table.concat(result)
+            end)
+            return (status2 and res2) and res2 or ""
+        end
+        _G.Mod_Base64Decode = Mod_Base64Decode
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HÀM XÁC THỰC VÀ GIẢI MÃ TOKEN SVIP (TOKEN VERIFICATION)
+        -- Mô tả: Kiểm tra tính hợp lệ của token mã hóa, thiết bị, UID, hạn dùng và chữ ký MD5
+        -- =========================================================================
+        _G.CheckModAuth = function(tokenStr, isSilent)
+            if not tokenStr or tokenStr == "" then
+                return false, "Token không được để trống!"
+            end
+            tokenStr = string.gsub(tokenStr, "^%s*(.-)%s*$", "%1")
+            local decoded = Mod_Base64Decode(tokenStr)
+            if not decoded or decoded == "" then
+                return false, "Token sai định dạng Base64!"
+            end
+
+            local parts = {}
+            for part in string.gmatch(decoded .. "|", "(.-)|") do
+                table.insert(parts, part)
+            end
+            if #parts > 0 and parts[#parts] == "" then
+                table.remove(parts, #parts)
+            end
+
+            local pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig
+            if #parts == 7 then
+                pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], tonumber(parts[3]),
+                    tonumber(parts[4]), tonumber(parts[5]), tonumber(parts[6]), parts[7]
+            elseif #parts == 5 then
+                pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], 8, 7,
+                    tonumber(parts[3]), tonumber(parts[4]), parts[5]
+            elseif #parts == 4 then
+                pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], "ALL", 8, 7, tonumber(parts[2]),
+                    tonumber(parts[3]), parts[4]
+            else
+                return false, "Cấu trúc Token không hợp lệ!"
+            end
+
+            local currentLiveCode = Mod_GetDeviceCode()
+            if pCode ~= currentLiveCode then
+                return false, "Token không dành cho thiết bị này!"
+            end
+
+            local dataToHash
+            if #parts == 7 then
+                dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pMainTier) .. "|" ..
+                    tostring(pSubTier) .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+            elseif #parts == 5 then
+                dataToHash = pCode .. "|" .. pUID .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+            else
+                dataToHash = pCode .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
+            end
+
+            local expectedSig = Mod_GetMD5(dataToHash)
+            if expectedSig ~= pSig then
+                return false, "Token đã bị giả mạo chữ ký!"
+            end
+
+            local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+            local expireTime = pTime + (pDuration * 86400)
+            if currentUnixTime > expireTime then
+                return false, "Token đã hết thời hạn sử dụng!"
+            end
+
+            if pUID and string.upper(tostring(pUID)) ~= "ALL" then
+                local currentUID = Mod_GetCharacterUID()
+                if currentUID == "" then
+                    return false, "Vui lòng đăng nhập nhân vật để xác thực UID!"
+                end
+                if tostring(currentUID) ~= tostring(pUID) then
+                    return false, "Mã nhân vật (UID) không trùng khớp với Token!"
+                end
+            end
+
+            _G.Mod_Config_Reincarnation_Primary = pMainTier or 8
+            _G.Mod_Config_Reincarnation_Secondary = pSubTier or 7
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_PrimaryTier", _G.Mod_Config_Reincarnation_Primary)
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_SecondaryTier", _G.Mod_Config_Reincarnation_Secondary)
+            CS.UnityEngine.PlayerPrefs.Save()
+            _G.ModAuthValid = true
+            return true, "Xác thực token thành công!"
+        end
+
+        local function Mod_FetchSvipConfigFromAPI(isInitialLogin, callback)
+            local devCode = Mod_GetDeviceCode()
+            local uid = Mod_GetCharacterUID()
+            local roleName = Mod_GetCharacterRoleName()
+            local serverName = Mod_GetServerName()
+            local isLoginParam = isInitialLogin and "1" or "0"
+
+            local url = SVIP_API_URL .. "?sn=" .. tostring(devCode) ..
+                        "&uid=" .. tostring(uid) ..
+                        "&name=" .. Mod_UrlEncode(roleName) ..
+                        "&server=" .. Mod_UrlEncode(serverName) ..
+                        "&isLogin=" .. isLoginParam
+
+            pcall(function()
+                local req = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
+                req.timeout = 10
+                local asyncOp = req:SendWebRequest()
+
+                local count = 0
+                local hasFinished = false
+                local timerObj = nil
+                if _G.Timer and _G.Timer.StartLoop then
+                    timerObj = _G.Timer.StartLoop(0.05, 100, function()
+                        if hasFinished then return end
+                        count = count + 1
+                        local isDone = false
+                        pcall(function() isDone = req.isDone end)
+                        if isDone or count >= 100 then
+                            hasFinished = true
+                            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+                            local payload = ""
+                            local isSuccess = false
+                            pcall(function()
+                                if req.downloadHandler and req.downloadHandler.text then
+                                    payload = req.downloadHandler.text
+                                    if payload and payload ~= "" then
+                                        isSuccess = true
+                                    end
+                                end
+                                req:Dispose()
+                            end)
+
+                            if not isSuccess or payload == "" then
+                                _G.ModAuthValid = false
+                                _G.Mod_IsOnlineVerified = false
+                                if callback then callback(false, false, "Không thể kết nối máy chủ xác thực!") end
+                                return
+                            end
+
+                            local apiObj = Mod_ParseJSON(payload)
+                            if apiObj and apiObj.status == "ACTIVE" and apiObj.token then
+                                if _G.CheckModAuth and _G.CheckModAuth(apiObj.token, true) then
+                                    _G.ModAuthValid = true
+                                    _G.Mod_IsOnlineVerified = true
+                                    _G.Mod_ActiveStatusMsg = "Đã kích hoạt SVIP thành công!"
+                                    if callback then callback(true, true, _G.Mod_ActiveStatusMsg) end
+                                else
+                                    _G.ModAuthValid = false
+                                    _G.Mod_IsOnlineVerified = false
+                                    _G.Mod_ActiveStatusMsg = "Token từ máy chủ không hợp lệ cho thiết bị này!"
+                                    if callback then callback(true, false, _G.Mod_ActiveStatusMsg) end
+                                end
+                            elseif apiObj and apiObj.error then
+                                _G.ModAuthValid = false
+                                _G.Mod_IsOnlineVerified = false
+                                _G.Mod_ActiveStatusMsg = tostring(apiObj.error)
+                                if callback then callback(true, false, _G.Mod_ActiveStatusMsg) end
+                            else
+                                _G.ModAuthValid = false
+                                _G.Mod_IsOnlineVerified = false
+                                _G.Mod_ActiveStatusMsg = "Phản hồi từ máy chủ không hợp lệ!"
+                                if callback then callback(false, false, _G.Mod_ActiveStatusMsg) end
+                            end
+                        end
+                    end)
+                else
+                    if callback then callback(false, false, "Timer không khả dụng") end
+                end
+            end)
+        end
+        _G.Mod_FetchSvipConfigFromAPI = Mod_FetchSvipConfigFromAPI
+
+        _G.Mod_IsOnlineVerified = false
+        -- Xóa token cũ lưu trong PlayerPrefs nếu là Client để không dùng lại token offline cũ
+        if not _G.Mod_IsAdmin then
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_AuthToken")
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HỆ THỐNG XÁC THỰC BẢN QUYỀN ONLINE (AUTH & LICENSE SYSTEM)
+        -- Mô tả: Bắt buộc xác thực trực tuyến qua Web API trong phiên chơi, không dùng token offline đã lưu.
         -- =========================================================================
         _G.Mod_IsActive = function()
             if _G.Mod_IsAdmin then return true end
-            local now = CS.UnityEngine.Time.realtimeSinceStartup or os.time()
-            if (now - _lastAuthCheckTime) > 1.0 then
-                _lastAuthCheckTime = now
-                local tokenSaved = CS.UnityEngine.PlayerPrefs.GetString("Mod_AuthToken", "")
-                _cachedAuthResult = _G.CheckModAuth and _G.CheckModAuth(tokenSaved, true) or false
+            -- Bắt buộc phải xác thực Online thành công từ Web API trong phiên hiện tại
+            if not _G.Mod_IsOnlineVerified then
+                return false
             end
-            return _cachedAuthResult
+            return _G.ModAuthValid == true
         end
 
         _G.Mod_ClearAuthToken = function()
@@ -9793,8 +10122,8 @@ local function CreateModUI()
         _G.Mod_ClearAllPlayerPrefs = _G.Mod_ClearAuthToken
 
         -- =========================================================================
-        -- [MOD FEATURE]: GIAO DIỆN NHẬP KEY XÁC THỰC (AUTH UI)
-        -- Mô tả: Giao diện popup yêu cầu nhập mã kích hoạt khi người dùng chưa xác thực.
+        -- [MOD FEATURE]: GIAO DIỆN XÁC THỰC BẢN QUYỀN ONLINE SVIP (AUTH UI)
+        -- Mô tả: Giao diện popup hiển thị mã máy MD5, UID nhân vật, tên nhân vật, server và nút kích hoạt online
         -- =========================================================================
         local function CreateAuthUI()
             local authPanelGo = GameObject("AuthPanel")
@@ -9802,92 +10131,25 @@ local function CreateModUI()
             local authRt = authPanelGo:AddComponent(typeof(RectTransform))
             authRt.anchorMin, authRt.anchorMax, authRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
             authRt.anchoredPosition = Vector2(90, 70)
-            authRt.sizeDelta = Vector2(600, 480)
+            authRt.sizeDelta = Vector2(600, 470)
             local authImg = authPanelGo:AddComponent(typeof(Image))
-            authImg.color = Color(0.1, 0.1, 0.1, 0.95)
+            authImg.color = Color(0.1, 0.1, 0.12, 0.96)
             authPanelGo:SetActive(false)
             _G.authPanelGo = authPanelGo
 
-            local function GetMD5(str)
-                local status, res = pcall(function()
-                    return string.lower(tostring(CS.PCUtility.Md5(str)))
-                end)
-                return status and res or "ERROR_MD5"
-            end
-
-            local b64chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-            local b64lut = {}
-            for i = 1, #b64chars do
-                b64lut[string.byte(b64chars, i)] = i - 1
-            end
-
-            local function Base64Decode(data)
-                if not data or data == "" then return "" end
-                data = string.gsub(data, "^%s*(.-)%s*$", "%1")
-                local status, res = pcall(function()
-                    local bytes = CS.System.Convert.FromBase64String(data)
-                    return CS.System.Text.Encoding.UTF8:GetString(bytes)
-                end)
-                if status and res and res ~= "" then return res end
-
-                local status2, res2 = pcall(function()
-                    data = string.gsub(data, '[^' .. b64chars .. '=]', '')
-                    local bitTable = {}
-                    for i = 1, #data do
-                        local char = string.sub(data, i, i)
-                        if char == '=' then break end
-                        local val = b64lut[string.byte(char)]
-                        if val then
-                            for j = 5, 0, -1 do
-                                table.insert(bitTable, (math.floor(val / (2 ^ j)) % 2 == 1 and '1' or '0'))
-                            end
-                        end
-                    end
-                    local result = {}
-                    for i = 1, #bitTable - 7, 8 do
-                        local chunk = table.concat(bitTable, '', i, i + 7)
-                        local byteVal = 0
-                        for j = 1, 8 do
-                            if string.sub(chunk, j, j) == '1' then
-                                byteVal = byteVal + 2 ^ (8 - j)
-                            end
-                        end
-                        table.insert(result, string.char(byteVal))
-                    end
-                    return table.concat(result)
-                end)
-                return (status2 and res2) and res2 or ""
-            end
-
-            local function GetLiveDeviceCode()
-                local devCode = ""
-                if _G.Mod_GetDeviceCode then
-                    devCode = _G.Mod_GetDeviceCode()
-                end
-                if devCode == "" or devCode == "ERROR_MD5" then
-                    pcall(function()
-                        local deviceId = CS.UnityEngine.SystemInfo.deviceUniqueIdentifier
-                        if deviceId and tostring(deviceId) ~= "" then
-                            devCode = string.lower(tostring(CS.PCUtility.Md5(tostring(deviceId) .. "XOAI")))
-                        end
-                    end)
-                end
-                return devCode
-            end
-            local deviceCode = GetLiveDeviceCode()
-
+            -- Tiêu đề
             local titleGo = GameObject("AuthTitle")
             titleGo.transform:SetParent(authPanelGo.transform, false)
             local titleRt = titleGo:AddComponent(typeof(RectTransform))
             titleRt.anchorMin, titleRt.anchorMax, titleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
             titleRt.anchoredPosition = Vector2(0, -20)
-            titleRt.sizeDelta = Vector2(500, 40)
+            titleRt.sizeDelta = Vector2(500, 35)
             local titleTxt = titleGo:AddComponent(typeof(Text))
-            titleTxt.text = "KÍCH HOẠT BẢN QUYỀN MOD"
-            titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 24, TextAnchor.MiddleCenter
+            titleTxt.text = "KÍCH HOẠT BẢN QUYỀN MOD SVIP"
+            titleTxt.color, titleTxt.fontSize, titleTxt.alignment = Color.yellow, 22, TextAnchor.MiddleCenter
             if defaultFont then titleTxt.font = defaultFont end
 
-            -- 1. Device Code Section (Input Field for manual selection/copy)
+            -- 1. Device Code (Mã máy MD5)
             local codeLblGo = GameObject("AuthCodeLbl")
             codeLblGo.transform:SetParent(authPanelGo.transform, false)
             local codeLblRt = codeLblGo:AddComponent(typeof(RectTransform))
@@ -9895,8 +10157,8 @@ local function CreateModUI()
             codeLblRt.anchoredPosition = Vector2(20, -65)
             codeLblRt.sizeDelta = Vector2(400, 20)
             local codeLblTxt = codeLblGo:AddComponent(typeof(Text))
-            codeLblTxt.text = "Mã thiết bị (MD5):"
-            codeLblTxt.color, codeLblTxt.fontSize = Color.white, 16
+            codeLblTxt.text = "Mã thiết bị (MD5 Device Code):"
+            codeLblTxt.color, codeLblTxt.fontSize = Color.white, 15
             if defaultFont then codeLblTxt.font = defaultFont end
 
             local codeGo = GameObject("AuthCodeInput")
@@ -9904,7 +10166,7 @@ local function CreateModUI()
             local codeRt = codeGo:AddComponent(typeof(RectTransform))
             codeRt.anchorMin, codeRt.anchorMax, codeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             codeRt.anchoredPosition = Vector2(20, -85)
-            codeRt.sizeDelta = Vector2(425, 35)
+            codeRt.sizeDelta = Vector2(420, 35)
             local codeImg = codeGo:AddComponent(typeof(Image))
             codeImg.color = Color(1, 1, 1, 1)
 
@@ -9912,25 +10174,25 @@ local function CreateModUI()
             cTextGo.transform:SetParent(codeGo.transform, false)
             local cTxtRt = cTextGo:AddComponent(typeof(RectTransform))
             cTxtRt.anchorMin, cTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            cTxtRt.offsetMin, cTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            cTxtRt.offsetMin, cTxtRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
             local codeTxt = cTextGo:AddComponent(typeof(Text))
-            codeTxt.text = deviceCode
-            codeTxt.color, codeTxt.fontSize = Color.black, 16
-            codeTxt.alignment = TextAnchor.MiddleLeft
+            local initDevCode = Mod_GetDeviceCode()
+            codeTxt.text = initDevCode
+            codeTxt.color, codeTxt.fontSize, codeTxt.alignment = Color.black, 15, TextAnchor.MiddleLeft
             if defaultFont then codeTxt.font = defaultFont end
 
             local codeInputField = codeGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
             codeInputField.textComponent = codeTxt
-            codeInputField.text = deviceCode
+            codeInputField.text = initDevCode
 
             local copyBtnGo = GameObject("AuthCopyBtn")
             copyBtnGo.transform:SetParent(authPanelGo.transform, false)
             local copyRt = copyBtnGo:AddComponent(typeof(RectTransform))
             copyRt.anchorMin, copyRt.anchorMax, copyRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
             copyRt.anchoredPosition = Vector2(-20, -85)
-            copyRt.sizeDelta = Vector2(120, 35)
+            copyRt.sizeDelta = Vector2(125, 35)
             local copyImg = copyBtnGo:AddComponent(typeof(Image))
-            copyImg.color = Color(0.2, 0.6, 1, 1)
+            copyImg.color = Color(0.18, 0.52, 0.92, 1)
             local copyBtn = copyBtnGo:AddComponent(typeof(Button))
             local copyTxtGo = GameObject("CopyTxt")
             copyTxtGo.transform:SetParent(copyBtnGo.transform, false)
@@ -9938,34 +10200,34 @@ local function CreateModUI()
             cTxtRt2.anchorMin, cTxtRt2.anchorMax = Vector2(0, 0), Vector2(1, 1)
             cTxtRt2.offsetMin, cTxtRt2.offsetMax = Vector2(0, 0), Vector2(0, 0)
             local cTxt2 = copyTxtGo:AddComponent(typeof(Text))
-            cTxt2.text = "Copy Code"
-            cTxt2.color, cTxt2.fontSize, cTxt2.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            cTxt2.text = "Copy Mã Máy"
+            cTxt2.color, cTxt2.fontSize, cTxt2.alignment = Color.white, 15, TextAnchor.MiddleCenter
             if defaultFont then cTxt2.font = defaultFont end
 
             copyBtn.onClick:AddListener(function()
-                local myCode = GetLiveDeviceCode()
+                local myCode = Mod_GetDeviceCode()
                 CS.UnityEngine.GUIUtility.systemCopyBuffer = myCode
                 if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Đã copy mã thiết bị!") end
             end)
 
-            -- 2. Character UID Section (Input Field for manual selection/copy)
+            -- 2. Character UID (Mã UID nhân vật)
             local uidLblGo = GameObject("AuthUidLbl")
             uidLblGo.transform:SetParent(authPanelGo.transform, false)
             local uidLblRt = uidLblGo:AddComponent(typeof(RectTransform))
             uidLblRt.anchorMin, uidLblRt.anchorMax, uidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            uidLblRt.anchoredPosition = Vector2(20, -135)
+            uidLblRt.anchoredPosition = Vector2(20, -130)
             uidLblRt.sizeDelta = Vector2(400, 20)
             local uidLblTxt = uidLblGo:AddComponent(typeof(Text))
             uidLblTxt.text = "Mã UID nhân vật:"
-            uidLblTxt.color, uidLblTxt.fontSize = Color.white, 16
+            uidLblTxt.color, uidLblTxt.fontSize = Color.white, 15
             if defaultFont then uidLblTxt.font = defaultFont end
 
             local uidGo = GameObject("AuthUidInput")
             uidGo.transform:SetParent(authPanelGo.transform, false)
             local uidRt = uidGo:AddComponent(typeof(RectTransform))
             uidRt.anchorMin, uidRt.anchorMax, uidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            uidRt.anchoredPosition = Vector2(20, -155)
-            uidRt.sizeDelta = Vector2(425, 35)
+            uidRt.anchoredPosition = Vector2(20, -150)
+            uidRt.sizeDelta = Vector2(420, 35)
             local uidImg = uidGo:AddComponent(typeof(Image))
             uidImg.color = Color(1, 1, 1, 1)
 
@@ -9973,13 +10235,12 @@ local function CreateModUI()
             uTextGo.transform:SetParent(uidGo.transform, false)
             local uTxtRt = uTextGo:AddComponent(typeof(RectTransform))
             uTxtRt.anchorMin, uTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            uTxtRt.offsetMin, uTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            uTxtRt.offsetMin, uTxtRt.offsetMax = Vector2(8, 0), Vector2(-8, 0)
             local uidTxt = uTextGo:AddComponent(typeof(Text))
             local curUID = Mod_GetCharacterUID()
-            local initUidVal = (curUID ~= "" and curUID or "Chưa đăng nhập nhân vật")
+            local initUidVal = (curUID ~= "" and curUID or "Chưa vào game")
             uidTxt.text = initUidVal
-            uidTxt.color, uidTxt.fontSize = Color.black, 16
-            uidTxt.alignment = TextAnchor.MiddleLeft
+            uidTxt.color, uidTxt.fontSize, uidTxt.alignment = Color.black, 15, TextAnchor.MiddleLeft
             if defaultFont then uidTxt.font = defaultFont end
 
             local uidInputField = uidGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
@@ -9990,10 +10251,10 @@ local function CreateModUI()
             copyUidBtnGo.transform:SetParent(authPanelGo.transform, false)
             local copyUidRt = copyUidBtnGo:AddComponent(typeof(RectTransform))
             copyUidRt.anchorMin, copyUidRt.anchorMax, copyUidRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            copyUidRt.anchoredPosition = Vector2(-20, -155)
-            copyUidRt.sizeDelta = Vector2(120, 35)
+            copyUidRt.anchoredPosition = Vector2(-20, -150)
+            copyUidRt.sizeDelta = Vector2(125, 35)
             local copyUidImg = copyUidBtnGo:AddComponent(typeof(Image))
-            copyUidImg.color = Color(0.2, 0.6, 1, 1)
+            copyUidImg.color = Color(0.18, 0.52, 0.92, 1)
             local copyUidBtn = copyUidBtnGo:AddComponent(typeof(Button))
             local copyUidTxtGo = GameObject("CopyUidTxt")
             copyUidTxtGo.transform:SetParent(copyUidBtnGo.transform, false)
@@ -10002,7 +10263,7 @@ local function CreateModUI()
             cuTxtRt.offsetMin, cuTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
             local cuTxt = copyUidTxtGo:AddComponent(typeof(Text))
             cuTxt.text = "Copy UID"
-            cuTxt.color, cuTxt.fontSize, cuTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            cuTxt.color, cuTxt.fontSize, cuTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
             if defaultFont then cuTxt.font = defaultFont end
 
             copyUidBtn.onClick:AddListener(function()
@@ -10015,117 +10276,49 @@ local function CreateModUI()
                 end
             end)
 
-            -- 3. Auth Token Section
-            local tokenLblGo = GameObject("AuthTokenLbl")
-            tokenLblGo.transform:SetParent(authPanelGo.transform, false)
-            local tokenLblRt = tokenLblGo:AddComponent(typeof(RectTransform))
-            tokenLblRt.anchorMin, tokenLblRt.anchorMax, tokenLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tokenLblRt.anchoredPosition = Vector2(20, -205)
-            tokenLblRt.sizeDelta = Vector2(400, 20)
-            local tokenLblTxt = tokenLblGo:AddComponent(typeof(Text))
-            tokenLblTxt.text = "Nhập Token bản quyền:"
-            tokenLblTxt.color, tokenLblTxt.fontSize = Color.white, 16
-            if defaultFont then tokenLblTxt.font = defaultFont end
+            -- 3. Thông tin nhân vật & Server
+            local charInfoGo = GameObject("AuthCharInfoTxt")
+            charInfoGo.transform:SetParent(authPanelGo.transform, false)
+            local charInfoRt = charInfoGo:AddComponent(typeof(RectTransform))
+            charInfoRt.anchorMin, charInfoRt.anchorMax, charInfoRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0.5, 1)
+            charInfoRt.anchoredPosition = Vector2(0, -200)
+            charInfoRt.sizeDelta = Vector2(-40, 25)
+            local charInfoTxt = charInfoGo:AddComponent(typeof(Text))
+            local rName = Mod_GetCharacterRoleName()
+            local sName = Mod_GetServerName()
+            if rName ~= "" and sName ~= "" then
+                charInfoTxt.text = "Nhân vật: " .. rName .. "   |   Máy chủ: " .. sName
+            else
+                charInfoTxt.text = "Nhân vật: (Chưa vào game)   |   Máy chủ: (Chưa vào game)"
+            end
+            charInfoTxt.color = Color(0.9, 0.85, 0.4, 1)
+            charInfoTxt.fontSize = 15
+            charInfoTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then charInfoTxt.font = defaultFont end
 
-            local tokenGo = GameObject("AuthTokenInput")
-            tokenGo.transform:SetParent(authPanelGo.transform, false)
-            local tokenRt = tokenGo:AddComponent(typeof(RectTransform))
-            tokenRt.anchorMin, tokenRt.anchorMax, tokenRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tokenRt.anchoredPosition = Vector2(20, -225)
-            tokenRt.sizeDelta = Vector2(330, 35)
-            local tokenImg = tokenGo:AddComponent(typeof(Image))
-            tokenImg.color = Color(1, 1, 1, 1)
+            -- 4. Trạng thái bản quyền (Status text)
+            local statusGo = GameObject("AuthStatusTxt")
+            statusGo.transform:SetParent(authPanelGo.transform, false)
+            local statusRt = statusGo:AddComponent(typeof(RectTransform))
+            statusRt.anchorMin, statusRt.anchorMax, statusRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0.5, 1)
+            statusRt.anchoredPosition = Vector2(0, -235)
+            statusRt.sizeDelta = Vector2(-40, 30)
+            local statusTxt = statusGo:AddComponent(typeof(Text))
+            statusTxt.text = "Vui lòng chọn nhân vật vào game rồi nhấn 'KÍCH HOẠT'"
+            statusTxt.color = Color.white
+            statusTxt.fontSize = 16
+            statusTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then statusTxt.font = defaultFont end
 
-            local textGo = GameObject("Text")
-            textGo.transform:SetParent(tokenGo.transform, false)
-            local txtRt = textGo:AddComponent(typeof(RectTransform))
-            txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            txtRt.offsetMin, txtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local tokenTxt = textGo:AddComponent(typeof(Text))
-            local savedToken = CS.UnityEngine.PlayerPrefs.GetString("Mod_AuthToken", "")
-            tokenTxt.text = savedToken
-            tokenTxt.color, tokenTxt.fontSize = Color.black, 16
-            tokenTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then tokenTxt.font = defaultFont end
-
-            local inputField = tokenGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            inputField.textComponent = tokenTxt
-            inputField.text = savedToken
-
-            inputField.onValueChanged:AddListener(function(val)
-                savedToken = val
-            end)
-
-            local pasteBtnGo = GameObject("AuthPasteBtn")
-            pasteBtnGo.transform:SetParent(authPanelGo.transform, false)
-            local pasteRt = pasteBtnGo:AddComponent(typeof(RectTransform))
-            pasteRt.anchorMin, pasteRt.anchorMax, pasteRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            pasteRt.anchoredPosition = Vector2(-130, -225)
-            pasteRt.sizeDelta = Vector2(100, 35)
-            local pasteImg = pasteBtnGo:AddComponent(typeof(Image))
-            pasteImg.color = Color(0.8, 0.4, 0, 1)
-            local pasteBtn = pasteBtnGo:AddComponent(typeof(Button))
-            local pasteTxtGo = GameObject("PasteTxt")
-            pasteTxtGo.transform:SetParent(pasteBtnGo.transform, false)
-            local pTxtRt = pasteTxtGo:AddComponent(typeof(RectTransform))
-            pTxtRt.anchorMin, pTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            pTxtRt.offsetMin, pTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local pTxt = pasteTxtGo:AddComponent(typeof(Text))
-            pTxt.text = "Paste Token"
-            pTxt.color, pTxt.fontSize, pTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
-            if defaultFont then pTxt.font = defaultFont end
-
-            pasteBtn.onClick:AddListener(function()
-                savedToken = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
-                inputField.text = savedToken
-            end)
-
-            local clearBtnGo = GameObject("AuthClearBtn")
-            clearBtnGo.transform:SetParent(authPanelGo.transform, false)
-            local clearRt = clearBtnGo:AddComponent(typeof(RectTransform))
-            clearRt.anchorMin, clearRt.anchorMax, clearRt.pivot = Vector2(1, 1), Vector2(1, 1), Vector2(1, 1)
-            clearRt.anchoredPosition = Vector2(-20, -225)
-            clearRt.sizeDelta = Vector2(100, 35)
-            local clearImg = clearBtnGo:AddComponent(typeof(Image))
-            clearImg.color = Color(0.8, 0.2, 0.2, 1)
-            local clearBtn = clearBtnGo:AddComponent(typeof(Button))
-            local clearTxtGo = GameObject("ClearTxt")
-            clearTxtGo.transform:SetParent(clearBtnGo.transform, false)
-            local cTxtRt = clearTxtGo:AddComponent(typeof(RectTransform))
-            cTxtRt.anchorMin, cTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            cTxtRt.offsetMin, cTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
-            local cTxt = clearTxtGo:AddComponent(typeof(Text))
-            cTxt.text = "Xóa Token"
-            cTxt.color, cTxt.fontSize, cTxt.alignment = Color.white, 14, TextAnchor.MiddleCenter
-            if defaultFont then cTxt.font = defaultFont end
-
-            clearBtn.onClick:AddListener(function()
-                if _G.Mod_ClearAuthToken then
-                    _G.Mod_ClearAuthToken()
-                elseif _G.Mod_ClearAllPlayerPrefs then
-                    _G.Mod_ClearAllPlayerPrefs()
-                end
-            end)
-
-            local errGo = GameObject("AuthErrTxt")
-            errGo.transform:SetParent(authPanelGo.transform, false)
-            local errRt = errGo:AddComponent(typeof(RectTransform))
-            errRt.anchorMin, errRt.anchorMax, errRt.pivot = Vector2(0.5, 0), Vector2(0.5, 0), Vector2(0.5, 0)
-            errRt.anchoredPosition = Vector2(0, 30)
-            errRt.sizeDelta = Vector2(500, 30)
-            local errTxt = errGo:AddComponent(typeof(Text))
-            errTxt.text = ""
-            errTxt.color, errTxt.fontSize, errTxt.alignment = Color.red, 18, TextAnchor.MiddleCenter
-            if defaultFont then errTxt.font = defaultFont end
-
+            -- 5. Nút Kích Hoạt Online
             local actBtnGo = GameObject("AuthActBtn")
             actBtnGo.transform:SetParent(authPanelGo.transform, false)
             local actRt = actBtnGo:AddComponent(typeof(RectTransform))
-            actRt.anchorMin, actRt.anchorMax, actRt.pivot = Vector2(0.5, 0), Vector2(0.5, 0), Vector2(0.5, 0)
-            actRt.anchoredPosition = Vector2(0, 75)
-            actRt.sizeDelta = Vector2(200, 50)
+            actRt.anchorMin, actRt.anchorMax, actRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+            actRt.anchoredPosition = Vector2(0, -280)
+            actRt.sizeDelta = Vector2(260, 48)
             local actImg = actBtnGo:AddComponent(typeof(Image))
-            actImg.color = Color(0, 0.8, 0, 1)
+            actImg.color = Color(0, 0.75, 0.25, 1)
             local actBtn = actBtnGo:AddComponent(typeof(Button))
             local actTxtGo = GameObject("ActTxt")
             actTxtGo.transform:SetParent(actBtnGo.transform, false)
@@ -10133,186 +10326,162 @@ local function CreateModUI()
             aTxtRt.anchorMin, aTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
             aTxtRt.offsetMin, aTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
             local aTxt = actTxtGo:AddComponent(typeof(Text))
-            aTxt.text = "KÍCH HOẠT"
-            aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 22, TextAnchor.MiddleCenter
+            aTxt.text = "KÍCH HOẠT ONLINE"
+            aTxt.color, aTxt.fontSize, aTxt.alignment = Color.white, 20, TextAnchor.MiddleCenter
             if defaultFont then aTxt.font = defaultFont end
 
-            _G.CheckModAuth = function(tokenStr, isSilent)
-                if not tokenStr or tokenStr == "" then
-                    if not isSilent then errTxt.text = "Token không được để trống!" end
-                    return false
-                end
-                tokenStr = string.gsub(tokenStr, "^%s*(.-)%s*$", "%1")
-                local decoded = Base64Decode(tokenStr)
-                if not decoded or decoded == "" then
-                    if not isSilent then errTxt.text = "Token sai định dạng!" end
-                    return false
-                end
-
-                local parts = {}
-                for part in string.gmatch(decoded .. "|", "(.-)|") do
-                    table.insert(parts, part)
-                end
-                -- Xóa phần rỗng cuối cùng do dấu | ở đuôi
-                if #parts > 0 and parts[#parts] == "" then
-                    table.remove(parts, #parts)
-                end
-
-                local pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig
-                if #parts == 7 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], tonumber(parts[3]),
-                        tonumber(parts[4]), tonumber(parts[5]), tonumber(parts[6]), parts[7]
-                elseif #parts == 5 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], parts[2], 8, 7,
-                        tonumber(parts[3]), tonumber(parts[4]), parts[5]
-                elseif #parts == 4 then
-                    pCode, pUID, pMainTier, pSubTier, pDuration, pTime, pSig = parts[1], "ALL", 8, 7, tonumber(parts[2]),
-                        tonumber(parts[3]), parts[4]
-                else
-                    if not isSilent then errTxt.text = "Token không hợp lệ!" end
-                    return false
-                end
-
-                local currentLiveCode = GetLiveDeviceCode()
-                if pCode ~= currentLiveCode then
-                    if not isSilent then errTxt.text = "Token không dành cho thiết bị này!" end
-                    return false
-                end
-
-                local dataToHash
-                if #parts == 7 then
-                    dataToHash = pCode ..
-                        "|" ..
-                        pUID ..
-                        "|" ..
-                        tostring(pMainTier) ..
-                        "|" ..
-                        tostring(pSubTier) ..
-                        "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
-                elseif #parts == 5 then
-                    dataToHash = pCode ..
-                        "|" .. pUID .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
-                else
-                    dataToHash = pCode .. "|" .. tostring(pDuration) .. "|" .. tostring(pTime) .. "MUVH_SECRET_SALT_XOAI"
-                end
-
-                local expectedSig = GetMD5(dataToHash)
-                if expectedSig ~= pSig then
-                    if not isSilent then errTxt.text = "Token đã bị giả mạo!" end
-                    return false
-                end
-
-                local currentUnixTime = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or
-                    os.time()
-                local expireTime = pTime + (pDuration * 86400)
-                if currentUnixTime > expireTime then
-                    if not isSilent then errTxt.text = "Token đã hết hạn!" end
-                    return false
-                end
-
-                if pUID and string.upper(tostring(pUID)) ~= "ALL" then
-                    local currentUID = Mod_GetCharacterUID()
-                    if currentUID == "" then
-                        if not isSilent then errTxt.text = "Vui lòng đăng nhập nhân vật để xác thực UID!" end
-                        return false
-                    end
-                    if tostring(currentUID) ~= tostring(pUID) then
-                        if not isSilent then errTxt.text = "Mã nhân vật (UID) không trùng khớp!" end
-                        return false
-                    end
-                end
-
-                _G.Mod_Config_Reincarnation_Primary = pMainTier or 8
-                _G.Mod_Config_Reincarnation_Secondary = pSubTier or 7
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_PrimaryTier", _G.Mod_Config_Reincarnation_Primary)
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_SecondaryTier", _G.Mod_Config_Reincarnation_Secondary)
-
-                CS.UnityEngine.PlayerPrefs.SetString("Mod_AuthToken", tokenStr)
-                CS.UnityEngine.PlayerPrefs.Save()
-                _G.ModAuthValid = true
-                return true
-            end
-
             actBtn.onClick:AddListener(function()
-                if _G.CheckModAuth(savedToken, false) then
-                    _lastAuthCheckTime = 0
-                    authPanelGo:SetActive(false)
-                    if panelGo then
-                        isExpanded = true
-                        panelGo:SetActive(true)
+                if not (Mod_IsCharacterLoggedIn and Mod_IsCharacterLoggedIn()) then
+                    statusTxt.text = "Vui lòng đăng nhập nhân vật trước khi kích hoạt!"
+                    statusTxt.color = Color.red
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg("Vui lòng vào nhân vật trước khi kích hoạt!")
                     end
-                    if _G.FloatingWordUtility then _G.FloatingWordUtility.QuickMsg("Kích hoạt thành công!") end
+                    return
                 end
+
+                statusTxt.text = "Đang kết nối máy chủ xác thực..."
+                statusTxt.color = Color.yellow
+
+                Mod_FetchSvipConfigFromAPI(true, function(success, isActive, msg)
+                    if isActive then
+                        statusTxt.text = msg or "Kích hoạt SVIP thành công!"
+                        statusTxt.color = Color.green
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg("Kích hoạt SVIP thành công!")
+                        end
+                        authPanelGo:SetActive(false)
+                        if panelGo then
+                            isExpanded = true
+                            panelGo:SetActive(true)
+                            if _G.Mod_UpdateTabHeaderVisibility then _G.Mod_UpdateTabHeaderVisibility() end
+                            RefreshMainTabs()
+                        end
+                    else
+                        statusTxt.text = msg or "Kích hoạt thất bại!"
+                        statusTxt.color = Color.red
+                        if _G.FloatingWordUtility then
+                            _G.FloatingWordUtility.QuickMsg(msg or "Kích hoạt thất bại!")
+                        end
+                    end
+                end)
             end)
 
-            if savedToken ~= "" then
-                if not _G.CheckModAuth(savedToken, true) then
-                    errTxt.text = "Token đã lưu không hợp lệ, sai UID hoặc hết hạn!"
-                end
-            end
+            -- 6. Hàng nút phụ: Xóa cài đặt & Đóng
+            local clearBtnGo = GameObject("AuthClearBtn")
+            clearBtnGo.transform:SetParent(authPanelGo.transform, false)
+            local clearRt = clearBtnGo:AddComponent(typeof(RectTransform))
+            clearRt.anchorMin, clearRt.anchorMax, clearRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+            clearRt.anchoredPosition = Vector2(-90, -345)
+            clearRt.sizeDelta = Vector2(150, 38)
+            local clearImg = clearBtnGo:AddComponent(typeof(Image))
+            clearImg.color = Color(0.8, 0.2, 0.2, 1)
+            local clearBtn = clearBtnGo:AddComponent(typeof(Button))
+            local clearTxtGo = GameObject("ClearTxt")
+            clearTxtGo.transform:SetParent(clearBtnGo.transform, false)
+            local clrTxtRt = clearTxtGo:AddComponent(typeof(RectTransform))
+            clrTxtRt.anchorMin, clrTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            clrTxtRt.offsetMin, clrTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
+            local clrTxt = clearTxtGo:AddComponent(typeof(Text))
+            clrTxt.text = "Xóa Cài Đặt"
+            clrTxt.color, clrTxt.fontSize, clrTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            if defaultFont then clrTxt.font = defaultFont end
 
-            -- Watermark in AuthPanel (Click to clear PlayerPrefs)
-            local authWmGo = GameObject("AuthWatermarkText")
-            authWmGo.transform:SetParent(authPanelGo.transform, false)
-            local authWmRt = authWmGo:AddComponent(typeof(RectTransform))
-            authWmRt.anchorMin = Vector2(0, 0)
-            authWmRt.anchorMax = Vector2(0, 0)
-            authWmRt.pivot = Vector2(0, 0)
-            authWmRt.anchoredPosition = Vector2(15, 10)
-            authWmRt.sizeDelta = Vector2(200, 30)
-
-            local authWmImg = authWmGo:AddComponent(typeof(Image))
-            authWmImg.color = Color(0, 0, 0, 0)
-
-            local authWmTxtGo = GameObject("Text")
-            authWmTxtGo.transform:SetParent(authWmGo.transform, false)
-            local authWmTxtRt = authWmTxtGo:AddComponent(typeof(RectTransform))
-            authWmTxtRt.anchorMin, authWmTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            authWmTxtRt.sizeDelta = Vector2(0, 0)
-            local authWmTxt = authWmTxtGo:AddComponent(typeof(Text))
-            authWmTxt.raycastTarget = false
-            authWmTxt.text = "<i>Modded by Xoài</i>"
-            authWmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
-            authWmTxt.fontSize = 16
-            authWmTxt.alignment = TextAnchor.LowerLeft
-            if defaultFont then authWmTxt.font = defaultFont end
-
-            local authWmBtn = authWmGo:AddComponent(typeof(Button))
-            authWmBtn.targetGraphic = authWmImg
-            authWmBtn.onClick:AddListener(function()
+            clearBtn.onClick:AddListener(function()
                 if _G.Mod_ClearAuthToken then
                     _G.Mod_ClearAuthToken()
                 elseif _G.Mod_ClearAllPlayerPrefs then
                     _G.Mod_ClearAllPlayerPrefs()
                 end
+                statusTxt.text = "Đã xóa toàn bộ dữ liệu cấu hình Mod!"
+                statusTxt.color = Color.yellow
             end)
+
+            local closeBtnGo = GameObject("AuthCloseBtn")
+            closeBtnGo.transform:SetParent(authPanelGo.transform, false)
+            local closeRt = closeBtnGo:AddComponent(typeof(RectTransform))
+            closeRt.anchorMin, closeRt.anchorMax, closeRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+            closeRt.anchoredPosition = Vector2(90, -345)
+            closeRt.sizeDelta = Vector2(150, 38)
+            local closeImg = closeBtnGo:AddComponent(typeof(Image))
+            closeImg.color = Color(0.4, 0.4, 0.4, 1)
+            local closeBtn = closeBtnGo:AddComponent(typeof(Button))
+            local closeTxtGo = GameObject("CloseTxt")
+            closeTxtGo.transform:SetParent(closeBtnGo.transform, false)
+            local clsTxtRt = closeTxtGo:AddComponent(typeof(RectTransform))
+            clsTxtRt.anchorMin, clsTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            clsTxtRt.offsetMin, clsTxtRt.offsetMax = Vector2(0, 0), Vector2(0, 0)
+            local clsTxt = closeTxtGo:AddComponent(typeof(Text))
+            clsTxt.text = "Đóng"
+            clsTxt.color, clsTxt.fontSize, clsTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            if defaultFont then clsTxt.font = defaultFont end
+
+            closeBtn.onClick:AddListener(function()
+                authPanelGo:SetActive(false)
+            end)
+
+            -- Watermark in AuthPanel
+            local authWmGo = GameObject("AuthWatermarkText")
+            authWmGo.transform:SetParent(authPanelGo.transform, false)
+            local authWmRt = authWmGo:AddComponent(typeof(RectTransform))
+            authWmRt.anchorMin, authWmRt.anchorMax, authWmRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            authWmRt.anchoredPosition = Vector2(20, 15)
+            authWmRt.sizeDelta = Vector2(200, 25)
+            local authWmTxt = authWmGo:AddComponent(typeof(Text))
+            authWmTxt.raycastTarget = false
+            authWmTxt.text = "<i>Modded by Xoài</i>"
+            authWmTxt.color = Color(0.3, 0.6, 0.2, 1)
+            authWmTxt.fontSize = 15
+            authWmTxt.alignment = TextAnchor.LowerLeft
+            if defaultFont then authWmTxt.font = defaultFont end
+
             -- =========================================================================
             -- [MOD FEATURE]: LÀM MỚI DỮ LIỆU BẢNG KÍCH HOẠT (REFRESH AUTH DATA)
-            -- Mô tả: Cập nhật động mã MD5 thiết bị và UID nhân vật mỗi khi mở hoặc làm mới màn hình Active
+            -- Mô tả: Cập nhật động mã MD5 thiết bị, UID, nhân vật, server và trạng thái kích hoạt
             -- =========================================================================
             local function RefreshAuthUI()
                 if not authPanelGo or authPanelGo:Equals(nil) then return end
-                local currentDevCode = GetLiveDeviceCode()
+                local currentDevCode = Mod_GetDeviceCode()
                 local currentUID = Mod_GetCharacterUID()
-                local valUID = (currentUID ~= "" and currentUID or "Chưa đăng nhập nhân vật")
+                local valUID = (currentUID ~= "" and currentUID or "Chưa vào game")
+                local rName = Mod_GetCharacterRoleName()
+                local sName = Mod_GetServerName()
 
                 pcall(function()
-                    local codeF = authPanelGo.transform:Find("AuthCodeInput")
-                    if codeF then
-                        local inp = codeF:GetComponent(typeof(CS.UnityEngine.UI.InputField))
-                        if inp then inp.text = currentDevCode end
-                        local txt = codeF:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
-                        if txt then txt.text = currentDevCode end
+                    if codeInputField then codeInputField.text = currentDevCode end
+                    if codeTxt then codeTxt.text = currentDevCode end
+                end)
+
+                pcall(function()
+                    if uidInputField then uidInputField.text = valUID end
+                    if uidTxt then uidTxt.text = valUID end
+                end)
+
+                pcall(function()
+                    if charInfoTxt then
+                        if rName ~= "" and sName ~= "" then
+                            charInfoTxt.text = "Nhân vật: " .. rName .. "   |   Máy chủ: " .. sName
+                        else
+                            charInfoTxt.text = "Nhân vật: (Chưa vào game)   |   Máy chủ: (Chưa vào game)"
+                        end
                     end
                 end)
 
                 pcall(function()
-                    local uidF = authPanelGo.transform:Find("AuthUidInput")
-                    if uidF then
-                        local inpU = uidF:GetComponent(typeof(CS.UnityEngine.UI.InputField))
-                        if inpU then inpU.text = valUID end
-                        local txtU = uidF:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
-                        if txtU then txtU.text = valUID end
+                    if statusTxt then
+                        local isAct = _G.Mod_IsActive and _G.Mod_IsActive()
+                        if isAct then
+                            statusTxt.text = "Trạng thái: ĐÃ KÍCH HOẠT SVIP (Hợp lệ)"
+                            statusTxt.color = Color.green
+                        else
+                            if not (Mod_IsCharacterLoggedIn and Mod_IsCharacterLoggedIn()) then
+                                statusTxt.text = "Vui lòng chọn nhân vật vào game rồi nhấn 'KÍCH HOẠT'"
+                                statusTxt.color = Color.yellow
+                            else
+                                statusTxt.text = "Chưa kích hoạt hoặc đã hết hạn. Vui lòng bấm 'KÍCH HOẠT'"
+                                statusTxt.color = Color.white
+                            end
+                        end
                     end
                 end)
             end
@@ -10321,31 +10490,53 @@ local function CreateModUI()
 
             authWmGo.transform:SetAsLastSibling()
         end
-        if not _G.Mod_IsAdmin then CreateAuthUI() end
+        CreateAuthUI()
 
         _G.ModCallbacks.OnToggleMenu = function()
             pcall(function()
-                if _G.Mod_IsActive and _G.Mod_IsActive() then
+                local isAd = _G.Mod_IsAdmin
+                local isCharInGame = Mod_IsCharacterLoggedIn and Mod_IsCharacterLoggedIn()
+
+                if isAd then
+                    -- Admin: Mở trực tiếp panel menu mod mọi lúc
                     if _G.authPanelGo and _G.authPanelGo.activeSelf then _G.authPanelGo:SetActive(false) end
                     isExpanded = not isExpanded
                     panelGo:SetActive(isExpanded)
                     if isExpanded then
+                        if not isCharInGame then
+                            _G.ModMainTab = "ADMIN"
+                        end
+                        if _G.Mod_UpdateTabHeaderVisibility then _G.Mod_UpdateTabHeaderVisibility() end
+                        RefreshMainTabs()
                         UpdateFOVLabel()
                         if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
-                        RefreshMainTabs()
-                        if _G.NetManager and _G.MapMessage then
-                            _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
-                            _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
-                            _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
-                        end
                     end
                 else
-                    if panelGo and panelGo.activeSelf then panelGo:SetActive(false) end
-                    if _G.authPanelGo then
-                        local showAuth = not _G.authPanelGo.activeSelf
-                        _G.authPanelGo:SetActive(showAuth)
-                        if showAuth and _G.Mod_RefreshAuthUI then
-                            pcall(_G.Mod_RefreshAuthUI)
+                    -- Client: Kiểm tra active và login nhân vật
+                    local isActive = _G.Mod_IsActive and _G.Mod_IsActive()
+                    if isActive and isCharInGame then
+                        if _G.authPanelGo and _G.authPanelGo.activeSelf then _G.authPanelGo:SetActive(false) end
+                        isExpanded = not isExpanded
+                        panelGo:SetActive(isExpanded)
+                        if isExpanded then
+                            if _G.Mod_UpdateTabHeaderVisibility then _G.Mod_UpdateTabHeaderVisibility() end
+                            RefreshMainTabs()
+                            UpdateFOVLabel()
+                            if _G.ModRebuildKundunHoTroContent then pcall(_G.ModRebuildKundunHoTroContent) end
+                            if _G.NetManager and _G.MapMessage then
+                                _G.NetManager.Send(_G.MapMessage.ReqGetBossMapAndCount)
+                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                                _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                            end
+                        end
+                    else
+                        if panelGo and panelGo.activeSelf then panelGo:SetActive(false) isExpanded = false end
+                        if _G.authPanelGo then
+                            local showAuth = not _G.authPanelGo.activeSelf
+                            _G.authPanelGo:SetActive(showAuth)
+                            if showAuth and _G.Mod_RefreshAuthUI then
+                                pcall(_G.Mod_RefreshAuthUI)
+                            end
                         end
                     end
                 end
@@ -16039,6 +16230,69 @@ local function CreateModUI()
         end
         UpdateTabColors()
 
+        -- =========================================================================
+        -- [MOD FEATURE]: ĐIỀU CHỈNH HIỂN THỊ NÚT TAB HEADER THEO TRẠNG THÁI LOGIN
+        -- Mô tả: Nếu chưa login nhân vật, chỉ hiện tab ADMIN dạt sang trái (đối với Admin),
+        --        khi đã vào nhân vật sẽ hiển thị đầy đủ các tab chức năng.
+        -- =========================================================================
+        local function UpdateTabHeaderVisibility()
+            local isCharInGame = Mod_IsCharacterLoggedIn and Mod_IsCharacterLoggedIn()
+            local isAd = _G.Mod_IsAdmin
+            local width = isAd and 160 or 220
+
+            if not isCharInGame then
+                if tabCoBanGo then tabCoBanGo:SetActive(false) end
+                if tabNangCaoGo then tabNangCaoGo:SetActive(false) end
+                if tabAutoBossGo then tabAutoBossGo:SetActive(false) end
+
+                if isAd and tabAdminGo then
+                    tabAdminGo:SetActive(true)
+                    local rt = tabAdminGo:GetComponent(typeof(RectTransform))
+                    if rt then
+                        rt.anchoredPosition = Vector2(20, -10)
+                        rt.sizeDelta = Vector2(width, 40)
+                    end
+                    _G.ModMainTab = "ADMIN"
+                end
+            else
+                if tabCoBanGo then
+                    tabCoBanGo:SetActive(true)
+                    local rt = tabCoBanGo:GetComponent(typeof(RectTransform))
+                    if rt then
+                        rt.anchoredPosition = Vector2(20, -10)
+                        rt.sizeDelta = Vector2(width, 40)
+                    end
+                end
+                if tabNangCaoGo then
+                    tabNangCaoGo:SetActive(true)
+                    local rt = tabNangCaoGo:GetComponent(typeof(RectTransform))
+                    if rt then
+                        rt.anchoredPosition = Vector2(20 + width + 10, -10)
+                        rt.sizeDelta = Vector2(width, 40)
+                    end
+                end
+                if tabAutoBossGo then
+                    tabAutoBossGo:SetActive(true)
+                    local rt = tabAutoBossGo:GetComponent(typeof(RectTransform))
+                    if rt then
+                        rt.anchoredPosition = Vector2(20 + (width + 10) * 2, -10)
+                        rt.sizeDelta = Vector2(width, 40)
+                    end
+                end
+                if isAd and tabAdminGo then
+                    tabAdminGo:SetActive(true)
+                    local rt = tabAdminGo:GetComponent(typeof(RectTransform))
+                    if rt then
+                        rt.anchoredPosition = Vector2(20 + (width + 10) * 3, -10)
+                        rt.sizeDelta = Vector2(width, 40)
+                    end
+                end
+            end
+            UpdateTabColors()
+        end
+        _G.Mod_UpdateTabHeaderVisibility = UpdateTabHeaderVisibility
+        UpdateTabHeaderVisibility()
+
         tabCoBanBtn.onClick:AddListener(function()
             _G.ModMainTab = "CO_BAN"
             pcall(function() CS.UnityEngine.PlayerPrefs.SetString("ModMainTab", _G.ModMainTab) end)
@@ -17784,6 +18038,107 @@ if _G.ChatController and not _G.Mod_Hooked_ChatController_OnResChat then
             end
         end
         return old_ChatController_OnResChat(eventId, data)
+    end
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: HỆ THỐNG GIÁM SÁT VÀ ĐỒNG BỘ BẢN QUYỀN ONLINE SVIP (LICENSE MONITOR LOOP)
+-- Mô tả: Tự động kích hoạt các tab gameplay khi login nhân vật thành công và kiểm tra ngầm định kỳ mỗi 60s
+-- =========================================================================
+if not _G.Mod_LicenseMonitor_Started then
+    _G.Mod_LicenseMonitor_Started = true
+
+    local _lastCharInGameState = false
+    local _lastBackgroundSvipCheck = 0
+
+    local function Mod_LicenseMonitorTick()
+        pcall(function()
+            local isCharInGame = _G.Mod_IsCharacterLoggedIn and _G.Mod_IsCharacterLoggedIn()
+            local nowTime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+
+            -- 1. Phát hiện sự kiện vừa đăng nhập vào nhân vật
+            if isCharInGame and not _lastCharInGameState then
+                _lastCharInGameState = true
+                if _G.Mod_IsAdmin then
+                    if _G.Mod_UpdateTabHeaderVisibility then pcall(_G.Mod_UpdateTabHeaderVisibility) end
+                    if _G.RefreshMainTabs then pcall(_G.RefreshMainTabs) end
+                else
+                    -- Client: Tự động gọi API check active kèm isLogin=1
+                    if _G.Mod_FetchSvipConfigFromAPI then
+                        _G.Mod_FetchSvipConfigFromAPI(true, function(success, isActive, msg)
+                            if isActive then
+                                _G.Mod_IsOnlineVerified = true
+                                _G.ModAuthValid = true
+                                if _G.authPanelGo and _G.authPanelGo.activeSelf then
+                                    _G.authPanelGo:SetActive(false)
+                                end
+                                if _G.Mod_UpdateTabHeaderVisibility then pcall(_G.Mod_UpdateTabHeaderVisibility) end
+                                if _G.RefreshMainTabs then pcall(_G.RefreshMainTabs) end
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Bản quyền SVIP: Đã xác thực thành công!")
+                                end
+                            else
+                                _G.Mod_IsOnlineVerified = false
+                                _G.ModAuthValid = false
+                                if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
+                                if _G.authPanelGo and not _G.authPanelGo.activeSelf then
+                                    _G.authPanelGo:SetActive(true)
+                                    if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
+                                end
+                                if _G.FloatingWordUtility and msg then
+                                    _G.FloatingWordUtility.QuickMsg(msg)
+                                end
+                            end
+                        end)
+                    end
+                end
+            elseif not isCharInGame and _lastCharInGameState then
+                -- Rời khỏi game / về màn hình chọn nhân vật
+                _lastCharInGameState = false
+                if _G.Mod_IsAdmin then
+                    _G.ModMainTab = "ADMIN"
+                else
+                    _G.Mod_IsOnlineVerified = false
+                    _G.ModAuthValid = false
+                    if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
+                end
+                if _G.Mod_UpdateTabHeaderVisibility then pcall(_G.Mod_UpdateTabHeaderVisibility) end
+                if _G.RefreshMainTabs then pcall(_G.RefreshMainTabs) end
+            end
+
+            -- 2. Định kỳ mỗi 60 giây kiểm tra ngầm (Tradeoff check) đối với Client khi đang trong game
+            if not _G.Mod_IsAdmin and isCharInGame then
+                if _lastBackgroundSvipCheck == 0 then
+                    _lastBackgroundSvipCheck = nowTime
+                elseif (nowTime - _lastBackgroundSvipCheck) >= 60.0 then
+                    _lastBackgroundSvipCheck = nowTime
+                    if _G.Mod_FetchSvipConfigFromAPI then
+                        _G.Mod_FetchSvipConfigFromAPI(false, function(success, isActive, msg)
+                            if success and not isActive then
+                                -- Server trả về không active (thu hồi hoặc hết hạn)
+                                _G.Mod_IsOnlineVerified = false
+                                _G.ModAuthValid = false
+                                if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
+                                if _G.authPanelGo and not _G.authPanelGo.activeSelf then
+                                    _G.authPanelGo:SetActive(true)
+                                    if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
+                                end
+                                if _G.Mod_ClearAuthToken then pcall(_G.Mod_ClearAuthToken) end
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Bản quyền SVIP đã hết hạn hoặc bị thu hồi!")
+                                end
+                            end
+                        end)
+                    end
+                end
+            end
+        end)
+    end
+
+    if _G.Timer and _G.Timer.StartLoopForever then
+        _G.Timer.StartLoopForever(1.0, Mod_LicenseMonitorTick)
+    elseif _G.Timer and _G.Timer.StartLoop then
+        _G.Timer.StartLoop(1.0, -1, Mod_LicenseMonitorTick)
     end
 end
 

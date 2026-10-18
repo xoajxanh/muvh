@@ -14,15 +14,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const saleId = searchParams.get('saleId');
+  const typeParam = searchParams.get('type') || searchParams.get('tab') || 'CUSTOMER';
+  const targetType = typeParam.toUpperCase() === 'SVIP' ? 'SVIP' : 'CUSTOMER';
 
   const now = new Date();
   const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   // =========================================================================
-  // [MOD FEATURE]: PHÂN QUYỀN VÀ LỌC DỮ LIỆU DASHBOARD THEO SALE
-  // Mô tả: Phân quyền dữ liệu dashboard: nếu là SALE chỉ xem số liệu cá nhân;
-  // nếu là ADMIN mặc định xem tổng toàn sàn hoặc có thể chọn lọc theo từng Sale.
+  // [MOD FEATURE]: PHÂN QUYỀN VÀ LỌC DỮ LIỆU DASHBOARD THEO SALE & TYPE (CUSTOMER/SVIP)
+  // Mô tả: Lọc dữ liệu theo tab Customer hoặc SVIP, bỏ qua hoàn toàn token isTest
   // =========================================================================
   let targetUserId: string | null = null;
   if (session.role === 'SALE') {
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     targetUserId = saleId;
   }
 
-  const notTestWhere: any = { isTest: false, isDeleted: false };
+  const notTestWhere: any = { isTest: false, isDeleted: false, type: targetType };
   if (targetUserId) {
     notTestWhere.createdById = targetUserId;
   }
@@ -110,18 +111,18 @@ export async function GET(req: NextRequest) {
       users.map(async (u) => {
         const [uTotalRev, uTotalCount, uMonthRev, uMonthCount] = await Promise.all([
           prisma.token.aggregate({
-            where: { isTest: false, isDeleted: false, createdById: u.id },
+            where: { isTest: false, isDeleted: false, type: targetType, createdById: u.id },
             _sum: { price: true },
           }),
           prisma.token.count({
-            where: { isTest: false, isDeleted: false, createdById: u.id },
+            where: { isTest: false, isDeleted: false, type: targetType, createdById: u.id },
           }),
           prisma.token.aggregate({
-            where: { isTest: false, isDeleted: false, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
+            where: { isTest: false, isDeleted: false, type: targetType, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
             _sum: { price: true },
           }),
           prisma.token.count({
-            where: { isTest: false, isDeleted: false, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
+            where: { isTest: false, isDeleted: false, type: targetType, createdById: u.id, createdAt: { gte: startOfCurrentMonth } },
           }),
         ]);
 
@@ -156,5 +157,6 @@ export async function GET(req: NextRequest) {
     salesStats,
     salesList,
     selectedSaleId: targetUserId || 'ALL',
+    selectedType: targetType,
   });
 }
