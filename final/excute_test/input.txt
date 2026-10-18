@@ -1,253 +1,206 @@
 -- =========================================================================
--- [SCRIPT]: TRÍCH XUẤT DANH SÁCH 50 NGƯỜI CHƠI BẢNG XẾP HẠNG THỰC LỰC SERVER
--- Mô tả: Lấy danh sách Top 50 BXH Thực Lực (Tổng Hợp) và xuất ra output.txt
+-- [SCRIPT TEST]: KIỂM TRA TOÀN DIỆN COOLDOWN & BUFF HỒI SINH (ĐẠI THIÊN SỨ)
 -- =========================================================================
-
-local function FormatCareer(careerId)
-    local basic = 0
-    if _G.RoleUtility and _G.RoleUtility.GetBasicCareer then
-        basic = _G.RoleUtility.GetBasicCareer(careerId or 0)
-    else
-        basic = (careerId or 0) % 10 + 10
-    end
-    if basic == 11 then return "Kiếm Sĩ"
-    elseif basic == 12 then return "Ma Pháp Sư"
-    elseif basic == 13 then return "Cung Thủ"
-    elseif basic == 14 then return "Ma Kiếm Sĩ"
-    elseif basic == 15 then return "Thánh Đạo Sư"
-    elseif basic == 16 then return "Triệu Hồi Sư"
-    else return "Khác (" .. tostring(careerId) .. ")"
-    end
+local lines = {}
+local function log(s)
+    table.insert(lines, tostring(s))
 end
 
-local function WriteOutputFile(content)
-    local path = ""
-    pcall(function()
-        path = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-    end)
-    if path == "" then
-        path = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-    end
+log("=========================================================================")
+log(">>> KIỂM TRA TRẠNG THÁI SKILL & COOLDOWN TRÊN NHÂN VẬT <<<")
+log("Thời gian thực thi: " .. os.date("%Y/%m/%d %H:%M:%S"))
+log("=========================================================================")
 
-    local success = false
-    -- Cách 1: Ghi qua C# File UTF-8
-    pcall(function()
-        if CS.System and CS.System.IO and CS.System.IO.File and CS.System.Text and CS.System.Text.Encoding then
-            CS.System.IO.File.WriteAllText(path, content, CS.System.Text.Encoding.UTF8)
-            success = true
-        end
-    end)
+local me = _G.RoleManager and _G.RoleManager.me
+if not me then
+    log("[LỖI] Không tìm thấy RoleManager.me!")
+else
+    local meId = me.id or (me.data and me.data.id) or 0
+    log(string.format("Nhân vật: ID=%s, Tên=%s, Career=%s, Dead=%s, HP=%s/%s",
+        tostring(meId), tostring(me.name), tostring(me.career), tostring(me.isDead),
+        tostring(me.hp or (me.data and me.data.hp)),
+        tostring(me.maxHp or (me.data and me.data.maxHp))))
 
-    -- Cách 2: Ghi qua io.open chuẩn Lua
-    if not success then
+    -- 1. KIỂM TRA CÁC BIẾN MOD TOWER CHECK
+    log("\n--- 1. CÁC BIẾN MOD CHECK SKILL THÁP ---")
+    log("Mod_AutoChallengeTower_Enabled : " .. tostring(_G.Mod_AutoChallengeTower_Enabled))
+    log("Mod_AutoTower_CheckSkill_Enabled: " .. tostring(_G.Mod_AutoTower_CheckSkill_Enabled))
+    log("Mod_TowerCheck_HoiSinh_Enabled  : " .. tostring(_G.Mod_TowerCheck_HoiSinh_Enabled))
+    log("Mod_TowerCheck_Limit_Enabled    : " .. tostring(_G.Mod_TowerCheck_Limit_Enabled))
+    log("Mod_TowerCheck_AngelSpike_Enabled: " .. tostring(_G.Mod_TowerCheck_AngelSpike_Enabled))
+    log("Mod_TowerCheck_NhiepHon_Enabled : " .. tostring(_G.Mod_TowerCheck_NhiepHon_Enabled))
+
+    -- 2. DUMP TOÀN BỘ COOLDOWN TRONG me.cd
+    log("\n--- 2. TOÀN BỘ DANH SÁCH COOLDOWN (me.cd) ---")
+    local curMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+    local curSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+    log(string.format("ServerTime (ms): %s | ServerSecondTime (s): %s", tostring(curMs), tostring(curSec)))
+
+    local cdCount = 0
+    if me.cd then
         pcall(function()
-            local f = io.open(path, "w")
-            if f then
-                f:write(content)
-                f:close()
-                success = true
+            for k, v in pairs(me.cd) do
+                cdCount = cdCount + 1
+                local endTime = 0
+                local cdType = type(v)
+                if cdType == "table" or cdType == "userdata" then
+                    endTime = v.endTime or 0
+                elseif cdType == "number" then
+                    endTime = v
+                end
+                
+                local remSec = 0
+                if endTime > 1000000000000 then
+                    remSec = math.ceil((endTime - curMs) / 1000)
+                elseif endTime > 0 then
+                    remSec = math.ceil(endTime - curSec)
+                end
+
+                local skillName = "Unknown"
+                pcall(function()
+                    if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
+                        local cfg = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(k)
+                        if cfg and cfg.name then skillName = cfg.name end
+                    end
+                end)
+
+                log(string.format("  CD Key: %-10s | RemSec: %-4d | EndTime: %-14s | Name: %s",
+                    tostring(k), remSec, tostring(endTime), tostring(skillName)))
             end
         end)
     end
-    return success, path
-end
+    log("Tổng số CD đang có: " .. tostring(cdCount))
 
-local function ProcessRankList(ranks)
-    if not ranks or #ranks == 0 then
-        -- Thử duyệt nếu ranks là map key number
-        local temp = {}
-        for k, v in pairs(ranks) do
-            if type(k) == "number" and type(v) == "table" then
-                table.insert(temp, v)
+    -- Kiểm tra riêng các key liên quan đến 10200100
+    log("\n--- 2.1. KIỂM TRA ĐẶC BIỆT CÁC KEY LIÊN QUAN HỒI SINH ---")
+    local testKeys = { 10200100, 10200101, 10200102, 10200103, 10200104, 10200105, 10200106, 10200107, 10200110, 53010101 }
+    for _, tk in ipairs(testKeys) do
+        local cdVal = me.cd and me.cd[tk]
+        if cdVal then
+            local et = (type(cdVal) == "table" and cdVal.endTime) or (type(cdVal) == "number" and cdVal) or 0
+            log(string.format("  [FOUND IN me.cd] Key %s => EndTime=%s", tostring(tk), tostring(et)))
+        else
+            log(string.format("  [NIL in me.cd] Key %s", tostring(tk)))
+        end
+    end
+
+    -- 3. DUMP TOÀN BỘ BUFF ĐANG CÓ TRÊN NHÂN VẬT
+    log("\n--- 3. DANH SÁCH BUFF HIỆN CÓ TRÊN BẢN THÂN (BuffDic) ---")
+    local buffCount = 0
+    if _G.BuffData and _G.BuffData.BuffDic and _G.BuffData.BuffDic[meId] then
+        for idx, b in ipairs(_G.BuffData.BuffDic[meId]) do
+            buffCount = buffCount + 1
+            local bCId = b.buffCId or (b.buffConfig and b.buffConfig.id) or 0
+            local bGrp = (b.buffConfig and b.buffConfig.buffGroup) or 0
+            local bName = (b.buffConfig and b.buffConfig.name) or "Unknown"
+            local bEnd = b.endTime or (b.buffConfig and b.buffConfig.totalTime) or 0
+            log(string.format("  Buff [%d]: ID=%s | Group=%s | Name=%s | EndTime=%s",
+                idx, tostring(bCId), tostring(bGrp), tostring(bName), tostring(bEnd)))
+        end
+    end
+    log("Tổng số Buff đang có: " .. tostring(buffCount))
+
+    -- 4. KIỂM TRA ViewData.meData
+    log("\n--- 4. KIỂM TRA ViewData.meData ---")
+    if _G.ViewData and _G.ViewData.meData then
+        local md = _G.ViewData.meData
+        if md.skills then
+            local suitSkillCount = 0
+            for skId, skVal in pairs(md.skills) do
+                if tostring(skId):find("102001") then
+                    suitSkillCount = suitSkillCount + 1
+                    log(string.format("  ViewData skill: Key=%s, sid=%s", tostring(skId), tostring(skVal and skVal.sid)))
+                end
+            end
+            log("Số skill 102001 trong ViewData.meData.skills: " .. tostring(suitSkillCount))
+        end
+        if md.cdMap then
+            log("ViewData.meData.cdMap:")
+            for ck, cv in pairs(md.cdMap) do
+                log(string.format("  cdMap[%s] = %s", tostring(ck), tostring(cv)))
             end
         end
-        ranks = temp
     end
 
-    local total = #ranks
-    local limit = math.min(total, 50)
-    if limit == 0 then
-        local msg = "Không tìm thấy dữ liệu xếp hạng nào trong bộ nhớ!"
-        WriteOutputFile(msg)
-        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-            _G.FloatingWordUtility.QuickMsg(msg)
+    -- 5. KIỂM TRA SuitData & BỘ ĐỒ ĐANG MẶC
+    log("\n--- 5. KIỂM TRA THÔNG TIN BỘ ĐỒ (SUIT DATA) ---")
+    pcall(function()
+        if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.suits then
+            log("ViewData.meData.suits:")
+            for sk, sv in pairs(_G.ViewData.meData.suits) do
+                log(string.format("  Suit[%s] = %s", tostring(sk), tostring(sv)))
+            end
         end
-        return
-    end
+    end)
 
-    local out = {}
-    local function addLine(fmt, ...)
-        local str = select("#", ...) > 0 and string.format(fmt, ...) or tostring(fmt)
-        table.insert(out, str)
-    end
+    -- 6. KIỂM TRA NÚT UI HỒI SINH TRÊN MÀN HÌNH
+    log("\n--- 6. KIỂM TRA NÚT UI HỒI SINH TRÊN MÀN HÌNH ---")
+    pcall(function()
+        local tGo = CS.UnityEngine.GameObject.Find("Mod_TowerCheck_HoiSinh_Enabled_Toggle")
+        if tGo then
+            log("Tìm thấy GameObject: Mod_TowerCheck_HoiSinh_Enabled_Toggle (Active=" .. tostring(tGo.activeInHierarchy) .. ")")
+            local txtComp = tGo:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
+            if txtComp then
+                log("Text hiện tại trên nút: '" .. tostring(txtComp.text) .. "'")
+            else
+                log("Không tìm thấy component Text trong nút!")
+            end
+        else
+            log("Không tìm thấy GameObject: Mod_TowerCheck_HoiSinh_Enabled_Toggle (Menu đang đóng hoặc chưa tạo)")
+        end
+    end)
 
-    addLine("=========================================================================")
-    addLine(">>> DANH SÁCH TOP %d BẢNG XẾP HẠNG THỰC LỰC (TỔNG HỢP) TẠI SERVER <<<", limit)
-    addLine("Thời gian trích xuất: %s", os.date and os.date("%Y/%m/%d %H:%M:%S") or "now")
-    addLine("Tổng số người trong BXH: %d", total)
-    addLine("=========================================================================\n")
-
-    -- 1. Chuỗi copy nhanh 1 dòng (cách nhau bằng dấu chấm phẩy ;)
-    local nameList = {}
-    for i = 1, limit do
-        local item = ranks[i]
-        local name = item.name or item.roleName or ("Player_" .. tostring(i))
-        table.insert(nameList, name)
-    end
-    local fastCopyStr = table.concat(nameList, ";")
-
-    addLine("-------------------------------------------------------------------------")
-    addLine("1. CHUỖI TÊN COPY NHANH (Dùng paste thẳng vào ô Khóa Mục Tiêu / Mod):")
-    addLine("-------------------------------------------------------------------------")
-    addLine("%s\n", fastCopyStr)
-
-    -- 2. Danh sách tên theo từng dòng
-    addLine("-------------------------------------------------------------------------")
-    addLine("2. DANH SÁCH TÊN RIÊNG BIỆT (Dễ copy từng người):")
-    addLine("-------------------------------------------------------------------------")
-    for i = 1, limit do
-        local item = ranks[i]
-        local name = item.name or item.roleName or ""
-        addLine("%2d. %s", i, name)
-    end
-    addLine("")
-
-    -- 3. Bảng chi tiết đầy đủ thông tin
-    addLine("-------------------------------------------------------------------------")
-    addLine("3. BẢNG CHI TIẾT THÔNG TIN TOP %d:", limit)
-    addLine("-------------------------------------------------------------------------")
-    addLine(string.format("%-4s | %-24s | %-12s | %-12s | %-6s | %-18s | %s", "Hạng", "Tên Nhân Vật", "Phái", "Lực Chiến", "Cấp", "Guild", "RoleID"))
-    addLine(string.rep("-", 95))
-
-    for i = 1, limit do
-        local item = ranks[i]
-        local name = item.name or item.roleName or ""
-        local careerStr = FormatCareer(item.career)
-        local fight = item.fightValue or 0
-        local level = item.level or 0
-        local guild = (item.unionName and item.unionName ~= "") and item.unionName or "(Trống)"
-        local lid = tostring(item.lid or item.id or 0)
-
-        addLine(string.format("%-4d | %-24s | %-12s | %-12s | %-6s | %-18s | %s", i, name, careerStr, tostring(fight), tostring(level), guild, lid))
-    end
-
-    addLine(string.rep("-", 95))
-    addLine("\n=========================================================================")
-    addLine(">>> KẾT THÚC DANH SÁCH TOP %d! <<<", limit)
-    addLine("=========================================================================")
-
-    local fullContent = table.concat(out, "\n")
-    local ok, filePath = WriteOutputFile(fullContent)
-
-    -- Lưu vào biến toàn cục để tiện dùng trong game
-    _G.Mod_LastRankTop50 = nameList
-    _G.Mod_LastRankTop50Str = fastCopyStr
-    _G.Mod_LastRankTopData = ranks
-
-    local tipMsg = string.format("Đã lấy thành công danh sách %d người chơi BXH vào output.txt!", limit)
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg(tipMsg)
-    elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
-        _G.CommonTipManage.ShowTips(tipMsg)
-    end
+    -- 7. THỬ GỌI TRỰC TIẾP Mod_UpdateTowerSkillButtons
+    log("\n--- 7. THỬ CHẠY Mod_UpdateTowerSkillButtons() ---")
+    pcall(function()
+        if _G.Mod_UpdateTowerSkillButtons then
+            _G.Mod_UpdateTowerSkillButtons()
+            log("Đã gọi _G.Mod_UpdateTowerSkillButtons() thành công!")
+            local tGo = CS.UnityEngine.GameObject.Find("Mod_TowerCheck_HoiSinh_Enabled_Toggle")
+            if tGo then
+                local txtComp = tGo:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
+                if txtComp then
+                    log("Text sau khi gọi Update: '" .. tostring(txtComp.text) .. "'")
+                end
+            end
+        else
+            log("Chưa có hàm _G.Mod_UpdateTowerSkillButtons!")
+        end
+    end)
 end
 
--- =========================================================================
--- LOGIC TÌM VÀ TRUY VẤN DỮ LIỆU BXH THỰC LỰC
--- =========================================================================
-local foundRanks = nil
+log("\n=========================================================================")
+log("Hoàn tất kiểm tra!")
 
--- Cách 1: Lấy trực tiếp từ UI nếu đang mở
+local outputContent = table.concat(lines, "\n")
+
+-- Ghi ra output.txt
+local outPath = ""
 pcall(function()
-    local ui = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Rank_ListInfoUI")
-    if ui and ui.GetRankData then
-        local d = ui:GetRankData()
-        if d and #d > 0 then
-            foundRanks = d
-        end
+    outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
+end)
+if outPath == "" then
+    outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
+end
+
+local written = false
+pcall(function()
+    if CS.System and CS.System.IO and CS.System.IO.File and CS.System.Text and CS.System.Text.Encoding then
+        CS.System.IO.File.WriteAllText(outPath, outputContent, CS.System.Text.Encoding.UTF8)
+        written = true
     end
 end)
-
--- Cách 2: Lấy từ RankListData.RankListAll[RANKTYPE.fight]
-if not foundRanks or #foundRanks == 0 then
+if not written then
     pcall(function()
-        if _G.RankListData and _G.RankListData.RankListAll then
-            local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
-            local fightTable = _G.RankListData.RankListAll[fightType]
-            if fightTable then
-                -- Ưu tiên career All (-1 hoặc 0)
-                if fightTable[-1] and #fightTable[-1] > 0 then
-                    foundRanks = fightTable[-1]
-                elseif fightTable[0] and #fightTable[0] > 0 then
-                    foundRanks = fightTable[0]
-                else
-                    -- Duyệt tất cả các key để tìm bảng nhiều phần tử nhất
-                    local maxLen = 0
-                    local best = nil
-                    for k, v in pairs(fightTable) do
-                        if type(v) == "table" and #v > maxLen then
-                            maxLen = #v
-                            best = v
-                        end
-                    end
-                    if best then foundRanks = best end
-                end
-            end
+        local f = io.open(outPath, "w")
+        if f then
+            f:write(outputContent)
+            f:close()
+            written = true
         end
     end)
 end
 
--- Nếu đã có dữ liệu trong bộ nhớ -> Xuất ngay lập tức!
-if foundRanks and #foundRanks > 0 then
-    ProcessRankList(foundRanks)
-else
-    -- Nếu chưa có dữ liệu (chưa mở BXH bao giờ) -> Gửi yêu cầu lên Server và đợi phản hồi
-    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-        _G.FloatingWordUtility.QuickMsg("Đang gửi yêu cầu lấy dữ liệu BXH Thực Lực từ Server...")
-    end
-
-    pcall(function()
-        local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
-        local careerAll = (_G.ERoleCareer and _G.ERoleCareer.All) or -1
-
-        if _G.networkRequest and _G.networkRequest.ReqQueryRanks then
-            _G.networkRequest.ReqQueryRanks(fightType, careerAll)
-        elseif _G.NetManager and _G.RankMessage and _G.RankMessage.ReqQueryRanks then
-            _G.NetManager.Send(_G.RankMessage.ReqQueryRanks, { rankType = fightType, career = careerAll })
-        end
-    end)
-
-    -- Đợi 0.8 giây cho Server trả gói tin về
-    local timerObj = _G.Timer or Timer
-    if timerObj and timerObj.Start then
-        timerObj.Start(0.8, function()
-            local delayedRanks = nil
-            pcall(function()
-                local fightType = (_G.RANKTYPE and _G.RANKTYPE.fight) or 2
-                if _G.RankListData and _G.RankListData.RankListAll and _G.RankListData.RankListAll[fightType] then
-                    local fTable = _G.RankListData.RankListAll[fightType]
-                    delayedRanks = fTable[-1] or fTable[0]
-                    if not delayedRanks or #delayedRanks == 0 then
-                        for k, v in pairs(fTable) do
-                            if type(v) == "table" and #v > 0 then
-                                delayedRanks = v
-                                break
-                            end
-                        end
-                    end
-                end
-            end)
-
-            if delayedRanks and #delayedRanks > 0 then
-                ProcessRankList(delayedRanks)
-            else
-                WriteOutputFile("Chưa nhận được phản hồi dữ liệu BXH từ Server. Vui lòng mở bảng BXH trong game lên một lần rồi chạy lại script!")
-                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg("Chưa có dữ liệu BXH. Hãy mở bảng BXH trong game rồi chạy lại!")
-                end
-            end
-        end)
-    else
-        WriteOutputFile("Đã gửi yêu cầu tới server. Hãy mở bảng BXH và chạy lại script để lấy danh sách.")
-    end
+if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+    _G.FloatingWordUtility.QuickMsg(written and "[DUMP OK] Đã ghi kết quả kiểm tra vào output.txt!" or "[LỖI] Không thể ghi output.txt")
 end

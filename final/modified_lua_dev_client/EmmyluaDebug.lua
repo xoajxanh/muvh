@@ -313,16 +313,6 @@ local function CreateModUI()
             end)
             if _G.Mod_TowerCheck_DkHpBuff_Enabled == nil then _G.Mod_TowerCheck_DkHpBuff_Enabled = true end
         end
-        -- =========================================================================
-        -- [MOD FEATURE]: TÙY CHỌN CHECK HỒI SINH (ĐẠI THIÊN SỨ PHÙ HỘ)
-        -- Mô tả: Tự động lưu và khôi phục trạng thái bật/tắt của tùy chọn Hồi Sinh.
-        -- =========================================================================
-        if _G.Mod_TowerCheck_HoiSinh_Enabled == nil then
-            pcall(function()
-                _G.Mod_TowerCheck_HoiSinh_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_HoiSinh_Enabled", 1) == 1)
-            end)
-            if _G.Mod_TowerCheck_HoiSinh_Enabled == nil then _G.Mod_TowerCheck_HoiSinh_Enabled = true end
-        end
         if _G.Mod_TowerCheck_PhaNgu_Enabled == nil then
             pcall(function()
                 _G.Mod_TowerCheck_PhaNgu_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_TowerCheck_PhaNgu_Enabled", 1) == 1)
@@ -7653,18 +7643,15 @@ local function CreateModUI()
                             local needAtk   = checkSkill and (_G.Mod_TowerCheck_ElfAtkBuff_Enabled == true)
                             local needDef   = checkSkill and (_G.Mod_TowerCheck_ElfDefBuff_Enabled == true)
                             local needHp    = checkSkill and (_G.Mod_TowerCheck_DkHpBuff_Enabled == true)
-                            local needHoiSinh = checkSkill and (_G.Mod_TowerCheck_HoiSinh_Enabled == true)
                             local needPhaNgu = checkSkill and (_G.Mod_TowerCheck_PhaNgu_Enabled == true)
                             local needNhiepHon = checkSkill and (_G.Mod_TowerCheck_NhiepHon_Enabled == true)
                             local needAnyBuff = needAtk or needDef or needHp
 
-                            local hasHoiSinh = false
                             local hasPhaNgu = false
                             local hasNhiepHon = false
                             pcall(function()
                                 local meSkills = (me and me.skills) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.skills)
                                 if meSkills then
-                                    if meSkills[10200100] then hasHoiSinh = true end
                                     if meSkills[16130100] then hasPhaNgu = true end
                                     if meSkills[26020100] then hasNhiepHon = true end
                                 end
@@ -7727,33 +7714,6 @@ local function CreateModUI()
                                             end
                                             if cdSec <= 0 then cdSec = 1 end
                                             table.insert(missingSkills, string.format("Gai (%ds)", cdSec))
-                                        end
-                                    end
-
-                                    -- Kiểm tra Hồi Sinh (Đại Thiên Sứ Phù Hộ 10200100): chỉ sẵn sàng khi CD dưới 5s và chưa kích hoạt buff
-                                    if needHoiSinh then
-                                        local isHoiSinhBuffActive = false
-                                        local meId = me.id or (me.data and me.data.id) or 0
-                                        if _G.BuffData and _G.BuffData.BuffDic and _G.BuffData.BuffDic[meId] then
-                                            for _, b in ipairs(_G.BuffData.BuffDic[meId]) do
-                                                if b.buffConfig and (b.buffConfig.buffGroup == 53010101 or (b.buffCId and b.buffCId >= 53010101 and b.buffCId <= 53010131)) then
-                                                    isHoiSinhBuffActive = true
-                                                    break
-                                                end
-                                            end
-                                        end
-
-                                        if isHoiSinhBuffActive then
-                                            table.insert(missingSkills, "Hồi Sinh (Đang kích hoạt)")
-                                        else
-                                            local cdData = me.cd and (me.cd[10200100] or me.cd[10200101])
-                                            local cdSec = 0
-                                            if cdData and cdData.endTime and cdData.endTime > serverTime then
-                                                cdSec = math.ceil((cdData.endTime - serverTime) / 1000)
-                                            end
-                                            if cdSec > 5 then
-                                                table.insert(missingSkills, string.format("Hồi Sinh (%ds)", cdSec))
-                                            end
                                         end
                                     end
 
@@ -9722,7 +9682,6 @@ local function CreateModUI()
                 _G.Mod_TowerCheck_ElfAtkBuff_Enabled = true
                 _G.Mod_TowerCheck_ElfDefBuff_Enabled = true
                 _G.Mod_TowerCheck_DkHpBuff_Enabled = true
-                _G.Mod_TowerCheck_HoiSinh_Enabled = true
                 _G.Mod_TowerCheck_PhaNgu_Enabled = true
                 _G.Mod_TowerCheck_NhiepHon_Enabled = true
                 _G.Mod_AutoBuff_Enabled = false
@@ -13168,9 +13127,8 @@ local function CreateModUI()
                     local _, txtElfDef = CreateToggle("BUFF THỦ", "Mod_TowerCheck_ElfDefBuff_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 35
 
-                    -- Hàng 3: BUFF MÁU & HỒI SINH
+                    -- Hàng 3: BUFF MÁU (để trống ô bên phải)
                     local _, txtDkHp = CreateToggle("BUFF MÁU", "Mod_TowerCheck_DkHpBuff_Enabled", btnX, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
-                    local _, txtHoiSinh = CreateToggle("HỒI SINH", "Mod_TowerCheck_HoiSinh_Enabled", btnX + optW + optGap, curY, optW, nil, contentGo, 30, 11, loadBlueColor)
                     curY = curY - 35
 
                     -- Hàng 4: PHÁ NGỰ & NHIẾP HỒN (<35%)
@@ -13180,7 +13138,7 @@ local function CreateModUI()
 
                     -- =========================================================================
                     -- [MOD FEATURE]: REAL-TIME CẬP NHẬT COOLDOWN & THỜI LƯỢNG BUFF TRÊN CÁC NÚT CHECK SKILL
-                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai, Hồi Sinh, Phá Ngự, Nhiếp Hồn)
+                    -- Mô tả: Cập nhật text hiển thị số giây hồi chiêu (Cực Hạn, Thánh Hồn Gai, Phá Ngự, Nhiếp Hồn)
                     --        và số giây hiệu lực còn lại của Buff Công, Buff Thủ, Buff Máu.
                     --        Khi Auto Tháp hoặc Check Skill Tháp tắt -> Reset text về mặc định sạch sẽ.
                     -- =========================================================================
@@ -13190,7 +13148,6 @@ local function CreateModUI()
                         if txtElfAtk and txtElfAtk.text ~= "BUFF CÔNG" then txtElfAtk.text = "BUFF CÔNG" end
                         if txtElfDef and txtElfDef.text ~= "BUFF THỦ" then txtElfDef.text = "BUFF THỦ" end
                         if txtDkHp and txtDkHp.text ~= "BUFF MÁU" then txtDkHp.text = "BUFF MÁU" end
-                        if txtHoiSinh and txtHoiSinh.text ~= "HỒI SINH" then txtHoiSinh.text = "HỒI SINH" end
                         if txtPhaNgu and txtPhaNgu.text ~= "PHÁ NGỰ" then txtPhaNgu.text = "PHÁ NGỰ" end
                         if txtNhiepHon and txtNhiepHon.text ~= "NHIẾP HỒN (<35%)" then txtNhiepHon.text = "NHIẾP HỒN (<35%)" end
                     end
@@ -13290,19 +13247,7 @@ local function CreateModUI()
                             txtDkHp.text = "BUFF MÁU"
                         end
 
-                        -- 6. Hồi Sinh CD (Đại Thiên Sứ Phù Hộ 10200100)
-                        if txtHoiSinh and txtHoiSinh.gameObject and txtHoiSinh.gameObject.activeInHierarchy then
-                            if _G.Mod_TowerCheck_HoiSinh_Enabled then
-                                local cdMsg = me.cd and me.cd[10200100]
-                                local cd = GetCdSeconds(cdMsg)
-                                local newTxt = (cd > 0) and ("HỒI SINH (" .. cd .. "s)") or "HỒI SINH"
-                                if txtHoiSinh.text ~= newTxt then txtHoiSinh.text = newTxt end
-                            else
-                                if txtHoiSinh.text ~= "HỒI SINH" then txtHoiSinh.text = "HỒI SINH" end
-                            end
-                        end
-
-                        -- 7. Phá Ngự CD
+                        -- 6. Phá Ngự CD
                         if txtPhaNgu and txtPhaNgu.gameObject and txtPhaNgu.gameObject.activeInHierarchy then
                             if _G.Mod_TowerCheck_PhaNgu_Enabled then
                                 local cdMsg = me.cd and (me.cd[16130100] or me.cd[16130101])
@@ -13314,7 +13259,7 @@ local function CreateModUI()
                             end
                         end
 
-                        -- 8. Nhiếp Hồn CD
+                        -- 7. Nhiếp Hồn CD
                         if txtNhiepHon and txtNhiepHon.gameObject and txtNhiepHon.gameObject.activeInHierarchy then
                             if _G.Mod_TowerCheck_NhiepHon_Enabled then
                                 local cdMsg = me.cd and (me.cd[26020100] or me.cd[26020101])
@@ -14050,6 +13995,118 @@ local function CreateModUI()
 
                 curY = curY - 45
             end
+
+            -- =========================================================================
+            -- [MOD FEATURE]: CHẶN CHAT THEO TÊN (BLOCK CHAT BY NAME) - GIAO DIỆN
+            -- Mô tả: Cụm Toggle CHẶN CHAT (130px) và InputField (125px) ở đáy cột Hỗ Trợ.
+            -- =========================================================================
+            curY = curY - 5
+
+            -- 1. Toggle CHẶN CHAT
+            local tGoBlockChat = GameObject("Mod_BlockChat_Enabled_Toggle")
+            tGoBlockChat.transform:SetParent(contentGo.transform, false)
+
+            local tRtBlockChat = tGoBlockChat:AddComponent(typeof(RectTransform))
+            tRtBlockChat.anchorMin, tRtBlockChat.anchorMax, tRtBlockChat.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tRtBlockChat.anchoredPosition = Vector2(btnX, curY)
+            tRtBlockChat.sizeDelta = Vector2(130, 30)
+
+            local bgBlockChat = GameObject("Bg")
+            bgBlockChat.transform:SetParent(tGoBlockChat.transform, false)
+            local bgRtBlockChat = bgBlockChat:AddComponent(typeof(RectTransform))
+            bgRtBlockChat.anchorMin, bgRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            bgRtBlockChat.sizeDelta = Vector2(0, 0)
+            local bgImgBlockChat = bgBlockChat:AddComponent(typeof(Image))
+
+            local txtGoBlockChat = GameObject("Text")
+            txtGoBlockChat.transform:SetParent(tGoBlockChat.transform, false)
+            local txtRtBlockChat = txtGoBlockChat:AddComponent(typeof(RectTransform))
+            txtRtBlockChat.anchorMin, txtRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            txtRtBlockChat.sizeDelta = Vector2(0, 0)
+            local txtBlockChat = txtGoBlockChat:AddComponent(typeof(Text))
+            txtBlockChat.raycastTarget = false
+            txtBlockChat.fontSize = 15
+            txtBlockChat.alignment = TextAnchor.MiddleCenter
+            if defaultFont then txtBlockChat.font = defaultFont end
+
+            local btnBlockChat = tGoBlockChat:AddComponent(typeof(Button))
+
+            if _G.Mod_BlockChat_Enabled == nil then
+                _G.Mod_BlockChat_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_BlockChat_Enabled", 0) == 1
+            end
+
+            local function UpdateBlockChatLabel()
+                if _G.Mod_BlockChat_Enabled then
+                    bgImgBlockChat.color = Color(0.2, 0.5, 0.2, 1)
+                    txtBlockChat.text = "CHẶN CHAT"
+                    txtBlockChat.color = Color.white
+                else
+                    bgImgBlockChat.color = Color(0.3, 0.3, 0.3, 1)
+                    txtBlockChat.text = "CHẶN CHAT"
+                    txtBlockChat.color = Color(0.7, 0.7, 0.7, 1)
+                end
+            end
+            UpdateBlockChatLabel()
+            _G.ModUpdateBlockChatLabel = UpdateBlockChatLabel
+
+            btnBlockChat.onClick:AddListener(function()
+                _G.Mod_BlockChat_Enabled = not _G.Mod_BlockChat_Enabled
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_BlockChat_Enabled", _G.Mod_BlockChat_Enabled and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateBlockChatLabel()
+                if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
+                    _G.Mod_ClearBlockedChatHistory()
+                end
+            end)
+
+            -- 2. InputField cho Chặn Chat
+            local blockChatTgtGo = GameObject("BlockChatInput")
+            blockChatTgtGo.transform:SetParent(contentGo.transform, false)
+            local blockChatRt = blockChatTgtGo:AddComponent(typeof(RectTransform))
+            blockChatRt.anchorMin, blockChatRt.anchorMax, blockChatRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            blockChatRt.anchoredPosition = Vector2(btnX + 135, curY)
+            blockChatRt.sizeDelta = Vector2(125, 30)
+
+            local blockChatBg = GameObject("Bg")
+            blockChatBg.transform:SetParent(blockChatTgtGo.transform, false)
+            local blockChatBgRt = blockChatBg:AddComponent(typeof(RectTransform))
+            blockChatBgRt.anchorMin, blockChatBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            blockChatBgRt.sizeDelta = Vector2(0, 0)
+            local blockChatImg = blockChatBg:AddComponent(typeof(Image))
+            blockChatImg.color = Color(0.1, 0.1, 0.1, 1)
+
+            local blockChatTxtGo = GameObject("Text")
+            blockChatTxtGo.transform:SetParent(blockChatTgtGo.transform, false)
+            local blockChatTxtRt = blockChatTxtGo:AddComponent(typeof(RectTransform))
+            blockChatTxtRt.anchorMin, blockChatTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            blockChatTxtRt.offsetMin, blockChatTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local blockChatTxt = blockChatTxtGo:AddComponent(typeof(Text))
+
+            if _G.Mod_BlockChat_Names == nil then
+                _G.Mod_BlockChat_Names = CS.UnityEngine.PlayerPrefs.GetString("Mod_BlockChat_Names", "")
+            end
+
+            blockChatTxt.text = _G.Mod_BlockChat_Names
+            blockChatTxt.color, blockChatTxt.fontSize = Color.white, 15
+            blockChatTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then blockChatTxt.font = defaultFont end
+
+            local blockChatField = blockChatTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+            blockChatField.textComponent = blockChatTxt
+            blockChatField.text = _G.Mod_BlockChat_Names
+
+            blockChatField.onValueChanged:AddListener(function(val)
+                _G.Mod_BlockChat_Names = val
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_BlockChat_Names", val)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
+                    _G.Mod_ClearBlockedChatHistory()
+                end
+            end)
+
+            curY = curY - 45
 
                 -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
                 contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
@@ -17603,3 +17660,130 @@ _G.Mod_StartFindHoaLongLoop = function()
         end
     end)
 end
+
+-- =========================================================================
+-- [MOD FEATURE]: HỆ THỐNG CHẶN CHAT THEO TÊN (BLOCK CHAT SYSTEM)
+-- Mô tả: Chặn triệt để tin nhắn chat từ đối tượng bị chỉ định trên toàn bộ các kênh (Thế giới, Bang, Đội, Gần, Liên server, Mật).
+--        Hỗ trợ nhập nhiều tên (cách nhau bởi ';', ',', '|'), so khớp không phân biệt hoa/thường,
+--        và tự động dọn sạch lịch sử tin nhắn cũ của đối tượng bị chặn khỏi giao diện.
+-- =========================================================================
+if _G.Mod_BlockChat_Enabled == nil then
+    pcall(function()
+        _G.Mod_BlockChat_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_BlockChat_Enabled", 0) == 1
+    end)
+end
+if _G.Mod_BlockChat_Names == nil then
+    pcall(function()
+        _G.Mod_BlockChat_Names = CS.UnityEngine.PlayerPrefs.GetString("Mod_BlockChat_Names", "")
+    end)
+end
+
+local function IsSenderBlocked(senderName)
+    if not _G.Mod_BlockChat_Enabled then return false end
+    if not senderName or senderName == "" then return false end
+    local blockInput = _G.Mod_BlockChat_Names
+    if not blockInput or blockInput == "" then return false end
+
+    local sLower = string.lower(tostring(senderName))
+    for token in string.gmatch(blockInput, "([^;,|\r\n]+)") do
+        local clean = string.match(token, "^%s*(.-)%s*$")
+        if clean and clean ~= "" then
+            local cleanLower = string.lower(clean)
+            if string.find(sLower, cleanLower, 1, true) then
+                return true
+            end
+        end
+    end
+    return false
+end
+_G.Mod_IsSenderBlocked = IsSenderBlocked
+
+local function ClearBlockedChatHistory()
+    pcall(function()
+        if not _G.Mod_BlockChat_Enabled then return end
+        local blockInput = _G.Mod_BlockChat_Names
+        if not blockInput or blockInput == "" then return end
+        if not _G.ChatData or not _G.ChatData.ChannelMessage then return end
+
+        local hasChanged = false
+        for k, messageQueue in pairs(_G.ChatData.ChannelMessage) do
+            if messageQueue and messageQueue.Count and messageQueue.GetValueByIndex and messageQueue.Clear and messageQueue.PushLast then
+                local count = messageQueue:Count()
+                local hasBlocked = false
+                local kept = {}
+                for i = 1, count do
+                    local msgItem = messageQueue:GetValueByIndex(i)
+                    local from = msgItem and (msgItem.from or msgItem.roleChatInfo)
+                    local senderName = from and (from.name or from.roleName)
+                    local isBlocked = false
+                    if senderName then
+                        local sId = from.serverId
+                        local fullSender = (sId and sId ~= "") and string.format("S%s.%s", tostring(sId), tostring(senderName)) or tostring(senderName)
+                        if IsSenderBlocked(senderName) or IsSenderBlocked(fullSender) then
+                            isBlocked = true
+                        end
+                    end
+                    if isBlocked then
+                        hasBlocked = true
+                    else
+                        table.insert(kept, msgItem)
+                    end
+                end
+
+                if hasBlocked then
+                    hasChanged = true
+                    messageQueue:Clear()
+                    for _, item in ipairs(kept) do
+                        messageQueue:PushLast(item)
+                    end
+                end
+            end
+        end
+
+        if hasChanged and _G.EventManager and _G.Event and _G.Event.Chat_RefreshChat then
+            _G.EventManager.Dispatch(_G.Event.Chat_RefreshChat)
+        end
+    end)
+end
+_G.Mod_ClearBlockedChatHistory = ClearBlockedChatHistory
+
+-- Hook ChatData.AddMessage (Chặn tiếp nhận tin nhắn chat từ Server)
+if _G.ChatData and not _G.Mod_Hooked_ChatData_AddMessage then
+    _G.Mod_Hooked_ChatData_AddMessage = true
+    local old_ChatData_AddMessage = _G.ChatData.AddMessage
+    _G.ChatData.AddMessage = function(channel, message)
+        if _G.Mod_BlockChat_Enabled and message then
+            local from = message.from or message.roleChatInfo
+            local senderName = from and (from.name or from.roleName)
+            if senderName then
+                local sId = from.serverId
+                local fullSender = (sId and sId ~= "") and string.format("S%s.%s", tostring(sId), tostring(senderName)) or tostring(senderName)
+                if IsSenderBlocked(senderName) or IsSenderBlocked(fullSender) then
+                    return
+                end
+            end
+        end
+        return old_ChatData_AddMessage(channel, message)
+    end
+end
+
+-- Hook ChatController.OnResChat (Chặn ngay tại handler giải mã gói tin)
+if _G.ChatController and not _G.Mod_Hooked_ChatController_OnResChat then
+    _G.Mod_Hooked_ChatController_OnResChat = true
+    local old_ChatController_OnResChat = _G.ChatController.OnResChat
+    _G.ChatController.OnResChat = function(eventId, data)
+        if _G.Mod_BlockChat_Enabled and data then
+            local from = data.from or data.roleChatInfo
+            local senderName = from and (from.name or from.roleName)
+            if senderName then
+                local sId = from.serverId
+                local fullSender = (sId and sId ~= "") and string.format("S%s.%s", tostring(sId), tostring(senderName)) or tostring(senderName)
+                if IsSenderBlocked(senderName) or IsSenderBlocked(fullSender) then
+                    return
+                end
+            end
+        end
+        return old_ChatController_OnResChat(eventId, data)
+    end
+end
+

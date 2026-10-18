@@ -1,125 +1,289 @@
 =========================================================================
->>> DANH SÁCH TOP 50 BẢNG XẾP HẠNG THỰC LỰC (TỔNG HỢP) TẠI SERVER <<<
-Thời gian trích xuất: 2026/10/15 23:34:23
-Tổng số người trong BXH: 50
+>>> KIỂM TRA TRẠNG THÁI SKILL & COOLDOWN TRÊN NHÂN VẬT <<<
+Thời gian thực thi: 2026/10/16 16:22:48
 =========================================================================
+Nhân vật: ID=5944968961162558483, Tên=Dino, Career=36, Dead=nil, HP=24062702/24345797
 
--------------------------------------------------------------------------
-1. CHUỖI TÊN COPY NHANH (Dùng paste thẳng vào ô Khóa Mục Tiêu / Mod):
--------------------------------------------------------------------------
-NgốBabe;Dino;Munn;Wind;GAM3LOL;BT;TLinh;chị2;Ferrari;TMO;CứcChym;IllIIl;Nắngcực;Bảo;Mắm;VânBae;Shine;Dâu;Bố393;XD666;LanAnh;PeNgheo;BeNgheo;Rush;Bụi;HeoSua;MrSiTTT;Vampire;HeyBae;HeoSữa;ChupPi;Trân;anhba;Vân;Anhlong;Balala;BabyBus;Anggel;DK;Lunatic;Kjng;GiaHan;Útđen;Bin90;Loren;tttimmy;Dark01;mrsi;VanYeng;RedM00n
+--- 1. CÁC BIẾN MOD CHECK SKILL THÁP ---
+Mod_AutoChallengeTower_Enabled : false
+Mod_AutoTower_CheckSkill_Enabled: true
+Mod_TowerCheck_HoiSinh_Enabled  : true
+Mod_TowerCheck_Limit_Enabled    : false
+Mod_TowerCheck_AngelSpike_Enabled: false
+Mod_TowerCheck_NhiepHon_Enabled : false
 
--------------------------------------------------------------------------
-2. DANH SÁCH TÊN RIÊNG BIỆT (Dễ copy từng người):
--------------------------------------------------------------------------
- 1. NgốBabe
- 2. Dino
- 3. Munn
- 4. Wind
- 5. GAM3LOL
- 6. BT
- 7. TLinh
- 8. chị2
- 9. Ferrari
-10. TMO
-11. CứcChym
-12. IllIIl
-13. Nắngcực
-14. Bảo
-15. Mắm
-16. VânBae
-17. Shine
-18. Dâu
-19. Bố393
-20. XD666
-21. LanAnh
-22. PeNgheo
-23. BeNgheo
-24. Rush
-25. Bụi
-26. HeoSua
-27. MrSiTTT
-28. Vampire
-29. HeyBae
-30. HeoSữa
-31. ChupPi
-32. Trân
-33. anhba
-34. Vân
-35. Anhlong
-36. Balala
-37. BabyBus
-38. Anggel
-39. DK
-40. Lunatic
-41. Kjng
-42. GiaHan
-43. Útđen
-44. Bin90
-45. Loren
-46. tttimmy
-47. Dark01
-48. mrsi
-49. VanYeng
-50. RedM00n
+--- 2. TOÀN BỘ DANH SÁCH COOLDOWN (me.cd) ---
+ServerTime (ms): 1792142568947 | ServerSecondTime (s): 1792142568
+  CD Key: 1          | RemSec: 1    | EndTime: 1792142569043  | Name: Unknown
+  CD Key: 0          | RemSec: 0    | EndTime: 1792142568911  | Name: Unknown
+  CD Key: 5944968977939821570 | RemSec: 24528 | EndTime: 1792167096329  | Name: Unknown
+  CD Key: 16100100   | RemSec: -5286 | EndTime: 1792137282539  | Name: Unknown
+  CD Key: 5944968977939640325 | RemSec: 24348 | EndTime: 1792166916182  | Name: Unknown
+  CD Key: 26020102   | RemSec: -1792082568 | EndTime: 60000          | Name: Nhiếp Hồn Chú
+  CD Key: 5944968977884285961 | RemSec: -56723 | EndTime: 1792085845780  | Name: Unknown
+  CD Key: 5944970077482591242 | RemSec: 27888 | EndTime: 1792170456784  | Name: Unknown
+  CD Key: 16100107   | RemSec: -5286 | EndTime: 1792137282539  | Name: Thủy Ảo Thú
+  CD Key: 5944968977886983180 | RemSec: -27079 | EndTime: 1792115489575  | Name: Unknown
+  CD Key: 16020109   | RemSec: -1792127950 | EndTime: 14618          | Name: Thuật Cuồng Bạo
+  CD Key: 5944968977915905038 | RemSec: -11716 | EndTime: 1792130852086  | Name: Unknown
+  CD Key: 5944968977939634191 | RemSec: 15921 | EndTime: 1792158489460  | Name: Unknown
+  CD Key: 13002000   | RemSec: -1122 | EndTime: 1792141446556  | Name: Mãnh Kích Siêu Cấp
+  CD Key: 5944968977885154321 | RemSec: -28879 | EndTime: 1792113689490  | Name: Unknown
+  CD Key: 5944970077482588178 | RemSec: 27888 | EndTime: 1792170456769  | Name: Unknown
+  CD Key: 13601043   | RemSec: -1118 | EndTime: 1792141450279  | Name: Huỳnh Thạch (Hỏa)
+  CD Key: 16030100   | RemSec: -5284 | EndTime: 1792137284420  | Name: Unknown
+  CD Key: 26030101   | RemSec: -5281 | EndTime: 1792137287623  | Name: Bịt Mắt
+  CD Key: 5944970077482584086 | RemSec: 27888 | EndTime: 1792170456753  | Name: Unknown
+  CD Key: 5944968977889519639 | RemSec: -24619 | EndTime: 1792117949768  | Name: Unknown
+  CD Key: 16030106   | RemSec: -1792139645 | EndTime: 2923           | Name: Thuật Hôn Mê
+  CD Key: 5944968977886961692 | RemSec: -55941 | EndTime: 1792086627397  | Name: Unknown
+  CD Key: 5944968977885474845 | RemSec: -57146 | EndTime: 1792085422641  | Name: Unknown
+  CD Key: 414        | RemSec: 1    | EndTime: 1792142569501  | Name: Unknown
+  CD Key: 5944968977889315871 | RemSec: -24799 | EndTime: 1792117769753  | Name: Unknown
+  CD Key: 5944968977888862242 | RemSec: -25279 | EndTime: 1792117289656  | Name: Unknown
+  CD Key: 16040100   | RemSec: -21228 | EndTime: 1792121340305  | Name: Unknown
+  CD Key: 5944968978010113062 | RemSec: 66176 | EndTime: 1792208744302  | Name: Unknown
+  CD Key: 26040104   | RemSec: -1792103568 | EndTime: 39000          | Name: Trận Yếu Ớt
+  CD Key: 5944968977918034985 | RemSec: -25600 | EndTime: 1792116968768  | Name: Unknown
+  CD Key: 16040106   | RemSec: -21228 | EndTime: 1792121340348  | Name: Liệt Tập
+  CD Key: 10200107   | RemSec: -1792082568 | EndTime: 60000          | Name: Đại Thiên Sứ Phù Hộ Lv7
+  CD Key: 5944968977889310770 | RemSec: -24799 | EndTime: 1792117769745  | Name: Unknown
+  CD Key: 16020100   | RemSec: -5377 | EndTime: 1792137191371  | Name: Unknown
+  CD Key: 16050100   | RemSec: 1    | EndTime: 1792142569091  | Name: Unknown
+  CD Key: 10000100   | RemSec: -22506 | EndTime: 1792120062150  | Name: Unknown
+  CD Key: 5944971176916476950 | RemSec: -25635 | EndTime: 1792116933412  | Name: Unknown
+  CD Key: 26040100   | RemSec: 32   | EndTime: 1792142600329  | Name: Unknown
+  CD Key: 5944970077523763222 | RemSec: 68094 | EndTime: 1792210662525  | Name: Unknown
+  CD Key: 5944968977917047828 | RemSec: 2265 | EndTime: 1792144833121  | Name: Unknown
+  CD Key: 16130106   | RemSec: -1792103568 | EndTime: 39000          | Name: Trận Phá Ngự
+  CD Key: 5944968977889305659 | RemSec: -24859 | EndTime: 1792117709735  | Name: Unknown
+  CD Key: 16130100   | RemSec: 31   | EndTime: 1792142599163  | Name: Unknown
+  CD Key: 16060100   | RemSec: 1    | EndTime: 1792142569113  | Name: Unknown
+  CD Key: 5944970077482551309 | RemSec: 27888 | EndTime: 1792170456698  | Name: Unknown
+  CD Key: 5944971176913939467 | RemSec: -25640 | EndTime: 1792116928124  | Name: Unknown
+  CD Key: 10000200   | RemSec: -22502 | EndTime: 1792120066189  | Name: Unknown
+  CD Key: 5944968977971261455 | RemSec: 26375 | EndTime: 1792168943346  | Name: Unknown
+  CD Key: 5944968977939833871 | RemSec: 24528 | EndTime: 1792167096337  | Name: Unknown
+  CD Key: 101        | RemSec: -163 | EndTime: 1792142405889  | Name: Unknown
+  CD Key: 16140100   | RemSec: -8   | EndTime: 1792142560325  | Name: Unknown
+  CD Key: 10060101   | RemSec: -1118 | EndTime: 1792141450279  | Name: Liên Kích Kỹ
+  CD Key: 102        | RemSec: -81  | EndTime: 1792142487589  | Name: Unknown
+  CD Key: 5944968977918123018 | RemSec: -25517 | EndTime: 1792117051779  | Name: Unknown
+  CD Key: 12221000   | RemSec: -1115 | EndTime: 1792141453880  | Name: Unknown
+  CD Key: 12221001   | RemSec: -1792134568 | EndTime: 8000           | Name: Sao Băng Diệt Thế: Nhận Lực Nham Thú, khi tấn công có 0.69% xác suất triệu hồi 4 lần Thiên Thạch: Oanh kích ngẫu nhiên kẻ địch trong phạm vi 5x5 phía trước, mỗi Thiên Thạch gây DMG diện rộng bằng 100% Tấn Công, đồng thời gây 50% giảm tốc, duy trì 0.5s. Cấp Kỹ Năng hiện tại
+  CD Key: 16060106   | RemSec: -1792141204 | EndTime: 1364           | Name: Tụ Linh
+  CD Key: 16010100   | RemSec: -5301 | EndTime: 1792137267870  | Name: Unknown
+  CD Key: 5944968961162558483 | RemSec: -1107 | EndTime: 1792141461305  | Name: Unknown
+  CD Key: 5944968977888868363 | RemSec: -25279 | EndTime: 1792117289665  | Name: Unknown
+  CD Key: 5944970077482598411 | RemSec: 27888 | EndTime: 1792170456816  | Name: Unknown
+  CD Key: 5944968977918079028 | RemSec: -25555 | EndTime: 1792117012960  | Name: Unknown
+  CD Key: 10200400   | RemSec: -1099 | EndTime: 1792141469708  | Name: Unknown
+  CD Key: 10200401   | RemSec: -1792097568 | EndTime: 45000          | Name: Ánh Sáng Đại Thiên Sứ Lv1
+  CD Key: 12370000   | RemSec: -1109 | EndTime: 1792141459730  | Name: Unknown
+  CD Key: 2050003    | RemSec: -20599 | EndTime: 1792121969262  | Name: Unknown
+  CD Key: 12070100   | RemSec: 1    | EndTime: 1792142569043  | Name: Unknown
+  CD Key: 12370005   | RemSec: -1792122568 | EndTime: 20000          | Name: Vòng Thời Không Lv5
+  CD Key: 5944970077482537174 | RemSec: 27888 | EndTime: 1792170456652  | Name: Unknown
+  CD Key: 5944970077482548226 | RemSec: 27888 | EndTime: 1792170456688  | Name: Unknown
+  CD Key: 12080100   | RemSec: 2    | EndTime: 1792142570490  | Name: Unknown
+  CD Key: 10200100   | RemSec: -5398 | EndTime: 1792137170839  | Name: Unknown
+  CD Key: 16070106   | RemSec: -1792142404 | EndTime: 164            | Name: Liệt Quang Thiểm
+  CD Key: 12070107   | RemSec: -1117 | EndTime: 1792141451253  | Name: Thiên Thạch
+  CD Key: 16070100   | RemSec: -3869 | EndTime: 1792138699339  | Name: Unknown
+  CD Key: 5944968978011489306 | RemSec: 71190 | EndTime: 1792213758470  | Name: Unknown
+  CD Key: 5944970077482582068 | RemSec: 27888 | EndTime: 1792170456735  | Name: Unknown
+  CD Key: 2050004    | RemSec: -58520 | EndTime: 1792084048368  | Name: Unknown
+  CD Key: 2050005    | RemSec: -58130 | EndTime: 1792084438693  | Name: Unknown
+  CD Key: 10300001   | RemSec: -41481 | EndTime: 1792101087551  | Name: Thủ Hộ Lv1
+  CD Key: 5944968977939628034 | RemSec: 24288 | EndTime: 1792166856170  | Name: Unknown
+  CD Key: 5944970077482545171 | RemSec: 27888 | EndTime: 1792170456668  | Name: Unknown
+  CD Key: 16080100   | RemSec: -4   | EndTime: 1792142564929  | Name: Unknown
+  CD Key: 10000101   | RemSec: -1792142448 | EndTime: 120            | Name: Tấn công thường
+  CD Key: 13603046   | RemSec: -1118 | EndTime: 1792141450509  | Name: Huỳnh Thạch (Băng)
+  CD Key: 13001000   | RemSec: -1075 | EndTime: 1792141493706  | Name: Né Tránh Vô Hạn
+  CD Key: 5944968977939811354 | RemSec: 24468 | EndTime: 1792167036321  | Name: Unknown
+  CD Key: 5944970077482807298 | RemSec: 28128 | EndTime: 1792170696858  | Name: Unknown
+  CD Key: 10300010   | RemSec: -41481 | EndTime: 1792101087551  | Name: Thủ Hộ Lv10
+  CD Key: 5944970077482594308 | RemSec: 27888 | EndTime: 1792170456798  | Name: Unknown
+  CD Key: 5944971176915185675 | RemSec: -25637 | EndTime: 1792116931670  | Name: Unknown
+  CD Key: 16140113   | RemSec: -1792142422 | EndTime: 146            | Name: Sinh Linh Phù Hộ
+  CD Key: 10000201   | RemSec: -22502 | EndTime: 1792120066225  | Name: Tấn công thường (Vũ khí cán ngắn)
+  CD Key: 5944967878493080591 | RemSec: 85168 | EndTime: 1792227735986  | Name: Unknown
+  CD Key: 5944968977884542992 | RemSec: -56483 | EndTime: 1792086085882  | Name: Unknown
+  CD Key: 26070101   | RemSec: -1792141955 | EndTime: 613            | Name: An Hồn Misa
+  CD Key: 26070100   | RemSec: 1    | EndTime: 1792142569325  | Name: Unknown
+  CD Key: 5944970077482563607 | RemSec: 27888 | EndTime: 1792170456713  | Name: Unknown
+  CD Key: 16090100   | RemSec: -4822 | EndTime: 1792137746659  | Name: Unknown
+  CD Key: 26010101   | RemSec: -5941 | EndTime: 1792136627204  | Name: Dã Thú Địa Ngục
+  CD Key: 5944970077482647554 | RemSec: 27948 | EndTime: 1792170516833  | Name: Unknown
+  CD Key: 10060100   | RemSec: 0    | EndTime: 1792142568281  | Name: Unknown
+  CD Key: 13003000   | RemSec: -1792082568 | EndTime: 60000          | Name: Tận Thế Vô Tận
+  CD Key: 13001001   | RemSec: -1075 | EndTime: 1792141493706  | Name: Né Tránh Vô Hạn
+  CD Key: 16090106   | RemSec: -4817 | EndTime: 1792137751045  | Name: Ám Hồn Khúc
+  CD Key: 16010107   | RemSec: -1792142466 | EndTime: 102            | Name: Liên Lôi Chú
+  CD Key: 13602040   | RemSec: -1792140568 | EndTime: 2000           | Name: Huỳnh Thạch (Thủy)
+  CD Key: 16080106   | RemSec: -1204 | EndTime: 1792141364831  | Name: Triệu Hồi Ác Linh
+  CD Key: 12080106   | RemSec: -1792141034 | EndTime: 1534           | Name: Đóng băng
+  CD Key: 16050106   | RemSec: -1117 | EndTime: 1792141451666  | Name: Ảnh Sát
+Tổng số CD đang có: 111
 
--------------------------------------------------------------------------
-3. BẢNG CHI TIẾT THÔNG TIN TOP 50:
--------------------------------------------------------------------------
-Hạng | Tên Nhân Vật         | Phái        | Lực Chiến | Cấp  | Guild              | RoleID
------------------------------------------------------------------------------------------------
-1    | NgốBabe                | Triệu Hồi Sư | 22148828     | 4248   | Russian            | 5944968961162621988
-2    | Dino                     | Triệu Hồi Sư | 15528402     | 4211   | Russian            | 5944968961162558483
-3    | Munn                     | Ma Kiếm Sĩ | 11824663     | 3862   | Russian            | 5944968961162516489
-4    | Wind                     | Ma Pháp Sư | 11079533     | 3892   | Russian            | 5944969511038812292
-5    | GAM3LOL                  | Cung Thủ   | 5331789      | 3571   | Lọ Đế         | 5944968961210784829
-6    | BT                       | Kiếm Sĩ   | 4474289      | 3309   | Russian            | 5944968961213649947
-7    | TLinh                    | Ma Pháp Sư | 4372835      | 3241   | Russian            | 5944968961210539392
-8    | chị2                   | Cung Thủ   | 3831397      | 2988   | Russian            | 5944968961236248663
-9    | Ferrari                  | Cung Thủ   | 3504080      | 3096   | Russian            | 5944969511019520031
-10   | TMO                      | Triệu Hồi Sư | 3098305      | 3135   | Russian            | 5944969511042742328
-11   | CứcChym                | Triệu Hồi Sư | 2744627      | 2883   | (Trống)          | 5944969511115286545
-12   | IllIIl                   | Ma Kiếm Sĩ | 2573838      | 2899   | Lọ Đế         | 5944968961205013737
-13   | Nắngcực              | Ma Kiếm Sĩ | 2407645      | 2955   | Russian            | 5944969511045860535
-14   | Bảo                    | Cung Thủ   | 2404221      | 2991   | Lọ Đế         | 5944968961164322940
-15   | Mắm                    | Cung Thủ   | 2309165      | 2970   | Russian            | 5944969511006756868
-16   | VânBae                  | Triệu Hồi Sư | 2302266      | 2946   | Russian            | 5944969511007187982
-17   | Shine                    | Cung Thủ   | 2159996      | 3029   | Russian            | 5944968961195523251
-18   | Dâu                     | Ma Kiếm Sĩ | 1962541      | 2916   | Russian            | 5944968961241597230
-19   | Bố393                  | Kiếm Sĩ   | 1855416      | 2866   | Lọ Đế         | 5944968961185953800
-20   | XD666                    | Cung Thủ   | 1807131      | 2888   | Russian            | 5944969511006734336
-21   | LanAnh                   | Triệu Hồi Sư | 1738578      | 2859   | Russian            | 5944969511038275664
-22   | PeNgheo                  | Ma Kiếm Sĩ | 1518980      | 2770   | Russian            | 5944968961222334745
-23   | BeNgheo                  | Ma Kiếm Sĩ | 1472172      | 2658   | Russian            | 5944968961194449924
-24   | Rush                     | Ma Kiếm Sĩ | 1442126      | 2701   | Russian            | 5944968961190603971
-25   | Bụi                    | Ma Kiếm Sĩ | 1432209      | 2682   | Russian            | 5944968961220394275
-26   | HeoSua                   | Cung Thủ   | 1340294      | 2624   | Russian            | 5944968961214789751
-27   | MrSiTTT                  | Kiếm Sĩ   | 1267394      | 2728   | Russian            | 5944968961184238663
-28   | Vampire                  | Cung Thủ   | 1233716      | 2625   | Russian            | 5944968961184408660
-29   | HeyBae                   | Kiếm Sĩ   | 1024714      | 2310   | Russian            | 5944969511023798320
-30   | HeoSữa                 | Ma Pháp Sư | 973860       | 2445   | Russian            | 5944968961176065156
-31   | ChupPi                   | Cung Thủ   | 972113       | 2500   | Russian            | 5944968961188697170
-32   | Trân                    | Cung Thủ   | 934062       | 2509   | Russian            | 5944968961248232791
-33   | anhba                    | Cung Thủ   | 897721       | 2475   | Russian            | 5944968961165852879
-34   | Vân                     | Ma Pháp Sư | 858038       | 2509   | Russian            | 5944969511007691984
-35   | Anhlong                  | Ma Pháp Sư | 826186       | 2615   | Lọ Đế         | 5944968961220929812
-36   | Balala                   | Cung Thủ   | 770749       | 2400   | Russian            | 5944968961220677769
-37   | BabyBus                  | Cung Thủ   | 689452       | 2392   | Russian            | 5944969511045643377
-38   | Anggel                   | Kiếm Sĩ   | 684125       | 2165   | Russian            | 5944968961183465653
-39   | DK                       | Kiếm Sĩ   | 618321       | 2282   | Russian            | 5944968961180299342
-40   | Lunatic                  | Cung Thủ   | 616667       | 2303   | Russian            | 5944968961162437632
-41   | Kjng                     | Ma Kiếm Sĩ | 593834       | 2241   | (Trống)          | 5944969511056798849
-42   | GiaHan                   | Cung Thủ   | 591481       | 2112   | (Trống)          | 5944968961179826254
-43   | Útđen                  | Cung Thủ   | 526622       | 2271   | Russian            | 5944968961234997254
-44   | Bin90                    | Cung Thủ   | 522005       | 2096   | Russian            | 5944969511007997098
-45   | Loren                    | Cung Thủ   | 465794       | 2365   | Thần             | 5944969513594243106
-46   | tttimmy                  | Kiếm Sĩ   | 454873       | 2086   | Russian            | 5944968961226096959
-47   | Dark01                   | Cung Thủ   | 446234       | 2174   | Russian            | 5944969511056368679
-48   | mrsi                     | Triệu Hồi Sư | 437669       | 2092   | Russian            | 5944968961206386875
-49   | VanYeng                  | Ma Pháp Sư | 428613       | 2107   | (Trống)          | 5944969511061937376
-50   | RedM00n                  | Ma Kiếm Sĩ | 428517       | 2092   | (Trống)          | 5944969511006976055
------------------------------------------------------------------------------------------------
+--- 2.1. KIỂM TRA ĐẶC BIỆT CÁC KEY LIÊN QUAN HỒI SINH ---
+  [FOUND IN me.cd] Key 10200100 => EndTime=1792137170839
+  [NIL in me.cd] Key 10200101
+  [NIL in me.cd] Key 10200102
+  [NIL in me.cd] Key 10200103
+  [NIL in me.cd] Key 10200104
+  [NIL in me.cd] Key 10200105
+  [NIL in me.cd] Key 10200106
+  [FOUND IN me.cd] Key 10200107 => EndTime=60000
+  [NIL in me.cd] Key 10200110
+  [NIL in me.cd] Key 53010101
+
+--- 3. DANH SÁCH BUFF HIỆN CÓ TRÊN BẢN THÂN (BuffDic) ---
+  Buff [1]: ID=16140119 | Group=16140100 | Name=Sinh Linh Phù Hộ | EndTime=600000
+  Buff [2]: ID=330001 | Group=330000 | Name=BUFF Tăng DMG Bảng Săn Ma | EndTime=600000
+  Buff [3]: ID=31000088 | Group=31000080 | Name=Sức Mạnh Chiến Thần | EndTime=600000
+  Buff [4]: ID=31000186 | Group=31000070 | Name=Ánh Sáng Thủ Hộ | EndTime=600000
+  Buff [5]: ID=31000034 | Group=31000020 | Name=Ánh Sinh Mệnh | EndTime=600000
+  Buff [6]: ID=2430201 | Group=2430200 | Name=DMG Triệu Hồi Ác Linh | EndTime=0
+  Buff [7]: ID=12900102 | Group=12900100 | Name=噬魂苍穹 | EndTime=0
+  Buff [8]: ID=17010168 | Group=17010100 | Name=Kỹ Năng Đỡ Tinh Hạch 68 | EndTime=0
+  Buff [9]: ID=12191001 | Group=12191000 | Name=Tân Tinh Sương Giá | EndTime=0
+  Buff [10]: ID=2214024 | Group=2214000 | Name=Thánh Hoàn: Ấn Ký Mù | EndTime=0
+  Buff [11]: ID=2212024 | Group=2212000 | Name=Thánh Hoàn: Ấn Ký Khiên Thánh | EndTime=0
+  Buff [12]: ID=2215024 | Group=2215000 | Name=Thánh Hoàn: Ấn Ký Giảm Buff | EndTime=0
+  Buff [13]: ID=12800201 | Group=12800200 | Name=噬魂星渊 | EndTime=0
+  Buff [14]: ID=12171001 | Group=12171000 | Name=Giẫm Đạp Chiến Tranh | EndTime=0
+  Buff [15]: ID=1001412 | Group=1001400 | Name=Ám Hồn Khúc | EndTime=0
+  Buff [16]: ID=12151001 | Group=12151000 | Name=Bạo Phong Ma Hạt | EndTime=0
+  Buff [17]: ID=2211023 | Group=2211000 | Name=Thánh Hoàn: Ấn Ký Thiêu Đốt | EndTime=0
+  Buff [18]: ID=81005009 | Group=81005000 | Name=Tinh Thông Chiến Đấu | EndTime=0
+  Buff [19]: ID=2213024 | Group=2213000 | Name=Thánh Hoàn: Ấn Ký Trị Liệu | EndTime=0
+Tổng số Buff đang có: 19
+
+--- 4. KIỂM TRA ViewData.meData ---
+  ViewData skill: Key=10200100, sid=10200107
+Số skill 102001 trong ViewData.meData.skills: 1
+ViewData.meData.cdMap:
+  cdMap[1] = table: 0x76374b5bf280
+  cdMap[0] = table: 0x76374b5baa00
+  cdMap[5944968977939821570] = table: 0x76374b5a7f00
+  cdMap[16100100] = table: 0x76374b5a74c0
+  cdMap[5944968977939640325] = table: 0x76374b5bce40
+  cdMap[26020102] = table: 0x76374b5bfd00
+  cdMap[5944968977884285961] = table: 0x76374b5a7d80
+  cdMap[5944970077482591242] = table: 0x76374b5bc000
+  cdMap[16100107] = table: 0x76374b5c1840
+  cdMap[5944968977886983180] = table: 0x76374b5bcf00
+  cdMap[16020109] = table: 0x76374b5beb00
+  cdMap[5944968977915905038] = table: 0x76374b5bc240
+  cdMap[5944968977939634191] = table: 0x76374b5a8d40
+  cdMap[13002000] = table: 0x76374b5be2c0
+  cdMap[5944968977885154321] = table: 0x76374b5a8e00
+  cdMap[5944970077482588178] = table: 0x76374b5b9f80
+  cdMap[13601043] = table: 0x76374b5bcb40
+  cdMap[16030100] = table: 0x76374b5bc600
+  cdMap[26030101] = table: 0x76374b5b9a40
+  cdMap[5944970077482584086] = table: 0x76374b5a7fc0
+  cdMap[5944968977889519639] = table: 0x76374b5aa140
+  cdMap[16030106] = table: 0x76374b5ba880
+  cdMap[5944968977886961692] = table: 0x76374b5b7b00
+  cdMap[5944968977885474845] = table: 0x76374b5a8740
+  cdMap[414] = table: 0x76374b5aa900
+  cdMap[5944968977889315871] = table: 0x76374b5ba580
+  cdMap[5944968977888862242] = table: 0x76374b5a88c0
+  cdMap[16040100] = table: 0x76374b5b9040
+  cdMap[5944968978010113062] = table: 0x76374b5b9980
+  cdMap[26040104] = table: 0x76374b5bf4c0
+  cdMap[5944968977918034985] = table: 0x76374b5a7440
+  cdMap[16040106] = table: 0x76374b5c10c0
+  cdMap[10200107] = table: 0x76374b5be140
+  cdMap[5944968977889310770] = table: 0x76374b5baf40
+  cdMap[16020100] = table: 0x76374b5c1780
+  cdMap[16050100] = table: 0x76374b5a8800
+  cdMap[10000100] = table: 0x76374b5c1180
+  cdMap[5944971176916476950] = table: 0x76374b5c1000
+  cdMap[26040100] = table: 0x76374b5bfc40
+  cdMap[5944970077523763222] = table: 0x76374b5bfb80
+  cdMap[5944968977917047828] = table: 0x76374b5bf700
+  cdMap[16130106] = table: 0x76374b5bfe80
+  cdMap[5944968977889305659] = table: 0x76374b5b94c0
+  cdMap[16130100] = table: 0x76374b5bff40
+  cdMap[16060100] = table: 0x76374b5bf400
+  cdMap[5944970077482551309] = table: 0x76374b5bf100
+  cdMap[5944971176913939467] = table: 0x76374b5bc0c0
+  cdMap[10000200] = table: 0x76374b5bed40
+  cdMap[5944968977971261455] = table: 0x76374b5bec80
+  cdMap[5944968977939833871] = table: 0x76374b5bebc0
+  cdMap[101] = table: 0x76374b5bea40
+  cdMap[16140100] = table: 0x76374b5a8bc0
+  cdMap[10060101] = table: 0x76374b5bfdc0
+  cdMap[102] = table: 0x76374b5be8c0
+  cdMap[5944968977918123018] = table: 0x76374b5be5c0
+  cdMap[12221000] = table: 0x76374b5ba100
+  cdMap[12221001] = table: 0x76374b5c1480
+  cdMap[16060106] = table: 0x76374b5be800
+  cdMap[16010100] = table: 0x76374b5be440
+  cdMap[5944968961162558483] = table: 0x76374b5be380
+  cdMap[5944968977888868363] = table: 0x76374b5be200
+  cdMap[5944970077482598411] = table: 0x76374b5bc9c0
+  cdMap[5944968977918079028] = table: 0x76374b5bc780
+  cdMap[10200400] = table: 0x76374b5a7340
+  cdMap[10200401] = table: 0x76374b5c1240
+  cdMap[12370000] = table: 0x76374b5bc300
+  cdMap[2050003] = table: 0x76374b5b9ec0
+  cdMap[12070100] = table: 0x76374b5b7980
+  cdMap[12370005] = table: 0x76374b5be500
+  cdMap[5944970077482537174] = table: 0x76374b5bee00
+  cdMap[5944970077482548226] = table: 0x76374b5b7440
+  cdMap[12080100] = table: 0x76374b5bac40
+  cdMap[10200100] = table: 0x76374b5bab80
+  cdMap[16070106] = table: 0x76374b5c1540
+  cdMap[12070107] = table: 0x76374b5c1600
+  cdMap[16070100] = table: 0x76374b5ba940
+  cdMap[5944968978011489306] = table: 0x76374b5ba7c0
+  cdMap[5944970077482582068] = table: 0x76374b5ba400
+  cdMap[2050004] = table: 0x76374b5b9e00
+  cdMap[2050005] = table: 0x76374b5b9b00
+  cdMap[10300001] = table: 0x76374b5a71c0
+  cdMap[5944968977939628034] = table: 0x76374b5b9800
+  cdMap[5944970077482545171] = table: 0x76374b5b9740
+  cdMap[16080100] = table: 0x76374b5aaf00
+  cdMap[10000101] = table: 0x76374b5bfac0
+  cdMap[13603046] = table: 0x76374b5beec0
+  cdMap[13001000] = table: 0x76374b5b9680
+  cdMap[5944968977939811354] = table: 0x76374b5b95c0
+  cdMap[5944970077482807298] = table: 0x76374b5a8200
+  cdMap[10300010] = table: 0x76374b5be740
+  cdMap[5944970077482594308] = table: 0x76374b5b9100
+  cdMap[5944971176915185675] = table: 0x76374b5b9280
+  cdMap[16140113] = table: 0x76374b5bf340
+  cdMap[10000201] = table: 0x76374b5bccc0
+  cdMap[5944967878493080591] = table: 0x76374b5aa780
+  cdMap[5944968977884542992] = table: 0x76374b5a8080
+  cdMap[26070101] = table: 0x76374b5c1300
+  cdMap[26070100] = table: 0x76374b5a8fc0
+  cdMap[5944970077482563607] = table: 0x76374b5a7b40
+  cdMap[16090100] = table: 0x76374b5a7840
+  cdMap[26010101] = table: 0x76374b5c1900
+  cdMap[5944970077482647554] = table: 0x76374b5aa540
+  cdMap[10060100] = table: 0x76374b5aafc0
+  cdMap[13003000] = table: 0x76374b5c16c0
+  cdMap[13001001] = table: 0x76374b5ba640
+  cdMap[16090106] = table: 0x76374b5bef80
+  cdMap[16010107] = table: 0x76374b5bf1c0
+  cdMap[13602040] = table: 0x76374b5c13c0
+  cdMap[16080106] = table: 0x76374b5bf940
+  cdMap[12080106] = table: 0x76374b5b9c80
+  cdMap[16050106] = table: 0x76374b5bcd80
+
+--- 5. KIỂM TRA THÔNG TIN BỘ ĐỒ (SUIT DATA) ---
+
+--- 6. KIỂM TRA NÚT UI HỒI SINH TRÊN MÀN HÌNH ---
+Không tìm thấy GameObject: Mod_TowerCheck_HoiSinh_Enabled_Toggle (Menu đang đóng hoặc chưa tạo)
+
+--- 7. THỬ CHẠY Mod_UpdateTowerSkillButtons() ---
+Đã gọi _G.Mod_UpdateTowerSkillButtons() thành công!
 
 =========================================================================
->>> KẾT THÚC DANH SÁCH TOP 50! <<<
-=========================================================================
+Hoàn tất kiểm tra!
