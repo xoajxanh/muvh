@@ -17,10 +17,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
   }
 
-  if (session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Quản trị viên (Admin) mới có quyền xem Lịch sử đăng nhập!' }, { status: 403 });
-  }
-
   const { searchParams } = new URL(req.url);
   const typeParam = searchParams.get('type') || searchParams.get('tab') || 'CUSTOMER';
   const targetType = typeParam.toUpperCase() === 'SVIP' ? 'SVIP' : 'CUSTOMER';
@@ -33,6 +29,32 @@ export async function GET(req: NextRequest) {
   const whereClause: any = {
     type: targetType,
   };
+
+  // Phân quyền: Sale chỉ xem thiết bị của các token do chính mình tạo (createdBy: session.id), Admin xem tất cả
+  if (session.role !== 'ADMIN') {
+    const userTokens = await prisma.token.findMany({
+      where: {
+        createdById: session.userId,
+        type: targetType,
+        isDeleted: false,
+      },
+      select: { deviceSnMd5: true },
+    });
+    const allowedMds = Array.from(new Set(userTokens.map((t) => t.deviceSnMd5).filter((s) => Boolean(s && s.trim()))));
+    if (allowedMds.length === 0) {
+      return NextResponse.json({
+        devices: [],
+        selectedType: targetType,
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 1,
+        },
+      });
+    }
+    whereClause.deviceSnMd5 = { in: allowedMds };
+  }
 
   if (search !== '') {
     whereClause.OR = [
@@ -79,6 +101,7 @@ export async function GET(req: NextRequest) {
             deviceSnMd5: g.deviceSnMd5,
             type: targetType,
             isDeleted: false,
+            ...(session.role !== 'ADMIN' ? { createdById: session.userId } : {}),
           },
           select: {
             id: true,

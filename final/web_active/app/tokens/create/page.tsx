@@ -373,22 +373,42 @@ export default function TokenCreatePage() {
                     </div>
                   </div>
 
-                  {/* Character Reincarnation */}
+                  {/* Character Reincarnation Primary & Secondary */}
                   <div className="flex flex-col justify-end">
-                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end">
-                      Chuyển Nhân Vật
+                    <label className="block text-xs font-semibold text-slate-300 mb-1.5 min-h-[20px] flex items-end justify-between">
+                      <span>Chuyển Nhân Vật</span>
+                      <span className="text-[10px] text-cyan-400 font-mono">C{characterReincarnation} & C{characterReincarnationSecondary}</span>
                     </label>
-                    <select
-                      value={characterReincarnation}
-                      onChange={(e) => setCharacterReincarnation(Number(e.target.value))}
-                      className="w-full h-10 px-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-cyan-300 font-semibold"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          Chuyển {lvl} (Data C{lvl} & C{lvl - 1})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <select
+                        value={characterReincarnation}
+                        onChange={(e) => {
+                          const prim = Number(e.target.value);
+                          setCharacterReincarnation(prim);
+                          setCharacterReincarnationSecondary(prim > 1 ? prim - 1 : 1);
+                        }}
+                        className="w-full h-10 px-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-cyan-300 font-semibold"
+                        title="Chuyển chính (Primary)"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            Chính: C{lvl}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={characterReincarnationSecondary}
+                        onChange={(e) => setCharacterReincarnationSecondary(Number(e.target.value))}
+                        className="w-full h-10 px-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300 font-semibold"
+                        title="Chuyển phụ (Secondary)"
+                      >
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                          <option key={lvl} value={lvl}>
+                            Phụ: C{lvl}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
 

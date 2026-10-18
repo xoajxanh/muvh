@@ -53,10 +53,6 @@ export default function HistoryPage() {
       })
       .then((data) => {
         if (data?.user) {
-          if (data.user.role !== 'ADMIN') {
-            router.push('/dashboard');
-            return;
-          }
           setUser(data.user);
         }
       })
@@ -89,7 +85,7 @@ export default function HistoryPage() {
   };
 
   useEffect(() => {
-    if (user && user.role === 'ADMIN') {
+    if (user) {
       loadHistory(activeTab, page, search);
     }
   }, [user, activeTab, page, limit]);

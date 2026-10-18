@@ -15,14 +15,23 @@ export async function GET(req: NextRequest, { params }: { params: { md5: string 
     return NextResponse.json({ error: 'Chưa đăng nhập' }, { status: 401 });
   }
 
-  if (session.role !== 'ADMIN') {
-    return NextResponse.json({ error: 'Chỉ Quản trị viên (Admin) mới có quyền xem Lịch sử đăng nhập!' }, { status: 403 });
-  }
-
   const { md5 } = params;
   const cleanMd5 = decodeURIComponent(md5).trim();
 
   try {
+    if (session.role !== 'ADMIN') {
+      const hasPerm = await prisma.token.findFirst({
+        where: {
+          deviceSnMd5: cleanMd5,
+          createdById: session.userId,
+          isDeleted: false,
+        },
+      });
+      if (!hasPerm) {
+        return NextResponse.json({ error: 'Bạn không có quyền xem thông tin thiết bị này!' }, { status: 403 });
+      }
+    }
+
     const [historyList, tokens] = await Promise.all([
       prisma.deviceLoginHistory.findMany({
         where: { deviceSnMd5: cleanMd5 },
@@ -30,7 +39,11 @@ export async function GET(req: NextRequest, { params }: { params: { md5: string 
         take: 100, // Tối đa 100 lần đăng nhập gần nhất
       }),
       prisma.token.findMany({
-        where: { deviceSnMd5: cleanMd5, isDeleted: false },
+        where: {
+          deviceSnMd5: cleanMd5,
+          isDeleted: false,
+          ...(session.role !== 'ADMIN' ? { createdById: session.userId } : {}),
+        },
         include: {
           createdBy: { select: { displayName: true, username: true } },
         },

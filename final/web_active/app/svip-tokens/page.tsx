@@ -34,7 +34,7 @@ export default function SvipTokensPage() {
   const [tokens, setTokens] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ACTIVE');
   const [createdByFilter, setCreatedByFilter] = useState('ALL');
   const [usersList, setUsersList] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -651,7 +651,14 @@ export default function SvipTokensPage() {
                     min={3}
                     max={12}
                     value={formData.mainTier}
-                    onChange={(e) => setFormData({ ...formData, mainTier: parseInt(e.target.value, 10) || 8 })}
+                    onChange={(e) => {
+                      const mainVal = parseInt(e.target.value, 10) || 8;
+                      setFormData({
+                        ...formData,
+                        mainTier: mainVal,
+                        subTier: mainVal > 1 ? mainVal - 1 : 1,
+                      });
+                    }}
                     className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
                   />
                 </div>

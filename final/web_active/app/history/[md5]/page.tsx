@@ -44,10 +44,6 @@ export default function DeviceHistoryDetailPage({ params }: { params: { md5: str
       })
       .then((resData) => {
         if (resData?.user) {
-          if (resData.user.role !== 'ADMIN') {
-            router.push('/dashboard');
-            return;
-          }
           setUser(resData.user);
           loadDetail();
         }
