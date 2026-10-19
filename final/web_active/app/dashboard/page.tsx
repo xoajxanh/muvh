@@ -165,7 +165,7 @@ export default function DashboardPage() {
               )}
 
               <Link
-                href={activeTab === 'CUSTOMER' ? '/tokens/create' : '/svip-tokens'}
+                href={activeTab === 'CUSTOMER' ? '/tokens/create' : '/svip-tokens?action=create'}
                 className={`px-5 py-2.5 text-sm font-bold rounded-xl shadow-lg flex items-center gap-2 hover:scale-105 transition-all ${
                   activeTab === 'CUSTOMER'
                     ? 'gradient-button text-white shadow-cyan-500/20'
@@ -508,7 +508,11 @@ export default function DashboardPage() {
                                 {isCurrentFiltered ? 'Đang lọc' : 'Lọc Dashboard'}
                               </button>
                               <Link
-                                href={`/tokens?createdBy=${sale.userId}`}
+                                href={
+                                  activeTab === 'CUSTOMER'
+                                    ? `/tokens?createdBy=${sale.userId}`
+                                    : `/svip-tokens?createdBy=${sale.userId}`
+                                }
                                 className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
                               >
                                 Xem Token
@@ -524,18 +528,23 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Recently Created Tokens */}
+          {/* ========================================================================= */}
+          {/* [MOD FEATURE]: DANH SÁCH TOKEN MỚI TẠO THEO TAB CUSTOMER / SVIP */}
+          {/* Mô tả: Chuyển hướng xem tất cả và xem chi tiết theo tab đang xem */}
+          {/* ========================================================================= */}
           <div className="glass-card p-6 rounded-2xl space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-bold text-slate-100 text-base">Token Mới Kích Hoạt Gần Đây</h3>
+                <h3 className="font-bold text-slate-100 text-base">
+                  Token {activeTab === 'SVIP' ? 'SVIP' : 'Customer'} Mới Kích Hoạt Gần Đây
+                </h3>
                 <p className="text-xs text-slate-400">Danh sách 5 token vừa tạo gần nhất</p>
               </div>
               <Link
-                href="/tokens"
+                href={activeTab === 'CUSTOMER' ? '/tokens' : '/svip-tokens'}
                 className="text-xs text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1"
               >
-                Xem tất cả <ChevronRight className="w-4 h-4" />
+                Xem tất cả {activeTab === 'SVIP' ? 'SVIP' : 'Customer'} <ChevronRight className="w-4 h-4" />
               </Link>
             </div>
 
@@ -546,7 +555,7 @@ export default function DashboardPage() {
                     <th className="py-3 px-4">Khách Hàng</th>
                     <th className="py-3 px-4">Thiết Bị MD5</th>
                     <th className="py-3 px-4">UID Nhân Vật</th>
-                    <th className="py-3 px-4">Gói VIP</th>
+                    <th className="py-3 px-4">{activeTab === 'SVIP' ? 'Cấp Chuyển' : 'Gói VIP'}</th>
                     <th className="py-3 px-4">Hạn Sử Dụng</th>
                     <th className="py-3 px-4">Giá Tiền</th>
                     <th className="py-3 px-4">Người Tạo</th>
@@ -564,8 +573,14 @@ export default function DashboardPage() {
                       </td>
                       <td className="py-3.5 px-4 font-mono text-slate-200">{tok.characterUid}</td>
                       <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 font-medium whitespace-nowrap">
-                          {tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định')}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-lg border font-medium whitespace-nowrap ${
+                          activeTab === 'SVIP'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 font-bold'
+                            : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/20'
+                        }`}>
+                          {activeTab === 'SVIP'
+                            ? `SVIP Cấp ${tok.characterReincarnation || 8}.${tok.characterReincarnationSecondary || 7}`
+                            : (tok.vipPackage?.name || (tok.isCustom ? 'Custom Config' : 'Mặc Định'))}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-medium text-slate-300">
@@ -577,7 +592,11 @@ export default function DashboardPage() {
                       <td className="py-3.5 px-4 text-slate-400">{tok.createdBy?.displayName}</td>
                       <td className="py-3.5 px-4 text-right">
                         <Link
-                          href={`/tokens/${tok.id}`}
+                          href={
+                            activeTab === 'CUSTOMER'
+                              ? `/tokens/${tok.id}`
+                              : `/svip-tokens?edit=${tok.id}&search=${tok.deviceSnMd5}`
+                          }
                           className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium text-[11px] transition"
                         >
                           Chi tiết

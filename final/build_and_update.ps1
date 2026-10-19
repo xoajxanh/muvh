@@ -8,7 +8,7 @@ $OutputEncoding = [System.Text.Encoding]::UTF8
 
 # Refresh PATH tu Registry de tu dong nhan dien Python/Java vua moi cai dat ma khong can mo lai console
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
-$version = "195"
+$version = "196"
 # Tu dong xac dinh thu muc goc (Git Root Directory)
 $rootDir = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path "$rootDir\.git")) {

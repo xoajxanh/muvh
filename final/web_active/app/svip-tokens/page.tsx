@@ -31,11 +31,20 @@ import {
 export default function SvipTokensPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  // =========================================================================
+  // [MOD FEATURE]: KHỞI TẠO BỘ LỌC TỪ URL SEARCH PARAMS CHO SVIP TOKENS
+  // Mô tả: Hỗ trợ nhận createdBy, search và action từ Dashboard chuyển sang
+  // =========================================================================
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const initialCreatedBy = urlParams?.get('createdBy') || 'ALL';
+  const initialSearch = urlParams?.get('search') || '';
+  const initialStatus = initialSearch ? 'ALL' : 'ACTIVE';
+
   const [tokens, setTokens] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ACTIVE');
-  const [createdByFilter, setCreatedByFilter] = useState('ALL');
+  const [search, setSearch] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+  const [createdByFilter, setCreatedByFilter] = useState(initialCreatedBy);
   const [usersList, setUsersList] = useState<any[]>([]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -178,6 +187,35 @@ export default function SvipTokensPage() {
     });
     setIsModalOpen(true);
   };
+
+  // =========================================================================
+  // [MOD FEATURE]: TỰ ĐỘNG MỞ MODAL XEM CHI TIẾT HOẶC TẠO MỚI TOKEN SVIP TỪ URL
+  // Mô tả: Hỗ trợ query ?action=create và ?edit={tokenId} từ Dashboard
+  // =========================================================================
+  useEffect(() => {
+    const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+    if (!params) return;
+
+    const action = params.get('action');
+    if (action === 'create') {
+      openCreateModal();
+    }
+
+    const editId = params.get('edit');
+    if (editId) {
+      fetch(`/api/svip-tokens/${editId}`)
+        .then((res) => {
+          if (res.ok) return res.json();
+          return null;
+        })
+        .then((data) => {
+          if (data?.token) {
+            openEditModal(data.token);
+          }
+        })
+        .catch((e) => console.error('Failed to load token for edit:', e));
+    }
+  }, []);
 
   // Tính Ngày hết hạn dự kiến theo startDate + durationDays
   const calculateExpirePreview = () => {
