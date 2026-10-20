@@ -355,7 +355,7 @@ local function CreateModUI()
 
         -- =========================================================================
         -- [MOD FEATURE]: HỆ THỐNG LỆNH BÍ MẬT (SECRET COMMAND ENGINE)
-        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst1, /adminburst2, /autothap, /autoaoe, /autobuff, /sieutoc, /pkmodeguild)
+        -- Mô tả: Quản lý các mã lệnh kích hoạt tính năng ẩn (/adminburst, /adminburst1, /adminburst2, /autothap, /autoaoe, /autobuff, /sieutoc, /pkmodeguild)
         -- =========================================================================
         if _G.Mod_SecretCommands == nil then
             pcall(function()
@@ -499,6 +499,42 @@ local function CreateModUI()
             end)
             if _G.Mod_LockTarget_Name == nil then _G.Mod_LockTarget_Name = "" end
         end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: AUTO PHÓ BẢN (HUYẾT LÂU & QUẢNG TRƯỜNG QUỶ) - INIT PREFS
+        -- Mô tả: Khởi tạo biến cài đặt tự động tham gia Huyết Lâu, QTQ và dùng Thẻ EXP
+        -- =========================================================================
+        if _G.Mod_AutoBloodCastle_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoBloodCastle_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBloodCastle_Enabled", 0) == 1
+            end)
+            if _G.Mod_AutoBloodCastle_Enabled == nil then _G.Mod_AutoBloodCastle_Enabled = false end
+        end
+        if _G.Mod_Coord_BloodCastle == nil then
+            pcall(function()
+                _G.Mod_Coord_BloodCastle = CS.UnityEngine.PlayerPrefs.GetString("Mod_Coord_BloodCastle", "14#60")
+            end)
+            if _G.Mod_Coord_BloodCastle == nil or _G.Mod_Coord_BloodCastle == "" then _G.Mod_Coord_BloodCastle = "14#60" end
+        end
+        if _G.Mod_AutoDemonPlaza_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoDemonPlaza_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoDemonPlaza_Enabled", 0) == 1
+            end)
+            if _G.Mod_AutoDemonPlaza_Enabled == nil then _G.Mod_AutoDemonPlaza_Enabled = false end
+        end
+        if _G.Mod_Coord_DemonPlaza == nil then
+            pcall(function()
+                _G.Mod_Coord_DemonPlaza = CS.UnityEngine.PlayerPrefs.GetString("Mod_Coord_DemonPlaza", "")
+            end)
+            if _G.Mod_Coord_DemonPlaza == nil then _G.Mod_Coord_DemonPlaza = "" end
+        end
+        if _G.Mod_AutoUseExpCard_Enabled == nil then
+            pcall(function()
+                _G.Mod_AutoUseExpCard_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoUseExpCard_Enabled", 0) == 1
+            end)
+            if _G.Mod_AutoUseExpCard_Enabled == nil then _G.Mod_AutoUseExpCard_Enabled = false end
+        end
+
 
         -- =========================================================================
         -- [MOD FEATURE]: THỐNG KÊ SĂN BOSS & ĐI MAP ẨN (FARM STATS & PERSISTENCE)
@@ -4404,9 +4440,11 @@ local function CreateModUI()
                 end
                 return tostring(mapId)
             end
+
             -- =========================================================================
-            -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG (CHỐNG TÁCH & CHỐNG THU HỒI)
-            -- Mô tả: Kiểm tra cấp cường hóa (intensify > 0) hoặc gia cường (additional > 0) từ mọi tầng dữ liệu
+            -- [MOD FEATURE]: BẢO VỆ TUYỆT ĐỐI ĐỒ NÂNG CẤP & TRANG SỨC BỘ ĐẶC THÙ (SAFETY SHIELD)
+            -- Mô tả: Kiểm tra cấp cường hóa, gia cường, tái sinh, khảm ngọc, cấp sao, đồ dung C8+,
+            --        hoặc Trang Sức Bộ có kỹ năng đặc thù (specialEffectIds). Luôn bỏ qua không tách & không thu hồi.
             -- =========================================================================
             local function IsEnhancedEquip(item)
                 if not item then return false end
@@ -4414,141 +4452,333 @@ local function CreateModUI()
                 local d = item.data or {}
                 local dSInfo = d.serverInfo or d.serverData or {}
 
+                -- 1. Cường hóa (intensify > 0)
                 local intensify = tonumber(item.intensify) or tonumber(d.intensify) or tonumber(sInfo.intensify) or tonumber(dSInfo.intensify) or 0
                 if intensify > 0 then return true end
 
+                -- 2. Gia cường (additional > 0)
                 local additional = tonumber(item.additional) or tonumber(d.additional) or tonumber(sInfo.additional) or tonumber(dSInfo.additional) or 0
                 if additional > 0 then return true end
+
+                -- 3. Tái sinh / Tẩy luyện (RegenerateAttributeList)
+                local regenList = item.RegenerateAttributeList or d.RegenerateAttributeList or sInfo.RegenerateAttributeList or dSInfo.RegenerateAttributeList
+                if regenList then
+                    local hasRegen = false
+                    pcall(function()
+                        if type(regenList) == "table" then
+                            if #regenList > 0 then hasRegen = true end
+                            if not hasRegen and _G.next and _G.next(regenList) ~= nil then hasRegen = true end
+                        elseif type(regenList) == "userdata" then
+                            local c = regenList.Count or regenList.Length or 0
+                            if c > 0 then hasRegen = true end
+                        end
+                    end)
+                    if hasRegen then return true end
+                end
+
+                -- 4. Khảm ngọc / Lỗ ngọc (gemList / inlayList)
+                local gems = item.gemList or item.inlayList or d.gemList or d.inlayList or sInfo.gemList or sInfo.inlayList
+                if gems then
+                    local hasGem = false
+                    pcall(function()
+                        if type(gems) == "table" then
+                            for _, g in pairs(gems) do
+                                if g and (g.id or g.itemId or (type(g) == "number" and g > 0)) then
+                                    hasGem = true
+                                    break
+                                end
+                            end
+                        elseif type(gems) == "userdata" then
+                            local c = gems.Count or gems.Length or 0
+                            if c > 0 then hasGem = true end
+                        end
+                    end)
+                    if hasGem then return true end
+                end
+
+                -- 5. Cấp sao (star / starLevel > 0)
+                local star = tonumber(item.star) or tonumber(item.starLevel) or tonumber(d.star) or tonumber(sInfo.star) or 0
+                if star > 0 then return true end
+
+                -- 6. Đồ Dung (canSmelt == true)
+                if sInfo.canSmelt == true or dSInfo.canSmelt == true or item.canSmelt == true then
+                    return true
+                end
+
+                -- 7. Kỹ năng đặc thù Trang Sức Bộ (specialEffectIds của Dây, Khuyên, Nhẫn Bộ: subType 34..38)
+                local spec = sInfo.specialEffectIds or dSInfo.specialEffectIds or item.specialEffectIds or d.specialEffectIds
+                if spec then
+                    local hasSpec = false
+                    pcall(function()
+                        if type(spec) == "table" then
+                            if _G.next and _G.next(spec) ~= nil then hasSpec = true end
+                        elseif type(spec) == "userdata" then
+                            local c = spec.Count or spec.Length or 0
+                            if c > 0 then hasSpec = true end
+                        end
+                    end)
+                    if hasSpec then return true end
+                end
 
                 return false
             end
             _G.Mod_IsEnhancedEquip = IsEnhancedEquip
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HỆ THỐNG CẤU HÌNH DÒNG NGON LINH HOẠT (DYNAMIC GOOD OPTIONS ENGINE)
+            -- Mô tả: Cung cấp kiểm tra thuộc tính Trác Việt theo bảng cấu hình tùy biến của người chơi.
+            --        Mặc định: Tất cả các dòng đều được chọn (ON = 1).
+            --        Nếu người chơi không chọn gì -> Tự động kích hoạt cơ chế bảo vệ đồ (không tách).
+            -- =========================================================================
+            _G.Mod_GoodOpts = _G.Mod_GoodOpts or {}
+            local function GetGoodOpt(cat, key)
+                local fullKey = "Mod_GoodOpt_" .. cat .. "_" .. key
+                if _G.Mod_GoodOpts[fullKey] == nil then
+                    local v = 1
+                    pcall(function() v = CS.UnityEngine.PlayerPrefs.GetInt(fullKey, 1) end)
+                    _G.Mod_GoodOpts[fullKey] = (v == 1)
+                end
+                return _G.Mod_GoodOpts[fullKey]
+            end
+            _G.Mod_GetGoodOpt = GetGoodOpt
+
+            local function SetGoodOpt(cat, key, val)
+                local fullKey = "Mod_GoodOpt_" .. cat .. "_" .. key
+                _G.Mod_GoodOpts[fullKey] = (val == true)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt(fullKey, val and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+            end
+            _G.Mod_SetGoodOpt = SetGoodOpt
+
+            local function MatchGoodOpt(str, optKey)
+                if not str then return false end
+                local s = string.lower(str)
+                if optKey == "atk2" then
+                    return string.find(s, "tấn công") ~= nil and string.find(s, "2") ~= nil and string.find(s, "%%") ~= nil
+                elseif optKey == "speed7" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "7") ~= nil
+                elseif optKey == "crit10" then
+                    return string.find(s, "trác việt") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "atk_lv20" then
+                    return string.find(s, "cấp/20") ~= nil or (string.find(s, "tấn công") ~= nil and string.find(s, "cấp") ~= nil)
+                elseif optKey == "hp4" then
+                    return string.find(s, "hp tối đa") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "def10" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "reflect5" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "gold10" then
+                    return string.find(s, "vàng") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "speed2" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "2") ~= nil
+                elseif optKey == "atk1" then
+                    return string.find(s, "tấn công") ~= nil and string.find(s, "1") ~= nil and string.find(s, "%%") ~= nil
+                elseif optKey == "crit3" then
+                    return string.find(s, "trác việt") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "reflect4" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "dmgred2" then
+                    return (string.find(s, "sát thương giảm") ~= nil or string.find(s, "giảm sát thương") ~= nil) and string.find(s, "2") ~= nil
+                elseif optKey == "hp3" then
+                    return string.find(s, "hp tối đa") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "def5" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "gold5" then
+                    return string.find(s, "vàng") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "dmgred4" then
+                    return (string.find(s, "sát thương giảm") ~= nil or string.find(s, "giảm sát thương") ~= nil) and string.find(s, "4") ~= nil
+                elseif optKey == "speed3" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "def4" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "reflect2" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "2") ~= nil
+                end
+                return false
+            end
+            _G.Mod_MatchGoodOpt = MatchGoodOpt
+
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
-                -- 0.0. Ưu tiên giữ lại Trang Bị Đã Cường Hóa / Gia Cường (intensify > 0 hoặc additional > 0)
+                -- 0. Ưu tiên bảo vệ tuyệt đối: Đồ đã cường hóa, gia cường, tái sinh, khảm ngọc, hoặc trang sức bộ có kỹ năng đặc thù
                 if IsEnhancedEquip(item) then
-                    return true -- Đã cường hóa/gia cường -> Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH
+                    return true -- Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH & KHÔNG THU HỒI
                 end
 
-                -- 0. Ưu tiên giữ lại Đồ Dung (canSmelt = true) đối với đồ từ Chuyển 8 trở lên
-                if tier >= 8 then
-                    local sInfo = item.serverInfo or item.serverData or {}
-                    if sInfo.canSmelt == true then
-                        return true -- Là đồ Dung -> Luôn Giữ Lại
-                    end
-                end
-
-                -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
-                if subType >= 34 and subType <= 38 then
-                    local sInfo = item.serverInfo or item.serverData or {}
-                    local specialEffectIds = sInfo.specialEffectIds
-                    if specialEffectIds then
-                        local hasSpecial = false
-                        pcall(function()
-                            if type(specialEffectIds) == "table" then
-                                hasSpecial = (_G.next(specialEffectIds) ~= nil)
-                            elseif type(specialEffectIds) == "userdata" then
-                                local count = specialEffectIds.Count or specialEffectIds.Length
-                                if count and count > 0 then hasSpecial = true end
-                            end
-                        end)
-                        if hasSpecial then
-                            return true -- Có Đặc Thù -> Dòng ngon -> Giữ
-                        end
-                    end
-                end
-
-                -- 2. Nếu không có Đặc thù (hoặc không phải trang sức bộ), xét tiếp dòng Trác Việt
                 if not excDesList or #excDesList == 0 then
                     return false
                 end
 
-                -- Nhóm 1: Trang phục (Mũ 113, Áo 114, Quần 115, Găng 116, Giày 117)
-                if subType == 113 or subType == 114 or subType == 115 or subType == 116 or subType == 117 then
-                    for _, des in ipairs(excDesList) do
-                        local isMp = string.find(des, "MP tối đa")
-                        local isGold = string.find(des, "Vàng") or string.find(des, "vàng")
-                        if isMp or isGold then
-                            return false -- Dính 1 dòng rác MP/Vàng -> Không phải dòng ngon
+                -- =====================================================================
+                -- NHÓM 1: ĐỒ ĐEO TRÁC VIỆT (Vũ khí & Trang phục / Quần áo)
+                -- Quy tắc: Có ít nhất 1 dòng chính VÀ ít nhất 1 dòng phụ được chọn
+                --          (Không chọn gì -> Safe Fallback: Coi là đồ ngon để bảo vệ đồ)
+                -- =====================================================================
+                local isWeaponTV = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
+                local isArmorTV = (subType >= 13 and subType <= 17)
+
+                if isWeaponTV then
+                    local mainKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    local subKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    local activeMain = {}
+                    local activeSub = {}
+                    for _, k in ipairs(mainKeys) do
+                        if GetGoodOpt("EquipTV_Weapon_Main", k) then table.insert(activeMain, k) end
+                    end
+                    for _, k in ipairs(subKeys) do
+                        if GetGoodOpt("EquipTV_Weapon_Sub", k) then table.insert(activeSub, k) end
+                    end
+
+                    -- Safe fallback: Nếu người chơi bỏ chọn hết -> BẢO VỆ ĐỒ, không tách!
+                    if #activeMain == 0 and #activeSub == 0 then
+                        return true
+                    end
+
+                    if #excDesList < 2 then return false end
+
+                    -- Kiểm tra tồn tại cặp (i, j) với i ~= j thỏa mãn dòng i khớp Dòng chính & dòng j khớp Dòng phụ
+                    for i = 1, #excDesList do
+                        local matchMain = false
+                        for _, mKey in ipairs(activeMain) do
+                            if MatchGoodOpt(excDesList[i], mKey) then
+                                matchMain = true
+                                break
+                            end
+                        end
+                        if matchMain then
+                            for j = 1, #excDesList do
+                                if i ~= j then
+                                    for _, sKey in ipairs(activeSub) do
+                                        if MatchGoodOpt(excDesList[j], sKey) then
+                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon!
+                                        end
+                                    end
+                                end
+                            end
                         end
                     end
-                    return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
+                    return false
                 end
 
-                -- Nhóm 2: Vũ khí & Khiên Hồng Trang (101, 106, 108, 109, 124, 181)
-                if subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
-                    for _, des in ipairs(excDesList) do
-                        local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or
-                            string.find(des, "MP tăng")
-                        if isKill then
-                            return false -- Dính 1 dòng rác diệt quái -> Không phải dòng ngon
+                if isArmorTV then
+                    local mainKeys = { "hp4", "def10", "reflect5", "gold10" }
+                    local subKeys = { "hp4", "def10", "reflect5", "gold10" }
+                    local activeMain = {}
+                    local activeSub = {}
+                    for _, k in ipairs(mainKeys) do
+                        if GetGoodOpt("EquipTV_Armor_Main", k) then table.insert(activeMain, k) end
+                    end
+                    for _, k in ipairs(subKeys) do
+                        if GetGoodOpt("EquipTV_Armor_Sub", k) then table.insert(activeSub, k) end
+                    end
+
+                    if #activeMain == 0 and #activeSub == 0 then
+                        return true
+                    end
+
+                    if #excDesList < 2 then return false end
+
+                    for i = 1, #excDesList do
+                        local matchMain = false
+                        for _, mKey in ipairs(activeMain) do
+                            if MatchGoodOpt(excDesList[i], mKey) then
+                                matchMain = true
+                                break
+                            end
+                        end
+                        if matchMain then
+                            for j = 1, #excDesList do
+                                if i ~= j then
+                                    for _, sKey in ipairs(activeSub) do
+                                        if MatchGoodOpt(excDesList[j], sKey) then
+                                            return true
+                                        end
+                                    end
+                                end
+                            end
                         end
                     end
-                    return true -- Không dính dòng rác diệt quái -> Dòng ngon!
+                    return false
                 end
 
-                -- Nhóm 3: Dây chuyền Bộ (36), Nhẫn Bộ (35, 38)
-                if subType == 36 or subType == 35 or subType == 38 then
-                    local hasGood = false
-                    for _, des in ipairs(excDesList) do
-                        local isCap = string.find(des, "cấp/20") or string.find(des, "cấp")
-                        local isGoodLine = (string.find(des, "Công Tốc") or string.find(des, "Tấn công")) and not isCap
-                        if isGoodLine then
-                            hasGood = true
-                        else
-                            return false -- Dính dòng +cấp/20 hoặc dòng rác khác -> Không đạt (Đem đi tách)
-                        end
+                -- =====================================================================
+                -- NHÓM 2: TRANG SỨC TRÁC VIỆT (Nhẫn 18, Dây chuyền 19, Khuyên tai 26)
+                -- Quy tắc Thuần Khiết: CHỈ ĐƯỢC PHÉP CÓ các dòng đã chọn. Dính dòng khác -> Tách!
+                -- =====================================================================
+                local checkPureOpts = nil
+                if subType == 18 then
+                    local allKeys = { "speed2", "atk1", "crit3", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Ring", k) then table.insert(checkPureOpts, k) end
                     end
-                    return hasGood
-                end
-
-                -- Nhóm 4: Khuyên Bộ (34, 37)
-                if subType == 34 or subType == 37 then
-                    local hasGood = false
-                    for _, des in ipairs(excDesList) do
-                        if string.find(des, "Phòng Ngự") or string.find(des, "Phản DMG") or string.find(des, "Phản") then
-                            hasGood = true
-                        else
-                            return false -- Dính dòng khác -> Không đạt
-                        end
+                elseif subType == 19 then
+                    local allKeys = { "speed2", "atk1", "crit3", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Necklace", k) then table.insert(checkPureOpts, k) end
                     end
-                    return hasGood
+                elseif subType == 26 then
+                    local allKeys = { "reflect4", "dmgred2", "hp3", "def5", "gold5" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Earring", k) then table.insert(checkPureOpts, k) end
+                    end
+
+                -- =====================================================================
+                -- NHÓM 3: ĐỒ BỘ (Vũ khí, Trang phục, Nhẫn/DC, Khuyên)
+                -- Quy tắc Thuần Khiết: CHỈ ĐƯỢC PHÉP CÓ các dòng đã chọn. Dính dòng khác -> Tách!
+                -- =====================================================================
+                elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                    -- Vũ khí Bộ
+                    local allKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Weapon", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType >= 113 and subType <= 117 then
+                    -- Trang phục Bộ (Mũ, Áo, Quần, Găng, Giày)
+                    local allKeys = { "dmgred4", "hp4", "def10", "reflect5", "gold10" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Armor", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType == 35 or subType == 36 or subType == 38 then
+                    -- Nhẫn, Dây chuyền Bộ
+                    local allKeys = { "atk2", "speed3" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_RingNecklace", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType == 34 or subType == 37 then
+                    -- Khuyên Bộ
+                    local allKeys = { "hp3", "def4", "reflect2", "gold10" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Earring", k) then table.insert(checkPureOpts, k) end
+                    end
                 end
 
-                -- Nhóm 5: Trang Sức Trác Việt - Nhẫn (18) & Dây chuyền (19)
-                if subType == 18 or subType == 19 then
-                    if #excDesList == 0 then return false end
+                if checkPureOpts ~= nil then
+                    -- Safe fallback: Nếu người chơi bỏ chọn hết -> BẢO VỆ ĐỒ, không tách!
+                    if #checkPureOpts == 0 then
+                        return true
+                    end
+
                     for _, des in ipairs(excDesList) do
                         local isValid = false
-                        if string.find(des, "Công Tốc +2", 1, true) then isValid = true
-                        elseif string.find(des, "Tỷ lệ Đòn Trác Việt +3.0%", 1, true) then isValid = true
-                        elseif string.find(des, "Tấn công +cấp/20.0", 1, true) then isValid = true
-                        elseif string.find(des, "Tấn công +1.0%", 1, true) then isValid = true
+                        for _, k in ipairs(checkPureOpts) do
+                            if MatchGoodOpt(des, k) then
+                                isValid = true
+                                break
+                            end
                         end
-                        
                         if not isValid then
-                            return false -- Dính 1 dòng rác bất kỳ -> Đem đi tách!
+                            return false -- Dính dù chỉ 1 dòng ngoài danh sách chọn -> TÁCH!
                         end
                     end
-                    return true -- Toàn bộ các dòng đều thuộc list ngon -> Giữ lại!
-                end
-
-                -- Nhóm 6: Trang Sức Trác Việt - Khuyên (26)
-                if subType == 26 then
-                    if #excDesList == 0 then return false end
-                    for _, des in ipairs(excDesList) do
-                        local isValid = false
-                        if string.find(des, "Sát thương giảm +2.0%", 1, true) then isValid = true
-                        elseif string.find(des, "Phản DMG +4.0%", 1, true) then isValid = true
-                        elseif string.find(des, "Tỉ lệ Phòng Ngự thành công +5.0%", 1, true) then isValid = true
-                        elseif string.find(des, "HP tối đa +3.0%", 1, true) then isValid = true
-                        end
-                        
-                        if not isValid then
-                            return false -- Dính 1 dòng rác bất kỳ -> Đem đi tách!
-                        end
-                    end
-                    return true -- Toàn bộ các dòng đều thuộc list ngon -> Giữ lại!
+                    return true -- 100% các dòng đều thuộc danh sách chọn -> ĐỒ NGON!
                 end
 
                 return false
@@ -4626,28 +4856,11 @@ local function CreateModUI()
                                     -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG KHỎI THU HỒI TÚI ĐỒ
                                     -- =========================================================================
                                     if IsEnhancedEquip(item) then
-                                        isGood = true -- Đã cường hóa -> Tuyệt đối giữ lại, không thu hồi
+                                        isGood = true -- Đã cường hóa/nâng cấp -> Tuyệt đối giữ lại, không thu hồi
                                     elseif isSmeltOrJewelry or not isExcellenceItem then
                                         isGood = true
-                                    elseif isArmor then
-                                        local hasHP, hasReflect, hasDefRate = false, false, false
-                                        for _, str in ipairs(excDesList) do
-                                            if str then
-                                                if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
-                                                if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
-                                                if string.find(str, "Tỉ lệ Phòng Ngự", 1, true) ~= nil then hasDefRate = true end
-                                            end
-                                        end
-                                        if hasHP and (hasReflect or hasDefRate) then isGood = true end
-                                    elseif isWeapon then
-                                        local hasSpeed, hasAtk = false, false
-                                        for _, str in ipairs(excDesList) do
-                                            if str then
-                                                if string.find(str, "Công Tốc +7", 1, true) ~= nil then hasSpeed = true end
-                                                if string.find(str, "Tấn công +2.0%", 1, true) ~= nil then hasAtk = true end
-                                            end
-                                        end
-                                        if hasSpeed and hasAtk then isGood = true end
+                                    elseif isArmor or isWeapon then
+                                        isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, 0, excDesList)
                                     else
                                         isGood = true
                                     end
@@ -5135,12 +5348,17 @@ local function CreateModUI()
                 end
 
                 -- =========================================================================
-                -- [MOD FEATURE]: TẠM DỪNG AUTO BOSS KHI ĐANG CANH KUNDUN (KUNDUN PRIORITY INTERRUPT)
-                -- Mô tả: Khi Kundun xuất hiện, Auto Boss nhường quyền 100% cho Auto PK canh điểm hồi sinh Kundun.
+                -- [MOD FEATURE]: TẠM DỪNG AUTO BOSS KHI ĐANG CANH KUNDUN HOẶC AUTO PHÓ BẢN
+                -- Mô tả: Nhường quyền 100% khi Kundun xuất hiện hoặc đang trong khung giờ ưu tiên Auto Phó Bản
                 -- =========================================================================
                 if _G.Mod_AutoHunt_KundunActive then
                     return
                 end
+
+                if _G.Mod_IsRunningDungeon or _G.Mod_IsPriorityDungeon then
+                    return
+                end
+
 
 
 
@@ -8372,17 +8590,14 @@ local function CreateModUI()
                             end
                             _G.Mod_NearestKundunName = displayName
 
-                            local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
-                            local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
+                            local isAdminBurst = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and (_G.Mod_HasSecretCommand("/adminburst") or _G.Mod_HasSecretCommand("/adminburst1") or _G.Mod_HasSecretCommand("/adminburst2"))
                             local isSieuToc = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
-                            local isAdminBurst = isAdminBurst1 or isAdminBurst2
+                            local burstSubMode = (_G.AutoPick_Mode == 2 or (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2"))) and 2 or 1
 
                             if _G.Mod_ShowKundunHP and not _G.Mod_KundunWeakExecuted then
                                 local msg
-                                if isAdminBurst2 then
-                                    msg = string.format("[ %s ] (2) HP: %.2f%%", displayName, hpPct)
-                                elseif isAdminBurst1 then
-                                    msg = string.format("[ %s ] (1) HP: %.2f%%", displayName, hpPct)
+                                if isAdminBurst then
+                                    msg = string.format("[ %s ] (%d) HP: %.2f%%", displayName, burstSubMode, hpPct)
                                 elseif isSieuToc then
                                     msg = string.format("%s (st) HP: %.2f%%", displayName, hpPct)
                                 else
@@ -8455,19 +8670,18 @@ local function CreateModUI()
                                                 local isBone = isBoneHon or isBoneCot
                                                 local shouldPick = false
 
-                                                local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
-                                                local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
-                                                local isAdminBurst = isAdminBurst1 or isAdminBurst2
+                                                local isAdminBurst = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and (_G.Mod_HasSecretCommand("/adminburst") or _G.Mod_HasSecretCommand("/adminburst1") or _G.Mod_HasSecretCommand("/adminburst2"))
+                                                local isBurstBypassFilter = isAdminBurst and (_G.AutoPick_Mode == 1 or (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")))
 
                                                 if decision.isRune then
-                                                    if isAdminBurst1 then
+                                                    if isBurstBypassFilter then
                                                         shouldPick = true
                                                     elseif decision.runePref and _G[decision.runePref] == true then
                                                         shouldPick = true
                                                     end
                                                 end
                                                 if decision.isFumo then
-                                                    if isAdminBurst1 then
+                                                    if isBurstBypassFilter then
                                                         shouldPick = true
                                                     elseif decision.fumoPref and _G[decision.fumoPref] == true then
                                                         shouldPick = true
@@ -8512,9 +8726,7 @@ local function CreateModUI()
                         end
 
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
-                        local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
-                        local isAdminBurst = isAdminBurst1 or isAdminBurst2
+                        local isAdminBurst = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and (_G.Mod_HasSecretCommand("/adminburst") or _G.Mod_HasSecretCommand("/adminburst1") or _G.Mod_HasSecretCommand("/adminburst2"))
 
                         -- =========================================================================
                         -- [MOD FEATURE]: HÀM TÍNH ĐIỂM ƯU TIÊN SẮP XẾP NHẶT ĐỒ CHO ADMIN
@@ -9226,7 +9438,9 @@ local function CreateModUI()
                         if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
                         pcall(function()
                             if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
+                                if _G.Mod_IsRunningDungeon or _G.Mod_IsPriorityDungeon then return end
                                 if _G.FlyMove and _G.FlyMove.useFly then return end
+
                                 if _G.PathFinderManager and _G.PathFinderManager.pathFinding and _G.PathFinderManager.pathFinding.isFind then return end
                                 local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
 
@@ -9336,6 +9550,414 @@ local function CreateModUI()
                     end)
                 end
                 _G.Mod_StartReturnPosLoop()
+
+                -- =========================================================================
+                -- [MOD FEATURE]: AUTO PHÓ BẢN (HUYẾT LÂU & QUẢNG TRƯỜNG QUỶ) - LOGIC & MONITOR LOOP
+                -- Mô tả: Vào giờ lẻ (1h, 3h, 5h... 23h) trong 14 phút đầu (00-14 phút):
+                --        - Dành quyền ưu tiên tuyệt đối cho phó bản (khóa Auto Boss, Auto Return Pos).
+                --        - Kiểm tra vé vào HL / QTQ, nếu thiếu vé sẽ hiển thị cảnh báo đỏ nổi giữa màn hình.
+                --        - Đủ vé sẽ tự động truyền tống vào phó bản tương ứng.
+                --        - Tự động bỏ qua 30s chờ (Mở Ngay / ReqSkipWait).
+                --        - Tự động dùng Thẻ Buff EXP (tối đa 2 thẻ/lần vào PB) khi buff hết hoặc < 10 phút.
+                --        - Di chuyển tới tọa độ farm đã cấu hình (mặc định HL: 14#60) và bật Auto Fight.
+                -- =========================================================================
+                _G.Mod_IsRunningDungeon = _G.Mod_IsRunningDungeon or false
+                _G.Mod_IsPriorityDungeon = _G.Mod_IsPriorityDungeon or false
+                _G.Mod_DungeonExpCardsUsed = _G.Mod_DungeonExpCardsUsed or 0
+                _G.Mod_LastExpCardUseTime = _G.Mod_LastExpCardUseTime or 0
+                _G.Mod_LastDungeonWarnTime = _G.Mod_LastDungeonWarnTime or 0
+                _G.Mod_LastDungeonExitTime = _G.Mod_LastDungeonExitTime or 0
+
+                local function TriggerDungeonSkipWait()
+                    pcall(function()
+                        local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
+                        local inBC = (cMap >= 1012000 and cMap <= 1012099)
+                        local inDS = (cMap >= 1010000 and cMap <= 1010099)
+                        local inTrans = inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript)
+                        if not inTrans then return end
+
+                        if _G.networkRequest and _G.networkRequest.ReqSkipWait then
+                            _G.networkRequest.ReqSkipWait()
+                        end
+                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqSkipWait then
+                            _G.NetManager.Send(_G.MapMessage.ReqSkipWait)
+                        end
+
+                        local goalUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("Instance_GoalUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.Instance_GoalUI)))
+                        if goalUI then
+                            if goalUI.btn_rightnowOnClick then
+                                goalUI:btn_rightnowOnClick(goalUI.btn_rightnow)
+                            elseif goalUI.btn_rightnow and goalUI.btn_rightnow.OnClick then
+                                goalUI.btn_rightnow:OnClick()
+                            end
+                        end
+
+                        local leftTopUI = _G.UIManager and _G.UIManager.GetUiByName and (_G.UIManager.GetUiByName("LeftTopPanelUI") or (_G.UIID and _G.UIManager.GetUiByName(_G.UIID.LeftTopPanelUI)))
+                        if leftTopUI and leftTopUI.transTempUI and leftTopUI.transTempUI.btn_rightnowOnClick then
+                            leftTopUI.transTempUI:btn_rightnowOnClick(leftTopUI.transTempUI.btn_rightnow)
+                        end
+
+                        if CS and CS.UnityEngine and CS.UnityEngine.GameObject and CS.UnityEngine.GameObject.Find then
+                            local btnObj = CS.UnityEngine.GameObject.Find("btn_rightnow")
+                            if btnObj and not IsObjectNil(btnObj) and btnObj.activeInHierarchy then
+                                local uBtn = btnObj:GetComponent(typeof(CS.UnityEngine.UI.Button)) or btnObj:GetComponent("Button")
+                                if uBtn and uBtn.onClick then
+                                    uBtn.onClick:Invoke()
+                                end
+                            end
+                        end
+                    end)
+                end
+                _G.TriggerDungeonSkipWait = TriggerDungeonSkipWait
+
+                pcall(function()
+                    if _G.EventManager and _G.Event and _G.Event.UpdateCopyDataInfo and not _G.Mod_Registered_UpdateCopyDataInfo then
+                        _G.Mod_Registered_UpdateCopyDataInfo = true
+                        _G.EventManager.RegistEvent(_G.Event.UpdateCopyDataInfo, function(id, msg)
+                            if _G.Mod_AutoBloodCastle_Enabled or _G.Mod_AutoDemonPlaza_Enabled then
+                                TriggerDungeonSkipWait()
+                            end
+                        end, nil)
+                    end
+                end)
+
+                local function ShowDungeonRedWarning(msg)
+                    local nowWarn = CS.UnityEngine.Time.realtimeSinceStartup
+                    if (nowWarn - (_G.Mod_LastDungeonWarnTime or 0)) >= 10.0 then
+                        _G.Mod_LastDungeonWarnTime = nowWarn
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg(msg)
+                        elseif _G.CommonTipManage and _G.CommonTipManage.ShowTips then
+                            _G.CommonTipManage.ShowTips(msg)
+                        end
+                    end
+                end
+
+                -- =========================================================================
+                -- [MOD FEATURE]: TỰ ĐỘNG QUAY VỀ BÃI TRAIN SAU PHÓ BẢN HOẶC KHI KHÔNG ĐI NỮA
+                -- Mô tả: Khi hoàn thành phó bản hoặc không còn lượt/vé, tự động dịch chuyển về bãi train
+                --        bằng Mod_PerformAutoTrainAndSmelt() nếu đã cài Mod_TrainCoord. Nếu chưa cài thì đứng ở thành.
+                -- =========================================================================
+                local function Mod_ReturnToTrainAfterDungeon()
+                    local returned = false
+                    pcall(function()
+                        -- Chỉ quay về bãi train nếu người dùng đã cài tọa độ bãi train (Mod_TrainCoord)
+                        if _G.Mod_PerformAutoTrainAndSmelt and _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                            _G.Mod_PerformAutoTrainAndSmelt()
+                            returned = true
+
+                            -- Khôi phục trạng thái cho Auto Boss nếu đang bật
+                            if _G.Mod_AutoFarmBoss_Enabled then
+                                if _G.Mod_AutoFarmBoss_State == 0 or _G.Mod_AutoFarmBoss_State == 2 then
+                                    _G.Mod_AutoFarmBoss_State = 2
+                                    _G.Mod_AutoFarmBoss_Target = nil
+                                    _G.Mod_AutoFarmBoss_WaitTime = CS.UnityEngine.Time.realtimeSinceStartup + 1.0
+                                end
+                            end
+                        end
+                        -- Nếu chưa cài Mod_TrainCoord thì không làm gì, để nhân vật đứng ở thành theo ý người dùng
+                    end)
+                    return returned
+                end
+                _G.Mod_ReturnToTrainAfterDungeon = Mod_ReturnToTrainAfterDungeon
+
+
+                local function AutoDungeonMonitorStep()
+                    if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+
+                    local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
+                    local inBC = (cMap >= 1012000 and cMap <= 1012099)
+                    local inDS = (cMap >= 1010000 and cMap <= 1010099)
+                    local inTrans = inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript)
+
+                    -- ==========================================
+                    -- A. ĐANG TRONG PHÓ BẢN
+                    -- ==========================================
+                    if inTrans then
+                        _G.Mod_IsRunningDungeon = true
+                        _G.Mod_IsPriorityDungeon = true
+                        _G.Mod_DungeonJustFinished = false
+
+                        -- 1. Bấm mở ngay bỏ qua 30s chờ
+                        TriggerDungeonSkipWait()
+
+                        -- 2. Tự Dùng Thẻ EXP (tối đa 2 thẻ/lần vào phó bản)
+                        if _G.Mod_AutoUseExpCard_Enabled then
+                            if (_G.Mod_DungeonExpCardsUsed or 0) < 2 then
+                                -- Kiểm tra thời gian hiệu lực còn lại của Buff EXP
+                                local myRoleId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id
+                                local buffs = (_G.BuffData and _G.BuffData.GetBuffs and _G.BuffData.GetBuffs(myRoleId)) or {}
+                                local expBuffRemainTime = 0
+                                for _, b in pairs(buffs) do
+                                    if b and b.buffConfig and b.buffConfig.name then
+                                        local bName = b.buffConfig.name
+                                        if bName:find("EXP đa tác dụng") or bName:find("EXP") then
+                                            local rTime = tonumber(b.time) or 0
+                                            if rTime > expBuffRemainTime then
+                                                expBuffRemainTime = rTime
+                                            end
+                                        end
+                                    end
+                                end
+
+                                -- Dùng thẻ khi buff đã hết hoặc thời gian dưới 10 phút (< 600s)
+                                if expBuffRemainTime < 600 then
+                                    local cardItem = nil
+                                    if _G.BagInfoData and _G.BagInfoData.bagItems then
+                                        for _, item in pairs(_G.BagInfoData.bagItems) do
+                                            if item and (item.itemId == 3000400 or (item.tblItem and item.tblItem.name and item.tblItem.name:find("Buff EXP"))) then
+                                                cardItem = item
+                                                break
+                                            end
+                                        end
+                                    end
+
+                                    if cardItem then
+                                        local now = CS.UnityEngine.Time.realtimeSinceStartup
+                                        if (now - (_G.Mod_LastExpCardUseTime or 0)) >= 2.0 then
+                                            _G.Mod_LastExpCardUseTime = now
+                                            _G.Mod_DungeonExpCardsUsed = (_G.Mod_DungeonExpCardsUsed or 0) + 1
+                                            pcall(function()
+                                                if _G.ItemUtility and _G.ItemUtility.UseItem then
+                                                    _G.ItemUtility.UseItem({
+                                                        useCount = 1,
+                                                        useItemId = cardItem.id,
+                                                        configId = cardItem.itemId,
+                                                        itemInfo = cardItem
+                                                    })
+                                                end
+                                                if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                                    _G.BagInfoController.UseItemReq(1, cardItem.id, nil, cardItem.itemId)
+                                                end
+                                                if _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+                                                    _G.NetManager.Send(_G.BagMessage.ReqUseItem, {
+                                                        count = 1,
+                                                        itemId = cardItem.id
+                                                    })
+                                                end
+                                            end)
+                                            if _G.FloatingWordUtility then
+                                                _G.FloatingWordUtility.QuickMsg(string.format("Đã dùng Thẻ Buff EXP (%d/2)", _G.Mod_DungeonExpCardsUsed))
+                                            end
+                                        end
+                                    else
+                                        -- Không có Thẻ Buff EXP trong túi -> Báo đỏ nổi giữa màn hình
+                                        ShowDungeonRedWarning("<color=#FF3333>Không có Thẻ Buff EXP trong túi!</color>")
+                                    end
+                                end
+                            end
+                        end
+
+                        -- 3. Di chuyển tới tọa độ farm đã cấu hình & Bật Auto Fight
+                        local targetCoordStr = nil
+                        if inBC then
+                            targetCoordStr = _G.Mod_Coord_BloodCastle
+                            if not targetCoordStr or targetCoordStr == "" then targetCoordStr = "14#60" end
+                        elseif inDS then
+                            targetCoordStr = _G.Mod_Coord_DemonPlaza
+                            if not targetCoordStr or targetCoordStr == "" then
+                                local pMe = _G.RoleManager and _G.RoleManager.me
+                                local curLvl = tonumber((pMe and pMe.level) or 1)
+                                targetCoordStr = (curLvl >= 150) and "135#97" or "137#167"
+                            end
+                        end
+
+                        if targetCoordStr and targetCoordStr ~= "" then
+                            local sx, sy = string.match(targetCoordStr, "^(%d+)#(%d+)$")
+                            if not sx then
+                                _, sx, sy = string.match(targetCoordStr, "^(%d+);(%d+)#(%d+)$")
+                            end
+                            if sx and sy then
+                                local tx, ty = tonumber(sx), tonumber(sy)
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                if me and not me.isDead then
+                                    local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                                    local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                                    local dist = math.sqrt((curX - tx)^2 + (curY - ty)^2)
+                                    if dist > 3 and me.MoveTo then
+                                        me:MoveTo({ x = tx, y = ty }, 0)
+                                    end
+                                end
+                            end
+                        end
+
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and not me.isDead then
+                            if me.SetAutoFight then
+                                me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                _G.QiJiHelperData.SetAutoFightData(true)
+                            end
+                        end
+                        return
+                    end
+
+                    -- ==========================================
+                    -- B. NGOÀI PHÓ BẢN
+                    -- ==========================================
+                    if _G.Mod_IsRunningDungeon then
+                        _G.Mod_IsRunningDungeon = false
+                        _G.Mod_DungeonExpCardsUsed = 0
+                        _G.Mod_LastDungeonExitTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        _G.Mod_DungeonJustFinished = true
+                    end
+
+                    -- Giờ lẻ (1h, 3h, 5h... 23h) và trong 14 phút đầu (00 - 14 phút)
+                    local curHour = tonumber(os.date("%H")) or 0
+                    local curMinute = tonumber(os.date("%M")) or 0
+                    local isOddHour = (curHour % 2 == 1)
+                    local isDungeonWindow = isOddHour and (curMinute < 15)
+
+                    -- Nếu không trong khung giờ phó bản hoặc không bật auto phó bản nào
+                    if not isDungeonWindow or (not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled) then
+                        _G.Mod_IsPriorityDungeon = false
+                        if _G.Mod_DungeonJustFinished then
+                            _G.Mod_DungeonJustFinished = false
+                            if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                                local ret = Mod_ReturnToTrainAfterDungeon()
+                                if ret and _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Đã kết thúc khung giờ phó bản, đang quay về bãi train...")
+                                end
+                            end
+                        end
+                        return
+                    end
+
+
+                    -- Đang trong khung giờ phó bản: Kiểm tra xem có phó bản nào sẵn sàng vào được không
+                    local pMe = _G.RoleManager and _G.RoleManager.me
+                    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
+
+                    local checkList = {}
+                    if _G.Mod_AutoBloodCastle_Enabled then
+                        table.insert(checkList, {
+                            name = "Huyết Lâu",
+                            subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.BloodCastle) or 100414,
+                            condId = 100414,
+                            maxNumId = 100404,
+                            globalCountId = 60000001
+                        })
+                    end
+                    if _G.Mod_AutoDemonPlaza_Enabled then
+                        table.insert(checkList, {
+                            name = "Quảng Trường Quỷ",
+                            subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.DemonPlaza) or 100408,
+                            condId = 100408,
+                            maxNumId = 100702,
+                            globalCountId = 60000002
+                        })
+                    end
+
+                    local canEnterDungeon = nil
+                    local hasAvailableEntry = false
+                    local hasTicketProblem = false
+
+                    for _, inst in ipairs(checkList) do
+                        local enterData, lvlNum = nil, nil
+                        pcall(function()
+                            if _G.TranScriptData and _G.TranScriptData.GetEnterConditionData then
+                                enterData, lvlNum = _G.TranScriptData.GetEnterConditionData(inst.subType, inst.condId, inst.maxNumId, curLvl)
+                            end
+                        end)
+
+                        if enterData and enterData.id then
+                            local leftCount = 0
+                            pcall(function()
+                                local gTbl = _G.ClientTable and _G.ClientTable.cfg_Global_globalManager and _G.ClientTable.cfg_Global_globalManager:TryGetValue(inst.globalCountId)
+                                if gTbl and gTbl.effect and _G.RefreshData and _G.RefreshData.GetInstanceCount then
+                                    leftCount = _G.RefreshData.GetInstanceCount(tonumber(gTbl.effect)) or 0
+                                end
+                            end)
+
+                            if leftCount > 0 then
+                                hasAvailableEntry = true
+                                local ticketId = 0
+                                local needCount = 1
+                                if enterData.cost then
+                                    local cParts = string.split(enterData.cost, "#")
+                                    ticketId = tonumber(cParts[1]) or 0
+                                    needCount = tonumber(cParts[2]) or 1
+                                end
+
+                                local haveTicketCount = 0
+                                pcall(function()
+                                    if ticketId > 0 and _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                                        haveTicketCount = _G.BagInfoData.GetItemTotalCountByItemId(ticketId) or 0
+                                    end
+                                end)
+
+                                if haveTicketCount < needCount then
+                                    hasTicketProblem = true
+                                    -- Không đủ vé -> Cảnh báo đỏ nổi giữa màn hình
+                                    local warnMsg = string.format("<color=#FF3333>Không đủ vé vào %s (Có: %d/%d)!</color>", inst.name, haveTicketCount, needCount)
+                                    ShowDungeonRedWarning(warnMsg)
+                                else
+                                    canEnterDungeon = { inst = inst, enterData = enterData }
+                                    break
+                                end
+                            end
+                        end
+                    end
+
+                    -- TRƯỜNG HỢP 1: CÓ PHÓ BẢN SẴN SÀNG VÀO ĐƯỢC
+                    if canEnterDungeon then
+                        _G.Mod_IsPriorityDungeon = true
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowTime - (_G.Mod_LastDungeonExitTime or 0)) >= 10.0 then
+                            _G.Mod_IsRunningDungeon = true
+                            _G.Mod_DungeonExpCardsUsed = 0
+                            _G.Mod_DungeonJustFinished = false
+                            pcall(function()
+                                if _G.EventManager and _G.Event and _G.Event.Map_ChangeMap then
+                                    _G.EventManager.Dispatch(_G.Event.Map_ChangeMap, { mapId = canEnterDungeon.enterData.id })
+                                end
+                                if _G.UIManager then
+                                    if _G.UIID and _G.UIID.Instance_BloodCastleUI then _G.UIManager.Hide(_G.UIID.Instance_BloodCastleUI) end
+                                    if _G.UIID and _G.UIID.Instance_DemonPlazaUI then _G.UIManager.Hide(_G.UIID.Instance_DemonPlazaUI) end
+                                    if _G.UIID and _G.UIID.PromptTipUI then _G.UIManager.Hide(_G.UIID.PromptTipUI) end
+                                end
+                            end)
+                        end
+                        return
+                    end
+
+                    -- TRƯỜNG HỢP 2: KHÔNG VÀO ĐƯỢC PHÓ BẢN (KHÔNG ĐI NỮA: HẾT LƯỢT HOẶC KHÔNG ĐỦ VÉ)
+                    -- Hủy ưu tiên phó bản để không khóa Auto Boss / Auto Return Pos
+                    _G.Mod_IsPriorityDungeon = false
+
+                    -- Tự động quay về bãi train nếu đã cài Mod_TrainCoord
+                    if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                        local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                        local isTownMap = (curMap == 1001 or curMap == 1002 or curMap == 1003)
+                        if _G.Mod_DungeonJustFinished or isTownMap then
+                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowTime - (_G.Mod_LastTrainReturnTriggerTime or 0)) >= 3.0 then
+                                _G.Mod_LastTrainReturnTriggerTime = nowTime
+                                local ret = Mod_ReturnToTrainAfterDungeon()
+                                if ret and _G.Mod_DungeonJustFinished then
+                                    _G.Mod_DungeonJustFinished = false
+                                    if _G.FloatingWordUtility then
+                                        _G.FloatingWordUtility.QuickMsg("Không còn phó bản để đi, đang quay về bãi train...")
+                                    end
+                                end
+                            end
+                        end
+                    else
+                        -- Chưa cài Mod_TrainCoord -> Nhân vật đứng ở thành theo ý người dùng
+                        _G.Mod_DungeonJustFinished = false
+                    end
+
+                end
+
+
+                _G.Mod_StartAutoDungeonLoop = function()
+                    _G.Mod_StartTrackedTimer("AutoDungeonMonitor", 1.0, -1, function()
+                        pcall(AutoDungeonMonitorStep)
+                    end)
+                end
+                _G.Mod_StartAutoDungeonLoop()
+
 
                 -- =========================================================================
                 -- [MOD FEATURE]: TỰ ĐỘNG CANH & DÍ KUNDUN TRONG AUTO HUNT (KUNDUN AUTO HUNT WATCHER)
@@ -9974,8 +10596,11 @@ local function CreateModUI()
                     "Mod_AutoPick_Bone_Hon", "Mod_AutoPick_Bone_Cot",
                     "Mod_GameSettingsSnapshot",
                     "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
-                    "Mod_TeleNotify_Enabled", "Mod_AutoBoss_SkipHpPct", "Mod_AutoHunt_Enabled"
+                    "Mod_TeleNotify_Enabled", "Mod_AutoBoss_SkipHpPct", "Mod_AutoHunt_Enabled",
+                    "Mod_AutoBloodCastle_Enabled", "Mod_Coord_BloodCastle",
+                    "Mod_AutoDemonPlaza_Enabled", "Mod_Coord_DemonPlaza", "Mod_AutoUseExpCard_Enabled"
                 }
+
                 for _, key in ipairs(modKeys) do
                     CS.UnityEngine.PlayerPrefs.DeleteKey(key)
                 end
@@ -10047,7 +10672,16 @@ local function CreateModUI()
                 _G.Mod_AutoBoss_SkipHpPct = 90
                 _G.Mod_AutoHunt_Enabled = false
                 _G.Mod_AutoHunt_NoTargetStartTime = nil
+                _G.Mod_AutoBloodCastle_Enabled = false
+                _G.Mod_Coord_BloodCastle = "14#60"
+                _G.Mod_AutoDemonPlaza_Enabled = false
+                _G.Mod_Coord_DemonPlaza = ""
+                _G.Mod_AutoUseExpCard_Enabled = false
+                _G.Mod_IsRunningDungeon = false
+                _G.Mod_IsPriorityDungeon = false
+                _G.Mod_DungeonExpCardsUsed = 0
                 _G.Mod_AutoPick_Limit = 0
+
                 _G.RunSpeedMultiplier = 1.0
                 _G.AtkSpeedMultiplier = 1.0
                 _G.Mod_CustomAttackRangeMultiplier = 1.0
@@ -12520,21 +13154,61 @@ local function CreateModUI()
                 UpdateSkipHpLabel()
             end)
 
-            -- RIGHT 1/3 PANEL - AUTO SMELT / TÁCH ĐỒ UI
-            local smeltStartX = 475
+            -- =========================================================================
+            -- [MOD FEATURE]: PANEL PHẢI AUTO BOSS DẠNG SCROLLVIEW & CẤU HÌNH DÒNG NGON
+            -- Mô tả: Chuyển đổi toàn bộ bảng Tách Đồ & Giữ Dòng Ngon thành ScrollView mượt mà,
+            --        bổ sung bảng cấu hình trực quan cho Đồ Đeo TV, Trang Sức TV và Đồ Bộ.
+            -- =========================================================================
+            local scrollGo = GameObject("AutoBossRightScroll")
+            scrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, scrollGo)
+            local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
+            scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            scrollRt.anchoredPosition = Vector2(468, -48)
+            scrollRt.sizeDelta = Vector2(245, 510)
+
+            local scrollImg = scrollGo:AddComponent(typeof(Image))
+            scrollImg.color = Color(0, 0, 0, 0.01)
+
+            local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            scrollRect.horizontal = false
+            scrollRect.vertical = true
+            scrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            scrollRect.scrollSensitivity = 30
+
+            local vpGo = GameObject("Viewport")
+            vpGo.transform:SetParent(scrollGo.transform, false)
+            local vpRt = vpGo:AddComponent(typeof(RectTransform))
+            vpRt.anchorMin, vpRt.anchorMax, vpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            vpRt.sizeDelta = Vector2(0, 0)
+            vpGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local contentGo = GameObject("Content")
+            contentGo.transform:SetParent(vpGo.transform, false)
+            local contentRt = contentGo:AddComponent(typeof(RectTransform))
+            contentRt.anchorMin, contentRt.anchorMax, contentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            contentRt.anchoredPosition = Vector2(0, 0)
+            contentRt.sizeDelta = Vector2(0, 1550)
+
+            local contentImg = contentGo:AddComponent(typeof(Image))
+            contentImg.color = Color(0, 0, 0, 0.01)
+
+            scrollRect.viewport = vpRt
+            scrollRect.content = contentRt
+
+            local smeltStartX = 6
             local btnW = 34
             local btnH = 22
-            local fontSize = 12
+            local curY = -5
 
             local title1Go = GameObject("SmeltTitle1")
-            title1Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, title1Go)
+            title1Go.transform:SetParent(contentGo.transform, false)
             local title1Rt = title1Go:AddComponent(typeof(RectTransform))
             title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            title1Rt.anchoredPosition = Vector2(smeltStartX, -50)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, curY)
             title1Rt.sizeDelta = Vector2(230, 20)
             local title1Txt = title1Go:AddComponent(typeof(Text))
-            title1Txt.raycastTarget = false
+            title1Txt.raycastTarget = true
             title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
             title1Txt.color = Color(1, 0.8, 0, 1)
             title1Txt.fontSize = 14
@@ -12542,12 +13216,12 @@ local function CreateModUI()
             if defaultFont then title1Txt.font = defaultFont end
 
             local smeltTogglePool = {}
+            local goodOptTogglePool = {}
 
             local function CreateSmeltToggle(prefix, colIdx, x, y, width, isKeepGood)
                 local varNameDummy = prefix .. "_" .. colIdx .. (isKeepGood and "_KG" or "")
                 local btnGo = GameObject("SmeltToggle_" .. varNameDummy)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
+                btnGo.transform:SetParent(contentGo.transform, false)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
@@ -12587,17 +13261,35 @@ local function CreateModUI()
                 return itemObj
             end
 
-            local curY = -75
+            curY = curY - 25
+            local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
+            kgTvLblGo.transform:SetParent(contentGo.transform, false)
+            local kgTvLblRt = kgTvLblGo:AddComponent(typeof(RectTransform))
+            kgTvLblRt.anchorMin, kgTvLblRt.anchorMax, kgTvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kgTvLblRt.anchoredPosition = Vector2(smeltStartX, curY)
+            kgTvLblRt.sizeDelta = Vector2(85, btnH)
+            local kgTvLblTxt = kgTvLblGo:AddComponent(typeof(Text))
+            kgTvLblTxt.raycastTarget = true
+            kgTvLblTxt.text = "GIỮ DÒNG NGON"
+            kgTvLblTxt.color = Color(1, 0.6, 0.2, 1)
+            kgTvLblTxt.fontSize = 10
+            kgTvLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then kgTvLblTxt.font = defaultFont end
+
+            for colIdx = 1, 4 do
+                CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
+            end
+            curY = curY - 26
+
             local function CreateTracVietRow(lblText, prefix)
                 local lblGo = GameObject("SmeltLbl_" .. prefix)
-                lblGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, lblGo)
+                lblGo.transform:SetParent(contentGo.transform, false)
                 local lblRt = lblGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 lblRt.anchoredPosition = Vector2(smeltStartX, curY)
                 lblRt.sizeDelta = Vector2(85, btnH)
                 local lblTxt = lblGo:AddComponent(typeof(Text))
-                lblTxt.raycastTarget = false
+                lblTxt.raycastTarget = true
                 lblTxt.text = lblText
                 lblTxt.color = Color.white
                 lblTxt.fontSize = 12
@@ -12610,30 +13302,6 @@ local function CreateModUI()
                 curY = curY - 26
             end
 
-            -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
-            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Trác Việt, mặc định Chọn (ON)
-            -- =========================================================================
-            local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
-            kgTvLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgTvLblGo)
-            local kgTvLblRt = kgTvLblGo:AddComponent(typeof(RectTransform))
-            kgTvLblRt.anchorMin, kgTvLblRt.anchorMax, kgTvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            kgTvLblRt.anchoredPosition = Vector2(smeltStartX, curY)
-            kgTvLblRt.sizeDelta = Vector2(85, btnH)
-            local kgTvLblTxt = kgTvLblGo:AddComponent(typeof(Text))
-            kgTvLblTxt.raycastTarget = false
-            kgTvLblTxt.text = "GIỮ DÒNG NGON"
-            kgTvLblTxt.color = Color(1, 0.6, 0.2, 1)
-            kgTvLblTxt.fontSize = 10
-            kgTvLblTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then kgTvLblTxt.font = defaultFont end
-
-            for colIdx = 1, 4 do
-                CreateSmeltToggle("KeepGoodTV", colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, true)
-            end
-            curY = curY - 26
-
             CreateTracVietRow("NHẪN", "Ring")
             CreateTracVietRow("DÂY CHUYỀN", "Necklace")
             CreateTracVietRow("KHUYÊN", "Earring")
@@ -12641,14 +13309,13 @@ local function CreateModUI()
             -- 2. VẠCH DASHED NGĂN CÁCH
             curY = curY - 2
             local dashGo = GameObject("SmeltDashLine")
-            dashGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, dashGo)
+            dashGo.transform:SetParent(contentGo.transform, false)
             local dashRt = dashGo:AddComponent(typeof(RectTransform))
             dashRt.anchorMin, dashRt.anchorMax, dashRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             dashRt.anchoredPosition = Vector2(smeltStartX, curY)
             dashRt.sizeDelta = Vector2(230, 15)
             local dashTxt = dashGo:AddComponent(typeof(Text))
-            dashTxt.raycastTarget = false
+            dashTxt.raycastTarget = true
             dashTxt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - -"
             dashTxt.color = Color(0.6, 0.6, 0.6, 0.8)
             dashTxt.fontSize = 11
@@ -12658,14 +13325,13 @@ local function CreateModUI()
             -- 3. PHẦN 2: TÁCH ĐỒ BỘ & GIỮ DÒNG NGON
             curY = curY - 18
             local title2Go = GameObject("SmeltTitle2")
-            title2Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, title2Go)
+            title2Go.transform:SetParent(contentGo.transform, false)
             local title2Rt = title2Go:AddComponent(typeof(RectTransform))
             title2Rt.anchorMin, title2Rt.anchorMax, title2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             title2Rt.anchoredPosition = Vector2(smeltStartX, curY)
             title2Rt.sizeDelta = Vector2(230, 20)
             local title2Txt = title2Go:AddComponent(typeof(Text))
-            title2Txt.raycastTarget = false
+            title2Txt.raycastTarget = true
             title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
             title2Txt.color = Color(1, 0.8, 0, 1)
             title2Txt.fontSize = 13
@@ -12673,20 +13339,14 @@ local function CreateModUI()
             if defaultFont then title2Txt.font = defaultFont end
 
             curY = curY - 25
-
-            -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON ĐỒ BỘ (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
-            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Đồ Bộ, mặc định Chọn (ON)
-            -- =========================================================================
             local kgLblGo = GameObject("SmeltLbl_KeepGood")
-            kgLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgLblGo)
+            kgLblGo.transform:SetParent(contentGo.transform, false)
             local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
             kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
             kgLblRt.sizeDelta = Vector2(85, btnH)
             local kgLblTxt = kgLblGo:AddComponent(typeof(Text))
-            kgLblTxt.raycastTarget = false
+            kgLblTxt.raycastTarget = true
             kgLblTxt.text = "GIỮ DÒNG NGON"
             kgLblTxt.color = Color(1, 0.6, 0.2, 1)
             kgLblTxt.fontSize = 10
@@ -12717,14 +13377,13 @@ local function CreateModUI()
                 local prefix = r[2]
 
                 local lblGo = GameObject("SmeltLbl_" .. prefix)
-                lblGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, lblGo)
+                lblGo.transform:SetParent(contentGo.transform, false)
                 local lblRt = lblGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 lblRt.anchoredPosition = Vector2(smeltStartX, curY)
                 lblRt.sizeDelta = Vector2(85, btnH)
                 local lblTxt = lblGo:AddComponent(typeof(Text))
-                lblTxt.raycastTarget = false
+                lblTxt.raycastTarget = true
                 lblTxt.text = label
                 lblTxt.color = Color.white
                 lblTxt.fontSize = 11
@@ -12738,13 +13397,11 @@ local function CreateModUI()
             end
 
             -- Nút TÁCH NGAY thủ công
-            curY = curY - 30
+            curY = curY - 10
             local manualSmeltBtnGo = GameObject("SmeltManualBtn")
-            manualSmeltBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, manualSmeltBtnGo)
+            manualSmeltBtnGo.transform:SetParent(contentGo.transform, false)
             local manualSmeltRt = manualSmeltBtnGo:AddComponent(typeof(RectTransform))
-            manualSmeltRt.anchorMin, manualSmeltRt.anchorMax, manualSmeltRt.pivot = Vector2(0, 1), Vector2(0, 1),
-                Vector2(0, 1)
+            manualSmeltRt.anchorMin, manualSmeltRt.anchorMax, manualSmeltRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             manualSmeltRt.anchoredPosition = Vector2(smeltStartX, curY)
             manualSmeltRt.sizeDelta = Vector2(233, 26)
 
@@ -12780,6 +13437,278 @@ local function CreateModUI()
                     LogMsg("Đã kích hoạt Tách Đồ & Thu Hồi thủ công!")
                 end)
             end)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: BẢNG CẤU HÌNH DÒNG NGON (DYNAMIC GOOD OPTIONS UI)
+            -- =========================================================================
+            curY = curY - 35
+            local dash2Go = GameObject("SmeltDashLine2")
+            dash2Go.transform:SetParent(contentGo.transform, false)
+            local dash2Rt = dash2Go:AddComponent(typeof(RectTransform))
+            dash2Rt.anchorMin, dash2Rt.anchorMax, dash2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            dash2Rt.anchoredPosition = Vector2(smeltStartX, curY)
+            dash2Rt.sizeDelta = Vector2(230, 15)
+            local dash2Txt = dash2Go:AddComponent(typeof(Text))
+            dash2Txt.raycastTarget = true
+            dash2Txt.text = "================================="
+            dash2Txt.color = Color(1, 0.8, 0, 0.8)
+            dash2Txt.fontSize = 11
+            dash2Txt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then dash2Txt.font = defaultFont end
+
+            curY = curY - 18
+            local goodOptMainTitleGo = GameObject("GoodOptMainTitle")
+            goodOptMainTitleGo.transform:SetParent(contentGo.transform, false)
+            local gotRt = goodOptMainTitleGo:AddComponent(typeof(RectTransform))
+            gotRt.anchorMin, gotRt.anchorMax, gotRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            gotRt.anchoredPosition = Vector2(smeltStartX, curY)
+            gotRt.sizeDelta = Vector2(233, 22)
+            local gotTxt = goodOptMainTitleGo:AddComponent(typeof(Text))
+            gotTxt.raycastTarget = true
+            gotTxt.text = "QUY ĐỊNH DÒNG NGON"
+            gotTxt.color = Color(1, 0.85, 0.2, 1)
+            gotTxt.fontSize = 16
+            gotTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then gotTxt.font = defaultFont end
+
+            curY = curY - 20
+            local safetyShieldNoteGo = GameObject("SafetyShieldNote")
+            safetyShieldNoteGo.transform:SetParent(contentGo.transform, false)
+            local ssnRt = safetyShieldNoteGo:AddComponent(typeof(RectTransform))
+            ssnRt.anchorMin, ssnRt.anchorMax, ssnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ssnRt.anchoredPosition = Vector2(smeltStartX, curY)
+            ssnRt.sizeDelta = Vector2(233, 16)
+            local ssnTxt = safetyShieldNoteGo:AddComponent(typeof(Text))
+            ssnTxt.raycastTarget = true
+            ssnTxt.text = "* Luôn giữ đồ Cường Hóa, Nâng Cấp, Skill Bộ"
+            ssnTxt.color = Color(0.4, 0.85, 0.5, 1)
+            ssnTxt.fontSize = 10
+            ssnTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then ssnTxt.font = defaultFont end
+
+            local lastElementWasToggle = false
+            local isFirstSection = true
+
+            local function CreateGoodOptToggle(cat, key, label, x, y, width)
+                lastElementWasToggle = true
+                local btnGo = GameObject("GoodOptToggle_" .. cat .. "_" .. key)
+                btnGo.transform:SetParent(contentGo.transform, false)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(width, 22)
+
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(btnGo.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 11
+                txt.alignment = TextAnchor.MiddleCenter
+                txt.text = label
+                if defaultFont then txt.font = defaultFont end
+
+                local btn = btnGo:AddComponent(typeof(Button))
+
+                local function updateVisual()
+                    local isChecked = _G.Mod_GetGoodOpt and _G.Mod_GetGoodOpt(cat, key)
+                    if isChecked then
+                        bgImg.color = Color(0.15, 0.55, 0.25, 1)
+                        txt.color = Color.white
+                    else
+                        bgImg.color = Color(0.25, 0.25, 0.25, 1)
+                        txt.color = Color(0.65, 0.65, 0.65, 1)
+                    end
+                end
+                updateVisual()
+
+                btn.onClick:AddListener(function()
+                    local curVal = _G.Mod_GetGoodOpt and _G.Mod_GetGoodOpt(cat, key)
+                    if _G.Mod_SetGoodOpt then _G.Mod_SetGoodOpt(cat, key, not curVal) end
+                    updateVisual()
+                end)
+
+                table.insert(goodOptTogglePool, { updateVisual = updateVisual })
+                return btnGo
+            end
+
+            local function CreateSectionHeader(titleText, noteText)
+                if isFirstSection then
+                    curY = curY - 26
+                    isFirstSection = false
+                else
+                    curY = curY - 42 -- Khoảng cách thoáng 20px so với hàng nút khối trước
+                end
+                lastElementWasToggle = false
+
+                local sGo = GameObject("SecHeader_" .. titleText)
+                sGo.transform:SetParent(contentGo.transform, false)
+                local sRt = sGo:AddComponent(typeof(RectTransform))
+                sRt.anchorMin, sRt.anchorMax, sRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                sRt.anchoredPosition = Vector2(smeltStartX, curY)
+                sRt.sizeDelta = Vector2(233, 20)
+                local sTxt = sGo:AddComponent(typeof(Text))
+                sTxt.raycastTarget = true
+                sTxt.text = titleText
+                sTxt.color = Color(1, 0.75, 0.2, 1)
+                sTxt.fontSize = 14
+                sTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then sTxt.font = defaultFont end
+
+                if noteText and noteText ~= "" then
+                    curY = curY - 18
+                    local nGo = GameObject("SecNote_" .. titleText)
+                    nGo.transform:SetParent(contentGo.transform, false)
+                    local nRt = nGo:AddComponent(typeof(RectTransform))
+                    nRt.anchorMin, nRt.anchorMax, nRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    nRt.anchoredPosition = Vector2(smeltStartX, curY)
+                    nRt.sizeDelta = Vector2(233, 16)
+                    local nTxt = nGo:AddComponent(typeof(Text))
+                    nTxt.raycastTarget = true
+                    nTxt.text = noteText
+                    nTxt.color = Color(0.7, 0.7, 0.7, 1)
+                    nTxt.fontSize = 10
+                    nTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then nTxt.font = defaultFont end
+                end
+            end
+
+            local function CreateSubLabel(subText)
+                if lastElementWasToggle then
+                    curY = curY - 30 -- Cách đáy hàng nút trước 8px
+                else
+                    curY = curY - 20
+                end
+                lastElementWasToggle = false
+
+                local lblGo = GameObject("SubLbl_" .. subText)
+                lblGo.transform:SetParent(contentGo.transform, false)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(233, 18)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = true
+                lblTxt.text = subText
+                lblTxt.color = Color(0.4, 0.9, 1, 1)
+                lblTxt.fontSize = 11
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+            end
+
+            local optW = 114
+            local col1X = smeltStartX
+            local col2X = smeltStartX + 118
+
+            -- NHÓM 1: ĐỒ ĐEO TRÁC VIỆT
+            CreateSectionHeader("--- ĐỒ ĐEO TRÁC VIỆT ---", "(Giữ khi có ít nhất 1 dòng chính VÀ 1 dòng phụ)")
+
+            CreateSubLabel("Vũ khí - Dòng chính:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Vũ khí - Dòng phụ:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục - Dòng chính:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Armor_Main", "hp4", "HP tối đa +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Main", "def10", "Phòng ngự +10%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Armor_Main", "reflect5", "Phản DMG +5.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Main", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục - Dòng phụ:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "hp4", "HP tối đa +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "def10", "Phòng ngự +10%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "reflect5", "Phản DMG +5.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            -- NHÓM 2: TRANG SỨC TRÁC VIỆT
+            CreateSectionHeader("--- TRANG SỨC TRÁC VIỆT ---", "(Chỉ giữ khi 100% dòng thuộc danh sách chọn)")
+
+            CreateSubLabel("Nhẫn:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Ring", "speed2", "Công tốc +2", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Ring", "atk1", "Tấn công +1.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Ring", "crit3", "Đòn TV +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Ring", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Dây chuyền:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Necklace", "speed2", "Công tốc +2", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Necklace", "atk1", "Tấn công +1.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Necklace", "crit3", "Đòn TV +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Necklace", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Khuyên tai:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Earring", "reflect4", "Phản DMG +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Earring", "dmgred2", "ST giảm +2.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Earring", "hp3", "HP tối đa +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Earring", "def5", "Phòng ngự +5.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Earring", "gold5", "Vàng tăng +5.0%", col1X, curY, optW)
+
+            -- NHÓM 3: ĐỒ BỘ
+            CreateSectionHeader("--- ĐỒ BỘ (SET EQUIPMENT) ---", "(Chỉ giữ khi 100% dòng thuộc danh sách chọn)")
+
+            CreateSubLabel("Vũ khí Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Weapon", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Weapon", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Weapon", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Weapon", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục Bộ (Mũ, Áo, Quần, Tay, Chân):")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Armor", "dmgred4", "ST giảm +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Armor", "hp4", "HP tối đa +4.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Armor", "def10", "Phòng ngự +10%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Armor", "reflect5", "Phản DMG +5.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Armor", "gold10", "Vàng tăng +10%", col1X, curY, optW)
+
+            CreateSubLabel("Nhẫn, Dây chuyền Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_RingNecklace", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_RingNecklace", "speed3", "Công Tốc +3", col2X, curY, optW)
+
+            CreateSubLabel("Khuyên Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Earring", "hp3", "HP tối đa +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Earring", "def4", "Phòng ngự +4.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Earring", "reflect2", "Phản DMG +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Earring", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            curY = curY - 30
+            contentRt.sizeDelta = Vector2(0, math.abs(curY))
 
             -- SUBTABS [ BOSS C7 ] / [ BOSS C8 ]
             local currentY = -175
@@ -12939,6 +13868,11 @@ local function CreateModUI()
                     else
                         toggleItem.go:SetActive(false)
                     end
+                end
+
+                -- Refresh all Good Options Toggles in pool
+                for _, optItem in ipairs(goodOptTogglePool or {}) do
+                    if optItem and optItem.updateVisual then pcall(optItem.updateVisual) end
                 end
 
                 -- Ẩn tất cả Tab buttons trước
@@ -13269,6 +14203,9 @@ local function CreateModUI()
             contentRt.anchorMin, contentRt.anchorMax, contentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
             contentRt.anchoredPosition = Vector2(0, 0)
 
+            local contentImg = contentGo:AddComponent(typeof(Image))
+            contentImg.color = Color(0, 0, 0, 0.01)
+
             scrollRect.viewport = vpRt
             scrollRect.content = contentRt
 
@@ -13288,8 +14225,53 @@ local function CreateModUI()
                 local btnW = 260
                 local curY = -5
 
-                -- CỤM AUTO THÁP & CÁC OPTION CON (Chỉ hiển thị khi có lệnh bí mật /autothap)
+                -- =========================================================================
+                -- [MOD FEATURE]: PHÂN CHIA KHỐI CHỨC NĂNG HỖ TRỢ VỚI TIÊU ĐỀ MÀU VÀNG
+                -- Mô tả: Phân nhóm trực quan thành 5 khối: PHONG MA THÁP, KUNDUN, HỖ TRỢ PVP,
+                --        HỖ TRỢ CHUNG và TRIỆU HỒI SƯ (SUM) kèm đường kẻ phân cách mờ.
+                -- =========================================================================
+                local function CreateSectionHeader(titleText)
+                    local hGo = GameObject("SectionHeader_" .. tostring(titleText))
+                    hGo.transform:SetParent(contentGo.transform, false)
+                    local rt = hGo:AddComponent(typeof(RectTransform))
+                    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    rt.anchoredPosition = Vector2(btnX, curY)
+                    rt.sizeDelta = Vector2(btnW, 22)
+
+                    local txt = hGo:AddComponent(typeof(Text))
+                    txt.raycastTarget = false
+                    txt.text = "--- " .. string.upper(titleText) .. " ---"
+                    txt.color = Color(1, 0.85, 0.15, 1)
+                    txt.fontSize = 13
+                    txt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then txt.font = defaultFont end
+                    curY = curY - 26
+                end
+
+                local function CreateSectionSeparator()
+                    local sGo = GameObject("SectionSeparator")
+                    sGo.transform:SetParent(contentGo.transform, false)
+                    local rt = sGo:AddComponent(typeof(RectTransform))
+                    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    rt.anchoredPosition = Vector2(btnX, curY)
+                    rt.sizeDelta = Vector2(btnW, 14)
+
+                    local txt = sGo:AddComponent(typeof(Text))
+                    txt.raycastTarget = false
+                    txt.text = "- - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+                    txt.color = Color(0.6, 0.6, 0.6, 0.5)
+                    txt.fontSize = 11
+                    txt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then txt.font = defaultFont end
+                    curY = curY - 18
+                end
+
+                -- =========================================================================
+                -- KHỐI 1: PHONG MA THÁP (Chỉ hiển thị khi có lệnh bí mật /autothap)
+                -- =========================================================================
                 if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
+                    CreateSectionHeader("PHONG MA THÁP")
+
                     CreateToggle("AUTO THÁP", "Mod_AutoChallengeTower_Enabled", btnX, curY, btnW, nil, contentGo, 35)
                     curY = curY - 45
 
@@ -13462,7 +14444,38 @@ local function CreateModUI()
                             end
                         end
                     end
+
+                    curY = curY - 5
+                    CreateSectionSeparator()
                 end
+
+                -- =========================================================================
+                -- KHỐI 2: KUNDUN
+                -- =========================================================================
+                CreateSectionHeader("KUNDUN")
+
+                CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                -- =========================================================================
+                -- [MOD FEATURE]: ẨN NÚT AUTO HUNT THEO SECRET COMMAND (/autohunt)
+                -- Mô tả: Nút AUTO HUNT chỉ hiển thị khi có secret command /autohunt trong hệ thống lệnh bí mật.
+                -- =========================================================================
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autohunt") then
+                    CreateToggle("AUTO HUNT", "Mod_AutoHunt_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                    curY = curY - 45
+                end
+
+                curY = curY - 5
+                CreateSectionSeparator()
+
+                -- =========================================================================
+                -- KHỐI 3: HỖ TRỢ PVP
+                -- =========================================================================
+                CreateSectionHeader("HỖ TRỢ PVP")
 
                 -- Nút AUTO AOE (Chỉ hiển thị khi có lệnh bí mật /autoaoe)
                 if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autoaoe") then
@@ -13539,765 +14552,1008 @@ local function CreateModUI()
                     curY = curY - 45
                 end
 
-            CreateToggle("TẮT HIỆU ỨNG", "Mod_DisableVisuals", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            CreateToggle("HIỆN MÁU KUNDUN", "Mod_ShowKundunHP", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            -- =========================================================================
-            -- [MOD FEATURE]: ẨN NÚT AUTO PK GUILD THEO SECRET COMMAND (/pkmodeguild)
-            -- Mô tả: Nút AUTO PK GUILD chỉ hiển thị khi có secret command /pkmodeguild trong hệ thống lệnh bí mật.
-            -- =========================================================================
-            if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") then
-                CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-                curY = curY - 45
-            end
-
-            -- =========================================================================
-            -- [MOD FEATURE]: ẨN NÚT AUTO HUNT THEO SECRET COMMAND (/autohunt)
-            -- Mô tả: Nút AUTO HUNT chỉ hiển thị khi có secret command /autohunt trong hệ thống lệnh bí mật.
-            -- =========================================================================
-            if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autohunt") then
-                CreateToggle("AUTO HUNT", "Mod_AutoHunt_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-                curY = curY - 45
-            end
-
-            -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
-            local function CreateResurrectRadioGroup(xPos, yPos, w)
-                w = w or 125
-                local spacing = 10
-
-                if _G.Mod_AutoResurrect_Free_Enabled == nil then
-                    pcall(function()
-                        _G.Mod_AutoResurrect_Free_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Free_Enabled", 0) == 1)
-                    end)
-                    if _G.Mod_AutoResurrect_Free_Enabled == nil then _G.Mod_AutoResurrect_Free_Enabled = false end
+                -- =========================================================================
+                -- [MOD FEATURE]: ẨN NÚT AUTO PK GUILD THEO SECRET COMMAND (/pkmodeguild)
+                -- Mô tả: Nút AUTO PK GUILD chỉ hiển thị khi có secret command /pkmodeguild trong hệ thống lệnh bí mật.
+                -- =========================================================================
+                if _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/pkmodeguild") then
+                    CreateToggle("AUTO PK GUILD", "Mod_AutoGuildPK_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                    curY = curY - 45
                 end
 
-                if _G.Mod_AutoResurrect_Here_Enabled == nil then
-                    pcall(function()
-                        _G.Mod_AutoResurrect_Here_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Here_Enabled", 0) == 1)
-                    end)
-                    if _G.Mod_AutoResurrect_Here_Enabled == nil then _G.Mod_AutoResurrect_Here_Enabled = false end
-                end
+                -- Nút Radio Hồi Sinh: HS FREE & HS KC (Chỉ 1 trong 2 được bật)
+                local function CreateResurrectRadioGroup(xPos, yPos, w)
+                    w = w or 125
+                    local spacing = 10
 
-                if _G.Mod_AutoResurrect_Free_Enabled and _G.Mod_AutoResurrect_Here_Enabled then
-                    _G.Mod_AutoResurrect_Free_Enabled = false
-                end
-
-                -- 1. NÚT HS FREE
-                local hsFreeGo = GameObject("HS_FREE_RadioToggle")
-                hsFreeGo.transform:SetParent(contentGo.transform, false)
-                local freeRt = hsFreeGo:AddComponent(typeof(RectTransform))
-                freeRt.anchorMin, freeRt.anchorMax, freeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                freeRt.anchoredPosition = Vector2(xPos, yPos)
-                freeRt.sizeDelta = Vector2(w, 35)
-
-                local freeBg = GameObject("Bg")
-                freeBg.transform:SetParent(hsFreeGo.transform, false)
-                local freeBgRt = freeBg:AddComponent(typeof(RectTransform))
-                freeBgRt.anchorMin, freeBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                freeBgRt.sizeDelta = Vector2(0, 0)
-                local freeBgImg = freeBg:AddComponent(typeof(Image))
-
-                local freeTxtGo = GameObject("Text")
-                freeTxtGo.transform:SetParent(hsFreeGo.transform, false)
-                local freeTxtRt = freeTxtGo:AddComponent(typeof(RectTransform))
-                freeTxtRt.anchorMin, freeTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                freeTxtRt.sizeDelta = Vector2(0, 0)
-                local freeTxt = freeTxtGo:AddComponent(typeof(Text))
-                freeTxt.raycastTarget = false
-                freeTxt.text = "HS FREE"
-                freeTxt.fontSize = 15
-                freeTxt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then freeTxt.font = defaultFont end
-
-                local freeBtn = hsFreeGo:AddComponent(typeof(Button))
-
-                -- 2. NÚT HS KC
-                local hsKcGo = GameObject("HS_KC_RadioToggle")
-                hsKcGo.transform:SetParent(contentGo.transform, false)
-                local kcRt = hsKcGo:AddComponent(typeof(RectTransform))
-                kcRt.anchorMin, kcRt.anchorMax, kcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                kcRt.anchoredPosition = Vector2(xPos + w + spacing, yPos)
-                kcRt.sizeDelta = Vector2(w, 35)
-
-                local kcBg = GameObject("Bg")
-                kcBg.transform:SetParent(hsKcGo.transform, false)
-                local kcBgRt = kcBg:AddComponent(typeof(RectTransform))
-                kcBgRt.anchorMin, kcBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                kcBgRt.sizeDelta = Vector2(0, 0)
-                local kcBgImg = kcBg:AddComponent(typeof(Image))
-
-                local kcTxtGo = GameObject("Text")
-                kcTxtGo.transform:SetParent(hsKcGo.transform, false)
-                local kcTxtRt = kcTxtGo:AddComponent(typeof(RectTransform))
-                kcTxtRt.anchorMin, kcTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                kcTxtRt.sizeDelta = Vector2(0, 0)
-                local kcTxt = kcTxtGo:AddComponent(typeof(Text))
-                kcTxt.raycastTarget = false
-                kcTxt.text = "HS KC"
-                kcTxt.fontSize = 15
-                kcTxt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then kcTxt.font = defaultFont end
-
-                local kcBtn = hsKcGo:AddComponent(typeof(Button))
-
-                local function UpdateResurrectVisuals()
-                    if _G.Mod_AutoResurrect_Free_Enabled then
-                        freeBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                        freeTxt.color = Color.white
-                    else
-                        freeBgImg.color = Color(0.3, 0.3, 0.3, 1)
-                        freeTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    if _G.Mod_AutoResurrect_Free_Enabled == nil then
+                        pcall(function()
+                            _G.Mod_AutoResurrect_Free_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Free_Enabled", 0) == 1)
+                        end)
+                        if _G.Mod_AutoResurrect_Free_Enabled == nil then _G.Mod_AutoResurrect_Free_Enabled = false end
                     end
 
-                    if _G.Mod_AutoResurrect_Here_Enabled then
-                        kcBgImg.color = Color(0.2, 0.6, 0.2, 1)
-                        kcTxt.color = Color.white
-                    else
-                        kcBgImg.color = Color(0.3, 0.3, 0.3, 1)
-                        kcTxt.color = Color(0.8, 0.8, 0.8, 1)
+                    if _G.Mod_AutoResurrect_Here_Enabled == nil then
+                        pcall(function()
+                            _G.Mod_AutoResurrect_Here_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoResurrect_Here_Enabled", 0) == 1)
+                        end)
+                        if _G.Mod_AutoResurrect_Here_Enabled == nil then _G.Mod_AutoResurrect_Here_Enabled = false end
                     end
-                end
-                UpdateResurrectVisuals()
-                _G.ModUpdateResurrectVisuals = UpdateResurrectVisuals
 
-                freeBtn.onClick:AddListener(function()
-                    if not _G.Mod_AutoResurrect_Free_Enabled then
-                        _G.Mod_AutoResurrect_Free_Enabled = true
-                        _G.Mod_AutoResurrect_Here_Enabled = false
-                    else
+                    if _G.Mod_AutoResurrect_Free_Enabled and _G.Mod_AutoResurrect_Here_Enabled then
                         _G.Mod_AutoResurrect_Free_Enabled = false
                     end
 
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
-                            _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
-                            _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateResurrectVisuals()
-                end)
+                    -- 1. NÚT HS FREE
+                    local hsFreeGo = GameObject("HS_FREE_RadioToggle")
+                    hsFreeGo.transform:SetParent(contentGo.transform, false)
+                    local freeRt = hsFreeGo:AddComponent(typeof(RectTransform))
+                    freeRt.anchorMin, freeRt.anchorMax, freeRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    freeRt.anchoredPosition = Vector2(xPos, yPos)
+                    freeRt.sizeDelta = Vector2(w, 35)
 
-                kcBtn.onClick:AddListener(function()
-                    if not _G.Mod_AutoResurrect_Here_Enabled then
-                        _G.Mod_AutoResurrect_Here_Enabled = true
-                        _G.Mod_AutoResurrect_Free_Enabled = false
-                    else
-                        _G.Mod_AutoResurrect_Here_Enabled = false
+                    local freeBg = GameObject("Bg")
+                    freeBg.transform:SetParent(hsFreeGo.transform, false)
+                    local freeBgRt = freeBg:AddComponent(typeof(RectTransform))
+                    freeBgRt.anchorMin, freeBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    freeBgRt.sizeDelta = Vector2(0, 0)
+                    local freeBgImg = freeBg:AddComponent(typeof(Image))
+
+                    local freeTxtGo = GameObject("Text")
+                    freeTxtGo.transform:SetParent(hsFreeGo.transform, false)
+                    local freeTxtRt = freeTxtGo:AddComponent(typeof(RectTransform))
+                    freeTxtRt.anchorMin, freeTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    freeTxtRt.sizeDelta = Vector2(0, 0)
+                    local freeTxt = freeTxtGo:AddComponent(typeof(Text))
+                    freeTxt.raycastTarget = false
+                    freeTxt.text = "HS FREE"
+                    freeTxt.fontSize = 15
+                    freeTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then freeTxt.font = defaultFont end
+
+                    local freeBtn = hsFreeGo:AddComponent(typeof(Button))
+
+                    -- 2. NÚT HS KC
+                    local hsKcGo = GameObject("HS_KC_RadioToggle")
+                    hsKcGo.transform:SetParent(contentGo.transform, false)
+                    local kcRt = hsKcGo:AddComponent(typeof(RectTransform))
+                    kcRt.anchorMin, kcRt.anchorMax, kcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    kcRt.anchoredPosition = Vector2(xPos + w + spacing, yPos)
+                    kcRt.sizeDelta = Vector2(w, 35)
+
+                    local kcBg = GameObject("Bg")
+                    kcBg.transform:SetParent(hsKcGo.transform, false)
+                    local kcBgRt = kcBg:AddComponent(typeof(RectTransform))
+                    kcBgRt.anchorMin, kcBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    kcBgRt.sizeDelta = Vector2(0, 0)
+                    local kcBgImg = kcBg:AddComponent(typeof(Image))
+
+                    local kcTxtGo = GameObject("Text")
+                    kcTxtGo.transform:SetParent(hsKcGo.transform, false)
+                    local kcTxtRt = kcTxtGo:AddComponent(typeof(RectTransform))
+                    kcTxtRt.anchorMin, kcTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    kcTxtRt.sizeDelta = Vector2(0, 0)
+                    local kcTxt = kcTxtGo:AddComponent(typeof(Text))
+                    kcTxt.raycastTarget = false
+                    kcTxt.text = "HS KC"
+                    kcTxt.fontSize = 15
+                    kcTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then kcTxt.font = defaultFont end
+
+                    local kcBtn = hsKcGo:AddComponent(typeof(Button))
+
+                    local function UpdateResurrectVisuals()
+                        if _G.Mod_AutoResurrect_Free_Enabled then
+                            freeBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                            freeTxt.color = Color.white
+                        else
+                            freeBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                            freeTxt.color = Color(0.8, 0.8, 0.8, 1)
+                        end
+
+                        if _G.Mod_AutoResurrect_Here_Enabled then
+                            kcBgImg.color = Color(0.2, 0.6, 0.2, 1)
+                            kcTxt.color = Color.white
+                        else
+                            kcBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                            kcTxt.color = Color(0.8, 0.8, 0.8, 1)
+                        end
                     end
-
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
-                            _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
-                            _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
                     UpdateResurrectVisuals()
-                end)
-            end
+                    _G.ModUpdateResurrectVisuals = UpdateResurrectVisuals
 
-            CreateResurrectRadioGroup(btnX, curY, 125)
-            curY = curY - 45
+                    freeBtn.onClick:AddListener(function()
+                        if not _G.Mod_AutoResurrect_Free_Enabled then
+                            _G.Mod_AutoResurrect_Free_Enabled = true
+                            _G.Mod_AutoResurrect_Here_Enabled = false
+                        else
+                            _G.Mod_AutoResurrect_Free_Enabled = false
+                        end
 
-            -- Cài đặt DELAY QUÉT PK
-            local function CreatePKDelayControl(xPos, yPos)
-                local go = GameObject("Mod_PKScanDelay_Control")
-                go.transform:SetParent(contentGo.transform, false)
-
-                local rt = go:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(btnW, 35)
-
-                local bg = GameObject("Bg")
-                bg.transform:SetParent(go.transform, false)
-                local bgRt = bg:AddComponent(typeof(RectTransform))
-                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRt.sizeDelta = Vector2(0, 0)
-                local bgImg = bg:AddComponent(typeof(Image))
-                bgImg.color = Color(0.2, 0.2, 0.2, 1)
-
-                local txtGo = GameObject("Text")
-                txtGo.transform:SetParent(go.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget = false
-                txt.fontSize = 13
-                txt.alignment = TextAnchor.MiddleLeft
-                txt.color = Color.white
-                if defaultFont then txt.font = defaultFont end
-
-                if _G.Mod_PKScanDelay == nil then
-                    pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
-                end
-                if not _G.Mod_PKScanDelay or _G.Mod_PKScanDelay < 0.1 then
-                    _G.Mod_PKScanDelay = 0.8
-                end
-
-                local function UpdateLabel()
-                    txt.text = string.format("DELAY QUÉT PK: %.1fs", _G.Mod_PKScanDelay or 0.8)
-                end
-                UpdateLabel()
-
-                local function createBtn(name, offsetX, width, btnText, btnColor)
-                    local btnGo = GameObject(name)
-                    btnGo.transform:SetParent(go.transform, false)
-                    local bRt = btnGo:AddComponent(typeof(RectTransform))
-                    bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
-                    bRt.anchoredPosition = Vector2(offsetX, 0)
-                    bRt.sizeDelta = Vector2(width, 28)
-                    local bImg = btnGo:AddComponent(typeof(Image))
-                    bImg.color = btnColor
-
-                    local bTxtGo = GameObject("Text")
-                    bTxtGo.transform:SetParent(btnGo.transform, false)
-                    local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
-                    bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                    bTxtRt.sizeDelta = Vector2(0, 0)
-                    local bTxt = bTxtGo:AddComponent(typeof(Text))
-                    bTxt.raycastTarget = false
-                    bTxt.text = btnText
-                    bTxt.color = Color.white
-                    bTxt.fontSize = 15
-                    bTxt.alignment = TextAnchor.MiddleCenter
-                    if defaultFont then bTxt.font = defaultFont end
-
-                    return btnGo:AddComponent(typeof(Button))
-                end
-
-                local mBtn = createBtn("MinusBtn", -45, 40, "-0.1", Color(0.5, 0.2, 0.2, 1))
-                local pBtn = createBtn("PlusBtn", -2, 40, "+0.1", Color(0.2, 0.5, 0.2, 1))
-
-                mBtn.onClick:AddListener(function()
-                    _G.Mod_PKScanDelay = math.max(0.1, math.floor(((_G.Mod_PKScanDelay or 0.3) - 0.1) * 10 + 0.5) / 10)
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_PKScanDelay", _G.Mod_PKScanDelay)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateLabel()
-                end)
-
-                pBtn.onClick:AddListener(function()
-                    _G.Mod_PKScanDelay = math.min(5.0, math.floor(((_G.Mod_PKScanDelay or 0.3) + 0.1) * 10 + 0.5) / 10)
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_PKScanDelay", _G.Mod_PKScanDelay)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateLabel()
-                end)
-            end
-
-            CreatePKDelayControl(btnX, curY)
-            curY = curY - 45
-
-            -- Toggle KHÓA MỤC TIÊU
-            local tGoLock = GameObject("Mod_LockTarget_Enabled_Toggle")
-            tGoLock.transform:SetParent(contentGo.transform, false)
-
-            local tRtLock = tGoLock:AddComponent(typeof(RectTransform))
-            tRtLock.anchorMin, tRtLock.anchorMax, tRtLock.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tRtLock.anchoredPosition = Vector2(btnX, curY)
-            tRtLock.sizeDelta = Vector2(140, 30)
-
-            local bgLock = GameObject("Bg")
-            bgLock.transform:SetParent(tGoLock.transform, false)
-            local bgRtLock = bgLock:AddComponent(typeof(RectTransform))
-            bgRtLock.anchorMin, bgRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            bgRtLock.sizeDelta = Vector2(0, 0)
-            local bgImgLock = bgLock:AddComponent(typeof(Image))
-
-            local txtGoLock = GameObject("Text")
-            txtGoLock.transform:SetParent(tGoLock.transform, false)
-            local txtRtLock = txtGoLock:AddComponent(typeof(RectTransform))
-            txtRtLock.anchorMin, txtRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            txtRtLock.sizeDelta = Vector2(0, 0)
-            local txtLock = txtGoLock:AddComponent(typeof(Text))
-            txtLock.raycastTarget = false
-            txtLock.fontSize = 15
-            txtLock.alignment = TextAnchor.MiddleCenter
-            if defaultFont then txtLock.font = defaultFont end
-
-            local btnLock = tGoLock:AddComponent(typeof(Button))
-
-            if _G.Mod_LockTarget_Enabled == nil then
-                _G.Mod_LockTarget_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) == 1
-            end
-
-            local function UpdateLockLabel()
-                if _G.Mod_LockTarget_Enabled then
-                    bgImgLock.color = Color(0.2, 0.5, 0.2, 1)
-                    txtLock.text = "KHÓA MỤC TIÊU"
-                    txtLock.color = Color.white
-                else
-                    bgImgLock.color = Color(0.3, 0.3, 0.3, 1)
-                    txtLock.text = "KHÓA MỤC TIÊU"
-                    txtLock.color = Color(0.7, 0.7, 0.7, 1)
-                end
-            end
-            UpdateLockLabel()
-            _G.ModUpdateLockLabel = UpdateLockLabel
-
-            btnLock.onClick:AddListener(function()
-                _G.Mod_LockTarget_Enabled = not _G.Mod_LockTarget_Enabled
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", _G.Mod_LockTarget_Enabled and 1 or 0)
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateLockLabel()
-            end)
-
-            -- Text Field cho Khóa mục tiêu
-            local lockTgtGo = GameObject("LockTargetInput")
-            lockTgtGo.transform:SetParent(contentGo.transform, false)
-            local lockRt = lockTgtGo:AddComponent(typeof(RectTransform))
-            lockRt.anchorMin, lockRt.anchorMax, lockRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lockRt.anchoredPosition = Vector2(btnX + 145, curY)
-            lockRt.sizeDelta = Vector2(115, 30)
-
-            local lockBg = GameObject("Bg")
-            lockBg.transform:SetParent(lockTgtGo.transform, false)
-            local lockBgRt = lockBg:AddComponent(typeof(RectTransform))
-            lockBgRt.anchorMin, lockBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            lockBgRt.sizeDelta = Vector2(0, 0)
-            local lockImg = lockBg:AddComponent(typeof(Image))
-            lockImg.color = Color(0.1, 0.1, 0.1, 1)
-
-            local lockTxtGo = GameObject("Text")
-            lockTxtGo.transform:SetParent(lockTgtGo.transform, false)
-            local lockTxtRt = lockTxtGo:AddComponent(typeof(RectTransform))
-            lockTxtRt.anchorMin, lockTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            lockTxtRt.offsetMin, lockTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local lockTxt = lockTxtGo:AddComponent(typeof(Text))
-
-            if _G.Mod_LockTarget_Name == nil then
-                _G.Mod_LockTarget_Name = CS.UnityEngine.PlayerPrefs.GetString("Mod_LockTarget_Name", "")
-            end
-
-            lockTxt.text = _G.Mod_LockTarget_Name
-            lockTxt.color, lockTxt.fontSize = Color.white, 15
-            lockTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then lockTxt.font = defaultFont end
-
-            local lockField = lockTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            lockField.textComponent = lockTxt
-            lockField.text = _G.Mod_LockTarget_Name
-
-            lockField.onValueChanged:AddListener(function(val)
-                _G.Mod_LockTarget_Name = val
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetString("Mod_LockTarget_Name", val)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
-            end)
-
-            curY = curY - 40
-            CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            -- Cài đặt DELAY QUAY LẠI
-            local function CreateReturnPosDelayControl(xPos, yPos)
-                local go = GameObject("Mod_ReturnPosDelay_Control")
-                go.transform:SetParent(contentGo.transform, false)
-
-                local rt = go:AddComponent(typeof(RectTransform))
-                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(xPos, yPos)
-                rt.sizeDelta = Vector2(btnW, 35)
-
-                local bg = GameObject("Bg")
-                bg.transform:SetParent(go.transform, false)
-                local bgRt = bg:AddComponent(typeof(RectTransform))
-                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                bgRt.sizeDelta = Vector2(0, 0)
-                local bgImg = bg:AddComponent(typeof(Image))
-                bgImg.color = Color(0.2, 0.2, 0.2, 1)
-
-                local txtGo = GameObject("Text")
-                txtGo.transform:SetParent(go.transform, false)
-                local txtRt = txtGo:AddComponent(typeof(RectTransform))
-                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
-                local txt = txtGo:AddComponent(typeof(Text))
-                txt.raycastTarget = false
-                txt.fontSize = 13
-                txt.alignment = TextAnchor.MiddleLeft
-                txt.color = Color.white
-                if defaultFont then txt.font = defaultFont end
-
-                if _G.Mod_AutoReturnPosDelay == nil then
-                    pcall(function()
-                        _G.Mod_AutoReturnPosDelay = CS.UnityEngine.PlayerPrefs.GetFloat(
-                            "Mod_AutoReturnPosDelay", 1.0)
-                    end)
-                end
-                if not _G.Mod_AutoReturnPosDelay or _G.Mod_AutoReturnPosDelay < 0.1 then
-                    _G.Mod_AutoReturnPosDelay = 1.0
-                end
-
-                local function UpdateLabel()
-                    txt.text = string.format("DELAY QUAY LẠI: %.1fs", _G.Mod_AutoReturnPosDelay or 1.0)
-                end
-                UpdateLabel()
-
-                local function createBtn(name, offsetX, width, btnText, btnColor)
-                    local btnGo = GameObject(name)
-                    btnGo.transform:SetParent(go.transform, false)
-                    local bRt = btnGo:AddComponent(typeof(RectTransform))
-                    bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
-                    bRt.anchoredPosition = Vector2(offsetX, 0)
-                    bRt.sizeDelta = Vector2(width, 28)
-                    local bImg = btnGo:AddComponent(typeof(Image))
-                    bImg.color = btnColor
-
-                    local bTxtGo = GameObject("Text")
-                    bTxtGo.transform:SetParent(btnGo.transform, false)
-                    local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
-                    bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                    bTxtRt.sizeDelta = Vector2(0, 0)
-                    local bTxt = bTxtGo:AddComponent(typeof(Text))
-                    bTxt.raycastTarget = false
-                    bTxt.text = btnText
-                    bTxt.color = Color.white
-                    bTxt.fontSize = 15
-                    bTxt.alignment = TextAnchor.MiddleCenter
-                    if defaultFont then bTxt.font = defaultFont end
-
-                    return btnGo:AddComponent(typeof(Button))
-                end
-
-                local mBtn = createBtn("MinusBtn", -45, 40, "-0.1", Color(0.5, 0.2, 0.2, 1))
-                local pBtn = createBtn("PlusBtn", -2, 40, "+0.1", Color(0.2, 0.5, 0.2, 1))
-
-                mBtn.onClick:AddListener(function()
-                    _G.Mod_AutoReturnPosDelay = math.max(0.1,
-                        math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) - 0.1) * 10 + 0.5) / 10)
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateLabel()
-                end)
-
-                pBtn.onClick:AddListener(function()
-                    _G.Mod_AutoReturnPosDelay = math.min(10.0,
-                        math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) + 0.1) * 10 + 0.5) / 10)
-                    pcall(function()
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                    end)
-                    UpdateLabel()
-                end)
-            end
-
-            CreateReturnPosDelayControl(btnX, curY)
-            curY = curY - 45
-
-            -- Nút LẤY VỊ TRÍ (Đưa lên trước ô nhập tọa độ, width = 140px, ở bên trái)
-            local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
-            getReturnPosBtnGo.transform:SetParent(contentGo.transform, false)
-            local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
-            getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
-                Vector2(0, 1)
-            getReturnPosRt.anchoredPosition = Vector2(btnX, curY)
-            getReturnPosRt.sizeDelta = Vector2(140, 30)
-
-            local getReturnPosBg = GameObject("Bg")
-            getReturnPosBg.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosBgRt = getReturnPosBg:AddComponent(typeof(RectTransform))
-            getReturnPosBgRt.anchorMin, getReturnPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosBgRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosBgImg = getReturnPosBg:AddComponent(typeof(Image))
-            getReturnPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
-
-            local getReturnPosTxtGo = GameObject("Text")
-            getReturnPosTxtGo.transform:SetParent(getReturnPosBtnGo.transform, false)
-            local getReturnPosTxtRt = getReturnPosTxtGo:AddComponent(typeof(RectTransform))
-            getReturnPosTxtRt.anchorMin, getReturnPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            getReturnPosTxtRt.sizeDelta = Vector2(0, 0)
-            local getReturnPosTxt = getReturnPosTxtGo:AddComponent(typeof(Text))
-            getReturnPosTxt.raycastTarget = false
-            getReturnPosTxt.text = "LẤY VỊ TRÍ"
-            getReturnPosTxt.color = Color.white
-            getReturnPosTxt.fontSize = 15
-            getReturnPosTxt.alignment = TextAnchor.MiddleCenter
-            if defaultFont then getReturnPosTxt.font = defaultFont end
-
-            -- InputField Tọa độ AutoReturnPosInput (width = 115px, ở bên phải)
-            local retTgtGo = GameObject("AutoReturnPosInput")
-            retTgtGo.transform:SetParent(contentGo.transform, false)
-            local retRt = retTgtGo:AddComponent(typeof(RectTransform))
-            retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            retRt.anchoredPosition = Vector2(btnX + 145, curY)
-            retRt.sizeDelta = Vector2(115, 30)
-
-            local retBg = GameObject("Bg")
-            retBg.transform:SetParent(retTgtGo.transform, false)
-            local retBgRt = retBg:AddComponent(typeof(RectTransform))
-            retBgRt.anchorMin, retBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retBgRt.sizeDelta = Vector2(0, 0)
-            local retImg = retBg:AddComponent(typeof(Image))
-            retImg.color = Color(0.1, 0.1, 0.1, 1)
-
-            local retTxtGo = GameObject("Text")
-            retTxtGo.transform:SetParent(retTgtGo.transform, false)
-            local retTxtRt = retTxtGo:AddComponent(typeof(RectTransform))
-            retTxtRt.anchorMin, retTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            retTxtRt.offsetMin, retTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local retTxt = retTxtGo:AddComponent(typeof(Text))
-
-            if _G.Mod_AutoReturnPos_Coords == nil then
-                _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
-            end
-
-            retTxt.text = _G.Mod_AutoReturnPos_Coords
-            retTxt.color, retTxt.fontSize = Color.white, 15
-            retTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then retTxt.font = defaultFont end
-
-            local retField = retTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            retField.textComponent = retTxt
-            retField.text = _G.Mod_AutoReturnPos_Coords
-
-            retField.onValueChanged:AddListener(function(val)
-                _G.Mod_AutoReturnPos_Coords = val
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
-            end)
-
-            local getReturnPosBtn = getReturnPosBtnGo:AddComponent(typeof(Button))
-            getReturnPosBtn.onClick:AddListener(function()
-                pcall(function()
-                    if _G.RoleManager and _G.RoleManager.me then
-                        local me = _G.RoleManager.me
-                        local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                        local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
-                        if curX > 0 and curYCoord > 0 then
-                            local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-                            local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
-                            local coordStr = ""
-                            if isFastBack and curMap > 0 then
-                                coordStr = string.format("%d;%d#%d", curMap, curX, curYCoord)
-                            else
-                                coordStr = string.format("%d#%d", curX, curYCoord)
-                            end
-                            _G.Mod_AutoReturnPos_Coords = coordStr
-                            retField.text = coordStr
-                            retTxt.text = coordStr
-                            CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
-                            if curMap > 0 then
-                                _G.Mod_AutoReturnPos_MapId = curMap
-                                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_MapId", curMap)
-                            end
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
+                                _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
+                                _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
                             CS.UnityEngine.PlayerPrefs.Save()
-                            if _G.FloatingWordUtility then
-                                if isFastBack then
-                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí nhanh (FastBack): " .. coordStr)
+                        end)
+                        UpdateResurrectVisuals()
+                    end)
+
+                    kcBtn.onClick:AddListener(function()
+                        if not _G.Mod_AutoResurrect_Here_Enabled then
+                            _G.Mod_AutoResurrect_Here_Enabled = true
+                            _G.Mod_AutoResurrect_Free_Enabled = false
+                        else
+                            _G.Mod_AutoResurrect_Here_Enabled = false
+                        end
+
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Free_Enabled",
+                                _G.Mod_AutoResurrect_Free_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoResurrect_Here_Enabled",
+                                _G.Mod_AutoResurrect_Here_Enabled and 1 or 0)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        UpdateResurrectVisuals()
+                    end)
+                end
+
+                CreateResurrectRadioGroup(btnX, curY, 125)
+                curY = curY - 45
+
+                -- Cài đặt DELAY QUÉT PK
+                local function CreatePKDelayControl(xPos, yPos)
+                    local go = GameObject("Mod_PKScanDelay_Control")
+                    go.transform:SetParent(contentGo.transform, false)
+
+                    local rt = go:AddComponent(typeof(RectTransform))
+                    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    rt.anchoredPosition = Vector2(xPos, yPos)
+                    rt.sizeDelta = Vector2(btnW, 35)
+
+                    local bg = GameObject("Bg")
+                    bg.transform:SetParent(go.transform, false)
+                    local bgRt = bg:AddComponent(typeof(RectTransform))
+                    bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    bgRt.sizeDelta = Vector2(0, 0)
+                    local bgImg = bg:AddComponent(typeof(Image))
+                    bgImg.color = Color(0.2, 0.2, 0.2, 1)
+
+                    local txtGo = GameObject("Text")
+                    txtGo.transform:SetParent(go.transform, false)
+                    local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                    txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
+                    local txt = txtGo:AddComponent(typeof(Text))
+                    txt.raycastTarget = false
+                    txt.fontSize = 13
+                    txt.alignment = TextAnchor.MiddleLeft
+                    txt.color = Color.white
+                    if defaultFont then txt.font = defaultFont end
+
+                    if _G.Mod_PKScanDelay == nil then
+                        pcall(function() _G.Mod_PKScanDelay = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_PKScanDelay", 0.8) end)
+                    end
+                    if not _G.Mod_PKScanDelay or _G.Mod_PKScanDelay < 0.1 then
+                        _G.Mod_PKScanDelay = 0.8
+                    end
+
+                    local function UpdateLabel()
+                        txt.text = string.format("DELAY QUÉT PK: %.1fs", _G.Mod_PKScanDelay or 0.8)
+                    end
+                    UpdateLabel()
+
+                    local function createBtn(name, offsetX, width, btnText, btnColor)
+                        local btnGo = GameObject(name)
+                        btnGo.transform:SetParent(go.transform, false)
+                        local bRt = btnGo:AddComponent(typeof(RectTransform))
+                        bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+                        bRt.anchoredPosition = Vector2(offsetX, 0)
+                        bRt.sizeDelta = Vector2(width, 28)
+                        local bImg = btnGo:AddComponent(typeof(Image))
+                        bImg.color = btnColor
+
+                        local bTxtGo = GameObject("Text")
+                        bTxtGo.transform:SetParent(btnGo.transform, false)
+                        local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
+                        bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                        bTxtRt.sizeDelta = Vector2(0, 0)
+                        local bTxt = bTxtGo:AddComponent(typeof(Text))
+                        bTxt.raycastTarget = false
+                        bTxt.text = btnText
+                        bTxt.color = Color.white
+                        bTxt.fontSize = 15
+                        bTxt.alignment = TextAnchor.MiddleCenter
+                        if defaultFont then bTxt.font = defaultFont end
+
+                        return btnGo:AddComponent(typeof(Button))
+                    end
+
+                    local mBtn = createBtn("MinusBtn", -45, 40, "-0.1", Color(0.5, 0.2, 0.2, 1))
+                    local pBtn = createBtn("PlusBtn", -2, 40, "+0.1", Color(0.2, 0.5, 0.2, 1))
+
+                    mBtn.onClick:AddListener(function()
+                        _G.Mod_PKScanDelay = math.max(0.1, math.floor(((_G.Mod_PKScanDelay or 0.3) - 0.1) * 10 + 0.5) / 10)
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_PKScanDelay", _G.Mod_PKScanDelay)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        UpdateLabel()
+                    end)
+
+                    pBtn.onClick:AddListener(function()
+                        _G.Mod_PKScanDelay = math.min(5.0, math.floor(((_G.Mod_PKScanDelay or 0.3) + 0.1) * 10 + 0.5) / 10)
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_PKScanDelay", _G.Mod_PKScanDelay)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        UpdateLabel()
+                    end)
+                end
+
+                CreatePKDelayControl(btnX, curY)
+                curY = curY - 45
+
+                -- Toggle KHÓA MỤC TIÊU
+                local tGoLock = GameObject("Mod_LockTarget_Enabled_Toggle")
+                tGoLock.transform:SetParent(contentGo.transform, false)
+
+                local tRtLock = tGoLock:AddComponent(typeof(RectTransform))
+                tRtLock.anchorMin, tRtLock.anchorMax, tRtLock.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tRtLock.anchoredPosition = Vector2(btnX, curY)
+                tRtLock.sizeDelta = Vector2(140, 30)
+
+                local bgLock = GameObject("Bg")
+                bgLock.transform:SetParent(tGoLock.transform, false)
+                local bgRtLock = bgLock:AddComponent(typeof(RectTransform))
+                bgRtLock.anchorMin, bgRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRtLock.sizeDelta = Vector2(0, 0)
+                local bgImgLock = bgLock:AddComponent(typeof(Image))
+
+                local txtGoLock = GameObject("Text")
+                txtGoLock.transform:SetParent(tGoLock.transform, false)
+                local txtRtLock = txtGoLock:AddComponent(typeof(RectTransform))
+                txtRtLock.anchorMin, txtRtLock.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRtLock.sizeDelta = Vector2(0, 0)
+                local txtLock = txtGoLock:AddComponent(typeof(Text))
+                txtLock.raycastTarget = false
+                txtLock.fontSize = 15
+                txtLock.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txtLock.font = defaultFont end
+
+                local btnLock = tGoLock:AddComponent(typeof(Button))
+
+                if _G.Mod_LockTarget_Enabled == nil then
+                    _G.Mod_LockTarget_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_LockTarget_Enabled", 0) == 1
+                end
+
+                local function UpdateLockLabel()
+                    if _G.Mod_LockTarget_Enabled then
+                        bgImgLock.color = Color(0.2, 0.5, 0.2, 1)
+                        txtLock.text = "KHÓA MỤC TIÊU"
+                        txtLock.color = Color.white
+                    else
+                        bgImgLock.color = Color(0.3, 0.3, 0.3, 1)
+                        txtLock.text = "KHÓA MỤC TIÊU"
+                        txtLock.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateLockLabel()
+                _G.ModUpdateLockLabel = UpdateLockLabel
+
+                btnLock.onClick:AddListener(function()
+                    _G.Mod_LockTarget_Enabled = not _G.Mod_LockTarget_Enabled
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_LockTarget_Enabled", _G.Mod_LockTarget_Enabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateLockLabel()
+                end)
+
+                -- Text Field cho Khóa mục tiêu
+                local lockTgtGo = GameObject("LockTargetInput")
+                lockTgtGo.transform:SetParent(contentGo.transform, false)
+                local lockRt = lockTgtGo:AddComponent(typeof(RectTransform))
+                lockRt.anchorMin, lockRt.anchorMax, lockRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lockRt.anchoredPosition = Vector2(btnX + 145, curY)
+                lockRt.sizeDelta = Vector2(115, 30)
+
+                local lockBg = GameObject("Bg")
+                lockBg.transform:SetParent(lockTgtGo.transform, false)
+                local lockBgRt = lockBg:AddComponent(typeof(RectTransform))
+                lockBgRt.anchorMin, lockBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                lockBgRt.sizeDelta = Vector2(0, 0)
+                local lockImg = lockBg:AddComponent(typeof(Image))
+                lockImg.color = Color(0.1, 0.1, 0.1, 1)
+
+                local lockTxtGo = GameObject("Text")
+                lockTxtGo.transform:SetParent(lockTgtGo.transform, false)
+                local lockTxtRt = lockTxtGo:AddComponent(typeof(RectTransform))
+                lockTxtRt.anchorMin, lockTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                lockTxtRt.offsetMin, lockTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local lockTxt = lockTxtGo:AddComponent(typeof(Text))
+
+                if _G.Mod_LockTarget_Name == nil then
+                    _G.Mod_LockTarget_Name = CS.UnityEngine.PlayerPrefs.GetString("Mod_LockTarget_Name", "")
+                end
+
+                lockTxt.text = _G.Mod_LockTarget_Name
+                lockTxt.color, lockTxt.fontSize = Color.white, 15
+                lockTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lockTxt.font = defaultFont end
+
+                local lockField = lockTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                lockField.textComponent = lockTxt
+                lockField.text = _G.Mod_LockTarget_Name
+
+                lockField.onValueChanged:AddListener(function(val)
+                    _G.Mod_LockTarget_Name = val
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetString("Mod_LockTarget_Name", val)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+                curY = curY - 40
+                CreateToggle("TỰ QUAY LẠI X#Y", "Mod_AutoReturnPos_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                -- Cài đặt DELAY QUAY LẠI
+                local function CreateReturnPosDelayControl(xPos, yPos)
+                    local go = GameObject("Mod_ReturnPosDelay_Control")
+                    go.transform:SetParent(contentGo.transform, false)
+
+                    local rt = go:AddComponent(typeof(RectTransform))
+                    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    rt.anchoredPosition = Vector2(xPos, yPos)
+                    rt.sizeDelta = Vector2(btnW, 35)
+
+                    local bg = GameObject("Bg")
+                    bg.transform:SetParent(go.transform, false)
+                    local bgRt = bg:AddComponent(typeof(RectTransform))
+                    bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    bgRt.sizeDelta = Vector2(0, 0)
+                    local bgImg = bg:AddComponent(typeof(Image))
+                    bgImg.color = Color(0.2, 0.2, 0.2, 1)
+
+                    local txtGo = GameObject("Text")
+                    txtGo.transform:SetParent(go.transform, false)
+                    local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                    txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    txtRt.offsetMin, txtRt.offsetMax = Vector2(6, 0), Vector2(-88, 0)
+                    local txt = txtGo:AddComponent(typeof(Text))
+                    txt.raycastTarget = false
+                    txt.fontSize = 13
+                    txt.alignment = TextAnchor.MiddleLeft
+                    txt.color = Color.white
+                    if defaultFont then txt.font = defaultFont end
+
+                    if _G.Mod_AutoReturnPosDelay == nil then
+                        pcall(function()
+                            _G.Mod_AutoReturnPosDelay = CS.UnityEngine.PlayerPrefs.GetFloat(
+                                "Mod_AutoReturnPosDelay", 1.0)
+                        end)
+                    end
+                    if not _G.Mod_AutoReturnPosDelay or _G.Mod_AutoReturnPosDelay < 0.1 then
+                        _G.Mod_AutoReturnPosDelay = 1.0
+                    end
+
+                    local function UpdateLabel()
+                        txt.text = string.format("DELAY QUAY LẠI: %.1fs", _G.Mod_AutoReturnPosDelay or 1.0)
+                    end
+                    UpdateLabel()
+
+                    local function createBtn(name, offsetX, width, btnText, btnColor)
+                        local btnGo = GameObject(name)
+                        btnGo.transform:SetParent(go.transform, false)
+                        local bRt = btnGo:AddComponent(typeof(RectTransform))
+                        bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(1, 0.5), Vector2(1, 0.5), Vector2(1, 0.5)
+                        bRt.anchoredPosition = Vector2(offsetX, 0)
+                        bRt.sizeDelta = Vector2(width, 28)
+                        local bImg = btnGo:AddComponent(typeof(Image))
+                        bImg.color = btnColor
+
+                        local bTxtGo = GameObject("Text")
+                        bTxtGo.transform:SetParent(btnGo.transform, false)
+                        local bTxtRt = bTxtGo:AddComponent(typeof(RectTransform))
+                        bTxtRt.anchorMin, bTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                        bTxtRt.sizeDelta = Vector2(0, 0)
+                        local bTxt = bTxtGo:AddComponent(typeof(Text))
+                        bTxt.raycastTarget = false
+                        bTxt.text = btnText
+                        bTxt.color = Color.white
+                        bTxt.fontSize = 15
+                        bTxt.alignment = TextAnchor.MiddleCenter
+                        if defaultFont then bTxt.font = defaultFont end
+
+                        return btnGo:AddComponent(typeof(Button))
+                    end
+
+                    local mBtn = createBtn("MinusBtn", -45, 40, "-0.1", Color(0.5, 0.2, 0.2, 1))
+                    local pBtn = createBtn("PlusBtn", -2, 40, "+0.1", Color(0.2, 0.5, 0.2, 1))
+
+                    mBtn.onClick:AddListener(function()
+                        _G.Mod_AutoReturnPosDelay = math.max(0.1,
+                            math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) - 0.1) * 10 + 0.5) / 10)
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        UpdateLabel()
+                    end)
+
+                    pBtn.onClick:AddListener(function()
+                        _G.Mod_AutoReturnPosDelay = math.min(10.0,
+                            math.floor(((_G.Mod_AutoReturnPosDelay or 1.0) + 0.1) * 10 + 0.5) / 10)
+                        pcall(function()
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_AutoReturnPosDelay", _G.Mod_AutoReturnPosDelay)
+                            CS.UnityEngine.PlayerPrefs.Save()
+                        end)
+                        UpdateLabel()
+                    end)
+                end
+
+                CreateReturnPosDelayControl(btnX, curY)
+                curY = curY - 45
+
+                -- Nút LẤY VỊ TRÍ (Đưa lên trước ô nhập tọa độ, width = 140px, ở bên trái)
+                local getReturnPosBtnGo = GameObject("GetReturnPosBtn")
+                getReturnPosBtnGo.transform:SetParent(contentGo.transform, false)
+                local getReturnPosRt = getReturnPosBtnGo:AddComponent(typeof(RectTransform))
+                getReturnPosRt.anchorMin, getReturnPosRt.anchorMax, getReturnPosRt.pivot = Vector2(0, 1), Vector2(0, 1),
+                    Vector2(0, 1)
+                getReturnPosRt.anchoredPosition = Vector2(btnX, curY)
+                getReturnPosRt.sizeDelta = Vector2(140, 30)
+
+                local getReturnPosBg = GameObject("Bg")
+                getReturnPosBg.transform:SetParent(getReturnPosBtnGo.transform, false)
+                local getReturnPosBgRt = getReturnPosBg:AddComponent(typeof(RectTransform))
+                getReturnPosBgRt.anchorMin, getReturnPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getReturnPosBgRt.sizeDelta = Vector2(0, 0)
+                local getReturnPosBgImg = getReturnPosBg:AddComponent(typeof(Image))
+                getReturnPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+                local getReturnPosTxtGo = GameObject("Text")
+                getReturnPosTxtGo.transform:SetParent(getReturnPosBtnGo.transform, false)
+                local getReturnPosTxtRt = getReturnPosTxtGo:AddComponent(typeof(RectTransform))
+                getReturnPosTxtRt.anchorMin, getReturnPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getReturnPosTxtRt.sizeDelta = Vector2(0, 0)
+                local getReturnPosTxt = getReturnPosTxtGo:AddComponent(typeof(Text))
+                getReturnPosTxt.raycastTarget = false
+                getReturnPosTxt.text = "LẤY VỊ TRÍ"
+                getReturnPosTxt.color = Color.white
+                getReturnPosTxt.fontSize = 15
+                getReturnPosTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then getReturnPosTxt.font = defaultFont end
+
+                -- InputField Tọa độ AutoReturnPosInput (width = 115px, ở bên phải)
+                local retTgtGo = GameObject("AutoReturnPosInput")
+                retTgtGo.transform:SetParent(contentGo.transform, false)
+                local retRt = retTgtGo:AddComponent(typeof(RectTransform))
+                retRt.anchorMin, retRt.anchorMax, retRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                retRt.anchoredPosition = Vector2(btnX + 145, curY)
+                retRt.sizeDelta = Vector2(115, 30)
+
+                local retBg = GameObject("Bg")
+                retBg.transform:SetParent(retTgtGo.transform, false)
+                local retBgRt = retBg:AddComponent(typeof(RectTransform))
+                retBgRt.anchorMin, retBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                retBgRt.sizeDelta = Vector2(0, 0)
+                local retImg = retBg:AddComponent(typeof(Image))
+                retImg.color = Color(0.1, 0.1, 0.1, 1)
+
+                local retTxtGo = GameObject("Text")
+                retTxtGo.transform:SetParent(retTgtGo.transform, false)
+                local retTxtRt = retTxtGo:AddComponent(typeof(RectTransform))
+                retTxtRt.anchorMin, retTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                retTxtRt.offsetMin, retTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local retTxt = retTxtGo:AddComponent(typeof(Text))
+
+                if _G.Mod_AutoReturnPos_Coords == nil then
+                    _G.Mod_AutoReturnPos_Coords = CS.UnityEngine.PlayerPrefs.GetString("Mod_AutoReturnPos_Coords", "")
+                end
+
+                retTxt.text = _G.Mod_AutoReturnPos_Coords
+                retTxt.color, retTxt.fontSize = Color.white, 15
+                retTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then retTxt.font = defaultFont end
+
+                local retField = retTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                retField.textComponent = retTxt
+                retField.text = _G.Mod_AutoReturnPos_Coords
+
+                retField.onValueChanged:AddListener(function(val)
+                    _G.Mod_AutoReturnPos_Coords = val
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", val)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+                local getReturnPosBtn = getReturnPosBtnGo:AddComponent(typeof(Button))
+                getReturnPosBtn.onClick:AddListener(function()
+                    pcall(function()
+                        if _G.RoleManager and _G.RoleManager.me then
+                            local me = _G.RoleManager.me
+                            local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                            local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                            if curX > 0 and curYCoord > 0 then
+                                local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                local coordStr = ""
+                                if isFastBack and curMap > 0 then
+                                    coordStr = string.format("%d;%d#%d", curMap, curX, curYCoord)
                                 else
-                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
+                                    coordStr = string.format("%d#%d", curX, curYCoord)
+                                end
+                                _G.Mod_AutoReturnPos_Coords = coordStr
+                                retField.text = coordStr
+                                retTxt.text = coordStr
+                                CS.UnityEngine.PlayerPrefs.SetString("Mod_AutoReturnPos_Coords", coordStr)
+                                if curMap > 0 then
+                                    _G.Mod_AutoReturnPos_MapId = curMap
+                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoReturnPos_MapId", curMap)
+                                end
+                                CS.UnityEngine.PlayerPrefs.Save()
+                                if _G.FloatingWordUtility then
+                                    if isFastBack then
+                                        _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí nhanh (FastBack): " .. coordStr)
+                                    else
+                                        _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí quay lại: " .. coordStr)
+                                    end
                                 end
                             end
                         end
-                    end
+                    end)
                 end)
-            end)
 
-            curY = curY - 40
-            CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
-            curY = curY - 45
-
-            -- =========================================================================
-            -- [MOD FEATURE]: NÚT GHI NHỚ PRESET (SKILL, HỒN CỐT & PHÙ VĂN) TRONG CỘT HỖ TRỢ
-            -- =========================================================================
-            if _G.Mod_IsSummonerModeActive and _G.Mod_IsSummonerModeActive() then
+                curY = curY - 40
                 curY = curY - 5
-                local halfW = math.floor((btnW - 8) / 2)
+                CreateSectionSeparator()
 
-                -- Nút 1: GHI NHỚ PRESET PVP (Màu đỏ cam)
-                local savePvpBtnGo = GameObject("SavePresetPvpBtn")
-                savePvpBtnGo.transform:SetParent(contentGo.transform, false)
-                local savePvpRt = savePvpBtnGo:AddComponent(typeof(RectTransform))
-                savePvpRt.anchorMin, savePvpRt.anchorMax, savePvpRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                savePvpRt.anchoredPosition = Vector2(btnX, curY)
-                savePvpRt.sizeDelta = Vector2(halfW, 35)
+                -- =========================================================================
+                -- [MOD FEATURE]: AUTO PHÓ BẢN (HUYẾT LÂU & QUẢNG TRƯỜNG QUỶ) - GIAO DIỆN
+                -- =========================================================================
+                CreateSectionHeader("AUTO PHÓ BẢN")
 
-                local savePvpImg = savePvpBtnGo:AddComponent(typeof(Image))
-                savePvpImg.color = Color(0.72, 0.28, 0.18, 1)
+                -- 1. NÚT AUTO HUYẾT LÂU
+                CreateToggle("AUTO HUYẾT LÂU", "Mod_AutoBloodCastle_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 40
 
-                local savePvpTxtGo = GameObject("Text")
-                savePvpTxtGo.transform:SetParent(savePvpBtnGo.transform, false)
-                local savePvpTxtRt = savePvpTxtGo:AddComponent(typeof(RectTransform))
-                savePvpTxtRt.anchorMin, savePvpTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                savePvpTxtRt.sizeDelta = Vector2(0, 0)
-                local savePvpTxt = savePvpTxtGo:AddComponent(typeof(Text))
-                savePvpTxt.raycastTarget = false
-                savePvpTxt.text = "GHI NHỚ PVP"
-                savePvpTxt.fontSize = 11
-                savePvpTxt.color = Color.white
-                savePvpTxt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then savePvpTxt.font = defaultFont end
+                -- 2. HÀNG LẤY VỊ TRÍ & TỌA ĐỘ FARM HUYẾT LÂU
+                local getBcPosBtnGo = GameObject("GetBCPosBtn")
+                getBcPosBtnGo.transform:SetParent(contentGo.transform, false)
+                local getBcPosBtnRt = getBcPosBtnGo:AddComponent(typeof(RectTransform))
+                getBcPosBtnRt.anchorMin, getBcPosBtnRt.anchorMax, getBcPosBtnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                getBcPosBtnRt.anchoredPosition = Vector2(btnX, curY)
+                getBcPosBtnRt.sizeDelta = Vector2(120, 30)
 
-                local savePvpBtn = savePvpBtnGo:AddComponent(typeof(Button))
-                savePvpBtn.onClick:AddListener(function()
-                    if _G.Mod_SaveSummonerPreset then
-                        _G.Mod_SaveSummonerPreset("PVP")
+                local getBcPosBg = GameObject("Bg")
+                getBcPosBg.transform:SetParent(getBcPosBtnGo.transform, false)
+                local getBcPosBgRt = getBcPosBg:AddComponent(typeof(RectTransform))
+                getBcPosBgRt.anchorMin, getBcPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getBcPosBgRt.sizeDelta = Vector2(0, 0)
+                local getBcPosBgImg = getBcPosBg:AddComponent(typeof(Image))
+                getBcPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+                local getBcPosTxtGo = GameObject("Text")
+                getBcPosTxtGo.transform:SetParent(getBcPosBtnGo.transform, false)
+                local getBcPosTxtRt = getBcPosTxtGo:AddComponent(typeof(RectTransform))
+                getBcPosTxtRt.anchorMin, getBcPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getBcPosTxtRt.sizeDelta = Vector2(0, 0)
+                local getBcPosTxt = getBcPosTxtGo:AddComponent(typeof(Text))
+                getBcPosTxt.raycastTarget = false
+                getBcPosTxt.text = "LẤY VỊ TRÍ"
+                getBcPosTxt.color = Color.white
+                getBcPosTxt.fontSize = 13
+                getBcPosTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then getBcPosTxt.font = defaultFont end
+
+                -- InputField Tọa độ Farm Huyết Lâu
+                local bcTgtGo = GameObject("AutoBCPosInput")
+                bcTgtGo.transform:SetParent(contentGo.transform, false)
+                local bcRt = bcTgtGo:AddComponent(typeof(RectTransform))
+                bcRt.anchorMin, bcRt.anchorMax, bcRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                bcRt.anchoredPosition = Vector2(btnX + 125, curY)
+                bcRt.sizeDelta = Vector2(135, 30)
+
+                local bcBg = GameObject("Bg")
+                bcBg.transform:SetParent(bcTgtGo.transform, false)
+                local bcBgRt = bcBg:AddComponent(typeof(RectTransform))
+                bcBgRt.anchorMin, bcBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bcBgRt.sizeDelta = Vector2(0, 0)
+                local bcImg = bcBg:AddComponent(typeof(Image))
+                bcImg.color = Color(0.1, 0.1, 0.1, 1)
+
+                local bcTxtGo = GameObject("Text")
+                bcTxtGo.transform:SetParent(bcTgtGo.transform, false)
+                local bcTxtRt = bcTxtGo:AddComponent(typeof(RectTransform))
+                bcTxtRt.anchorMin, bcTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bcTxtRt.offsetMin, bcTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local bcTxt = bcTxtGo:AddComponent(typeof(Text))
+
+                if _G.Mod_Coord_BloodCastle == nil or _G.Mod_Coord_BloodCastle == "" then
+                    _G.Mod_Coord_BloodCastle = CS.UnityEngine.PlayerPrefs.GetString("Mod_Coord_BloodCastle", "14#60")
+                end
+                if _G.Mod_Coord_BloodCastle == nil or _G.Mod_Coord_BloodCastle == "" then
+                    _G.Mod_Coord_BloodCastle = "14#60"
+                end
+
+                bcTxt.text = _G.Mod_Coord_BloodCastle
+                bcTxt.color, bcTxt.fontSize = Color.white, 14
+                bcTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then bcTxt.font = defaultFont end
+
+                local bcField = bcTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                bcField.textComponent = bcTxt
+                bcField.text = _G.Mod_Coord_BloodCastle
+
+                -- Placeholder
+                local bcPhGo = GameObject("Placeholder")
+                bcPhGo.transform:SetParent(bcTgtGo.transform, false)
+                local bcPhRt = bcPhGo:AddComponent(typeof(RectTransform))
+                bcPhRt.anchorMin, bcPhRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bcPhRt.offsetMin, bcPhRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local bcPhTxt = bcPhGo:AddComponent(typeof(Text))
+                bcPhTxt.text = "14#60"
+                bcPhTxt.fontSize = 12
+                bcPhTxt.fontStyle = CS.UnityEngine.FontStyle.Italic
+                bcPhTxt.color = Color(0.6, 0.6, 0.6, 0.5)
+                bcPhTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then bcPhTxt.font = defaultFont end
+                bcField.placeholder = bcPhTxt
+
+                bcField.onValueChanged:AddListener(function(val)
+                    _G.Mod_Coord_BloodCastle = val
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetString("Mod_Coord_BloodCastle", val)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+                local getBcPosBtn = getBcPosBtnGo:AddComponent(typeof(Button))
+                getBcPosBtn.onClick:AddListener(function()
+                    pcall(function()
+                        if _G.RoleManager and _G.RoleManager.me then
+                            local me = _G.RoleManager.me
+                            local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                            local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                            if curX > 0 and curYCoord > 0 then
+                                local coordStr = string.format("%d#%d", curX, curYCoord)
+                                _G.Mod_Coord_BloodCastle = coordStr
+                                bcField.text = coordStr
+                                bcTxt.text = coordStr
+                                CS.UnityEngine.PlayerPrefs.SetString("Mod_Coord_BloodCastle", coordStr)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí farm Huyết Lâu: " .. coordStr)
+                                end
+                            end
+                        end
+                    end)
+                end)
+
+                curY = curY - 38
+
+                -- 3. NÚT AUTO QUẢNG TRƯỜNG QUỶ
+                CreateToggle("AUTO QUẢNG TRƯỜNG QUỶ", "Mod_AutoDemonPlaza_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 40
+
+                -- 4. HÀNG LẤY VỊ TRÍ & TỌA ĐỘ FARM QUẢNG TRƯỜNG QUỶ
+                local getDsPosBtnGo = GameObject("GetDSPosBtn")
+                getDsPosBtnGo.transform:SetParent(contentGo.transform, false)
+                local getDsPosBtnRt = getDsPosBtnGo:AddComponent(typeof(RectTransform))
+                getDsPosBtnRt.anchorMin, getDsPosBtnRt.anchorMax, getDsPosBtnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                getDsPosBtnRt.anchoredPosition = Vector2(btnX, curY)
+                getDsPosBtnRt.sizeDelta = Vector2(120, 30)
+
+                local getDsPosBg = GameObject("Bg")
+                getDsPosBg.transform:SetParent(getDsPosBtnGo.transform, false)
+                local getDsPosBgRt = getDsPosBg:AddComponent(typeof(RectTransform))
+                getDsPosBgRt.anchorMin, getDsPosBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getDsPosBgRt.sizeDelta = Vector2(0, 0)
+                local getDsPosBgImg = getDsPosBg:AddComponent(typeof(Image))
+                getDsPosBgImg.color = Color(0.2, 0.5, 0.7, 1)
+
+                local getDsPosTxtGo = GameObject("Text")
+                getDsPosTxtGo.transform:SetParent(getDsPosBtnGo.transform, false)
+                local getDsPosTxtRt = getDsPosTxtGo:AddComponent(typeof(RectTransform))
+                getDsPosTxtRt.anchorMin, getDsPosTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                getDsPosTxtRt.sizeDelta = Vector2(0, 0)
+                local getDsPosTxt = getDsPosTxtGo:AddComponent(typeof(Text))
+                getDsPosTxt.raycastTarget = false
+                getDsPosTxt.text = "LẤY VỊ TRÍ"
+                getDsPosTxt.color = Color.white
+                getDsPosTxt.fontSize = 13
+                getDsPosTxt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then getDsPosTxt.font = defaultFont end
+
+                -- InputField Tọa độ Farm Quảng Trường Quỷ
+                local dsTgtGo = GameObject("AutoDSPosInput")
+                dsTgtGo.transform:SetParent(contentGo.transform, false)
+                local dsRt = dsTgtGo:AddComponent(typeof(RectTransform))
+                dsRt.anchorMin, dsRt.anchorMax, dsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                dsRt.anchoredPosition = Vector2(btnX + 125, curY)
+                dsRt.sizeDelta = Vector2(135, 30)
+
+                local dsBg = GameObject("Bg")
+                dsBg.transform:SetParent(dsTgtGo.transform, false)
+                local dsBgRt = dsBg:AddComponent(typeof(RectTransform))
+                dsBgRt.anchorMin, dsBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                dsBgRt.sizeDelta = Vector2(0, 0)
+                local dsImg = dsBg:AddComponent(typeof(Image))
+                dsImg.color = Color(0.1, 0.1, 0.1, 1)
+
+                local dsTxtGo = GameObject("Text")
+                dsTxtGo.transform:SetParent(dsTgtGo.transform, false)
+                local dsTxtRt = dsTxtGo:AddComponent(typeof(RectTransform))
+                dsTxtRt.anchorMin, dsTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                dsTxtRt.offsetMin, dsTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local dsTxt = dsTxtGo:AddComponent(typeof(Text))
+
+                if _G.Mod_Coord_DemonPlaza == nil then
+                    _G.Mod_Coord_DemonPlaza = CS.UnityEngine.PlayerPrefs.GetString("Mod_Coord_DemonPlaza", "")
+                end
+
+                dsTxt.text = _G.Mod_Coord_DemonPlaza
+                dsTxt.color, dsTxt.fontSize = Color.white, 14
+                dsTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then dsTxt.font = defaultFont end
+
+                local dsField = dsTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                dsField.textComponent = dsTxt
+                dsField.text = _G.Mod_Coord_DemonPlaza
+
+                -- Placeholder
+                local dsPhGo = GameObject("Placeholder")
+                dsPhGo.transform:SetParent(dsTgtGo.transform, false)
+                local dsPhRt = dsPhGo:AddComponent(typeof(RectTransform))
+                dsPhRt.anchorMin, dsPhRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                dsPhRt.offsetMin, dsPhRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local dsPhTxt = dsPhGo:AddComponent(typeof(Text))
+                dsPhTxt.text = "Tâm map"
+                dsPhTxt.fontSize = 12
+                dsPhTxt.fontStyle = CS.UnityEngine.FontStyle.Italic
+                dsPhTxt.color = Color(0.6, 0.6, 0.6, 0.5)
+                dsPhTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then dsPhTxt.font = defaultFont end
+                dsField.placeholder = dsPhTxt
+
+                dsField.onValueChanged:AddListener(function(val)
+                    _G.Mod_Coord_DemonPlaza = val
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetString("Mod_Coord_DemonPlaza", val)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+                local getDsPosBtn = getDsPosBtnGo:AddComponent(typeof(Button))
+                getDsPosBtn.onClick:AddListener(function()
+                    pcall(function()
+                        if _G.RoleManager and _G.RoleManager.me then
+                            local me = _G.RoleManager.me
+                            local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
+                            local curYCoord = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                            if curX > 0 and curYCoord > 0 then
+                                local coordStr = string.format("%d#%d", curX, curYCoord)
+                                _G.Mod_Coord_DemonPlaza = coordStr
+                                dsField.text = coordStr
+                                dsTxt.text = coordStr
+                                CS.UnityEngine.PlayerPrefs.SetString("Mod_Coord_DemonPlaza", coordStr)
+                                CS.UnityEngine.PlayerPrefs.Save()
+                                if _G.FloatingWordUtility then
+                                    _G.FloatingWordUtility.QuickMsg("Đã lấy vị trí farm QTQ: " .. coordStr)
+                                end
+                            end
+                        end
+                    end)
+                end)
+
+                curY = curY - 38
+
+                -- 5. NÚT TỰ DÙNG THẺ EXP
+                CreateToggle("TỰ DÙNG THẺ EXP", "Mod_AutoUseExpCard_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                curY = curY - 5
+                CreateSectionSeparator()
+
+                -- =========================================================================
+                -- KHỐI: HỖ TRỢ CHUNG
+                -- =========================================================================
+                CreateSectionHeader("HỖ TRỢ CHUNG")
+
+
+                CreateToggle("MỞ RƯƠNG VÀNG", "Mod_AutoOpenGoldenChest_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                -- =========================================================================
+                -- [MOD FEATURE]: CHẶN CHAT THEO TÊN (BLOCK CHAT BY NAME) - GIAO DIỆN
+                -- =========================================================================
+                curY = curY - 5
+
+                -- 1. Toggle CHẶN CHAT
+                local tGoBlockChat = GameObject("Mod_BlockChat_Enabled_Toggle")
+                tGoBlockChat.transform:SetParent(contentGo.transform, false)
+
+                local tRtBlockChat = tGoBlockChat:AddComponent(typeof(RectTransform))
+                tRtBlockChat.anchorMin, tRtBlockChat.anchorMax, tRtBlockChat.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                tRtBlockChat.anchoredPosition = Vector2(btnX, curY)
+                tRtBlockChat.sizeDelta = Vector2(130, 30)
+
+                local bgBlockChat = GameObject("Bg")
+                bgBlockChat.transform:SetParent(tGoBlockChat.transform, false)
+                local bgRtBlockChat = bgBlockChat:AddComponent(typeof(RectTransform))
+                bgRtBlockChat.anchorMin, bgRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRtBlockChat.sizeDelta = Vector2(0, 0)
+                local bgImgBlockChat = bgBlockChat:AddComponent(typeof(Image))
+
+                local txtGoBlockChat = GameObject("Text")
+                txtGoBlockChat.transform:SetParent(tGoBlockChat.transform, false)
+                local txtRtBlockChat = txtGoBlockChat:AddComponent(typeof(RectTransform))
+                txtRtBlockChat.anchorMin, txtRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRtBlockChat.sizeDelta = Vector2(0, 0)
+                local txtBlockChat = txtGoBlockChat:AddComponent(typeof(Text))
+                txtBlockChat.raycastTarget = false
+                txtBlockChat.fontSize = 15
+                txtBlockChat.alignment = TextAnchor.MiddleCenter
+                if defaultFont then txtBlockChat.font = defaultFont end
+
+                local btnBlockChat = tGoBlockChat:AddComponent(typeof(Button))
+
+                if _G.Mod_BlockChat_Enabled == nil then
+                    _G.Mod_BlockChat_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_BlockChat_Enabled", 0) == 1
+                end
+
+                local function UpdateBlockChatLabel()
+                    if _G.Mod_BlockChat_Enabled then
+                        bgImgBlockChat.color = Color(0.2, 0.5, 0.2, 1)
+                        txtBlockChat.text = "CHẶN CHAT"
+                        txtBlockChat.color = Color.white
+                    else
+                        bgImgBlockChat.color = Color(0.3, 0.3, 0.3, 1)
+                        txtBlockChat.text = "CHẶN CHAT"
+                        txtBlockChat.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateBlockChatLabel()
+                _G.ModUpdateBlockChatLabel = UpdateBlockChatLabel
+
+                btnBlockChat.onClick:AddListener(function()
+                    _G.Mod_BlockChat_Enabled = not _G.Mod_BlockChat_Enabled
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_BlockChat_Enabled", _G.Mod_BlockChat_Enabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateBlockChatLabel()
+                    if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
+                        _G.Mod_ClearBlockedChatHistory()
                     end
                 end)
 
-                -- Nút 2: GHI NHỚ PRESET PVE (Màu xanh lam)
-                local savePveBtnGo = GameObject("SavePresetPveBtn")
-                savePveBtnGo.transform:SetParent(contentGo.transform, false)
-                local savePveRt = savePveBtnGo:AddComponent(typeof(RectTransform))
-                savePveRt.anchorMin, savePveRt.anchorMax, savePveRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                savePveRt.anchoredPosition = Vector2(btnX + halfW + 8, curY)
-                savePveRt.sizeDelta = Vector2(halfW, 35)
+                -- 2. InputField cho Chặn Chat
+                local blockChatTgtGo = GameObject("BlockChatInput")
+                blockChatTgtGo.transform:SetParent(contentGo.transform, false)
+                local blockChatRt = blockChatTgtGo:AddComponent(typeof(RectTransform))
+                blockChatRt.anchorMin, blockChatRt.anchorMax, blockChatRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                blockChatRt.anchoredPosition = Vector2(btnX + 135, curY)
+                blockChatRt.sizeDelta = Vector2(125, 30)
 
-                local savePveImg = savePveBtnGo:AddComponent(typeof(Image))
-                savePveImg.color = Color(0.18, 0.48, 0.72, 1)
+                local blockChatBg = GameObject("Bg")
+                blockChatBg.transform:SetParent(blockChatTgtGo.transform, false)
+                local blockChatBgRt = blockChatBg:AddComponent(typeof(RectTransform))
+                blockChatBgRt.anchorMin, blockChatBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                blockChatBgRt.sizeDelta = Vector2(0, 0)
+                local blockChatImg = blockChatBg:AddComponent(typeof(Image))
+                blockChatImg.color = Color(0.1, 0.1, 0.1, 1)
 
-                local savePveTxtGo = GameObject("Text")
-                savePveTxtGo.transform:SetParent(savePveBtnGo.transform, false)
-                local savePveTxtRt = savePveTxtGo:AddComponent(typeof(RectTransform))
-                savePveTxtRt.anchorMin, savePveTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-                savePveTxtRt.sizeDelta = Vector2(0, 0)
-                local savePveTxt = savePveTxtGo:AddComponent(typeof(Text))
-                savePveTxt.raycastTarget = false
-                savePveTxt.text = "GHI NHỚ PVE"
-                savePveTxt.fontSize = 11
-                savePveTxt.color = Color.white
-                savePveTxt.alignment = TextAnchor.MiddleCenter
-                if defaultFont then savePveTxt.font = defaultFont end
+                local blockChatTxtGo = GameObject("Text")
+                blockChatTxtGo.transform:SetParent(blockChatTgtGo.transform, false)
+                local blockChatTxtRt = blockChatTxtGo:AddComponent(typeof(RectTransform))
+                blockChatTxtRt.anchorMin, blockChatTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                blockChatTxtRt.offsetMin, blockChatTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+                local blockChatTxt = blockChatTxtGo:AddComponent(typeof(Text))
 
-                local savePveBtn = savePveBtnGo:AddComponent(typeof(Button))
-                savePveBtn.onClick:AddListener(function()
-                    if _G.Mod_SaveSummonerPreset then
-                        _G.Mod_SaveSummonerPreset("PVE")
+                if _G.Mod_BlockChat_Names == nil then
+                    _G.Mod_BlockChat_Names = CS.UnityEngine.PlayerPrefs.GetString("Mod_BlockChat_Names", "")
+                end
+
+                blockChatTxt.text = _G.Mod_BlockChat_Names
+                blockChatTxt.color, blockChatTxt.fontSize = Color.white, 15
+                blockChatTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then blockChatTxt.font = defaultFont end
+
+                local blockChatField = blockChatTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
+                blockChatField.textComponent = blockChatTxt
+                blockChatField.text = _G.Mod_BlockChat_Names
+
+                blockChatField.onValueChanged:AddListener(function(val)
+                    _G.Mod_BlockChat_Names = val
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetString("Mod_BlockChat_Names", val)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
+                        _G.Mod_ClearBlockedChatHistory()
                     end
                 end)
 
                 curY = curY - 45
-            end
 
-            -- =========================================================================
-            -- [MOD FEATURE]: CHẶN CHAT THEO TÊN (BLOCK CHAT BY NAME) - GIAO DIỆN
-            -- Mô tả: Cụm Toggle CHẶN CHAT (130px) và InputField (125px) ở đáy cột Hỗ Trợ.
-            -- =========================================================================
-            curY = curY - 5
+                -- =========================================================================
+                -- KHỐI 5: TRIỆU HỒI SƯ (SUM) (Chỉ hiển thị khi đang chơi Summoner)
+                -- =========================================================================
+                if _G.Mod_IsSummonerModeActive and _G.Mod_IsSummonerModeActive() then
+                    curY = curY - 5
+                    CreateSectionSeparator()
+                    CreateSectionHeader("TRIỆU HỒI SƯ (SUM)")
+                    curY = curY - 5
+                    local halfW = math.floor((btnW - 8) / 2)
 
-            -- 1. Toggle CHẶN CHAT
-            local tGoBlockChat = GameObject("Mod_BlockChat_Enabled_Toggle")
-            tGoBlockChat.transform:SetParent(contentGo.transform, false)
+                    -- Nút 1: GHI NHỚ PRESET PVP (Màu đỏ cam)
+                    local savePvpBtnGo = GameObject("SavePresetPvpBtn")
+                    savePvpBtnGo.transform:SetParent(contentGo.transform, false)
+                    local savePvpRt = savePvpBtnGo:AddComponent(typeof(RectTransform))
+                    savePvpRt.anchorMin, savePvpRt.anchorMax, savePvpRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    savePvpRt.anchoredPosition = Vector2(btnX, curY)
+                    savePvpRt.sizeDelta = Vector2(halfW, 35)
 
-            local tRtBlockChat = tGoBlockChat:AddComponent(typeof(RectTransform))
-            tRtBlockChat.anchorMin, tRtBlockChat.anchorMax, tRtBlockChat.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            tRtBlockChat.anchoredPosition = Vector2(btnX, curY)
-            tRtBlockChat.sizeDelta = Vector2(130, 30)
+                    local savePvpImg = savePvpBtnGo:AddComponent(typeof(Image))
+                    savePvpImg.color = Color(0.72, 0.28, 0.18, 1)
 
-            local bgBlockChat = GameObject("Bg")
-            bgBlockChat.transform:SetParent(tGoBlockChat.transform, false)
-            local bgRtBlockChat = bgBlockChat:AddComponent(typeof(RectTransform))
-            bgRtBlockChat.anchorMin, bgRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            bgRtBlockChat.sizeDelta = Vector2(0, 0)
-            local bgImgBlockChat = bgBlockChat:AddComponent(typeof(Image))
+                    local savePvpTxtGo = GameObject("Text")
+                    savePvpTxtGo.transform:SetParent(savePvpBtnGo.transform, false)
+                    local savePvpTxtRt = savePvpTxtGo:AddComponent(typeof(RectTransform))
+                    savePvpTxtRt.anchorMin, savePvpTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    savePvpTxtRt.sizeDelta = Vector2(0, 0)
+                    local savePvpTxt = savePvpTxtGo:AddComponent(typeof(Text))
+                    savePvpTxt.raycastTarget = false
+                    savePvpTxt.text = "GHI NHỚ PVP"
+                    savePvpTxt.fontSize = 11
+                    savePvpTxt.color = Color.white
+                    savePvpTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then savePvpTxt.font = defaultFont end
 
-            local txtGoBlockChat = GameObject("Text")
-            txtGoBlockChat.transform:SetParent(tGoBlockChat.transform, false)
-            local txtRtBlockChat = txtGoBlockChat:AddComponent(typeof(RectTransform))
-            txtRtBlockChat.anchorMin, txtRtBlockChat.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            txtRtBlockChat.sizeDelta = Vector2(0, 0)
-            local txtBlockChat = txtGoBlockChat:AddComponent(typeof(Text))
-            txtBlockChat.raycastTarget = false
-            txtBlockChat.fontSize = 15
-            txtBlockChat.alignment = TextAnchor.MiddleCenter
-            if defaultFont then txtBlockChat.font = defaultFont end
+                    local savePvpBtn = savePvpBtnGo:AddComponent(typeof(Button))
+                    savePvpBtn.onClick:AddListener(function()
+                        if _G.Mod_SaveSummonerPreset then
+                            _G.Mod_SaveSummonerPreset("PVP")
+                        end
+                    end)
 
-            local btnBlockChat = tGoBlockChat:AddComponent(typeof(Button))
+                    -- Nút 2: GHI NHỚ PRESET PVE (Màu xanh lam)
+                    local savePveBtnGo = GameObject("SavePresetPveBtn")
+                    savePveBtnGo.transform:SetParent(contentGo.transform, false)
+                    local savePveRt = savePveBtnGo:AddComponent(typeof(RectTransform))
+                    savePveRt.anchorMin, savePveRt.anchorMax, savePveRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    savePveRt.anchoredPosition = Vector2(btnX + halfW + 8, curY)
+                    savePveRt.sizeDelta = Vector2(halfW, 35)
 
-            if _G.Mod_BlockChat_Enabled == nil then
-                _G.Mod_BlockChat_Enabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_BlockChat_Enabled", 0) == 1
-            end
+                    local savePveImg = savePveBtnGo:AddComponent(typeof(Image))
+                    savePveImg.color = Color(0.18, 0.48, 0.72, 1)
 
-            local function UpdateBlockChatLabel()
-                if _G.Mod_BlockChat_Enabled then
-                    bgImgBlockChat.color = Color(0.2, 0.5, 0.2, 1)
-                    txtBlockChat.text = "CHẶN CHAT"
-                    txtBlockChat.color = Color.white
-                else
-                    bgImgBlockChat.color = Color(0.3, 0.3, 0.3, 1)
-                    txtBlockChat.text = "CHẶN CHAT"
-                    txtBlockChat.color = Color(0.7, 0.7, 0.7, 1)
+                    local savePveTxtGo = GameObject("Text")
+                    savePveTxtGo.transform:SetParent(savePveBtnGo.transform, false)
+                    local savePveTxtRt = savePveTxtGo:AddComponent(typeof(RectTransform))
+                    savePveTxtRt.anchorMin, savePveTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                    savePveTxtRt.sizeDelta = Vector2(0, 0)
+                    local savePveTxt = savePveTxtGo:AddComponent(typeof(Text))
+                    savePveTxt.raycastTarget = false
+                    savePveTxt.text = "GHI NHỚ PVE"
+                    savePveTxt.fontSize = 11
+                    savePveTxt.color = Color.white
+                    savePveTxt.alignment = TextAnchor.MiddleCenter
+                    if defaultFont then savePveTxt.font = defaultFont end
+
+                    local savePveBtn = savePveBtnGo:AddComponent(typeof(Button))
+                    savePveBtn.onClick:AddListener(function()
+                        if _G.Mod_SaveSummonerPreset then
+                            _G.Mod_SaveSummonerPreset("PVE")
+                        end
+                    end)
+
+                    curY = curY - 45
                 end
-            end
-            UpdateBlockChatLabel()
-            _G.ModUpdateBlockChatLabel = UpdateBlockChatLabel
-
-            btnBlockChat.onClick:AddListener(function()
-                _G.Mod_BlockChat_Enabled = not _G.Mod_BlockChat_Enabled
-                CS.UnityEngine.PlayerPrefs.SetInt("Mod_BlockChat_Enabled", _G.Mod_BlockChat_Enabled and 1 or 0)
-                CS.UnityEngine.PlayerPrefs.Save()
-                UpdateBlockChatLabel()
-                if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
-                    _G.Mod_ClearBlockedChatHistory()
-                end
-            end)
-
-            -- 2. InputField cho Chặn Chat
-            local blockChatTgtGo = GameObject("BlockChatInput")
-            blockChatTgtGo.transform:SetParent(contentGo.transform, false)
-            local blockChatRt = blockChatTgtGo:AddComponent(typeof(RectTransform))
-            blockChatRt.anchorMin, blockChatRt.anchorMax, blockChatRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            blockChatRt.anchoredPosition = Vector2(btnX + 135, curY)
-            blockChatRt.sizeDelta = Vector2(125, 30)
-
-            local blockChatBg = GameObject("Bg")
-            blockChatBg.transform:SetParent(blockChatTgtGo.transform, false)
-            local blockChatBgRt = blockChatBg:AddComponent(typeof(RectTransform))
-            blockChatBgRt.anchorMin, blockChatBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            blockChatBgRt.sizeDelta = Vector2(0, 0)
-            local blockChatImg = blockChatBg:AddComponent(typeof(Image))
-            blockChatImg.color = Color(0.1, 0.1, 0.1, 1)
-
-            local blockChatTxtGo = GameObject("Text")
-            blockChatTxtGo.transform:SetParent(blockChatTgtGo.transform, false)
-            local blockChatTxtRt = blockChatTxtGo:AddComponent(typeof(RectTransform))
-            blockChatTxtRt.anchorMin, blockChatTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
-            blockChatTxtRt.offsetMin, blockChatTxtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
-            local blockChatTxt = blockChatTxtGo:AddComponent(typeof(Text))
-
-            if _G.Mod_BlockChat_Names == nil then
-                _G.Mod_BlockChat_Names = CS.UnityEngine.PlayerPrefs.GetString("Mod_BlockChat_Names", "")
-            end
-
-            blockChatTxt.text = _G.Mod_BlockChat_Names
-            blockChatTxt.color, blockChatTxt.fontSize = Color.white, 15
-            blockChatTxt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then blockChatTxt.font = defaultFont end
-
-            local blockChatField = blockChatTgtGo:AddComponent(typeof(CS.UnityEngine.UI.InputField))
-            blockChatField.textComponent = blockChatTxt
-            blockChatField.text = _G.Mod_BlockChat_Names
-
-            blockChatField.onValueChanged:AddListener(function(val)
-                _G.Mod_BlockChat_Names = val
-                pcall(function()
-                    CS.UnityEngine.PlayerPrefs.SetString("Mod_BlockChat_Names", val)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                end)
-                if _G.Mod_BlockChat_Enabled and _G.Mod_ClearBlockedChatHistory then
-                    _G.Mod_ClearBlockedChatHistory()
-                end
-            end)
-
-            curY = curY - 45
 
                 -- Tự động tính toán tổng chiều cao content để cuộn mượt mà
                 contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
@@ -14493,7 +15749,7 @@ local function CreateModUI()
             local adminContentRt = adminContentGo:AddComponent(typeof(RectTransform))
             adminContentRt.anchorMin, adminContentRt.anchorMax, adminContentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
             adminContentRt.anchoredPosition = Vector2(0, 0)
-            adminContentRt.sizeDelta = Vector2(0, 780)
+            adminContentRt.sizeDelta = Vector2(0, 350)
 
             adminScrollRect.viewport = adminVpRt
             adminScrollRect.content = adminContentRt
@@ -15689,7 +16945,7 @@ local function CreateModUI()
                 dashedSepGo.transform:SetParent(parentGo.transform, false)
                 local dsRt = dashedSepGo:AddComponent(typeof(RectTransform))
                 dsRt.anchorMin, dsRt.anchorMax, dsRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-                dsRt.anchoredPosition = Vector2(0, -466)
+                dsRt.anchoredPosition = Vector2(0, -80)
                 dsRt.sizeDelta = Vector2(680, 16)
                 local dsTxt = dashedSepGo:AddComponent(typeof(Text))
                 dsTxt.raycastTarget = false
@@ -15704,7 +16960,7 @@ local function CreateModUI()
                 infoTitleGo.transform:SetParent(parentGo.transform, false)
                 local infoTitleRt = infoTitleGo:AddComponent(typeof(RectTransform))
                 infoTitleRt.anchorMin, infoTitleRt.anchorMax, infoTitleRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
-                infoTitleRt.anchoredPosition = Vector2(0, -486)
+                infoTitleRt.anchoredPosition = Vector2(0, -100)
                 infoTitleRt.sizeDelta = Vector2(600, 24)
                 local infoTitleTxt = infoTitleGo:AddComponent(typeof(Text))
                 infoTitleTxt.text = "=== THÔNG TIN, CHỨC NĂNG NHÂN VẬT ==="
@@ -15770,8 +17026,8 @@ local function CreateModUI()
                     return ""
                 end
 
-                -- HÀNG NÚT TỔNG HỢP: [ LẤY TẤT CẢ ] và [ COPY TỔNG HỢP ] (Đặt ngay dưới tiêu đề, Y = -516)
-                CreateSmallBtn(parentGo, 15, -516, 150, 26, "[ LẤY TẤT CẢ ]", Color(0.1, 0.65, 0.35, 1), function()
+                -- HÀNG NÚT TỔNG HỢP: [ LẤY TẤT CẢ ] và [ COPY TỔNG HỢP ] (Đặt ngay dưới tiêu đề, Y = -130)
+                CreateSmallBtn(parentGo, 15, -130, 150, 26, "[ LẤY TẤT CẢ ]", Color(0.1, 0.65, 0.35, 1), function()
                     local rId = GetRoleIdVal()
                     local cUid = GetCharUidVal()
                     local nVal = GetNameVal()
@@ -15787,7 +17043,7 @@ local function CreateModUI()
                     end
                 end)
 
-                CreateSmallBtn(parentGo, 175, -516, 180, 26, "[ COPY TỔNG HỢP ]", Color(0.7, 0.3, 0.6, 1), function()
+                CreateSmallBtn(parentGo, 175, -130, 180, 26, "[ COPY TỔNG HỢP ]", Color(0.7, 0.3, 0.6, 1), function()
                     local rId = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
                     local cUid = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
                     local nVal = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
@@ -15800,30 +17056,30 @@ local function CreateModUI()
                     end
                 end)
 
-                -- 1. HÀNG 1: RoleId & UID (Y = -548)
+                -- 1. HÀNG 1: RoleId & UID (Y = -162)
                 -- 1.1 RoleId
                 local rIdLblGo = GameObject("RoleIdLbl")
                 rIdLblGo.transform:SetParent(parentGo.transform, false)
                 local rIdLblRt = rIdLblGo:AddComponent(typeof(RectTransform))
                 rIdLblRt.anchorMin, rIdLblRt.anchorMax, rIdLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rIdLblRt.anchoredPosition = Vector2(15, -548)
+                rIdLblRt.anchoredPosition = Vector2(15, -162)
                 rIdLblRt.sizeDelta = Vector2(55, 26)
                 local rIdLblTxt = rIdLblGo:AddComponent(typeof(Text))
                 rIdLblTxt.text = "RoleId:"
                 rIdLblTxt.color, rIdLblTxt.fontSize, rIdLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then rIdLblTxt.font = defaultFont end
 
-                local _, roleIdInp, _ = CreateSmallInput(parentGo, 72, -548, 145, 26, "", false)
+                local _, roleIdInp, _ = CreateSmallInput(parentGo, 72, -162, 145, 26, "", false)
                 ui.roleIdInp = roleIdInp
 
-                CreateSmallBtn(parentGo, 222, -548, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -162, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetRoleIdVal()
                     ui.roleIdInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("RoleId: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -548, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -162, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.roleIdInp and ui.roleIdInp.text ~= "") and ui.roleIdInp.text or GetRoleIdVal()
                     CopyWithNotice(v, "RoleId")
                 end)
@@ -15833,79 +17089,79 @@ local function CreateModUI()
                 uidLblGo.transform:SetParent(parentGo.transform, false)
                 local uidLblRt = uidLblGo:AddComponent(typeof(RectTransform))
                 uidLblRt.anchorMin, uidLblRt.anchorMax, uidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                uidLblRt.anchoredPosition = Vector2(340, -548)
+                uidLblRt.anchoredPosition = Vector2(340, -162)
                 uidLblRt.sizeDelta = Vector2(40, 26)
                 local uidLblTxt = uidLblGo:AddComponent(typeof(Text))
                 uidLblTxt.text = "UID:"
                 uidLblTxt.color, uidLblTxt.fontSize, uidLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then uidLblTxt.font = defaultFont end
 
-                local _, charUidInp, _ = CreateSmallInput(parentGo, 385, -548, 175, 26, "", false)
+                local _, charUidInp, _ = CreateSmallInput(parentGo, 385, -162, 175, 26, "", false)
                 ui.charUidInp = charUidInp
 
-                CreateSmallBtn(parentGo, 565, -548, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 565, -162, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetCharUidVal()
                     ui.charUidInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("UID: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 611, -548, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 611, -162, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.charUidInp and ui.charUidInp.text ~= "") and ui.charUidInp.text or GetCharUidVal()
                     CopyWithNotice(v, "UID")
                 end)
 
-                -- 2. HÀNG 2: Name (Y = -580) - Phía bên phải để trống
+                -- 2. HÀNG 2: Name (Y = -194) - Phía bên phải để trống
                 local nameLblGo = GameObject("NameLbl")
                 nameLblGo.transform:SetParent(parentGo.transform, false)
                 local nameLblRt = nameLblGo:AddComponent(typeof(RectTransform))
                 nameLblRt.anchorMin, nameLblRt.anchorMax, nameLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                nameLblRt.anchoredPosition = Vector2(15, -580)
+                nameLblRt.anchoredPosition = Vector2(15, -194)
                 nameLblRt.sizeDelta = Vector2(55, 26)
                 local nameLblTxt = nameLblGo:AddComponent(typeof(Text))
                 nameLblTxt.text = "Name:"
                 nameLblTxt.color, nameLblTxt.fontSize, nameLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then nameLblTxt.font = defaultFont end
 
-                local _, nameInp, _ = CreateSmallInput(parentGo, 72, -580, 145, 26, "", false)
+                local _, nameInp, _ = CreateSmallInput(parentGo, 72, -194, 145, 26, "", false)
                 ui.nameInp = nameInp
 
-                CreateSmallBtn(parentGo, 222, -580, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -194, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetNameVal()
                     ui.nameInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("Name: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -580, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -194, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.nameInp and ui.nameInp.text ~= "") and ui.nameInp.text or GetNameVal()
                     CopyWithNotice(v, "Name")
                 end)
 
-                -- 3. HÀNG 3: MapID & Location (Y = -612)
+                -- 3. HÀNG 3: MapID & Location (Y = -226)
                 -- 3.1 MapID
                 local mapLblGo = GameObject("MapIdLbl")
                 mapLblGo.transform:SetParent(parentGo.transform, false)
                 local mapLblRt = mapLblGo:AddComponent(typeof(RectTransform))
                 mapLblRt.anchorMin, mapLblRt.anchorMax, mapLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                mapLblRt.anchoredPosition = Vector2(15, -612)
+                mapLblRt.anchoredPosition = Vector2(15, -226)
                 mapLblRt.sizeDelta = Vector2(55, 26)
                 local mapLblTxt = mapLblGo:AddComponent(typeof(Text))
                 mapLblTxt.text = "MapID:"
                 mapLblTxt.color, mapLblTxt.fontSize, mapLblTxt.alignment = Color.white, 14, TextAnchor.MiddleLeft
                 if defaultFont then mapLblTxt.font = defaultFont end
 
-                local _, mapIdInp, _ = CreateSmallInput(parentGo, 72, -612, 145, 26, "", false)
+                local _, mapIdInp, _ = CreateSmallInput(parentGo, 72, -226, 145, 26, "", false)
                 ui.mapIdInp = mapIdInp
 
-                CreateSmallBtn(parentGo, 222, -612, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 222, -226, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetMapIdVal()
                     ui.mapIdInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("MapID: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 268, -612, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 268, -226, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.mapIdInp and ui.mapIdInp.text ~= "") and ui.mapIdInp.text or GetMapIdVal()
                     CopyWithNotice(v, "MapID")
                 end)
@@ -15915,47 +17171,47 @@ local function CreateModUI()
                 locLblGo.transform:SetParent(parentGo.transform, false)
                 local locLblRt = locLblGo:AddComponent(typeof(RectTransform))
                 locLblRt.anchorMin, locLblRt.anchorMax, locLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                locLblRt.anchoredPosition = Vector2(340, -612)
+                locLblRt.anchoredPosition = Vector2(340, -226)
                 locLblRt.sizeDelta = Vector2(45, 26)
                 local locLblTxt = locLblGo:AddComponent(typeof(Text))
                 locLblTxt.text = "Tọa độ:"
                 locLblTxt.color, locLblTxt.fontSize, locLblTxt.alignment = Color.white, 13, TextAnchor.MiddleLeft
                 if defaultFont then locLblTxt.font = defaultFont end
 
-                local _, locInp, _ = CreateSmallInput(parentGo, 385, -612, 175, 26, "", false)
+                local _, locInp, _ = CreateSmallInput(parentGo, 385, -226, 175, 26, "", false)
                 ui.locInp = locInp
 
-                CreateSmallBtn(parentGo, 565, -612, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 565, -226, 42, 26, "GET", Color(0.15, 0.55, 0.75, 1), function()
                     local v = GetLocationVal()
                     ui.locInp.text = v
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                         _G.FloatingWordUtility.QuickMsg("Tọa độ: " .. (v ~= "" and v or "Trống"))
                     end
                 end)
-                CreateSmallBtn(parentGo, 611, -612, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 611, -226, 46, 26, "COPY", Color(0.8, 0.45, 0.1, 1), function()
                     local v = (ui.locInp and ui.locInp.text ~= "") and ui.locInp.text or GetLocationVal()
                     CopyWithNotice(v, "Tọa độ")
                 end)
 
-                -- 4. HÀNG 4: CHỨC NĂNG BAY ĐẾN (Y = -652)
+                -- 4. HÀNG 4: CHỨC NĂNG BAY ĐẾN (Y = -266)
                 local flyLblGo = GameObject("FlyLbl")
                 flyLblGo.transform:SetParent(parentGo.transform, false)
                 local flyLblRt = flyLblGo:AddComponent(typeof(RectTransform))
                 flyLblRt.anchorMin, flyLblRt.anchorMax, flyLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                flyLblRt.anchoredPosition = Vector2(15, -652)
+                flyLblRt.anchoredPosition = Vector2(15, -266)
                 flyLblRt.sizeDelta = Vector2(55, 26)
                 local flyLblTxt = flyLblGo:AddComponent(typeof(Text))
                 flyLblTxt.text = "Bay đến:"
                 flyLblTxt.color, flyLblTxt.fontSize, flyLblTxt.alignment = Color.yellow, 13, TextAnchor.MiddleLeft
                 if defaultFont then flyLblTxt.font = defaultFont end
 
-                local _, flyInp, flyTxt = CreateSmallInput(parentGo, 72, -652, 145, 26, "", false)
+                local _, flyInp, flyTxt = CreateSmallInput(parentGo, 72, -266, 145, 26, "", false)
                 flyTxt.fontSize = 12
                 flyInp.text = ""
                 ui.flyInp = flyInp
 
                 -- Nút [PASTE]
-                CreateSmallBtn(parentGo, 222, -652, 44, 26, "Paste", Color(0.8, 0.4, 0, 1), function()
+                CreateSmallBtn(parentGo, 222, -266, 44, 26, "Paste", Color(0.8, 0.4, 0, 1), function()
                     local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                     clip = string.gsub(clip, "^%s*(.-)%s*$", "%1")
                     ui.flyInp.text = clip
@@ -15965,7 +17221,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [COPY]
-                CreateSmallBtn(parentGo, 270, -652, 46, 26, "Copy", Color(0.85, 0.5, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 270, -266, 46, 26, "Copy", Color(0.85, 0.5, 0.1, 1), function()
                     local val = ui.flyInp and ui.flyInp.text or ""
                     val = string.gsub(val, "^%s*(.-)%s*$", "%1")
                     if val ~= "" then
@@ -15981,7 +17237,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [HIỆN TẠI]
-                CreateSmallBtn(parentGo, 324, -652, 160, 26, "Lấy Tọa Độ Hiện Tại", Color(0.2, 0.5, 0.75, 1), function()
+                CreateSmallBtn(parentGo, 324, -266, 160, 26, "Lấy Tọa Độ Hiện Tại", Color(0.2, 0.5, 0.75, 1), function()
                     local mId = GetMapIdVal()
                     local lVal = GetLocationVal()
                     if mId ~= "" and lVal ~= "" then
@@ -15997,7 +17253,7 @@ local function CreateModUI()
                 end)
 
                 -- Nút [BAY NGAY] (Nổi bật, cam tươi viền xanh)
-                CreateSmallBtn(parentGo, 492, -652, 165, 26, "BAY NGAY >>", Color(0.85, 0.25, 0.1, 1), function()
+                CreateSmallBtn(parentGo, 492, -266, 165, 26, "BAY NGAY >>", Color(0.85, 0.25, 0.1, 1), function()
                     local inputRaw = ui.flyInp and ui.flyInp.text or ""
                     inputRaw = string.gsub(inputRaw, "^%s*(.-)%s*$", "%1")
                     if inputRaw == "" then
@@ -16094,7 +17350,7 @@ local function CreateModUI()
                 flyTipGo.transform:SetParent(parentGo.transform, false)
                 local flyTipRt = flyTipGo:AddComponent(typeof(RectTransform))
                 flyTipRt.anchorMin, flyTipRt.anchorMax, flyTipRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                flyTipRt.anchoredPosition = Vector2(15, -686)
+                flyTipRt.anchoredPosition = Vector2(15, -300)
                 flyTipRt.sizeDelta = Vector2(650, 20)
                 local flyTipTxt = flyTipGo:AddComponent(typeof(Text))
                 flyTipTxt.raycastTarget = false
@@ -16106,7 +17362,8 @@ local function CreateModUI()
 
             -- KHỞI TẠO CÁC MỤC TRONG ADMIN SCROLLVIEW
             BuildAdminControlSection(adminContentGo)
-            BuildAdminKeygenSection(adminContentGo)
+            -- [MOD FEATURE]: Ẩn UI Tạo Token Bản Quyền VIP (chuyển sang tạo trên Web)
+            -- BuildAdminKeygenSection(adminContentGo)
             BuildAdminCharInfoSection(adminContentGo)
         end
         
@@ -16474,9 +17731,8 @@ local function CreateModUI()
                     -- [MOD FEATURE]: KIỂM TRA LỆNH BÍ MẬT BÃO NHẶT ADMIN & NHẶT SIÊU TỐC
                     -- Mô tả: Thay thế hoàn toàn điều kiện FOV 75 (/adminburst1), FOV 80 (/adminburst2) và FOV 65 + scopeVal (/sieutoc).
                     -- =========================================================================
-                    local isAdminBurst1 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")
-                    local isAdminBurst2 = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst2")
-                    local isAdminBurst = isAdminBurst1 or isAdminBurst2
+                    local isAdminBurst = _G.Mod_IsAdmin and _G.Mod_HasSecretCommand and (_G.Mod_HasSecretCommand("/adminburst") or _G.Mod_HasSecretCommand("/adminburst1") or _G.Mod_HasSecretCommand("/adminburst2"))
+                    local isBurstBypassFilter = isAdminBurst and (_G.AutoPick_Mode == 1 or (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/adminburst1")))
                     local isSecretTrickActive = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/sieutoc")
 
                     local eType = dropItemData.type
@@ -16852,11 +18108,11 @@ local function CreateModUI()
                     if isBone then
                         shouldPick = true
                     -- =========================================================================
-                    -- [MOD FEATURE]: ĐIỀU KIỆN BÃO NHẶT & LỌC ĐỒ THEO FOV (CHÍNH XÁC FOV 75 VÀ 80)
-                    -- Mô tả: FOV == 75 nhặt vét toàn bộ Phù Văn & Phụ Ma; FOV == 80 áp dụng bộ lọc; mốc khác tắt bão nhặt.
+                    -- [MOD FEATURE]: ĐIỀU KIỆN BÃO NHẶT & LỌC ĐỒ PHÙ VĂN / PHỤ MA (/adminburst)
+                    -- Mô tả: Nhặt Nhanh (/adminburst1) nhặt vét toàn bộ Phù Văn & Phụ Ma; Nhặt Gần (/adminburst2) áp dụng bộ lọc.
                     -- =========================================================================
                     elseif decision.isRune then
-                        if isAdminBurst and isFov75 then
+                        if isBurstBypassFilter then
                             shouldPick = true
                         else
                             if decision.runePref and _G[decision.runePref] == true then
@@ -16864,7 +18120,7 @@ local function CreateModUI()
                             end
                         end
                     elseif decision.isFumo then
-                        if isAdminBurst and isFov75 then
+                        if isBurstBypassFilter then
                             shouldPick = true
                         else
                             if decision.fumoPref and _G[decision.fumoPref] == true then
