@@ -1,5 +1,6 @@
 -- =========================================================================
--- [SCRIPT TEST]: KIỂM TRA TOÀN DIỆN COOLDOWN & BUFF HỒI SINH (ĐẠI THIÊN SỨ)
+-- [SCRIPT TEST / HOT-RELOAD]: AUTO HUNT ĐÁNH QUÁI TẠI BÃI TRAIN & FIX AUTO PHÓ BẢN
+-- File target: d:\MUVH\android\mu-decompiled\final\excute_test\input.txt
 -- =========================================================================
 local lines = {}
 local function log(s)
@@ -7,200 +8,271 @@ local function log(s)
 end
 
 log("=========================================================================")
-log(">>> KIỂM TRA TRẠNG THÁI SKILL & COOLDOWN TRÊN NHÂN VẬT <<<")
+log(">>> HOT-RELOAD: AUTO HUNT ĐÁNH QUÁI BÃI TRAIN & FIX PHÓ BẢN <<<")
 log("Thời gian thực thi: " .. os.date("%Y/%m/%d %H:%M:%S"))
 log("=========================================================================")
 
-local me = _G.RoleManager and _G.RoleManager.me
-if not me then
-    log("[LỖI] Không tìm thấy RoleManager.me!")
-else
-    local meId = me.id or (me.data and me.data.id) or 0
-    log(string.format("Nhân vật: ID=%s, Tên=%s, Career=%s, Dead=%s, HP=%s/%s",
-        tostring(meId), tostring(me.name), tostring(me.career), tostring(me.isDead),
-        tostring(me.hp or (me.data and me.data.hp)),
-        tostring(me.maxHp or (me.data and me.data.maxHp))))
+local pMe = _G.RoleManager and _G.RoleManager.me
+local myRoleId = pMe and pMe.id
+local curLvl = tonumber((_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or (pMe and pMe.level) or 1)
+local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
 
-    -- 1. KIỂM TRA CÁC BIẾN MOD TOWER CHECK
-    log("\n--- 1. CÁC BIẾN MOD CHECK SKILL THÁP ---")
-    log("Mod_AutoChallengeTower_Enabled : " .. tostring(_G.Mod_AutoChallengeTower_Enabled))
-    log("Mod_AutoTower_CheckSkill_Enabled: " .. tostring(_G.Mod_AutoTower_CheckSkill_Enabled))
-    log("Mod_TowerCheck_HoiSinh_Enabled  : " .. tostring(_G.Mod_TowerCheck_HoiSinh_Enabled))
-    log("Mod_TowerCheck_Limit_Enabled    : " .. tostring(_G.Mod_TowerCheck_Limit_Enabled))
-    log("Mod_TowerCheck_AngelSpike_Enabled: " .. tostring(_G.Mod_TowerCheck_AngelSpike_Enabled))
-    log("Mod_TowerCheck_NhiepHon_Enabled : " .. tostring(_G.Mod_TowerCheck_NhiepHon_Enabled))
+log(string.format("Nhân vật: %s (Lv %d, ID: %s)", tostring(pMe and pMe.name or "N/A"), curLvl, tostring(myRoleId)))
+log(string.format("Bản đồ hiện tại: %s", tostring(cMap)))
+log(string.format("Mod_AutoHunt_Enabled: %s | Mod_AutoFarmBoss_Enabled: %s",
+    tostring(_G.Mod_AutoHunt_Enabled), tostring(_G.Mod_AutoFarmBoss_Enabled)))
+log(string.format("Mod_TrainCoord đã lưu: %s", tostring(_G.Mod_TrainCoord or "Chưa cài")))
 
-    -- 2. DUMP TOÀN BỘ COOLDOWN TRONG me.cd
-    log("\n--- 2. TOÀN BỘ DANH SÁCH COOLDOWN (me.cd) ---")
-    local curMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-    local curSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
-    log(string.format("ServerTime (ms): %s | ServerSecondTime (s): %s", tostring(curMs), tostring(curSec)))
+-- =========================================================================
+-- PHẦN 1: HÀM NHẬN DIỆN ĐANG Ở BÃI TRAIN (AT TRAIN SPOT CHECKER)
+-- =========================================================================
+local function Mod_IsAtTrainSpot_New()
+    if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then return false end
+    if _G.Mod_TrainArrivedAtPos then return true end
 
-    local cdCount = 0
-    if me.cd then
-        pcall(function()
-            for k, v in pairs(me.cd) do
-                cdCount = cdCount + 1
-                local endTime = 0
-                local cdType = type(v)
-                if cdType == "table" or cdType == "userdata" then
-                    endTime = v.endTime or 0
-                elseif cdType == "number" then
-                    endTime = v
+    local coordStr = _G.Mod_TrainCoord
+    local sx, sy = string.match(coordStr, "^(%d+)#(%d+)$")
+    local tMap = nil
+    if not sx then
+        tMap, sx, sy = string.match(coordStr, "^(%d+);(%d+)#(%d+)$")
+    end
+    if sx and sy then
+        local tx, ty = tonumber(sx), tonumber(sy)
+        local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+        local expectedMap = tonumber(tMap)
+        if not expectedMap then
+            local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
+            local primaryTag = "C" .. tostring(primaryTier)
+            local tab = _G.ModAutoBossConfigTab or primaryTag
+            local mapsConfig = _G.GetMapsConfigByTier and _G.GetMapsConfigByTier(tab)
+            if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.GetMapsConfigByTier and _G.GetMapsConfigByTier(primaryTag) end
+            expectedMap = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
+        end
+        if expectedMap and curMap == expectedMap then
+            local me = _G.RoleManager and _G.RoleManager.me
+            local meX = (me and me.serverCoord and me.serverCoord.x) or (me and me.cellPos and me.cellPos.x) or 0
+            local meY = (me and me.serverCoord and me.serverCoord.y) or (me and me.cellPos and me.cellPos.y) or 0
+            local dist = math.sqrt((meX - tx)^2 + (meY - ty)^2)
+            if dist <= 15 then
+                _G.Mod_TrainArrivedAtPos = true
+                return true
+            end
+        end
+    end
+    return false
+end
+_G.Mod_IsAtTrainSpot = Mod_IsAtTrainSpot_New
+
+local isAtTrainNow = _G.Mod_IsAtTrainSpot()
+log(string.format("Trạng thái nhận diện bãi train hiện tại: %s (ArrivedFlag: %s)",
+    tostring(isAtTrainNow), tostring(_G.Mod_TrainArrivedAtPos)))
+
+-- =========================================================================
+-- PHẦN 2: HOT-RELOAD RoleTargetManager.IsCanAttackMonster
+-- =========================================================================
+pcall(function()
+    if _G.RoleTargetManager then
+        local rawOldIsCanAttack = _G.RoleTargetManager.__Orig_IsCanAttackMonster or _G.RoleTargetManager.IsCanAttackMonster
+        _G.RoleTargetManager.__Orig_IsCanAttackMonster = rawOldIsCanAttack
+
+        _G.RoleTargetManager.IsCanAttackMonster = function(role)
+            if _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive() then
+                local isAtTrain = (_G.Mod_IsAtTrainSpot and _G.Mod_IsAtTrainSpot()) or (_G.Mod_TrainArrivedAtPos == true)
+                if not isAtTrain then
+                    return false -- Đang đi săn: Chặn đánh quái
                 end
-                
-                local remSec = 0
-                if endTime > 1000000000000 then
-                    remSec = math.ceil((endTime - curMs) / 1000)
-                elseif endTime > 0 then
-                    remSec = math.ceil(endTime - curSec)
-                end
+                -- Đang ở bãi train: Cho phép đánh quái bình thường!
+            end
 
-                local skillName = "Unknown"
-                pcall(function()
-                    if _G.ClientTable and _G.ClientTable.cfg_Skill_skillManager then
-                        local cfg = _G.ClientTable.cfg_Skill_skillManager:TryGetValue(k)
-                        if cfg and cfg.name then skillName = cfg.name end
+            if not role or role.isDead then return false end
+            local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
+            local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
+            if isSummon or (ownerId ~= 0 and ownerId ~= nil) then return false end
+            local me = _G.RoleManager and _G.RoleManager.me
+            if me and me.level and _G.QiJiHelperData and me.level <= _G.QiJiHelperData.limitSelectMonsterLevel and not role:IsBoss() and role.owner ~= 0 and role.owner ~= me.id then
+                return false
+            end
+            if role.IsSameCamp and role:IsSameCamp() then return false end
+            return true
+        end
+        log("[SUCCESS] Đã nạp hàm RoleTargetManager.IsCanAttackMonster mới vào memory!")
+    end
+end)
+
+-- =========================================================================
+-- PHẦN 3: HOT-RELOAD AutoDungeonMonitorStep
+-- =========================================================================
+local function AutoDungeonMonitorStep_Fixed()
+    if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+
+    if not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled then
+        _G.Mod_IsRunningDungeon = false
+        _G.Mod_IsPriorityDungeon = false
+        _G.Mod_DungeonJustFinished = false
+        return
+    end
+
+    local curMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
+    local isBC = (curMap >= 1012000 and curMap <= 1012099)
+    local isDS = (curMap >= 1010000 and curMap <= 1010099)
+    local inDungeon = (isBC and _G.Mod_AutoBloodCastle_Enabled) or (isDS and _G.Mod_AutoDemonPlaza_Enabled)
+
+    if inDungeon then
+        _G.Mod_IsRunningDungeon = true
+        _G.Mod_IsPriorityDungeon = true
+        _G.Mod_DungeonJustFinished = false
+
+        if _G.TriggerDungeonSkipWait then _G.TriggerDungeonSkipWait() end
+
+        -- Dùng thẻ EXP
+        if _G.Mod_AutoUseExpCard_Enabled then
+            if (_G.Mod_DungeonExpCardsUsed or 0) < 2 then
+                local mId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id
+                local bList = (_G.BuffData and _G.BuffData.GetBuffs and _G.BuffData.GetBuffs(mId)) or {}
+                local expBuffRemainTime = 0
+                for _, b in pairs(bList) do
+                    if b and b.buffConfig and b.buffConfig.name then
+                        local bName = b.buffConfig.name
+                        if bName:find("EXP") or bName:find("Kinh Nghiệm") then
+                            local rTime = tonumber(b.time) or 0
+                            if rTime > expBuffRemainTime then expBuffRemainTime = rTime end
+                        end
                     end
-                end)
+                end
 
-                log(string.format("  CD Key: %-10s | RemSec: %-4d | EndTime: %-14s | Name: %s",
-                    tostring(k), remSec, tostring(endTime), tostring(skillName)))
-            end
-        end)
-    end
-    log("Tổng số CD đang có: " .. tostring(cdCount))
+                if expBuffRemainTime < 600 then
+                    local cardItem = nil
+                    if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
+                        pcall(function() cardItem = _G.BagInfoData.GetItemByConfigID(3000400) end)
+                    end
+                    if not cardItem and _G.BagInfoData and _G.BagInfoData.TotalItems then
+                        for _, it in pairs(_G.BagInfoData.TotalItems) do
+                            if it and (it.itemId == 3000400 or (it.tblItem and it.tblItem.name and it.tblItem.name:find("Buff EXP"))) then
+                                cardItem = it
+                                break
+                            end
+                        end
+                    end
 
-    -- Kiểm tra riêng các key liên quan đến 10200100
-    log("\n--- 2.1. KIỂM TRA ĐẶC BIỆT CÁC KEY LIÊN QUAN HỒI SINH ---")
-    local testKeys = { 10200100, 10200101, 10200102, 10200103, 10200104, 10200105, 10200106, 10200107, 10200110, 53010101 }
-    for _, tk in ipairs(testKeys) do
-        local cdVal = me.cd and me.cd[tk]
-        if cdVal then
-            local et = (type(cdVal) == "table" and cdVal.endTime) or (type(cdVal) == "number" and cdVal) or 0
-            log(string.format("  [FOUND IN me.cd] Key %s => EndTime=%s", tostring(tk), tostring(et)))
-        else
-            log(string.format("  [NIL in me.cd] Key %s", tostring(tk)))
-        end
-    end
-
-    -- 3. DUMP TOÀN BỘ BUFF ĐANG CÓ TRÊN NHÂN VẬT
-    log("\n--- 3. DANH SÁCH BUFF HIỆN CÓ TRÊN BẢN THÂN (BuffDic) ---")
-    local buffCount = 0
-    if _G.BuffData and _G.BuffData.BuffDic and _G.BuffData.BuffDic[meId] then
-        for idx, b in ipairs(_G.BuffData.BuffDic[meId]) do
-            buffCount = buffCount + 1
-            local bCId = b.buffCId or (b.buffConfig and b.buffConfig.id) or 0
-            local bGrp = (b.buffConfig and b.buffConfig.buffGroup) or 0
-            local bName = (b.buffConfig and b.buffConfig.name) or "Unknown"
-            local bEnd = b.endTime or (b.buffConfig and b.buffConfig.totalTime) or 0
-            log(string.format("  Buff [%d]: ID=%s | Group=%s | Name=%s | EndTime=%s",
-                idx, tostring(bCId), tostring(bGrp), tostring(bName), tostring(bEnd)))
-        end
-    end
-    log("Tổng số Buff đang có: " .. tostring(buffCount))
-
-    -- 4. KIỂM TRA ViewData.meData
-    log("\n--- 4. KIỂM TRA ViewData.meData ---")
-    if _G.ViewData and _G.ViewData.meData then
-        local md = _G.ViewData.meData
-        if md.skills then
-            local suitSkillCount = 0
-            for skId, skVal in pairs(md.skills) do
-                if tostring(skId):find("102001") then
-                    suitSkillCount = suitSkillCount + 1
-                    log(string.format("  ViewData skill: Key=%s, sid=%s", tostring(skId), tostring(skVal and skVal.sid)))
+                    if cardItem then
+                        local now = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (now - (_G.Mod_LastExpCardUseTime or 0)) >= 2.0 then
+                            _G.Mod_LastExpCardUseTime = now
+                            _G.Mod_DungeonExpCardsUsed = (_G.Mod_DungeonExpCardsUsed or 0) + 1
+                            pcall(function()
+                                if _G.ItemUtility and _G.ItemUtility.UseItem then
+                                    _G.ItemUtility.UseItem({
+                                        useCount = 1,
+                                        useItemId = cardItem.id,
+                                        configId = cardItem.itemId,
+                                        useParam = cardItem.tblItem and cardItem.tblItem.useParam,
+                                        params = nil,
+                                        itemInfo = cardItem
+                                    })
+                                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                    _G.BagInfoController.UseItemReq(1, cardItem.id, nil, cardItem.itemId)
+                                end
+                            end)
+                            if _G.FloatingWordUtility then
+                                _G.FloatingWordUtility.QuickMsg(string.format("Đã dùng Thẻ Buff EXP (%d/2)", _G.Mod_DungeonExpCardsUsed))
+                            end
+                        end
+                    end
                 end
             end
-            log("Số skill 102001 trong ViewData.meData.skills: " .. tostring(suitSkillCount))
         end
-        if md.cdMap then
-            log("ViewData.meData.cdMap:")
-            for ck, cv in pairs(md.cdMap) do
-                log(string.format("  cdMap[%s] = %s", tostring(ck), tostring(cv)))
+
+        -- Di chuyển cắm đầu chạy khi dist > 1.5m
+        local targetCoordStr = nil
+        if isBC then
+            targetCoordStr = _G.Mod_Coord_BloodCastle
+            if not targetCoordStr or targetCoordStr == "" then targetCoordStr = "14#60" end
+        elseif isDS then
+            targetCoordStr = _G.Mod_Coord_DemonPlaza
+            if not targetCoordStr or targetCoordStr == "" then
+                local curL = tonumber((pMe and pMe.level) or 1)
+                targetCoordStr = (curL >= 150) and "135#97" or "137#167"
             end
         end
-    end
 
-    -- 5. KIỂM TRA SuitData & BỘ ĐỒ ĐANG MẶC
-    log("\n--- 5. KIỂM TRA THÔNG TIN BỘ ĐỒ (SUIT DATA) ---")
-    pcall(function()
-        if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.suits then
-            log("ViewData.meData.suits:")
-            for sk, sv in pairs(_G.ViewData.meData.suits) do
-                log(string.format("  Suit[%s] = %s", tostring(sk), tostring(sv)))
-            end
-        end
-    end)
+        if targetCoordStr and targetCoordStr ~= "" then
+            local sx, sy = string.match(targetCoordStr, "^(%d+)#(%d+)$")
+            if not sx then _, sx, sy = string.match(targetCoordStr, "^(%d+);(%d+)#(%d+)$") end
+            if sx and sy then
+                local tx, ty = tonumber(sx), tonumber(sy)
+                local me = _G.RoleManager and _G.RoleManager.me
+                if me and not me.isDead then
+                    local curX = (me.serverCoord and me.serverCoord.x) or (me.cellPos and me.cellPos.x) or (me.Position and me.Position.x) or 0
+                    local curY = (me.serverCoord and me.serverCoord.y) or (me.cellPos and me.cellPos.y) or (me.Position and me.Position.y) or 0
+                    local dist = math.sqrt((curX - tx)^2 + (curY - ty)^2)
 
-    -- 6. KIỂM TRA NÚT UI HỒI SINH TRÊN MÀN HÌNH
-    log("\n--- 6. KIỂM TRA NÚT UI HỒI SINH TRÊN MÀN HÌNH ---")
-    pcall(function()
-        local tGo = CS.UnityEngine.GameObject.Find("Mod_TowerCheck_HoiSinh_Enabled_Toggle")
-        if tGo then
-            log("Tìm thấy GameObject: Mod_TowerCheck_HoiSinh_Enabled_Toggle (Active=" .. tostring(tGo.activeInHierarchy) .. ")")
-            local txtComp = tGo:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
-            if txtComp then
-                log("Text hiện tại trên nút: '" .. tostring(txtComp.text) .. "'")
-            else
-                log("Không tìm thấy component Text trong nút!")
-            end
-        else
-            log("Không tìm thấy GameObject: Mod_TowerCheck_HoiSinh_Enabled_Toggle (Menu đang đóng hoặc chưa tạo)")
-        end
-    end)
-
-    -- 7. THỬ GỌI TRỰC TIẾP Mod_UpdateTowerSkillButtons
-    log("\n--- 7. THỬ CHẠY Mod_UpdateTowerSkillButtons() ---")
-    pcall(function()
-        if _G.Mod_UpdateTowerSkillButtons then
-            _G.Mod_UpdateTowerSkillButtons()
-            log("Đã gọi _G.Mod_UpdateTowerSkillButtons() thành công!")
-            local tGo = CS.UnityEngine.GameObject.Find("Mod_TowerCheck_HoiSinh_Enabled_Toggle")
-            if tGo then
-                local txtComp = tGo:GetComponentInChildren(typeof(CS.UnityEngine.UI.Text))
-                if txtComp then
-                    log("Text sau khi gọi Update: '" .. tostring(txtComp.text) .. "'")
+                    if dist > 1.5 then
+                        -- CẮM ĐẦU CHẠY KHÔNG ĐƯỢC ĐÁNH
+                        if me.isAutoFight then
+                            if me.StopAutoFight then me:StopAutoFight() end
+                            if _G.EventManager and _G.Event and _G.Event.Role_StopAutoFight then
+                                _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
+                            end
+                        end
+                        me.TargetAvatar = nil
+                        if me.MoveTo then me:MoveTo({ x = tx, y = ty }, 0) end
+                        return
+                    else
+                        -- ĐÃ TỚI GẦN VỊ TRÍ <= 1.5m -> BẬT AUTO FIGHT
+                        if me.SetAutoFight and not me.isAutoFight then
+                            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+                        end
+                        return
+                    end
                 end
             end
-        else
-            log("Chưa có hàm _G.Mod_UpdateTowerSkillButtons!")
         end
+
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me and not me.isDead and me.SetAutoFight and not me.isAutoFight then
+            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+        end
+        return
+    end
+
+    -- Ngoài phó bản
+    if _G.Mod_IsRunningDungeon then
+        _G.Mod_IsRunningDungeon = false
+        _G.Mod_DungeonExpCardsUsed = 0
+        _G.Mod_LastDungeonExitTime = CS.UnityEngine.Time.realtimeSinceStartup
+        _G.Mod_DungeonJustFinished = true
+    end
+
+    local curH = tonumber(os.date("%H")) or 0
+    local curM = tonumber(os.date("%M")) or 0
+    if curM >= 15 then
+        _G.Mod_IsPriorityDungeon = false
+        if _G.Mod_DungeonJustFinished then
+            _G.Mod_DungeonJustFinished = false
+            if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
+                if _G.Mod_ReturnToTrainAfterDungeon then _G.Mod_ReturnToTrainAfterDungeon() end
+            end
+        end
+        return
+    end
+end
+
+if _G.Mod_StartTrackedTimer then
+    _G.Mod_StartTrackedTimer("AutoDungeonMonitor", 1.0, -1, function()
+        pcall(AutoDungeonMonitorStep_Fixed)
     end)
+    log("[SUCCESS] Đã nạp AutoDungeonMonitorStep mới vào Timer!")
 end
 
-log("\n=========================================================================")
-log("Hoàn tất kiểm tra!")
+log("=========================================================================")
 
-local outputContent = table.concat(lines, "\n")
-
--- Ghi ra output.txt
-local outPath = ""
+-- GHI DỮ LIỆU RA OUTPUT.TXT
+local outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
 pcall(function()
-    outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-end)
-if outPath == "" then
-    outPath = "/storage/emulated/0/Android/data/com.vnyh.gp/files/output.txt"
-end
-
-local written = false
-pcall(function()
-    if CS.System and CS.System.IO and CS.System.IO.File and CS.System.Text and CS.System.Text.Encoding then
-        CS.System.IO.File.WriteAllText(outPath, outputContent, CS.System.Text.Encoding.UTF8)
-        written = true
+    local f = io.open(outPath, "w")
+    if f then
+        f:write(table.concat(lines, "\n"))
+        f:close()
+        log("Đã xuất log ra output.txt thành công!")
     end
 end)
-if not written then
-    pcall(function()
-        local f = io.open(outPath, "w")
-        if f then
-            f:write(outputContent)
-            f:close()
-            written = true
-        end
-    end)
-end
-
-if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-    _G.FloatingWordUtility.QuickMsg(written and "[DUMP OK] Đã ghi kết quả kiểm tra vào output.txt!" or "[LỖI] Không thể ghi output.txt")
-end

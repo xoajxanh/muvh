@@ -5203,6 +5203,48 @@ local function CreateModUI()
             _G.Mod_PerformAutoTrainAndSmelt = Mod_PerformAutoTrainAndSmelt
 
             -- =========================================================================
+            -- [MOD FEATURE]: HÀM NHẬN DIỆN ĐANG Ở BÃI TRAIN (AT TRAIN SPOT CHECKER)
+            -- Mô tả: Xác định nhân vật đang đứng tại bãi train đã cài đặt (Mod_TrainCoord).
+            --        Dùng để phân biệt khi nào được đánh quái (ở bãi train) và khi nào chỉ đánh người (đi săn).
+            -- =========================================================================
+            local function Mod_IsAtTrainSpot()
+                if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then return false end
+                if _G.Mod_TrainArrivedAtPos then return true end
+
+                local coordStr = _G.Mod_TrainCoord
+                local sx, sy = string.match(coordStr, "^(%d+)#(%d+)$")
+                local tMap = nil
+                if not sx then
+                    tMap, sx, sy = string.match(coordStr, "^(%d+);(%d+)#(%d+)$")
+                end
+                if sx and sy then
+                    local tx, ty = tonumber(sx), tonumber(sy)
+                    local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                    local expectedMap = tonumber(tMap)
+                    if not expectedMap then
+                        local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
+                        local primaryTag = "C" .. tostring(primaryTier)
+                        local tab = _G.ModAutoBossConfigTab or primaryTag
+                        local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
+                        if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
+                        expectedMap = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
+                    end
+                    if expectedMap and curMap == expectedMap then
+                        local pMe = _G.RoleManager and _G.RoleManager.me
+                        local meX = (pMe and pMe.serverCoord and pMe.serverCoord.x) or (pMe and pMe.cellPos and pMe.cellPos.x) or 0
+                        local meY = (pMe and pMe.serverCoord and pMe.serverCoord.y) or (pMe and pMe.cellPos and pMe.cellPos.y) or 0
+                        local dist = math.sqrt((meX - tx)^2 + (meY - ty)^2)
+                        if dist <= 15 then
+                            _G.Mod_TrainArrivedAtPos = true
+                            return true
+                        end
+                    end
+                end
+                return false
+            end
+            _G.Mod_IsAtTrainSpot = Mod_IsAtTrainSpot
+
+            -- =========================================================================
             -- [MOD FEATURE]: MÁY TRẠNG THÁI AUTO SĂN BOSS TOÀN DIỆN (AUTO FARM BOSS FSM)
             -- Mô tả: FSM điều khiển tự đổi map, tìm boss, di chuyển, xả combo, chờ nhặt đồ.
             -- =========================================================================
@@ -9402,9 +9444,10 @@ local function CreateModUI()
                                         else
                                             -- Hết đối thủ người chơi:
                                             local isAutoHunt = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
-                                            if not isAutoHunt then
-                                                -- CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange)
-                                                if isMonsterNearby(scanRange) then
+                                            local isAtTrain = (_G.Mod_IsAtTrainSpot and _G.Mod_IsAtTrainSpot()) or (_G.Mod_TrainArrivedAtPos == true)
+                                            if not isAutoHunt or isAtTrain then
+                                                -- CHỈ bật lại AutoFight nếu có Quái/Kundun ở gần (~15 ô hoặc scanRange) hoặc đang ở bãi train
+                                                if isAtTrain or isMonsterNearby(scanRange) then
                                                     if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight then
                                                         if _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
                                                             _G.RoleManager.me:SetAutoFight("AutoFight")
@@ -9412,7 +9455,7 @@ local function CreateModUI()
                                                     end
                                                 end
                                             else
-                                                -- Khi Auto Hunt BẬT: TUYỆT ĐỐI KHÔNG ĐÁNH QUÁI khi không có mục tiêu người chơi
+                                                -- Khi Auto Hunt BẬT và KHÔNG Ở BÃI TRAIN: TUYỆT ĐỐI KHÔNG ĐÁNH QUÁI khi không có mục tiêu người chơi
                                                 if _G.RoleManager.me and _G.RoleManager.me.isAutoFight == "AutoFight" then
                                                     if _G.RoleManager.me.SetAutoFight then
                                                         _G.RoleManager.me:SetAutoFight("None")
@@ -9665,15 +9708,26 @@ local function CreateModUI()
                 local function AutoDungeonMonitorStep()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
 
+                    -- CỬA CHẶN ƯU TIÊN SỐ 1:
+                    -- Nếu người dùng TẮT cả 2 tính năng Auto Huyết Lâu và Auto Quảng Trường Quỷ,
+                    -- tuyệt đối không can thiệp vào bất kỳ phó bản nào khác (Boss cá nhân, Leo tháp...) của người chơi!
+                    if not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled then
+                        _G.Mod_IsRunningDungeon = false
+                        _G.Mod_IsPriorityDungeon = false
+                        _G.Mod_DungeonJustFinished = false
+                        return
+                    end
+
                     local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
                     local inBC = (cMap >= 1012000 and cMap <= 1012099)
                     local inDS = (cMap >= 1010000 and cMap <= 1010099)
-                    local inTrans = inBC or inDS or (_G.TranScriptData and _G.TranScriptData.InTranscript)
+                    -- CHỈ nhận diện khi đúng là map Huyết Lâu hoặc Quảng Trường Quỷ:
+                    local inTargetDungeon = (inBC and _G.Mod_AutoBloodCastle_Enabled) or (inDS and _G.Mod_AutoDemonPlaza_Enabled)
 
                     -- ==========================================
-                    -- A. ĐANG TRONG PHÓ BẢN
+                    -- A. ĐANG TRONG PHÓ BẢN (HUYẾT LÂU HOẶC QUẢNG TRƯỜNG QUỶ)
                     -- ==========================================
-                    if inTrans then
+                    if inTargetDungeon then
                         _G.Mod_IsRunningDungeon = true
                         _G.Mod_IsPriorityDungeon = true
                         _G.Mod_DungeonJustFinished = false
@@ -9703,8 +9757,11 @@ local function CreateModUI()
                                 -- Dùng thẻ khi buff đã hết hoặc thời gian dưới 10 phút (< 600s)
                                 if expBuffRemainTime < 600 then
                                     local cardItem = nil
-                                    if _G.BagInfoData and _G.BagInfoData.bagItems then
-                                        for _, item in pairs(_G.BagInfoData.bagItems) do
+                                    if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
+                                        pcall(function() cardItem = _G.BagInfoData.GetItemByConfigID(3000400) end)
+                                    end
+                                    if not cardItem and _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                        for _, item in pairs(_G.BagInfoData.TotalItems) do
                                             if item and (item.itemId == 3000400 or (item.tblItem and item.tblItem.name and item.tblItem.name:find("Buff EXP"))) then
                                                 cardItem = item
                                                 break
@@ -9723,17 +9780,12 @@ local function CreateModUI()
                                                         useCount = 1,
                                                         useItemId = cardItem.id,
                                                         configId = cardItem.itemId,
+                                                        useParam = cardItem.tblItem and cardItem.tblItem.useParam,
+                                                        params = nil,
                                                         itemInfo = cardItem
                                                     })
-                                                end
-                                                if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
                                                     _G.BagInfoController.UseItemReq(1, cardItem.id, nil, cardItem.itemId)
-                                                end
-                                                if _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
-                                                    _G.NetManager.Send(_G.BagMessage.ReqUseItem, {
-                                                        count = 1,
-                                                        itemId = cardItem.id
-                                                    })
                                                 end
                                             end)
                                             if _G.FloatingWordUtility then
@@ -9749,6 +9801,8 @@ local function CreateModUI()
                         end
 
                         -- 3. Di chuyển tới tọa độ farm đã cấu hình & Bật Auto Fight
+                        -- [QUY TẮC]: Khi khoảng cách > 1.5m, CẮM ĐẦU CHẠY KHÔNG ĐƯỢC ĐÁNH
+                        --            Chỉ khi khoảng cách <= 1.5m mới bật AutoFight!
                         local targetCoordStr = nil
                         if inBC then
                             targetCoordStr = _G.Mod_Coord_BloodCastle
@@ -9771,24 +9825,37 @@ local function CreateModUI()
                                 local tx, ty = tonumber(sx), tonumber(sy)
                                 local me = _G.RoleManager and _G.RoleManager.me
                                 if me and not me.isDead then
-                                    local curX = me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x) or 0
-                                    local curY = me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y) or 0
+                                    local curX = (me.serverCoord and me.serverCoord.x) or (me.cellPos and me.cellPos.x) or (me.Position and me.Position.x) or 0
+                                    local curY = (me.serverCoord and me.serverCoord.y) or (me.cellPos and me.cellPos.y) or (me.Position and me.Position.y) or 0
                                     local dist = math.sqrt((curX - tx)^2 + (curY - ty)^2)
-                                    if dist > 3 and me.MoveTo then
-                                        me:MoveTo({ x = tx, y = ty }, 0)
+
+                                    if dist > 1.5 then
+                                        -- CẮM ĐẦU CHẠY KHÔNG ĐƯỢC ĐÁNH
+                                        if me.isAutoFight then
+                                            if me.StopAutoFight then me:StopAutoFight() end
+                                            if _G.EventManager and _G.Event and _G.Event.Role_StopAutoFight then
+                                                _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
+                                            end
+                                        end
+                                        me.TargetAvatar = nil
+                                        if me.MoveTo then
+                                            me:MoveTo({ x = tx, y = ty }, 0)
+                                        end
+                                        return -- Dừng bước tick này, không bật đánh!
+                                    else
+                                        -- ĐÃ TIẾP CẬN VỊ TRÍ <= 1.5m -> BẬT AUTOFIGHT
+                                        if me.SetAutoFight and not me.isAutoFight then
+                                            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+                                        end
+                                        return
                                     end
                                 end
                             end
                         end
 
                         local me = _G.RoleManager and _G.RoleManager.me
-                        if me and not me.isDead then
-                            if me.SetAutoFight then
-                                me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
-                            end
-                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
-                                _G.QiJiHelperData.SetAutoFightData(true)
-                            end
+                        if me and not me.isDead and me.SetAutoFight and not me.isAutoFight then
+                            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
                         end
                         return
                     end
@@ -9803,14 +9870,10 @@ local function CreateModUI()
                         _G.Mod_DungeonJustFinished = true
                     end
 
-                    -- Giờ lẻ (1h, 3h, 5h... 23h) và trong 14 phút đầu (00 - 14 phút)
+                    -- Khung giờ mở phó bản: Phút 00 -> 14
                     local curHour = tonumber(os.date("%H")) or 0
                     local curMinute = tonumber(os.date("%M")) or 0
-                    local isOddHour = (curHour % 2 == 1)
-                    local isDungeonWindow = isOddHour and (curMinute < 15)
-
-                    -- Nếu không trong khung giờ phó bản hoặc không bật auto phó bản nào
-                    if not isDungeonWindow or (not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled) then
+                    if curMinute >= 15 then
                         _G.Mod_IsPriorityDungeon = false
                         if _G.Mod_DungeonJustFinished then
                             _G.Mod_DungeonJustFinished = false
@@ -9824,30 +9887,40 @@ local function CreateModUI()
                         return
                     end
 
+                    -- QUY TẮC KHUNG GIỜ GIỐNG HỆT BẢN FARM:
+                    -- - GIỜ LẺ (1h, 3h, 5h, 7h...): CHỈ MỞ HUYẾT LÂU (Blood Castle)
+                    -- - GIỜ CHẴN (0h, 2h, 4h, 6h...): CHỈ MỞ QUẢNG TRƯỜNG QUỶ (Demon Plaza)
+                    local checkList = {}
+                    if curHour % 2 == 1 then
+                        if _G.Mod_AutoBloodCastle_Enabled then
+                            table.insert(checkList, {
+                                name = "Huyết Lâu",
+                                subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.BloodCastle) or 2203,
+                                condId = 100414,
+                                maxNumId = 100404,
+                                globalCountId = 60000001
+                            })
+                        end
+                    else
+                        if _G.Mod_AutoDemonPlaza_Enabled then
+                            table.insert(checkList, {
+                                name = "Quảng Trường Quỷ",
+                                subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.DemonPlaza) or 2204,
+                                condId = 100408,
+                                maxNumId = 100702,
+                                globalCountId = 60000002
+                            })
+                        end
+                    end
+
+                    if #checkList == 0 then
+                        _G.Mod_IsPriorityDungeon = false
+                        return
+                    end
 
                     -- Đang trong khung giờ phó bản: Kiểm tra xem có phó bản nào sẵn sàng vào được không
                     local pMe = _G.RoleManager and _G.RoleManager.me
-                    local curLvl = tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or 1)
-
-                    local checkList = {}
-                    if _G.Mod_AutoBloodCastle_Enabled then
-                        table.insert(checkList, {
-                            name = "Huyết Lâu",
-                            subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.BloodCastle) or 100414,
-                            condId = 100414,
-                            maxNumId = 100404,
-                            globalCountId = 60000001
-                        })
-                    end
-                    if _G.Mod_AutoDemonPlaza_Enabled then
-                        table.insert(checkList, {
-                            name = "Quảng Trường Quỷ",
-                            subType = (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.DemonPlaza) or 100408,
-                            condId = 100408,
-                            maxNumId = 100702,
-                            globalCountId = 60000002
-                        })
-                    end
+                    local curLvl = tonumber((_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1)
 
                     local canEnterDungeon = nil
                     local hasAvailableEntry = false
@@ -9904,8 +9977,8 @@ local function CreateModUI()
                     if canEnterDungeon then
                         _G.Mod_IsPriorityDungeon = true
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (nowTime - (_G.Mod_LastDungeonExitTime or 0)) >= 10.0 then
-                            _G.Mod_IsRunningDungeon = true
+                        if (nowTime - (_G.Mod_LastDungeonEnterReqTime or -999)) >= 5.0 and (nowTime - (_G.Mod_LastDungeonExitTime or -999)) >= 10.0 then
+                            _G.Mod_LastDungeonEnterReqTime = nowTime
                             _G.Mod_DungeonExpCardsUsed = 0
                             _G.Mod_DungeonJustFinished = false
                             pcall(function()

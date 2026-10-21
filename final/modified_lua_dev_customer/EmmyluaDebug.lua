@@ -4732,12 +4732,13 @@ local function CreateModUI()
                         if dist > 2.0 then
                             _G.Mod_AutoFarmBoss_BossWait = 0
 
-                            -- Đảm bảo AutoFight không bị bật sớm làm ngắt chuyển động chạy bộ
+                            -- =========================================================================
+                            -- [MOD FEATURE]: CHẠY BỘ TỚI BOSS MƯỢT MÀ (KHÔNG GỌI SETAUTOTASKFIGHT DẬP NHỊP)
+                            -- Mô tả: Chỉ tắt AutoFight khi đang bật để không ngắt quãng lộ trình chạy bộ;
+                            --        tuyệt đối không gọi SetAutoTaskFight tránh khựng/flicker rung giật mỗi 0.3s.
+                            -- =========================================================================
                             if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
                                 if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
-                            end
-                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight then
-                                _G.RoleManager.me:SetAutoTaskFight("None")
                             end
                             if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
                                 if _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end

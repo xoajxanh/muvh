@@ -53,11 +53,15 @@ end
 
 function RoleTargetManager.IsCanAttackMonster(role)
   -- =========================================================================
-  -- [MOD FEATURE]: CHẶN ĐÁNH QUÁI KHI BẬT AUTO HUNT
-  -- Mô tả: Khi Auto Hunt bật, chặn toàn bộ việc chọn và tấn công quái/boss
+  -- [MOD FEATURE]: CHẶN ĐÁNH QUÁI KHI BẬT AUTO HUNT (NGOẠI TRỪ KHI Ở BÃI TRAIN)
+  -- Mô tả: Khi Auto Hunt bật, nếu KHÔNG ở bãi train thì chặn đánh quái để tập trung PK.
+  --        Nếu ĐANG Ở BÃI TRAIN thì VẪN ĐÁNH QUÁI NHƯ BÌNH THƯỜNG!
   -- =========================================================================
   if _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive() then
-    return false
+    local isAtTrain = (_G.Mod_IsAtTrainSpot and _G.Mod_IsAtTrainSpot()) or (_G.Mod_TrainArrivedAtPos == true)
+    if not isAtTrain then
+      return false
+    end
   end
   if not role or role.isDead then
     return false
