@@ -2841,113 +2841,43 @@ local function CreateModUI()
             _G.BossHooked = true
 
             -- =========================================================================
-            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (SMOOTH CAMERA & ANCHOR FOLLOW)
-            -- Mô tả: Camera bám theo nhân vật Me mỗi frame (interval = 0) và khóa góc xoay Vector3.zero
-            --        giúp loại bỏ hoàn toàn hiện tượng rung lắc/giật hình khi xoay hướng hoặc đánh chiêu.
+            -- [MOD FEATURE]: HACK TẦM ĐÁNH & GÓC NHÌN CAMERA (NATIVE CAMERA FOLLOW)
+            -- Mô tả: Khôi phục Camera bám theo Me gốc của game, mượt 100% C++ Engine không rung lắc
             -- =========================================================================
             pcall(function()
-                local function InitCameraFollowAnchor()
-                    local mc = _G.MainCamera
-                    if not mc or not mc.transform or IsNil(mc.transform) then
-                        if mc and mc.Init then mc.Init() end
-                    end
-                    if not mc or not mc.transform or IsNil(mc.transform) then return end
+                -- Dọn dẹp Mod_CameraAnchor cũ nếu có để Camera bám trực tiếp vào Me
+                local oldAnchor = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
+                if oldAnchor and not IsNil(oldAnchor) then
+                    CS.UnityEngine.Object.Destroy(oldAnchor)
+                end
+                _G.Mod_CameraAnchor = nil
+                _G.Mod_CameraAnchorTrans = nil
 
-                    local anchorGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                    if not anchorGo or IsNil(anchorGo) then
-                        anchorGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                        CS.UnityEngine.Object.DontDestroyOnLoad(anchorGo)
-                    end
-                    local anchorTrans = anchorGo.transform
-                    anchorTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                    _G.Mod_CameraAnchor = anchorGo
-
-                    local function RefreshAnchorCam()
-                        local zoom = mc.zoom or 1
-                        local angle = mc.angle or -45
-                        local distX = 4.0 + (9.7 - 4.0) * zoom
-                        local distY = 2.5 + (8.42 - 2.5) * zoom
-                        local angX = 20.0 + (42.0 - 20.0) * zoom
-
-                        local rad = math.rad(angle)
-                        local x = -distX * math.sin(rad)
-                        local z = -distX * math.cos(rad)
-
-                        if mc.transform.SetLocalEulerAngles then
-                            mc.transform:SetLocalEulerAngles(angX, angle, 0)
-                        else
-                            mc.transform.localEulerAngles = CS.UnityEngine.Vector3(angX, angle, 0)
-                        end
-
-                        if mc.transform.SetLocalPosition then
-                            mc.transform:SetLocalPosition(x, distY, z)
-                        else
-                            mc.transform.localPosition = CS.UnityEngine.Vector3(x, distY, z)
-                        end
-                    end
-
-                    local function SyncAnchorPos()
-                        local aGo = _G.Mod_CameraAnchor
-                        if not aGo or IsNil(aGo) then
-                            aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                            if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
-                            end
-                            _G.Mod_CameraAnchor = aGo
-                        end
-                        local role = _G.RoleManager and _G.RoleManager.me
-                        if role and role.transform and not IsNil(role.transform) then
-                            local p = role.transform.position
-                            local aTrans = aGo.transform
-                            aTrans.position = p
-                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                        end
-                    end
-
-                    if mc.transform.parent ~= anchorTrans then
-                        mc.transform:SetParent(anchorTrans, false)
-                        RefreshAnchorCam()
-                        SyncAnchorPos()
-                    end
-
+                local mc = _G.MainCamera
+                if mc then
                     if not _G.Mod_Hooked_AttachRole and mc.AttachRole then
                         _G.Mod_Hooked_AttachRole = true
                         local old_AttachRole = mc.AttachRole
                         mc.AttachRole = function(role)
                             if not role then return end
-                            mc.target = role.transform
-                            local aGo = _G.Mod_CameraAnchor
-                            if not aGo or IsNil(aGo) then
-                                aGo = CS.UnityEngine.GameObject.Find("Mod_CameraAnchor")
-                                if not aGo or IsNil(aGo) then
-                                    aGo = CS.UnityEngine.GameObject("Mod_CameraAnchor")
-                                    CS.UnityEngine.Object.DontDestroyOnLoad(aGo)
-                                end
-                                _G.Mod_CameraAnchor = aGo
+                            if old_AttachRole then old_AttachRole(role) end
+                            if role.transform and mc.transform then
+                                mc.transform:SetParent(role.transform, false)
+                                if mc.RefreshPosition then mc.RefreshPosition() end
                             end
-                            local aTrans = aGo.transform
-                            aTrans.eulerAngles = CS.UnityEngine.Vector3.zero
-                            mc.transform:SetParent(aTrans, false)
-                            RefreshAnchorCam()
-                            SyncAnchorPos()
                         end
                     end
-
-                    _G.Mod_StartSmoothCameraLoop = function()
-                        _G.Mod_StartTrackedTimer("SmoothCamera", 0, -1, function()
-                            pcall(SyncAnchorPos)
-                        end)
+                    -- Nếu đang trong map và có role me, gán trực tiếp lại
+                    local me = _G.RoleManager and _G.RoleManager.me
+                    if me and mc.AttachRole then
+                        pcall(function() mc.AttachRole(me) end)
                     end
-                    _G.Mod_StartSmoothCameraLoop()
                 end
-
-                InitCameraFollowAnchor()
             end)
 
             -- =========================================================================
-            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO BODY, CÁNH & DẤU CHÂN ME
-            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không bị giật/bóng ma/2 người
+            -- [MOD FEATURE]: KHÓA TỐC ĐỘ ANIMATION 1.0X CHO CÁNH & BODY ME (SIÊU NHẸ)
+            -- Mô tả: Giữ chuyển động 1.0x mượt mà tuyệt đối khi tăng tốc chạy, không tốn CPU/GC
             -- =========================================================================
             _G.Mod_LockMyAnimatorsToNormal = function()
                 pcall(function()
@@ -2955,11 +2885,9 @@ local function CreateModUI()
                     if not me then return end
 
                     if me.wingAnimator and me.wingAnimator.animator and not IsNil(me.wingAnimator.animator) then
-                        me.wingAnimator.animator.speed = 1.0
-                    end
-                    if me.AvatarEquip and me.AvatarEquip.wingObj and not IsNil(me.AvatarEquip.wingObj) then
-                        local wAnim = me.AvatarEquip.wingObj:GetComponent(typeof(CS.UnityEngine.Animator))
-                        if wAnim and not IsNil(wAnim) and wAnim.speed ~= 1.0 then wAnim.speed = 1.0 end
+                        if me.wingAnimator.animator.speed ~= 1.0 then
+                            me.wingAnimator.animator.speed = 1.0
+                        end
                     end
                 end)
             end
@@ -2970,7 +2898,9 @@ local function CreateModUI()
                 local old_SetAnimatorSpeed = _G.AnimatorCtrl.SetAnimatorSpeed
                 _G.AnimatorCtrl.SetAnimatorSpeed = function(self, speed)
                     if self.avatar and self.avatar.isMe then
-                        speed = 1.0
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            speed = 1.0
+                        end
                     end
                     return old_SetAnimatorSpeed(self, speed)
                 end
@@ -2981,7 +2911,9 @@ local function CreateModUI()
                 local old_RoleModel_Play = _G.RoleModel.PlayAnimation
                 _G.RoleModel.PlayAnimation = function(self, name, speed, fadeTime, startTime, realTime, callback)
                     if self.avatar and self.avatar.isMe then
-                        speed = 1.0
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
+                            speed = 1.0
+                        end
                     end
                     return old_RoleModel_Play(self, name, speed, fadeTime, startTime, realTime, callback)
                 end
@@ -2993,7 +2925,7 @@ local function CreateModUI()
                 _G.RoleEquip.SetWingAni = function(self, RoleMoveType, isCurIsSafeZone)
                     old_SetWingAni(self, RoleMoveType, isCurIsSafeZone)
                     if self.avatar and self.avatar.isMe then
-                        if self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
+                        if (_G.RunSpeedMultiplier or 1.0) > 1.0 and self.wingAnimator and self.wingAnimator.animator and not IsNil(self.wingAnimator.animator) then
                             self.wingAnimator.animator.speed = 1.0
                         end
                     end
@@ -3006,22 +2938,15 @@ local function CreateModUI()
                 local old_SetFoot = _G.RoleEquip.SetFoot
                 _G.RoleEquip.SetFoot = function(self, position, path)
                     old_SetFoot(self, position, path)
-                    if self.avatar and self.avatar.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
                 end
             end
 
-            -- Hook Me:MoveTo và Player:SetMoving để khóa ngay lập tức khi người chơi click di chuyển
+            -- Hook Me:MoveTo và Player:SetMoving
             if _G.Me and not _G.Mod_Hooked_Me_MoveTo then
                 _G.Mod_Hooked_Me_MoveTo = true
                 local old_Me_MoveTo = _G.Me.MoveTo
                 _G.Me.MoveTo = function(self, cell, stopRange, onEndMove)
-                    local ret = old_Me_MoveTo(self, cell, stopRange, onEndMove)
-                    if self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
-                    return ret
+                    return old_Me_MoveTo(self, cell, stopRange, onEndMove)
                 end
             end
 
@@ -3029,10 +2954,7 @@ local function CreateModUI()
                 _G.Mod_Hooked_Player_SetMoving = true
                 local old_Player_SetMoving = _G.Player.SetMoving
                 _G.Player.SetMoving = function(self, moveType)
-                    old_Player_SetMoving(self, moveType)
-                    if self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
+                    return old_Player_SetMoving(self, moveType)
                 end
             end
 
@@ -3046,6 +2968,11 @@ local function CreateModUI()
                             -- Lưu lại tốc độ gốc chuẩn của game/server, chống bị nhân dồn lũy kế
                             self._modBaseMoveSpeed = moveSpeed
                         end
+                        -- Khóa bản quyền: Chưa kích hoạt thì luôn chạy tốc độ chuẩn 1.0x
+                        if not _G.Mod_IsActive then
+                            original_SetMoveSpeed(self, self._modBaseMoveSpeed or moveSpeed)
+                            return
+                        end
                         local base = self._modBaseMoveSpeed or moveSpeed or 5.0
                         local mult = _G.RunSpeedMultiplier or 1.0
                         if mult < 1.0 then mult = 1.0 end
@@ -3054,15 +2981,13 @@ local function CreateModUI()
                     else
                         original_SetMoveSpeed(self, moveSpeed)
                     end
-                    if self.isMe then
-                        if _G.Mod_LockMyAnimatorsToNormal then _G.Mod_LockMyAnimatorsToNormal() end
-                    end
                 end
             end
 
-            -- Loop giám sát định kỳ 1.0s khóa chuẩn Animator 1.0x khi chạy tốc độ cao (nhẹ, 0 GC alloc)
+            -- Loop giám sát định kỳ 2.0s khóa chuẩn Animator 1.0x khi chạy tốc độ cao
             _G.Mod_StartSpeedAnimLockLoop = function()
-                _G.Mod_StartTrackedTimer("SpeedAnimLock", 1.0, -1, function()
+                _G.Mod_StartTrackedTimer("SpeedAnimLock", 2.0, -1, function()
+                    if not _G.Mod_IsActive then return end
                     if (_G.RunSpeedMultiplier or 1.0) > 1.0 then
                         if _G.Mod_LockMyAnimatorsToNormal then
                             _G.Mod_LockMyAnimatorsToNormal()
@@ -3093,6 +3018,7 @@ local function CreateModUI()
                 _G.ModMeDataAtkSpeedHooked = true
                 _G.MeData.InitFinalAttribute = function(self)
                     original_InitFinalAttribute(self)
+                    if not _G.Mod_IsActive then return end
                     if _G.AtkSpeedMultiplier and _G.AtkSpeedMultiplier > 1.0 then
                         local speedKey = _G.EAttributeType and _G.EAttributeType.attackSpeedCalculateValue
                         if speedKey and self.attributeMap and self.attributeMap[speedKey] then
@@ -3142,8 +3068,6 @@ local function CreateModUI()
             _G.SceneData.MonsterMapDataInit = function(data)
                 if original_MonsterMapDataInit then original_MonsterMapDataInit(data) end
                 ParseBossData()
-                if _G.Mod_StartSmoothCameraLoop then pcall(_G.Mod_StartSmoothCameraLoop) end
-                if _G.Mod_LockMyAnimatorsToNormal then pcall(_G.Mod_LockMyAnimatorsToNormal) end
             end
             -- =========================================================================
             -- [MOD FEATURE]: TỰ ĐỘNG TIẾP CẬN BOSS THÁP & PHỤ BẢN (TOWER BOSS & DUNGEON AUTO)
@@ -5119,7 +5043,7 @@ local function CreateModUI()
                         end)
                     end
 
-                    if _G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0 then
+                    if _G.Mod_IsActive and _G.Mod_CustomAttackRange and _G.Mod_CustomAttackRange > 0 then
                         local safeScope = math.min(15, _G.Mod_CustomAttackRange)
                         if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
                             if _G.QiJiHelperData.SettingData.KillMonsterScope ~= safeScope then
@@ -5128,7 +5052,7 @@ local function CreateModUI()
                         end
                     end
 
-                    if _G.Mod_AutoApproachTowerBoss then
+                    if _G.Mod_IsActive and _G.Mod_AutoApproachTowerBoss then
                         local groupId = _G.SceneData and _G.SceneData.groupId
                         if groupId and string.match(tostring(groupId), "^1059") then
                             if _G.LastTowerMapId ~= groupId then
@@ -5251,7 +5175,7 @@ local function CreateModUI()
                 if _G.Timer and _G.Timer.StartLoop then
                     _G.Timer.StartLoop(0.5, -1, function()
                         pcall(function()
-                            if _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
+                            if _G.Mod_IsActive and _G.Mod_AutoPK_Enabled and _G.RoleManager and _G.RoleManager.me then
                                 local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                 local delay = _G.Mod_PKScanDelay or 0.8
                                 if (nowTime - (_G.Mod_LastPKScanTime or 0)) >= delay then
@@ -5440,7 +5364,7 @@ local function CreateModUI()
                 if _G.Timer and _G.Timer.StartLoop then
                     _G.Timer.StartLoop(0.5, -1, function()
                         pcall(function()
-                            if _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
+                            if _G.Mod_IsActive and _G.Mod_AutoReturnPos_Enabled and _G.Mod_AutoReturnPos_Coords and _G.Mod_AutoReturnPos_Coords ~= "" then
                                 local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                                 local delay = _G.Mod_AutoReturnPosDelay or 1.0
                                 if (nowTime - (_G.Mod_LastReturnPosTime or 0)) >= delay then
@@ -5501,7 +5425,7 @@ local function CreateModUI()
             if _G.Timer and _G.Timer.StartLoop then
                 _G.Timer.StartLoop(0.2, -1, function()
                     pcall(function()
-                        if _G.Mod_AutoAoE_BossAn then
+                        if _G.Mod_IsActive and _G.Mod_AutoAoE_BossAn then
                             local mapId = _G.SceneData and _G.SceneData.mapId or 0
                             if tonumber(mapId) == 240001 then
                                 local me = _G.RoleManager and _G.RoleManager.me
@@ -5548,6 +5472,7 @@ local function CreateModUI()
 
                 _G.Timer.StartLoop(1, -1, function()
                     pcall(function()
+                        if not _G.Mod_IsActive then return end
                         local targetFov = _G.currentFOV or _G.SavedFOV or _G.Mod_Config_FOV_Max or 50
                         local cam = CS.UnityEngine.Camera.main
                         if cam and math.abs(cam.fieldOfView - targetFov) > 0.5 then
@@ -5558,6 +5483,7 @@ local function CreateModUI()
 
 
                     pcall(function()
+                        if not _G.Mod_IsActive then return end
                         if _G.AutoFightFindTargetManager and not _G.Mod_HookedAutoFightTarget then
                             _G.Mod_HookedAutoFightTarget = true
                             local original_GetMostMonster = _G.AutoFightFindTargetManager.GetMostMonsterInMonsterList
@@ -6615,6 +6541,145 @@ local function CreateModUI()
             end)
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: THÔNG BÁO KUNDUN XUẤT HIỆN (IN-GAME STROBE ALERT - CUSTOMER)
+        -- Mô tả: Quét định kỳ 5s/lần. Khi Kundun Thánh Cốt / Phù Văn (C3..C12) được chọn
+        --        đã xuất hiện (x == y), phát thông báo nổi nhấp nháy đỏ-vàng ra giữa màn hình.
+        -- =========================================================================
+        _G.Mod_KundunNotify = _G.Mod_KundunNotify or {}
+        _G.Mod_KundunNotify.Limits = {
+            [16] = { [4] = 40, [5] = 70, [6] = 70, [7] = 70, [8] = 70, [9] = 70, [10] = 70, [11] = 70, [12] = 70, [13] = 70, [14] = 70, [15] = 70 },
+            [17] = { [6] = 200, [7] = 300, [8] = 400, [9] = 500, [10] = 500, [11] = 500, [12] = 500, [13] = 500, [14] = 500, [15] = 500 }
+        }
+
+        _G.Mod_KundunNotify.GetLimit = function(bossType, tier)
+            local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+            if _G.ClientTable and _G.ClientTable.cfg_Monster_bossManager then
+                local cfg = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(bossId)
+                if cfg and cfg.yuanGuMonsterKillNum and cfg.yuanGuMonsterKillNum > 0 then
+                    return cfg.yuanGuMonsterKillNum
+                end
+            end
+            local limits = _G.Mod_KundunNotify.Limits
+            if limits and limits[bossType] and limits[bossType][tier] then
+                return limits[bossType][tier]
+            end
+            return (bossType == 16) and 70 or 500
+        end
+
+        _G.Mod_KundunNotify.CheckSpawned = function(bossType, tier)
+            local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+            local limit = _G.Mod_KundunNotify.GetLimit(bossType, tier)
+            if limit <= 0 then return false end
+            if _G.SceneData and _G.SceneData.GetAncientBossData then
+                local isSatisfy, info = _G.SceneData:GetAncientBossData(bossType, bossId)
+                if isSatisfy == true then
+                    return true
+                end
+                if info and info.count and info.count >= limit then
+                    return true
+                end
+            end
+            return false
+        end
+
+        _G.Mod_KundunNotify.FlashAlert = function(msg)
+            local alertText = "<size=22><b><color=#FFFF00>⚠️ " .. msg .. " ⚠️</color></b></size>"
+            if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+                _G.FloatingTipUtility.QuickMsg(alertText)
+            elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(alertText)
+            end
+        end
+
+        _G.Mod_KundunNotifyTimer = nil
+
+        _G.Mod_KundunNotify.DoScan = function()
+            if not _G.AutoPick_KundunNotify_Enabled then return end
+            pcall(function()
+                -- Gửi yêu cầu cập nhật tiến độ boss mới nhất từ server
+                if _G.networkRequest and _G.networkRequest.ReqAncientBossInfo then
+                    _G.networkRequest.ReqAncientBossInfo(16)
+                    _G.networkRequest.ReqAncientBossInfo(17)
+                elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqAncientBossInfo then
+                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                end
+
+                local spawnedTC = {}
+                for t = 4, 15 do
+                    if _G["Mod_KundunNotify_TC_C" .. t] then
+                        if _G.Mod_KundunNotify.CheckSpawned(16, t) then
+                            table.insert(spawnedTC, "C" .. t)
+                        end
+                    end
+                end
+
+                local spawnedPV = {}
+                for t = 6, 15 do
+                    if _G["Mod_KundunNotify_PV_C" .. t] then
+                        if _G.Mod_KundunNotify.CheckSpawned(17, t) then
+                            table.insert(spawnedPV, "C" .. t)
+                        end
+                    end
+                end
+
+                if #spawnedTC > 0 then
+                    local msgTC = "Kundun thánh cốt " .. table.concat(spawnedTC, "-") .. " đã hiện"
+                    _G.Mod_KundunNotify.FlashAlert(msgTC)
+                end
+
+                if #spawnedPV > 0 then
+                    local msgPV = "Kundun phù văn " .. table.concat(spawnedPV, "-") .. " đã hiện"
+                    if #spawnedTC > 0 then
+                        if _G.Timer and _G.Timer.Start then
+                            _G.Timer.Start(0.8, function()
+                                _G.Mod_KundunNotify.FlashAlert(msgPV)
+                            end)
+                        else
+                            _G.Mod_KundunNotify.FlashAlert(msgPV)
+                        end
+                    else
+                        _G.Mod_KundunNotify.FlashAlert(msgPV)
+                    end
+                end
+            end)
+        end
+
+        _G.Mod_StartKundunNotifyLoop = function()
+            if _G.Mod_KundunNotifyTimer then
+                if _G.Timer and _G.Timer.Stop then
+                    _G.Timer.Stop(_G.Mod_KundunNotifyTimer)
+                end
+                _G.Mod_KundunNotifyTimer = nil
+            end
+            if _G.Timer and _G.Timer.StartLoop then
+                _G.Mod_KundunNotifyTimer = _G.Timer.StartLoop(5.0, -1, _G.Mod_KundunNotify.DoScan)
+            end
+            _G.Mod_KundunNotify.DoScan()
+        end
+
+        _G.Mod_StopKundunNotifyLoop = function()
+            if _G.Mod_KundunNotifyTimer then
+                if _G.Timer and _G.Timer.Stop then
+                    _G.Timer.Stop(_G.Mod_KundunNotifyTimer)
+                end
+                _G.Mod_KundunNotifyTimer = nil
+            end
+        end
+
+        -- Khôi phục cấu hình Kundun Notify từ PlayerPrefs
+        _G.AutoPick_KundunNotify_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_KundunNotify_Enabled", 0) == 1)
+        for t = 4, 15 do
+            _G["Mod_KundunNotify_TC_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_TC_C" .. t, 0) == 1)
+        end
+        for t = 6, 15 do
+            _G["Mod_KundunNotify_PV_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_PV_C" .. t, 0) == 1)
+        end
+        if _G.AutoPick_KundunNotify_Enabled and _G.Mod_StartKundunNotifyLoop then
+            pcall(_G.Mod_StartKundunNotifyLoop)
+        end
+
         local function CreateAutoLootUI()
             local leftColX = 15
             local currentY = -58
@@ -6857,6 +6922,211 @@ local function CreateModUI()
 
                 table.insert(_G.KundunUILabelPool, txt)
                 currentY = currentY - 28
+            end
+
+            -- =========================================================================
+            -- [MOD FEATURE]: THÔNG BÁO KUNDUN BOSS UI (CUSTOMER LEFT COLUMN)
+            -- Mô tả: Khối chọn thông báo Kundun Thánh Cốt & Phù Văn (C3..C12) và Toggle kích hoạt
+            -- =========================================================================
+            currentY = currentY - 6
+            local sepNotifyGo = GameObject("KundunNotifySeparator")
+            sepNotifyGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, sepNotifyGo)
+            local sepNotifyRt = sepNotifyGo:AddComponent(typeof(RectTransform))
+            sepNotifyRt.anchorMin, sepNotifyRt.anchorMax, sepNotifyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sepNotifyRt.anchoredPosition = Vector2(leftColX, currentY)
+            sepNotifyRt.sizeDelta = Vector2(330, 16)
+            local sepNotifyTxt = sepNotifyGo:AddComponent(typeof(Text))
+            sepNotifyTxt.raycastTarget = false
+            sepNotifyTxt.color = Color(0.4, 0.4, 0.4, 1)
+            sepNotifyTxt.fontSize = 13
+            sepNotifyTxt.alignment = TextAnchor.MiddleLeft
+            sepNotifyTxt.horizontalOverflow = CS.UnityEngine.HorizontalWrapMode.Overflow
+            sepNotifyTxt.verticalOverflow = CS.UnityEngine.VerticalWrapMode.Overflow
+            if defaultFont then sepNotifyTxt.font = defaultFont end
+            sepNotifyTxt.text = "--------------------------------------------------------------------------------"
+
+            currentY = currentY - 22
+            local titleNotifyGo = GameObject("KundunNotifyTitle")
+            titleNotifyGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, titleNotifyGo)
+            local titleNotifyRt = titleNotifyGo:AddComponent(typeof(RectTransform))
+            titleNotifyRt.anchorMin, titleNotifyRt.anchorMax, titleNotifyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleNotifyRt.anchoredPosition = Vector2(leftColX + 5, currentY)
+            titleNotifyRt.sizeDelta = Vector2(320, 22)
+            local titleNotifyTxt = titleNotifyGo:AddComponent(typeof(Text))
+            titleNotifyTxt.raycastTarget = false
+            titleNotifyTxt.text = "[ THÔNG BÁO KUNDUN BOSS ]"
+            titleNotifyTxt.color = Color(1, 0.8, 0, 1)
+            titleNotifyTxt.fontSize = 18
+            titleNotifyTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then titleNotifyTxt.font = defaultFont end
+
+            currentY = currentY - 32
+            -- Toggle THÔNG BÁO XUẤT HIỆN (Full width 330px, height 34px)
+            local notifToggleGo = GameObject("AutoPick_KundunNotify_Enabled_Toggle")
+            notifToggleGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, notifToggleGo)
+            local notifTRt = notifToggleGo:AddComponent(typeof(RectTransform))
+            notifTRt.anchorMin, notifTRt.anchorMax, notifTRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            notifTRt.anchoredPosition = Vector2(leftColX, currentY)
+            notifTRt.sizeDelta = Vector2(330, 34)
+
+            local notifBg = GameObject("Bg")
+            notifBg.transform:SetParent(notifToggleGo.transform, false)
+            local notifBgRt = notifBg:AddComponent(typeof(RectTransform))
+            notifBgRt.anchorMin, notifBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            notifBgRt.sizeDelta = Vector2(0, 0)
+            local notifBgImg = notifBg:AddComponent(typeof(Image))
+
+            local notifTxtGo = GameObject("Text")
+            notifTxtGo.transform:SetParent(notifToggleGo.transform, false)
+            local notifTxtRt = notifTxtGo:AddComponent(typeof(RectTransform))
+            notifTxtRt.anchorMin, notifTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            notifTxtRt.sizeDelta = Vector2(0, 0)
+            local notifTxt = notifTxtGo:AddComponent(typeof(Text))
+            notifTxt.raycastTarget = false
+            notifTxt.fontSize = 16
+            notifTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then notifTxt.font = defaultFont end
+
+            local function UpdateCustomerKundunNotifyMasterLabel()
+                if _G.AutoPick_KundunNotify_Enabled then
+                    notifBgImg.color = Color(0.2, 0.5, 0.2, 1)
+                    notifTxt.text = "THÔNG BÁO XUẤT HIỆN"
+                    notifTxt.color = Color.white
+                else
+                    notifBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    notifTxt.text = "THÔNG BÁO XUẤT HIỆN"
+                    notifTxt.color = Color(0.7, 0.7, 0.7, 1)
+                end
+            end
+            UpdateCustomerKundunNotifyMasterLabel()
+
+            local notifBtn = notifToggleGo:AddComponent(typeof(Button))
+            notifBtn.onClick:AddListener(function()
+                _G.AutoPick_KundunNotify_Enabled = not _G.AutoPick_KundunNotify_Enabled
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_KundunNotify_Enabled", _G.AutoPick_KundunNotify_Enabled and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateCustomerKundunNotifyMasterLabel()
+                if _G.AutoPick_KundunNotify_Enabled then
+                    if _G.Mod_StartKundunNotifyLoop then pcall(_G.Mod_StartKundunNotifyLoop) end
+                else
+                    if _G.Mod_StopKundunNotifyLoop then pcall(_G.Mod_StopKundunNotifyLoop) end
+                end
+            end)
+
+            -- Helper nút chọn tier cho Customer
+            local function CreateCustomerKundunTierToggle(label, varName, xPos, yPos, w, h)
+                local tGo = GameObject(varName .. "_Toggle")
+                tGo.transform:SetParent(panelGo.transform, false)
+                table.insert(_G.NangCaoUIList, tGo)
+                local rt = tGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(xPos, yPos)
+                rt.sizeDelta = Vector2(w or 58, h or 24)
+
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(tGo.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+
+                local tg = GameObject("Text")
+                tg.transform:SetParent(tGo.transform, false)
+                local trt = tg:AddComponent(typeof(RectTransform))
+                trt.anchorMin, trt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                trt.sizeDelta = Vector2(0, 0)
+                local tt = tg:AddComponent(typeof(Text))
+                tt.raycastTarget = false
+                tt.fontSize = 13
+                tt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then tt.font = defaultFont end
+
+                local function UpdateState()
+                    if _G[varName] then
+                        bgImg.color = Color(0.2, 0.5, 0.2, 1)
+                        tt.text = label
+                        tt.color = Color.white
+                    else
+                        bgImg.color = Color(0.3, 0.3, 0.3, 1)
+                        tt.text = label
+                        tt.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateState()
+
+                local b = tGo:AddComponent(typeof(Button))
+                b.onClick:AddListener(function()
+                    _G[varName] = not _G[varName]
+                    CS.UnityEngine.PlayerPrefs.SetInt(varName, _G[varName] and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateState()
+                end)
+            end
+
+            -- Nhãn Thánh Cốt
+            currentY = currentY - 38
+            local tcLblGo = GameObject("KundunNotify_TCLbl")
+            tcLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, tcLblGo)
+            local tcLblRt = tcLblGo:AddComponent(typeof(RectTransform))
+            tcLblRt.anchorMin, tcLblRt.anchorMax, tcLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tcLblRt.anchoredPosition = Vector2(leftColX + 5, currentY)
+            tcLblRt.sizeDelta = Vector2(200, 18)
+            local tcLblTxt = tcLblGo:AddComponent(typeof(Text))
+            tcLblTxt.raycastTarget = false
+            tcLblTxt.text = "Thánh Cốt:"
+            tcLblTxt.color = Color(1, 1, 0.5, 1)
+            tcLblTxt.fontSize = 15
+            tcLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then tcLblTxt.font = defaultFont end
+
+            -- Hàng 1 Thánh Cốt (C4..C9) và Hàng 2 (C10..C15)
+            local custBtnW = 50
+            local custGap = 6
+            currentY = currentY - 24
+            for i, t in ipairs({ 4, 5, 6, 7, 8, 9 }) do
+                local x = leftColX + (i - 1) * (custBtnW + custGap)
+                CreateCustomerKundunTierToggle("C" .. t, "Mod_KundunNotify_TC_C" .. t, x, currentY, custBtnW, 24)
+            end
+
+            currentY = currentY - 28
+            for i, t in ipairs({ 10, 11, 12, 13, 14, 15 }) do
+                local x = leftColX + (i - 1) * (custBtnW + custGap)
+                CreateCustomerKundunTierToggle("C" .. t, "Mod_KundunNotify_TC_C" .. t, x, currentY, custBtnW, 24)
+            end
+
+            -- Nhãn Phù Văn
+            currentY = currentY - 32
+            local pvLblGo = GameObject("KundunNotify_PVLbl")
+            pvLblGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, pvLblGo)
+            local pvLblRt = pvLblGo:AddComponent(typeof(RectTransform))
+            pvLblRt.anchorMin, pvLblRt.anchorMax, pvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            pvLblRt.anchoredPosition = Vector2(leftColX + 5, currentY)
+            pvLblRt.sizeDelta = Vector2(200, 18)
+            local pvLblTxt = pvLblGo:AddComponent(typeof(Text))
+            pvLblTxt.raycastTarget = false
+            pvLblTxt.text = "Phù Văn:"
+            pvLblTxt.color = Color(1, 1, 0.5, 1)
+            pvLblTxt.fontSize = 15
+            pvLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then pvLblTxt.font = defaultFont end
+
+            -- Hàng 1 Phù Văn: Để trống 2 ô đầu (C4, C5), C6..C9 bắt đầu từ cột 3 để thẳng hàng với C6..C9 của Thánh Cốt bên trên
+            currentY = currentY - 24
+            for i, t in ipairs({ 6, 7, 8, 9 }) do
+                local col = i + 2
+                local x = leftColX + (col - 1) * (custBtnW + custGap)
+                CreateCustomerKundunTierToggle("C" .. t, "Mod_KundunNotify_PV_C" .. t, x, currentY, custBtnW, 24)
+            end
+
+            currentY = currentY - 28
+            for i, t in ipairs({ 10, 11, 12, 13, 14, 15 }) do
+                local x = leftColX + (i - 1) * (custBtnW + custGap)
+                CreateCustomerKundunTierToggle("C" .. t, "Mod_KundunNotify_PV_C" .. t, x, currentY, custBtnW, 24)
             end
 
             _G.ModUpdateKundunUI = function()
@@ -9783,9 +10053,10 @@ local function CreateModUI()
             end
 
             _G.Mod_StartVisualMasterLoop = function()
+                if not _G.Mod_IsActive then return end
                 if _G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive() then
                     _G.Mod_StartTrackedTimer("VisualMaster", 0.5, -1, function()
-                        if not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
+                        if not _G.Mod_IsActive or not (_G.Mod_IsDisableVisualsActive and _G.Mod_IsDisableVisualsActive()) then
                             _G.Mod_StopTimer("VisualMaster")
                             return
                         end
@@ -10139,13 +10410,13 @@ local function Mod_CheckHoaLongAround(radius)
 end
 
 _G.Mod_StartFindHoaLongLoop = function()
-    if not _G.Mod_FindHoaLong_Enabled then
+    if not _G.Mod_IsActive or not _G.Mod_FindHoaLong_Enabled then
         _G.Mod_StopTimer("Mod_FindHoaLongLoop")
         return
     end
 
     _G.Mod_StartTrackedTimer("Mod_FindHoaLongLoop", 0.5, -1, function()
-        if not _G.Mod_FindHoaLong_Enabled then
+        if not _G.Mod_IsActive or not _G.Mod_FindHoaLong_Enabled then
             _G.Mod_StopTimer("Mod_FindHoaLongLoop")
             return
         end

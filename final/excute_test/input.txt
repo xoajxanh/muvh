@@ -1,278 +1,161 @@
 -- =========================================================================
--- [SCRIPT TEST / HOT-RELOAD]: AUTO HUNT ĐÁNH QUÁI TẠI BÃI TRAIN & FIX AUTO PHÓ BẢN
--- File target: d:\MUVH\android\mu-decompiled\final\excute_test\input.txt
+-- [HOT-FIX TEST]: CẬP NHẬT LOGIC THÔNG BÁO KUNDUN (TC: C4-C15, PV: C6-C15)
+-- Target: Nạp trực tiếp vào game đang chạy trên máy/giả lập
 -- =========================================================================
+
 local lines = {}
 local function log(s)
     table.insert(lines, tostring(s))
 end
 
 log("=========================================================================")
-log(">>> HOT-RELOAD: AUTO HUNT ĐÁNH QUÁI BÃI TRAIN & FIX PHÓ BẢN <<<")
-log("Thời gian thực thi: " .. os.date("%Y/%m/%d %H:%M:%S"))
+log(">>> BÁO CÁO CẬP NHẬT THÔNG BÁO KUNDUN (HOT-UPDATE) <<<")
+log("Thời gian: " .. os.date("%Y/%m/%d %H:%M:%S"))
 log("=========================================================================")
 
-local pMe = _G.RoleManager and _G.RoleManager.me
-local myRoleId = pMe and pMe.id
-local curLvl = tonumber((_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.level) or (pMe and pMe.level) or 1)
-local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
+-- 1. CẬP NHẬT BẢNG LIMITS CHO KUNDUN
+_G.Mod_KundunNotify = _G.Mod_KundunNotify or {}
+_G.Mod_KundunNotify.Limits = {
+    [16] = { [4] = 40, [5] = 70, [6] = 70, [7] = 70, [8] = 70, [9] = 70, [10] = 70, [11] = 70, [12] = 70, [13] = 70, [14] = 70, [15] = 70 },
+    [17] = { [6] = 200, [7] = 300, [8] = 400, [9] = 500, [10] = 500, [11] = 500, [12] = 500, [13] = 500, [14] = 500, [15] = 500 }
+}
+log("[1] Bảng giới hạn Kundun: Thánh Cốt C4..C15 (40..70), Phù Văn C6..C15 (200..500).")
 
-log(string.format("Nhân vật: %s (Lv %d, ID: %s)", tostring(pMe and pMe.name or "N/A"), curLvl, tostring(myRoleId)))
-log(string.format("Bản đồ hiện tại: %s", tostring(cMap)))
-log(string.format("Mod_AutoHunt_Enabled: %s | Mod_AutoFarmBoss_Enabled: %s",
-    tostring(_G.Mod_AutoHunt_Enabled), tostring(_G.Mod_AutoFarmBoss_Enabled)))
-log(string.format("Mod_TrainCoord đã lưu: %s", tostring(_G.Mod_TrainCoord or "Chưa cài")))
-
--- =========================================================================
--- PHẦN 1: HÀM NHẬN DIỆN ĐANG Ở BÃI TRAIN (AT TRAIN SPOT CHECKER)
--- =========================================================================
-local function Mod_IsAtTrainSpot_New()
-    if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then return false end
-    if _G.Mod_TrainArrivedAtPos then return true end
-
-    local coordStr = _G.Mod_TrainCoord
-    local sx, sy = string.match(coordStr, "^(%d+)#(%d+)$")
-    local tMap = nil
-    if not sx then
-        tMap, sx, sy = string.match(coordStr, "^(%d+);(%d+)#(%d+)$")
-    end
-    if sx and sy then
-        local tx, ty = tonumber(sx), tonumber(sy)
-        local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-        local expectedMap = tonumber(tMap)
-        if not expectedMap then
-            local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
-            local primaryTag = "C" .. tostring(primaryTier)
-            local tab = _G.ModAutoBossConfigTab or primaryTag
-            local mapsConfig = _G.GetMapsConfigByTier and _G.GetMapsConfigByTier(tab)
-            if not mapsConfig or #mapsConfig == 0 then mapsConfig = _G.GetMapsConfigByTier and _G.GetMapsConfigByTier(primaryTag) end
-            expectedMap = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
+-- 2. CẬP NHẬT HÀM GETLIMIT & CHECKSPAWNED
+_G.Mod_KundunNotify.GetLimit = function(bossType, tier)
+    local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+    if _G.ClientTable and _G.ClientTable.cfg_Monster_bossManager then
+        local cfg = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(bossId)
+        if cfg and cfg.yuanGuMonsterKillNum and cfg.yuanGuMonsterKillNum > 0 then
+            return cfg.yuanGuMonsterKillNum
         end
-        if expectedMap and curMap == expectedMap then
-            local me = _G.RoleManager and _G.RoleManager.me
-            local meX = (me and me.serverCoord and me.serverCoord.x) or (me and me.cellPos and me.cellPos.x) or 0
-            local meY = (me and me.serverCoord and me.serverCoord.y) or (me and me.cellPos and me.cellPos.y) or 0
-            local dist = math.sqrt((meX - tx)^2 + (meY - ty)^2)
-            if dist <= 15 then
-                _G.Mod_TrainArrivedAtPos = true
-                return true
-            end
+    end
+    local limits = _G.Mod_KundunNotify.Limits
+    if limits and limits[bossType] and limits[bossType][tier] then
+        return limits[bossType][tier]
+    end
+    return (bossType == 16) and 70 or 500
+end
+
+_G.Mod_KundunNotify.CheckSpawned = function(bossType, tier)
+    local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+    local limit = _G.Mod_KundunNotify.GetLimit(bossType, tier)
+    if limit <= 0 then return false end
+    if _G.SceneData and _G.SceneData.GetAncientBossData then
+        local isSatisfy, info = _G.SceneData:GetAncientBossData(bossType, bossId)
+        if isSatisfy == true then
+            return true
+        end
+        if info and info.count and info.count >= limit then
+            return true
         end
     end
     return false
 end
-_G.Mod_IsAtTrainSpot = Mod_IsAtTrainSpot_New
 
-local isAtTrainNow = _G.Mod_IsAtTrainSpot()
-log(string.format("Trạng thái nhận diện bãi train hiện tại: %s (ArrivedFlag: %s)",
-    tostring(isAtTrainNow), tostring(_G.Mod_TrainArrivedAtPos)))
-
--- =========================================================================
--- PHẦN 2: HOT-RELOAD RoleTargetManager.IsCanAttackMonster
--- =========================================================================
-pcall(function()
-    if _G.RoleTargetManager then
-        local rawOldIsCanAttack = _G.RoleTargetManager.__Orig_IsCanAttackMonster or _G.RoleTargetManager.IsCanAttackMonster
-        _G.RoleTargetManager.__Orig_IsCanAttackMonster = rawOldIsCanAttack
-
-        _G.RoleTargetManager.IsCanAttackMonster = function(role)
-            if _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive() then
-                local isAtTrain = (_G.Mod_IsAtTrainSpot and _G.Mod_IsAtTrainSpot()) or (_G.Mod_TrainArrivedAtPos == true)
-                if not isAtTrain then
-                    return false -- Đang đi săn: Chặn đánh quái
-                end
-                -- Đang ở bãi train: Cho phép đánh quái bình thường!
-            end
-
-            if not role or role.isDead then return false end
-            local isSummon = role.isSummon or (role.data and role.data.isSummon) or false
-            local ownerId = role.ownerId or (role.data and role.data.ownerId) or role.masterId or (role.data and role.data.master) or 0
-            if isSummon or (ownerId ~= 0 and ownerId ~= nil) then return false end
-            local me = _G.RoleManager and _G.RoleManager.me
-            if me and me.level and _G.QiJiHelperData and me.level <= _G.QiJiHelperData.limitSelectMonsterLevel and not role:IsBoss() and role.owner ~= 0 and role.owner ~= me.id then
-                return false
-            end
-            if role.IsSameCamp and role:IsSameCamp() then return false end
-            return true
-        end
-        log("[SUCCESS] Đã nạp hàm RoleTargetManager.IsCanAttackMonster mới vào memory!")
-    end
-end)
-
--- =========================================================================
--- PHẦN 3: HOT-RELOAD AutoDungeonMonitorStep
--- =========================================================================
-local function AutoDungeonMonitorStep_Fixed()
-    if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
-
-    if not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled then
-        _G.Mod_IsRunningDungeon = false
-        _G.Mod_IsPriorityDungeon = false
-        _G.Mod_DungeonJustFinished = false
-        return
-    end
-
-    local curMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
-    local isBC = (curMap >= 1012000 and curMap <= 1012099)
-    local isDS = (curMap >= 1010000 and curMap <= 1010099)
-    local inDungeon = (isBC and _G.Mod_AutoBloodCastle_Enabled) or (isDS and _G.Mod_AutoDemonPlaza_Enabled)
-
-    if inDungeon then
-        _G.Mod_IsRunningDungeon = true
-        _G.Mod_IsPriorityDungeon = true
-        _G.Mod_DungeonJustFinished = false
-
-        if _G.TriggerDungeonSkipWait then _G.TriggerDungeonSkipWait() end
-
-        -- Dùng thẻ EXP
-        if _G.Mod_AutoUseExpCard_Enabled then
-            if (_G.Mod_DungeonExpCardsUsed or 0) < 2 then
-                local mId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id
-                local bList = (_G.BuffData and _G.BuffData.GetBuffs and _G.BuffData.GetBuffs(mId)) or {}
-                local expBuffRemainTime = 0
-                for _, b in pairs(bList) do
-                    if b and b.buffConfig and b.buffConfig.name then
-                        local bName = b.buffConfig.name
-                        if bName:find("EXP") or bName:find("Kinh Nghiệm") then
-                            local rTime = tonumber(b.time) or 0
-                            if rTime > expBuffRemainTime then expBuffRemainTime = rTime end
-                        end
-                    end
-                end
-
-                if expBuffRemainTime < 600 then
-                    local cardItem = nil
-                    if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
-                        pcall(function() cardItem = _G.BagInfoData.GetItemByConfigID(3000400) end)
-                    end
-                    if not cardItem and _G.BagInfoData and _G.BagInfoData.TotalItems then
-                        for _, it in pairs(_G.BagInfoData.TotalItems) do
-                            if it and (it.itemId == 3000400 or (it.tblItem and it.tblItem.name and it.tblItem.name:find("Buff EXP"))) then
-                                cardItem = it
-                                break
-                            end
-                        end
-                    end
-
-                    if cardItem then
-                        local now = CS.UnityEngine.Time.realtimeSinceStartup
-                        if (now - (_G.Mod_LastExpCardUseTime or 0)) >= 2.0 then
-                            _G.Mod_LastExpCardUseTime = now
-                            _G.Mod_DungeonExpCardsUsed = (_G.Mod_DungeonExpCardsUsed or 0) + 1
-                            pcall(function()
-                                if _G.ItemUtility and _G.ItemUtility.UseItem then
-                                    _G.ItemUtility.UseItem({
-                                        useCount = 1,
-                                        useItemId = cardItem.id,
-                                        configId = cardItem.itemId,
-                                        useParam = cardItem.tblItem and cardItem.tblItem.useParam,
-                                        params = nil,
-                                        itemInfo = cardItem
-                                    })
-                                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
-                                    _G.BagInfoController.UseItemReq(1, cardItem.id, nil, cardItem.itemId)
-                                end
-                            end)
-                            if _G.FloatingWordUtility then
-                                _G.FloatingWordUtility.QuickMsg(string.format("Đã dùng Thẻ Buff EXP (%d/2)", _G.Mod_DungeonExpCardsUsed))
-                            end
-                        end
-                    end
-                end
-            end
-        end
-
-        -- Di chuyển cắm đầu chạy khi dist > 1.5m
-        local targetCoordStr = nil
-        if isBC then
-            targetCoordStr = _G.Mod_Coord_BloodCastle
-            if not targetCoordStr or targetCoordStr == "" then targetCoordStr = "14#60" end
-        elseif isDS then
-            targetCoordStr = _G.Mod_Coord_DemonPlaza
-            if not targetCoordStr or targetCoordStr == "" then
-                local curL = tonumber((pMe and pMe.level) or 1)
-                targetCoordStr = (curL >= 150) and "135#97" or "137#167"
-            end
-        end
-
-        if targetCoordStr and targetCoordStr ~= "" then
-            local sx, sy = string.match(targetCoordStr, "^(%d+)#(%d+)$")
-            if not sx then _, sx, sy = string.match(targetCoordStr, "^(%d+);(%d+)#(%d+)$") end
-            if sx and sy then
-                local tx, ty = tonumber(sx), tonumber(sy)
-                local me = _G.RoleManager and _G.RoleManager.me
-                if me and not me.isDead then
-                    local curX = (me.serverCoord and me.serverCoord.x) or (me.cellPos and me.cellPos.x) or (me.Position and me.Position.x) or 0
-                    local curY = (me.serverCoord and me.serverCoord.y) or (me.cellPos and me.cellPos.y) or (me.Position and me.Position.y) or 0
-                    local dist = math.sqrt((curX - tx)^2 + (curY - ty)^2)
-
-                    if dist > 1.5 then
-                        -- CẮM ĐẦU CHẠY KHÔNG ĐƯỢC ĐÁNH
-                        if me.isAutoFight then
-                            if me.StopAutoFight then me:StopAutoFight() end
-                            if _G.EventManager and _G.Event and _G.Event.Role_StopAutoFight then
-                                _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
-                            end
-                        end
-                        me.TargetAvatar = nil
-                        if me.MoveTo then me:MoveTo({ x = tx, y = ty }, 0) end
-                        return
-                    else
-                        -- ĐÃ TỚI GẦN VỊ TRÍ <= 1.5m -> BẬT AUTO FIGHT
-                        if me.SetAutoFight and not me.isAutoFight then
-                            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
-                        end
-                        return
-                    end
-                end
-            end
-        end
-
-        local me = _G.RoleManager and _G.RoleManager.me
-        if me and not me.isDead and me.SetAutoFight and not me.isAutoFight then
-            me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
-        end
-        return
-    end
-
-    -- Ngoài phó bản
-    if _G.Mod_IsRunningDungeon then
-        _G.Mod_IsRunningDungeon = false
-        _G.Mod_DungeonExpCardsUsed = 0
-        _G.Mod_LastDungeonExitTime = CS.UnityEngine.Time.realtimeSinceStartup
-        _G.Mod_DungeonJustFinished = true
-    end
-
-    local curH = tonumber(os.date("%H")) or 0
-    local curM = tonumber(os.date("%M")) or 0
-    if curM >= 15 then
-        _G.Mod_IsPriorityDungeon = false
-        if _G.Mod_DungeonJustFinished then
-            _G.Mod_DungeonJustFinished = false
-            if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
-                if _G.Mod_ReturnToTrainAfterDungeon then _G.Mod_ReturnToTrainAfterDungeon() end
-            end
-        end
-        return
+_G.Mod_KundunNotify.FlashAlert = function(msg)
+    local alertText = "<size=22><b><color=#FFFF00>⚠️ " .. msg .. " ⚠️</color></b></size>"
+    if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+        _G.FloatingTipUtility.QuickMsg(alertText)
+    elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(alertText)
     end
 end
 
-if _G.Mod_StartTrackedTimer then
-    _G.Mod_StartTrackedTimer("AutoDungeonMonitor", 1.0, -1, function()
-        pcall(AutoDungeonMonitorStep_Fixed)
+-- 3. CẬP NHẬT HÀM QUÉT KUNDUN (DoScan: TC C4..C15, PV C6..C15)
+_G.Mod_KundunNotify.DoScan = function()
+    if not _G.AutoPick_KundunNotify_Enabled then return end
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqAncientBossInfo then
+            _G.networkRequest.ReqAncientBossInfo(16)
+            _G.networkRequest.ReqAncientBossInfo(17)
+        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqAncientBossInfo then
+            _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+            _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+        end
+
+        local spawnedTC = {}
+        for t = 4, 15 do
+            if _G["Mod_KundunNotify_TC_C" .. t] then
+                if _G.Mod_KundunNotify.CheckSpawned(16, t) then
+                    table.insert(spawnedTC, "C" .. t)
+                end
+            end
+        end
+
+        local spawnedPV = {}
+        for t = 6, 15 do
+            if _G["Mod_KundunNotify_PV_C" .. t] then
+                if _G.Mod_KundunNotify.CheckSpawned(17, t) then
+                    table.insert(spawnedPV, "C" .. t)
+                end
+            end
+        end
+
+        if #spawnedTC > 0 then
+            local msgTC = "Kundun thánh cốt " .. table.concat(spawnedTC, "-") .. " đã hiện"
+            _G.Mod_KundunNotify.FlashAlert(msgTC)
+        end
+
+        if #spawnedPV > 0 then
+            local msgPV = "Kundun phù văn " .. table.concat(spawnedPV, "-") .. " đã hiện"
+            if #spawnedTC > 0 then
+                if _G.Timer and _G.Timer.Start then
+                    _G.Timer.Start(0.8, function()
+                        _G.Mod_KundunNotify.FlashAlert(msgPV)
+                    end)
+                else
+                    _G.Mod_KundunNotify.FlashAlert(msgPV)
+                end
+            else
+                _G.Mod_KundunNotify.FlashAlert(msgPV)
+            end
+        end
     end)
-    log("[SUCCESS] Đã nạp AutoDungeonMonitorStep mới vào Timer!")
 end
+
+-- Khôi phục cấu hình từ PlayerPrefs nếu có
+for t = 4, 15 do
+    _G["Mod_KundunNotify_TC_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_TC_C" .. t, 0) == 1)
+end
+for t = 6, 15 do
+    _G["Mod_KundunNotify_PV_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_PV_C" .. t, 0) == 1)
+end
+
+-- Khởi động lại vòng lặp quét nếu đang bật
+if _G.AutoPick_KundunNotify_Enabled and _G.Mod_StartKundunNotifyLoop then
+    pcall(_G.Mod_StartKundunNotifyLoop)
+    log("[2] Vòng lặp quét Kundun: Đang chạy (5s/lần).")
+else
+    log("[2] Vòng lặp quét Kundun: Hiện đang tắt.")
+end
+
+-- 4. DỌN SẠCH RÁC BỘ NHỚ LUA VM
+local memBefore = collectgarbage("count")
+collectgarbage("collect")
+collectgarbage("collect")
+local memAfter = collectgarbage("count")
+local freed = (memBefore - memAfter) / 1024
+log(string.format("[3] DỌN RÁC BỘ NHỚ LUA: Trước: %.2f MB -> Sau: %.2f MB (Giải phóng: %.2f MB)",
+    memBefore / 1024, memAfter / 1024, freed))
 
 log("=========================================================================")
+log("CẬP NHẬT KUNDUN HOÀN TẤT:")
+log("  - Thánh Cốt: C4..C15 (đã bỏ C3 thừa)")
+log("  - Phù Văn: C6..C15 (đã bỏ C3, C4, C5 thừa)")
+log("  - UI: Đã căn chỉnh hàng dọc C6 PV thẳng hàng C6 TC, để trống 2 ô C4 & C5.")
+log("=========================================================================")
 
--- GHI DỮ LIỆU RA OUTPUT.TXT
+local outText = table.concat(lines, "\n")
 local outPath = CS.UnityEngine.Application.persistentDataPath .. "/output.txt"
-pcall(function()
-    local f = io.open(outPath, "w")
-    if f then
-        f:write(table.concat(lines, "\n"))
-        f:close()
-        log("Đã xuất log ra output.txt thành công!")
-    end
-end)
+local f = io.open(outPath, "w")
+if f then
+    f:write(outText)
+    f:close()
+end
+
+if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+    _G.FloatingTipUtility.QuickMsg("<size=22><b><color=#00FF00>✅ ĐÃ CẬP NHẬT BÁO KUNDUN C4..C15 THÀNH CÔNG!</color></b></size>")
+elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+    _G.FloatingWordUtility.QuickMsg("<size=22><b><color=#00FF00>✅ ĐÃ CẬP NHẬT BÁO KUNDUN C4..C15 THÀNH CÔNG!</color></b></size>")
+end

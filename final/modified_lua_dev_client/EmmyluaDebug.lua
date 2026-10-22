@@ -2566,13 +2566,13 @@ local function CreateModUI()
             if _G.Mod_Config_Reincarnation_Primary == nil then
                 pcall(function()
                     local p = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
-                    if p >= 3 and p <= 12 then _G.Mod_Config_Reincarnation_Primary = p end
+                    if p >= 4 and p <= 15 then _G.Mod_Config_Reincarnation_Primary = p end
                 end)
             end
             if _G.Mod_Config_Reincarnation_Secondary == nil then
                 pcall(function()
                     local s = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0)
-                    if s >= 3 and s <= 12 then _G.Mod_Config_Reincarnation_Secondary = s end
+                    if s >= 4 and s <= 15 then _G.Mod_Config_Reincarnation_Secondary = s end
                 end)
             end
             local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
@@ -5067,6 +5067,10 @@ local function CreateModUI()
             -- =========================================================================
             _G.Mod_LastBossDeathJiggleTime = 0
             _G.Mod_StopBossDeathRushAndJiggle = function(reason)
+                -- [MOD FEATURE]: KHÓA BẢO VỆ CHỈ CHẠY KHI AUTO BOSS STATE 5/6
+                if not _G.Mod_AutoFarmBoss_Enabled then return end
+                if _G.Mod_AutoFarmBoss_State ~= 5 and _G.Mod_AutoFarmBoss_State ~= 6 then return end
+
                 pcall(function()
                     -- 1. Ngắt lộ trình tìm đường của game
                     if _G.PathFinderManager and _G.PathFinderManager.ResetData then
@@ -9704,6 +9708,23 @@ local function CreateModUI()
                 end
                 _G.Mod_ReturnToTrainAfterDungeon = Mod_ReturnToTrainAfterDungeon
 
+                -- =========================================================================
+                -- [MOD FEATURE]: HÀM ĐIỀU KHIỂN & ÁP DỤNG TỐC CHẠY CHO PHÓ BẢN
+                -- Mô tả: Cập nhật tốc chạy vào Me:SetMoveSpeed và đồng bộ nhãn hiển thị menu Mod
+                -- =========================================================================
+                local function Mod_ApplyRunSpeed(mult)
+                    _G.RunSpeedMultiplier = mult
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then
+                            local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 5.0
+                            me:SetMoveSpeed(base, true)
+                        end
+                        if _G.Mod_AllUIUpdaters then
+                            for _, upd in ipairs(_G.Mod_AllUIUpdaters) do pcall(upd) end
+                        end
+                    end)
+                end
 
                 local function AutoDungeonMonitorStep()
                     if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
@@ -9715,14 +9736,32 @@ local function CreateModUI()
                         _G.Mod_IsRunningDungeon = false
                         _G.Mod_IsPriorityDungeon = false
                         _G.Mod_DungeonJustFinished = false
+                        if _G.Mod_DungeonSpeedReduced and _G.Mod_SavedSpeedBeforeDungeon then
+                            local oldSpd = _G.Mod_SavedSpeedBeforeDungeon
+                            _G.Mod_SavedSpeedBeforeDungeon = nil
+                            _G.Mod_DungeonSpeedReduced = false
+                            Mod_ApplyRunSpeed(oldSpd)
+                        end
                         return
                     end
 
-                    local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or 0
+                    local cMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
                     local inBC = (cMap >= 1012000 and cMap <= 1012099)
                     local inDS = (cMap >= 1010000 and cMap <= 1010099)
                     -- CHỈ nhận diện khi đúng là map Huyết Lâu hoặc Quảng Trường Quỷ:
                     local inTargetDungeon = (inBC and _G.Mod_AutoBloodCastle_Enabled) or (inDS and _G.Mod_AutoDemonPlaza_Enabled)
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BỎ QUA VÀO HUYẾT LÂU / QTQ KHI ĐANG Ở TRONG MAP ẨN
+                    -- Mô tả: Nếu nhân vật đang trong Map Ẩn (MapId 240001 / TranscriptType 1423),
+                    --        tạm thời bỏ qua không vào HL/QTQ để hoàn thành dọn Map Ẩn trước.
+                    --        Chỉ khi ra khỏi Map Ẩn mới kiểm tra và vào HL/QTQ.
+                    -- =========================================================================
+                    local isInHiddenMap = (cMap == 240001) or (_G.TranScriptData and (_G.TranScriptData.TranscriptType == 1423 or (_G.TranScriptData.InTranscript and cMap == 240001)))
+                    if isInHiddenMap then
+                        _G.Mod_IsPriorityDungeon = false
+                        return
+                    end
 
                     -- ==========================================
                     -- A. ĐANG TRONG PHÓ BẢN (HUYẾT LÂU HOẶC QUẢNG TRƯỜNG QUỶ)
@@ -9731,6 +9770,24 @@ local function CreateModUI()
                         _G.Mod_IsRunningDungeon = true
                         _G.Mod_IsPriorityDungeon = true
                         _G.Mod_DungeonJustFinished = false
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG CHUYỂN TỐC CHẠY XUỐNG 1.8X KHI VÀO HUYẾT LÂU (CHỐNG LAG QUÁI)
+                        -- Mô tả: Khi vào HL (hoặc QTQ), nếu tốc chạy > 1.8x thì tạm hạ xuống 1.8x
+                        --        để không bị lag quái/trượt cửa cầu. Lưu lại tốc độ ban đầu để khôi phục khi ra ngoài.
+                        -- =========================================================================
+                        if inBC or inDS then
+                            if not _G.Mod_DungeonSpeedReduced then
+                                if (_G.RunSpeedMultiplier or 1.0) > 1.8 then
+                                    _G.Mod_SavedSpeedBeforeDungeon = _G.RunSpeedMultiplier
+                                    _G.Mod_DungeonSpeedReduced = true
+                                    Mod_ApplyRunSpeed(1.8)
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg("[AUTO HL] Đã chuyển tốc chạy xuống 1.8x chống lag quái!")
+                                    end
+                                end
+                            end
+                        end
 
                         -- 1. Bấm mở ngay bỏ qua 30s chờ
                         TriggerDungeonSkipWait()
@@ -9863,6 +9920,22 @@ local function CreateModUI()
                     -- ==========================================
                     -- B. NGOÀI PHÓ BẢN
                     -- ==========================================
+                    -- =========================================================================
+                    -- [MOD FEATURE]: KHÔI PHỤC TỐC CHẠY BAN ĐẦU KHI RA KHỎI HUYẾT LÂU / PHÓ BẢN
+                    -- Mô tả: Trả lại tốc độ chạy cũ của người chơi khi rời khỏi phó bản
+                    -- =========================================================================
+                    if _G.Mod_DungeonSpeedReduced then
+                        _G.Mod_DungeonSpeedReduced = false
+                        if _G.Mod_SavedSpeedBeforeDungeon then
+                            local oldSpd = _G.Mod_SavedSpeedBeforeDungeon
+                            _G.Mod_SavedSpeedBeforeDungeon = nil
+                            Mod_ApplyRunSpeed(oldSpd)
+                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đã khôi phục tốc chạy ban đầu: %.1fx", oldSpd))
+                            end
+                        end
+                    end
+
                     if _G.Mod_IsRunningDungeon then
                         _G.Mod_IsRunningDungeon = false
                         _G.Mod_DungeonExpCardsUsed = 0
@@ -10081,7 +10154,7 @@ local function CreateModUI()
                             local holyMapId = nil
 
                             if _G.SceneData and _G.SceneData.GetAncientBossData then
-                                for tier = 4, 12 do
+                                for tier = 4, 15 do
                                     local bossId = 20201000 + tier
                                     local limit = (tier == 4) and 40 or 70
                                     local count = 0
@@ -10101,14 +10174,14 @@ local function CreateModUI()
                                 end
                             end
 
-                            -- Phù Văn (type 17): C6 limit 200, C7 limit 300, C8 limit 400, C9-C12 limit 500
+                            -- Phù Văn (type 17): C6 limit 200, C7 limit 300, C8 limit 400, C9-C15 limit 500
                             -- Chỉ xét Phù Văn nếu không có Thánh Cốt (Ưu tiên Thánh Cốt)
                             local hasRune = false
                             local runeTier = nil
                             local runeMapId = nil
 
                             if not hasHolySkeleton and _G.SceneData and _G.SceneData.GetAncientBossData then
-                                for tier = 6, 12 do
+                                for tier = 6, 15 do
                                     local bossId = 20211000 + tier
                                     local limit = (tier >= 9) and 500 or (tier == 8 and 400 or (tier == 7 and 300 or 200))
                                     local count = 0
@@ -12047,6 +12120,145 @@ local function CreateModUI()
         end
 
         -- =========================================================================
+        -- [MOD FEATURE]: THÔNG BÁO KUNDUN XUẤT HIỆN (IN-GAME STROBE ALERT)
+        -- Mô tả: Quét định kỳ 5s/lần. Khi Kundun Thánh Cốt / Phù Văn (C3..C12) được chọn
+        --        đã xuất hiện (x == y), phát thông báo nổi nhấp nháy đỏ-vàng ra giữa màn hình.
+        -- =========================================================================
+        _G.Mod_KundunNotify = _G.Mod_KundunNotify or {}
+        _G.Mod_KundunNotify.Limits = {
+            [16] = { [4] = 40, [5] = 70, [6] = 70, [7] = 70, [8] = 70, [9] = 70, [10] = 70, [11] = 70, [12] = 70, [13] = 70, [14] = 70, [15] = 70 },
+            [17] = { [6] = 200, [7] = 300, [8] = 400, [9] = 500, [10] = 500, [11] = 500, [12] = 500, [13] = 500, [14] = 500, [15] = 500 }
+        }
+
+        _G.Mod_KundunNotify.GetLimit = function(bossType, tier)
+            local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+            if _G.ClientTable and _G.ClientTable.cfg_Monster_bossManager then
+                local cfg = _G.ClientTable.cfg_Monster_bossManager:TryGetValue(bossId)
+                if cfg and cfg.yuanGuMonsterKillNum and cfg.yuanGuMonsterKillNum > 0 then
+                    return cfg.yuanGuMonsterKillNum
+                end
+            end
+            local limits = _G.Mod_KundunNotify.Limits
+            if limits and limits[bossType] and limits[bossType][tier] then
+                return limits[bossType][tier]
+            end
+            return (bossType == 16) and 70 or 500
+        end
+
+        _G.Mod_KundunNotify.CheckSpawned = function(bossType, tier)
+            local bossId = (bossType == 16) and (20201000 + tier) or (20211000 + tier)
+            local limit = _G.Mod_KundunNotify.GetLimit(bossType, tier)
+            if limit <= 0 then return false end
+            if _G.SceneData and _G.SceneData.GetAncientBossData then
+                local isSatisfy, info = _G.SceneData:GetAncientBossData(bossType, bossId)
+                if isSatisfy == true then
+                    return true
+                end
+                if info and info.count and info.count >= limit then
+                    return true
+                end
+            end
+            return false
+        end
+
+        _G.Mod_KundunNotify.FlashAlert = function(msg)
+            local alertText = "<size=22><b><color=#FFFF00>⚠️ " .. msg .. " ⚠️</color></b></size>"
+            if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+                _G.FloatingTipUtility.QuickMsg(alertText)
+            elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                _G.FloatingWordUtility.QuickMsg(alertText)
+            end
+        end
+
+        _G.Mod_KundunNotifyTimer = nil
+
+        _G.Mod_KundunNotify.DoScan = function()
+            if not _G.AutoPick_KundunNotify_Enabled then return end
+            pcall(function()
+                -- Gửi yêu cầu cập nhật tiến độ boss mới nhất từ server
+                if _G.networkRequest and _G.networkRequest.ReqAncientBossInfo then
+                    _G.networkRequest.ReqAncientBossInfo(16)
+                    _G.networkRequest.ReqAncientBossInfo(17)
+                elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqAncientBossInfo then
+                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 16 })
+                    _G.NetManager.Send(_G.MapMessage.ReqAncientBossInfo, { type = 17 })
+                end
+
+                local spawnedTC = {}
+                for t = 4, 15 do
+                    if _G["Mod_KundunNotify_TC_C" .. t] then
+                        if _G.Mod_KundunNotify.CheckSpawned(16, t) then
+                            table.insert(spawnedTC, "C" .. t)
+                        end
+                    end
+                end
+
+                local spawnedPV = {}
+                for t = 6, 15 do
+                    if _G["Mod_KundunNotify_PV_C" .. t] then
+                        if _G.Mod_KundunNotify.CheckSpawned(17, t) then
+                            table.insert(spawnedPV, "C" .. t)
+                        end
+                    end
+                end
+
+                if #spawnedTC > 0 then
+                    local msgTC = "Kundun thánh cốt " .. table.concat(spawnedTC, "-") .. " đã hiện"
+                    _G.Mod_KundunNotify.FlashAlert(msgTC)
+                end
+
+                if #spawnedPV > 0 then
+                    local msgPV = "Kundun phù văn " .. table.concat(spawnedPV, "-") .. " đã hiện"
+                    if #spawnedTC > 0 then
+                        if _G.Timer and _G.Timer.Start then
+                            _G.Timer.Start(0.8, function()
+                                _G.Mod_KundunNotify.FlashAlert(msgPV)
+                            end)
+                        else
+                            _G.Mod_KundunNotify.FlashAlert(msgPV)
+                        end
+                    else
+                        _G.Mod_KundunNotify.FlashAlert(msgPV)
+                    end
+                end
+            end)
+        end
+
+        _G.Mod_StartKundunNotifyLoop = function()
+            if _G.Mod_KundunNotifyTimer then
+                if _G.Timer and _G.Timer.Stop then
+                    _G.Timer.Stop(_G.Mod_KundunNotifyTimer)
+                end
+                _G.Mod_KundunNotifyTimer = nil
+            end
+            if _G.Timer and _G.Timer.StartLoop then
+                _G.Mod_KundunNotifyTimer = _G.Timer.StartLoop(5.0, -1, _G.Mod_KundunNotify.DoScan)
+            end
+            _G.Mod_KundunNotify.DoScan()
+        end
+
+        _G.Mod_StopKundunNotifyLoop = function()
+            if _G.Mod_KundunNotifyTimer then
+                if _G.Timer and _G.Timer.Stop then
+                    _G.Timer.Stop(_G.Mod_KundunNotifyTimer)
+                end
+                _G.Mod_KundunNotifyTimer = nil
+            end
+        end
+
+        -- Khôi phục cấu hình Kundun Notify từ PlayerPrefs
+        _G.AutoPick_KundunNotify_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_KundunNotify_Enabled", 0) == 1)
+        for t = 4, 15 do
+            _G["Mod_KundunNotify_TC_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_TC_C" .. t, 0) == 1)
+        end
+        for t = 6, 15 do
+            _G["Mod_KundunNotify_PV_C" .. t] = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_KundunNotify_PV_C" .. t, 0) == 1)
+        end
+        if _G.AutoPick_KundunNotify_Enabled and _G.Mod_StartKundunNotifyLoop then
+            pcall(_G.Mod_StartKundunNotifyLoop)
+        end
+
+        -- =========================================================================
         -- [MOD FEATURE]: GIAO DIỆN TAB NHẶT ĐỒ SIÊU TỐC (AUTO LOOT UI & SCROLLVIEW)
         -- Mô tả: Giao diện cuộn riêng cho khối Nhặt Đồ Siêu Tốc (Thánh Cốt, Phù Văn, Kết Tinh Phụ Ma, Số Lượng Nhặt).
         -- =========================================================================
@@ -12075,7 +12287,7 @@ local function CreateModUI()
             local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
             scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             scrollRt.anchoredPosition = Vector2(10, -95)
-            scrollRt.sizeDelta = Vector2(400, 335)
+            scrollRt.sizeDelta = Vector2(400, 210)
 
             local scrollImg = scrollGo:AddComponent(typeof(Image))
             scrollImg.color = Color(0, 0, 0, 0.01)
@@ -12567,35 +12779,52 @@ local function CreateModUI()
             contentRt.sizeDelta = Vector2(0, math.abs(curY) + 20)
 
             -- =========================================================================
-            -- [MOD FEATURE]: KHỐI INFO KUNDUN BOSS CỐ ĐỊNH (FIXED AT BOTTOM OF LEFT COLUMN)
-            -- Mô tả: Giữ cố định ở góc dưới cột trái (Y = -430 -> -570), không bị cuộn.
+            -- [MOD FEATURE]: KHỐI INFO & THÔNG BÁO KUNDUN BOSS (SCROLLABLE KUNDUN PANEL)
+            -- Mô tả: Tích hợp [INFO KUNDUN BOSS] và [THÔNG BÁO KUNDUN BOSS] trong ScrollView cuộn riêng
+            --        vị trí Y = -315, chiều cao 265px.
             -- =========================================================================
-            local rightColX2 = 10
-            local kundunY = -430
+            local kScrollGo = GameObject("KundunScrollView")
+            kScrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.NangCaoUIList, kScrollGo)
 
-            local sep2Go = GameObject("BossThapSeparator")
-            sep2Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, sep2Go)
-            local sep2Rt = sep2Go:AddComponent(typeof(RectTransform))
-            sep2Rt.anchorMin, sep2Rt.anchorMax, sep2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            sep2Rt.anchoredPosition = Vector2(10, kundunY)
-            sep2Rt.sizeDelta = Vector2(400, 14)
-            local sep2Txt = sep2Go:AddComponent(typeof(Text))
-            sep2Txt.raycastTarget = false
-            sep2Txt.color = Color(0.4, 0.4, 0.4, 1)
-            sep2Txt.fontSize = 12
-            sep2Txt.alignment = TextAnchor.MiddleLeft
-            if defaultFont then sep2Txt.font = defaultFont end
-            sep2Txt.text = "----------------------------------------------------------------------------------------------------------------------"
+            local kScrollRt = kScrollGo:AddComponent(typeof(RectTransform))
+            kScrollRt.anchorMin, kScrollRt.anchorMax, kScrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            kScrollRt.anchoredPosition = Vector2(10, -315)
+            kScrollRt.sizeDelta = Vector2(400, 265)
 
-            kundunY = -448
+            local kScrollImg = kScrollGo:AddComponent(typeof(Image))
+            kScrollImg.color = Color(0, 0, 0, 0.01)
+
+            local kScrollRect = kScrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            kScrollRect.horizontal = false
+            kScrollRect.vertical = true
+            kScrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            kScrollRect.scrollSensitivity = 25
+
+            local kViewportGo = GameObject("Viewport")
+            kViewportGo.transform:SetParent(kScrollGo.transform, false)
+            local kVpRt = kViewportGo:AddComponent(typeof(RectTransform))
+            kVpRt.anchorMin, kVpRt.anchorMax, kVpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            kVpRt.sizeDelta = Vector2(0, 0)
+            kViewportGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local kContentGo = GameObject("Content")
+            kContentGo.transform:SetParent(kViewportGo.transform, false)
+            local kContentRt = kContentGo:AddComponent(typeof(RectTransform))
+            kContentRt.anchorMin, kContentRt.anchorMax, kContentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            kContentRt.anchoredPosition = Vector2(0, 0)
+            kContentRt.sizeDelta = Vector2(0, 395)
+
+            kScrollRect.viewport = kVpRt
+            kScrollRect.content = kContentRt
+
+            -- --- PHẦN 1: [ INFO KUNDUN BOSS ] ---
             local titleGoKundun = GameObject("KundunTitle")
-            titleGoKundun.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, titleGoKundun)
+            titleGoKundun.transform:SetParent(kContentGo.transform, false)
             _G.KundunTitleGo = titleGoKundun
             local titleRtK = titleGoKundun:AddComponent(typeof(RectTransform))
             titleRtK.anchorMin, titleRtK.anchorMax, titleRtK.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            titleRtK.anchoredPosition = Vector2(10, kundunY)
+            titleRtK.anchoredPosition = Vector2(0, -5)
             titleRtK.sizeDelta = Vector2(400, 20)
             local titleTxtK = titleGoKundun:AddComponent(typeof(Text))
             titleTxtK.raycastTarget = false
@@ -12605,13 +12834,12 @@ local function CreateModUI()
             titleTxtK.alignment = TextAnchor.MiddleCenter
             if defaultFont then titleTxtK.font = defaultFont end
 
-            local kundunTabY = -470
+            local kundunTabY = -29
 
             -- Tab C3 - C12
             local function CreateTabBtn(label, tabName, xPos, yPos)
                 local btnGo = GameObject("NangCaoTab_" .. tabName)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, btnGo)
+                btnGo.transform:SetParent(kContentGo.transform, false)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(xPos, yPos)
@@ -12642,40 +12870,36 @@ local function CreateModUI()
 
             _G.ModKundunBossTab = _G.ModKundunBossTab or "C8"
             _G.NangCaoTabBtns = {}
-            for t = 3, 12 do
+            for t = 4, 15 do
                 local tag = "C" .. t
-                local tBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, rightColX2, kundunTabY)
+                local tBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, 10, kundunTabY)
                 tBtn.go:SetActive(false)
                 _G.NangCaoTabBtns[tag] = tBtn
             end
 
-            kundunY = -498
-
             local sep3Go = GameObject("BossThapSeparator")
-            sep3Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.NangCaoUIList, sep3Go)
+            sep3Go.transform:SetParent(kContentGo.transform, false)
             local sep3Rt = sep3Go:AddComponent(typeof(RectTransform))
             sep3Rt.anchorMin, sep3Rt.anchorMax, sep3Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            sep3Rt.anchoredPosition = Vector2(10, kundunY)
+            sep3Rt.anchoredPosition = Vector2(0, -60)
             sep3Rt.sizeDelta = Vector2(400, 14)
             local sep3Txt = sep3Go:AddComponent(typeof(Text))
             sep3Txt.raycastTarget = false
             sep3Txt.color = Color(0.4, 0.4, 0.4, 1)
             sep3Txt.fontSize = 12
-            sep3Txt.alignment = TextAnchor.MiddleLeft
+            sep3Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then sep3Txt.font = defaultFont end
             sep3Txt.text = "------------------------------------------------------------------------------------------------------------------------"
 
-            kundunY = -518
             _G.KundunUILabelPool = {}
+            local kRowY = -76
             for i = 1, 2 do
                 local rowGo = GameObject("KundunRow_" .. i)
-                rowGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.NangCaoUIList, rowGo)
+                rowGo.transform:SetParent(kContentGo.transform, false)
                 local rt = rowGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                rt.anchoredPosition = Vector2(20, kundunY)
-                rt.sizeDelta = Vector2(360, 22)
+                rt.anchoredPosition = Vector2(15, kRowY)
+                rt.sizeDelta = Vector2(370, 22)
                 local txt = rowGo:AddComponent(typeof(Text))
                 txt.raycastTarget = false
                 txt.color = Color.white
@@ -12685,7 +12909,189 @@ local function CreateModUI()
                 txt.text = ""
 
                 table.insert(_G.KundunUILabelPool, txt)
-                kundunY = kundunY - 24
+                kRowY = kRowY - 24
+            end
+
+            -- --- PHẦN 2: [ THÔNG BÁO KUNDUN BOSS ] ---
+            local sepNotifyGo = GameObject("KundunNotifySep")
+            sepNotifyGo.transform:SetParent(kContentGo.transform, false)
+            local sepNotifyRt = sepNotifyGo:AddComponent(typeof(RectTransform))
+            sepNotifyRt.anchorMin, sepNotifyRt.anchorMax, sepNotifyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            sepNotifyRt.anchoredPosition = Vector2(0, -128)
+            sepNotifyRt.sizeDelta = Vector2(400, 14)
+            local sepNotifyTxt = sepNotifyGo:AddComponent(typeof(Text))
+            sepNotifyTxt.raycastTarget = false
+            sepNotifyTxt.color = Color(0.4, 0.4, 0.4, 1)
+            sepNotifyTxt.fontSize = 12
+            sepNotifyTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then sepNotifyTxt.font = defaultFont end
+            sepNotifyTxt.text = "------------------------------------------------------------------------------------------------------------------------"
+
+            local titleNotifyGo = GameObject("KundunNotifyTitle")
+            titleNotifyGo.transform:SetParent(kContentGo.transform, false)
+            local titleNotifyRt = titleNotifyGo:AddComponent(typeof(RectTransform))
+            titleNotifyRt.anchorMin, titleNotifyRt.anchorMax, titleNotifyRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            titleNotifyRt.anchoredPosition = Vector2(0, -146)
+            titleNotifyRt.sizeDelta = Vector2(400, 20)
+            local titleNotifyTxt = titleNotifyGo:AddComponent(typeof(Text))
+            titleNotifyTxt.raycastTarget = false
+            titleNotifyTxt.text = "[ THÔNG BÁO KUNDUN BOSS ]"
+            titleNotifyTxt.color = Color(1, 0.8, 0, 1)
+            titleNotifyTxt.fontSize = 16
+            titleNotifyTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then titleNotifyTxt.font = defaultFont end
+
+            -- Master Toggle: THÔNG BÁO XUẤT HIỆN (Full Width 380px, Height 30px)
+            local notifToggleGo = GameObject("AutoPick_KundunNotify_Enabled_Toggle")
+            notifToggleGo.transform:SetParent(kContentGo.transform, false)
+            local notifTRt = notifToggleGo:AddComponent(typeof(RectTransform))
+            notifTRt.anchorMin, notifTRt.anchorMax, notifTRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            notifTRt.anchoredPosition = Vector2(10, -172)
+            notifTRt.sizeDelta = Vector2(380, 30)
+
+            local notifBgImg = notifToggleGo:AddComponent(typeof(Image))
+            notifBgImg.raycastTarget = true
+
+            local notifTxtGo = GameObject("Text")
+            notifTxtGo.transform:SetParent(notifToggleGo.transform, false)
+            local notifTxtRt = notifTxtGo:AddComponent(typeof(RectTransform))
+            notifTxtRt.anchorMin, notifTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            notifTxtRt.sizeDelta = Vector2(0, 0)
+            local notifTxt = notifTxtGo:AddComponent(typeof(Text))
+            notifTxt.raycastTarget = false
+            notifTxt.fontSize = 14
+            notifTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then notifTxt.font = defaultFont end
+
+            local function UpdateKundunNotifyMasterLabel()
+                if _G.AutoPick_KundunNotify_Enabled then
+                    notifBgImg.color = Color(0.1, 0.6, 0.2, 1)
+                    notifTxt.text = "THÔNG BÁO XUẤT HIỆN"
+                    notifTxt.color = Color.white
+                else
+                    notifBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    notifTxt.text = "THÔNG BÁO XUẤT HIỆN"
+                    notifTxt.color = Color(0.7, 0.7, 0.7, 1)
+                end
+            end
+            UpdateKundunNotifyMasterLabel()
+            _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
+            table.insert(_G.Mod_AllUIUpdaters, UpdateKundunNotifyMasterLabel)
+
+            local notifBtn = notifToggleGo:AddComponent(typeof(Button))
+            notifBtn.targetGraphic = notifBgImg
+            notifBtn.onClick:AddListener(function()
+                _G.AutoPick_KundunNotify_Enabled = not _G.AutoPick_KundunNotify_Enabled
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_KundunNotify_Enabled", _G.AutoPick_KundunNotify_Enabled and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                UpdateKundunNotifyMasterLabel()
+                if _G.AutoPick_KundunNotify_Enabled then
+                    if _G.Mod_StartKundunNotifyLoop then pcall(_G.Mod_StartKundunNotifyLoop) end
+                else
+                    if _G.Mod_StopKundunNotifyLoop then pcall(_G.Mod_StopKundunNotifyLoop) end
+                end
+            end)
+
+            -- Helper tạo nút chọn Tier Kundun Notify
+            local function CreateKundunTierToggle(label, varName, xPos, yPos, w, h)
+                local tGo = GameObject(varName .. "_Toggle")
+                tGo.transform:SetParent(kContentGo.transform, false)
+                local rt = tGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(xPos, yPos)
+                rt.sizeDelta = Vector2(w or 72, h or 24)
+
+                local bg = tGo:AddComponent(typeof(Image))
+                bg.raycastTarget = true
+
+                local tg = GameObject("Text")
+                tg.transform:SetParent(tGo.transform, false)
+                local trt = tg:AddComponent(typeof(RectTransform))
+                trt.anchorMin, trt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                trt.sizeDelta = Vector2(0, 0)
+                local tt = tg:AddComponent(typeof(Text))
+                tt.raycastTarget = false
+                tt.fontSize = 12
+                tt.alignment = TextAnchor.MiddleCenter
+                if defaultFont then tt.font = defaultFont end
+
+                local function UpdateBtnState()
+                    if _G[varName] then
+                        bg.color = Color(0.1, 0.6, 0.2, 1)
+                        tt.text = label
+                        tt.color = Color.white
+                    else
+                        bg.color = Color(0.28, 0.28, 0.28, 1)
+                        tt.text = label
+                        tt.color = Color(0.7, 0.7, 0.7, 1)
+                    end
+                end
+                UpdateBtnState()
+                table.insert(_G.Mod_AllUIUpdaters, UpdateBtnState)
+
+                local b = tGo:AddComponent(typeof(Button))
+                b.targetGraphic = bg
+                b.onClick:AddListener(function()
+                    _G[varName] = not _G[varName]
+                    CS.UnityEngine.PlayerPrefs.SetInt(varName, _G[varName] and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    UpdateBtnState()
+                end)
+            end
+
+            -- Nhãn & Toggles THÁNH CỐT (C3..C12)
+            local tcLblGo = GameObject("KundunNotify_TCLbl")
+            tcLblGo.transform:SetParent(kContentGo.transform, false)
+            local tcLblRt = tcLblGo:AddComponent(typeof(RectTransform))
+            tcLblRt.anchorMin, tcLblRt.anchorMax, tcLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tcLblRt.anchoredPosition = Vector2(10, -208)
+            tcLblRt.sizeDelta = Vector2(200, 18)
+            local tcLblTxt = tcLblGo:AddComponent(typeof(Text))
+            tcLblTxt.raycastTarget = false
+            tcLblTxt.text = "Thánh Cốt:"
+            tcLblTxt.color = Color(1, 1, 0.5, 1)
+            tcLblTxt.fontSize = 13
+            tcLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then tcLblTxt.font = defaultFont end
+
+            -- Hàng 1 Thánh Cốt (C4..C9)
+            local btnW_k = 59
+            local btnGap_k = 5
+            for i, t in ipairs({ 4, 5, 6, 7, 8, 9 }) do
+                local x = 10 + (i - 1) * (btnW_k + btnGap_k)
+                CreateKundunTierToggle("C" .. t, "Mod_KundunNotify_TC_C" .. t, x, -228, btnW_k, 24)
+            end
+            -- Hàng 2 Thánh Cốt (C10..C15)
+            for i, t in ipairs({ 10, 11, 12, 13, 14, 15 }) do
+                local x = 10 + (i - 1) * (btnW_k + btnGap_k)
+                CreateKundunTierToggle("C" .. t, "Mod_KundunNotify_TC_C" .. t, x, -256, btnW_k, 24)
+            end
+
+            -- Nhãn & Toggles PHÙ VĂN (C6..C15)
+            local pvLblGo = GameObject("KundunNotify_PVLbl")
+            pvLblGo.transform:SetParent(kContentGo.transform, false)
+            local pvLblRt = pvLblGo:AddComponent(typeof(RectTransform))
+            pvLblRt.anchorMin, pvLblRt.anchorMax, pvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            pvLblRt.anchoredPosition = Vector2(10, -286)
+            pvLblRt.sizeDelta = Vector2(200, 18)
+            local pvLblTxt = pvLblGo:AddComponent(typeof(Text))
+            pvLblTxt.raycastTarget = false
+            pvLblTxt.text = "Phù Văn:"
+            pvLblTxt.color = Color(1, 1, 0.5, 1)
+            pvLblTxt.fontSize = 13
+            pvLblTxt.alignment = TextAnchor.MiddleLeft
+            if defaultFont then pvLblTxt.font = defaultFont end
+
+            -- Hàng 1 Phù Văn: Để trống 2 ô đầu (C4, C5), C6..C9 bắt đầu từ cột 3 để thẳng hàng với C6..C9 của Thánh Cốt bên trên
+            for i, t in ipairs({ 6, 7, 8, 9 }) do
+                local col = i + 2
+                local x = 10 + (col - 1) * (btnW_k + btnGap_k)
+                CreateKundunTierToggle("C" .. t, "Mod_KundunNotify_PV_C" .. t, x, -306, btnW_k, 24)
+            end
+            -- Hàng 2 Phù Văn (C10..C15): Thẳng hàng với C10..C15 của Thánh Cốt
+            for i, t in ipairs({ 10, 11, 12, 13, 14, 15 }) do
+                local x = 10 + (i - 1) * (btnW_k + btnGap_k)
+                CreateKundunTierToggle("C" .. t, "Mod_KundunNotify_PV_C" .. t, x, -334, btnW_k, 24)
             end
 
             _G.Mod_TeleNotify_Enabled = false
@@ -18948,12 +19354,6 @@ local status, err = pcall(function()
         _G.UIManager.Show = function(name, args, animation)
             local ret = nil
             if original_Show then ret = original_Show(name, args, animation) end
-
-            if name == "Tip_MonsterTipUI" then
-                if _G.Mod_StopBossDeathRushAndJiggle then
-                    _G.Mod_StopBossDeathRushAndJiggle("UIManager.Show Tip_MonsterTipUI")
-                end
-            end
 
             if name == "Main_MainMenuUI" then
                 if not _G.MyModCreated then
