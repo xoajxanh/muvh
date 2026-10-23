@@ -3197,8 +3197,11 @@ local function CreateModUI()
                 return tostring(mapId)
             end
             -- =========================================================================
+            -- =========================================================================
             -- [MOD FEATURE]: BẢO VỆ ĐỒ ĐÃ CƯỜNG HÓA / GIA CƯỜNG (CHỐNG TÁCH & CHỐNG THU HỒI)
-            -- Mô tả: Kiểm tra cấp cường hóa (intensify > 0) hoặc gia cường (additional > 0) từ mọi tầng dữ liệu
+            -- Mô tả: Kiểm tra toàn diện cấp cường hóa (intensify > 0), gia cường (additional > 0),
+            --        tái sinh (RegenerateAttributeList), khảm ngọc (gemList/inlayList), cấp sao,
+            --        hoặc kỹ năng đặc thù Trang Sức Bộ để tuyệt đối không bao giờ tách nhầm đồ VIP/đang dùng.
             -- =========================================================================
             local function IsEnhancedEquip(item)
                 if not item then return false end
@@ -3206,97 +3209,380 @@ local function CreateModUI()
                 local d = item.data or {}
                 local dSInfo = d.serverInfo or d.serverData or {}
 
+                -- 1. Cường hóa (intensify > 0)
                 local intensify = tonumber(item.intensify) or tonumber(d.intensify) or tonumber(sInfo.intensify) or tonumber(dSInfo.intensify) or 0
                 if intensify > 0 then return true end
 
+                -- 2. Gia cường (additional > 0)
                 local additional = tonumber(item.additional) or tonumber(d.additional) or tonumber(sInfo.additional) or tonumber(dSInfo.additional) or 0
                 if additional > 0 then return true end
+
+                -- 3. Tái sinh / Tẩy luyện (RegenerateAttributeList)
+                local regenList = item.RegenerateAttributeList or d.RegenerateAttributeList or sInfo.RegenerateAttributeList or dSInfo.RegenerateAttributeList
+                if regenList then
+                    local hasRegen = false
+                    pcall(function()
+                        if type(regenList) == "table" then
+                            if #regenList > 0 then hasRegen = true end
+                            if not hasRegen and _G.next and _G.next(regenList) ~= nil then hasRegen = true end
+                        elseif type(regenList) == "userdata" then
+                            local c = regenList.Count or regenList.Length or 0
+                            if c > 0 then hasRegen = true end
+                        end
+                    end)
+                    if hasRegen then return true end
+                end
+
+                -- 4. Khảm ngọc / Lỗ ngọc (gemList / inlayList)
+                local gems = item.gemList or item.inlayList or d.gemList or d.inlayList or sInfo.gemList or sInfo.inlayList
+                if gems then
+                    local hasGem = false
+                    pcall(function()
+                        if type(gems) == "table" then
+                            for _, g in pairs(gems) do
+                                if g and (g.id or g.itemId or (type(g) == "number" and g > 0)) then
+                                    hasGem = true
+                                    break
+                                end
+                            end
+                        elseif type(gems) == "userdata" then
+                            local c = gems.Count or gems.Length or 0
+                            if c > 0 then hasGem = true end
+                        end
+                    end)
+                    if hasGem then return true end
+                end
+
+                -- 5. Cấp sao (star / starLevel > 0)
+                local star = tonumber(item.star) or tonumber(item.starLevel) or tonumber(d.star) or tonumber(sInfo.star) or 0
+                if star > 0 then return true end
+
+                -- 6. Đồ Dung (canSmelt == true)
+                if sInfo.canSmelt == true or dSInfo.canSmelt == true or item.canSmelt == true then
+                    return true
+                end
+
+                -- 7. Kỹ năng đặc thù Trang Sức Bộ (specialEffectIds của Dây, Khuyên, Nhẫn Bộ: subType 34..38)
+                local spec = sInfo.specialEffectIds or dSInfo.specialEffectIds or item.specialEffectIds or d.specialEffectIds
+                if spec then
+                    local hasSpec = false
+                    pcall(function()
+                        if type(spec) == "table" then
+                            if _G.next and _G.next(spec) ~= nil then hasSpec = true end
+                        elseif type(spec) == "userdata" then
+                            local c = spec.Count or spec.Length or 0
+                            if c > 0 then hasSpec = true end
+                        end
+                    end)
+                    if hasSpec then return true end
+                end
 
                 return false
             end
             _G.Mod_IsEnhancedEquip = IsEnhancedEquip
 
+            -- =========================================================================
+            -- [MOD FEATURE]: HỆ THỐNG CẤU HÌNH DÒNG NGON LINH HOẠT (DYNAMIC GOOD OPTIONS ENGINE)
+            -- Mô tả: Cung cấp kiểm tra thuộc tính Trác Việt theo bảng cấu hình tùy biến của người chơi.
+            --        Mặc định: Tất cả các dòng đều được chọn (ON = 1).
+            --        Nếu người chơi không chọn gì -> Tự động kích hoạt cơ chế bảo vệ đồ (không tách).
+            -- =========================================================================
+            _G.Mod_GoodOpts = _G.Mod_GoodOpts or {}
+            local function GetGoodOpt(cat, key)
+                local fullKey = "Mod_GoodOpt_" .. cat .. "_" .. key
+                if _G.Mod_GoodOpts[fullKey] == nil then
+                    local v = 1
+                    pcall(function() v = CS.UnityEngine.PlayerPrefs.GetInt(fullKey, 1) end)
+                    _G.Mod_GoodOpts[fullKey] = (v == 1)
+                end
+                return _G.Mod_GoodOpts[fullKey]
+            end
+            _G.Mod_GetGoodOpt = GetGoodOpt
+
+            local function SetGoodOpt(cat, key, val)
+                local fullKey = "Mod_GoodOpt_" .. cat .. "_" .. key
+                _G.Mod_GoodOpts[fullKey] = (val == true)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt(fullKey, val and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+            end
+            _G.Mod_SetGoodOpt = SetGoodOpt
+
+            local function MatchGoodOpt(str, optKey)
+                if not str then return false end
+                local s = string.lower(str)
+                if optKey == "atk2" then
+                    return string.find(s, "tấn công") ~= nil and string.find(s, "2") ~= nil and string.find(s, "%%") ~= nil
+                elseif optKey == "speed7" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "7") ~= nil
+                elseif optKey == "crit10" then
+                    return string.find(s, "trác việt") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "atk_lv20" then
+                    return string.find(s, "cấp/20") ~= nil or (string.find(s, "tấn công") ~= nil and string.find(s, "cấp") ~= nil)
+                elseif optKey == "hp4" then
+                    return string.find(s, "hp tối đa") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "def10" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "reflect5" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "gold10" then
+                    return string.find(s, "vàng") ~= nil and string.find(s, "10") ~= nil
+                elseif optKey == "speed2" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "2") ~= nil
+                elseif optKey == "atk1" then
+                    return string.find(s, "tấn công") ~= nil and string.find(s, "1") ~= nil and string.find(s, "%%") ~= nil
+                elseif optKey == "crit3" then
+                    return string.find(s, "trác việt") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "reflect4" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "dmgred2" then
+                    return (string.find(s, "giảm") ~= nil or string.find(s, "st giảm") ~= nil or string.find(s, "sát thương giảm") ~= nil) and string.find(s, "2") ~= nil
+                elseif optKey == "hp3" then
+                    return string.find(s, "hp") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "def5" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "gold5" then
+                    return string.find(s, "vàng") ~= nil and string.find(s, "5") ~= nil
+                elseif optKey == "dmgred4" then
+                    return (string.find(s, "giảm") ~= nil or string.find(s, "st giảm") ~= nil or string.find(s, "sát thương giảm") ~= nil) and string.find(s, "4") ~= nil
+                elseif optKey == "speed3" then
+                    return string.find(s, "công tốc") ~= nil and string.find(s, "3") ~= nil
+                elseif optKey == "def4" then
+                    return string.find(s, "phòng ngự") ~= nil and string.find(s, "4") ~= nil
+                elseif optKey == "reflect2" then
+                    return string.find(s, "phản") ~= nil and string.find(s, "2") ~= nil
+                end
+                return false
+            end
+            _G.Mod_MatchGoodOpt = MatchGoodOpt
+
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
-                -- 0. Ưu tiên giữ lại Trang Bị Đã Cường Hóa / Gia Cường (intensify > 0 hoặc additional > 0)
+                -- 0. Ưu tiên bảo vệ tuyệt đối: Đồ đã cường hóa, gia cường, tái sinh, khảm ngọc
                 if IsEnhancedEquip(item) then
-                    return true -- Đã cường hóa/gia cường -> Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH
+                    return true -- Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH & KHÔNG THU HỒI
                 end
 
-                -- 1. Ưu tiên giữ Trang Sức Bộ (34-38) nếu có dòng Đặc Thù (specialEffectIds)
-                if subType >= 34 and subType <= 38 then
-                    local sInfo = item.serverInfo or item.serverData or {}
-                    local specialEffectIds = sInfo.specialEffectIds
-                    if specialEffectIds then
-                        local hasSpecial = false
-                        pcall(function()
-                            if type(specialEffectIds) == "table" then
-                                hasSpecial = (_G.next(specialEffectIds) ~= nil)
-                            elseif type(specialEffectIds) == "userdata" then
-                                local count = specialEffectIds.Count or specialEffectIds.Length
-                                if count and count > 0 then hasSpecial = true end
-                            end
-                        end)
-                        if hasSpecial then
-                            return true -- Có Đặc Thù -> Dòng ngon -> Giữ
-                        end
-                    end
-                end
-
-                -- 2. Nếu không có Đặc thù (hoặc không phải trang sức bộ), xét tiếp dòng Trác Việt
                 if not excDesList or #excDesList == 0 then
                     return false
                 end
 
-                -- Nhóm 1: Trang phục (Mũ 113, Áo 114, Quần 115, Găng 116, Giày 117)
-                if subType == 113 or subType == 114 or subType == 115 or subType == 116 or subType == 117 then
-                    for _, des in ipairs(excDesList) do
-                        local isMp = string.find(des, "MP tối đa")
-                        local isGold = string.find(des, "Vàng") or string.find(des, "vàng")
-                        if isMp or isGold then
-                            return false -- Dính 1 dòng rác MP/Vàng -> Không phải dòng ngon
+                -- =========================================================================
+                -- [MOD FEATURE]: PHÂN LOẠI & LỌC ĐỒ TRÁC VIỆT / ĐỒ BỘ
+                -- Mô tả:
+                -- 1. NHÓM ĐỒ ĐEO TRÁC VIỆT (Vũ khí & Trang phục đeo):
+                --    - Không ghép dòng được, dùng để mặc trực tiếp.
+                --    - Quy tắc: Chỉ cần có bộ đôi thỏa mãn (1 dòng chính + 1 dòng phụ) trên 2 dòng bất kỳ
+                --      là GIỮ LẠI (ví dụ: đồ có 4 dòng, có atk2 + speed7 hoặc atk2 + crit10 là giữ).
+                --      Các dòng còn lại trên đồ (kể cả dòng rác) KHÔNG tính là rác, đồ vẫn ĐƯỢC GIỮ!
+                -- 2. NHÓM TRANG SỨC TRÁC VIỆT & TẤT CẢ ĐỒ BỘ (Vũ khí bộ, Quần áo bộ, Trang sức bộ):
+                --    - Ghép được dòng (hợp thành/kế thừa dòng khi rèn).
+                --    - Quy tắc Thuần Khiết (Pure Opts): TẤT CẢ các dòng có trên món đồ PHẢI nằm
+                --      trong danh sách quy định (được tick chọn).
+                --    - Dính BẤT KỲ dòng nào ngoài danh sách quy định -> COI LÀ RÁC (Tách/Thu hồi ngay)!
+                -- =========================================================================
+
+                -- NHÓM 1: ĐỒ ĐEO TRÁC VIỆT (Vũ khí & Trang phục / Quần áo)
+                local isWeaponTV = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
+                local isArmorTV = (subType >= 13 and subType <= 17)
+
+                if isWeaponTV then
+                    local mainKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    local subKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    local activeMain = {}
+                    local activeSub = {}
+                    for _, k in ipairs(mainKeys) do
+                        if GetGoodOpt("EquipTV_Weapon_Main", k) then table.insert(activeMain, k) end
+                    end
+                    for _, k in ipairs(subKeys) do
+                        if GetGoodOpt("EquipTV_Weapon_Sub", k) then table.insert(activeSub, k) end
+                    end
+
+                    -- Safe fallback:
+                    if #activeMain == 0 and #activeSub == 0 then
+                        return true -- Không tick gì -> Bảo vệ toàn bộ đồ
+                    elseif #activeMain > 0 and #activeSub == 0 then
+                        -- Người chơi chỉ chọn dòng chính -> Có ít nhất 1 dòng chính là giữ
+                        for _, des in ipairs(excDesList) do
+                            for _, mKey in ipairs(activeMain) do
+                                if MatchGoodOpt(des, mKey) then return true end
+                            end
+                        end
+                        return false
+                    elseif #activeMain == 0 and #activeSub > 0 then
+                        -- Người chơi chỉ chọn dòng phụ -> Có ít nhất 1 dòng phụ là giữ
+                        for _, des in ipairs(excDesList) do
+                            for _, sKey in ipairs(activeSub) do
+                                if MatchGoodOpt(des, sKey) then return true end
+                            end
+                        end
+                        return false
+                    end
+
+                    if #excDesList < 2 then return false end
+
+                    -- Cần ít nhất 1 dòng chính VÀ 1 dòng phụ (trên 2 dòng khác nhau của món đồ).
+                    -- Các dòng còn lại trên đồ (dù là dòng rác) KHÔNG ảnh hưởng, đồ vẫn ĐƯỢC GIỮ!
+                    for i = 1, #excDesList do
+                        local matchMain = false
+                        for _, mKey in ipairs(activeMain) do
+                            if MatchGoodOpt(excDesList[i], mKey) then
+                                matchMain = true
+                                break
+                            end
+                        end
+                        if matchMain then
+                            for j = 1, #excDesList do
+                                if i ~= j then
+                                    for _, sKey in ipairs(activeSub) do
+                                        if MatchGoodOpt(excDesList[j], sKey) then
+                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon (GIỮ)!
+                                        end
+                                    end
+                                end
+                            end
                         end
                     end
-                    return true -- Không dính bất kỳ dòng MP/Vàng nào -> Dòng ngon!
+                    return false
                 end
 
-                -- Nhóm 2: Vũ khí & Khiên Hồng Trang (101, 106, 108, 109, 124, 181)
-                if subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
-                    for _, des in ipairs(excDesList) do
-                        local isKill = string.find(des, "diệt quái") or string.find(des, "HP tăng") or
-                            string.find(des, "MP tăng")
-                        if isKill then
-                            return false -- Dính 1 dòng rác diệt quái -> Không phải dòng ngon
+                if isArmorTV then
+                    local mainKeys = { "hp4", "def10", "reflect5", "gold10" }
+                    local subKeys = { "hp4", "def10", "reflect5", "gold10" }
+                    local activeMain = {}
+                    local activeSub = {}
+                    for _, k in ipairs(mainKeys) do
+                        if GetGoodOpt("EquipTV_Armor_Main", k) then table.insert(activeMain, k) end
+                    end
+                    for _, k in ipairs(subKeys) do
+                        if GetGoodOpt("EquipTV_Armor_Sub", k) then table.insert(activeSub, k) end
+                    end
+
+                    -- Safe fallback:
+                    if #activeMain == 0 and #activeSub == 0 then
+                        return true
+                    elseif #activeMain > 0 and #activeSub == 0 then
+                        for _, des in ipairs(excDesList) do
+                            for _, mKey in ipairs(activeMain) do
+                                if MatchGoodOpt(des, mKey) then return true end
+                            end
+                        end
+                        return false
+                    elseif #activeMain == 0 and #activeSub > 0 then
+                        for _, des in ipairs(excDesList) do
+                            for _, sKey in ipairs(activeSub) do
+                                if MatchGoodOpt(des, sKey) then return true end
+                            end
+                        end
+                        return false
+                    end
+
+                    if #excDesList < 2 then return false end
+
+                    -- Cần ít nhất 1 dòng chính VÀ 1 dòng phụ (trên 2 dòng khác nhau).
+                    -- Các dòng khác không tính là rác, đồ vẫn ĐƯỢC GIỮ!
+                    for i = 1, #excDesList do
+                        local matchMain = false
+                        for _, mKey in ipairs(activeMain) do
+                            if MatchGoodOpt(excDesList[i], mKey) then
+                                matchMain = true
+                                break
+                            end
+                        end
+                        if matchMain then
+                            for j = 1, #excDesList do
+                                if i ~= j then
+                                    for _, sKey in ipairs(activeSub) do
+                                        if MatchGoodOpt(excDesList[j], sKey) then
+                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon (GIỮ)!
+                                        end
+                                    end
+                                end
+                            end
                         end
                     end
-                    return true -- Không dính dòng rác diệt quái -> Dòng ngon!
+                    return false
                 end
 
-                -- Nhóm 3: Dây chuyền (36), Nhẫn trái (35), Nhẫn phải (38)
-                if subType == 36 or subType == 35 or subType == 38 then
-                    local hasGood = false
-                    for _, des in ipairs(excDesList) do
-                        local isCap = string.find(des, "cấp/20") or string.find(des, "cấp")
-                        local isGoodLine = (string.find(des, "Công Tốc") or string.find(des, "Tấn công")) and not isCap
-                        if isGoodLine then
-                            hasGood = true
-                        else
-                            return false -- Dính dòng +cấp/20 hoặc dòng rác khác -> Không đạt (Đem đi tách)
-                        end
+                -- =====================================================================
+                -- NHÓM 2: TRANG SỨC TRÁC VIỆT (Nhẫn 18, Dây chuyền 19, Khuyên tai 26)
+                -- Quy tắc Thuần Khiết: CHỈ ĐƯỢC PHÉP CÓ các dòng đã chọn. Dính dòng khác -> Tách!
+                -- =====================================================================
+                local checkPureOpts = nil
+                if subType == 18 then
+                    local allKeys = { "speed2", "atk1", "crit3", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Ring", k) then table.insert(checkPureOpts, k) end
                     end
-                    return hasGood
+                elseif subType == 19 then
+                    local allKeys = { "speed2", "atk1", "crit3", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Necklace", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType == 26 then
+                    local allKeys = { "reflect4", "dmgred2", "hp3", "def5", "gold5" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("JewelryTV_Earring", k) then table.insert(checkPureOpts, k) end
+                    end
+
+                -- =========================================================================
+                -- NHÓM 3: ĐỒ BỘ (Vũ khí, Trang phục, Nhẫn/DC, Khuyên)
+                -- Quy tắc Thuần Khiết: CHỈ ĐƯỢC PHÉP CÓ các dòng đã chọn. Dính dòng khác -> Tách!
+                -- =========================================================================
+                elseif (subType >= 101 and subType <= 112) or subType == 124 or subType == 125 or subType == 156 or subType == 157 or subType == 181 then
+                    -- Vũ khí Bộ
+                    local allKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Weapon", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType >= 113 and subType <= 117 then
+                    -- Trang phục Bộ (Mũ, Áo, Quần, Găng, Giày)
+                    local allKeys = { "dmgred4", "hp4", "def10", "reflect5", "gold10" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Armor", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType == 35 or subType == 36 or subType == 38 then
+                    -- Nhẫn, Dây chuyền Bộ
+                    local allKeys = { "atk2", "speed3" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_RingNecklace", k) then table.insert(checkPureOpts, k) end
+                    end
+                elseif subType == 34 or subType == 37 then
+                    -- Khuyên Bộ
+                    local allKeys = { "hp3", "def4", "reflect2", "gold10" }
+                    checkPureOpts = {}
+                    for _, k in ipairs(allKeys) do
+                        if GetGoodOpt("Set_Earring", k) then table.insert(checkPureOpts, k) end
+                    end
                 end
 
-                -- Nhóm 4: Khuyên trái (34), Khuyên phải (37)
-                if subType == 34 or subType == 37 then
-                    local hasGood = false
+                if checkPureOpts ~= nil then
+                    -- Safe fallback: Nếu người chơi bỏ chọn hết -> BẢO VỆ ĐỒ, không tách!
+                    if #checkPureOpts == 0 then
+                        return true
+                    end
+
+                    -- QUY TẮC THUẦN KHIẾT: Vì ghép được dòng, nên mọi dòng trên đồ PHẢI nằm trong danh sách chọn.
+                    -- Nếu có BẤT KỲ dòng nào ngoài danh sách quy định -> COI LÀ RÁC (Tách/Thu hồi)!
                     for _, des in ipairs(excDesList) do
-                        if string.find(des, "Phòng Ngự") or string.find(des, "Phản DMG") or string.find(des, "Phản") then
-                            hasGood = true
-                        else
-                            return false -- Dính dòng khác -> Không đạt
+                        local isValid = false
+                        for _, k in ipairs(checkPureOpts) do
+                            if MatchGoodOpt(des, k) then
+                                isValid = true
+                                break
+                            end
+                        end
+                        if not isValid then
+                            return false -- Dính dù chỉ 1 dòng ngoài danh sách quy định -> TÁCH!
                         end
                     end
-                    return hasGood
+                    return true -- 100% các dòng đều thuộc danh sách quy định -> ĐỒ NGON (GIỮ LẠI GHÉP DÒNG)!
                 end
 
                 return false
@@ -3377,25 +3663,8 @@ local function CreateModUI()
                                         isGood = true -- Đã cường hóa -> Tuyệt đối giữ lại, không thu hồi
                                     elseif isSmeltOrJewelry or not isExcellenceItem then
                                         isGood = true
-                                    elseif isArmor then
-                                        local hasHP, hasReflect, hasDefRate = false, false, false
-                                        for _, str in ipairs(excDesList) do
-                                            if str then
-                                                if string.find(str, "HP tối đa +4.0%", 1, true) ~= nil then hasHP = true end
-                                                if string.find(str, "Phản DMG +5.0%", 1, true) ~= nil then hasReflect = true end
-                                                if string.find(str, "Tỉ lệ Phòng Ngự", 1, true) ~= nil then hasDefRate = true end
-                                            end
-                                        end
-                                        if hasHP and (hasReflect or hasDefRate) then isGood = true end
-                                    elseif isWeapon then
-                                        local hasSpeed, hasAtk = false, false
-                                        for _, str in ipairs(excDesList) do
-                                            if str then
-                                                if string.find(str, "Công Tốc +7", 1, true) ~= nil then hasSpeed = true end
-                                                if string.find(str, "Tấn công +2.0%", 1, true) ~= nil then hasAtk = true end
-                                            end
-                                        end
-                                        if hasSpeed and hasAtk then isGood = true end
+                                    elseif isArmor or isWeapon then
+                                        isGood = _G.Mod_IsGoodItem and _G.Mod_IsGoodItem(item, subType, 0, excDesList)
                                     else
                                         isGood = true
                                     end
@@ -3470,7 +3739,7 @@ local function CreateModUI()
                                 prefix = "Gloves"
                             elseif subType == 117 then
                                 prefix = "Boots"
-                            elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                            elseif (subType >= 101 and subType <= 112) or subType == 124 or subType == 125 or subType == 156 or subType == 157 or subType == 181 then
                                 prefix = "Weapon"
                             end
 
@@ -5470,12 +5739,38 @@ local function CreateModUI()
                     end)
                 end)
 
-                _G.Timer.StartLoop(1, -1, function()
+                -- =========================================================================
+                -- [MOD FEATURE]: KHÓA VÀ CẬP NHẬT FOV SIÊU TỐC (0.1S VÀ SỰ KIỆN QUA MAP)
+                -- Mô tả: Chu kỳ 0.1s và hook Event.Scene_SceneLoaded giúp Camera cập nhật FOV tức thì khi qua map,
+                --        loại bỏ hoàn toàn hiện tượng trễ 1s gây giật và thu phóng màn hình khó chịu.
+                -- =========================================================================
+                if _G.EventManager and _G.Event and _G.Event.Scene_SceneLoaded and not _G.Mod_HookedSceneLoadedFOV then
+                    _G.Mod_HookedSceneLoadedFOV = true
+                    pcall(function()
+                        _G.EventManager.Regist(_G.Event.Scene_SceneLoaded, function()
+                            pcall(function()
+                                _G.Mod_CachedMainCam = nil
+                                local targetFov = _G.currentFOV or _G.SavedFOV or _G.Mod_Config_FOV_Max or 50
+                                local cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                                if cam then
+                                    _G.Mod_CachedMainCam = cam
+                                    cam.fieldOfView = targetFov
+                                end
+                            end)
+                        end)
+                    end)
+                end
+
+                _G.Timer.StartLoop(0.1, -1, function()
                     pcall(function()
                         if not _G.Mod_IsActive then return end
                         local targetFov = _G.currentFOV or _G.SavedFOV or _G.Mod_Config_FOV_Max or 50
-                        local cam = CS.UnityEngine.Camera.main
-                        if cam and math.abs(cam.fieldOfView - targetFov) > 0.5 then
+                        local cam = _G.Mod_CachedMainCam
+                        if not cam or (IsNil and IsNil(cam)) then
+                            cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                            _G.Mod_CachedMainCam = cam
+                        end
+                        if cam and (not IsNil or not IsNil(cam)) and math.abs(cam.fieldOfView - targetFov) > 0.5 then
                             cam.fieldOfView = targetFov
                         end
                     end)
@@ -7718,36 +8013,77 @@ local function CreateModUI()
             vLineImg.color = Color(0.4, 0.4, 0.4, 1)
 
             -- =========================================================================
-            -- CỘT PHẢI (1/3 WIDTH): TÁCH ĐỒ DYNAMIC C REACTIVE THEO TOKEN CẤU HÌNH
+            -- [MOD FEATURE]: PANEL PHẢI AUTO BOSS DẠNG SCROLLVIEW & CẤU HÌNH DÒNG NGON
+            -- Mô tả: Chuyển đổi toàn bộ bảng Tách Đồ & Giữ Dòng Ngon thành ScrollView mượt mà,
+            --        bổ sung bảng cấu hình trực quan cho Đồ Đeo TV, Trang Sức TV và Đồ Bộ.
             -- =========================================================================
-            local smeltStartX = 475
-            local btnW, btnH = 34, 22
+            local scrollGo = GameObject("AutoBossRightScroll")
+            scrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, scrollGo)
+            local scrollRt = scrollGo:AddComponent(typeof(RectTransform))
+            scrollRt.anchorMin, scrollRt.anchorMax, scrollRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            scrollRt.anchoredPosition = Vector2(468, -48)
+            scrollRt.sizeDelta = Vector2(245, 510)
+
+            local scrollImg = scrollGo:AddComponent(typeof(Image))
+            scrollImg.color = Color(0, 0, 0, 0.01)
+
+            local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            scrollRect.horizontal = false
+            scrollRect.vertical = true
+            scrollRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            scrollRect.scrollSensitivity = 30
+
+            local vpGo = GameObject("Viewport")
+            vpGo.transform:SetParent(scrollGo.transform, false)
+            local vpRt = vpGo:AddComponent(typeof(RectTransform))
+            vpRt.anchorMin, vpRt.anchorMax, vpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            vpRt.sizeDelta = Vector2(0, 0)
+            vpGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local contentGo = GameObject("Content")
+            contentGo.transform:SetParent(vpGo.transform, false)
+            local contentRt = contentGo:AddComponent(typeof(RectTransform))
+            contentRt.anchorMin, contentRt.anchorMax, contentRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            contentRt.anchoredPosition = Vector2(0, 0)
+            contentRt.sizeDelta = Vector2(0, 1550)
+
+            local contentImg = contentGo:AddComponent(typeof(Image))
+            contentImg.color = Color(0, 0, 0, 0.01)
+
+            scrollRect.viewport = vpRt
+            scrollRect.content = contentRt
+
+            local smeltStartX = 6
+            local btnW = 34
+            local btnH = 22
+            local curY = -5
 
             local title1Go = GameObject("SmeltTitle1")
-            title1Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, title1Go)
+            title1Go.transform:SetParent(contentGo.transform, false)
             local title1Rt = title1Go:AddComponent(typeof(RectTransform))
             title1Rt.anchorMin, title1Rt.anchorMax, title1Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            title1Rt.anchoredPosition = Vector2(smeltStartX, -50)
+            title1Rt.anchoredPosition = Vector2(smeltStartX, curY)
             title1Rt.sizeDelta = Vector2(230, 20)
             local title1Txt = title1Go:AddComponent(typeof(Text))
-            title1Txt.raycastTarget = false
+            title1Txt.raycastTarget = true
             title1Txt.text = "TÁCH ĐỒ TRÁC VIỆT"
             title1Txt.color = Color(1, 0.8, 0, 1)
-            title1Txt.fontSize = 13
-            title1Txt.alignment = TextAnchor.MiddleLeft
+            title1Txt.fontSize = 14
+            title1Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then title1Txt.font = defaultFont end
 
             local smeltTogglePool = {}
+            local goodOptTogglePool = {}
 
             local function CreateSmeltToggle(prefix, colIdx, x, y, width, isKeepGood)
-                local btnGo = GameObject("SmeltToggle_" .. prefix .. "_" .. colIdx)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
+                local varNameDummy = prefix .. "_" .. colIdx .. (isKeepGood and "_KG" or "")
+                local btnGo = GameObject("SmeltToggle_" .. varNameDummy)
+                btnGo.transform:SetParent(contentGo.transform, false)
                 local rt = btnGo:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 rt.anchoredPosition = Vector2(x, y)
-                rt.sizeDelta = Vector2(width or btnW, btnH)
+                rt.sizeDelta = Vector2(width, btnH)
 
                 local bg = GameObject("Bg")
                 bg.transform:SetParent(btnGo.transform, false)
@@ -7783,36 +8119,9 @@ local function CreateModUI()
                 return itemObj
             end
 
-            local curY = -75
-            local function CreateTracVietRow(lblText, prefix)
-                local lblGo = GameObject("SmeltLbl_" .. prefix)
-                lblGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, lblGo)
-                local lblRt = lblGo:AddComponent(typeof(RectTransform))
-                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
-                lblRt.sizeDelta = Vector2(85, btnH)
-                local lblTxt = lblGo:AddComponent(typeof(Text))
-                lblTxt.raycastTarget = false
-                lblTxt.text = lblText
-                lblTxt.color = Color.white
-                lblTxt.fontSize = 12
-                lblTxt.alignment = TextAnchor.MiddleLeft
-                if defaultFont then lblTxt.font = defaultFont end
-
-                for colIdx = 1, 4 do
-                    CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
-                end
-                curY = curY - 26
-            end
-
-            -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON RIÊNG CHO TRÁC VIỆT (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
-            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Trác Việt, mặc định Chọn (ON)
-            -- =========================================================================
+            curY = curY - 25
             local kgTvLblGo = GameObject("SmeltLbl_KeepGoodTV")
-            kgTvLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgTvLblGo)
+            kgTvLblGo.transform:SetParent(contentGo.transform, false)
             local kgTvLblRt = kgTvLblGo:AddComponent(typeof(RectTransform))
             kgTvLblRt.anchorMin, kgTvLblRt.anchorMax, kgTvLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             kgTvLblRt.anchoredPosition = Vector2(smeltStartX, curY)
@@ -7830,15 +8139,35 @@ local function CreateModUI()
             end
             curY = curY - 26
 
+            local function CreateTracVietRow(lblText, prefix)
+                local lblGo = GameObject("SmeltLbl_" .. prefix)
+                lblGo.transform:SetParent(contentGo.transform, false)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(85, btnH)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = false
+                lblTxt.text = lblText
+                lblTxt.color = Color.white
+                lblTxt.fontSize = 11
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+
+                for colIdx = 1, 4 do
+                    CreateSmeltToggle(prefix, colIdx, smeltStartX + 88 + (colIdx - 1) * 37, curY, btnW, false)
+                end
+                curY = curY - 24
+            end
+
             CreateTracVietRow("NHẪN", "Ring")
             CreateTracVietRow("DÂY CHUYỀN", "Necklace")
             CreateTracVietRow("KHUYÊN", "Earring")
 
-            -- Dash Line
+            -- 2. VẠCH DASHED NGĂN CÁCH
             curY = curY - 2
             local dashGo = GameObject("SmeltDashLine")
-            dashGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, dashGo)
+            dashGo.transform:SetParent(contentGo.transform, false)
             local dashRt = dashGo:AddComponent(typeof(RectTransform))
             dashRt.anchorMin, dashRt.anchorMax, dashRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             dashRt.anchoredPosition = Vector2(smeltStartX, curY)
@@ -7851,32 +8180,25 @@ local function CreateModUI()
             dashTxt.alignment = TextAnchor.MiddleCenter
             if defaultFont then dashTxt.font = defaultFont end
 
-            -- Title 2: ĐỒ BỘ & DÒNG NGON
+            -- 3. PHẦN 2: TÁCH ĐỒ BỘ & GIỮ DÒNG NGON
             curY = curY - 18
             local title2Go = GameObject("SmeltTitle2")
-            title2Go.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, title2Go)
+            title2Go.transform:SetParent(contentGo.transform, false)
             local title2Rt = title2Go:AddComponent(typeof(RectTransform))
             title2Rt.anchorMin, title2Rt.anchorMax, title2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             title2Rt.anchoredPosition = Vector2(smeltStartX, curY)
             title2Rt.sizeDelta = Vector2(230, 20)
             local title2Txt = title2Go:AddComponent(typeof(Text))
-            title2Txt.raycastTarget = false
+            title2Txt.raycastTarget = true
             title2Txt.text = "TÁCH ĐỒ BỘ & DÒNG NGON"
             title2Txt.color = Color(1, 0.8, 0, 1)
             title2Txt.fontSize = 13
-            title2Txt.alignment = TextAnchor.MiddleLeft
+            title2Txt.alignment = TextAnchor.MiddleCenter
             if defaultFont then title2Txt.font = defaultFont end
 
             curY = curY - 25
-
-            -- =========================================================================
-            -- [MOD FEATURE]: HÀNG GIỮ DÒNG NGON ĐỒ BỘ (ĐẶT ĐẦU DANH SÁCH & MẶC ĐỊNH CHỌN)
-            -- Mô tả: Cấu hình giữ dòng ngon đưa lên đầu danh sách Đồ Bộ, mặc định Chọn (ON)
-            -- =========================================================================
             local kgLblGo = GameObject("SmeltLbl_KeepGood")
-            kgLblGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, kgLblGo)
+            kgLblGo.transform:SetParent(contentGo.transform, false)
             local kgLblRt = kgLblGo:AddComponent(typeof(RectTransform))
             kgLblRt.anchorMin, kgLblRt.anchorMax, kgLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             kgLblRt.anchoredPosition = Vector2(smeltStartX, curY)
@@ -7913,8 +8235,7 @@ local function CreateModUI()
                 local prefix = r[2]
 
                 local lblGo = GameObject("SmeltLbl_" .. prefix)
-                lblGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, lblGo)
+                lblGo.transform:SetParent(contentGo.transform, false)
                 local lblRt = lblGo:AddComponent(typeof(RectTransform))
                 lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
                 lblRt.anchoredPosition = Vector2(smeltStartX, curY)
@@ -7933,11 +8254,10 @@ local function CreateModUI()
                 curY = curY - 24
             end
 
-            -- Nút TÁCH NGAY (THỦ CÔNG)
+            -- Nút TÁCH NGAY thủ công
             curY = curY - 30
             local manualSmeltBtnGo = GameObject("SmeltManualBtn")
-            manualSmeltBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, manualSmeltBtnGo)
+            manualSmeltBtnGo.transform:SetParent(contentGo.transform, false)
             local manualSmeltRt = manualSmeltBtnGo:AddComponent(typeof(RectTransform))
             manualSmeltRt.anchorMin, manualSmeltRt.anchorMax, manualSmeltRt.pivot = Vector2(0, 1), Vector2(0, 1),
                 Vector2(0, 1)
@@ -7976,6 +8296,278 @@ local function CreateModUI()
                     LogMsg("Đã kích hoạt Tách Đồ & Thu Hồi thủ công!")
                 end)
             end)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: BẢNG CẤU HÌNH DÒNG NGON (DYNAMIC GOOD OPTIONS UI)
+            -- =========================================================================
+            curY = curY - 35
+            local dash2Go = GameObject("SmeltDashLine2")
+            dash2Go.transform:SetParent(contentGo.transform, false)
+            local dash2Rt = dash2Go:AddComponent(typeof(RectTransform))
+            dash2Rt.anchorMin, dash2Rt.anchorMax, dash2Rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            dash2Rt.anchoredPosition = Vector2(smeltStartX, curY)
+            dash2Rt.sizeDelta = Vector2(230, 15)
+            local dash2Txt = dash2Go:AddComponent(typeof(Text))
+            dash2Txt.raycastTarget = true
+            dash2Txt.text = "================================="
+            dash2Txt.color = Color(1, 0.8, 0, 0.8)
+            dash2Txt.fontSize = 11
+            dash2Txt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then dash2Txt.font = defaultFont end
+
+            curY = curY - 18
+            local goodOptMainTitleGo = GameObject("GoodOptMainTitle")
+            goodOptMainTitleGo.transform:SetParent(contentGo.transform, false)
+            local gotRt = goodOptMainTitleGo:AddComponent(typeof(RectTransform))
+            gotRt.anchorMin, gotRt.anchorMax, gotRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            gotRt.anchoredPosition = Vector2(smeltStartX, curY)
+            gotRt.sizeDelta = Vector2(233, 22)
+            local gotTxt = goodOptMainTitleGo:AddComponent(typeof(Text))
+            gotTxt.raycastTarget = true
+            gotTxt.text = "QUY ĐỊNH DÒNG NGON"
+            gotTxt.color = Color(1, 0.85, 0.2, 1)
+            gotTxt.fontSize = 16
+            gotTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then gotTxt.font = defaultFont end
+
+            curY = curY - 20
+            local safetyShieldNoteGo = GameObject("SafetyShieldNote")
+            safetyShieldNoteGo.transform:SetParent(contentGo.transform, false)
+            local ssnRt = safetyShieldNoteGo:AddComponent(typeof(RectTransform))
+            ssnRt.anchorMin, ssnRt.anchorMax, ssnRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ssnRt.anchoredPosition = Vector2(smeltStartX, curY)
+            ssnRt.sizeDelta = Vector2(233, 16)
+            local ssnTxt = safetyShieldNoteGo:AddComponent(typeof(Text))
+            ssnTxt.raycastTarget = true
+            ssnTxt.text = "* Luôn giữ đồ Cường Hóa, Nâng Cấp, Skill Bộ"
+            ssnTxt.color = Color(0.4, 0.85, 0.5, 1)
+            ssnTxt.fontSize = 10
+            ssnTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then ssnTxt.font = defaultFont end
+
+            local lastElementWasToggle = false
+            local isFirstSection = true
+
+            local function CreateGoodOptToggle(cat, key, label, x, y, width)
+                lastElementWasToggle = true
+                local btnGo = GameObject("GoodOptToggle_" .. cat .. "_" .. key)
+                btnGo.transform:SetParent(contentGo.transform, false)
+                local rt = btnGo:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                rt.anchoredPosition = Vector2(x, y)
+                rt.sizeDelta = Vector2(width, 22)
+
+                local bg = GameObject("Bg")
+                bg.transform:SetParent(btnGo.transform, false)
+                local bgRt = bg:AddComponent(typeof(RectTransform))
+                bgRt.anchorMin, bgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                bgRt.sizeDelta = Vector2(0, 0)
+                local bgImg = bg:AddComponent(typeof(Image))
+
+                local txtGo = GameObject("Text")
+                txtGo.transform:SetParent(btnGo.transform, false)
+                local txtRt = txtGo:AddComponent(typeof(RectTransform))
+                txtRt.anchorMin, txtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                txtRt.sizeDelta = Vector2(0, 0)
+                local txt = txtGo:AddComponent(typeof(Text))
+                txt.raycastTarget = false
+                txt.fontSize = 11
+                txt.alignment = TextAnchor.MiddleCenter
+                txt.text = label
+                if defaultFont then txt.font = defaultFont end
+
+                local btn = btnGo:AddComponent(typeof(Button))
+
+                local function updateVisual()
+                    local isChecked = _G.Mod_GetGoodOpt and _G.Mod_GetGoodOpt(cat, key)
+                    if isChecked then
+                        bgImg.color = Color(0.15, 0.55, 0.25, 1)
+                        txt.color = Color.white
+                    else
+                        bgImg.color = Color(0.25, 0.25, 0.25, 1)
+                        txt.color = Color(0.65, 0.65, 0.65, 1)
+                    end
+                end
+                updateVisual()
+
+                btn.onClick:AddListener(function()
+                    local curVal = _G.Mod_GetGoodOpt and _G.Mod_GetGoodOpt(cat, key)
+                    if _G.Mod_SetGoodOpt then _G.Mod_SetGoodOpt(cat, key, not curVal) end
+                    updateVisual()
+                end)
+
+                table.insert(goodOptTogglePool, { updateVisual = updateVisual })
+                return btnGo
+            end
+
+            local function CreateSectionHeader(titleText, noteText)
+                if isFirstSection then
+                    curY = curY - 26
+                    isFirstSection = false
+                else
+                    curY = curY - 42 -- Khoảng cách thoáng 20px so với hàng nút khối trước
+                end
+                lastElementWasToggle = false
+
+                local sGo = GameObject("SecHeader_" .. titleText)
+                sGo.transform:SetParent(contentGo.transform, false)
+                local sRt = sGo:AddComponent(typeof(RectTransform))
+                sRt.anchorMin, sRt.anchorMax, sRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                sRt.anchoredPosition = Vector2(smeltStartX, curY)
+                sRt.sizeDelta = Vector2(233, 20)
+                local sTxt = sGo:AddComponent(typeof(Text))
+                sTxt.raycastTarget = true
+                sTxt.text = titleText
+                sTxt.color = Color(1, 0.75, 0.2, 1)
+                sTxt.fontSize = 14
+                sTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then sTxt.font = defaultFont end
+
+                if noteText and noteText ~= "" then
+                    curY = curY - 18
+                    local nGo = GameObject("SecNote_" .. titleText)
+                    nGo.transform:SetParent(contentGo.transform, false)
+                    local nRt = nGo:AddComponent(typeof(RectTransform))
+                    nRt.anchorMin, nRt.anchorMax, nRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                    nRt.anchoredPosition = Vector2(smeltStartX, curY)
+                    nRt.sizeDelta = Vector2(233, 16)
+                    local nTxt = nGo:AddComponent(typeof(Text))
+                    nTxt.raycastTarget = true
+                    nTxt.text = noteText
+                    nTxt.color = Color(0.7, 0.7, 0.7, 1)
+                    nTxt.fontSize = 10
+                    nTxt.alignment = TextAnchor.MiddleLeft
+                    if defaultFont then nTxt.font = defaultFont end
+                end
+            end
+
+            local function CreateSubLabel(subText)
+                if lastElementWasToggle then
+                    curY = curY - 30 -- Cách đáy hàng nút trước 8px
+                else
+                    curY = curY - 20
+                end
+                lastElementWasToggle = false
+
+                local lblGo = GameObject("SubLbl_" .. subText)
+                lblGo.transform:SetParent(contentGo.transform, false)
+                local lblRt = lblGo:AddComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                lblRt.anchoredPosition = Vector2(smeltStartX, curY)
+                lblRt.sizeDelta = Vector2(233, 18)
+                local lblTxt = lblGo:AddComponent(typeof(Text))
+                lblTxt.raycastTarget = true
+                lblTxt.text = subText
+                lblTxt.color = Color(0.4, 0.9, 1, 1)
+                lblTxt.fontSize = 11
+                lblTxt.alignment = TextAnchor.MiddleLeft
+                if defaultFont then lblTxt.font = defaultFont end
+            end
+
+            local optW = 114
+            local col1X = smeltStartX
+            local col2X = smeltStartX + 118
+
+            -- NHÓM 1: ĐỒ ĐEO TRÁC VIỆT
+            CreateSectionHeader("--- ĐỒ ĐEO TRÁC VIỆT ---", "(Giữ khi có ít nhất 1 dòng chính VÀ 1 dòng phụ)")
+
+            CreateSubLabel("Vũ khí - Dòng chính:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Main", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Vũ khí - Dòng phụ:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Weapon_Sub", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục - Dòng chính:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Armor_Main", "hp4", "HP tối đa +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Main", "def10", "Phòng ngự +10%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Armor_Main", "reflect5", "Phản DMG +5.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Main", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục - Dòng phụ:")
+            curY = curY - 22
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "hp4", "HP tối đa +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "def10", "Phòng ngự +10%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "reflect5", "Phản DMG +5.0%", col1X, curY, optW)
+            CreateGoodOptToggle("EquipTV_Armor_Sub", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            -- NHÓM 2: TRANG SỨC TRÁC VIỆT
+            CreateSectionHeader("--- TRANG SỨC TRÁC VIỆT ---", "(Chỉ giữ khi 100% dòng thuộc danh sách chọn)")
+
+            CreateSubLabel("Nhẫn:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Ring", "speed2", "Công tốc +2", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Ring", "atk1", "Tấn công +1.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Ring", "crit3", "Đòn TV +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Ring", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Dây chuyền:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Necklace", "speed2", "Công tốc +2", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Necklace", "atk1", "Tấn công +1.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Necklace", "crit3", "Đòn TV +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Necklace", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Khuyên tai:")
+            curY = curY - 22
+            CreateGoodOptToggle("JewelryTV_Earring", "reflect4", "Phản DMG +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Earring", "dmgred2", "ST giảm +2.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Earring", "hp3", "HP tối đa +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("JewelryTV_Earring", "def5", "Phòng ngự +5.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("JewelryTV_Earring", "gold5", "Vàng tăng +5.0%", col1X, curY, optW)
+
+            -- NHÓM 3: ĐỒ BỘ
+            CreateSectionHeader("--- ĐỒ BỘ (SET EQUIPMENT) ---", "(Chỉ giữ khi 100% dòng thuộc danh sách chọn)")
+
+            CreateSubLabel("Vũ khí Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Weapon", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Weapon", "speed7", "Công tốc +7", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Weapon", "crit10", "Đòn TV +10.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Weapon", "atk_lv20", "Atk +cấp/20", col2X, curY, optW)
+
+            CreateSubLabel("Trang phục Bộ (Mũ, Áo, Quần, Tay, Chân):")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Armor", "dmgred4", "ST giảm +4.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Armor", "hp4", "HP tối đa +4.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Armor", "def10", "Phòng ngự +10%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Armor", "reflect5", "Phản DMG +5.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Armor", "gold10", "Vàng tăng +10%", col1X, curY, optW)
+
+            CreateSubLabel("Nhẫn, Dây chuyền Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_RingNecklace", "atk2", "Tấn công +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_RingNecklace", "speed3", "Công Tốc +3", col2X, curY, optW)
+
+            CreateSubLabel("Khuyên Bộ:")
+            curY = curY - 22
+            CreateGoodOptToggle("Set_Earring", "hp3", "HP tối đa +3.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Earring", "def4", "Phòng ngự +4.0%", col2X, curY, optW)
+            curY = curY - 24
+            CreateGoodOptToggle("Set_Earring", "reflect2", "Phản DMG +2.0%", col1X, curY, optW)
+            CreateGoodOptToggle("Set_Earring", "gold10", "Vàng tăng +10%", col2X, curY, optW)
+
+            curY = curY - 30
+            contentRt.sizeDelta = Vector2(0, math.abs(curY))
 
             -- =========================================================================
             -- CỘT TRÁI (2/3 WIDTH): BOSS TIER TABS & BOSS BUTTONS GRID & FOOTER STATS
@@ -8170,6 +8762,11 @@ local function CreateModUI()
                     else
                         toggleItem.go:SetActive(false)
                     end
+                end
+
+                -- Refresh all Good Options Toggles in pool
+                for _, optItem in ipairs(goodOptTogglePool or {}) do
+                    if optItem and optItem.updateVisual then pcall(optItem.updateVisual) end
                 end
 
                 -- Ẩn tất cả Tab buttons trước

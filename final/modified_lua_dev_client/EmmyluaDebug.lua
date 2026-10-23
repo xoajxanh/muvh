@@ -4564,7 +4564,7 @@ local function CreateModUI()
                 elseif optKey == "atk_lv20" then
                     return string.find(s, "cấp/20") ~= nil or (string.find(s, "tấn công") ~= nil and string.find(s, "cấp") ~= nil)
                 elseif optKey == "hp4" then
-                    return string.find(s, "hp tối đa") ~= nil and string.find(s, "4") ~= nil
+                    return string.find(s, "hp") ~= nil and string.find(s, "4") ~= nil
                 elseif optKey == "def10" then
                     return string.find(s, "phòng ngự") ~= nil and string.find(s, "10") ~= nil
                 elseif optKey == "reflect5" then
@@ -4580,15 +4580,15 @@ local function CreateModUI()
                 elseif optKey == "reflect4" then
                     return string.find(s, "phản") ~= nil and string.find(s, "4") ~= nil
                 elseif optKey == "dmgred2" then
-                    return (string.find(s, "sát thương giảm") ~= nil or string.find(s, "giảm sát thương") ~= nil) and string.find(s, "2") ~= nil
+                    return (string.find(s, "giảm") ~= nil or string.find(s, "st giảm") ~= nil or string.find(s, "sát thương giảm") ~= nil) and string.find(s, "2") ~= nil
                 elseif optKey == "hp3" then
-                    return string.find(s, "hp tối đa") ~= nil and string.find(s, "3") ~= nil
+                    return string.find(s, "hp") ~= nil and string.find(s, "3") ~= nil
                 elseif optKey == "def5" then
                     return string.find(s, "phòng ngự") ~= nil and string.find(s, "5") ~= nil
                 elseif optKey == "gold5" then
                     return string.find(s, "vàng") ~= nil and string.find(s, "5") ~= nil
                 elseif optKey == "dmgred4" then
-                    return (string.find(s, "sát thương giảm") ~= nil or string.find(s, "giảm sát thương") ~= nil) and string.find(s, "4") ~= nil
+                    return (string.find(s, "giảm") ~= nil or string.find(s, "st giảm") ~= nil or string.find(s, "sát thương giảm") ~= nil) and string.find(s, "4") ~= nil
                 elseif optKey == "speed3" then
                     return string.find(s, "công tốc") ~= nil and string.find(s, "3") ~= nil
                 elseif optKey == "def4" then
@@ -4601,7 +4601,7 @@ local function CreateModUI()
             _G.Mod_MatchGoodOpt = MatchGoodOpt
 
             _G.Mod_IsGoodItem = function(item, subType, tier, excDesList)
-                -- 0. Ưu tiên bảo vệ tuyệt đối: Đồ đã cường hóa, gia cường, tái sinh, khảm ngọc, hoặc trang sức bộ có kỹ năng đặc thù
+                -- 0. Ưu tiên bảo vệ tuyệt đối: Đồ đã cường hóa, gia cường, tái sinh, khảm ngọc
                 if IsEnhancedEquip(item) then
                     return true -- Luôn coi là đồ ngon, TUYỆT ĐỐI KHÔNG TÁCH & KHÔNG THU HỒI
                 end
@@ -4610,11 +4610,22 @@ local function CreateModUI()
                     return false
                 end
 
-                -- =====================================================================
+                -- =========================================================================
+                -- [MOD FEATURE]: PHÂN LOẠI & LỌC ĐỒ TRÁC VIỆT / ĐỒ BỘ
+                -- Mô tả:
+                -- 1. NHÓM ĐỒ ĐEO TRÁC VIỆT (Vũ khí & Trang phục đeo):
+                --    - Không ghép dòng được, dùng để mặc trực tiếp.
+                --    - Quy tắc: Chỉ cần có bộ đôi thỏa mãn (1 dòng chính + 1 dòng phụ) trên 2 dòng bất kỳ
+                --      là GIỮ LẠI (ví dụ: đồ có 4 dòng, có atk2 + speed7 hoặc atk2 + crit10 là giữ).
+                --      Các dòng còn lại trên đồ (kể cả dòng rác) KHÔNG tính là rác, đồ vẫn ĐƯỢC GIỮ!
+                -- 2. NHÓM TRANG SỨC TRÁC VIỆT & TẤT CẢ ĐỒ BỘ (Vũ khí bộ, Quần áo bộ, Trang sức bộ):
+                --    - Ghép được dòng (hợp thành/kế thừa dòng khi rèn).
+                --    - Quy tắc Thuần Khiết (Pure Opts): TẤT CẢ các dòng có trên món đồ PHẢI nằm
+                --      trong danh sách quy định (được tick chọn).
+                --    - Dính BẤT KỲ dòng nào ngoài danh sách quy định -> COI LÀ RÁC (Tách/Thu hồi ngay)!
+                -- =========================================================================
+
                 -- NHÓM 1: ĐỒ ĐEO TRÁC VIỆT (Vũ khí & Trang phục / Quần áo)
-                -- Quy tắc: Có ít nhất 1 dòng chính VÀ ít nhất 1 dòng phụ được chọn
-                --          (Không chọn gì -> Safe Fallback: Coi là đồ ngon để bảo vệ đồ)
-                -- =====================================================================
                 local isWeaponTV = ((subType >= 1 and subType <= 12) or subType == 24 or subType == 25 or subType == 56 or subType == 57 or subType == 81)
                 local isArmorTV = (subType >= 13 and subType <= 17)
 
@@ -4630,14 +4641,31 @@ local function CreateModUI()
                         if GetGoodOpt("EquipTV_Weapon_Sub", k) then table.insert(activeSub, k) end
                     end
 
-                    -- Safe fallback: Nếu người chơi bỏ chọn hết -> BẢO VỆ ĐỒ, không tách!
+                    -- Safe fallback:
                     if #activeMain == 0 and #activeSub == 0 then
-                        return true
+                        return true -- Không tick gì -> Bảo vệ toàn bộ đồ
+                    elseif #activeMain > 0 and #activeSub == 0 then
+                        -- Người chơi chỉ chọn dòng chính -> Có ít nhất 1 dòng chính là giữ
+                        for _, des in ipairs(excDesList) do
+                            for _, mKey in ipairs(activeMain) do
+                                if MatchGoodOpt(des, mKey) then return true end
+                            end
+                        end
+                        return false
+                    elseif #activeMain == 0 and #activeSub > 0 then
+                        -- Người chơi chỉ chọn dòng phụ -> Có ít nhất 1 dòng phụ là giữ
+                        for _, des in ipairs(excDesList) do
+                            for _, sKey in ipairs(activeSub) do
+                                if MatchGoodOpt(des, sKey) then return true end
+                            end
+                        end
+                        return false
                     end
 
                     if #excDesList < 2 then return false end
 
-                    -- Kiểm tra tồn tại cặp (i, j) với i ~= j thỏa mãn dòng i khớp Dòng chính & dòng j khớp Dòng phụ
+                    -- Cần ít nhất 1 dòng chính VÀ 1 dòng phụ (trên 2 dòng khác nhau của món đồ).
+                    -- Các dòng còn lại trên đồ (dù là dòng rác) KHÔNG ảnh hưởng, đồ vẫn ĐƯỢC GIỮ!
                     for i = 1, #excDesList do
                         local matchMain = false
                         for _, mKey in ipairs(activeMain) do
@@ -4651,7 +4679,7 @@ local function CreateModUI()
                                 if i ~= j then
                                     for _, sKey in ipairs(activeSub) do
                                         if MatchGoodOpt(excDesList[j], sKey) then
-                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon!
+                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon (GIỮ)!
                                         end
                                     end
                                 end
@@ -4673,12 +4701,29 @@ local function CreateModUI()
                         if GetGoodOpt("EquipTV_Armor_Sub", k) then table.insert(activeSub, k) end
                     end
 
+                    -- Safe fallback:
                     if #activeMain == 0 and #activeSub == 0 then
                         return true
+                    elseif #activeMain > 0 and #activeSub == 0 then
+                        for _, des in ipairs(excDesList) do
+                            for _, mKey in ipairs(activeMain) do
+                                if MatchGoodOpt(des, mKey) then return true end
+                            end
+                        end
+                        return false
+                    elseif #activeMain == 0 and #activeSub > 0 then
+                        for _, des in ipairs(excDesList) do
+                            for _, sKey in ipairs(activeSub) do
+                                if MatchGoodOpt(des, sKey) then return true end
+                            end
+                        end
+                        return false
                     end
 
                     if #excDesList < 2 then return false end
 
+                    -- Cần ít nhất 1 dòng chính VÀ 1 dòng phụ (trên 2 dòng khác nhau).
+                    -- Các dòng khác không tính là rác, đồ vẫn ĐƯỢC GIỮ!
                     for i = 1, #excDesList do
                         local matchMain = false
                         for _, mKey in ipairs(activeMain) do
@@ -4692,7 +4737,7 @@ local function CreateModUI()
                                 if i ~= j then
                                     for _, sKey in ipairs(activeSub) do
                                         if MatchGoodOpt(excDesList[j], sKey) then
-                                            return true
+                                            return true -- Đạt chuẩn 1 dòng chính + 1 dòng phụ -> Đồ ngon (GIỮ)!
                                         end
                                     end
                                 end
@@ -4730,7 +4775,7 @@ local function CreateModUI()
                 -- NHÓM 3: ĐỒ BỘ (Vũ khí, Trang phục, Nhẫn/DC, Khuyên)
                 -- Quy tắc Thuần Khiết: CHỈ ĐƯỢC PHÉP CÓ các dòng đã chọn. Dính dòng khác -> Tách!
                 -- =====================================================================
-                elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                elseif (subType >= 101 and subType <= 112) or subType == 124 or subType == 125 or subType == 156 or subType == 157 or subType == 181 then
                     -- Vũ khí Bộ
                     local allKeys = { "atk2", "speed7", "crit10", "atk_lv20" }
                     checkPureOpts = {}
@@ -4766,6 +4811,8 @@ local function CreateModUI()
                         return true
                     end
 
+                    -- QUY TẮC THUẦN KHIẾT: Vì ghép được dòng, nên mọi dòng trên đồ PHẢI nằm trong danh sách chọn.
+                    -- Nếu có BẤT KỲ dòng nào ngoài danh sách quy định -> COI LÀ RÁC (Tách/Thu hồi)!
                     for _, des in ipairs(excDesList) do
                         local isValid = false
                         for _, k in ipairs(checkPureOpts) do
@@ -4775,10 +4822,10 @@ local function CreateModUI()
                             end
                         end
                         if not isValid then
-                            return false -- Dính dù chỉ 1 dòng ngoài danh sách chọn -> TÁCH!
+                            return false -- Dính dù chỉ 1 dòng ngoài danh sách quy định -> TÁCH!
                         end
                     end
-                    return true -- 100% các dòng đều thuộc danh sách chọn -> ĐỒ NGON!
+                    return true -- 100% các dòng đều thuộc danh sách quy định -> ĐỒ NGON (GIỮ LẠI GHÉP DÒNG)!
                 end
 
                 return false
@@ -4935,7 +4982,7 @@ local function CreateModUI()
                                 prefix = "Gloves"
                             elseif subType == 117 then
                                 prefix = "Boots"
-                            elseif subType == 101 or subType == 106 or subType == 108 or subType == 109 or subType == 124 or subType == 181 then
+                            elseif (subType >= 101 and subType <= 112) or subType == 124 or subType == 125 or subType == 156 or subType == 157 or subType == 181 then
                                 prefix = "Weapon"
                             end
 
@@ -8994,13 +9041,35 @@ local function CreateModUI()
                         end
                     end
 
+                    -- =========================================================================
+                    -- [MOD FEATURE]: KHÓA VÀ CẬP NHẬT FOV SIÊU TỐC (SỰ KIỆN QUA MAP)
+                    -- Mô tả: Hook Event.Scene_SceneLoaded giúp Camera cập nhật FOV tức thì khi qua map (0ms),
+                    --        loại bỏ hoàn toàn hiện tượng trễ gây giật và thu phóng màn hình khó chịu.
+                    -- =========================================================================
+                    if _G.EventManager and _G.Event and _G.Event.Scene_SceneLoaded and not _G.Mod_HookedSceneLoadedFOV then
+                        _G.Mod_HookedSceneLoadedFOV = true
+                        pcall(function()
+                            _G.EventManager.Regist(_G.Event.Scene_SceneLoaded, function()
+                                pcall(function()
+                                    _G.Mod_CachedMainCam = nil
+                                    local targetFov = _G.currentFOV or _G.SavedFOV or _G.Mod_Config_FOV_Max or 50
+                                    local cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                                    if cam then
+                                        _G.Mod_CachedMainCam = cam
+                                        cam.fieldOfView = targetFov
+                                    end
+                                end)
+                            end)
+                        end)
+                    end
+
                     if _G.SavedFOV then
                         local cam = _G.Mod_CachedMainCam
                         if not cam or IsNil(cam) then
                             cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
                             _G.Mod_CachedMainCam = cam
                         end
-                        if cam and not IsNil(cam) and math.abs(cam.fieldOfView - _G.SavedFOV) > 1 then
+                        if cam and not IsNil(cam) and math.abs(cam.fieldOfView - _G.SavedFOV) > 0.5 then
                             cam.fieldOfView = _G.SavedFOV
                             if UpdateFOVLabel then UpdateFOVLabel() end
                         end
