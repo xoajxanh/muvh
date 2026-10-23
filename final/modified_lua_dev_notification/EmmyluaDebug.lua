@@ -169,6 +169,337 @@ local function RequestServerBossData()
     end)
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: KHÓA MẶC ĐỊNH FOV CAMERA 65 CHO BẢN NOTIFICATION
+-- Mô tả: Tự động thiết lập và duy trì Camera fieldOfView = 65 liên tục.
+-- =========================================================================
+pcall(function()
+    local targetFov = 65
+    local cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+    if cam then cam.fieldOfView = targetFov end
+    if _G.MainCamera and _G.MainCamera.camera then _G.MainCamera.camera.fieldOfView = targetFov end
+
+    if _G.EventManager and _G.Event and _G.Event.Scene_SceneLoaded then
+        _G.EventManager.Regist(_G.Event.Scene_SceneLoaded, function()
+            pcall(function()
+                local c = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                if c then c.fieldOfView = targetFov end
+                if _G.MainCamera and _G.MainCamera.camera then _G.MainCamera.camera.fieldOfView = targetFov end
+            end)
+        end)
+    end
+
+    if _G.MainCamera then
+        local orig_AttachRole = _G.MainCamera.AttachRole
+        if orig_AttachRole then
+            _G.MainCamera.AttachRole = function(role)
+                orig_AttachRole(role)
+                pcall(function()
+                    if _G.MainCamera.camera then _G.MainCamera.camera.fieldOfView = targetFov end
+                end)
+            end
+        end
+        local orig_Reset = _G.MainCamera.Reset
+        if orig_Reset then
+            _G.MainCamera.Reset = function()
+                orig_Reset()
+                pcall(function()
+                    if _G.MainCamera.camera then _G.MainCamera.camera.fieldOfView = targetFov end
+                end)
+            end
+        end
+    end
+end)
+
+-- =========================================================================
+-- [MOD FEATURE]: QUẢN LÝ THỐNG KÊ MỞ BẢN ĐỒ ẨN THEO TỪNG CHUYỂN & RESET QUA NGÀY (AN STATS DATA & DAY ROLLOVER)
+-- Mô tả: Lưu trữ, tải, xử lý reset qua ngày mới và gửi báo cáo thống kê qua Telegram bot theo từng nhóm C6-C12.
+-- =========================================================================
+_G.Mod_CheckDayRollover = function()
+    pcall(function()
+        local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+        if not _G.Mod_AnStatsDate or _G.Mod_AnStatsDate == "" then
+            _G.Mod_AnStatsDate = todayStr
+            _G.Mod_AnStatsToday = _G.Mod_AnStatsToday or {}
+            for t = 6, 12 do _G.Mod_AnStatsToday[t] = _G.Mod_AnStatsToday[t] or {} end
+            _G.Mod_AnStatsYesterday = _G.Mod_AnStatsYesterday or {}
+            for t = 6, 12 do _G.Mod_AnStatsYesterday[t] = _G.Mod_AnStatsYesterday[t] or {} end
+            return
+        end
+
+        if _G.Mod_AnStatsDate ~= todayStr then
+            local yesterdayStr = CS.System.DateTime.Now:AddDays(-1):ToString("yyyy/MM/dd")
+            if _G.Mod_AnStatsDate == yesterdayStr then
+                _G.Mod_AnStatsYesterday = {}
+                for t = 6, 12 do
+                    _G.Mod_AnStatsYesterday[t] = {}
+                    for p, c in pairs((_G.Mod_AnStatsToday and _G.Mod_AnStatsToday[t]) or {}) do
+                        _G.Mod_AnStatsYesterday[t][p] = c
+                    end
+                end
+            else
+                _G.Mod_AnStatsYesterday = {}
+                for t = 6, 12 do _G.Mod_AnStatsYesterday[t] = {} end
+            end
+
+            _G.Mod_AnStatsToday = {}
+            for t = 6, 12 do _G.Mod_AnStatsToday[t] = {} end
+
+            _G.Mod_AnStatsDate = todayStr
+            if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+            if _G.Mod_SendAnStatsTelegram then _G.Mod_SendAnStatsTelegram() end
+        end
+    end)
+end
+
+_G.Mod_SaveAnStats = function()
+    pcall(function()
+        if not _G.Mod_AnStatsToday then return end
+        local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+        CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsDate", _G.Mod_AnStatsDate or todayStr)
+
+        local tLines = {}
+        for tier = 6, 12 do
+            local tData = _G.Mod_AnStatsToday[tier]
+            if tData then
+                for name, count in pairs(tData) do
+                    table.insert(tLines, string.format("C%d#%s#%d", tier, tostring(name), count))
+                end
+            end
+        end
+        CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsTodayData", table.concat(tLines, "|"))
+
+        local yLines = {}
+        for tier = 6, 12 do
+            local yData = _G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[tier]
+            if yData then
+                for name, count in pairs(yData) do
+                    table.insert(yLines, string.format("C%d#%s#%d", tier, tostring(name), count))
+                end
+            end
+        end
+        CS.UnityEngine.PlayerPrefs.SetString("Mod_AnStatsYesterdayData", table.concat(yLines, "|"))
+
+        CS.UnityEngine.PlayerPrefs.Save()
+    end)
+end
+
+_G.Mod_LoadAnStats = function()
+    pcall(function()
+        local todayStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+        local savedDate = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsDate", "")
+        _G.Mod_AnStatsDate = savedDate ~= "" and savedDate or todayStr
+
+        _G.Mod_AnStatsToday = {}
+        for tier = 6, 12 do _G.Mod_AnStatsToday[tier] = {} end
+
+        local todayDataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsTodayData", "")
+        if todayDataStr ~= "" then
+            for item in string.gmatch(todayDataStr, "[^|]+") do
+                local tStr, kStr, vStr = string.match(item, "C(%d+)#([^#]+)#(%d+)")
+                if tStr and kStr and vStr then
+                    local tNum = tonumber(tStr)
+                    _G.Mod_AnStatsToday[tNum] = _G.Mod_AnStatsToday[tNum] or {}
+                    _G.Mod_AnStatsToday[tNum][kStr] = tonumber(vStr) or 0
+                end
+            end
+        end
+
+        _G.Mod_AnStatsYesterday = {}
+        for tier = 6, 12 do _G.Mod_AnStatsYesterday[tier] = {} end
+
+        local yestDataStr = CS.UnityEngine.PlayerPrefs.GetString("Mod_AnStatsYesterdayData", "")
+        if yestDataStr ~= "" then
+            for item in string.gmatch(yestDataStr, "[^|]+") do
+                local tStr, kStr, vStr = string.match(item, "C(%d+)#([^#]+)#(%d+)")
+                if tStr and kStr and vStr then
+                    local tNum = tonumber(tStr)
+                    _G.Mod_AnStatsYesterday[tNum] = _G.Mod_AnStatsYesterday[tNum] or {}
+                    _G.Mod_AnStatsYesterday[tNum][kStr] = tonumber(vStr) or 0
+                end
+            end
+        end
+
+        if _G.Mod_CheckDayRollover then _G.Mod_CheckDayRollover() end
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: BÁO CÁO THỐNG KÊ QUA TELEGRAM BOT THEO NHÓM CHUYỂN (TELEGRAM AN STATS DISPATCH)
+-- Mô tả: Gửi hoặc sửa tin nhắn Telegram báo cáo thống kê mở bản đồ ẩn phân theo từng nhóm C6 - C12.
+-- =========================================================================
+_G.Mod_SendAnStatsTelegram = function()
+    pcall(function()
+        if CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) ~= 1 then return end
+
+        local botToken = CS.UnityEngine.PlayerPrefs.GetString("Mod_TeleBotToken", "")
+        local chatId = CS.UnityEngine.PlayerPrefs.GetString("Mod_TeleChatId_An", "")
+        if chatId == "" then
+            chatId = "-5126116516"
+        end
+        local messageId = CS.UnityEngine.PlayerPrefs.GetString("Mod_TeleMessageId", "")
+        if messageId == "" then
+            messageId = "10467"
+        end
+
+        if botToken == "" or chatId == "" then return end
+
+        if _G.Mod_CheckDayRollover then _G.Mod_CheckDayRollover() end
+
+        local nowStr = CS.System.DateTime.Now:ToString("yyyy/MM/dd HH:mm:ss")
+
+        -- Calculate overall totals across enabled tiers and build tier sections
+        local totalToday = 0
+        local totalYesterday = 0
+        local tierSections = {}
+        local hasAnyData = false
+
+        for tier = 6, 12 do
+            local isTierEnabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_An_C" .. tier, 1) == 1
+            if isTierEnabled then
+                local tData = (_G.Mod_AnStatsToday and _G.Mod_AnStatsToday[tier]) or {}
+                local yData = (_G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[tier]) or {}
+
+                local tierToday = 0
+                local tierYesterday = 0
+                local tierPlayers = {}
+                local playerMap = {}
+                for p, c in pairs(tData) do
+                    tierToday = tierToday + c
+                    totalToday = totalToday + c
+                    if not playerMap[p] then
+                        playerMap[p] = true
+                        table.insert(tierPlayers, p)
+                    end
+                end
+                for p, c in pairs(yData) do
+                    tierYesterday = tierYesterday + c
+                    totalYesterday = totalYesterday + c
+                    if not playerMap[p] then
+                        playerMap[p] = true
+                        table.insert(tierPlayers, p)
+                    end
+                end
+
+                local lines = {}
+                table.insert(lines, string.format("<b>C%d: %d (%d)</b>", tier, tierToday, tierYesterday))
+                if #tierPlayers > 0 then
+                    table.sort(tierPlayers, function(a, b)
+                        local tA = tData[a] or 0
+                        local tB = tData[b] or 0
+                        if tA ~= tB then return tA > tB end
+                        local yA = yData[a] or 0
+                        local yB = yData[b] or 0
+                        if yA ~= yB then return yA > yB end
+                        return tostring(a) < tostring(b)
+                    end)
+
+                    for _, pName in ipairs(tierPlayers) do
+                        local cT = tData[pName] or 0
+                        local cY = yData[pName] or 0
+                        table.insert(lines, string.format("   %s: %d (%d)", tostring(pName), cT, cY))
+                    end
+                end
+                hasAnyData = true
+                table.insert(tierSections, table.concat(lines, "\n"))
+            end
+        end
+
+        local msgLines = {}
+        table.insert(msgLines, string.format("THỐNG KÊ MỞ BẢN ĐỒ ẨN: <b>%d</b> (%d)", totalToday, totalYesterday))
+
+        if hasAnyData and #tierSections > 0 then
+            for _, sec in ipairs(tierSections) do
+                table.insert(msgLines, "\n" .. sec)
+            end
+        else
+            table.insert(msgLines, "\n<i>(Chưa có dữ liệu hôm nay)</i>")
+        end
+
+        table.insert(msgLines, string.format("\n<i>Cập nhật lúc: %s</i>", nowStr))
+
+        local fullMsg = table.concat(msgLines, "\n")
+        local url = ""
+        if messageId and messageId ~= "" then
+            url = string.format(
+                "https://api.telegram.org/bot%s/editMessageText?chat_id=%s&message_id=%s&text=%s&parse_mode=HTML",
+                botToken,
+                chatId,
+                tostring(messageId),
+                CS.UnityEngine.WWW.EscapeURL(fullMsg)
+            )
+        else
+            url = string.format(
+                "https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s&parse_mode=HTML",
+                botToken,
+                chatId,
+                CS.UnityEngine.WWW.EscapeURL(fullMsg)
+            )
+        end
+
+        CS.UnityEngine.WWW(url)
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: XỬ LÝ THÔNG BÁO TRIỆU HỒI BOSS ẨN (AN BOSS EVENT PROCESSOR)
+-- Mô tả: Phân loại Boss C6-C12, kiểm tra toggle config, tăng số lượt theo từng chuyển và gửi Telegram.
+-- =========================================================================
+local function GetBossTierFromName(bossName)
+    if not bossName or bossName == "" then return nil end
+    if string.find(bossName, "Nhện Sói") then return 6 end
+    if string.find(bossName, "Đất Sét") then return 7 end
+    if string.find(bossName, "Kỵ Sĩ") then return 8 end
+    if string.find(bossName, "Đao Phủ") then return 9 end
+    if string.find(bossName, "Sứ Đồ") then return 10 end
+    if string.find(bossName, "Thống Lĩnh") then return 11 end
+    if string.find(bossName, "Thợ Săn") then return 12 end
+    return nil
+end
+
+local function ProcessAnAnnouncement(playerName, bossName)
+    if not (_G.Mod_IsActive and _G.Mod_IsActive()) then return end
+    if CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) ~= 1 then return end
+    if not playerName or playerName == "" or not bossName or bossName == "" then return end
+
+    local tier = GetBossTierFromName(bossName)
+    if not tier then return end
+
+    local prefKey = "Mod_An_C" .. tier
+    if CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 1) ~= 1 then return end
+
+    local currentSec = (_G.Time and _G.Time.GetServerSecondTime) and _G.Time.GetServerSecondTime() or os.time()
+    if _G.LastAnPlayer == playerName and _G.LastAnTier == tier and (currentSec - (_G.LastAnTime or 0) < 3) then
+        return
+    end
+    _G.LastAnPlayer = playerName
+    _G.LastAnTier = tier
+    _G.LastAnTime = currentSec
+
+    if not _G.Mod_AnStats_Loaded then
+        if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+        _G.Mod_AnStats_Loaded = true
+    end
+
+    if _G.Mod_CheckDayRollover then _G.Mod_CheckDayRollover() end
+
+    _G.Mod_AnStatsToday = _G.Mod_AnStatsToday or {}
+    _G.Mod_AnStatsToday[tier] = _G.Mod_AnStatsToday[tier] or {}
+    _G.Mod_AnStatsToday[tier][playerName] = (_G.Mod_AnStatsToday[tier][playerName] or 0) + 1
+
+    if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+
+    local cToday = _G.Mod_AnStatsToday[tier][playerName]
+    local cYest = (_G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[tier] and _G.Mod_AnStatsYesterday[tier][playerName]) or 0
+    if _G.FloatingWordUtility then
+        _G.FloatingWordUtility.QuickMsg(string.format("TỔNG HỢP ẨN (C%d): %s (+1) -> %d (%d)", tier, playerName, cToday, cYest))
+    end
+
+    if _G.Mod_SendAnStatsTelegram then
+        _G.Mod_SendAnStatsTelegram()
+    end
+end
+
 -- Main UI Builder Function
 local function CreateModUI()
     local status, err = pcall(function()
@@ -238,8 +569,8 @@ local function CreateModUI()
         panelRt.anchorMin = Vector2(0, 0)
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
-        panelRt.anchoredPosition = Vector2(90, 50)
-        panelRt.sizeDelta = Vector2(720, 580)
+        panelRt.anchoredPosition = Vector2(90, 40)
+        panelRt.sizeDelta = Vector2(720, 870)
 
         local panelImg = panelGo:AddComponent(typeof(Image))
         panelImg.color = Color(0, 0, 0, 0.85)
@@ -580,16 +911,16 @@ local function CreateModUI()
                 CS.UnityEngine.PlayerPrefs.Save()
             end)
 
-            -- 2. Telegram Chat ID Input (Width widened to 540 for perfect gap & visibility)
+            -- 2. Telegram Chat ID (Báo Boss Kundun) Input
             currentY = currentY - 45
             local chatIdLblGo = GameObject("ChatIdLbl")
             chatIdLblGo.transform:SetParent(panelGo.transform, false)
             local cidLblRt = chatIdLblGo:AddComponent(typeof(RectTransform))
             cidLblRt.anchorMin, cidLblRt.anchorMax, cidLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
             cidLblRt.anchoredPosition = Vector2(20, currentY)
-            cidLblRt.sizeDelta = Vector2(400, 20)
+            cidLblRt.sizeDelta = Vector2(500, 20)
             local cidLblTxt = chatIdLblGo:AddComponent(typeof(Text))
-            cidLblTxt.text = "Telegram Chat ID:"
+            cidLblTxt.text = "Telegram Chat ID (Báo Boss Kundun):"
             cidLblTxt.color, cidLblTxt.fontSize = Color.white, 16
             cidLblTxt.raycastTarget = false
             if defaultFont then cidLblTxt.font = defaultFont end
@@ -650,6 +981,162 @@ local function CreateModUI()
                 local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
                 cidField.text = clip
                 CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleChatId", clip)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            -- 3. Telegram Chat ID (Thống Kê Ẩn) Input
+            currentY = currentY - 45
+            local anChatIdLblGo = GameObject("AnChatIdLbl")
+            anChatIdLblGo.transform:SetParent(panelGo.transform, false)
+            local ancLblRt = anChatIdLblGo:AddComponent(typeof(RectTransform))
+            ancLblRt.anchorMin, ancLblRt.anchorMax, ancLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ancLblRt.anchoredPosition = Vector2(20, currentY)
+            ancLblRt.sizeDelta = Vector2(500, 20)
+            local ancLblTxt = anChatIdLblGo:AddComponent(typeof(Text))
+            ancLblTxt.text = "Telegram Chat ID (Thống Kê Ẩn):"
+            ancLblTxt.color, ancLblTxt.fontSize = Color.white, 16
+            ancLblTxt.raycastTarget = false
+            if defaultFont then ancLblTxt.font = defaultFont end
+
+            currentY = currentY - 25
+            local anChatIdInGo = GameObject("AnChatIdInput")
+            anChatIdInGo.transform:SetParent(panelGo.transform, false)
+            local ancInRt = anChatIdInGo:AddComponent(typeof(RectTransform))
+            ancInRt.anchorMin, ancInRt.anchorMax, ancInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            ancInRt.anchoredPosition = Vector2(20, currentY)
+            ancInRt.sizeDelta = Vector2(540, 35)
+            local ancInImg = anChatIdInGo:AddComponent(typeof(Image))
+            ancInImg.color = Color(1, 1, 1, 1)
+            ancInImg.raycastTarget = true
+
+            local ancTextGo = GameObject("Text")
+            ancTextGo.transform:SetParent(anChatIdInGo.transform, false)
+            local anctRt = ancTextGo:AddComponent(typeof(RectTransform))
+            anctRt.anchorMin, anctRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            anctRt.offsetMin, anctRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local ancTxt = ancTextGo:AddComponent(typeof(Text))
+            local savedAnChatId = CS.UnityEngine.PlayerPrefs.GetString("Mod_TeleChatId_An", "")
+            if savedAnChatId == "" then
+                savedAnChatId = "-5126116516"
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleChatId_An", savedAnChatId)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end
+            ancTxt.text = savedAnChatId
+            ancTxt.color, ancTxt.fontSize = Color.black, 15
+            ancTxt.alignment = TextAnchor.MiddleLeft
+            ancTxt.raycastTarget = false
+            if defaultFont then ancTxt.font = defaultFont end
+
+            local ancField = anChatIdInGo:AddComponent(typeof(InputField))
+            ancField.textComponent = ancTxt
+            ancField.text = savedAnChatId
+            ancField.onValueChanged:AddListener(function(val)
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleChatId_An", val)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            local pasteAnCidBtnGo = GameObject("PasteAnChatIdBtn")
+            pasteAnCidBtnGo.transform:SetParent(panelGo.transform, false)
+            local pancRt = pasteAnCidBtnGo:AddComponent(typeof(RectTransform))
+            pancRt.anchorMin, pancRt.anchorMax, pancRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            pancRt.anchoredPosition = Vector2(570, currentY)
+            pancRt.sizeDelta = Vector2(130, 35)
+            local pancImg = pasteAnCidBtnGo:AddComponent(typeof(Image))
+            pancImg.color = Color(0.8, 0.4, 0, 1)
+            pancImg.raycastTarget = true
+            local pancBtn = pasteAnCidBtnGo:AddComponent(typeof(Button))
+            local pancTxtGo = GameObject("Text")
+            pancTxtGo.transform:SetParent(pasteAnCidBtnGo.transform, false)
+            local panctRt = pancTxtGo:AddComponent(typeof(RectTransform))
+            panctRt.anchorMin, panctRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            local pancTxt = pancTxtGo:AddComponent(typeof(Text))
+            pancTxt.text = "Paste ChatID"
+            pancTxt.color, pancTxt.fontSize, pancTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
+            pancTxt.raycastTarget = false
+            if defaultFont then pancTxt.font = defaultFont end
+
+            pancBtn.onClick:AddListener(function()
+                local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                ancField.text = clip
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleChatId_An", clip)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            -- 4. Telegram Message ID Input (Optional, for editing pinned/existing message)
+            currentY = currentY - 45
+            local msgIdLblGo = GameObject("MsgIdLbl")
+            msgIdLblGo.transform:SetParent(panelGo.transform, false)
+            local midLblRt = msgIdLblGo:AddComponent(typeof(RectTransform))
+            midLblRt.anchorMin, midLblRt.anchorMax, midLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            midLblRt.anchoredPosition = Vector2(20, currentY)
+            midLblRt.sizeDelta = Vector2(500, 20)
+            local midLblTxt = msgIdLblGo:AddComponent(typeof(Text))
+            midLblTxt.text = "Telegram Message ID (Sửa tin nhắn Thống Kê Ẩn):"
+            midLblTxt.color, midLblTxt.fontSize = Color.white, 16
+            midLblTxt.raycastTarget = false
+            if defaultFont then midLblTxt.font = defaultFont end
+
+            currentY = currentY - 25
+            local msgIdInGo = GameObject("MsgIdInput")
+            msgIdInGo.transform:SetParent(panelGo.transform, false)
+            local midInRt = msgIdInGo:AddComponent(typeof(RectTransform))
+            midInRt.anchorMin, midInRt.anchorMax, midInRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            midInRt.anchoredPosition = Vector2(20, currentY)
+            midInRt.sizeDelta = Vector2(540, 35)
+            local midInImg = msgIdInGo:AddComponent(typeof(Image))
+            midInImg.color = Color(1, 1, 1, 1)
+            midInImg.raycastTarget = true
+
+            local midTextGo = GameObject("Text")
+            midTextGo.transform:SetParent(msgIdInGo.transform, false)
+            local midtRt = midTextGo:AddComponent(typeof(RectTransform))
+            midtRt.anchorMin, midtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            midtRt.offsetMin, midtRt.offsetMax = Vector2(5, 0), Vector2(-5, 0)
+            local midTxt = midTextGo:AddComponent(typeof(Text))
+            local savedMsgId = CS.UnityEngine.PlayerPrefs.GetString("Mod_TeleMessageId", "")
+            if savedMsgId == "" or savedMsgId == "1231" then
+                savedMsgId = "10467"
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleMessageId", savedMsgId)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end
+            midTxt.text = savedMsgId
+            midTxt.color, midTxt.fontSize = Color.black, 15
+            midTxt.alignment = TextAnchor.MiddleLeft
+            midTxt.raycastTarget = false
+            if defaultFont then midTxt.font = defaultFont end
+
+            local midField = msgIdInGo:AddComponent(typeof(InputField))
+            midField.textComponent = midTxt
+            midField.text = savedMsgId
+            midField.onValueChanged:AddListener(function(val)
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleMessageId", val)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            local pasteMidBtnGo = GameObject("PasteMsgIdBtn")
+            pasteMidBtnGo.transform:SetParent(panelGo.transform, false)
+            local pmidRt = pasteMidBtnGo:AddComponent(typeof(RectTransform))
+            pmidRt.anchorMin, pmidRt.anchorMax, pmidRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            pmidRt.anchoredPosition = Vector2(570, currentY)
+            pmidRt.sizeDelta = Vector2(130, 35)
+            local pmidImg = pasteMidBtnGo:AddComponent(typeof(Image))
+            pmidImg.color = Color(0.8, 0.4, 0, 1)
+            pmidImg.raycastTarget = true
+            local pmidBtn = pasteMidBtnGo:AddComponent(typeof(Button))
+            local pmidTxtGo = GameObject("Text")
+            pmidTxtGo.transform:SetParent(pasteMidBtnGo.transform, false)
+            local pmidtRt = pmidTxtGo:AddComponent(typeof(RectTransform))
+            pmidtRt.anchorMin, pmidtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            local pmidTxt = pmidTxtGo:AddComponent(typeof(Text))
+            pmidTxt.text = "Paste MsgID"
+            pmidTxt.color, pmidTxt.fontSize, pmidTxt.alignment = Color.white, 15, TextAnchor.MiddleCenter
+            pmidTxt.raycastTarget = false
+            if defaultFont then pmidTxt.font = defaultFont end
+
+            pmidBtn.onClick:AddListener(function()
+                local clip = CS.UnityEngine.GUIUtility.systemCopyBuffer or ""
+                midField.text = clip
+                CS.UnityEngine.PlayerPrefs.SetString("Mod_TeleMessageId", clip)
                 CS.UnityEngine.PlayerPrefs.Save()
             end)
 
@@ -925,6 +1412,208 @@ local function CreateModUI()
                     _G.FloatingWordUtility.QuickMsg("Đã gửi tin nhắn TEST Telegram (" .. scannedCount .. " loại boss)!")
                 end
             end)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: GIAO DIỆN CẤU HÌNH THỐNG KÊ ẨN (C6 - C12)
+            -- Mô tả: Cụm nút bấm chọn chuyển C6-C12, bật/tắt thống kê và nút gửi test/reset.
+            -- =========================================================================
+            currentY = currentY - 50
+            local sepGo2 = GameObject("Sep2")
+            sepGo2.transform:SetParent(panelGo.transform, false)
+            local sepRt2 = sepGo2:AddComponent(typeof(RectTransform))
+            sepRt2.anchorMin, sepRt2.anchorMax, sepRt2.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+            sepRt2.anchoredPosition = Vector2(0, currentY)
+            sepRt2.sizeDelta = Vector2(680, 20)
+            local sepTxt2 = sepGo2:AddComponent(typeof(Text))
+            sepTxt2.text = "--------------------------------------------------------------------------------------------------"
+            sepTxt2.color, sepTxt2.fontSize, sepTxt2.alignment = Color.gray, 16, TextAnchor.MiddleCenter
+            sepTxt2.raycastTarget = false
+
+            currentY = currentY - 25
+            local anSecHeaderGo = GameObject("AnSecHeader")
+            anSecHeaderGo.transform:SetParent(panelGo.transform, false)
+            local anshRt = anSecHeaderGo:AddComponent(typeof(RectTransform))
+            anshRt.anchorMin, anshRt.anchorMax, anshRt.pivot = Vector2(0.5, 1), Vector2(0.5, 1), Vector2(0.5, 1)
+            anshRt.anchoredPosition = Vector2(0, currentY)
+            anshRt.sizeDelta = Vector2(500, 25)
+            local anshTxt = anSecHeaderGo:AddComponent(typeof(Text))
+            anshTxt.text = "CẤU HÌNH THỐNG KÊ ẨN (C6 - C12)"
+            anshTxt.color, anshTxt.fontSize, anshTxt.alignment = Color(1, 0.6, 0.2, 1), 18, TextAnchor.MiddleCenter
+            anshTxt.raycastTarget = false
+            if defaultFont then anshTxt.font = defaultFont end
+
+            -- Hàng nút C6 - C12
+            currentY = currentY - 45
+            local anBossInfo = {
+                { tier = 6, name = "Nhện Sói" },
+                { tier = 7, name = "Đất Sét" },
+                { tier = 8, name = "Kỵ Sĩ" },
+                { tier = 9, name = "Đao Phủ" },
+                { tier = 10, name = "Sứ Đồ" },
+                { tier = 11, name = "Thống Lĩnh" },
+                { tier = 12, name = "Thợ Săn" }
+            }
+
+            local anStartX = 20
+            local anBtnW = 90
+            local anBtnGap = 8
+            for i, info in ipairs(anBossInfo) do
+                local t = info.tier
+                local btnAnGo = GameObject("An_Btn_C" .. t)
+                btnAnGo.transform:SetParent(panelGo.transform, false)
+                local bRt = btnAnGo:AddComponent(typeof(RectTransform))
+                bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+                bRt.anchoredPosition = Vector2(anStartX + (i - 1) * (anBtnW + anBtnGap), currentY)
+                bRt.sizeDelta = Vector2(anBtnW, 40)
+
+                local imgTile = btnAnGo:AddComponent(typeof(Image))
+                local prefKey = "Mod_An_C" .. t
+                local isEnabled = CS.UnityEngine.PlayerPrefs.GetInt(prefKey, 1) == 1
+                imgTile.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.3, 0.3, 0.3, 1)
+                imgTile.raycastTarget = true
+
+                local txtGoTile = GameObject("Text")
+                txtGoTile.transform:SetParent(btnAnGo.transform, false)
+                local tRt = txtGoTile:AddComponent(typeof(RectTransform))
+                tRt.anchorMin, tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                local txtTile = txtGoTile:AddComponent(typeof(Text))
+                txtTile.text = string.format("C%d\n%s", t, info.name)
+                txtTile.color, txtTile.fontSize, txtTile.alignment = Color.white, 13, TextAnchor.MiddleCenter
+                txtTile.raycastTarget = false
+                if defaultFont then txtTile.font = defaultFont end
+
+                local btnTile = btnAnGo:AddComponent(typeof(Button))
+                btnTile.targetGraphic = imgTile
+                btnTile.onClick:AddListener(function()
+                    isEnabled = not isEnabled
+                    CS.UnityEngine.PlayerPrefs.SetInt(prefKey, isEnabled and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                    imgTile.color = isEnabled and Color(0.2, 0.6, 0.2, 1) or Color(0.3, 0.3, 0.3, 1)
+                end)
+            end
+
+            -- Controls Row: Toggle ON/OFF, Test Ẩn, Reset Data
+            currentY = currentY - 55
+
+            -- Nút BẬT/TẮT THỐNG KÊ ẨN
+            local anToggleBtnGo = GameObject("AnStats_ToggleBtn")
+            anToggleBtnGo.transform:SetParent(panelGo.transform, false)
+            local atRt = anToggleBtnGo:AddComponent(typeof(RectTransform))
+            atRt.anchorMin, atRt.anchorMax, atRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            atRt.anchoredPosition = Vector2(20, currentY)
+            atRt.sizeDelta = Vector2(225, 42)
+
+            local atImg = anToggleBtnGo:AddComponent(typeof(Image))
+            local isAnOn = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) == 1
+            atImg.color = isAnOn and Color(0.2, 0.6, 0.2, 1) or Color(0.3, 0.3, 0.3, 1)
+            atImg.raycastTarget = true
+
+            local atTxtGo = GameObject("Text")
+            atTxtGo.transform:SetParent(anToggleBtnGo.transform, false)
+            local attRt = atTxtGo:AddComponent(typeof(RectTransform))
+            attRt.anchorMin, attRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            local atTxt = atTxtGo:AddComponent(typeof(Text))
+            atTxt.text = isAnOn and "THỐNG KÊ ẨN [ON]" or "THỐNG KÊ ẨN [OFF]"
+            atTxt.color, atTxt.fontSize, atTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            atTxt.raycastTarget = false
+            if defaultFont then atTxt.font = defaultFont end
+
+            local atBtn = anToggleBtnGo:AddComponent(typeof(Button))
+            atBtn.targetGraphic = atImg
+            atBtn.onClick:AddListener(function()
+                isAnOn = not isAnOn
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_AnStats_Enabled", isAnOn and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+                atImg.color = isAnOn and Color(0.2, 0.6, 0.2, 1) or Color(0.3, 0.3, 0.3, 1)
+                atTxt.text = isAnOn and "THỐNG KÊ ẨN [ON]" or "THỐNG KÊ ẨN [OFF]"
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg(isAnOn and "Đã BẬT Thống kê Ẩn!" or "Đã TẮT Thống kê Ẩn!")
+                end
+            end)
+
+            -- Nút TEST ẨN
+            local anTestBtnGo = GameObject("AnTestBtn")
+            anTestBtnGo.transform:SetParent(panelGo.transform, false)
+            local antRt = anTestBtnGo:AddComponent(typeof(RectTransform))
+            antRt.anchorMin, antRt.anchorMax, antRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            antRt.anchoredPosition = Vector2(255, currentY)
+            antRt.sizeDelta = Vector2(220, 42)
+
+            local antImg = anTestBtnGo:AddComponent(typeof(Image))
+            antImg.color = Color(0.1, 0.5, 0.8, 1)
+            antImg.raycastTarget = true
+
+            local antTxtGo = GameObject("Text")
+            antTxtGo.transform:SetParent(anTestBtnGo.transform, false)
+            local anttRt = antTxtGo:AddComponent(typeof(RectTransform))
+            anttRt.anchorMin, anttRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            local antTxt = antTxtGo:AddComponent(typeof(Text))
+            antTxt.text = "TEST ẨN TELEGRAM"
+            antTxt.color, antTxt.fontSize, antTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            antTxt.raycastTarget = false
+            if defaultFont then antTxt.font = defaultFont end
+
+            local antBtn = anTestBtnGo:AddComponent(typeof(Button))
+            antBtn.targetGraphic = antImg
+            antBtn.onClick:AddListener(function()
+                if not _G.Mod_AnStats_Loaded then
+                    if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                    _G.Mod_AnStats_Loaded = true
+                end
+                -- Populate test sample data for ALL currently enabled tiers
+                for t = 6, 12 do
+                    if CS.UnityEngine.PlayerPrefs.GetInt("Mod_An_C" .. t, 1) == 1 then
+                        _G.Mod_AnStatsToday[t] = _G.Mod_AnStatsToday[t] or {}
+                        if not next(_G.Mod_AnStatsToday[t]) then
+                            _G.Mod_AnStatsToday[t]["Tester_C" .. t] = 1
+                        end
+                    end
+                end
+                if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                if _G.Mod_SendAnStatsTelegram then
+                    _G.Mod_SendAnStatsTelegram()
+                    if _G.FloatingWordUtility then
+                        _G.FloatingWordUtility.QuickMsg("Đã gửi/cập nhật Thống kê Ẩn lên Telegram!")
+                    end
+                end
+            end)
+
+            -- Nút RESET DATA ẨN
+            local anResetBtnGo = GameObject("AnResetBtn")
+            anResetBtnGo.transform:SetParent(panelGo.transform, false)
+            local anrRt = anResetBtnGo:AddComponent(typeof(RectTransform))
+            anrRt.anchorMin, anrRt.anchorMax, anrRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            anrRt.anchoredPosition = Vector2(485, currentY)
+            anrRt.sizeDelta = Vector2(215, 42)
+
+            local anrImg = anResetBtnGo:AddComponent(typeof(Image))
+            anrImg.color = Color(0.7, 0.2, 0.2, 1)
+            anrImg.raycastTarget = true
+
+            local anrTxtGo = GameObject("Text")
+            anrTxtGo.transform:SetParent(anResetBtnGo.transform, false)
+            local anrtRt = anrTxtGo:AddComponent(typeof(RectTransform))
+            anrtRt.anchorMin, anrtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            local anrTxt = anrTxtGo:AddComponent(typeof(Text))
+            anrTxt.text = "RESET DATA ẨN"
+            anrTxt.color, anrTxt.fontSize, anrTxt.alignment = Color.white, 16, TextAnchor.MiddleCenter
+            anrTxt.raycastTarget = false
+            if defaultFont then anrTxt.font = defaultFont end
+
+            local anrBtn = anResetBtnGo:AddComponent(typeof(Button))
+            anrBtn.targetGraphic = anrImg
+            anrBtn.onClick:AddListener(function()
+                _G.Mod_AnStatsToday = {}
+                for t = 6, 12 do _G.Mod_AnStatsToday[t] = {} end
+                _G.Mod_AnStatsYesterday = {}
+                for t = 6, 12 do _G.Mod_AnStatsYesterday[t] = {} end
+                _G.Mod_AnStatsDate = CS.System.DateTime.Now:ToString("yyyy/MM/dd")
+                if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+                if _G.Mod_SendAnStatsTelegram then _G.Mod_SendAnStatsTelegram() end
+                if _G.FloatingWordUtility then
+                    _G.FloatingWordUtility.QuickMsg("Đã RESET toàn bộ số liệu thống kê Ẩn!")
+                end
+            end)
         end
 
         CreateNotificationUI()
@@ -978,6 +1667,89 @@ if not status then
     if _G.WriteLog then _G.WriteLog("LỖI Hook UIManager: " .. tostring(err)) end
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: HOOK THÔNG BÁO TRIỆU HỒI BOSS ẨN (AN STATS EVENT HOOKS)
+-- Mô tả: Hook NoticeController.ResAnnounce và ChatData.AddMessage để phát hiện triệu hồi quái biến dị.
+-- =========================================================================
+pcall(function()
+    if _G.NoticeController and not _G.Mod_HookedNoticeAnnounce then
+        _G.Mod_HookedNoticeAnnounce = true
+        local orig_ResAnnounce = _G.NoticeController.ResAnnounce
+        _G.NoticeController.ResAnnounce = function(eventId, data)
+            pcall(function()
+                if data and data.parameter and #data.parameter >= 3 then
+                    local pStr = table.concat(data.parameter, " ")
+                    if data.id == 24001 or string.find(pStr, "Bản đồ ẩn") or string.find(pStr, "Biến Dị") then
+                        local p1 = tostring(data.parameter[1] or "")
+                        local p3 = tostring(data.parameter[3] or "")
+                        local p1Clean = string.gsub(string.gsub(p1, "<color=#ffffff00>a</color>", " "), "<[^>]+>", "")
+                        local p3Clean = string.gsub(string.gsub(p3, "<color=#ffffff00>a</color>", " "), "<[^>]+>", "")
+                        p1Clean = string.match(p1Clean, "^%s*(.-)%s*$")
+                        p3Clean = string.match(p3Clean, "^%s*(.-)%s*$")
+                        if p1Clean and p1Clean ~= "" and p3Clean and p3Clean ~= "" then
+                            ProcessAnAnnouncement(p1Clean, p3Clean)
+                        end
+                    end
+                end
+            end)
+            if orig_ResAnnounce then orig_ResAnnounce(eventId, data) end
+        end
+    end
+end)
+
+pcall(function()
+    if _G.ChatData and not _G.Mod_HookedChatDataAddMessage then
+        _G.Mod_HookedChatDataAddMessage = true
+        local orig_AddMessage = _G.ChatData.AddMessage
+        _G.ChatData.AddMessage = function(channel, message)
+            pcall(function()
+                local rawText = ""
+                if message then
+                    if type(message.chatMsg) == "table" and message.chatMsg.message then
+                        rawText = tostring(message.chatMsg.message)
+                    elseif type(message.chatMsg) == "string" then
+                        rawText = tostring(message.chatMsg)
+                    elseif message.message then
+                        rawText = tostring(message.message)
+                    elseif message.content then
+                        rawText = tostring(message.content)
+                    end
+                end
+
+                if rawText and rawText ~= "" then
+                    local textWithoutColorA = string.gsub(rawText, "<color=#ffffff00>a</color>", " ")
+                    local cleanText = string.gsub(textWithoutColorA, "<[^>]+>", "")
+                    cleanText = string.gsub(cleanText, "%s+", " ")
+
+                    local isSystemText = string.find(cleanText, "Hệ thống") or string.find(cleanText, "Bản đồ ẩn")
+                    if isSystemText or channel == 8 or (_G.ChatChannelEnum and channel == _G.ChatChannelEnum.SYSTEM) then
+                        if string.find(cleanText, "Bản đồ ẩn") and string.find(cleanText, "triệu hồi") then
+                            local playerName = string.match(cleanText, "%]%s*([^%s]+)%s+trong")
+                            if not playerName or playerName == "" then
+                                playerName = string.match(cleanText, "([^%s]+)%s+trong%s+Bản đồ ẩn")
+                            end
+                            if not playerName or playerName == "" then
+                                playerName = string.match(cleanText, "([^%s]+)%s+trong")
+                            end
+
+                            local bossName = string.match(cleanText, "%[BOSS Biến Dị%]([^,]+)")
+                            if not bossName or bossName == "" then
+                                bossName = string.match(cleanText, "Biến Dị Hoàn Toàn%-([^,]+)")
+                            end
+
+                            if playerName and playerName ~= "" and bossName and bossName ~= "" then
+                                ProcessAnAnnouncement(playerName, bossName)
+                            end
+                        end
+                    end
+                end
+            end)
+
+            if orig_AddMessage then orig_AddMessage(channel, message) end
+        end
+    end
+end)
+
 -- Heartbeat Loop: Re-checks UIManager hook, ensures CreateModUI & runs 5s Telegram Dispatch loop
 if not _G.ModUIHooked then
     _G.ModUIHooked = true
@@ -1005,6 +1777,29 @@ if not _G.ModUIHooked then
                 if not _G.MyModCreated and _G.SceneData and _G.SceneData.me then
                     _G.MyModCreated = true
                     CreateModUI()
+                end
+            end)
+
+            -- Auto-load AnStats on startup
+            if not _G.Mod_AnStats_Loaded then
+                if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
+                _G.Mod_AnStats_Loaded = true
+            end
+
+            -- Check Day Rollover
+            if _G.Mod_CheckDayRollover then
+                _G.Mod_CheckDayRollover()
+            end
+
+            -- Maintain Camera FOV 65
+            pcall(function()
+                local targetFov = 65
+                local cam = CS.UnityEngine.Camera and CS.UnityEngine.Camera.main
+                if cam and math.abs(cam.fieldOfView - targetFov) > 0.5 then
+                    cam.fieldOfView = targetFov
+                end
+                if _G.MainCamera and _G.MainCamera.camera and math.abs(_G.MainCamera.camera.fieldOfView - targetFov) > 0.5 then
+                    _G.MainCamera.camera.fieldOfView = targetFov
                 end
             end)
 

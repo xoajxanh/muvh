@@ -4208,30 +4208,14 @@ local function CreateModUI()
 
             -- =========================================================================
             -- [MOD FEATURE]: HÀM SỬ DỤNG BÙA VỀ THÀNH (TOWN PORTAL SCROLL HELPER)
-            -- Mô tả: Dùng item Bùa Về Thành (20000021) quay về Lorencia; nếu không có bùa thì dùng ReqCallFlag
+            -- Mô tả: Bay thẳng về Lorencia (Map 1001: 54, 63) bằng ReqCallFlag tức thì, an toàn
             -- =========================================================================
             local function Mod_UseTownPortalScroll()
-                local foundScroll = false
-                if _G.BagInfoData and _G.BagInfoData.TotalItems then
-                    for _, itemData in pairs(_G.BagInfoData.TotalItems) do
-                        if itemData and itemData.itemId == 20000021 then
-                            if _G.networkRequest and _G.networkRequest.ReqUseItem then
-                                _G.networkRequest.ReqUseItem(1, itemData.id)
-                                foundScroll = true
-                            elseif _G.NetManager and _G.NetManager.Send and _G.ItemMessage and _G.ItemMessage.ReqUseItem then
-                                _G.NetManager.Send(_G.ItemMessage.ReqUseItem, { id = itemData.id, count = 1 })
-                                foundScroll = true
-                            end
-                            break
-                        end
-                    end
+                if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                    _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 1001, line = 1, x = 54, y = 63 })
+                    return true
                 end
-                if not foundScroll then
-                    if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
-                        _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 1001, line = 1, x = 54, y = 63 })
-                    end
-                end
-                return foundScroll
+                return false
             end
             _G.Mod_UseTownPortalScroll = Mod_UseTownPortalScroll
 
@@ -7984,17 +7968,23 @@ local function CreateModUI()
 
                     -- =========================================================================
                     -- [MOD FEATURE]: TỰ ĐỘNG KHIÊU CHIẾN PHONG MA THÁP LIÊN HOÀN VỚI BÃI BUFF
-                    -- Mô tả: Tự động kiểm tra Buff Công/Thủ/Máu & Cực Hạn, Gai.
-                    --        - Nếu thiếu buff: Tự bay sang bãi buff (101096: 20, 207).
-                    --        - Khi nhận đủ buff: Dùng Bùa Về Thành quay về Lorencia (Map 1001: 54, 63).
-                    --        - Tại Lorencia: Nếu đủ điều kiện (buff + Cực Hạn + Gai) -> Tự vào Tháp!
-                    --        - Nếu chưa đủ điều kiện: Báo QuickMsg chi tiết lý do (throttle 4s).
+                    -- Mô tả: Tự động kiểm tra Buff Công/Thủ/Máu & Cực Hạn, Gai, Phá Ngự, Nhiếp Hồn.
+                    --        - BƯỚC 1 (XIN BUFF): Nếu thiếu buff:
+                    --          * Nếu chưa ở map 101096 hoặc cách xa bãi buff (20, 207) > 5 ô -> Bay sang bãi buff 101096 (20, 207).
+                    --          * Nếu đã ở bãi buff (20, 207) -> Đứng đợi nhận buff.
+                    --        - BƯỚC 2 (VỀ LORENCIA TRƯỚC): Khi đã đủ buff (hoặc không yêu cầu buff):
+                    --          * Nếu CHƯA Ở LORENCIA (Map 1001) -> Bắt buộc bay về Lorencia (Map 1001: 54, 63) trước!
+                    --          * Tuyệt đối không vào Tháp từ map ngoài hay bãi buff để tránh lag rớt bản đồ.
+                    --        - BƯỚC 3 (VÀO THÁP): CHỈ KHI ĐÃ ĐỨNG TẠI LORENCIA (Map 1001):
+                    --          * Chờ hồi xong Cực Hạn, Gai, Phá Ngự, Nhiếp Hồn -> Tự động vào Tháp!
+                    --          * Nếu chưa đủ điều kiện: Báo QuickMsg chi tiết lý do (throttle 4s).
                     -- =========================================================================
                     if _G.Mod_AutoChallengeTower_Enabled and _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/autothap") then
                         local me = _G.RoleManager and _G.RoleManager.me
                         local inCopy = _G.TranScriptData and _G.TranScriptData.InTranscript
                         local mapId = _G.SceneData and _G.SceneData.mapId
                         local groupId = _G.SceneData and _G.SceneData.groupId
+                        local curMap = mapId or groupId or 0
 
                         if me and not me.isDead and (not me.hp or me.hp > 0) and not inCopy then
                             local checkSkill = (_G.Mod_AutoTower_CheckSkill_Enabled == true)
@@ -8029,25 +8019,56 @@ local function CreateModUI()
                             if needHp  and not hasHp  then table.insert(missingBuffs, "Buff Máu") end
                             local isMissingAnyBuff = (#missingBuffs > 0)
 
-                            local isAtLoren = (mapId == 1001 or groupId == 1001)
-                            local isAtBuffMap = (mapId == 101096 or groupId == 101096)
+                            local isAtLoren = (curMap == 1001 or mapId == 1001 or groupId == 1001)
+                            local isAtBuffMap = (curMap == 101096 or mapId == 101096 or groupId == 101096)
+                            local myCell = me.serverCoord or (me.cellPos and { x = me.cellPos.x, y = me.cellPos.y }) or { x = 0, y = 0 }
+                            local distToBuffSpot = isAtBuffMap and math.max(math.abs((myCell.x or 0) - 20), math.abs((myCell.y or 0) - 207)) or 999
                             local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
 
-                            -- TRƯỜNG HỢP 1: ĐANG Ở LORENCIA (MAP 1001)
-                            if isAtLoren then
-                                -- 1.1. Nếu có yêu cầu buff và đang thiếu buff -> Tự bay sang bãi buff 101096 (20, 207)
-                                if needAnyBuff and isMissingAnyBuff then
-                                    if (nowRealtime - (_G.Mod_LastTowerFlyBuffTime or 0)) >= 4.0 then
+                            -- BƯỚC 1: CÓ YÊU CẦU BUFF VÀ ĐANG THIẾU BUFF -> ĐI XIN BUFF
+                            if needAnyBuff and isMissingAnyBuff then
+                                if not isAtBuffMap or distToBuffSpot > 5 then
+                                    -- Chưa ở bãi buff hoặc đang đứng xa toạ độ (20, 207) > 5 ô -> Bay tới bãi buff
+                                    if (nowRealtime - (_G.Mod_LastTowerFlyBuffTime or 0)) >= 3.0 then
                                         _G.Mod_LastTowerFlyBuffTime = nowRealtime
                                         if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
                                             _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 101096, line = 1, x = 20, y = 207 })
                                         end
                                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang thiếu " .. table.concat(missingBuffs, ", ") .. " -> Bay sang bãi buff...")
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Thiếu " .. table.concat(missingBuffs, ", ") .. " -> Bay sang bãi buff (20, 207)...")
                                         end
                                     end
                                 else
-                                    -- 1.2. Đã đủ buff (hoặc không yêu cầu buff). Kiểm tra Cực Hạn, Gai, Phá Ngự & Nhiếp Hồn
+                                    -- Đã đứng đúng bãi buff (20, 207) trong phạm vi <= 5 ô -> Đợi nhận buff
+                                    if (nowRealtime - (_G.Mod_LastTowerWaitingBuffMsgTime or 0)) >= 4.0 then
+                                        _G.Mod_LastTowerWaitingBuffMsgTime = nowRealtime
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang đợi nhận: " .. table.concat(missingBuffs, ", "))
+                                        end
+                                    end
+                                end
+
+                            -- BƯỚC 2 & 3: ĐÃ ĐỦ BUFF (HOẶC KHÔNG YÊU CẦU BUFF)
+                            else
+                                -- BƯỚC 2: NẾU CHƯA Ở LORENCIA (MAP 1001) -> BẮT BUỘC BAY VỀ LORENCIA TRƯỚC!
+                                --         (Bất kể vừa nhận buff xong ở 101096 hay vừa rời Tháp rớt ở map khác)
+                                if not isAtLoren then
+                                    if (nowRealtime - (_G.Mod_LastTowerBackLorenTime or 0)) >= 2.5 then
+                                        _G.Mod_LastTowerBackLorenTime = nowRealtime
+                                        local used = false
+                                        if _G.Mod_UseTownPortalScroll then
+                                            pcall(function() used = _G.Mod_UseTownPortalScroll() end)
+                                        end
+                                        if not used and _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, { mapId = 1001, line = 1, x = 54, y = 63 })
+                                        end
+                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đã đủ buff! Về Lorencia chuẩn bị vào Tháp...")
+                                        end
+                                    end
+
+                                -- BƯỚC 3: ĐÃ Ở LORENCIA (MAP 1001) -> KIỂM TRA SKILL & VÀO THÁP
+                                else
                                     local serverTime = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
                                     local missingSkills = {}
 
@@ -8112,7 +8133,7 @@ local function CreateModUI()
                                             end
                                         end
                                     else
-                                        -- TẤT CẢ ĐIỀU KIỆN ĐÃ ĐẦY ĐỦ -> VÀO THÁP!
+                                        -- TẤT CẢ ĐIỀU KIỆN ĐÃ ĐẦY ĐỦ VÀ ĐANG Ở LORENCIA -> VÀO THÁP!
                                         if (nowRealtime - (_G.Mod_LastTowerJoinReqTime or 0)) >= 3.0 then
                                             _G.Mod_LastTowerJoinReqTime = nowRealtime
 
@@ -8146,34 +8167,6 @@ local function CreateModUI()
                                                     _G.FloatingWordUtility.QuickMsg(string.format("[AUTO THÁP] Lần thứ %d thành công!", _G.Mod_AutoChallengeTower_Count))
                                                 end
                                             end
-                                        end
-                                    end
-                                end
-
-                            -- TRƯỜNG HỢP 2: ĐANG Ở BÃI BUFF (MAP 101096)
-                            elseif isAtBuffMap and needAnyBuff then
-                                if not isMissingAnyBuff then
-                                    -- BƯỚC 3: ĐÃ NHẬN ĐỦ TẤT CẢ CÁC BUFF ĐƯỢC YÊU CẦU -> DÙNG BÙA VỀ THÀNH
-                                    if (nowRealtime - (_G.Mod_LastTowerUseScrollTime or 0)) >= 3.0 then
-                                        _G.Mod_LastTowerUseScrollTime = nowRealtime
-                                        local used = false
-                                        if _G.Mod_UseTownPortalScroll then
-                                            used = _G.Mod_UseTownPortalScroll()
-                                        end
-                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                            if used then
-                                                _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đã đủ buff! Dùng Bùa Về Thành về Lorencia...")
-                                            else
-                                                _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đã đủ buff! Bay về Lorencia (Map 1001)...")
-                                            end
-                                        end
-                                    end
-                                else
-                                    -- Đang đứng đợi nhận buff tại bãi
-                                    if (nowRealtime - (_G.Mod_LastTowerWaitingBuffMsgTime or 0)) >= 4.0 then
-                                        _G.Mod_LastTowerWaitingBuffMsgTime = nowRealtime
-                                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                            _G.FloatingWordUtility.QuickMsg("[AUTO THÁP] Đang đợi nhận: " .. table.concat(missingBuffs, ", "))
                                         end
                                     end
                                 end
