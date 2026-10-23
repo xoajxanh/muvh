@@ -10240,6 +10240,24 @@ local function CreateModUI()
                     -- TRƯỜNG HỢP 1: CÓ PHÓ BẢN SẴN SÀNG VÀO ĐƯỢC
                     if canEnterDungeon then
                         _G.Mod_IsPriorityDungeon = true
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ ĐỘNG THOÁT PHÓ BẢN KHÁC TRƯỚC KHI VÀO HUYẾT LÂU / QTQ
+                        -- Mô tả: Dùng chính hàm ExitDungeon() của Auto Boss. Nếu nhân vật đang ở trong
+                        --        phó bản khác (ngoại trừ Map Ẩn đã được chặn ở đầu), gửi lệnh thoát pb
+                        --        và chờ ra ngoài thành trước khi vào HL/QTQ.
+                        -- =========================================================================
+                        if ExitDungeon and ExitDungeon() then
+                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowTime - (_G.Mod_LastAutoDungeonExitMsgTime or 0)) >= 3.0 then
+                                _G.Mod_LastAutoDungeonExitMsgTime = nowTime
+                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                    _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đang trong phó bản khác, gửi lệnh thoát để vào %s...", canEnterDungeon.inst.name))
+                                end
+                            end
+                            return
+                        end
+
                         local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
                         if (nowTime - (_G.Mod_LastDungeonEnterReqTime or -999)) >= 5.0 and (nowTime - (_G.Mod_LastDungeonExitTime or -999)) >= 10.0 then
                             _G.Mod_LastDungeonEnterReqTime = nowTime
