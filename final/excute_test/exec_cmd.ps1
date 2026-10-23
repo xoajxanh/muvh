@@ -1,3 +1,6 @@
-Remove-Item -Path "d:\MUVH\android\mu-decompiled\final\excute_test\run_unit_test.py" -Force -ErrorAction SilentlyContinue
-Remove-Item -Path "d:\MUVH\android\mu-decompiled\final\excute_test\test_unit.lua" -Force -ErrorAction SilentlyContinue
-Write-Output "Cleaned temp test files."
+& "d:\MUVH\android\mu-decompiled\lua53\luac53.exe" -p "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_client\EmmyluaDebug.lua"
+if ($LASTEXITCODE -eq 0) {
+    Write-Output "SYNTAX CHECK: OK!"
+} else {
+    Write-Output "SYNTAX CHECK: FAILED!"
+}

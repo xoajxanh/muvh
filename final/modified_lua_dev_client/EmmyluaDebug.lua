@@ -2178,6 +2178,34 @@ local function CreateModUI()
             CS.UnityEngine.PlayerPrefs.Save()
             if _G.ModUpdateFloatingPKBtn then _G.ModUpdateFloatingPKBtn() end
             if _G.Mod_AutoPK_Enabled then
+                -- =========================================================================
+                -- [MOD FEATURE]: CẤU HÌNH PHẠM VI ĐÁNH VÀ PHÁT HIỆN ĐỊCH KHI BẬT AUTO PK
+                -- Mô tả: Mặc định tầm đánh 1.4x và phạm vi phát hiện địch 15 khi bật Auto PK.
+                -- =========================================================================
+                pcall(function()
+                    _G.Mod_CustomAttackRangeMultiplier = 1.4
+                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.4)
+                    if _G.Mod_ApplyAttackRangeMultiplier then
+                        _G.Mod_ApplyAttackRangeMultiplier(1.4)
+                    end
+
+                    _G.Mod_CustomAttackRange = 15
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 15)
+                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                        _G.QiJiHelperData.SettingData.KillMonsterScope = 15
+                    end
+
+                    CS.UnityEngine.PlayerPrefs.Save()
+
+                    if _G.Mod_AllUIUpdaters then
+                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                    end
+
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("[AUTO PK] Đã bật! Tầm đánh: 1.4x, Phát hiện địch: 15")
+                    end
+                end)
+
                 pcall(function()
                     if _G.RoleManager and _G.RoleManager.me and _G.NetManager and _G.RoleMessage then
                         local curMode = _G.RoleManager.me.PKMode
@@ -7583,8 +7611,9 @@ local function CreateModUI()
                                             if _G.UIID.Role_ResurgenceUI then
                                                 _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
                                             end
-                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
-                                            if _G.Mod_IsAdmin and _G.UIID.CountDown then
+                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (KHI CÓ LỆNH /FASTREBORN)
+                                            local isFastReborn = (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastreborn"))
+                                            if isFastReborn and _G.UIID.CountDown then
                                                 _G.UIManager.Hide(_G.UIID.CountDown)
                                             end
                                         end
@@ -7628,8 +7657,9 @@ local function CreateModUI()
                                             if _G.UIID.Role_ResurgenceUI then
                                                 _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
                                             end
-                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
-                                            if _G.Mod_IsAdmin and _G.UIID.CountDown then
+                                            -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (KHI CÓ LỆNH /FASTREBORN)
+                                            local isFastReborn = (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastreborn"))
+                                            if isFastReborn and _G.UIID.CountDown then
                                                 _G.UIManager.Hide(_G.UIID.CountDown)
                                             end
                                         end
@@ -7644,8 +7674,9 @@ local function CreateModUI()
                                 if _G.UIID.Role_ResurgenceUI and _G.UIManager.IsVisible(_G.UIID.Role_ResurgenceUI) then
                                     _G.UIManager.Hide(_G.UIID.Role_ResurgenceUI)
                                 end
-                                -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (CHỈ ADMIN TEST)
-                                if _G.Mod_IsAdmin and _G.UIID.CountDown and _G.UIManager.IsVisible(_G.UIID.CountDown) then
+                                -- [MOD FEATURE]: DẬP TẮT ĐỒNG HỒ ĐẾM NGƯỢC 3VS3 (KHI CÓ LỆNH /FASTREBORN)
+                                local isFastReborn = (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastreborn"))
+                                if isFastReborn and _G.UIID.CountDown and _G.UIManager.IsVisible(_G.UIID.CountDown) then
                                     _G.UIManager.Hide(_G.UIID.CountDown)
                                 end
                             end
@@ -9212,70 +9243,70 @@ local function CreateModUI()
                     end)
 
                     -- =========================================================================
-                    -- [MOD FEATURE]: CHẶN ĐỒNG HỒ ĐẾM NGƯỢC HỒI SINH 3VS3 (CHỈ ADMIN TEST)
-                    -- Mô tả: Khi Admin bật Auto Resurrect (HS Free hoặc HS KC), chặn không cho mở và tự dập tắt
+                    -- [MOD FEATURE]: CHẶN ĐỒNG HỒ ĐẾM NGƯỢC HỒI SINH 3VS3 (KHI CÓ LỆNH /FASTREBORN)
+                    -- Mô tả: Khi có secret command /fastreborn, chặn không cho mở và tự dập tắt
                     --        UI đếm ngược Activity_Sport3V3Dead (UIID.CountDown) trong thi đấu 3vs3.
                     -- =========================================================================
-                    if _G.Mod_IsAdmin then
-                        pcall(function()
-                            if _G.TipUtility and not _G.Mod_HookedTipReviveCountDown then
-                                _G.Mod_HookedTipReviveCountDown = true
-                                local orig_ShowReviveCountDown = _G.TipUtility.ShowReviveCountDown
-                                if orig_ShowReviveCountDown then
-                                    _G.TipUtility.ShowReviveCountDown = function(param)
-                                        if _G.Mod_IsAdmin and (_G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Here_Enabled) then
-                                            return
-                                        end
-                                        return orig_ShowReviveCountDown(param)
+                    pcall(function()
+                        if _G.TipUtility and not _G.Mod_HookedTipReviveCountDown then
+                            _G.Mod_HookedTipReviveCountDown = true
+                            local orig_ShowReviveCountDown = _G.TipUtility.ShowReviveCountDown
+                            if orig_ShowReviveCountDown then
+                                _G.TipUtility.ShowReviveCountDown = function(param)
+                                    local isFastReborn = (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastreborn"))
+                                    if isFastReborn then
+                                        return
                                     end
+                                    return orig_ShowReviveCountDown(param)
                                 end
                             end
+                        end
 
-                            if _G.Activity_Sport3V3Dead and not _G.Mod_HookedActivitySport3V3Dead then
-                                _G.Mod_HookedActivitySport3V3Dead = true
-                                local orig_Sport3V3Dead_OnShow = _G.Activity_Sport3V3Dead.OnShow
-                                if orig_Sport3V3Dead_OnShow then
-                                    _G.Activity_Sport3V3Dead.OnShow = function(self)
-                                        if _G.Mod_IsAdmin and (_G.Mod_AutoResurrect_Free_Enabled or _G.Mod_AutoResurrect_Here_Enabled) then
-                                            pcall(function()
-                                                if self.StopTimer then self:StopTimer() end
-                                                if self.Hide then self:Hide() end
-                                            end)
-                                            return
-                                        end
-                                        return orig_Sport3V3Dead_OnShow(self)
-                                    end
-                                end
-                            end
-
-                            -- =========================================================================
-                            -- [MOD FEATURE]: HOOK ME CONTROLLER HỒI SINH FREE TRONG KUNDUN VỀ LORENCIA
-                            -- Mô tả: Bắt sự kiện bấm tay hoặc gọi ReqReqRelive(BornPoint) trong map Kundun khi bật /fastback
-                            -- =========================================================================
-                            if _G.MeController and not _G.Mod_HookedMeController_ReliveKundun then
-                                _G.Mod_HookedMeController_ReliveKundun = true
-                                local orig_ReqReqRelive = _G.MeController.ReqReqRelive
-                                if orig_ReqReqRelive then
-                                    _G.MeController.ReqReqRelive = function(reliveType)
-                                        orig_ReqReqRelive(reliveType)
+                        if _G.Activity_Sport3V3Dead and not _G.Mod_HookedActivitySport3V3Dead then
+                            _G.Mod_HookedActivitySport3V3Dead = true
+                            local orig_Sport3V3Dead_OnShow = _G.Activity_Sport3V3Dead.OnShow
+                            if orig_Sport3V3Dead_OnShow then
+                                _G.Activity_Sport3V3Dead.OnShow = function(self)
+                                    local isFastReborn = (_G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastreborn"))
+                                    if isFastReborn then
                                         pcall(function()
-                                            if _G.RoleReliveType and reliveType == _G.RoleReliveType.BornPoint then
-                                                local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-                                                local isKundunMap = (curMap == 250001 or curMap == 270001 or curMap == 250002)
-                                                local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
-                                                if isKundunMap and isFastBack then
-                                                    _G.Mod_PendingKundunFastBackExit = true
-                                                    if _G.Mod_ExitKundunToLorencia then
-                                                        _G.Mod_ExitKundunToLorencia()
-                                                    end
+                                            if self.StopTimer then self:StopTimer() end
+                                            if self.Hide then self:Hide() end
+                                        end)
+                                        return
+                                    end
+                                    return orig_Sport3V3Dead_OnShow(self)
+                                end
+                            end
+                        end
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: HOOK ME CONTROLLER HỒI SINH FREE TRONG KUNDUN VỀ LORENCIA
+                        -- Mô tả: Bắt sự kiện bấm tay hoặc gọi ReqReqRelive(BornPoint) trong map Kundun khi bật /fastback
+                        -- =========================================================================
+                        if _G.MeController and not _G.Mod_HookedMeController_ReliveKundun then
+                            _G.Mod_HookedMeController_ReliveKundun = true
+                            local orig_ReqReqRelive = _G.MeController.ReqReqRelive
+                            if orig_ReqReqRelive then
+                                _G.MeController.ReqReqRelive = function(reliveType)
+                                    orig_ReqReqRelive(reliveType)
+                                    pcall(function()
+                                        if _G.RoleReliveType and reliveType == _G.RoleReliveType.BornPoint then
+                                            local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                                            local isKundunMap = (curMap == 250001 or curMap == 270001 or curMap == 250002)
+                                            local isFastBack = _G.Mod_HasSecretCommand and _G.Mod_HasSecretCommand("/fastback")
+                                            if isKundunMap and isFastBack then
+                                                _G.Mod_PendingKundunFastBackExit = true
+                                                if _G.Mod_ExitKundunToLorencia then
+                                                    _G.Mod_ExitKundunToLorencia()
                                                 end
                                             end
-                                        end)
-                                    end
+                                        end
+                                    end)
                                 end
                             end
-                        end)
-                    end
+                        end
+                    end)
 
                     -- =========================================================================
                     -- [MOD FEATURE]: KHÓA MỤC TIÊU SMART TARGET & BẢO HỘ (SCOPE CHECK & FALLBACK)
@@ -9805,11 +9836,39 @@ local function CreateModUI()
                         _G.Mod_IsRunningDungeon = false
                         _G.Mod_IsPriorityDungeon = false
                         _G.Mod_DungeonJustFinished = false
-                        if _G.Mod_DungeonSpeedReduced and _G.Mod_SavedSpeedBeforeDungeon then
-                            local oldSpd = _G.Mod_SavedSpeedBeforeDungeon
-                            _G.Mod_SavedSpeedBeforeDungeon = nil
+                        if _G.Mod_DungeonSettingsApplied or _G.Mod_DungeonSpeedReduced then
+                            _G.Mod_DungeonSettingsApplied = false
                             _G.Mod_DungeonSpeedReduced = false
-                            Mod_ApplyRunSpeed(oldSpd)
+                            local snap = _G.Mod_SavedDungeonSettings
+                            _G.Mod_SavedDungeonSettings = nil
+                            _G.Mod_SavedSpeedBeforeDungeon = nil
+                            if snap then
+                                pcall(function()
+                                    if snap.speed then
+                                        _G.RunSpeedMultiplier = snap.speed
+                                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", snap.speed)
+                                        Mod_ApplyRunSpeed(snap.speed)
+                                    end
+                                    if snap.attackRangeMult then
+                                        _G.Mod_CustomAttackRangeMultiplier = snap.attackRangeMult
+                                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", snap.attackRangeMult)
+                                        if _G.Mod_ApplyAttackRangeMultiplier then
+                                            _G.Mod_ApplyAttackRangeMultiplier(snap.attackRangeMult)
+                                        end
+                                    end
+                                    if snap.detectRange then
+                                        _G.Mod_CustomAttackRange = snap.detectRange
+                                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", snap.detectRange)
+                                        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                                            _G.QiJiHelperData.SettingData.KillMonsterScope = snap.detectRange
+                                        end
+                                    end
+                                    CS.UnityEngine.PlayerPrefs.Save()
+                                    if _G.Mod_AllUIUpdaters then
+                                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                    end
+                                end)
+                            end
                         end
                         return
                     end
@@ -9841,20 +9900,52 @@ local function CreateModUI()
                         _G.Mod_DungeonJustFinished = false
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: TỰ ĐỘNG CHUYỂN TỐC CHẠY XUỐNG 1.8X KHI VÀO HUYẾT LÂU (CHỐNG LAG QUÁI)
-                        -- Mô tả: Khi vào HL (hoặc QTQ), nếu tốc chạy > 1.8x thì tạm hạ xuống 1.8x
-                        --        để không bị lag quái/trượt cửa cầu. Lưu lại tốc độ ban đầu để khôi phục khi ra ngoài.
+                        -- [MOD FEATURE]: TỰ ĐỘNG THIẾT LẬP THÔNG SỐ KHI VÀO HUYẾT LÂU / QTQ (CHỐNG LAG QUÁI)
+                        -- Mô tả: Khi vào HL (hoặc QTQ), lưu snapshot 3 thông số: Tốc chạy, Tầm đánh, Phát hiện địch.
+                        --        Áp dụng mặc định: Tốc độ 1.8x, Tầm đánh 1.4x, Phát hiện địch 15.
+                        --        Khôi phục lại đúng 3 thông số ban đầu khi ra khỏi phó bản.
                         -- =========================================================================
                         if inBC or inDS then
-                            if not _G.Mod_DungeonSpeedReduced then
-                                if (_G.RunSpeedMultiplier or 1.0) > 1.8 then
-                                    _G.Mod_SavedSpeedBeforeDungeon = _G.RunSpeedMultiplier
-                                    _G.Mod_DungeonSpeedReduced = true
+                            if not _G.Mod_DungeonSettingsApplied then
+                                _G.Mod_DungeonSettingsApplied = true
+                                _G.Mod_DungeonSpeedReduced = true
+                                _G.Mod_SavedDungeonSettings = {
+                                    speed = _G.RunSpeedMultiplier or 1.0,
+                                    attackRangeMult = _G.Mod_CustomAttackRangeMultiplier or 1.0,
+                                    detectRange = _G.Mod_CustomAttackRange or 0
+                                }
+                                _G.Mod_SavedSpeedBeforeDungeon = _G.Mod_SavedDungeonSettings.speed
+
+                                pcall(function()
+                                    -- 1. Tốc độ chạy 1.8x
+                                    _G.RunSpeedMultiplier = 1.8
+                                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.8)
                                     Mod_ApplyRunSpeed(1.8)
-                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                        _G.FloatingWordUtility.QuickMsg("[AUTO HL] Đã chuyển tốc chạy xuống 1.8x chống lag quái!")
+
+                                    -- 2. Phạm vi đánh (Tầm đánh) 1.4x
+                                    _G.Mod_CustomAttackRangeMultiplier = 1.4
+                                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 1.4)
+                                    if _G.Mod_ApplyAttackRangeMultiplier then
+                                        _G.Mod_ApplyAttackRangeMultiplier(1.4)
                                     end
-                                end
+
+                                    -- 3. Phát hiện địch 15
+                                    _G.Mod_CustomAttackRange = 15
+                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 15)
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                                        _G.QiJiHelperData.SettingData.KillMonsterScope = 15
+                                    end
+
+                                    CS.UnityEngine.PlayerPrefs.Save()
+
+                                    if _G.Mod_AllUIUpdaters then
+                                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                    end
+
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg("[AUTO HL] Đã áp dụng: Tốc chạy 1.8x, Tầm đánh 1.4x, Phát hiện 15!")
+                                    end
+                                end)
                             end
                         end
 
@@ -9990,18 +10081,49 @@ local function CreateModUI()
                     -- B. NGOÀI PHÓ BẢN
                     -- ==========================================
                     -- =========================================================================
-                    -- [MOD FEATURE]: KHÔI PHỤC TỐC CHẠY BAN ĐẦU KHI RA KHỎI HUYẾT LÂU / PHÓ BẢN
-                    -- Mô tả: Trả lại tốc độ chạy cũ của người chơi khi rời khỏi phó bản
+                    -- [MOD FEATURE]: KHÔI PHỤC 3 THÔNG SỐ CÀI ĐẶT BAN ĐẦU KHI RA KHỎI HUYẾT LÂU / QTQ
+                    -- Mô tả: Trả lại đúng Tốc độ chạy, Tầm đánh và Phát hiện địch cũ của người chơi khi rời khỏi phó bản.
                     -- =========================================================================
-                    if _G.Mod_DungeonSpeedReduced then
+                    if _G.Mod_DungeonSettingsApplied or _G.Mod_DungeonSpeedReduced then
+                        _G.Mod_DungeonSettingsApplied = false
                         _G.Mod_DungeonSpeedReduced = false
-                        if _G.Mod_SavedSpeedBeforeDungeon then
-                            local oldSpd = _G.Mod_SavedSpeedBeforeDungeon
-                            _G.Mod_SavedSpeedBeforeDungeon = nil
-                            Mod_ApplyRunSpeed(oldSpd)
-                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đã khôi phục tốc chạy ban đầu: %.1fx", oldSpd))
-                            end
+                        local snap = _G.Mod_SavedDungeonSettings
+                        _G.Mod_SavedDungeonSettings = nil
+                        _G.Mod_SavedSpeedBeforeDungeon = nil
+
+                        if snap then
+                            pcall(function()
+                                if snap.speed then
+                                    _G.RunSpeedMultiplier = snap.speed
+                                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", snap.speed)
+                                    Mod_ApplyRunSpeed(snap.speed)
+                                end
+                                if snap.attackRangeMult then
+                                    _G.Mod_CustomAttackRangeMultiplier = snap.attackRangeMult
+                                    CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", snap.attackRangeMult)
+                                    if _G.Mod_ApplyAttackRangeMultiplier then
+                                        _G.Mod_ApplyAttackRangeMultiplier(snap.attackRangeMult)
+                                    end
+                                end
+                                if snap.detectRange then
+                                    _G.Mod_CustomAttackRange = snap.detectRange
+                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", snap.detectRange)
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                                        _G.QiJiHelperData.SettingData.KillMonsterScope = snap.detectRange
+                                    end
+                                end
+
+                                CS.UnityEngine.PlayerPrefs.Save()
+
+                                if _G.Mod_AllUIUpdaters then
+                                    for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                end
+
+                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                    _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đã khôi phục cài đặt: Tốc %.1fx, Tầm %.1fx, Phát hiện %d",
+                                        snap.speed or 1.0, snap.attackRangeMult or 1.0, snap.detectRange or 0))
+                                end
+                            end)
                         end
                     end
 
@@ -13365,6 +13487,34 @@ local function CreateModUI()
             mtBtn.onClick:AddListener(function()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
                 if _G.Mod_AutoFarmBoss_Enabled then
+                    -- =========================================================================
+                    -- [MOD FEATURE]: CẤU HÌNH PHẠM VI ĐÁNH VÀ PHÁT HIỆN ĐỊCH KHI BẬT AUTO BOSS
+                    -- Mô tả: Mặc định phạm vi đánh 0.7x và phạm vi phát hiện địch 5 khi bật Auto Boss.
+                    -- =========================================================================
+                    pcall(function()
+                        _G.Mod_CustomAttackRangeMultiplier = 0.7
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_CustomAttackRangeMultiplier", 0.7)
+                        if _G.Mod_ApplyAttackRangeMultiplier then
+                            _G.Mod_ApplyAttackRangeMultiplier(0.7)
+                        end
+
+                        _G.Mod_CustomAttackRange = 5
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 5)
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                            _G.QiJiHelperData.SettingData.KillMonsterScope = 5
+                        end
+
+                        CS.UnityEngine.PlayerPrefs.Save()
+
+                        if _G.Mod_AllUIUpdaters then
+                            for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                        end
+
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("[AUTO BOSS] Đã bật! Tầm đánh: 0.7x, Phát hiện địch: 5")
+                        end
+                    end)
+
                     _G.AutoPick_Enabled = false
                     CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
                     CS.UnityEngine.PlayerPrefs.Save()
