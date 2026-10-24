@@ -1,2 +1,2 @@
-# Master Executor Script Runner
-Write-Host "Executor Ready."
+# Master Executor Command File
+Write-Host "Ready."

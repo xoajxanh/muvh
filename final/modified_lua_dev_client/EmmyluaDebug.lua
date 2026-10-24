@@ -4412,18 +4412,54 @@ local function CreateModUI()
             _G.Mod_AutoFarmBoss_NextReqTime = _G.Mod_AutoFarmBoss_NextReqTime or 0
             _G.Mod_AutoFarmBoss_WaitTime = _G.Mod_AutoFarmBoss_WaitTime or 0
 
-            local function ExitDungeon()
-                if _G.TranScriptData and _G.TranScriptData.InTranscript then
-                    if _G.TranScriptController then
-                        if _G.TranScriptController.ReqExitInstance then _G.TranScriptController.ReqExitInstance() end
-                        if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
-                        if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController.ReqExitUnionMap() end
+            -- =========================================================================
+            -- [MOD FEATURE]: HÀM THOÁT PHÓ BẢN TOÀN CỤC (GLOBAL EXIT DUNGEON)
+            -- Mô tả: Kiểm tra và thoát mọi loại phó bản (Boss cá nhân, Tháp, Vạn Thần Điện, Liên Minh...)
+            --        Được export ra _G.Mod_ExitDungeon và _G.ExitDungeon để mọi module dùng chung.
+            -- =========================================================================
+            local function Mod_IsInDungeon()
+                if _G.TranScriptData then
+                    if _G.TranScriptData.InTranscript or _G.TranScriptData.InAllGodsscript then
+                        return true
                     end
-                    --_G.Mod_DebugMsg("Đang thoát phó bản Boss...")
+                end
+                if _G.QuickFind and _G.QuickFind.GetDuoQiCrossDataManager then
+                    local dq = _G.QuickFind:GetDuoQiCrossDataManager()
+                    if dq and dq.IsEnterDuoQi and dq:IsEnterDuoQi() == true then
+                        return true
+                    end
+                end
+                return false
+            end
+            _G.Mod_IsInDungeon = Mod_IsInDungeon
+
+            local function ExitDungeon()
+                if Mod_IsInDungeon() then
+                    pcall(function()
+                        if _G.RoleManager and _G.RoleManager.me then
+                            if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                            if _G.RoleManager.me.SetAutoTaskFight then _G.RoleManager.me:SetAutoTaskFight("None") end
+                            if _G.RoleManager.me.StopMove then _G.RoleManager.me:StopMove() end
+                        end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                            _G.QiJiHelperData.SetAutoFightData(false)
+                        end
+
+                        if _G.TranScriptController then
+                            if _G.TranScriptController.ReqExitInstance then _G.TranScriptController.ReqExitInstance() end
+                            if _G.TranScriptController.ReqExitAllGods then _G.TranScriptController.ReqExitAllGods() end
+                            if _G.TranScriptController.ReqExitUnionMap then _G.TranScriptController.ReqExitUnionMap() end
+                        end
+                        if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqExitInstance then
+                            _G.NetManager.Send(_G.MapMessage.ReqExitInstance)
+                        end
+                    end)
                     return true
                 end
                 return false
             end
+            _G.Mod_ExitDungeon = ExitDungeon
+            _G.ExitDungeon = ExitDungeon
 
             _G.Mod_AutoFarmBoss_Ignore = _G.Mod_AutoFarmBoss_Ignore or {}
 
@@ -9828,6 +9864,7 @@ local function CreateModUI()
                     if not _G.Mod_AutoBloodCastle_Enabled and not _G.Mod_AutoDemonPlaza_Enabled then
                         _G.Mod_IsRunningDungeon = false
                         _G.Mod_IsPriorityDungeon = false
+                        _G.Mod_WaitingExitDungeonForHL = nil
                         _G.Mod_DungeonJustFinished = false
                         if _G.Mod_DungeonSettingsApplied or _G.Mod_DungeonSpeedReduced then
                             _G.Mod_DungeonSettingsApplied = false
@@ -10132,6 +10169,7 @@ local function CreateModUI()
                     local curMinute = tonumber(os.date("%M")) or 0
                     if curMinute >= 15 then
                         _G.Mod_IsPriorityDungeon = false
+                        _G.Mod_WaitingExitDungeonForHL = nil
                         if _G.Mod_DungeonJustFinished then
                             _G.Mod_DungeonJustFinished = false
                             if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
@@ -10235,23 +10273,47 @@ local function CreateModUI()
                         _G.Mod_IsPriorityDungeon = true
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: TỰ ĐỘNG THOÁT PHÓ BẢN KHÁC TRƯỚC KHI VÀO HUYẾT LÂU / QTQ
-                        -- Mô tả: Dùng chính hàm ExitDungeon() của Auto Boss. Nếu nhân vật đang ở trong
-                        --        phó bản khác (ngoại trừ Map Ẩn đã được chặn ở đầu), gửi lệnh thoát pb
-                        --        và chờ ra ngoài thành trước khi vào HL/QTQ.
+                        -- [MOD FEATURE]: TỰ ĐỘNG THOÁT PHÓ BẢN KHÁC VỀ LORENCIA TRƯỚC KHI VÀO HUYẾT LÂU / QTQ
+                        -- Mô tả: Nếu nhân vật đang ở trong phó bản khác (ngoại trừ Map Ẩn đã được chặn ở đầu),
+                        --        dừng đánh, gửi lệnh thoát pb và CHỜ NHÂN VẬT THỰC SỰ VỀ ĐẾN LORENCIA (map 1001)
+                        --        hoặc ra ngoài thành an toàn rồi mới bắt đầu gửi lệnh vào HL/QTQ.
                         -- =========================================================================
-                        if ExitDungeon and ExitDungeon() then
-                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                            if (nowTime - (_G.Mod_LastAutoDungeonExitMsgTime or 0)) >= 3.0 then
-                                _G.Mod_LastAutoDungeonExitMsgTime = nowTime
-                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                    _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đang trong phó bản khác, gửi lệnh thoát để vào %s...", canEnterDungeon.inst.name))
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        local curMap = (_G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId)) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
+                        local isInPb = (_G.Mod_IsInDungeon and _G.Mod_IsInDungeon()) or false
+
+                        -- BƯỚC A: NẾU ĐANG TRONG PHÓ BẢN HOẶC ĐANG TRONG TIẾN TRÌNH THOÁT VỀ THÀNH
+                        if isInPb or _G.Mod_WaitingExitDungeonForHL then
+                            local isTown = (curMap == 1001 or curMap == 1002 or curMap == 1003)
+                            if not isTown then
+                                -- Chưa về tới Lorencia/thành -> Gửi lệnh thoát (giãn cách mỗi 2.5s tránh spam)
+                                if (nowTime - (_G.Mod_LastAutoDungeonExitMsgTime or 0)) >= 2.5 then
+                                    _G.Mod_LastAutoDungeonExitMsgTime = nowTime
+                                    _G.Mod_WaitingExitDungeonForHL = true
+                                    if _G.Mod_ExitDungeon then
+                                        _G.Mod_ExitDungeon()
+                                    elseif ExitDungeon then
+                                        ExitDungeon()
+                                    end
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đang thoát phó bản về Lorencia để vào %s...", canEnterDungeon.inst.name))
+                                    end
+                                end
+                                return -- Tiếp tục chờ tick sau
+                            else
+                                -- Đã về tới Lorencia an toàn!
+                                _G.Mod_WaitingExitDungeonForHL = nil
+                                if (nowTime - (_G.Mod_LastAutoDungeonExitMsgTime or 0)) >= 2.0 then
+                                    _G.Mod_LastAutoDungeonExitMsgTime = nowTime
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg(string.format("[AUTO HL] Đã về Lorencia an toàn! Bắt đầu vào %s...", canEnterDungeon.inst.name))
+                                    end
                                 end
                             end
-                            return
                         end
 
-                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        -- BƯỚC B: NHÂN VẬT ĐÃ Ở NGOÀI THÀNH HOẶC BÃI TRAIN (KHÔNG Ở TRONG PHÓ BẢN)
+                        -- TIẾN HÀNH GỬI LỆNH VÀO HUYẾT LÂU / QUẢNG TRƯỜNG QUỶ
                         if (nowTime - (_G.Mod_LastDungeonEnterReqTime or -999)) >= 5.0 and (nowTime - (_G.Mod_LastDungeonExitTime or -999)) >= 10.0 then
                             _G.Mod_LastDungeonEnterReqTime = nowTime
                             _G.Mod_DungeonExpCardsUsed = 0
@@ -10273,6 +10335,7 @@ local function CreateModUI()
                     -- TRƯỜNG HỢP 2: KHÔNG VÀO ĐƯỢC PHÓ BẢN (KHÔNG ĐI NỮA: HẾT LƯỢT HOẶC KHÔNG ĐỦ VÉ)
                     -- Hủy ưu tiên phó bản để không khóa Auto Boss / Auto Return Pos
                     _G.Mod_IsPriorityDungeon = false
+                    _G.Mod_WaitingExitDungeonForHL = nil
 
                     -- Tự động quay về bãi train nếu đã cài Mod_TrainCoord
                     if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then

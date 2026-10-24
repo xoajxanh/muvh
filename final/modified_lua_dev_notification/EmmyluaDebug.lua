@@ -298,9 +298,15 @@ _G.Mod_LoadAnStats = function()
             for item in string.gmatch(todayDataStr, "[^|]+") do
                 local tStr, kStr, vStr = string.match(item, "C(%d+)#([^#]+)#(%d+)")
                 if tStr and kStr and vStr then
-                    local tNum = tonumber(tStr)
-                    _G.Mod_AnStatsToday[tNum] = _G.Mod_AnStatsToday[tNum] or {}
-                    _G.Mod_AnStatsToday[tNum][kStr] = tonumber(vStr) or 0
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BỎ QUA DỮ LIỆU TEST TRONG THỐNG KÊ MỞ BẢN ĐỒ ẨN
+                    -- Mô tả: Loại bỏ hoàn toàn các key Tester để không làm sai lệch số liệu thực tế
+                    -- =========================================================================
+                    if not string.find(kStr, "Tester") then
+                        local tNum = tonumber(tStr)
+                        _G.Mod_AnStatsToday[tNum] = _G.Mod_AnStatsToday[tNum] or {}
+                        _G.Mod_AnStatsToday[tNum][kStr] = tonumber(vStr) or 0
+                    end
                 end
             end
         end
@@ -313,22 +319,28 @@ _G.Mod_LoadAnStats = function()
             for item in string.gmatch(yestDataStr, "[^|]+") do
                 local tStr, kStr, vStr = string.match(item, "C(%d+)#([^#]+)#(%d+)")
                 if tStr and kStr and vStr then
-                    local tNum = tonumber(tStr)
-                    _G.Mod_AnStatsYesterday[tNum] = _G.Mod_AnStatsYesterday[tNum] or {}
-                    _G.Mod_AnStatsYesterday[tNum][kStr] = tonumber(vStr) or 0
+                    if not string.find(kStr, "Tester") then
+                        local tNum = tonumber(tStr)
+                        _G.Mod_AnStatsYesterday[tNum] = _G.Mod_AnStatsYesterday[tNum] or {}
+                        _G.Mod_AnStatsYesterday[tNum][kStr] = tonumber(vStr) or 0
+                    end
                 end
             end
         end
 
         if _G.Mod_CheckDayRollover then _G.Mod_CheckDayRollover() end
+
+        -- Tự động lưu lại để dọn sạch vĩnh viễn các dữ liệu Tester cũ khỏi PlayerPrefs
+        if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
     end)
 end
 
 -- =========================================================================
 -- [MOD FEATURE]: BÁO CÁO THỐNG KÊ QUA TELEGRAM BOT THEO NHÓM CHUYỂN (TELEGRAM AN STATS DISPATCH)
 -- Mô tả: Gửi hoặc sửa tin nhắn Telegram báo cáo thống kê mở bản đồ ẩn phân theo từng nhóm C6 - C12.
+--        Hỗ trợ tham số overrideToday / overrideYesterday cho chức năng Test mà không ảnh hưởng data thật.
 -- =========================================================================
-_G.Mod_SendAnStatsTelegram = function()
+_G.Mod_SendAnStatsTelegram = function(overrideToday, overrideYesterday)
     pcall(function()
         if CS.UnityEngine.PlayerPrefs.GetInt("Mod_AnStats_Enabled", 1) ~= 1 then return end
 
@@ -357,27 +369,32 @@ _G.Mod_SendAnStatsTelegram = function()
         for tier = 6, 12 do
             local isTierEnabled = CS.UnityEngine.PlayerPrefs.GetInt("Mod_An_C" .. tier, 1) == 1
             if isTierEnabled then
-                local tData = (_G.Mod_AnStatsToday and _G.Mod_AnStatsToday[tier]) or {}
-                local yData = (_G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[tier]) or {}
+                local tData = (overrideToday and overrideToday[tier]) or (_G.Mod_AnStatsToday and _G.Mod_AnStatsToday[tier]) or {}
+                local yData = (overrideYesterday and overrideYesterday[tier]) or (_G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[tier]) or {}
 
                 local tierToday = 0
                 local tierYesterday = 0
                 local tierPlayers = {}
                 local playerMap = {}
                 for p, c in pairs(tData) do
-                    tierToday = tierToday + c
-                    totalToday = totalToday + c
-                    if not playerMap[p] then
-                        playerMap[p] = true
-                        table.insert(tierPlayers, p)
+                    -- Nếu không phải mock override, bỏ qua mọi mục Tester còn sót
+                    if overrideToday or not string.find(tostring(p), "Tester") then
+                        tierToday = tierToday + c
+                        totalToday = totalToday + c
+                        if not playerMap[p] then
+                            playerMap[p] = true
+                            table.insert(tierPlayers, p)
+                        end
                     end
                 end
                 for p, c in pairs(yData) do
-                    tierYesterday = tierYesterday + c
-                    totalYesterday = totalYesterday + c
-                    if not playerMap[p] then
-                        playerMap[p] = true
-                        table.insert(tierPlayers, p)
+                    if overrideYesterday or not string.find(tostring(p), "Tester") then
+                        tierYesterday = tierYesterday + c
+                        totalYesterday = totalYesterday + c
+                        if not playerMap[p] then
+                            playerMap[p] = true
+                            table.insert(tierPlayers, p)
+                        end
                     end
                 end
 
@@ -1560,20 +1577,46 @@ local function CreateModUI()
                     if _G.Mod_LoadAnStats then _G.Mod_LoadAnStats() end
                     _G.Mod_AnStats_Loaded = true
                 end
-                -- Populate test sample data for ALL currently enabled tiers
+
+                -- =========================================================================
+                -- [MOD FEATURE]: GỬI MOCK TEST TELEGRAM KHÔNG LƯU DATA THẬT
+                -- Mô tả: Tạo dữ liệu giả lập độc lập chỉ để test format tin nhắn Telegram.
+                --        Tuyệt đối không gán vào Mod_AnStatsToday và không lưu PlayerPrefs!
+                -- =========================================================================
+                local mockToday = {}
+                local mockYesterday = {}
                 for t = 6, 12 do
+                    mockToday[t] = {}
+                    mockYesterday[t] = {}
                     if CS.UnityEngine.PlayerPrefs.GetInt("Mod_An_C" .. t, 1) == 1 then
-                        _G.Mod_AnStatsToday[t] = _G.Mod_AnStatsToday[t] or {}
-                        if not next(_G.Mod_AnStatsToday[t]) then
-                            _G.Mod_AnStatsToday[t]["Tester_C" .. t] = 1
+                        local hasReal = false
+                        if _G.Mod_AnStatsToday and _G.Mod_AnStatsToday[t] then
+                            for p, c in pairs(_G.Mod_AnStatsToday[t]) do
+                                if not string.find(p, "Tester") then
+                                    mockToday[t][p] = c
+                                    hasReal = true
+                                end
+                            end
+                        end
+                        -- Chỉ thêm Tester mẫu nếu nhóm đó chưa có người mở
+                        if not hasReal then
+                            mockToday[t]["Tester_C" .. t] = 1
+                        end
+
+                        if _G.Mod_AnStatsYesterday and _G.Mod_AnStatsYesterday[t] then
+                            for p, c in pairs(_G.Mod_AnStatsYesterday[t]) do
+                                if not string.find(p, "Tester") then
+                                    mockYesterday[t][p] = c
+                                end
+                            end
                         end
                     end
                 end
-                if _G.Mod_SaveAnStats then _G.Mod_SaveAnStats() end
+
                 if _G.Mod_SendAnStatsTelegram then
-                    _G.Mod_SendAnStatsTelegram()
+                    _G.Mod_SendAnStatsTelegram(mockToday, mockYesterday)
                     if _G.FloatingWordUtility then
-                        _G.FloatingWordUtility.QuickMsg("Đã gửi/cập nhật Thống kê Ẩn lên Telegram!")
+                        _G.FloatingWordUtility.QuickMsg("Đã gửi tin TEST lên Telegram (không lưu vào số liệu thật)!")
                     end
                 end
             end)
