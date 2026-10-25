@@ -16,7 +16,6 @@ export default function Sidebar({ userRole }: SidebarProps) {
     { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { label: 'Token Customer', href: '/tokens', icon: Key },
     { label: 'Token SVIP', href: '/svip-tokens', icon: Crown },
-    { label: 'Lịch Sử Thiết Bị', href: '/history', icon: History },
     { label: 'Mẫu Tin Nhắn', href: '/templates', icon: MessageSquareQuote },
     { label: 'Gói Cước VIP', href: '/packages', icon: Package },
     { label: 'Telegram CSKH', href: '/telegrams', icon: Send },

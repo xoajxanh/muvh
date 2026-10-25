@@ -1,2 +1,2 @@
-# Master Executor Command File
-Write-Host "Ready."
+Set-Location "d:\MUVH\android\mu-decompiled\final\web_active"
+npm run build

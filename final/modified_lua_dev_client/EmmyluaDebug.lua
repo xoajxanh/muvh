@@ -27,6 +27,12 @@ function EmmyluaDebug.InitEmmyluaDebug(obj)
         end
     end
 
+    _G.Mod_UpdateCombatUIStats = function()
+        if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+        if _G.ModUpdateAttackRangeLabel then pcall(_G.ModUpdateAttackRangeLabel) end
+        if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
+    end
+
     -- Xóa file update cũ và tạo thư mục giả để chặn game tải lại lua.mu2
     pcall(function()
         local Application = CS.UnityEngine.Application
@@ -2197,8 +2203,12 @@ local function CreateModUI()
 
                     CS.UnityEngine.PlayerPrefs.Save()
 
-                    if _G.Mod_AllUIUpdaters then
-                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                    -- =========================================================================
+                    -- [MOD FEATURE]: REFRESH NHANH CHỈ SỐ KHI BẬT AUTO PK
+                    -- Mô tả: Thay thế Mod_AllUIUpdaters bằng Mod_UpdateCombatUIStats để tránh đứng game 1-2s
+                    -- =========================================================================
+                    if _G.Mod_UpdateCombatUIStats then
+                        pcall(_G.Mod_UpdateCombatUIStats)
                     end
 
                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -9849,8 +9859,8 @@ local function CreateModUI()
                             local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 5.0
                             me:SetMoveSpeed(base, true)
                         end
-                        if _G.Mod_AllUIUpdaters then
-                            for _, upd in ipairs(_G.Mod_AllUIUpdaters) do pcall(upd) end
+                        if _G.Mod_UpdateCombatUIStats then
+                            pcall(_G.Mod_UpdateCombatUIStats)
                         end
                     end)
                 end
@@ -9894,8 +9904,8 @@ local function CreateModUI()
                                         end
                                     end
                                     CS.UnityEngine.PlayerPrefs.Save()
-                                    if _G.Mod_AllUIUpdaters then
-                                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                    if _G.Mod_UpdateCombatUIStats then
+                                        pcall(_G.Mod_UpdateCombatUIStats)
                                     end
                                 end)
                             end
@@ -9968,8 +9978,8 @@ local function CreateModUI()
 
                                     CS.UnityEngine.PlayerPrefs.Save()
 
-                                    if _G.Mod_AllUIUpdaters then
-                                        for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                    if _G.Mod_UpdateCombatUIStats then
+                                        pcall(_G.Mod_UpdateCombatUIStats)
                                     end
 
                                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -10145,8 +10155,8 @@ local function CreateModUI()
 
                                 CS.UnityEngine.PlayerPrefs.Save()
 
-                                if _G.Mod_AllUIUpdaters then
-                                    for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                                if _G.Mod_UpdateCombatUIStats then
+                                    pcall(_G.Mod_UpdateCombatUIStats)
                                 end
 
                                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -11842,6 +11852,11 @@ local function CreateModUI()
             end
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
+            if valueVarName == "RunSpeedMultiplier" then
+                _G.ModUpdateSpeedLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             local function OnSpeedChanged()
                 UpdateLabel()
@@ -12131,6 +12146,11 @@ local function CreateModUI()
             end
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
+            if valueVarName == "Mod_CustomAttackRangeMultiplier" then
+                _G.ModUpdateAttackRangeLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
@@ -12197,6 +12217,11 @@ local function CreateModUI()
             end
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
+            if valueVarName == "Mod_CustomAttackRange" then
+                _G.ModUpdateDetectRangeLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0, _G[valueVarName] - step)
@@ -12228,6 +12253,16 @@ local function CreateModUI()
                 CS.UnityEngine.PlayerPrefs.Save()
                 UpdateLabel()
             end)
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: HÀM REFRESH NHANH CHỈ SỐ CHIẾN ĐẤU (FAST COMBAT STATS REFRESH)
+        -- Mô tả: Chỉ cập nhật đúng 3 nhãn Tốc chạy, Phạm vi đánh và Phát hiện địch để triệt tiêu hiện tượng lag 1-2s
+        -- =========================================================================
+        _G.Mod_UpdateCombatUIStats = function()
+            if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+            if _G.ModUpdateAttackRangeLabel then pcall(_G.ModUpdateAttackRangeLabel) end
+            if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
         end
 
         -- =========================================================================
@@ -12313,8 +12348,8 @@ local function CreateModUI()
                             local base = me._modBaseMoveSpeed or (me.data and me.data.moveSpeed) or 350
                             me:SetMoveSpeed(base, true)
                         end
-                        if _G.Mod_AllUIUpdaters then
-                            for _, upd in ipairs(_G.Mod_AllUIUpdaters) do pcall(upd) end
+                        if _G.Mod_UpdateCombatUIStats then
+                            pcall(_G.Mod_UpdateCombatUIStats)
                         end
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                             _G.FloatingWordUtility.QuickMsg(string.format("[GỠ LAG THÀNH CÔNG] Đã về điểm neo (%d,%d)! Tốc chạy: 1.8x", sX, sY))
@@ -13580,8 +13615,12 @@ local function CreateModUI()
 
                         CS.UnityEngine.PlayerPrefs.Save()
 
-                        if _G.Mod_AllUIUpdaters then
-                            for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                        -- =========================================================================
+                        -- [MOD FEATURE]: REFRESH NHANH CHỈ SỐ KHI BẬT AUTO BOSS
+                        -- Mô tả: Thay thế Mod_AllUIUpdaters bằng Mod_UpdateCombatUIStats để tránh đứng game 1-2s
+                        -- =========================================================================
+                        if _G.Mod_UpdateCombatUIStats then
+                            pcall(_G.Mod_UpdateCombatUIStats)
                         end
 
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then

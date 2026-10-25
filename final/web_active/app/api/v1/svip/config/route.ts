@@ -26,24 +26,6 @@ export async function GET(req: NextRequest) {
     const cleanSn = sn.trim();
     const cleanUid = (uid || '').trim();
 
-    const recordLoginHistory = async (status: 'SUCCESS' | 'FAILED') => {
-      if (!isLogin) return;
-      try {
-        await prisma.deviceLoginHistory.create({
-          data: {
-            deviceSnMd5: cleanSn,
-            characterUid: cleanUid || 'ALL',
-            characterName: roleName.trim() || null,
-            serverName: serverName.trim() || null,
-            status,
-            type: 'SVIP',
-          },
-        });
-      } catch (err) {
-        console.error('[History] Failed to record SVIP login history:', err);
-      }
-    };
-
     // Tìm tất cả token SVIP còn hiệu lực của máy này (khớp UID hoặc ALL)
     const matchingTokens = await prisma.token.findMany({
       where: {
@@ -74,8 +56,6 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
       });
 
-      await recordLoginHistory('FAILED');
-
       if (deletedToken) {
         return NextResponse.json({
           error: 'Token SVIP bản quyền đã bị thu hồi hoặc xóa bởi quản trị viên',
@@ -92,7 +72,6 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     if (new Date(token.expireAt) < now) {
-      await recordLoginHistory('FAILED');
       return NextResponse.json({
         error: 'Token SVIP đã hết hạn sử dụng. Vui lòng gia hạn để tiếp tục!',
         status: 'EXPIRED',
@@ -101,8 +80,45 @@ export async function GET(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // Xác thực thành công!
-    await recordLoginHistory('SUCCESS');
+    // =========================================================================
+    // [MOD FEATURE]: CHỐNG CHƠI SONG SONG TRÊN CÙNG MÃ MÁY (ANTI-CONCURRENT 75S)
+    // Mô tả: Kiểm tra nếu trên cùng mã máy có nhân vật/token khác vừa online trong vòng 75s
+    // =========================================================================
+    const thresholdDate = new Date(now.getTime() - 75 * 1000);
+    const concurrentToken = await prisma.token.findFirst({
+      where: {
+        id: { not: token.id },
+        deviceSnMd5: cleanSn,
+        isDeleted: false,
+        lastOnline: { gte: thresholdDate },
+      },
+      orderBy: { lastOnline: 'desc' },
+    });
+
+    if (concurrentToken) {
+      const otherName = concurrentToken.lastCharacterName || concurrentToken.characterUid || 'khác';
+      return NextResponse.json({
+        error: `Mã máy này đang có nhân vật [${otherName}] đang chơi! Gói phụ chỉ được chơi luân phiên, không thể mở 2 acc song song cùng lúc.`,
+        status: 'CONCURRENT_BLOCKED',
+      }, { status: 403 });
+    }
+
+    // =========================================================================
+    // [MOD FEATURE]: CẬP NHẬT TRẠNG THÁI ONLINE VÀ THÔNG TIN NHÂN VẬT (HEARTBEAT)
+    // Mô tả: Lưu lastOnline, lastCharacterName, lastServerName mỗi khi client ping
+    // =========================================================================
+    try {
+      await prisma.token.update({
+        where: { id: token.id },
+        data: {
+          lastOnline: now,
+          ...(roleName && roleName.trim() !== '' ? { lastCharacterName: roleName.trim() } : {}),
+          ...(serverName && serverName.trim() !== '' ? { lastServerName: serverName.trim() } : {}),
+        },
+      });
+    } catch (updateErr) {
+      console.error('[SVIP Update] Failed to update lastOnline:', updateErr);
+    }
 
     return NextResponse.json({
       success: true,

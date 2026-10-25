@@ -167,9 +167,15 @@ export default function SvipTokensPage() {
 
   const openEditModal = (token: any) => {
     setEditingToken(token);
-    const startDateFormatted = token.createdAt
-      ? new Date(new Date(token.createdAt).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-      : new Date().toISOString().slice(0, 16);
+    let origStart: Date;
+    if (token.expireAt && token.durationDays) {
+      origStart = new Date(new Date(token.expireAt).getTime() - Number(token.durationDays) * 86400 * 1000);
+    } else if (token.createdAt) {
+      origStart = new Date(token.createdAt);
+    } else {
+      origStart = new Date();
+    }
+    const startDateFormatted = new Date(origStart.getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 
     const isAll = (token.characterUid || '').toUpperCase() === 'ALL';
     setFormData({
@@ -343,6 +349,49 @@ export default function SvipTokensPage() {
     );
   };
 
+  const renderLastOnline = (tok: any) => {
+    if (!tok.lastOnline) {
+      return <span className="text-slate-500 italic text-[11px]">Chưa online</span>;
+    }
+    const diffMs = Date.now() - new Date(tok.lastOnline).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const isOnline = diffMins <= 2;
+
+    const charInfo = tok.lastCharacterName ? (
+      <span className="text-slate-300 font-semibold text-[11px] block truncate max-w-[130px]" title={`${tok.lastCharacterName} (${tok.lastServerName || 'N/A'})`}>
+        {tok.lastCharacterName} {tok.lastServerName ? `(${tok.lastServerName})` : ''}
+      </span>
+    ) : null;
+
+    if (isOnline) {
+      return (
+        <div className="flex flex-col">
+          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Online
+          </span>
+          {charInfo}
+        </div>
+      );
+    }
+
+    let timeStr = '';
+    if (diffMins < 60) {
+      timeStr = `${diffMins}p trước`;
+    } else if (diffMins < 1440) {
+      timeStr = `${Math.floor(diffMins / 60)}h trước`;
+    } else {
+      timeStr = new Date(tok.lastOnline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    return (
+      <div className="flex flex-col">
+        <span className="text-slate-400 text-[11px]">{timeStr}</span>
+        {charInfo}
+      </div>
+    );
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans">
       <Sidebar userRole={user?.role} />
@@ -446,6 +495,7 @@ export default function SvipTokensPage() {
                     <th className="py-3.5 px-4 font-semibold">Cấp Chuyển</th>
                     <th className="py-3.5 px-4 font-semibold">Thời Hạn</th>
                     <th className="py-3.5 px-4 font-semibold">Hết Hạn</th>
+                    <th className="py-3.5 px-4 font-semibold">Online Gần Nhất</th>
                     <th className="py-3.5 px-4 font-semibold">Trạng Thái</th>
                     <th className="py-3.5 px-4 font-semibold">Người Tạo</th>
                     <th className="py-3.5 px-4 font-semibold text-right">Thao Tác</th>
@@ -454,14 +504,14 @@ export default function SvipTokensPage() {
                 <tbody className="divide-y divide-slate-800/60">
                   {loading ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
                         <div className="animate-spin w-6 h-6 border-2 border-amber-500 border-t-transparent rounded-full mx-auto mb-2" />
                         Đang tải danh sách Token SVIP...
                       </td>
                     </tr>
                   ) : tokens.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-12 text-center text-slate-400">
+                      <td colSpan={9} className="py-12 text-center text-slate-400">
                         Không tìm thấy Token SVIP nào phù hợp
                       </td>
                     </tr>
@@ -521,6 +571,9 @@ export default function SvipTokensPage() {
                               month: '2-digit',
                               year: 'numeric',
                             })}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {renderLastOnline(token)}
                           </td>
                           <td className="py-3.5 px-4">{getStatusBadge(token)}</td>
                           <td className="py-3.5 px-4 text-xs">

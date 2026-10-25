@@ -26,24 +26,6 @@ export async function GET(req: NextRequest) {
     const cleanSn = sn.trim();
     const cleanUid = uid.trim();
 
-    const recordLoginHistory = async (status: 'SUCCESS' | 'FAILED') => {
-      if (!isLogin) return;
-      try {
-        await prisma.deviceLoginHistory.create({
-          data: {
-            deviceSnMd5: cleanSn,
-            characterUid: cleanUid,
-            characterName: roleName.trim() || null,
-            serverName: serverName.trim() || null,
-            status,
-            type: 'CUSTOMER',
-          },
-        });
-      } catch (err) {
-        console.error('[History] Failed to record customer login history:', err);
-      }
-    };
-
     const token = await prisma.token.findFirst({
       where: {
         deviceSnMd5: cleanSn,
@@ -69,8 +51,6 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: 'desc' },
       });
 
-      await recordLoginHistory('FAILED');
-
       if (deletedToken) {
         return NextResponse.json({
           error: 'Token bản quyền đã bị thu hồi hoặc xóa bởi quản trị viên',
@@ -90,6 +70,12 @@ export async function GET(req: NextRequest) {
     // =========================================================================
     // [MOD FEATURE]: XỬ LÝ TOKEN PHỤ (Kế thừa trạng thái & hạn dùng của Token Cha)
     // =========================================================================
+    let activeTokenToReturn = token.encryptedToken;
+    let activeExpireAt = token.expireAt;
+    let activeDurationDays = token.durationDays;
+    let isSubTokenResult = false;
+    let parentUidResult: string | undefined = undefined;
+
     if (token.parentId && token.parent) {
       const isDeviceSub = token.parent.deviceSnMd5 !== token.deviceSnMd5;
       const parentLabel = isDeviceSub
@@ -97,7 +83,6 @@ export async function GET(req: NextRequest) {
         : `UID chính: ${token.parent.characterUid}`;
 
       if (token.parent.isDeleted) {
-        await recordLoginHistory('FAILED');
         return NextResponse.json({
           error: `Token chính liên kết (${parentLabel}) đã bị thu hồi hoặc xóa bởi quản trị viên`,
           status: 'DELETED',
@@ -111,7 +96,6 @@ export async function GET(req: NextRequest) {
 
       const parentExpireAt = new Date(token.parent.expireAt);
       if (parentExpireAt < now) {
-        await recordLoginHistory('FAILED');
         return NextResponse.json({
           error: `Token chính liên kết (${parentLabel}) đã hết hạn sử dụng. Vui lòng gia hạn Token máy chính!`,
           status: 'EXPIRED',
@@ -125,7 +109,6 @@ export async function GET(req: NextRequest) {
       }
 
       // Token Cha còn hạn -> Token Phụ HỢP LỆ & ACTIVE!
-      // Tự động đóng gói lại payload với expire_time lấy theo hạn của Token Cha
       let parsedTelegrams: string[] = ['@admin1', '@admin2'];
       try {
         parsedTelegrams = JSON.parse(token.adminTelegrams);
@@ -157,44 +140,73 @@ export async function GET(req: NextRequest) {
         adminTelegrams: parsedTelegrams,
       });
 
-      await recordLoginHistory('SUCCESS');
-
-      return NextResponse.json({
-        success: true,
-        status: 'ACTIVE',
-        isExpired: false,
-        token: dynamicToken,
-        expireAt: token.parent.expireAt,
-        durationDays: token.parent.durationDays,
-        isSubToken: true,
-        parentCharacterUid: token.parent.characterUid,
-      });
+      activeTokenToReturn = dynamicToken;
+      activeExpireAt = token.parent.expireAt;
+      activeDurationDays = token.parent.durationDays;
+      isSubTokenResult = true;
+      parentUidResult = token.parent.characterUid;
+    } else {
+      // Token độc lập / Token chính
+      if (new Date(token.expireAt) < now) {
+        return NextResponse.json({
+          error: 'Token bản quyền đã hết hạn sử dụng',
+          status: 'EXPIRED',
+          isExpired: true,
+          expireAt: token.expireAt,
+          isSubToken: false,
+        }, { status: 403 });
+      }
     }
 
     // =========================================================================
-    // XỬ LÝ TOKEN ĐỘC LẬP / TOKEN CHÍNH
+    // [MOD FEATURE]: CHỐNG CHƠI SONG SONG TRÊN CÙNG MÃ MÁY (ANTI-CONCURRENT 75S)
+    // Mô tả: Kiểm tra nếu trên cùng mã máy có nhân vật/token khác vừa online trong vòng 75s
     // =========================================================================
-    if (new Date(token.expireAt) < now) {
-      await recordLoginHistory('FAILED');
+    const thresholdDate = new Date(now.getTime() - 75 * 1000);
+    const concurrentToken = await prisma.token.findFirst({
+      where: {
+        id: { not: token.id },
+        deviceSnMd5: cleanSn,
+        isDeleted: false,
+        lastOnline: { gte: thresholdDate },
+      },
+      orderBy: { lastOnline: 'desc' },
+    });
+
+    if (concurrentToken) {
+      const otherName = concurrentToken.lastCharacterName || concurrentToken.characterUid || 'khác';
       return NextResponse.json({
-        error: 'Token bản quyền đã hết hạn sử dụng',
-        status: 'EXPIRED',
-        isExpired: true,
-        expireAt: token.expireAt,
-        isSubToken: false,
+        error: `Mã máy này đang có nhân vật [${otherName}] đang chơi! Gói phụ chỉ được chơi luân phiên, không thể mở 2 acc song song cùng lúc.`,
+        status: 'CONCURRENT_BLOCKED',
       }, { status: 403 });
     }
 
-    await recordLoginHistory('SUCCESS');
+    // =========================================================================
+    // [MOD FEATURE]: CẬP NHẬT TRẠNG THÁI ONLINE VÀ THÔNG TIN NHÂN VẬT (HEARTBEAT)
+    // Mô tả: Lưu lastOnline, lastCharacterName, lastServerName mỗi khi client ping
+    // =========================================================================
+    try {
+      await prisma.token.update({
+        where: { id: token.id },
+        data: {
+          lastOnline: now,
+          ...(roleName && roleName.trim() !== '' ? { lastCharacterName: roleName.trim() } : {}),
+          ...(serverName && serverName.trim() !== '' ? { lastServerName: serverName.trim() } : {}),
+        },
+      });
+    } catch (updateErr) {
+      console.error('[Config Update] Failed to update lastOnline:', updateErr);
+    }
 
     return NextResponse.json({
       success: true,
       status: 'ACTIVE',
       isExpired: false,
-      token: token.encryptedToken,
-      expireAt: token.expireAt,
-      durationDays: token.durationDays,
-      isSubToken: false,
+      token: activeTokenToReturn,
+      expireAt: activeExpireAt,
+      durationDays: activeDurationDays,
+      isSubToken: isSubTokenResult,
+      ...(parentUidResult ? { parentCharacterUid: parentUidResult } : {}),
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi server khi xử lý cấu hình' }, { status: 500 });

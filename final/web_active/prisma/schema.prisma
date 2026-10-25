@@ -79,6 +79,9 @@ model Token {
   createdBy               User        @relation("UserTokens", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
+  lastOnline              DateTime?
+  lastCharacterName       String?
+  lastServerName          String?
   notes                   TokenNote[]
 
   parentId                String?

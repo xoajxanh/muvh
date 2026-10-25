@@ -292,6 +292,49 @@ export default function TokensPage() {
     );
   };
 
+  const renderLastOnline = (tok: any) => {
+    if (!tok.lastOnline) {
+      return <span className="text-slate-500 italic text-[11px]">Chưa online</span>;
+    }
+    const diffMs = Date.now() - new Date(tok.lastOnline).getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const isOnline = diffMins <= 2;
+
+    const charInfo = tok.lastCharacterName ? (
+      <span className="text-slate-300 font-semibold text-[11px] block truncate max-w-[130px]" title={`${tok.lastCharacterName} (${tok.lastServerName || 'N/A'})`}>
+        {tok.lastCharacterName} {tok.lastServerName ? `(${tok.lastServerName})` : ''}
+      </span>
+    ) : null;
+
+    if (isOnline) {
+      return (
+        <div className="flex flex-col">
+          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-bold text-[11px]">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Online
+          </span>
+          {charInfo}
+        </div>
+      );
+    }
+
+    let timeStr = '';
+    if (diffMins < 60) {
+      timeStr = `${diffMins}p trước`;
+    } else if (diffMins < 1440) {
+      timeStr = `${Math.floor(diffMins / 60)}h trước`;
+    } else {
+      timeStr = new Date(tok.lastOnline).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+    }
+
+    return (
+      <div className="flex flex-col">
+        <span className="text-slate-400 text-[11px]">{timeStr}</span>
+        {charInfo}
+      </div>
+    );
+  };
+
   const filterOptions = [
     { label: 'TẤT CẢ', value: 'ALL' },
     { label: 'ĐANG HOẠT ĐỘNG', value: 'ACTIVE' },
@@ -402,6 +445,7 @@ export default function TokensPage() {
                       <th className="py-3.5 px-4">UID Nhân Vật</th>
                       <th className="py-3.5 px-4">Gói VIP / Loại</th>
                       <th className="py-3.5 px-4">Hạn Sử Dụng</th>
+                      <th className="py-3.5 px-4">Online Gần Nhất</th>
                       <th className="py-3.5 px-4">Giá Tiền</th>
                       <th className="py-3.5 px-4">Người Tạo</th>
                       <th className="py-3.5 px-4 text-right">Thao Tác</th>
@@ -453,6 +497,9 @@ export default function TokensPage() {
                             })() : (
                               <span>{new Date(tok.expireAt).toLocaleDateString('vi-VN')} ({tok.durationDays}d)</span>
                             )}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {renderLastOnline(tok)}
                           </td>
                           <td className="py-3.5 px-4 font-semibold text-emerald-400">
                             {tok.price.toLocaleString('vi-VN')} đ
