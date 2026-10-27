@@ -33,6 +33,43 @@ function EmmyluaDebug.InitEmmyluaDebug(obj)
         if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
     end
 
+    -- =========================================================================
+    -- [MOD FEATURE]: HÀM REFRESH CHỌN LỌC GIAO DIỆN KUNDUN (FAST KUNDUN UI REFRESH)
+    -- Mô tả: Chỉ làm mới đúng các thuộc tính bị thay đổi (PK, Lock, HS, Nhặt, Tốc/Tầm, Guild PK, Return Pos, Refresh, Hiện Máu Kundun)
+    --        Thay thế việc duyệt Mod_AllUIUpdaters gây đơ lag game lúc Kundun sắp chết hoặc khi revert sau 20s.
+    -- =========================================================================
+    _G.Mod_UpdateKundunWeakUIStats = function()
+        -- 1. Chỉ số chiến đấu (Tốc chạy, Tầm đánh, Phát hiện địch)
+        if _G.Mod_UpdateCombatUIStats then pcall(_G.Mod_UpdateCombatUIStats) end
+
+        -- 2. Nút PK nổi & Lock Target
+        if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
+        if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
+
+        -- 3. Hồi sinh (HS KC / HS Miễn Phí)
+        if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
+
+        -- 4. Tự động nhặt & Ẩn hiển thị
+        if _G.Mod_UpdateToggleUI then
+            pcall(_G.Mod_UpdateToggleUI, "AutoPick_Enabled")
+        elseif _G.ModUpdateCountText then
+            pcall(_G.ModUpdateCountText)
+        end
+        if _G.Mod_ApplyDisableVisualsState then
+            pcall(_G.Mod_ApplyDisableVisualsState)
+        end
+
+        -- 5. Tự làm mới
+        if _G.ModUpdateRefreshLabel then pcall(_G.ModUpdateRefreshLabel) end
+
+        -- 6. Các Toggle khác qua Mod_UpdateToggleUI
+        if _G.Mod_UpdateToggleUI then
+            pcall(_G.Mod_UpdateToggleUI, "Mod_AutoGuildPK_Enabled")
+            pcall(_G.Mod_UpdateToggleUI, "Mod_AutoReturnPos_Enabled")
+            pcall(_G.Mod_UpdateToggleUI, "Mod_ShowKundunHP")
+        end
+    end
+
     -- Xóa file update cũ và tạo thư mục giả để chặn game tải lại lua.mu2
     pcall(function()
         local Application = CS.UnityEngine.Application
@@ -413,6 +450,12 @@ local function CreateModUI()
         end
         _G.Mod_IsDisableVisualsActive = function()
             return (_G.Mod_DisableVisuals == true) or (_G.AutoPick_Enabled == true)
+        end
+        if _G.AutoPick_Enabled == nil then
+            pcall(function()
+                _G.AutoPick_Enabled = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoPick_Enabled", 0) == 1) or (CS.UnityEngine.PlayerPrefs.GetInt("AutoPick_Enabled", 0) == 1)
+            end)
+            if _G.AutoPick_Enabled == nil then _G.AutoPick_Enabled = false end
         end
         if _G.Mod_InfiniteInstance == nil then
             _G.Mod_InfiniteInstance = CS.UnityEngine.PlayerPrefs.GetInt(
@@ -4428,6 +4471,8 @@ local function CreateModUI()
             --        Được export ra _G.Mod_ExitDungeon và _G.ExitDungeon để mọi module dùng chung.
             -- =========================================================================
             local function Mod_IsInDungeon()
+                local curMap = (_G.SceneData and _G.SceneData.mapId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId)
+                if curMap == 260001 then return true end
                 if _G.TranScriptData then
                     if _G.TranScriptData.InTranscript or _G.TranScriptData.InAllGodsscript then
                         return true
@@ -5240,70 +5285,73 @@ local function CreateModUI()
                     Mod_PerformSmeltItems()
 
                     local coordStr = _G.Mod_TrainCoord or ""
+                    local sx, sy = string.match(coordStr, "^(%d+)#(%d+)$")
+                    local tMap = nil
+                    if not sx then
+                        tMap, sx, sy = string.match(coordStr, "^(%d+);(%d+)#(%d+)$")
+                    end
+                    local tx, ty = tonumber(sx), tonumber(sy)
 
-                    if coordStr and string.find(coordStr, "#") then
-                        local parts = {}
-                        for p in string.gmatch(coordStr, "[^#]+") do table.insert(parts, p) end
-                        local tx, ty = tonumber(parts[1]), tonumber(parts[2])
-
-                        if tx and ty then
+                    if tx and ty then
+                        local wildMapId = tonumber(tMap)
+                        if not wildMapId then
                             local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
                             local primaryTag = "C" .. tostring(primaryTier)
                             local tab = _G.ModAutoBossConfigTab or primaryTag
                             local mapsConfig = GetMapsConfigByTier and GetMapsConfigByTier(tab)
                             if not mapsConfig or #mapsConfig == 0 then mapsConfig = GetMapsConfigByTier(primaryTag) end
-                            local wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
-                            local curMap = _G.SceneData and _G.SceneData.mapId or 0
+                            wildMapId = (mapsConfig and mapsConfig[1] and mapsConfig[1].mapId)
+                        end
+                        local curMap = _G.SceneData and _G.SceneData.mapId or 0
 
-                            local pMe = _G.RoleManager and _G.RoleManager.me
-                            local meX, meY = 0, 0
-                            if pMe then
-                                if pMe.cellPos then
-                                    meX, meY = pMe.cellPos.x, pMe.cellPos.y
-                                elseif pMe.serverCoord then
-                                    meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
+                        local pMe = _G.RoleManager and _G.RoleManager.me
+                        local meX, meY = 0, 0
+                        if pMe then
+                            if pMe.cellPos then
+                                meX, meY = pMe.cellPos.x, pMe.cellPos.y
+                            elseif pMe.serverCoord then
+                                meX, meY = pMe.serverCoord.x, pMe.serverCoord.y
+                            end
+                        end
+
+                        local dx = meX - tx
+                        local dy = meY - ty
+                        local dist = math.sqrt(dx * dx + dy * dy)
+
+                        -- Kiểm tra xem đã đến bãi train chưa (cùng map và cách <= 1.5 ô)
+                        if curMap == wildMapId and dist <= 1.5 then
+                            -- Đã tới bãi train an toàn -> bật auto kỹ năng liên tục (dùng AutoFight chuẩn, không ngắt StopMove lặp lại)
+                            if not _G.Mod_TrainArrivedAtPos then
+                                if pMe and pMe.StopMove then pMe:StopMove() end
+                                _G.Mod_TrainArrivedAtPos = true
+                            end
+                            if pMe and pMe.SetAutoFight and (pMe.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
+                                pMe:SetAutoFight("AutoFight")
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData and not _G.QiJiHelperData.isAutoFight then
+                                _G.QiJiHelperData.SetAutoFightData(true)
+                            end
+                            _G.Mod_IsMovingToTrainPos = false
+                            isStillReturning, isChangingMap = false, false
+                        else
+                            -- Chưa tới hoặc khác map -> Bay thẳng siêu tốc tới (tx, ty) bãi train bằng ReqCallFlag
+                            _G.Mod_IsMovingToTrainPos = false
+                            _G.Mod_TrainArrivedAtPos = false
+                            local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if nowRealtime - (_G.Mod_LastTrainTeleportTime or 0) >= 1.0 then
+                                _G.Mod_LastTrainTeleportTime = nowRealtime
+                                if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag and wildMapId then
+                                    -- Gửi lệnh triệu hồi đến map hoang dã bãi train tại tọa độ (tx, ty)
+                                    _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                        mapId = wildMapId,
+                                        line = 1,
+                                        x = tx,
+                                        y = ty
+                                    })
                                 end
                             end
-
-                            local dx = meX - tx
-                            local dy = meY - ty
-                            local dist = math.sqrt(dx * dx + dy * dy)
-
-                            -- Kiểm tra xem đã đến bãi train chưa (cùng map và cách <= 5 ô)
-                            if curMap == wildMapId and dist <= 5 then
-                                -- Đã tới bãi train an toàn -> bật auto kỹ năng liên tục (dùng AutoFight chuẩn, không ngắt StopMove lặp lại)
-                                if not _G.Mod_TrainArrivedAtPos then
-                                    if pMe and pMe.StopMove then pMe:StopMove() end
-                                    _G.Mod_TrainArrivedAtPos = true
-                                end
-                                if pMe and pMe.SetAutoFight and (pMe.isAutoFight ~= "AutoFight" or not (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)) then
-                                    pMe:SetAutoFight("AutoFight")
-                                end
-                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData and not _G.QiJiHelperData.isAutoFight then
-                                    _G.QiJiHelperData.SetAutoFightData(true)
-                                end
-                                _G.Mod_IsMovingToTrainPos = false
-                                isStillReturning, isChangingMap = false, false
-                            else
-                                -- Chưa tới hoặc khác map -> Bay thẳng siêu tốc tới (tx, ty) bãi train bằng ReqCallFlag
-                                _G.Mod_IsMovingToTrainPos = false
-                                _G.Mod_TrainArrivedAtPos = false
-                                local nowRealtime = CS.UnityEngine.Time.realtimeSinceStartup
-                                if nowRealtime - (_G.Mod_LastTrainTeleportTime or 0) >= 1.0 then
-                                    _G.Mod_LastTrainTeleportTime = nowRealtime
-                                    if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag and wildMapId then
-                                        -- Gửi lệnh triệu hồi đến map hoang dã bãi train tại tọa độ (tx, ty)
-                                        _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
-                                            mapId = wildMapId,
-                                            line = 1,
-                                            x = tx,
-                                            y = ty
-                                        })
-                                    end
-                                end
-                                isStillReturning = true
-                                isChangingMap = (curMap ~= wildMapId)
-                            end
+                            isStillReturning = true
+                            isChangingMap = (curMap ~= wildMapId)
                         end
                     end
                 end)
@@ -5313,12 +5361,12 @@ local function CreateModUI()
 
             -- =========================================================================
             -- [MOD FEATURE]: HÀM NHẬN DIỆN ĐANG Ở BÃI TRAIN (AT TRAIN SPOT CHECKER)
-            -- Mô tả: Xác định nhân vật đang đứng tại bãi train đã cài đặt (Mod_TrainCoord).
+            -- Mô tả: Xác định nhân vật đang đứng tại bãi train đã cài đặt (Mod_TrainCoord)
+            --        với khoảng cách chuẩn <= 1.5m.
             --        Dùng để phân biệt khi nào được đánh quái (ở bãi train) và khi nào chỉ đánh người (đi săn).
             -- =========================================================================
             local function Mod_IsAtTrainSpot()
                 if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then return false end
-                if _G.Mod_TrainArrivedAtPos then return true end
 
                 local coordStr = _G.Mod_TrainCoord
                 local sx, sy = string.match(coordStr, "^(%d+)#(%d+)$")
@@ -5328,7 +5376,7 @@ local function CreateModUI()
                 end
                 if sx and sy then
                     local tx, ty = tonumber(sx), tonumber(sy)
-                    local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
+                    local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
                     local expectedMap = tonumber(tMap)
                     if not expectedMap then
                         local primaryTier = _G.Mod_Config_Reincarnation_Primary or (CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 8)) or 8
@@ -5343,12 +5391,13 @@ local function CreateModUI()
                         local meX = (pMe and pMe.serverCoord and pMe.serverCoord.x) or (pMe and pMe.cellPos and pMe.cellPos.x) or 0
                         local meY = (pMe and pMe.serverCoord and pMe.serverCoord.y) or (pMe and pMe.cellPos and pMe.cellPos.y) or 0
                         local dist = math.sqrt((meX - tx)^2 + (meY - ty)^2)
-                        if dist <= 15 then
+                        if dist <= 1.5 then
                             _G.Mod_TrainArrivedAtPos = true
                             return true
                         end
                     end
                 end
+                _G.Mod_TrainArrivedAtPos = false
                 return false
             end
             _G.Mod_IsAtTrainSpot = Mod_IsAtTrainSpot
@@ -7184,14 +7233,13 @@ local function CreateModUI()
                 -- Lưu PlayerPrefs duy nhất 1 lần (chống nghẽn I/O)
                 pcall(function() CS.UnityEngine.PlayerPrefs.Save() end)
 
-                -- Cập nhật tất cả UI
-                if _G.Mod_AllUIUpdaters then
-                    for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                -- =========================================================================
+                -- [MOD FEATURE]: REFRESH CHỌN LỌC GIAO DIỆN KHI KÍCH HOẠT KUNDUN WEAK
+                -- Mô tả: Thay thế Mod_AllUIUpdaters bằng Mod_UpdateKundunWeakUIStats để chống đơ lag game
+                -- =========================================================================
+                if _G.Mod_UpdateKundunWeakUIStats then
+                    pcall(_G.Mod_UpdateKundunWeakUIStats)
                 end
-                if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
-                if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
-                if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
-                if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
 
                 local tStr = tostring(threshold or 0.7)
                 local modeTag = _G.Mod_KundunAutoCastAngelAndFight and "BẬT THIÊN SỨ, HÒA BÌNH, HS KC" or "HÒA BÌNH, HS KC, ĐỨNG IM CHỜ GOM ĐỒ"
@@ -8637,20 +8685,19 @@ local function CreateModUI()
                                 end)
                             end
 
-                            if _G.Mod_AllUIUpdaters then
-                                for _, fn in ipairs(_G.Mod_AllUIUpdaters) do pcall(fn) end
+                            -- =========================================================================
+                            -- [MOD FEATURE]: REFRESH CHỌN LỌC GIAO DIỆN KHI REVERT KUNDUN
+                            -- Mô tả: Thay thế Mod_AllUIUpdaters bằng Mod_UpdateKundunWeakUIStats để chống đơ lag game
+                            -- =========================================================================
+                            if _G.Mod_UpdateKundunWeakUIStats then
+                                pcall(_G.Mod_UpdateKundunWeakUIStats)
                             end
-                            if _G.ModUpdateFloatingPKBtn then pcall(_G.ModUpdateFloatingPKBtn) end
-                            if _G.ModUpdateLockLabel then pcall(_G.ModUpdateLockLabel) end
-                            if _G.ModUpdateResurrectVisuals then pcall(_G.ModUpdateResurrectVisuals) end
-                            if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
-                            if _G.UpdateCoBanUIText then pcall(_G.UpdateCoBanUIText) end
 
                             if _G.FloatingWordUtility then
-                                _G.FloatingWordUtility.QuickMsg("HẾT PHIÊN KUNDUN (15S): TẮT NHẶT ĐỒ, TẮT HỒI SINH & PHỤC HỒI CÀI ĐẶT!")
+                                _G.FloatingWordUtility.QuickMsg("HẾT PHIÊN KUNDUN (20S): TẮT NHẶT ĐỒ, TẮT HỒI SINH & PHỤC HỒI CÀI ĐẶT!")
                             end
                             if _G.WriteLog then
-                                _G.WriteLog("Hết phiên săn Kundun sau 15s: Đã tắt Nhặt đồ, tắt Hồi sinh và phục hồi cài đặt.")
+                                _G.WriteLog("Hết phiên săn Kundun sau 20s: Đã tắt Nhặt đồ, tắt Hồi sinh và phục hồi cài đặt.")
                             end
                             _G.Mod_PreKundunSettingsSnapshot = nil
                         end
@@ -8774,7 +8821,9 @@ local function CreateModUI()
                             end
 
                             local triggerThreshold = 0.69
-                            if kLevel >= 3800 then
+                            if kLevel >= 4200 then
+                                triggerThreshold = 0.5
+                            elseif kLevel >= 3800 then
                                 triggerThreshold = 0.6
                             elseif kLevel >= 3400 then
                                 triggerThreshold = 1
@@ -9848,6 +9897,79 @@ local function CreateModUI()
                 _G.Mod_ReturnToTrainAfterDungeon = Mod_ReturnToTrainAfterDungeon
 
                 -- =========================================================================
+                -- [MOD FEATURE]: QUẢN LÝ BÃI TRAIN & TỰ ĐỘNG BẬT TỰ ĐÁNH NGOÀI PHÓ BẢN
+                -- Mô tả: Khi Auto Huyết Lâu (hoặc QTQ) bật nhưng không đạt điều kiện farm phó bản
+                --        (ngoài khung giờ 00-14, sai giờ chẵn/lẻ, hết lượt, hoặc thiếu vé):
+                --        - Nếu đã cài Mod_TrainCoord:
+                --          1. Nếu chưa tới bãi train (khoảng cách > 1.5m hoặc khác map) và không bật Auto Boss:
+                --             Định kỳ mỗi 3s gọi Mod_ReturnToTrainAfterDungeon() đưa nhân vật về bãi train.
+                --          2. Nếu ĐÃ ĐỨNG TẠI BÃI TRAIN (khoảng cách <= 1.5m):
+                --             Tự động bật TỰ ĐÁNH (AutoFight) nếu chưa bật.
+                --             Định kỳ chạy phân giải đồ rác Mod_PerformSmeltItems() chống đầy túi.
+                -- =========================================================================
+                local function Mod_HandleIdleTrainSpotAndAutoFight()
+                    _G.Mod_IsPriorityDungeon = false
+                    _G.Mod_WaitingExitDungeonForHL = nil
+
+                    if not _G.Mod_TrainCoord or _G.Mod_TrainCoord == "" then
+                        _G.Mod_DungeonJustFinished = false
+                        return
+                    end
+
+                    local isAtTrain = (_G.Mod_IsAtTrainSpot and _G.Mod_IsAtTrainSpot())
+
+                    if isAtTrain then
+                        _G.Mod_DungeonJustFinished = false
+
+                        -- ĐANG ĐỨNG TẠI BÃI TRAIN (CỰ LY <= 1.5m) -> ĐẢM BẢO BẬT TỰ ĐÁNH
+                        local pMe = _G.RoleManager and _G.RoleManager.me
+                        if pMe and not pMe.isDead then
+                            local isAutoFightActive = (pMe.isAutoFight == "AutoFight") or (_G.QiJiHelperData and _G.QiJiHelperData.isAutoFight)
+                            if not isAutoFightActive then
+                                if pMe.SetAutoFight then
+                                    pMe:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight")
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                    _G.QiJiHelperData.SetAutoFightData(true)
+                                end
+                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                    _G.FloatingWordUtility.QuickMsg("[AUTO HL] Tại bãi train -> Bật Tự Đánh!")
+                                end
+                            end
+                        end
+
+                        -- Định kỳ phân giải trang bị rác mỗi 15s để chống đầy túi
+                        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                        if (nowTime - (_G.Mod_LastTrainSmeltTime or 0)) >= 15.0 then
+                            _G.Mod_LastTrainSmeltTime = nowTime
+                            if _G.Mod_PerformSmeltItems then
+                                pcall(_G.Mod_PerformSmeltItems)
+                            end
+                        end
+                    else
+                        -- CHƯA TỚI BÃI TRAIN (> 1.5m HOẶC KHÁC MAP)
+                        -- Tự động đưa về bãi train nếu:
+                        -- + Vừa kết thúc phó bản (_G.Mod_DungeonJustFinished)
+                        -- + HOẶC không bật Auto Boss (nếu bật Auto Boss thì để Auto Boss chủ động)
+                        local isAutoBossActive = _G.Mod_AutoFarmBoss_Enabled or (_G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive())
+                        if _G.Mod_DungeonJustFinished or not isAutoBossActive then
+                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+                            if (nowTime - (_G.Mod_LastTrainReturnTriggerTime or 0)) >= 3.0 then
+                                _G.Mod_LastTrainReturnTriggerTime = nowTime
+                                local ret = Mod_ReturnToTrainAfterDungeon()
+                                if ret and _G.Mod_DungeonJustFinished then
+                                    _G.Mod_DungeonJustFinished = false
+                                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                        _G.FloatingWordUtility.QuickMsg("Không còn phó bản để đi, đang quay về bãi train...")
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                _G.Mod_HandleIdleTrainSpotAndAutoFight = Mod_HandleIdleTrainSpotAndAutoFight
+
+                -- =========================================================================
                 -- [MOD FEATURE]: HÀM ĐIỀU KHIỂN & ÁP DỤNG TỐC CHẠY CHO PHÓ BẢN
                 -- Mô tả: Cập nhật tốc chạy vào Me:SetMoveSpeed và đồng bộ nhãn hiển thị menu Mod
                 -- =========================================================================
@@ -9969,11 +10091,12 @@ local function CreateModUI()
                                         _G.Mod_ApplyAttackRangeMultiplier(1.4)
                                     end
 
-                                    -- 3. Phát hiện địch 15
-                                    _G.Mod_CustomAttackRange = 15
-                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 15)
+                                    -- 3. Phát hiện địch: Huyết Lâu = 5 (chống lag quái), QTQ = 15
+                                    local targetDetectRange = inBC and 5 or 15
+                                    _G.Mod_CustomAttackRange = targetDetectRange
+                                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", targetDetectRange)
                                     if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
-                                        _G.QiJiHelperData.SettingData.KillMonsterScope = 15
+                                        _G.QiJiHelperData.SettingData.KillMonsterScope = targetDetectRange
                                     end
 
                                     CS.UnityEngine.PlayerPrefs.Save()
@@ -9983,7 +10106,8 @@ local function CreateModUI()
                                     end
 
                                     if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                                        _G.FloatingWordUtility.QuickMsg("[AUTO HL] Đã áp dụng: Tốc chạy 1.8x, Tầm đánh 1.4x, Phát hiện 15!")
+                                        local dName = inBC and "HL" or "QTQ"
+                                        _G.FloatingWordUtility.QuickMsg(string.format("[AUTO %s] Đã áp dụng: Tốc chạy 1.8x, Tầm đánh 1.4x, Phát hiện %d!", dName, targetDetectRange))
                                     end
                                 end)
                             end
@@ -10172,23 +10296,14 @@ local function CreateModUI()
                         _G.Mod_DungeonExpCardsUsed = 0
                         _G.Mod_LastDungeonExitTime = CS.UnityEngine.Time.realtimeSinceStartup
                         _G.Mod_DungeonJustFinished = true
+                        _G.Mod_TrainArrivedAtPos = false
                     end
 
                     -- Khung giờ mở phó bản: Phút 00 -> 14
                     local curHour = tonumber(os.date("%H")) or 0
                     local curMinute = tonumber(os.date("%M")) or 0
                     if curMinute >= 15 then
-                        _G.Mod_IsPriorityDungeon = false
-                        _G.Mod_WaitingExitDungeonForHL = nil
-                        if _G.Mod_DungeonJustFinished then
-                            _G.Mod_DungeonJustFinished = false
-                            if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
-                                local ret = Mod_ReturnToTrainAfterDungeon()
-                                if ret and _G.FloatingWordUtility then
-                                    _G.FloatingWordUtility.QuickMsg("Đã kết thúc khung giờ phó bản, đang quay về bãi train...")
-                                end
-                            end
-                        end
+                        Mod_HandleIdleTrainSpotAndAutoFight()
                         return
                     end
 
@@ -10219,7 +10334,7 @@ local function CreateModUI()
                     end
 
                     if #checkList == 0 then
-                        _G.Mod_IsPriorityDungeon = false
+                        Mod_HandleIdleTrainSpotAndAutoFight()
                         return
                     end
 
@@ -10343,31 +10458,7 @@ local function CreateModUI()
                     end
 
                     -- TRƯỜNG HỢP 2: KHÔNG VÀO ĐƯỢC PHÓ BẢN (KHÔNG ĐI NỮA: HẾT LƯỢT HOẶC KHÔNG ĐỦ VÉ)
-                    -- Hủy ưu tiên phó bản để không khóa Auto Boss / Auto Return Pos
-                    _G.Mod_IsPriorityDungeon = false
-                    _G.Mod_WaitingExitDungeonForHL = nil
-
-                    -- Tự động quay về bãi train nếu đã cài Mod_TrainCoord
-                    if _G.Mod_TrainCoord and _G.Mod_TrainCoord ~= "" then
-                        local curMap = _G.SceneData and (_G.SceneData.mapId or _G.SceneData.groupId) or 0
-                        local isTownMap = (curMap == 1001 or curMap == 1002 or curMap == 1003)
-                        if _G.Mod_DungeonJustFinished or isTownMap then
-                            local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
-                            if (nowTime - (_G.Mod_LastTrainReturnTriggerTime or 0)) >= 3.0 then
-                                _G.Mod_LastTrainReturnTriggerTime = nowTime
-                                local ret = Mod_ReturnToTrainAfterDungeon()
-                                if ret and _G.Mod_DungeonJustFinished then
-                                    _G.Mod_DungeonJustFinished = false
-                                    if _G.FloatingWordUtility then
-                                        _G.FloatingWordUtility.QuickMsg("Không còn phó bản để đi, đang quay về bãi train...")
-                                    end
-                                end
-                            end
-                        end
-                    else
-                        -- Chưa cài Mod_TrainCoord -> Nhân vật đứng ở thành theo ý người dùng
-                        _G.Mod_DungeonJustFinished = false
-                    end
+                    Mod_HandleIdleTrainSpotAndAutoFight()
 
                 end
 
@@ -11670,6 +11761,7 @@ local function CreateModUI()
             end)
         end
         UpdateRefreshLabel()
+        _G.ModUpdateRefreshLabel = UpdateRefreshLabel
         RefreshMainTabs()
 
         local rmBtnComp = refreshMinusBtnGo:AddComponent(typeof(Button))
@@ -11980,6 +12072,13 @@ local function CreateModUI()
             UpdateLabel()
             _G.Mod_AllUIUpdaters = _G.Mod_AllUIUpdaters or {}
             table.insert(_G.Mod_AllUIUpdaters, UpdateLabel)
+            _G.Mod_ToggleUpdaters = _G.Mod_ToggleUpdaters or {}
+            _G.Mod_ToggleUpdaters[varName] = UpdateLabel
+            _G.Mod_UpdateToggleUI = function(targetVarName)
+                if _G.Mod_ToggleUpdaters and _G.Mod_ToggleUpdaters[targetVarName] then
+                    pcall(_G.Mod_ToggleUpdaters[targetVarName])
+                end
+            end
 
             if varName == "AutoPick_Enabled" then
                 _G.ModUpdateCountText = function()
@@ -11999,6 +12098,10 @@ local function CreateModUI()
                 end
             elseif varName == "Mod_AutoChallengeTower_Enabled" then
                 _G.ModUpdateAutoChallengeTowerLabel = function()
+                    pcall(UpdateLabel)
+                end
+            elseif varName == "Mod_AutoKimPhieu_Enabled" then
+                _G.ModUpdateAutoKimPhieuLabel = function()
                     pcall(UpdateLabel)
                 end
             end
@@ -12064,6 +12167,24 @@ local function CreateModUI()
                         end
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                             _G.FloatingWordUtility.QuickMsg("ĐÃ DỪNG TÌM HỎA LONG!")
+                        end
+                    end
+                end
+
+                if varName == "Mod_AutoKimPhieu_Enabled" then
+                    if _G[varName] then
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("BẮT ĐẦU AUTO KIM PHIẾU (HANG ĐỘNG VÀNG)...")
+                        end
+                        if _G.Mod_StartAutoKimPhieuLoop then
+                            pcall(_G.Mod_StartAutoKimPhieuLoop)
+                        end
+                    else
+                        if _G.Mod_StopTimer then
+                            _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+                        end
+                        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("ĐÃ DỪNG AUTO KIM PHIẾU!")
                         end
                     end
                 end
@@ -13597,8 +13718,8 @@ local function CreateModUI()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
                 if _G.Mod_AutoFarmBoss_Enabled then
                     -- =========================================================================
-                    -- [MOD FEATURE]: CẤU HÌNH PHẠM VI ĐÁNH VÀ PHÁT HIỆN ĐỊCH KHI BẬT AUTO BOSS
-                    -- Mô tả: Mặc định phạm vi đánh 0.7x và phạm vi phát hiện địch 5 khi bật Auto Boss.
+                    -- [MOD FEATURE]: CẤU HÌNH THÔNG SỐ VÀ TẮT NHẶT ĐỒ KHI BẬT AUTO BOSS
+                    -- Mô tả: Mặc định tầm đánh 0.7x, phát hiện địch 5 và TỰ ĐỘNG TẮT NHẶT ĐỒ khi bật Auto Boss.
                     -- =========================================================================
                     pcall(function()
                         _G.Mod_CustomAttackRangeMultiplier = 0.7
@@ -13613,27 +13734,37 @@ local function CreateModUI()
                             _G.QiJiHelperData.SettingData.KillMonsterScope = 5
                         end
 
+                        -- Mặc định TẮT Tự động nhặt khi bật Auto Boss
+                        _G.AutoPick_Enabled = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
+                        CS.UnityEngine.PlayerPrefs.SetInt("AutoPick_Enabled", 0)
+
+                        -- Xóa hàng đợi bão nhặt đồ tồn đọng để không cản trở di chuyển săn boss
+                        _G.Mod_ActiveSpamItems = nil
+                        _G.Mod_AdminBurstDropItems = nil
+
                         CS.UnityEngine.PlayerPrefs.Save()
 
-                        -- =========================================================================
-                        -- [MOD FEATURE]: REFRESH NHANH CHỈ SỐ KHI BẬT AUTO BOSS
-                        -- Mô tả: Thay thế Mod_AllUIUpdaters bằng Mod_UpdateCombatUIStats để tránh đứng game 1-2s
-                        -- =========================================================================
+                        -- Refresh UI nhanh chỉ số chiến đấu
                         if _G.Mod_UpdateCombatUIStats then
                             pcall(_G.Mod_UpdateCombatUIStats)
                         end
 
+                        -- Refresh UI nút Tự động nhặt
+                        if _G.Mod_UpdateToggleUI then
+                            pcall(_G.Mod_UpdateToggleUI, "AutoPick_Enabled")
+                        elseif _G.ModUpdateCountText then
+                            pcall(_G.ModUpdateCountText)
+                        end
+
+                        if _G.Mod_ApplyDisableVisualsState then
+                            pcall(_G.Mod_ApplyDisableVisualsState)
+                        end
+
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                            _G.FloatingWordUtility.QuickMsg("[AUTO BOSS] Đã bật! Tầm đánh: 0.7x, Phát hiện địch: 5")
+                            _G.FloatingWordUtility.QuickMsg("[AUTO BOSS] Đã bật! Tầm đánh: 0.7x, Phát hiện: 5, ĐÃ TẮT NHẶT ĐỒ!")
                         end
                     end)
-
-                    _G.AutoPick_Enabled = false
-                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
-                    CS.UnityEngine.PlayerPrefs.Save()
-                    if _G.ModUpdateCountText then
-                        pcall(_G.ModUpdateCountText)
-                    end
                 else
                     _G.Mod_AutoFarmBoss_State = 0
                     _G.Mod_AutoFarmBoss_Target = nil
@@ -16178,6 +16309,9 @@ local function CreateModUI()
                 curY = curY - 45
 
                 CreateToggle("TÌM HỎA LONG", "Mod_FindHoaLong_Enabled", btnX, curY, btnW, nil, contentGo, 35)
+                curY = curY - 45
+
+                CreateToggle("AUTO KIM PHIẾU", "Mod_AutoKimPhieu_Enabled", btnX, curY, btnW, nil, contentGo, 35)
                 curY = curY - 45
 
                 -- =========================================================================
@@ -18884,6 +19018,23 @@ local function CreateModUI()
 
                 local curMapId = (_G.SceneData and _G.SceneData.mapId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
 
+                -- [MOD FEATURE]: HÚT VÀNG SIÊU TỐC TRONG HANG ĐỘNG VÀNG (MAP 260001)
+                if curMapId == 260001 or _G.Mod_AutoKimPhieu_Enabled then
+                    pcall(function()
+                        local objId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
+                        if objId then
+                            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                                _G.PickupManager.ReqPickUpMapItem(objId)
+                            elseif _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                                _G.PickupManager.ReqPickUpMapItems({ objId })
+                            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                                _G.networkRequest.ReqPickUpMapItems({ objId })
+                            end
+                        end
+                    end)
+                    return
+                end
+
                 -- 2. KHỐN THÚ ĐẤU (Map 1077): Lưu tọa độ rương KTĐ
                 if curMapId == 1077 and (_G.Mod_AutoPK_Enabled or _G.Mod_AutoPick_KTD) then
                     local objId = dropItemData.id or (dropItemData.item and dropItemData.item.id)
@@ -18960,7 +19111,8 @@ local function CreateModUI()
                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
                     return original_CanAutoPickUpDropItem(self, itemInfo)
                 end
-                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
+                local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled or _G.Mod_AutoKimPhieu_Enabled or curMap == 260001 then
                     return false
                 end
                 return original_CanAutoPickUpDropItem(self, itemInfo)
@@ -18971,7 +19123,8 @@ local function CreateModUI()
                 if not (_G.Mod_IsActive and _G.Mod_IsActive()) then
                     return original_CanPickUpDropItem(self, itemInfo)
                 end
-                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
+                local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled or _G.Mod_AutoKimPhieu_Enabled or curMap == 260001 then
                     return false
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
@@ -19971,6 +20124,201 @@ _G.Mod_StartFindHoaLongLoop = function()
             end
             if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                 _G.FloatingWordUtility.QuickMsg("⚠️ Không có Đá Dịch Chuyển (20000022) trong túi đồ!")
+            end
+        end
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: AUTO HANG ĐỘNG VÀNG - SỬ DỤNG KIM PHIẾU (AUTO KIM PHIẾU)
+-- Mô tả: Tự động dùng Kim Phiếu (ID 1000193) vào Hang Động Vàng (Map 260001),
+--        bật tự đánh tiêu diệt Thần Rồng Vàng (Monster 20220001),
+--        hút tức thì 100% vàng khóa rơi ra đất (0ms),
+--        sau khi rồng chết và nhặt sạch vàng thì tự thoát ra ngoài (Lorencia)
+--        và lặp lại liên tục cho đến khi dùng hết toàn bộ Kim Phiếu.
+-- =========================================================================
+_G.Mod_AutoKimPhieu_Enabled = false
+_G.Mod_AutoKimPhieu_DragonDeadTime = nil
+_G.Mod_AutoKimPhieu_EnterMapTime = 0
+_G.Mod_AutoKimPhieu_SawDragonAlive = false
+_G.Mod_AutoKimPhieu_NextActionTime = 0
+_G.Mod_AutoKimPhieu_Kills = 0
+_G.Mod_GoldCaveBatchIds = _G.Mod_GoldCaveBatchIds or {}
+
+local function Mod_GetKimPhieuCount()
+    local count = 0
+    pcall(function()
+        if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+            count = _G.BagInfoData.GetItemTotalCountByItemId(1000193) or 0
+        end
+    end)
+    return count
+end
+_G.Mod_GetKimPhieuCount = Mod_GetKimPhieuCount
+
+local function Mod_StopAutoKimPhieu(reason)
+    _G.Mod_AutoKimPhieu_Enabled = false
+    if _G.Mod_StopTimer then
+        _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+    end
+    pcall(function()
+        if CS.UnityEngine.PlayerPrefs then
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoKimPhieu_Enabled", 0)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end
+    end)
+    if _G.ModUpdateAutoKimPhieuLabel then
+        pcall(_G.ModUpdateAutoKimPhieuLabel)
+    end
+    _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+    _G.Mod_AutoKimPhieu_SawDragonAlive = false
+    if reason and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(reason)
+    end
+end
+_G.Mod_StopAutoKimPhieu = Mod_StopAutoKimPhieu
+
+local function Mod_CheckDragonInGoldCave()
+    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if not monsterRoles then return nil, false end
+
+    for lid, role in pairs(monsterRoles) do
+        if role then
+            local cfgId = (role.GetConfigId and role:GetConfigId()) or role.configId or (role.data and role.data.configId)
+            local roleName = role.name or (role.data and role.data.name) or ""
+            if cfgId == 20220001 or string.find(roleName, "Rồng Vàng") or string.find(roleName, "Rong Vang") then
+                local isAlive = not role.isDead and (not role.hp or role.hp > 0)
+                return role, isAlive
+            end
+        end
+    end
+    return nil, false
+end
+
+_G.Mod_StartAutoKimPhieuLoop = function()
+    if not _G.Mod_AutoKimPhieu_Enabled then
+        _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+        return
+    end
+
+    _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+    _G.Mod_AutoKimPhieu_EnterMapTime = 0
+    _G.Mod_AutoKimPhieu_SawDragonAlive = false
+    _G.Mod_AutoKimPhieu_NextActionTime = 0
+    _G.Mod_GoldCaveBatchIds = {}
+
+    _G.Mod_StartTrackedTimer("Mod_AutoKimPhieuLoop", 0.3, -1, function()
+        if not _G.Mod_AutoKimPhieu_Enabled then
+            _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+            return
+        end
+
+        local me = _G.RoleManager and _G.RoleManager.me
+        if not me or me.isDead then return end
+
+        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+        if nowTime < (_G.Mod_AutoKimPhieu_NextActionTime or 0) then
+            return
+        end
+
+        local curMapId = (_G.SceneData and _G.SceneData.mapId) or (me.mapId) or 0
+
+        -- ---------------------------------------------------------------------
+        -- TRƯỜNG HỢP 1: ĐANG Ở NGOÀI MAP (Lorencia / Map thường)
+        -- ---------------------------------------------------------------------
+        if curMapId ~= 260001 then
+            _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+            _G.Mod_AutoKimPhieu_EnterMapTime = 0
+            _G.Mod_AutoKimPhieu_SawDragonAlive = false
+
+            local ticketCount = Mod_GetKimPhieuCount()
+            if ticketCount <= 0 then
+                local finishMsg = string.format("🎉 ĐÃ HẾT KIM PHIẾU! (Đã hoàn thành %d lượt Hang Động Vàng)", _G.Mod_AutoKimPhieu_Kills or 0)
+                Mod_StopAutoKimPhieu(finishMsg)
+                return
+            end
+
+            -- Gửi gói tin vào Hang Động Vàng
+            local sent = false
+            pcall(function()
+                if _G.networkRequest and _G.networkRequest.ReqJoinGoldCaves then
+                    _G.networkRequest.ReqJoinGoldCaves(1, 1)
+                    sent = true
+                elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqJoinGoldCaves then
+                    _G.NetManager.Send(_G.MapMessage.ReqJoinGoldCaves, { type = 1, count = 1 })
+                    sent = true
+                end
+            end)
+
+            if sent then
+                _G.Mod_AutoKimPhieu_NextActionTime = nowTime + 2.0 -- Giãn cách chờ chuyển map
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("🎫 DÙNG KIM PHIẾU (CÒN %d VÉ) - ĐANG VÀO HANG ĐỘNG VÀNG...", ticketCount))
+                end
+            end
+            return
+        end
+
+        -- ---------------------------------------------------------------------
+        -- TRƯỜNG HỢP 2: ĐANG TRONG HANG ĐỘNG VÀNG (MAP 260001)
+        -- ---------------------------------------------------------------------
+        if _G.Mod_AutoKimPhieu_EnterMapTime == 0 then
+            _G.Mod_AutoKimPhieu_EnterMapTime = nowTime
+        end
+
+        local dragonRole, isAlive = Mod_CheckDragonInGoldCave()
+
+        if dragonRole and isAlive then
+            -- Rồng còn sống: Khóa mục tiêu và bật AutoFight
+            _G.Mod_AutoKimPhieu_SawDragonAlive = true
+            _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+
+            pcall(function()
+                if me.SetTarget then
+                    me:SetTarget(dragonRole)
+                elseif me.SetTargetAvatar then
+                    me:SetTargetAvatar(dragonRole)
+                end
+                if me.SetAutoFight then
+                    me:SetAutoFight("AutoFight")
+                end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+            end)
+        else
+            -- Rồng đã chết (hoặc đã bị tiêu diệt)
+            local timeInMap = nowTime - (_G.Mod_AutoKimPhieu_EnterMapTime or nowTime)
+            if _G.Mod_AutoKimPhieu_SawDragonAlive or timeInMap >= 2.0 then
+                if not _G.Mod_AutoKimPhieu_DragonDeadTime then
+                    _G.Mod_AutoKimPhieu_DragonDeadTime = nowTime
+                    -- Tắt tự đánh
+                    pcall(function()
+                        if me.SetAutoFight then me:SetAutoFight("None") end
+                        if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                            _G.QiJiHelperData.SetAutoFightData(false)
+                        end
+                    end)
+                end
+
+                -- Chờ 1.0 giây để gói tin nhặt vàng hút sạch toàn bộ vàng rơi dưới đất
+                local elapsedSinceDead = nowTime - _G.Mod_AutoKimPhieu_DragonDeadTime
+                if elapsedSinceDead >= 1.0 then
+                    -- Thoát phó bản về ngoài map
+                    pcall(function()
+                        if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+                            _G.TranScriptController.ReqExitInstance()
+                        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqExitInstance then
+                            _G.NetManager.Send(_G.MapMessage.ReqExitInstance)
+                        end
+                    end)
+
+                    _G.Mod_AutoKimPhieu_Kills = (_G.Mod_AutoKimPhieu_Kills or 0) + 1
+                    _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+                    _G.Mod_AutoKimPhieu_SawDragonAlive = false
+                    _G.Mod_AutoKimPhieu_EnterMapTime = 0
+                    _G.Mod_AutoKimPhieu_NextActionTime = nowTime + 1.5 -- Chờ ra map ngoài ổn định
+                end
             end
         end
     end)
