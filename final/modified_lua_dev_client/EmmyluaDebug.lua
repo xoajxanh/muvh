@@ -18648,6 +18648,9 @@ local function CreateModUI()
                     original_RemoveDropSceneCellPos(dropItemData)
                 end
                 if dropItemData and dropItemData.id then
+                    if _G.Mod_GroundItemsTracked then
+                        _G.Mod_GroundItemsTracked[dropItemData.id] = nil
+                    end
                     if _G.Mod_ActiveSpamItems then
                         _G.Mod_ActiveSpamItems[dropItemData.id] = nil
                     end
@@ -19018,6 +19021,20 @@ local function CreateModUI()
 
                 local curMapId = (_G.SceneData and _G.SceneData.mapId) or (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.mapId) or 0
 
+                -- Ghi nhận cọc vật phẩm rơi vào Mod_GroundItemsTracked
+                local dropObjId = dropItemData.id or dropItemData.objId or (dropItemData.item and dropItemData.item.id)
+                if dropObjId then
+                    _G.Mod_GroundItemsTracked = _G.Mod_GroundItemsTracked or {}
+                    _G.Mod_GroundItemsTracked[dropObjId] = {
+                        id = dropObjId,
+                        x = dropItemData.x or 0,
+                        y = dropItemData.y or 0,
+                        confId = (dropItemData.item and dropItemData.item.itemId) or dropItemData.configId or 0,
+                        count = (dropItemData.item and dropItemData.item.count) or 1,
+                        type = dropItemData.type or 0
+                    }
+                end
+
                 -- [MOD FEATURE]: HÚT VÀNG SIÊU TỐC TRONG HANG ĐỘNG VÀNG (MAP 260001)
                 if curMapId == 260001 or _G.Mod_AutoKimPhieu_Enabled then
                     pcall(function()
@@ -19112,7 +19129,7 @@ local function CreateModUI()
                     return original_CanAutoPickUpDropItem(self, itemInfo)
                 end
                 local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
-                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled or _G.Mod_AutoKimPhieu_Enabled or curMap == 260001 then
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
                     return false
                 end
                 return original_CanAutoPickUpDropItem(self, itemInfo)
@@ -19124,7 +19141,7 @@ local function CreateModUI()
                     return original_CanPickUpDropItem(self, itemInfo)
                 end
                 local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
-                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled or _G.Mod_AutoKimPhieu_Enabled or curMap == 260001 then
+                if _G.AutoPick_Enabled or _G.Mod_AutoOpenGoldenChest_Enabled then
                     return false
                 end
                 return original_CanPickUpDropItem(self, itemInfo)
@@ -20130,6 +20147,201 @@ _G.Mod_StartFindHoaLongLoop = function()
 end
 
 -- =========================================================================
+-- =========================================================================
+-- [MOD FEATURE]: THƯ VIỆN NHẶT ĐỒ & VÉT ĐỒ TRÊN ĐẤT (GROUND ITEM SWEEPER / HOOVER LIBRARY)
+-- Mô tả: Module thư viện dùng chung cho toàn bộ hệ thống Mod:
+--        1. Mod_GetGroundDropItems: Quét bộ nhớ RAM DropItemManager lấy 100% item trên sàn.
+--        2. Mod_SweepGroundItems: Vét sạch đồ trên đất bằng ReqPickUpMapItems (Batch Loot)
+--           mặc định gom nhiều ID dù chỉ có 1, kèm cơ chế MoveTo hỗ trợ khi cần.
+-- =========================================================================
+local function Mod_GetGroundDropItems_Deprecated(filterFn)
+    local result = {}
+    local dropItemsTable = nil
+
+    pcall(function()
+        if _G.DropItemManager and _G.DropItemManager.GetDropItemById then
+            local _, val = debug.getupvalue(_G.DropItemManager.GetDropItemById, 1)
+            if type(val) == "table" then
+                dropItemsTable = val
+            end
+        end
+    end)
+
+    if dropItemsTable then
+        local me = _G.RoleManager and _G.RoleManager.me
+        local meCoord = me and (me.serverCoord or me.cellPos or (me.data and me.data.serverCoord))
+        local meX = meCoord and (meCoord.x or meCoord.X) or 0
+        local meY = meCoord and (meCoord.y or meCoord.Y) or 0
+
+        for id, itemObj in pairs(dropItemsTable) do
+            if itemObj then
+                local d = itemObj.data or itemObj
+                local objId = (d and d.id) or id
+                local ix = (d and d.x) or (itemObj.serverCoord and itemObj.serverCoord.x) or 0
+                local iy = (d and d.y) or (itemObj.serverCoord and itemObj.serverCoord.y) or 0
+                local confId = (d and d.item and d.item.itemId) or (d and d.configId) or 0
+                local count = (d and d.item and d.item.count) or 1
+                local itemType = (d and d.type) or 0
+
+                local itemInfo = {
+                    id = objId,
+                    x = ix,
+                    y = iy,
+                    confId = confId,
+                    count = count,
+                    type = itemType,
+                    raw = itemObj
+                }
+
+                if not filterFn or filterFn(itemInfo) then
+                    local dist = 999
+                    if meX > 0 and meY > 0 and ix > 0 and iy > 0 then
+                        dist = math.max(math.abs(meX - ix), math.abs(meY - iy))
+                    end
+                    itemInfo.dist = dist
+                    table.insert(result, itemInfo)
+                end
+            end
+        end
+    end
+    return result
+end
+local function Mod_GetGroundDropItems(filterFn)
+    local result = {}
+    local seenIds = {}
+    local dropItemsTable = nil
+
+    pcall(function()
+        if _G.DropItemManager and _G.DropItemManager.GetDropItemById then
+            for i = 1, 3 do
+                local _, val = debug.getupvalue(_G.DropItemManager.GetDropItemById, i)
+                if type(val) == "table" and next(val) ~= nil then
+                    dropItemsTable = val
+                    break
+                end
+            end
+        end
+    end)
+
+    local me = _G.RoleManager and _G.RoleManager.me
+    local meCoord = me and (me.serverCoord or me.cellPos or (me.data and me.data.serverCoord))
+    local meX = meCoord and (meCoord.x or meCoord.X) or 0
+    local meY = meCoord and (meCoord.y or meCoord.Y) or 0
+
+    local function AddItemToResult(objId, ix, iy, confId, count, itemType, rawObj)
+        if not objId or seenIds[objId] then return end
+        seenIds[objId] = true
+
+        local itemInfo = {
+            id = objId,
+            x = ix or 0,
+            y = iy or 0,
+            confId = confId or 0,
+            count = count or 1,
+            type = itemType or 0,
+            raw = rawObj
+        }
+
+        if not filterFn or filterFn(itemInfo) then
+            local dist = 999
+            if meX > 0 and meY > 0 and itemInfo.x > 0 and itemInfo.y > 0 then
+                dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
+            end
+            itemInfo.dist = dist
+            table.insert(result, itemInfo)
+        end
+    end
+
+    -- 1. Quét từ dropItemsTable (Memory RAM)
+    if dropItemsTable then
+        for id, itemObj in pairs(dropItemsTable) do
+            if itemObj then
+                local d = itemObj.data or itemObj
+                local objId = (d and d.id) or id
+                local ix = (d and d.x) or (itemObj.serverCoord and itemObj.serverCoord.x) or 0
+                local iy = (d and d.y) or (itemObj.serverCoord and itemObj.serverCoord.y) or 0
+                local confId = (d and d.item and d.item.itemId) or (d and d.configId) or 0
+                local count = (d and d.item and d.item.count) or 1
+                local itemType = (d and d.type) or 0
+                AddItemToResult(objId, ix, iy, confId, count, itemType, itemObj)
+            end
+        end
+    end
+
+    -- 2. Hợp nhất với Mod_GroundItemsTracked (Sự kiện rơi đồ)
+    if _G.Mod_GroundItemsTracked then
+        for objId, info in pairs(_G.Mod_GroundItemsTracked) do
+            AddItemToResult(objId, info.x, info.y, info.confId, info.count, info.type, nil)
+        end
+    end
+
+    return result
+end
+
+_G.Mod_GetGroundDropItems = Mod_GetGroundDropItems
+
+local function Mod_SweepGroundItems(options)
+    options = options or {}
+    local filterFn = options.filterFn
+    local allowMove = (options.allowMove == true)
+    local items = Mod_GetGroundDropItems(filterFn)
+
+    if not items or #items == 0 then
+        return { isClean = true, count = 0 }
+    end
+
+    -- Gom danh sách ID cọc đồ dưới đất để bắn Batch Loot
+    local batchIds = {}
+    for _, it in ipairs(items) do
+        if it.id then
+            table.insert(batchIds, it.id)
+        end
+    end
+
+    -- 1. Ưu tiên bắn ReqPickUpMapItems (mặc định hút theo batch nhiều ID dù chỉ có 1)
+    if #batchIds > 0 then
+        pcall(function()
+            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                _G.PickupManager.ReqPickUpMapItems(batchIds)
+            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                _G.networkRequest.ReqPickUpMapItems(batchIds)
+            elseif _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                for _, id in ipairs(batchIds) do
+                    _G.PickupManager.ReqPickUpMapItem(id)
+                end
+            end
+        end)
+    end
+
+    -- Sắp xếp cọc gần nhất
+    table.sort(items, function(a, b)
+        return (a.dist or 999) < (b.dist or 999)
+    end)
+    local nearest = items[1]
+
+    -- 2. Nếu cho phép MoveTo và cọc gần nhất ở xa (> 1.2 ô): cho nhân vật lao tới hỗ trợ
+    if allowMove and nearest and nearest.dist and nearest.dist > 1.2 then
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me and me.MoveTo and nearest.x > 0 and nearest.y > 0 then
+            pcall(function()
+                if me.StopMoveImmediate then me:StopMoveImmediate() end
+                if me.MoveCloseAutoFight then me:MoveCloseAutoFight() end
+                if me.SetAutoFight then me:SetAutoFight("None") end
+                me:MoveTo({ x = nearest.x, y = nearest.y }, 0)
+            end)
+        end
+    end
+
+    return {
+        isClean = false,
+        count = #items,
+        nearest = nearest,
+        batchIds = batchIds
+    }
+end
+_G.Mod_SweepGroundItems = Mod_SweepGroundItems
+
+-- =========================================================================
 -- [MOD FEATURE]: AUTO HANG ĐỘNG VÀNG - SỬ DỤNG KIM PHIẾU (AUTO KIM PHIẾU)
 -- Mô tả: Tự động dùng Kim Phiếu (ID 1000193) vào Hang Động Vàng (Map 260001),
 --        bật tự đánh tiêu diệt Thần Rồng Vàng (Monster 20220001),
@@ -20179,6 +20391,34 @@ end
 _G.Mod_StopAutoKimPhieu = Mod_StopAutoKimPhieu
 
 local function Mod_CheckDragonInGoldCave()
+    -- 1. Nếu trên sàn đã có cọc vàng rơi ra -> Thần Rồng Vàng CHẮC CHẮN ĐÃ CHẾT!
+    local curDrops = Mod_GetGroundDropItems()
+    if curDrops and #curDrops > 0 then
+        return nil, false
+    end
+
+    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if not monsterRoles then return nil, false end
+
+    for lid, role in pairs(monsterRoles) do
+        if role then
+            local cfgId = (role.GetConfigId and role:GetConfigId()) or role.configId or (role.data and role.data.configId)
+            local roleName = role.name or (role.data and role.data.name) or ""
+            if cfgId == 20220001 or string.find(roleName, "Rồng Vàng") or string.find(roleName, "Rong Vang") then
+                local hp = role.hp or (role.data and role.data.hp)
+                local canSel = true
+                if role.CanSelect then canSel = role:CanSelect()
+                elseif role.IsCanSelect then canSel = role:IsCanSelect() end
+
+                local isAlive = not role.isDead and (not hp or hp > 0) and (canSel == true)
+                return role, isAlive
+            end
+        end
+    end
+    return nil, false
+end
+
+local function Mod_CheckDragonInGoldCave_Deprecated()
     local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
     if not monsterRoles then return nil, false end
 
@@ -20195,7 +20435,408 @@ local function Mod_CheckDragonInGoldCave()
     return nil, false
 end
 
+-- =========================================================================
+-- [MOD FEATURE]: CẬP NHẬT THƯ VIỆN NHẶT ĐỒ (VIEWDATA + VIPMANAGER) & AUTO KIM PHIẾU TỐI ƯU 0MS
+-- Mô tả:
+--   1. Mod_GetBoundGoldCount & Mod_FormatNumber: Lấy & định dạng số Vàng Khóa (ID 1000021) hiện tại.
+--   2. Mod_GetGroundDropItems: Quét đa nguồn (ViewData.GetGameObjectsInView + VipManager + DropItemManager + Tracked).
+--   3. Mod_SweepGroundItems: Bắn trực tiếp ReqPickUpMapItem & ReqPickUpMapItems gom sạch vật phẩm trên sàn.
+--   4. Mod_StartAutoKimPhieuLoop: Tối ưu bắt mục tiêu 0ms ngay khi vào hang (bỏ chặn NextActionTime và CanSelect khi rồng mới đáp),
+--      hút sạch vàng bằng ReqPickUpMapItem, hết vàng lập tức thoát map qua lượt mới và báo số Vàng Khóa hiện tại.
+-- =========================================================================
+local function Mod_GetBoundGoldCount()
+    local gold = 0
+    pcall(function()
+        if _G.BagInfoData then
+            if _G.BagInfoData.CoinInfos and _G.BagInfoData.CoinInfos[1000021] then
+                gold = _G.BagInfoData.CoinInfos[1000021]
+            elseif _G.BagInfoData.GetItemCountByItemConfigId then
+                gold = _G.BagInfoData.GetItemCountByItemConfigId(1000021) or 0
+            end
+        end
+    end)
+    return gold
+end
+_G.Mod_GetBoundGoldCount = Mod_GetBoundGoldCount
+
+local function Mod_FormatNumber(n)
+    local s = tostring(math.floor(tonumber(n) or 0))
+    local k
+    while true do
+        s, k = string.gsub(s, "^(-?%d+)(%d%d%d)", "%1,%2")
+        if k == 0 then break end
+    end
+    return s
+end
+_G.Mod_FormatNumber = Mod_FormatNumber
+
+Mod_GetGroundDropItems = function(filterFn)
+    local result = {}
+    local seenIds = {}
+
+    local me = _G.RoleManager and _G.RoleManager.me
+    local meCoord = me and (me.serverCoord or me.cellPos or (me.data and me.data.serverCoord))
+    local meX = meCoord and (meCoord.x or meCoord.X) or 0
+    local meY = meCoord and (meCoord.y or meCoord.Y) or 0
+
+    local function AddItemToResult(objId, ix, iy, confId, count, itemType, name, rawObj)
+        if not objId or seenIds[objId] then return end
+        seenIds[objId] = true
+
+        local itemInfo = {
+            id = objId,
+            x = ix or 0,
+            y = iy or 0,
+            confId = confId or 0,
+            count = count or 1,
+            type = itemType or 0,
+            name = name or "",
+            raw = rawObj
+        }
+
+        if not filterFn or filterFn(itemInfo) then
+            local dist = 999
+            if meX > 0 and meY > 0 and itemInfo.x > 0 and itemInfo.y > 0 then
+                dist = math.max(math.abs(meX - itemInfo.x), math.abs(meY - itemInfo.y))
+            end
+            itemInfo.dist = dist
+            table.insert(result, itemInfo)
+        end
+    end
+
+    -- 1. Nguồn chính: ViewData.GetGameObjectsInView() (Chứa 100% đối tượng & cọc đồ trên bản đồ)
+    pcall(function()
+        if _G.ViewData and _G.ViewData.GetGameObjectsInView then
+            local objs = _G.ViewData.GetGameObjectsInView()
+            if objs then
+                for id, obj in pairs(objs) do
+                    if obj then
+                        local isDrop = (obj.item ~= nil) or (obj.dropTime ~= nil) or (obj.configID == 1000021) or (obj.type == 103 or obj.type == 24 or obj.type == 26)
+                        if isDrop then
+                            local itemId = (obj.item and obj.item.itemId) or obj.configID or obj.itemId or 0
+                            local name = obj.name or ""
+                            local count = (obj.item and obj.item.count) or 1
+                            local ix = obj.x or (obj.serverCoord and obj.serverCoord.x) or 0
+                            local iy = obj.y or (obj.serverCoord and obj.serverCoord.y) or 0
+                            local itemType = obj.type or 0
+                            AddItemToResult(id, ix, iy, itemId, count, itemType, name, obj)
+                        end
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 2. Nguồn 2: VipManager upvalue (vipAutoPickDropItems)
+    pcall(function()
+        if _G.VipManager and _G.VipManager.Update then
+            local _, val = debug.getupvalue(_G.VipManager.Update, 1)
+            if type(val) == "table" then
+                for id, itemObj in pairs(val) do
+                    if itemObj then
+                        local d = itemObj.data or itemObj
+                        local objId = (d and d.id) or id
+                        local itemId = (d and d.item and d.item.itemId) or (d and d.configID) or (d and d.itemId) or 0
+                        local name = (d and d.name) or ""
+                        local count = (d and d.item and d.item.count) or 1
+                        local ix = (d and d.x) or itemObj.x or 0
+                        local iy = (d and d.y) or itemObj.y or 0
+                        local itemType = (d and d.type) or 0
+                        AddItemToResult(objId, ix, iy, itemId, count, itemType, name, itemObj)
+                    end
+                end
+            end
+        end
+    end)
+
+    -- 3. Nguồn 3: DropItemManager upvalues (dropItems)
+    pcall(function()
+        if _G.DropItemManager and _G.DropItemManager.GetDropItemById then
+            for i = 1, 3 do
+                local _, val = debug.getupvalue(_G.DropItemManager.GetDropItemById, i)
+                if type(val) == "table" and next(val) ~= nil then
+                    for id, itemObj in pairs(val) do
+                        if itemObj then
+                            local d = itemObj.data or itemObj
+                            local objId = (d and d.id) or id
+                            local ix = (d and d.x) or (itemObj.serverCoord and itemObj.serverCoord.x) or 0
+                            local iy = (d and d.y) or (itemObj.serverCoord and itemObj.serverCoord.y) or 0
+                            local confId = (d and d.item and d.item.itemId) or (d and d.configID) or (d and d.configId) or 0
+                            local count = (d and d.item and d.item.count) or 1
+                            local itemType = (d and d.type) or 0
+                            local name = (d and d.name) or ""
+                            AddItemToResult(objId, ix, iy, confId, count, itemType, name, itemObj)
+                        end
+                    end
+                    break
+                end
+            end
+        end
+    end)
+
+    -- 4. Nguồn 4: Mod_GroundItemsTracked (Sự kiện rơi đồ)
+    if _G.Mod_GroundItemsTracked then
+        for objId, info in pairs(_G.Mod_GroundItemsTracked) do
+            AddItemToResult(objId, info.x, info.y, info.confId, info.count, info.type, "", nil)
+        end
+    end
+
+    return result
+end
+_G.Mod_GetGroundDropItems = Mod_GetGroundDropItems
+
+Mod_SweepGroundItems = function(options)
+    options = options or {}
+    local filterFn = options.filterFn
+    local allowMove = (options.allowMove == true)
+    local items = Mod_GetGroundDropItems(filterFn)
+
+    if not items or #items == 0 then
+        return { isClean = true, count = 0 }
+    end
+
+    local batchIds = {}
+    for _, it in ipairs(items) do
+        if it.id then
+            table.insert(batchIds, it.id)
+            -- Bắn trực tiếp ReqPickUpMapItem cho từng cọc đồ
+            pcall(function()
+                if _G.PickupManager and _G.PickupManager.ReqPickUpMapItem then
+                    _G.PickupManager.ReqPickUpMapItem(it.id)
+                elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItem then
+                    _G.networkRequest.ReqPickUpMapItem(it.id)
+                end
+            end)
+        end
+    end
+
+    -- Bắn kèm ReqPickUpMapItems gom theo batch
+    if #batchIds > 0 then
+        pcall(function()
+            if _G.PickupManager and _G.PickupManager.ReqPickUpMapItems then
+                _G.PickupManager.ReqPickUpMapItems(batchIds)
+            elseif _G.networkRequest and _G.networkRequest.ReqPickUpMapItems then
+                _G.networkRequest.ReqPickUpMapItems(batchIds)
+            end
+        end)
+    end
+
+    table.sort(items, function(a, b)
+        return (a.dist or 999) < (b.dist or 999)
+    end)
+    local nearest = items[1]
+
+    if allowMove and nearest and nearest.dist and nearest.dist > 1.2 then
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me and me.MoveTo and nearest.x > 0 and nearest.y > 0 then
+            pcall(function()
+                if me.StopMoveImmediate then me:StopMoveImmediate() end
+                if me.MoveCloseAutoFight then me:MoveCloseAutoFight() end
+                if me.SetAutoFight then me:SetAutoFight("None") end
+                me:MoveTo({ x = nearest.x, y = nearest.y }, 0)
+            end)
+        end
+    end
+
+    return {
+        isClean = false,
+        count = #items,
+        nearest = nearest,
+        batchIds = batchIds
+    }
+end
+_G.Mod_SweepGroundItems = Mod_SweepGroundItems
+
+Mod_CheckDragonInGoldCave = function()
+    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if monsterRoles then
+        for lid, role in pairs(monsterRoles) do
+            if role then
+                local cfgId = (role.GetConfigId and role:GetConfigId()) or role.configId or (role.data and role.data.configId)
+                local roleName = role.name or (role.data and role.data.name) or ""
+                if cfgId == 20220001 or string.find(roleName, "Rồng Vàng") or string.find(roleName, "Rong Vang") then
+                    local hp = role.hp or (role.data and role.data.hp)
+                    -- Không dùng CanSelect() ở đây vì khi rồng mới đáp xuống (1-2s đầu) CanSelect() trả về false làm trễ bắt mục tiêu
+                    local isAlive = not role.isDead and (not hp or hp > 0)
+                    return role, isAlive
+                end
+            end
+        end
+    end
+    return nil, false
+end
+_G.Mod_CheckDragonInGoldCave = Mod_CheckDragonInGoldCave
+
 _G.Mod_StartAutoKimPhieuLoop = function()
+    if _G.Mod_StopTimer then
+        _G.Mod_StopTimer("Mod_TestAutoKimPhieuLoop")
+    end
+    if not _G.Mod_AutoKimPhieu_Enabled then
+        _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+        return
+    end
+
+    _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+    _G.Mod_AutoKimPhieu_EnterMapTime = 0
+    _G.Mod_AutoKimPhieu_SawDragonAlive = false
+    _G.Mod_AutoKimPhieu_SawGold = false
+    _G.Mod_AutoKimPhieu_LastJoinTime = 0
+    _G.Mod_AutoKimPhieu_LastExitTime = 0
+    _G.Mod_GoldCaveBatchIds = {}
+
+    _G.Mod_StartTrackedTimer("Mod_AutoKimPhieuLoop", 0.25, -1, function()
+        if not _G.Mod_AutoKimPhieu_Enabled then
+            _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
+            return
+        end
+
+        local me = _G.RoleManager and _G.RoleManager.me
+        if not me or me.isDead then return end
+
+        local nowTime = CS.UnityEngine.Time.realtimeSinceStartup
+        local curMapId = (_G.SceneData and _G.SceneData.mapId) or (me.mapId) or 0
+
+        -- ---------------------------------------------------------------------
+        -- TRƯỜNG HỢP 1: ĐANG Ở NGOÀI MAP (Lorencia / Map thường)
+        -- ---------------------------------------------------------------------
+        if curMapId ~= 260001 then
+            _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+            _G.Mod_AutoKimPhieu_EnterMapTime = 0
+            _G.Mod_AutoKimPhieu_SawDragonAlive = false
+            _G.Mod_AutoKimPhieu_SawGold = false
+            _G.Mod_AutoKimPhieu_LastExitTime = 0
+
+            -- Chỉ giãn cách gói xin vào hang khi đang đứng ở ngoài map
+            if nowTime - (_G.Mod_AutoKimPhieu_LastJoinTime or 0) < 2.0 then
+                return
+            end
+
+            local ticketCount = Mod_GetKimPhieuCount()
+            local curGoldStr = Mod_FormatNumber(Mod_GetBoundGoldCount())
+            if ticketCount <= 0 then
+                local finishMsg = string.format("🎉 ĐÃ HẾT KIM PHIẾU! Xong %d lượt | Vàng khóa: %s", _G.Mod_AutoKimPhieu_Kills or 0, curGoldStr)
+                Mod_StopAutoKimPhieu(finishMsg)
+                return
+            end
+
+            local sent = false
+            pcall(function()
+                if _G.networkRequest and _G.networkRequest.ReqJoinGoldCaves then
+                    _G.networkRequest.ReqJoinGoldCaves(1, 1)
+                    sent = true
+                elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqJoinGoldCaves then
+                    _G.NetManager.Send(_G.MapMessage.ReqJoinGoldCaves, { type = 1, count = 1 })
+                    sent = true
+                end
+            end)
+
+            if sent then
+                _G.Mod_AutoKimPhieu_LastJoinTime = nowTime
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("🎫 VÀO HANG ĐỘNG VÀNG (Còn %d vé | Vàng khóa: %s)", ticketCount, curGoldStr))
+                end
+            end
+            return
+        end
+
+        -- ---------------------------------------------------------------------
+        -- TRƯỜNG HỢP 2: ĐANG TRONG HANG ĐỘNG VÀNG (MAP 260001) - BẮT MỤC TIÊU 0MS
+        -- ---------------------------------------------------------------------
+        _G.Mod_AutoKimPhieu_LastJoinTime = 0
+        if _G.Mod_AutoKimPhieu_EnterMapTime == 0 then
+            _G.Mod_AutoKimPhieu_EnterMapTime = nowTime
+        end
+
+        -- Nếu vừa gửi lệnh thoát map thì chờ chuyển cảnh (tối đa 1.5s)
+        if (_G.Mod_AutoKimPhieu_LastExitTime or 0) > 0 and (nowTime - _G.Mod_AutoKimPhieu_LastExitTime) < 1.5 then
+            return
+        end
+
+        local dragonRole, isAlive = Mod_CheckDragonInGoldCave()
+
+        -- 2.1: Rồng còn sống -> Khóa mục tiêu & bật AutoFight tức thì (0ms)
+        if dragonRole and isAlive then
+            _G.Mod_AutoKimPhieu_SawDragonAlive = true
+            _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+
+            pcall(function()
+                if me.SetTarget then
+                    me:SetTarget(dragonRole)
+                elseif me.SetTargetAvatar then
+                    me:SetTargetAvatar(dragonRole)
+                end
+                if me.SetAutoFight then
+                    me:SetAutoFight("AutoFight")
+                end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+            end)
+            return
+        end
+
+        -- 2.2: Nếu mới vừa đặt chân vào map (< 1.5s) và rồng chưa kịp spawn xong gói tin -> Bật sẵn AutoFight đón đầu
+        local timeInMap = nowTime - (_G.Mod_AutoKimPhieu_EnterMapTime or nowTime)
+        local groundDrops = Mod_GetGroundDropItems()
+        if not _G.Mod_AutoKimPhieu_SawDragonAlive and timeInMap < 1.5 and (not groundDrops or #groundDrops == 0) then
+            pcall(function()
+                if me.SetAutoFight then me:SetAutoFight("AutoFight") end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(true)
+                end
+            end)
+            return
+        end
+
+        -- 2.3: Rồng đã chết -> Ngắt AutoFight, bắn ReqPickUpMapItem hút vàng, hết vàng là thoát ngay
+        if not _G.Mod_AutoKimPhieu_DragonDeadTime then
+            _G.Mod_AutoKimPhieu_DragonDeadTime = nowTime
+            pcall(function()
+                if me.SetAutoFight then me:SetAutoFight("None") end
+                if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                    _G.QiJiHelperData.SetAutoFightData(false)
+                end
+            end)
+        end
+
+        local elapsedSinceDead = nowTime - _G.Mod_AutoKimPhieu_DragonDeadTime
+        local sweepRes = Mod_SweepGroundItems({
+            allowMove = (elapsedSinceDead >= 1.5)
+        })
+        local isClean = sweepRes and sweepRes.isClean
+
+        if not isClean then
+            _G.Mod_AutoKimPhieu_SawGold = true
+        else
+            -- Khi đã thấy vàng và hút sạch (isClean == true) hoặc quá 1.5s sau khi rồng chết mà sàn sạch bóng vàng
+            if _G.Mod_AutoKimPhieu_SawGold or elapsedSinceDead >= 1.5 then
+                _G.Mod_AutoKimPhieu_Kills = (_G.Mod_AutoKimPhieu_Kills or 0) + 1
+                local curGoldStr = Mod_FormatNumber(Mod_GetBoundGoldCount())
+                local remainTickets = Mod_GetKimPhieuCount()
+
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg(string.format("✅ XONG LƯỢT #%d! Vàng khóa: %s (Còn %d vé)", _G.Mod_AutoKimPhieu_Kills, curGoldStr, remainTickets))
+                end
+
+                _G.Mod_AutoKimPhieu_DragonDeadTime = nil
+                _G.Mod_AutoKimPhieu_SawDragonAlive = false
+                _G.Mod_AutoKimPhieu_SawGold = false
+                _G.Mod_AutoKimPhieu_EnterMapTime = 0
+                _G.Mod_AutoKimPhieu_LastExitTime = nowTime
+
+                pcall(function()
+                    if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+                        _G.TranScriptController.ReqExitInstance()
+                    elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqExitInstance then
+                        _G.NetManager.Send(_G.MapMessage.ReqExitInstance)
+                    end
+                end)
+            end
+        end
+    end)
+end
+
+local function _Mod_StartAutoKimPhieuLoop_Deprecated()
     if not _G.Mod_AutoKimPhieu_Enabled then
         _G.Mod_StopTimer("Mod_AutoKimPhieuLoop")
         return
@@ -20289,7 +20930,8 @@ _G.Mod_StartAutoKimPhieuLoop = function()
         else
             -- Rồng đã chết (hoặc đã bị tiêu diệt)
             local timeInMap = nowTime - (_G.Mod_AutoKimPhieu_EnterMapTime or nowTime)
-            if _G.Mod_AutoKimPhieu_SawDragonAlive or timeInMap >= 2.0 then
+            local groundDrops = Mod_GetGroundDropItems()
+            if _G.Mod_AutoKimPhieu_SawDragonAlive or timeInMap >= 2.0 or (groundDrops and #groundDrops > 0) then
                 if not _G.Mod_AutoKimPhieu_DragonDeadTime then
                     _G.Mod_AutoKimPhieu_DragonDeadTime = nowTime
                     -- Tắt tự đánh
@@ -20301,9 +20943,24 @@ _G.Mod_StartAutoKimPhieuLoop = function()
                     end)
                 end
 
-                -- Chờ 1.0 giây để gói tin nhặt vàng hút sạch toàn bộ vàng rơi dưới đất
+                -- Chờ hút sạch toàn bộ vàng rơi dưới đất qua Ground Sweeper
                 local elapsedSinceDead = nowTime - _G.Mod_AutoKimPhieu_DragonDeadTime
-                if elapsedSinceDead >= 1.0 then
+                -- VÉT VÀNG TRÊN SÀN BẰNG THƯ VIỆN GROUND SWEEPER
+                local sweepRes = Mod_SweepGroundItems({
+                    allowMove = true, -- Bật lao tới hỗ trợ và gom batch
+                    useBatch = true
+                })
+                local isClean = sweepRes and sweepRes.isClean
+
+                -- Nếu sau 1.5s mà vẫn còn cọc vàng chưa hút được thì bật MoveTo lao đến hỗ trợ
+                if not isClean and elapsedSinceDead >= 1.5 then
+                    Mod_SweepGroundItems({ allowMove = true, useBatch = true })
+                end
+
+                -- Thoát phó bản khi:
+                -- 1. Sàn đấu đã sạch bóng 100% vàng (isClean == true) và đã trôi qua tối thiểu 0.5s sau khi rồng chết
+                -- 2. HOẶC Quá thời gian chờ an toàn (5.0s) để tránh kẹt bot nếu gặp cọc lỗi
+                if (isClean and elapsedSinceDead >= 0.5) or elapsedSinceDead >= 5.0 then
                     -- Thoát phó bản về ngoài map
                     pcall(function()
                         if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then

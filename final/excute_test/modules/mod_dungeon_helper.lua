@@ -158,4 +158,66 @@ function ModDungeonHelper.GetDungeonSchedule()
     }
 end
 
+--- Kiểm tra nhân vật có đang trong Hang Động Vàng (Gold Cave - Map 260001) không
+-- @return boolean, number: inGoldCave, curMapId
+function ModDungeonHelper.IsInGoldCave()
+    local me = _G.RoleManager and _G.RoleManager.me
+    local curMapId = (_G.SceneData and _G.SceneData.mapId) or (me and me.mapId) or 0
+    return (curMapId == 260001), curMapId
+end
+
+--- Gửi lệnh dùng Kim Phiếu (ID 1000193) để vào Hang Động Vàng (Map 260001)
+-- @return boolean: true nếu đã gửi lệnh
+function ModDungeonHelper.EnterGoldCave()
+    local sent = false
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqJoinGoldCaves then
+            _G.networkRequest.ReqJoinGoldCaves(1, 1)
+            sent = true
+        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqJoinGoldCaves then
+            _G.NetManager.Send(_G.MapMessage.ReqJoinGoldCaves, { type = 1, count = 1 })
+            sent = true
+        end
+    end)
+    return sent
+end
+
+--- Gửi lệnh thoát khỏi phó bản hiện tại (Hang Động Vàng, Huyết Lâu, QTQ...)
+-- @return boolean: true nếu đã gửi lệnh
+function ModDungeonHelper.ExitInstance()
+    local sent = false
+    pcall(function()
+        if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+            _G.TranScriptController.ReqExitInstance()
+            sent = true
+        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqExitInstance then
+            _G.NetManager.Send(_G.MapMessage.ReqExitInstance)
+            sent = true
+        end
+    end)
+    return sent
+end
+
+--- Kiểm tra trạng thái Thần Rồng Vàng (Monster ConfigID 20220001) trong Hang Động Vàng
+-- LƯU Ý BẪY QUAN TRỌNG: Không kiểm tra `role:CanSelect()` vì trong 1-2s đầu khi Rồng đang múa đáp xuống,
+-- `CanSelect()` trả về `false` dù `HP > 0`, gây trễ 2-3s bắt mục tiêu. Chỉ cần kiểm tra `not role.isDead and hp > 0`.
+-- @return table|nil, boolean: dragonRole, isAlive
+function ModDungeonHelper.CheckDragonInGoldCave()
+    local monsterRoles = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(2)
+    if monsterRoles then
+        for _, role in pairs(monsterRoles) do
+            if role then
+                local cfgId = (role.GetConfigId and role:GetConfigId()) or role.configId or (role.data and role.data.configId)
+                local roleName = role.name or (role.data and role.data.name) or ""
+                if cfgId == 20220001 or string.find(roleName, "Rồng Vàng") or string.find(roleName, "Rong Vang") then
+                    local hp = role.hp or (role.data and role.data.hp)
+                    local isAlive = not role.isDead and (not hp or hp > 0)
+                    return role, isAlive
+                end
+            end
+        end
+    end
+    return nil, false
+end
+
 return ModDungeonHelper

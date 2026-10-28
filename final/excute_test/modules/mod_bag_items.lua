@@ -137,4 +137,42 @@ function ModBagItems.GetBagCapacity()
     }
 end
 
+--- Lấy số lượng tiền tệ / tài nguyên theo Config ID (1000021: Vàng Khóa, 1000020: Vàng, 1000030: Kim Cương, 1000010: Zen)
+-- LƯU Ý: Không dùng GetItemTotalCountByItemId(1000021) vì hàm đó sẽ cộng gộp cả Vàng không khóa (bindEqualItem = 1000020).
+-- @param coinConfigId number: Mặc định 1000021 (Vàng Khóa)
+-- @return number: Số dư hiện tại
+function ModBagItems.GetCoinCount(coinConfigId)
+    coinConfigId = coinConfigId or 1000021
+    local amount = 0
+    pcall(function()
+        if _G.BagInfoData then
+            if _G.BagInfoData.CoinInfos and _G.BagInfoData.CoinInfos[coinConfigId] then
+                amount = _G.BagInfoData.CoinInfos[coinConfigId]
+            elseif _G.BagInfoData.GetItemCountByItemConfigId then
+                amount = _G.BagInfoData.GetItemCountByItemConfigId(coinConfigId) or 0
+            end
+        end
+    end)
+    return amount
+end
+
+--- Lấy nhanh số Vàng Khóa hiện tại của nhân vật (Config ID: 1000021)
+-- @return number
+function ModBagItems.GetBoundGoldCount()
+    return ModBagItems.GetCoinCount(1000021)
+end
+
+--- Định dạng số có dấu phẩy ngăn cách hàng nghìn (ví dụ: 1250000 -> "1,250,000")
+-- @param n number
+-- @return string
+function ModBagItems.FormatNumber(n)
+    local s = tostring(math.floor(tonumber(n) or 0))
+    local k
+    while true do
+        s, k = string.gsub(s, "^(-?%d+)(%d%d%d)", "%1,%2")
+        if k == 0 then break end
+    end
+    return s
+end
+
 return ModBagItems

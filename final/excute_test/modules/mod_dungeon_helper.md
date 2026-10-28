@@ -33,3 +33,12 @@ Module này chuyên trách việc nhận diện bản đồ phó bản, kiểm t
    * **Giờ lẻ (1h, 3h, 5h, 7h...)**: Huyết Lâu (Blood Castle).
    * **Giờ chẵn (0h, 2h, 4h, 6h...)**: Quảng Trường Quỷ (Demon Plaza).
    * **Phút 00 -> 14**: Cửa phó bản mở, bot ưu tiên vào phó bản trước bãi train.
+
+5. **Hang Động Vàng (Gold Cave - Auto Kim Phiếu)**:
+   * **Map ID**: `260001`
+   * **Vé vào cổng**: `1000193` (Kim Phiếu)
+   * **Boss**: `20220001` (Thần Rồng Vàng)
+   * **Vàng rơi**: `1000021` (Vàng Khóa - `Type = 103`, `SL = 50000`)
+   * **Lệnh vào hang**: `_G.networkRequest.ReqJoinGoldCaves(1, 1)`
+   * **Lệnh thoát phó bản**: `_G.TranScriptController.ReqExitInstance()` (hoặc `_G.NetManager.Send(_G.MapMessage.ReqExitInstance)`)
+   * ⚠️ **Bẫy bắt mục tiêu Rồng Vàng**: Không dùng `role:CanSelect()` khi kiểm tra Rồng sống vì 1–2s đầu lúc Rồng đang đáp từ trên trời xuống `CanSelect()` trả về `false` gây trễ. Chỉ kiểm tra `not role.isDead and hp > 0` và tách riêng biến `LastJoinTime` (chỉ chặn khi đứng ngoài map) để vào hang là đánh tức thì ở 0ms.

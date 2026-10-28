@@ -35,9 +35,16 @@ Module này chuyên trách việc quét túi đồ, đếm số lượng, tìm k
      end
      ```
 2. **Đếm số lượng vé/vật phẩm**:
-   * *Line 7467-7468 (Đếm ngọc hồi sinh), Line 9892-9893 (Đếm vé Huyết Lâu/QTQ)*:
+   * *Line 7467-7468 (Đếm ngọc hồi sinh), Line 9892-9893 (Đếm vé Huyết Lâu/QTQ), Line 20364 (Đếm Kim Phiếu `1000193`)*:
      ```lua
      local count = _G.BagInfoData.GetItemTotalCountByItemId(itemId) or 0
+     ```
+2b. **Lấy số dư Tiền tệ / Vàng Khóa (`1000021`), Vàng thường (`1000020`), Kim Cương (`1000030`)**:
+   * ⚠️ **BẪY QUAN TRỌNG**: Không dùng `GetItemTotalCountByItemId(1000021)` để lấy riêng Vàng Khóa vì hàm đó tự cộng gộp cả `bindEqualItem` (`1000020` Vàng không khóa).
+   * ✅ **CÁCH CHUẨN 100%**: Truy cập trực tiếp bảng `BagInfoData.CoinInfos[1000021]` hoặc `BagInfoData.GetItemCountByItemConfigId(1000021)`:
+     ```lua
+     local boundGold = (_G.BagInfoData.CoinInfos and _G.BagInfoData.CoinInfos[1000021])
+                    or _G.BagInfoData.GetItemCountByItemConfigId(1000021) or 0
      ```
 3. **Cấu trúc trường của một `itemData`**:
    * `itemData.id`: Instance ID (GUID trong túi, ví dụ: 59449... - dùng để gửi packet mạng `ReqUseItem`).
