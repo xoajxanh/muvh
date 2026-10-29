@@ -1563,7 +1563,18 @@ local function CreateModUI()
             pcall(function()
                 if _G.Event.Map_MonsterAllState and not _G.Mod_Hooked_MonsterAllState then
                     _G.Mod_Hooked_MonsterAllState = true
-                    _G.EventManager.Regist(_G.Event.Map_MonsterAllState, function(_, msg)
+                    _G.EventManager.Regist(_G.Event.Map_MonsterAllState, function(id, msg)
+                        local packet = (type(msg) == "table" and msg) or (type(id) == "table" and id)
+                        if packet and packet.list then
+                            for _, mon in ipairs(packet.list) do
+                                if mon and mon.id then
+                                    _G.Mod_BossStateMap[mon.id] = mon.state
+                                    if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                                end
+                            end
+                        end
+                    end)
+                    if false then
                         if msg and msg.list then
                             for _, mon in ipairs(msg.list) do
                                 if mon and mon.id then
@@ -1572,20 +1583,38 @@ local function CreateModUI()
                             end
                         end
                         if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
-                    end, "Mod_MonsterAllState")
+                    end
                 end
                 if _G.Event.Map_MonsterStateChange and not _G.Mod_Hooked_MonsterStateChange then
                     _G.Mod_Hooked_MonsterStateChange = true
-                    _G.EventManager.Regist(_G.Event.Map_MonsterStateChange, function(_, msg)
+                    _G.EventManager.Regist(_G.Event.Map_MonsterStateChange, function(id, msg)
+                        local packet = (type(msg) == "table" and msg) or (type(id) == "table" and id)
+                        if packet and packet.id then
+                            _G.Mod_BossStateMap[packet.id] = packet.state
+                            if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                        end
+                    end)
+                    if false then
                         if msg and msg.id then
                             _G.Mod_BossStateMap[msg.id] = (msg.state == 0 and 1 or 0)
                         end
                         if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
-                    end, "Mod_MonsterStateChange")
+                    end
                 end
                 if _G.Event.Map_BossAndElite and not _G.Mod_Hooked_MapBossAndElite then
                     _G.Mod_Hooked_MapBossAndElite = true
-                    _G.EventManager.Regist(_G.Event.Map_BossAndElite, function(_, msg)
+                    _G.EventManager.Regist(_G.Event.Map_BossAndElite, function(id, msg)
+                        local packet = (type(msg) == "table" and msg) or (type(id) == "table" and id)
+                        if packet and packet.list then
+                            for _, item in ipairs(packet.list) do
+                                if item and item.id then
+                                    _G.Mod_BossStateMap[item.id] = item.state
+                                    if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
+                                end
+                            end
+                        end
+                    end)
+                    if false then -- replaced old inverted handler
                         if msg and msg.list then
                             for _, mon in ipairs(msg.list) do
                                 if mon and mon.id then
@@ -1594,7 +1623,7 @@ local function CreateModUI()
                             end
                         end
                         if _G.UpdateBossWatchUIText then pcall(_G.UpdateBossWatchUIText) end
-                    end, "Mod_MapBossAndElite")
+                    end -- end replaced old handler
                 end
                 if _G.Event.Scene_SceneBossCount and not _G.Mod_Hooked_SceneBossCount then
                     _G.Mod_Hooked_SceneBossCount = true
@@ -5807,6 +5836,19 @@ local function CreateModUI()
                                         if GetAvailableTiers then
                                             for _, tTag in ipairs(GetAvailableTiers()) do
                                                 foundCombatBoss = CheckList(GetMapsConfigByTier(tTag))
+                                                if foundCombatBoss then
+                                                    local me = _G.RoleManager and _G.RoleManager.me
+                                                    local px = me and (me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x))
+                                                    local py = me and (me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y))
+                                                    local bx = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                                                    local by = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
+                                                    if px and py and bx and by then
+                                                        local bDist = math.sqrt((px - bx) * (px - bx) + (py - by) * (py - by))
+                                                        if bDist > 1.5 then
+                                                            foundCombatBoss = nil
+                                                        end
+                                                    end
+                                                end
                                                 if foundCombatBoss then break end
                                             end
                                         end
@@ -6287,7 +6329,9 @@ local function CreateModUI()
                     if bestBoss then
                             _G.Mod_AutoFarmBoss_Target = bestBoss
                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
-                            if isAutoHunt or bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 3) then
+                            local useTeleport = (_G.Mod_AutoFarmBoss_UseTeleport ~= false)
+                            local maxStartWait = useTeleport and 3 or 20
+                            if isAutoHunt or bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= maxStartWait) then
                                 LogMsg(string.format("%s: %s (Map: %s)",
                                     isAutoHunt and "[Auto Hunt] Tuần tra Boss" or "Bắt đầu săn",
                                     bestBoss.cfg.name,
@@ -6300,8 +6344,18 @@ local function CreateModUI()
                                 -- Mô tả: Chọn vị trí 1 / cổng 1 ban đầu, luôn chuyển sang State 3 để bay đến mục tiêu
                                 -- =========================================================================
                                 if not isAutoHunt then
-                                    bestBoss.currentPosX = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].x) or bestBoss.cfg.posX
-                                    bestBoss.currentPosY = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].y) or bestBoss.cfg.posY
+                                    local sx, sy = nil, nil
+                                    if GetBossSpotCoord then
+                                        sx, sy = GetBossSpotCoord(bestBoss.cfg, 1)
+                                    end
+                                    bestBoss.currentPosX = useTeleport and ((bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].x) or sx) or nil
+                                    bestBoss.currentPosY = useTeleport and ((bestBoss.cfg.spots and #bestBoss.cfg.spots > 0 and bestBoss.cfg.spots[1].y) or sy) or nil
+                                    bestBoss.currentPos = nil
+                                    bestBoss.secondSpotPos = nil
+                                    if not useTeleport then
+                                        bestBoss.currentPosX = bestBoss.cfg.posX
+                                        bestBoss.currentPosY = bestBoss.cfg.posY
+                                    end
                                     bestBoss.currentTransferId = (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 0 and bestBoss.cfg.transferIds[1]) or bestBoss.cfg.transferId
 
                                     bestBoss.cfg.posX = bestBoss.currentPosX
@@ -6318,7 +6372,9 @@ local function CreateModUI()
                                 _G.Mod_TrainArrivedAtPos = false
 
                                 local hasMultiple = (bestBoss.cfg.spots and #bestBoss.cfg.spots > 1) or (bestBoss.cfg.transferIds and #bestBoss.cfg.transferIds > 1)
-                                if isAutoHunt or hasMultiple or isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
+                                _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
+                                _G.Mod_AutoFarmBoss_DidUseStone = false
+                                if isAutoHunt or (not useTeleport) or hasMultiple or isCallFlag or currentMapId ~= bestBoss.mapCfg.mapId or currentLine ~= bestBoss.line then
                                     _G.Mod_AutoFarmBoss_State = 3
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + (isAutoHunt and 0.2 or 1.0)
                                 else
@@ -6438,6 +6494,252 @@ local function CreateModUI()
                             return
                         end
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: CHẾ ĐỘ TIẾP CẬN BOSS KÉP (DÙNG DỊCH CHUYỂN ON / OFF)
+                        -- Mô tả: Khi DÙNG DỊCH CHUYỂN tắt -> Vào cổng Map, dùng Ấn Dịch Chuyển (20000022) nếu
+                        --        ở Map Hoang Dã và cách Boss > 50m, khi <= 50m thì chạy bộ tiếp cận Boss.
+                        --        Khi DÙNG DỊCH CHUYỂN bật -> Dịch chuyển trực tiếp (ReqCallFlag / Cổng Boss).
+                        -- =========================================================================
+                        if _G.Mod_AutoFarmBoss_UseTeleport == false then
+                            local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex) or 1
+                            if currentMapId ~= target.mapCfg.mapId or (target.line and currentLine ~= target.line) then
+                                LogMsg(string.format("Đang di chuyển tới Map Boss: %s, Line %d...",
+                                    GetMapName(target.mapCfg.mapId), target.line or 1))
+                                _G.Mod_AutoFarmBoss_ReqIconSentMap = nil
+
+                                local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
+                                    target.mapCfg.mapId
+                                if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                    _G.SceneController.OnReqTransferTransmitMap(nil,
+                                        { mapId = transId, line = target.line or 1, changeLine = true })
+                                elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
+                                    local initialPos = (target.currentPosX and target.currentPosY and { x = target.currentPosX, y = target.currentPosY }) or
+                                        (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
+                                        { x = 100, y = 100 }
+                                    _G.PathFinderManager.MoveToLinePos(target.mapCfg.mapId, initialPos, transId, target.line or 1,
+                                        nil, nil, nil, nil, true)
+                                end
+
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 3.0
+                                return
+                            end
+
+                            if _G.Mod_AutoFarmBoss_ReqIconSentMap ~= currentMapId then
+                                _G.Mod_AutoFarmBoss_ReqIconSentMap = currentMapId
+
+                                pcall(function()
+                                    if _G.PathFinderManager then
+                                        if _G.PathFinderManager.ResetData then _G.PathFinderManager.ResetData() end
+                                        if _G.PathFinderManager.pathFinding then
+                                            _G.PathFinderManager.pathFinding.isFind = false
+                                            _G.PathFinderManager.pathFinding.curPath = nil
+                                        end
+                                    end
+                                    local me = _G.RoleManager and _G.RoleManager.me
+                                    if me then
+                                        if me.StopMove then me:StopMove() end
+                                        if me.SetAutoFight then me:SetAutoFight("None") end
+                                        if me.SetAutoTaskFight then me:SetAutoTaskFight("None") end
+                                        if me.MoveTo then
+                                            local meCell = me.cellPos or me.serverCoord
+                                            local meX = meCell and meCell.x or (me.data and me.data.x) or 0
+                                            local meY = meCell and meCell.y or (me.data and me.data.y) or 0
+                                            if meX > 0 and meY > 0 then
+                                                local dx = math.random(-1, 1)
+                                                local dy = math.random(-1, 1)
+                                                if dx == 0 and dy == 0 then dx = 1; dy = 1 end
+                                                local targetCell = (CS.UnityEngine.Vector2Int and CS.UnityEngine.Vector2Int(meX + dx, meY + dy))
+                                                    or (_G.Vector2Int and _G.Vector2Int(meX + dx, meY + dy))
+                                                    or { x = meX + dx, y = meY + dy }
+                                                me:MoveTo(targetCell, 0)
+                                            end
+                                        end
+                                    end
+                                    if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+                                        _G.QiJiHelperData.SetAutoFightData(false)
+                                    end
+                                end)
+
+                                if _G.SceneData and _G.SceneData.SetMiniMapData then
+                                    pcall(function()
+                                        _G.SceneData.SetMiniMapData(_G.SceneData.mapId or target.mapCfg.mapId,
+                                            _G.SceneData.groupId or target.mapCfg.mapId)
+                                    end)
+                                end
+
+                                if _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqBossIcon then
+                                    pcall(function() _G.NetManager.Send(_G.MapMessage.ReqBossIcon) end)
+                                end
+
+                                LogMsg(string.format("Đã tới Map %s (Jiggle xóa lag)! Đang xin dữ liệu Minimap trạng thái Boss...",
+                                    GetMapName(target.mapCfg.mapId)))
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
+                                return
+                            end
+
+                            local alivePos, aliveCount, totalCandidates = nil, 0, 0
+                            if _G.GetAliveBossPosition then
+                                alivePos, aliveCount, totalCandidates = _G.GetAliveBossPosition(target.cfg.id, target.mapCfg.mapId)
+                            end
+
+                            if totalCandidates > 0 and aliveCount == 0 then
+                                LogMsg(string.format("Minimap xác nhận tất cả điểm của Boss %s đã bị hạ. Trở về State 1...",
+                                    target.cfg.name or ""))
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                _G.Mod_AutoFarmBoss_State = 1
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                return
+                            end
+
+                            -- =========================================================================
+                            -- [MOD FEATURE]: LẤY TỌA ĐỘ QUÁI/BOSS TỪ MINIMAP NHƯ BẢN CUSTOMER
+                            -- Mô tả: Khi không dùng dịch chuyển (đứng ở đầu map), lấy tọa độ Boss sống từ
+                            --        GetAliveBossPosition / GetBossPosition (SceneData.bossPosDataList & cfg_Map_minimap),
+                            --        tuyệt đối không lấy tọa độ cổng dịch chuyển (Mod_BossTransferCoords).
+                            -- =========================================================================
+                            if target.triedSecondSpot and target.secondSpotPos then
+                                target.currentPos = target.secondSpotPos
+                            else
+                                target.currentPos = alivePos or
+                                    (_G.GetBossPosition and _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId)) or
+                                    (target.cfg.spots and target.cfg.spots[1] and { x = target.cfg.spots[1].x, y = target.cfg.spots[1].y })
+                            end
+                            if false then
+                            local fallbackPos = nil
+                            if target.currentPosX and target.currentPosY then
+                                fallbackPos = { x = target.currentPosX, y = target.currentPosY }
+                            elseif target.cfg.posX and target.cfg.posY then
+                                fallbackPos = { x = target.cfg.posX, y = target.cfg.posY }
+                            elseif GetBossSpotCoord then
+                                local sx, sy = GetBossSpotCoord(target.cfg, target.triedSecondSpot and 2 or 1)
+                                if sx and sy then fallbackPos = { x = sx, y = sy } end
+                            end
+
+                            if target.triedSecondSpot and fallbackPos then
+                                target.currentPos = fallbackPos
+                            else
+                                target.currentPos = alivePos or fallbackPos or
+                                    (_G.GetBossPosition and _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId))
+                            end
+
+                            end -- end disabled old fallbackPos
+                            local posLog = target.currentPos and
+                                string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
+
+                            local px, py = nil, nil
+                            if _G.RoleManager and _G.RoleManager.me then
+                                local me = _G.RoleManager.me
+                                if me.cellPos then
+                                    px, py = me.cellPos.x, me.cellPos.y
+                                elseif me.serverCoord then
+                                    px, py = me.serverCoord.x, me.serverCoord.y
+                                elseif me.GetPosition then
+                                    local p = me:GetPosition()
+                                    if p then px, py = math.floor(p.x), math.floor(p.z) end
+                                elseif me.position then
+                                    px, py = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
+                                end
+                            end
+
+                            if px and py and target.currentPos and target.currentPos.x and target.currentPos.y then
+                                local dx = px - target.currentPos.x
+                                local dy = py - target.currentPos.y
+                                local dist = math.sqrt(dx * dx + dy * dy)
+
+                                local mapTitle = target.mapCfg and target.mapCfg.title or ""
+                                local isWildMap = (string.find(mapTitle, "Hoang Dã") ~= nil) or (target.cfg.useCallFlag == true)
+                                local inTranscript = (_G.TranScriptData and (_G.TranScriptData.InTranscript or (_G.TranScriptData.IsInTranscript and _G.TranScriptData.IsInTranscript()))) or false
+                                if inTranscript then isWildMap = false end
+
+                                if isWildMap and dist > 50 then
+                                    local stoneBagId = nil
+                                    if _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                        for _, itemData in pairs(_G.BagInfoData.TotalItems) do
+                                            if itemData then
+                                                local itemId = itemData.itemId or (itemData.data and itemData.data.itemId)
+                                                local instanceId = itemData.id or (itemData.data and itemData.data.id)
+                                                if itemId == 20000022 then
+                                                    stoneBagId = instanceId
+                                                    break
+                                                end
+                                            end
+                                        end
+                                    end
+
+                                    if stoneBagId then
+                                        LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m). Dùng Ấn Dịch Chuyển (20000022)...",
+                                            target.cfg.name or "", dist))
+                                        if _G.networkRequest and _G.networkRequest.ReqUseItem then
+                                            _G.networkRequest.ReqUseItem(1, stoneBagId)
+                                        elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                            _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
+                                        end
+                                        _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.2
+                                        return
+                                    else
+                                        LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ!",
+                                            target.cfg.name or "", dist))
+                                    end
+                                elseif isWildMap and dist <= 50 then
+                                    LogMsg(string.format("[Hoang Dã] Đã tiếp cận Boss %s ở cự ly %.1fm (<=50m). Bắt đầu chạy bộ tới mục tiêu!",
+                                        target.cfg.name or "", dist))
+                                end
+                            end
+
+                            if alivePos then
+                                LogMsg(string.format("Minimap báo Boss %s SỐNG tại %s! Đang chạy bộ tới mục tiêu...",
+                                    target.cfg.name or "", posLog))
+                            else
+                                LogMsg(string.format("Đang chạy bộ tới tọa độ Boss: %s %s, Line %d...",
+                                    GetMapName(target.mapCfg.mapId), posLog, target.line or 1))
+                            end
+
+                            _G.Mod_AutoFarmBoss_ArrivedAtPos = false
+                            local onArrive = function()
+                                _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                            end
+
+                            local moved = false
+                            if _G.RoleManager and _G.RoleManager.me then
+                                if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                                if _G.RoleManager.me.StopAutoFight then _G.RoleManager.me:StopAutoFight() end
+                                if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.Role_StopAutoFight then
+                                    _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
+                                end
+                                _G.RoleManager.me.TargetAvatar = nil
+                            end
+                            if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
+                                _G.QiJiHelperData.SetAutoFightData(false)
+                            end
+                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.MoveTo and target.currentPos then
+                                local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
+                                _G.RoleManager.me:MoveTo(cellPos, 0, function(status)
+                                    _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                end)
+                                moved = true
+                            end
+
+                            if not moved then
+                                local targetVector = target.currentPos and Vector2(target.currentPos.x, target.currentPos.y) or nil
+                                if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                                    _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
+                                        target.line, nil, (Purpose and Purpose.None) or 0, onArrive, 0, true)
+                                elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
+                                    _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
+                                        (Purpose and Purpose.None) or 0, onArrive)
+                                end
+                            end
+
+                            _G.Mod_AutoFarmBoss_State = 4
+                            _G.Mod_AutoFarmBoss_TargetWait = 0
+                            _G.Mod_AutoFarmBoss_BossWait = 0
+                            _G.Mod_AutoFarmBoss_DidJiggle = false
+                            _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
+                            _G.Mod_AutoFarmBoss_LastTargetPos = target.currentPos and { x = target.currentPos.x, y = target.currentPos.y }
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                            return
+                        end
+
                         LogMsg(string.format("Đang bay tới Map Boss: %s (%s)...", GetMapName(target.mapCfg.mapId), tostring(target.cfg.name)))
 
                         -- =========================================================================
@@ -6495,6 +6797,292 @@ local function CreateModUI()
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + (isAutoHunt and 0.2 or 1.0)
                             else
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                            end
+                            return
+                        end
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: STATE 4 CHẠY BỘ ÁP SÁT BOSS <= 2M KHI TẮT DÙNG DỊCH CHUYỂN
+                        -- Mô tả: Khi DÙNG DỊCH CHUYỂN tắt (và không phải Auto Hunt), duy trì chạy bộ MoveTo
+                        --        đến khi khoảng cách tới Boss <= 2.0m mới bật AutoFight và sang State 5.
+                        -- =========================================================================
+                        local isAutoHuntEarly = _G.Mod_IsAutoHuntActive and _G.Mod_IsAutoHuntActive()
+                        if not isAutoHuntEarly and _G.Mod_AutoFarmBoss_UseTeleport == false then
+                            local currentLine = _G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex) or 1
+                            if target.line and currentLine ~= target.line then
+                                LogMsg(string.format("Sai Line (Hiện tại: %s, Cần: %s). Đang chuyển sang Line %d...",
+                                    tostring(currentLine), tostring(target.line), target.line))
+                                if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqChangeLine then
+                                    _G.NetManager.Send(_G.MapMessage.ReqChangeLine, { line = target.line })
+                                elseif _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+                                    local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or target.mapCfg.mapId
+                                    _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = transId, line = target.line, changeLine = true })
+                                end
+                                _G.Mod_AutoFarmBoss_State = 3
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.5
+                                return
+                            end
+                            local px, py = nil, nil
+                            if _G.RoleManager and _G.RoleManager.me then
+                                local me = _G.RoleManager.me
+                                if me.cellPos then
+                                    px, py = me.cellPos.x, me.cellPos.y
+                                elseif me.serverCoord then
+                                    px, py = me.serverCoord.x, me.serverCoord.y
+                                elseif me.GetPosition then
+                                    local p = me:GetPosition()
+                                    if p then px, py = math.floor(p.x), math.floor(p.z) end
+                                elseif me.position then
+                                    px, py = math.floor(me.position.x), math.floor(me.position.z or me.position.y)
+                                end
+                            end
+
+                            local foundBoss = false
+                            local isHighHp = false
+                            local bossRoleObj = nil
+
+                            if _G.RoleManager and _G.RoleManager.GetRolesByType then
+                                local monsterRoles = _G.RoleManager.GetRolesByType(2)
+                                if monsterRoles then
+                                    for lid, role in pairs(monsterRoles) do
+                                        local d = role.data
+                                        local mId = d and (d.configId or d.monsterId or d.templateId) or "none"
+
+                                        local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
+                                        local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
+                                        local isTarget = (_G.RoleManager.me and _G.RoleManager.me.TargetAvatar and _G.RoleManager.me.TargetAvatar == role)
+
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: NHẬN DIỆN CHÍNH XÁC BOSS TRONG STATE 4 (TRÁNH NHẦM QUÁI THƯỜNG ĐANG TARGET)
+                                        -- Mô tả: Không dùng isTarget để tránh nhận nhầm quái train (VD: Quái Lv4300) làm ghi đè tọa độ Boss.
+                                        -- =========================================================================
+                                        local hasBothIds = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil)
+                                        if role.hp and role.hp > 0 and ((hasBothIds and idMatch) or (not hasBothIds and nameMatch)) then
+                                            foundBoss = true
+                                            bossRoleObj = role
+                                            local maxHp = role.maxHp or role.maxHP
+                                            if not maxHp or maxHp <= 0 then maxHp = role.hp end
+
+                                            local isMine = (d and d.owner and _G.RoleManager.me and tostring(d.owner) == tostring(_G.RoleManager.me.id))
+                                            local isUnowned = (d and (tostring(d.owner) == "0" or d.owner == nil))
+
+                                            if maxHp > 0 then
+                                                local hpPct = (role.hp / maxHp) * 100
+                                                local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
+                                                if hpPct >= skipThresh or isMine or isUnowned then
+                                                    isHighHp = true
+                                                end
+                                            else
+                                                isHighHp = true
+                                            end
+                                            break
+                                        end
+                                    end
+                                end
+                            end
+
+                            if bossRoleObj and target.currentPos then
+                                local bx = bossRoleObj.serverCoord and bossRoleObj.serverCoord.x or (bossRoleObj.cellPos and bossRoleObj.cellPos.x) or (bossRoleObj.data and bossRoleObj.data.x)
+                                local by = bossRoleObj.serverCoord and bossRoleObj.serverCoord.y or (bossRoleObj.cellPos and bossRoleObj.cellPos.y) or (bossRoleObj.data and bossRoleObj.data.y)
+                                if bx and by then
+                                    target.currentPos.x = tonumber(bx) or target.currentPos.x
+                                    target.currentPos.y = tonumber(by) or target.currentPos.y
+                                end
+                            end
+
+                            local targetPos = target.currentPos
+                            local dist = 9999
+                            if px and py and targetPos and targetPos.x and targetPos.y then
+                                local dx = px - targetPos.x
+                                local dy = py - targetPos.y
+                                dist = math.sqrt(dx * dx + dy * dy)
+                            end
+
+                            -- ĐIỀU KIỆN 1: CÒN CÁCH TỌA ĐỘ BOSS > 2M -> TIẾP TỤC CHẠY BỘ
+                            if dist > 1.5 then
+                                if _G.RoleManager and _G.RoleManager.me then
+                                    if _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
+                                        if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                                        if _G.RoleManager.me.StopAutoFight then _G.RoleManager.me:StopAutoFight() end
+                                        if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.Role_StopAutoFight then
+                                            _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
+                                        end
+                                    end
+                                    if _G.RoleManager.me.TargetAvatar and _G.RoleManager.me.TargetAvatar ~= bossRoleObj then
+                                        _G.RoleManager.me.TargetAvatar = nil
+                                    end
+                                end
+                                _G.Mod_AutoFarmBoss_BossWait = 0
+
+                                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.isAutoFight and _G.RoleManager.me.isAutoFight ~= "None" then
+                                    if _G.RoleManager.me.SetAutoFight then _G.RoleManager.me:SetAutoFight("None") end
+                                end
+                                if _G.QiJiHelperData and _G.QiJiHelperData.isAutoFight then
+                                    if _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
+                                end
+
+                                local me = _G.RoleManager and _G.RoleManager.me
+                                local isMoving = false
+                                if me and me.IsMoving then
+                                    isMoving = me:IsMoving()
+                                end
+
+                                local lastMoveTime = _G.Mod_AutoFarmBoss_LastForceMoveTime or 0
+                                local moveCooldown = isMoving and 4.0 or 1.0
+                                local needForceMove = (nowRealtime - lastMoveTime) >= moveCooldown
+
+                                if not needForceMove and target and target.currentPos and _G.Mod_AutoFarmBoss_LastTargetPos then
+                                    local lPos = _G.Mod_AutoFarmBoss_LastTargetPos
+                                    local cPos = target.currentPos
+                                    local tdx = (cPos.x or 0) - (lPos.x or 0)
+                                    local tdy = (cPos.y or 0) - (lPos.y or 0)
+                                    if (tdx * tdx + tdy * tdy) > 1.0 then
+                                        needForceMove = true
+                                    end
+                                end
+
+                                if needForceMove and me and (not me.hp or me.hp > 0) then
+                                    _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
+                                    if target and target.currentPos then
+                                        _G.Mod_AutoFarmBoss_LastTargetPos = { x = target.currentPos.x, y = target.currentPos.y }
+                                        local moved = false
+                                        if me and me.MoveTo then
+                                            local cellPos = { x = target.currentPos.x, y = target.currentPos.y }
+                                            me:MoveTo(cellPos, 0, function(status)
+                                                _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                            end)
+                                            moved = true
+                                        end
+                                        if not moved then
+                                            local targetVector = Vector2(target.currentPos.x, target.currentPos.y)
+                                            if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos then
+                                                _G.PathFinderManager.JumpMapToMoveToPos(target.mapCfg.mapId, targetVector, nil,
+                                                    target.line, nil, (Purpose and Purpose.None) or 0, function()
+                                                        _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                    end, 0, true)
+                                            elseif _G.JumpMapToPos and _G.JumpMapToPos.MapMoveToPos then
+                                                _G.JumpMapToPos.MapMoveToPos(target.mapCfg.mapId, targetVector, nil, target.line, nil,
+                                                    (Purpose and Purpose.None) or 0, function()
+                                                        _G.Mod_AutoFarmBoss_ArrivedAtPos = true
+                                                    end)
+                                            end
+                                        end
+                                    end
+                                end
+
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                                return
+                            end
+
+                            -- ĐIỀU KIỆN 2: KHI ĐÃ TIẾP CẬN CỰ LY <= 2M
+                            _G.Mod_AutoFarmBoss_LastForceMoveTime = nil
+                            _G.Mod_AutoFarmBoss_LastTargetPos = nil
+
+                            if foundBoss then
+                                local maxHp = bossRoleObj and (bossRoleObj.maxHp or bossRoleObj.maxHP or bossRoleObj.hp) or 1
+                                local hpPct = bossRoleObj and ((bossRoleObj.hp / maxHp) * 100) or 100
+
+                                if isHighHp then
+                                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoFight then
+                                        _G.RoleManager.me:SetAutoFight("AutoFight")
+                                    end
+                                    _G.Mod_AutoFarmBoss_State = 5
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    LogMsg(string.format("Đã áp sát Boss %s cự ly %.1fm (<= 1.5m) - HP: %.2f%%. Bật Auto Fight!",
+                                        tostring(target.cfg.name or ""), dist, hpPct))
+                                    if _G.RoleManager and _G.RoleManager.me and bossRoleObj then
+                                        if _G.RoleManager.me.SetTarget then
+                                            pcall(function() _G.RoleManager.me:SetTarget(bossRoleObj) end)
+                                        end
+                                        _G.RoleManager.me.TargetAvatar = bossRoleObj
+                                    end
+                                else
+                                    local skipThresh = _G.Mod_AutoBoss_SkipHpPct or 90
+                                    LogMsg(string.format("Boss bị Ks (HP < %d%%). Bỏ qua 6 phút", skipThresh))
+                                    _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 360
+                                    _G.Mod_AutoFarmBoss_Target = nil
+                                    _G.Mod_AutoFarmBoss_State = 1
+                                    _G.Mod_AutoFarmBoss_TargetWait = 0
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                end
+                                return
+                            end
+
+                            -- Nếu Boss có nhiều vị trí spawn trên Minimap mà điểm 1 không thấy Boss -> Chuyển sang chạy bộ tới Điểm 2
+                            if not target.triedSecondSpot then
+                                local allPos = _G.GetAllBossPositions and _G.GetAllBossPositions(target.cfg.id, target.mapCfg.mapId) or {}
+                                local nextPos = nil
+                                if #allPos > 1 then
+                                    for _, p in ipairs(allPos) do
+                                        if not target.currentPos or math.abs(p.x - target.currentPos.x) > 3 or math.abs(p.y - target.currentPos.y) > 3 then
+                                            nextPos = { x = p.x, y = p.y }
+                                            break
+                                        end
+                                    end
+                                elseif target.cfg.spots and #target.cfg.spots > 1 then
+                                    nextPos = { x = target.cfg.spots[2].x, y = target.cfg.spots[2].y }
+                                end
+                                if nextPos then
+                                    target.triedSecondSpot = true
+                                    target.secondSpotPos = nextPos
+                                    target.currentPos = nextPos
+                                    LogMsg(string.format("Không thấy Boss tại Vị trí 1, tiếp tục chạy bộ sang Vị trí 2 (%s: %d, %d)...",
+                                        target.cfg.name or "", nextPos.x, nextPos.y))
+                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                end
+                            end
+                            if false then
+                            local hasMultipleSpots = (target.cfg.spots and #target.cfg.spots > 1)
+                            local hasMultipleTransfers = (target.cfg.transferIds and #target.cfg.transferIds > 1)
+                            if (hasMultipleSpots or hasMultipleTransfers) and not target.triedSecondSpot then
+                                local sx, sy = nil, nil
+                                if GetBossSpotCoord then
+                                    sx, sy = GetBossSpotCoord(target.cfg, 2)
+                                end
+                                if sx and sy then
+                                    target.triedSecondSpot = true
+                                    target.currentPosX = sx
+                                    target.currentPosY = sy
+                                    target.cfg.posX = sx
+                                    target.cfg.posY = sy
+                                    target.currentPos = { x = sx, y = sy }
+                                    LogMsg(string.format("Không thấy Boss tại Vị trí 1, tiếp tục di chuyển sang Vị trí 2 (%s: %d, %d)...",
+                                        target.cfg.name or "", sx, sy))
+                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                end
+                            end
+                            end; if false then if false then LogMsg(string.format("",
+                                        target.cfg.name or "", sx, sy))
+                                    _G.Mod_AutoFarmBoss_State = 3
+                                    _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                    return
+                                end
+                            end
+
+                            -- end block
+                            _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
+                            if _G.Mod_AutoFarmBoss_BossWait <= 20 then
+                                if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
+                                    LogMsg(string.format("[ĐÓN ĐẦU] Đã tới tọa độ %s (cách %.1fm), đang chờ Boss %s xuất hiện (%ds/20s)...",
+                                        target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "",
+                                        dist,
+                                        target.cfg.name or "",
+                                        _G.Mod_AutoFarmBoss_BossWait))
+                                end
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                            else
+                                LogMsg(string.format("Đã đứng chờ 20s tại tọa độ %s nhưng Boss không xuất hiện. Bỏ qua 120s và trở về State 1...",
+                                    target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
+                                _G.Mod_AutoFarmBoss_BossWait = 0
+                                _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 120
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                _G.Mod_AutoFarmBoss_State = 1
+                                _G.Mod_AutoFarmBoss_TargetWait = 0
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                             end
                             return
@@ -6607,7 +7195,9 @@ local function CreateModUI()
                                     local nameMatch = (d and d.name and target.cfg.name and string.find(string.lower(d.name), string.lower(target.cfg.name), 1, true))
                                     local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
 
-                                    if role.hp and role.hp > 0 and (idMatch or nameMatch) then
+                                    local hasBothIds = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil)
+                                    if role.hp and role.hp > 0 and ((hasBothIds and idMatch) or (not hasBothIds and nameMatch)) then
+                                        local bossRoleRef = role
                                         foundBoss = true
                                         local maxHp = role.maxHp or role.maxHP
                                         if not maxHp or maxHp <= 0 then maxHp = role.hp end
@@ -6687,6 +7277,7 @@ local function CreateModUI()
                                 end
                             end
 
+                            -- end block
                             _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
                             if _G.Mod_AutoFarmBoss_BossWait > 2 then
                                 _G.Mod_AutoFarmBoss_BossWait = 0
@@ -6852,7 +7443,46 @@ local function CreateModUI()
                                     local isTarget = (_G.RoleManager.me and _G.RoleManager.me.TargetAvatar and _G.RoleManager.me.TargetAvatar == role)
                                     local idMatch = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil and tonumber(mId) == tonumber(target.cfg.id))
 
-                                    if idMatch or isTarget or nameMatch then
+                                    local hasBothIds = (tonumber(mId) ~= nil and tonumber(target.cfg.id) ~= nil)
+                                    if (hasBothIds and idMatch) or (not hasBothIds and nameMatch) then
+                                        if not (role.isDead or (role.hp and role.hp <= 0)) then
+                                            local me = _G.RoleManager and _G.RoleManager.me
+                                            local px = me and (me.serverCoord and me.serverCoord.x or (me.cellPos and me.cellPos.x))
+                                            local py = me and (me.serverCoord and me.serverCoord.y or (me.cellPos and me.cellPos.y))
+                                            local bx = role.serverCoord and role.serverCoord.x or (role.cellPos and role.cellPos.x) or (role.data and role.data.x)
+                                            local by = role.serverCoord and role.serverCoord.y or (role.cellPos and role.cellPos.y) or (role.data and role.data.y)
+                                            local bDist = (px and py and bx and by) and math.sqrt((px - bx) * (px - bx) + (py - by) * (py - by)) or 0
+                                            if bDist > 1.5 and me then
+                                                if me.SetAutoFight then me:SetAutoFight("None") end
+                                                if me.StopAutoFight then me:StopAutoFight() end
+                                                if _G.EventManager and _G.EventManager.Dispatch and _G.Event and _G.Event.Role_StopAutoFight then
+                                                    _G.EventManager.Dispatch(_G.Event.Role_StopAutoFight)
+                                                end
+                                                me.TargetAvatar = nil
+                                                if target then
+                                                    target.currentPos = { x = tonumber(bx), y = tonumber(by) }
+                                                end
+                                                if me.MoveTo then
+                                                    me:MoveTo({ x = tonumber(bx), y = tonumber(by) }, 0)
+                                                end
+                                                if not _G.Mod_AutoFarmBoss_UseTeleport then
+                                                    _G.Mod_AutoFarmBoss_State = 4
+                                                end
+                                                _G.Mod_AutoFarmBoss_LastForceMoveTime = nowRealtime
+                                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                                                return
+                                            elseif me then
+                                                if me.TargetAvatar ~= role then
+                                                    if me.SetTarget then
+                                                        pcall(function() me:SetTarget(role) end)
+                                                    end
+                                                    me.TargetAvatar = role
+                                                end
+                                                if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and me.SetAutoFight then
+                                                    me:SetAutoFight("AutoFight")
+                                                end
+                                            end
+                                        end
                                         if role.isDead or (role.hp and role.hp <= 0) then
                                             bossIsDead = true
                                         else
@@ -13669,12 +14299,55 @@ local function CreateModUI()
             -- =========================================================================
 
             -- CỘT TRÁI - HÀNG 1: Master Toggle AUTO BOSS (y = -68)
+            -- =========================================================================
+            -- [MOD FEATURE]: HEADER CẤU HÌNH AUTO BOSS DẠNG SCROLLVIEW & NÚT DÙNG DỊCH CHUYỂN
+            -- Mô tả: Chuyển toàn bộ phần cấu hình đầu tab Auto Boss thành ScrollView để không
+            --        chèn vào danh sách Boss bên dưới; thêm nút DÙNG DỊCH CHUYỂN ngay dưới AUTO BOSS.
+            -- =========================================================================
+            local headerScrollGo = GameObject("AutoBossHeaderScroll")
+            headerScrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, headerScrollGo)
+            local hsRt = headerScrollGo:AddComponent(typeof(RectTransform))
+            hsRt.anchorMin, hsRt.anchorMax, hsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            hsRt.anchoredPosition = Vector2(startX, -66)
+            hsRt.sizeDelta = Vector2(440, 100)
+
+            local hsImg = headerScrollGo:AddComponent(typeof(Image))
+            hsImg.color = Color(0, 0, 0, 0.01)
+
+            local hsRect = headerScrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            hsRect.horizontal = false
+            hsRect.vertical = true
+            hsRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            hsRect.scrollSensitivity = 25
+
+            local hsVpGo = GameObject("Viewport")
+            hsVpGo.transform:SetParent(headerScrollGo.transform, false)
+            local hsVpRt = hsVpGo:AddComponent(typeof(RectTransform))
+            hsVpRt.anchorMin, hsVpRt.anchorMax, hsVpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            hsVpRt.sizeDelta = Vector2(0, 0)
+            hsVpGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local headerContentGo = GameObject("Content")
+            headerContentGo.transform:SetParent(hsVpGo.transform, false)
+            local hcRt = headerContentGo:AddComponent(typeof(RectTransform))
+            hcRt.anchorMin, hcRt.anchorMax, hcRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            hcRt.anchoredPosition = Vector2(0, 0)
+            hcRt.sizeDelta = Vector2(0, 138)
+
+            local hcImg = headerContentGo:AddComponent(typeof(Image))
+            hcImg.color = Color(0, 0, 0, 0.01)
+
+            hsRect.viewport = hsVpRt
+            hsRect.content = hcRt
+
             local masterToggleGo = GameObject("AutoFarmBossToggle")
             masterToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, masterToggleGo)
             local mtRt = masterToggleGo:AddComponent(typeof(RectTransform))
             mtRt.anchorMin, mtRt.anchorMax, mtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            mtRt.anchoredPosition = Vector2(startX, -68)
+            masterToggleGo.transform:SetParent(headerContentGo.transform, false)
+            mtRt.anchoredPosition = Vector2(0, -2)
             mtRt.sizeDelta = Vector2(200, 30)
 
             local mtBg = GameObject("Bg")
@@ -13783,12 +14456,71 @@ local function CreateModUI()
             end)
 
             -- CỘT TRÁI - HÀNG 2: TỰ VÀO MAP ẨN Toggle (y = -102)
+            -- CỘT TRÁI - HÀNG 2: DÙNG DỊCH CHUYỂN Toggle (y = -36)
+            local useTpToggleGo = GameObject("AutoBossUseTeleportToggle")
+            useTpToggleGo.transform:SetParent(headerContentGo.transform, false)
+            local utRt = useTpToggleGo:AddComponent(typeof(RectTransform))
+            utRt.anchorMin, utRt.anchorMax, utRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            utRt.anchoredPosition = Vector2(0, -36)
+            utRt.sizeDelta = Vector2(200, 30)
+
+            local utBg = GameObject("Bg")
+            utBg.transform:SetParent(useTpToggleGo.transform, false)
+            local utBgRt = utBg:AddComponent(typeof(RectTransform))
+            utBgRt.anchorMin, utBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            utBgRt.sizeDelta = Vector2(0, 0)
+            local utBgImg = utBg:AddComponent(typeof(Image))
+
+            local utTxtGo = GameObject("Text")
+            utTxtGo.transform:SetParent(useTpToggleGo.transform, false)
+            local utTxtRt = utTxtGo:AddComponent(typeof(RectTransform))
+            utTxtRt.anchorMin, utTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            utTxtRt.sizeDelta = Vector2(0, 0)
+            local utTxt = utTxtGo:AddComponent(typeof(Text))
+            utTxt.raycastTarget = false
+            utTxt.fontSize = 14
+            utTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then utTxt.font = defaultFont end
+
+            local utBtn = useTpToggleGo:AddComponent(typeof(Button))
+
+            local function UpdateUseTeleportToggle()
+                if _G.Mod_AutoFarmBoss_UseTeleport then
+                    utBgImg.color = Color(0.2, 0.4, 0.6, 1)
+                    utTxt.text = "DÙNG DỊCH CHUYỂN: BẬT"
+                    utTxt.color = Color.white
+                else
+                    utBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    utTxt.text = "DÙNG DỊCH CHUYỂN: TẮT"
+                    utTxt.color = Color(0.8, 0.8, 0.8, 1)
+                end
+            end
+
+            if _G.Mod_AutoFarmBoss_UseTeleport == nil then
+                pcall(function()
+                    _G.Mod_AutoFarmBoss_UseTeleport = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoFarmBoss_UseTeleport", 1) == 1)
+                end)
+                if _G.Mod_AutoFarmBoss_UseTeleport == nil then _G.Mod_AutoFarmBoss_UseTeleport = true end
+            end
+            UpdateUseTeleportToggle()
+
+            utBtn.onClick:AddListener(function()
+                _G.Mod_AutoFarmBoss_UseTeleport = not _G.Mod_AutoFarmBoss_UseTeleport
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoFarmBoss_UseTeleport",
+                        _G.Mod_AutoFarmBoss_UseTeleport and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateUseTeleportToggle()
+            end)
+
             local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
             hiddenToggleGo.transform:SetParent(panelGo.transform, false)
             table.insert(_G.AutoBossUIList, hiddenToggleGo)
             local htRt = hiddenToggleGo:AddComponent(typeof(RectTransform))
             htRt.anchorMin, htRt.anchorMax, htRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            htRt.anchoredPosition = Vector2(startX, -102)
+            hiddenToggleGo.transform:SetParent(headerContentGo.transform, false)
+            htRt.anchoredPosition = Vector2(0, -70)
             htRt.sizeDelta = Vector2(200, 30)
 
             local htBg = GameObject("Bg")
@@ -13847,7 +14579,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, saveSkillBtnGo)
             local ssRt = saveSkillBtnGo:AddComponent(typeof(RectTransform))
             ssRt.anchorMin, ssRt.anchorMax, ssRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ssRt.anchoredPosition = Vector2(startX, -136)
+            saveSkillBtnGo.transform:SetParent(headerContentGo.transform, false)
+            ssRt.anchoredPosition = Vector2(0, -104)
             ssRt.sizeDelta = Vector2(200, 30)
 
             local ssBg = GameObject("Bg")
@@ -13884,7 +14617,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, labelTrainGo)
             local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
             lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lblRt.anchoredPosition = Vector2(230, -68)
+            labelTrainGo.transform:SetParent(headerContentGo.transform, false)
+            lblRt.anchoredPosition = Vector2(210, -2)
             lblRt.sizeDelta = Vector2(220, 16)
             local lblTxt = labelTrainGo:AddComponent(typeof(Text))
             lblTxt.raycastTarget = false
@@ -13899,7 +14633,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, trainTgtGo)
             local trainRt = trainTgtGo:AddComponent(typeof(RectTransform))
             trainRt.anchorMin, trainRt.anchorMax, trainRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            trainRt.anchoredPosition = Vector2(230, -86)
+            trainTgtGo.transform:SetParent(headerContentGo.transform, false)
+            trainRt.anchoredPosition = Vector2(210, -20)
             trainRt.sizeDelta = Vector2(105, 28)
 
             local trainBg = GameObject("Bg")
@@ -13945,7 +14680,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, getPosBtnGo)
             local getPosRt = getPosBtnGo:AddComponent(typeof(RectTransform))
             getPosRt.anchorMin, getPosRt.anchorMax, getPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            getPosRt.anchoredPosition = Vector2(340, -86)
+            getPosBtnGo.transform:SetParent(headerContentGo.transform, false)
+            getPosRt.anchoredPosition = Vector2(320, -20)
             getPosRt.sizeDelta = Vector2(110, 28)
 
             local getPosBg = GameObject("Bg")
@@ -13995,7 +14731,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, skipHpLabelGo)
             local skipLblRt = skipHpLabelGo:AddComponent(typeof(RectTransform))
             skipLblRt.anchorMin, skipLblRt.anchorMax, skipLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            skipLblRt.anchoredPosition = Vector2(230, -120)
+            skipHpLabelGo.transform:SetParent(headerContentGo.transform, false)
+            skipLblRt.anchoredPosition = Vector2(210, -54)
             skipLblRt.sizeDelta = Vector2(220, 16)
             local skipLblTxt = skipHpLabelGo:AddComponent(typeof(Text))
             skipLblTxt.raycastTarget = false
@@ -14011,7 +14748,8 @@ local function CreateModUI()
             table.insert(_G.AutoBossUIList, skipHpValGo)
             local skipValRt = skipHpValGo:AddComponent(typeof(RectTransform))
             skipValRt.anchorMin, skipValRt.anchorMax, skipValRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            skipValRt.anchoredPosition = Vector2(230, -138)
+            skipHpValGo.transform:SetParent(headerContentGo.transform, false)
+            skipValRt.anchoredPosition = Vector2(210, -72)
             skipValRt.sizeDelta = Vector2(110, 28)
 
             local skipValBg = GameObject("Bg")
@@ -14054,7 +14792,8 @@ local function CreateModUI()
                 table.insert(_G.AutoBossUIList, btnGo)
                 local bRt = btnGo:AddComponent(typeof(RectTransform))
                 bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                bRt.anchoredPosition = Vector2(posX, -138)
+                btnGo.transform:SetParent(headerContentGo.transform, false)
+                bRt.anchoredPosition = Vector2(posX - startX, -72)
                 bRt.sizeDelta = Vector2(w, 28)
                 local bImg = btnGo:AddComponent(typeof(Image))
                 bImg.color = btnColor
