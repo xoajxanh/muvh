@@ -314,6 +314,512 @@ local TASK_CONFIG_BY_ID = {
 	[3120] = TASK_BEHAVIOR.CRAFT_ITEM,
 }
 
+-- =========================================================================
+-- [MOD FEATURE]: BỘ ĐẾM THỜI GIAN XỬ LÝ ACCOUNT, LƯU LOG THEO SERVER & PANEL KQ
+-- Mô tả:
+--   1. Ghi nhận thời gian xử lý từng cặp S<Server>-<Email> (ví dụ: S515-accvutmuvh0001@gmail.com: 20s(done)).
+--   2. Nếu S<Server>-<Email> đã mark (done) và bị quét lại thì bỏ qua không ghi đè; nếu chưa (done) thì cộng dồn.
+--   3. Sắp xếp: Server giảm dần (S515 -> S514...), Email tăng dần (0001 -> 0002...).
+--   4. Hiển thị thông báo giữa màn hình mỗi 5s/lần theo style thông báo Kundun xuất hiện bên bản Client.
+--   5. Tạo nút [KQ] & Panel Kết Quả (ScrollView chiều cao 1200, bám mép trái màn hình, nút X để đóng) đọc trực tiếp từ file txt.
+-- =========================================================================
+_G.Mod_AccTimeRecords = _G.Mod_AccTimeRecords or {}
+_G.Mod_AccTimeLoaded = _G.Mod_AccTimeLoaded or false
+_G.Mod_CurrentTrackingKey = _G.Mod_CurrentTrackingKey or ""
+_G.Mod_CurrentSessionSec = _G.Mod_CurrentSessionSec or 0
+_G.Mod_KqPanelVisible = _G.Mod_KqPanelVisible or false
+
+local function GetAccTimeLogFilePath()
+	local dir = "/storage/emulated/0/Android/data/com.vnyh.gp/files"
+	pcall(function()
+		if CS and CS.UnityEngine and CS.UnityEngine.Application and CS.UnityEngine.Application.persistentDataPath then
+			local p = tostring(CS.UnityEngine.Application.persistentDataPath)
+			if p ~= "" then dir = p end
+		end
+	end)
+	return dir .. "/account_time_log.txt"
+end
+
+local function FormatAccDuration(sec)
+	local s = math.max(1, math.floor(tonumber(sec) or 0))
+	if s < 60 then
+		return string.format("%ds", s)
+	end
+	local m = math.floor(s / 60)
+	local rem = s % 60
+	return string.format("%dp%ds", m, rem)
+end
+
+local function ParseAccDurationStr(timeStr)
+	local str = tostring(timeStr or "")
+	local m = tonumber(string.match(str, "(%d+)%s*[pP]")) or 0
+	local s = tonumber(string.match(str, "(%d+)%s*[sS]")) or 0
+	if m == 0 and s == 0 then
+		s = tonumber(string.match(str, "(%d+)")) or 0
+	end
+	return math.max(1, m * 60 + s)
+end
+
+local function LoadAccountTimeRecords(forceReload)
+	if _G.Mod_AccTimeLoaded and not forceReload then return end
+	_G.Mod_AccTimeLoaded = true
+	pcall(function()
+		local path = GetAccTimeLogFilePath()
+		local content = nil
+		if CS and CS.System and CS.System.IO and CS.System.IO.File and CS.System.IO.File.Exists(path) then
+			content = CS.System.IO.File.ReadAllText(path, CS.System.Text.Encoding.UTF8)
+		else
+			local f = io.open(path, "r")
+			if f then
+				content = f:read("*a")
+				f:close()
+			end
+		end
+		if not content or content == "" then return end
+		for line in string.gmatch(content, "[^\r\n]+") do
+			local srvStr, emailRaw, rhs = string.match(line, "^%s*[Ss](%d+)%-(.-)%s*[:;]%s*(.-)%s*$")
+			if srvStr and emailRaw and rhs then
+				local srvId = tonumber(srvStr) or 0
+				local email = tostring(emailRaw):gsub("^%s+", ""):gsub("%s+$", "")
+				if srvId > 0 and email ~= "" then
+					local isDone = (string.find(string.lower(rhs), "%(done%)") ~= nil)
+					local sec = ParseAccDurationStr(rhs)
+					local key = string.format("S%d-%s", srvId, string.lower(email))
+					local existing = _G.Mod_AccTimeRecords[key]
+					if not existing or not existing.done then
+						_G.Mod_AccTimeRecords[key] = {
+							key = key,
+							serverId = srvId,
+							email = email,
+							elapsedSec = sec,
+							done = isDone,
+						}
+					end
+				end
+			end
+		end
+	end)
+end
+
+local function GetSortedAccountTimeRecords()
+	LoadAccountTimeRecords(false)
+	local list = {}
+	for _, rec in pairs(_G.Mod_AccTimeRecords) do
+		if rec and rec.serverId and rec.email and rec.email ~= "" then
+			table.insert(list, rec)
+		end
+	end
+	table.sort(list, function(a, b)
+		local sa = tonumber(a.serverId) or 0
+		local sb = tonumber(b.serverId) or 0
+		if sa ~= sb then
+			return sa > sb -- Server giảm dần (S515 -> S514...)
+		end
+		return string.lower(tostring(a.email)) < string.lower(tostring(b.email)) -- Email tăng dần
+	end)
+	return list
+end
+
+local function SaveAccountTimeRecords()
+	pcall(function()
+		local list = GetSortedAccountTimeRecords()
+		local lines = {}
+		for _, rec in ipairs(list) do
+			local line = string.format("S%d-%s: %s%s",
+				tonumber(rec.serverId) or 0,
+				tostring(rec.email),
+				FormatAccDuration(rec.elapsedSec),
+				rec.done and "(done)" or "")
+			table.insert(lines, line)
+		end
+		local fullText = table.concat(lines, "\r\n")
+		if #lines > 0 then fullText = fullText .. "\r\n" end
+		local path = GetAccTimeLogFilePath()
+		if CS and CS.System and CS.System.IO and CS.System.IO.File then
+			CS.System.IO.File.WriteAllText(path, fullText, CS.System.Text.Encoding.UTF8)
+		else
+			local f = io.open(path, "w")
+			if f then
+				f:write(fullText)
+				f:close()
+			end
+		end
+	end)
+	if _G.Mod_KqPanelVisible and _G.Mod_RefreshKqPanelUI then
+		pcall(_G.Mod_RefreshKqPanelUI)
+	end
+end
+
+local function FlashAccTimeCenterAlert(msg)
+	pcall(function()
+		local alertText = "<size=22><b><color=#FFFF00>⚠️ " .. tostring(msg) .. " ⚠️</color></b></size>"
+		if _G.FloatingTipUtility and _G.FloatingTipUtility.QuickMsg then
+			_G.FloatingTipUtility.QuickMsg(alertText)
+		elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+			_G.FloatingWordUtility.QuickMsg(alertText)
+		end
+	end)
+end
+
+local function ResolveCurrentSessionServerAndEmail()
+	local curAcc = (GetCurrentAccount and GetCurrentAccount()) or (_G.BotAccounts and _G.BotAccounts[_G.CurrentAccountIndex or 1]) or {}
+	local email = tostring(_G.Bot_ActiveSessionEmail or curAcc.account or ""):gsub("^%s+", ""):gsub("%s+$", "")
+	local srvId = tonumber(_G.Bot_ActiveSessionServer)
+		or tonumber(_G.TARGET_SERVER_ID)
+		or tonumber(curAcc.targetServer)
+		or (CS and CS.UnityEngine and CS.UnityEngine.PlayerPrefs and CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492))
+		or 492
+	return srvId, email
+end
+
+_G.FinalizeAccountTimeOnGoal = function(emailArg, srvArg)
+	pcall(function()
+		LoadAccountTimeRecords(false)
+		local defSrv, defEmail = ResolveCurrentSessionServerAndEmail()
+		local srvId = tonumber(srvArg) or defSrv
+		local email = tostring((emailArg and emailArg ~= "" and emailArg) or defEmail)
+		if srvId <= 0 or email == "" or email == "Unknown" then return end
+
+		local key = string.format("S%d-%s", srvId, string.lower(email))
+		local rec = _G.Mod_AccTimeRecords[key]
+		-- Nếu S<Server>-<Email> đã mark (done) từ trước thì bỏ qua không log đè nữa
+		if rec and rec.done then
+			return
+		end
+		if not rec then
+			rec = {
+				key = key,
+				serverId = srvId,
+				email = email,
+				elapsedSec = math.max(2, tonumber(_G.Mod_CurrentSessionSec) or 2),
+				done = true,
+			}
+			_G.Mod_AccTimeRecords[key] = rec
+		else
+			rec.elapsedSec = math.max(2, tonumber(rec.elapsedSec) or 0, tonumber(_G.Mod_CurrentSessionSec) or 2)
+			rec.done = true
+		end
+		SaveAccountTimeRecords()
+		FlashAccTimeCenterAlert(string.format("S%d-%s: %s(done)", rec.serverId, rec.email, FormatAccDuration(rec.elapsedSec)))
+	end)
+end
+
+-- Khởi tạo giao diện Nút [KQ] và Panel Kết Quả (ScrollView cao 1200 bám trái màn hình)
+local function EnsureKqResultPanelUI()
+	pcall(function()
+		local GameObject = CS.UnityEngine.GameObject
+		local RectTransform = CS.UnityEngine.RectTransform
+		local Vector2 = CS.UnityEngine.Vector2
+		local Vector3 = CS.UnityEngine.Vector3
+		local Color = CS.UnityEngine.Color
+		local Image = CS.UnityEngine.UI.Image
+		local Text = CS.UnityEngine.UI.Text
+		local Button = CS.UnityEngine.UI.Button
+		local ScrollRect = CS.UnityEngine.UI.ScrollRect
+		local RectMask2D = CS.UnityEngine.UI.RectMask2D
+		local Font = CS.UnityEngine.Font
+		local Resources = CS.UnityEngine.Resources
+		local TextAnchor = CS.UnityEngine.TextAnchor
+
+		local modRoot = GameObject.Find("MySuperModCanvas")
+		if not modRoot then return end
+
+		local existingBtn = modRoot.transform:Find("FloatingKqBtn")
+		if existingBtn then return end
+
+		local defaultFont = Resources.GetBuiltinResource(typeof(Font), "Arial.ttf")
+
+		-- 1. Nút nổi [KQ] bên trái màn hình (X=1, Y=220, ngay trên nút EXEC)
+		local kqBtnGo = GameObject("FloatingKqBtn")
+		kqBtnGo.transform:SetParent(modRoot.transform, false)
+		local kqBtnRt = kqBtnGo:AddComponent(typeof(RectTransform))
+		kqBtnRt.anchorMin = Vector2(0, 0)
+		kqBtnRt.anchorMax = Vector2(0, 0)
+		kqBtnRt.pivot = Vector2(0, 0)
+		kqBtnRt.anchoredPosition = Vector2(1, 220)
+		kqBtnRt.sizeDelta = Vector2(60, 60)
+
+		local kqBtnImg = kqBtnGo:AddComponent(typeof(Image))
+		kqBtnImg.color = Color(0.12, 0.52, 0.78, 1.0)
+		kqBtnImg.raycastTarget = true
+
+		local kqBtnTxtGo = GameObject("KqTxt")
+		kqBtnTxtGo.transform:SetParent(kqBtnGo.transform, false)
+		local kqBtnTxtRt = kqBtnTxtGo:AddComponent(typeof(RectTransform))
+		kqBtnTxtRt.anchorMin = Vector2(0, 0)
+		kqBtnTxtRt.anchorMax = Vector2(1, 1)
+		kqBtnTxtRt.sizeDelta = Vector2(0, 0)
+		local kqBtnTxt = kqBtnTxtGo:AddComponent(typeof(Text))
+		kqBtnTxt.text = "KQ"
+		kqBtnTxt.color = Color.white
+		kqBtnTxt.fontSize = 18
+		kqBtnTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+		kqBtnTxt.alignment = TextAnchor.MiddleCenter
+		kqBtnTxt.raycastTarget = false
+		if defaultFont then kqBtnTxt.font = defaultFont end
+
+		-- 2. Panel Kết Quả bám mép trái màn hình (Chiều cao 1200, có ScrollView và nút X đóng)
+		local kqPanelGo = GameObject("ModKqResultPanel")
+		kqPanelGo.transform:SetParent(modRoot.transform, false)
+		local kqPanelRt = kqPanelGo:AddComponent(typeof(RectTransform))
+		kqPanelRt.anchorMin = Vector2(0, 0.5)
+		kqPanelRt.anchorMax = Vector2(0, 0.5)
+		kqPanelRt.pivot = Vector2(0, 0.5)
+		kqPanelRt.anchoredPosition = Vector2(66, 0)
+		kqPanelRt.sizeDelta = Vector2(500, 1200)
+		kqPanelGo.transform.localScale = Vector3(0.88, 0.88, 1)
+
+		local kqPanelImg = kqPanelGo:AddComponent(typeof(Image))
+		kqPanelImg.color = Color(0.06, 0.07, 0.09, 0.96)
+		kqPanelImg.raycastTarget = true
+		kqPanelGo:SetActive(false)
+
+		-- Header Bar
+		local headerGo = GameObject("KqHeader")
+		headerGo.transform:SetParent(kqPanelGo.transform, false)
+		local headerRt = headerGo:AddComponent(typeof(RectTransform))
+		headerRt.anchorMin = Vector2(0, 1)
+		headerRt.anchorMax = Vector2(1, 1)
+		headerRt.pivot = Vector2(0.5, 1)
+		headerRt.anchoredPosition = Vector2(0, 0)
+		headerRt.sizeDelta = Vector2(0, 48)
+		local headerImg = headerGo:AddComponent(typeof(Image))
+		headerImg.color = Color(0.12, 0.16, 0.22, 1.0)
+		headerImg.raycastTarget = false
+
+		local headerTitleGo = GameObject("KqHeaderTitle")
+		headerTitleGo.transform:SetParent(headerGo.transform, false)
+		local htRt = headerTitleGo:AddComponent(typeof(RectTransform))
+		htRt.anchorMin = Vector2(0, 0)
+		htRt.anchorMax = Vector2(1, 1)
+		htRt.offsetMin = Vector2(14, 0)
+		htRt.offsetMax = Vector2(-56, 0)
+		local headerTitleTxt = headerTitleGo:AddComponent(typeof(Text))
+		headerTitleTxt.text = "KẾT QUẢ XỬ LÝ ACCOUNT"
+		headerTitleTxt.color = Color(1, 0.88, 0.15, 1)
+		headerTitleTxt.fontSize = 18
+		headerTitleTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+		headerTitleTxt.alignment = TextAnchor.MiddleLeft
+		headerTitleTxt.raycastTarget = false
+		if defaultFont then headerTitleTxt.font = defaultFont end
+
+		-- Nút [X] Đóng Panel ở góc trên bên phải
+		local closeBtnGo = GameObject("BtnCloseKqPanel")
+		closeBtnGo.transform:SetParent(headerGo.transform, false)
+		local cbRt = closeBtnGo:AddComponent(typeof(RectTransform))
+		cbRt.anchorMin = Vector2(1, 0.5)
+		cbRt.anchorMax = Vector2(1, 0.5)
+		cbRt.pivot = Vector2(1, 0.5)
+		cbRt.anchoredPosition = Vector2(-6, 0)
+		cbRt.sizeDelta = Vector2(40, 36)
+		local cbImg = closeBtnGo:AddComponent(typeof(Image))
+		cbImg.color = Color(0.82, 0.18, 0.18, 1)
+		cbImg.raycastTarget = true
+
+		local cbTxtGo = GameObject("Text")
+		cbTxtGo.transform:SetParent(closeBtnGo.transform, false)
+		local cbtRt = cbTxtGo:AddComponent(typeof(RectTransform))
+		cbtRt.anchorMin = Vector2(0, 0)
+		cbtRt.anchorMax = Vector2(1, 1)
+		cbtRt.sizeDelta = Vector2(0, 0)
+		local cbTxt = cbTxtGo:AddComponent(typeof(Text))
+		cbTxt.text = "X"
+		cbTxt.color = Color.white
+		cbTxt.fontSize = 18
+		cbTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+		cbTxt.alignment = TextAnchor.MiddleCenter
+		cbTxt.raycastTarget = false
+		if defaultFont then cbTxt.font = defaultFont end
+
+		-- ScrollView hiển thị danh sách kết quả
+		local scrollGo = GameObject("KqScrollView")
+		scrollGo.transform:SetParent(kqPanelGo.transform, false)
+		local sRt = scrollGo:AddComponent(typeof(RectTransform))
+		sRt.anchorMin = Vector2(0, 0)
+		sRt.anchorMax = Vector2(1, 1)
+		sRt.offsetMin = Vector2(10, 10)
+		sRt.offsetMax = Vector2(-10, -54)
+
+		local scrollRect = scrollGo:AddComponent(typeof(ScrollRect))
+		scrollRect.horizontal = false
+		scrollRect.vertical = true
+		scrollRect.movementType = ScrollRect.MovementType.Clamped
+		scrollRect.scrollSensitivity = 35
+
+		local viewportGo = GameObject("Viewport")
+		viewportGo.transform:SetParent(scrollGo.transform, false)
+		local vpRt = viewportGo:AddComponent(typeof(RectTransform))
+		vpRt.anchorMin = Vector2(0, 0)
+		vpRt.anchorMax = Vector2(1, 1)
+		vpRt.pivot = Vector2(0, 1)
+		vpRt.sizeDelta = Vector2(0, 0)
+		local vpImg = viewportGo:AddComponent(typeof(Image))
+		vpImg.color = Color(0, 0, 0, 0.25)
+		vpImg.raycastTarget = true
+		viewportGo:AddComponent(typeof(RectMask2D))
+
+		local contentGo = GameObject("Content")
+		contentGo.transform:SetParent(viewportGo.transform, false)
+		local contentRt = contentGo:AddComponent(typeof(RectTransform))
+		contentRt.anchorMin = Vector2(0, 1)
+		contentRt.anchorMax = Vector2(1, 1)
+		contentRt.pivot = Vector2(0, 1)
+		contentRt.anchoredPosition = Vector2(0, 0)
+		contentRt.sizeDelta = Vector2(0, 1136)
+
+		scrollRect.viewport = vpRt
+		scrollRect.content = contentRt
+
+		_G.Mod_KqRowPool = _G.Mod_KqRowPool or {}
+
+		_G.Mod_RefreshKqPanelUI = function()
+			pcall(function()
+				if not kqPanelGo or kqPanelGo:Equals(nil) then return end
+				LoadAccountTimeRecords(true)
+				local list = GetSortedAccountTimeRecords()
+				local doneCount = 0
+				for _, r in ipairs(list) do
+					if r.done then doneCount = doneCount + 1 end
+				end
+				if headerTitleTxt and not headerTitleTxt:Equals(nil) then
+					headerTitleTxt.text = string.format("KẾT QUẢ XỬ LÝ (%d/%d done)", doneCount, #list)
+				end
+
+				local rowH = 30
+				local totalH = math.max(1136, (#list * rowH) + 16)
+				contentRt.sizeDelta = Vector2(0, totalH)
+
+				local count = math.max(#list, 1)
+				for i = 1, count do
+					local rowTxt = _G.Mod_KqRowPool[i]
+					if not rowTxt or rowTxt:Equals(nil) then
+						local rGo = GameObject("KqRow_" .. i)
+						rGo.transform:SetParent(contentGo.transform, false)
+						local rRt = rGo:AddComponent(typeof(RectTransform))
+						rRt.anchorMin = Vector2(0, 1)
+						rRt.anchorMax = Vector2(1, 1)
+						rRt.pivot = Vector2(0, 1)
+						rRt.anchoredPosition = Vector2(8, -6 - (i - 1) * rowH)
+						rRt.sizeDelta = Vector2(-16, rowH)
+
+						rowTxt = rGo:AddComponent(typeof(Text))
+						rowTxt.fontSize = 16
+						rowTxt.alignment = TextAnchor.MiddleLeft
+						rowTxt.raycastTarget = false
+						if defaultFont then rowTxt.font = defaultFont end
+						_G.Mod_KqRowPool[i] = rowTxt
+					end
+					rowTxt.gameObject:SetActive(true)
+					if #list == 0 then
+						rowTxt.text = "<color=#AAAAAA>Chưa có dữ liệu log thời gian xử lý...</color>"
+					else
+						local rec = list[i]
+						local lineStr = string.format("S%d-%s: %s%s",
+							tonumber(rec.serverId) or 0,
+							tostring(rec.email),
+							FormatAccDuration(rec.elapsedSec),
+							rec.done and "(done)" or "")
+						if rec.done then
+							rowTxt.text = "<color=#00FF88>" .. lineStr .. "</color>"
+						else
+							rowTxt.text = "<color=#FFFF00>" .. lineStr .. "</color>"
+						end
+					end
+				end
+
+				for i = count + 1, #_G.Mod_KqRowPool do
+					local rowTxt = _G.Mod_KqRowPool[i]
+					if rowTxt and not rowTxt:Equals(nil) then
+						rowTxt.gameObject:SetActive(false)
+					end
+				end
+			end)
+		end
+
+		local function SetKqPanelVisible(visible)
+			_G.Mod_KqPanelVisible = (visible == true)
+			if kqPanelGo and not kqPanelGo:Equals(nil) then
+				kqPanelGo:SetActive(_G.Mod_KqPanelVisible)
+				if _G.Mod_KqPanelVisible then
+					kqPanelGo.transform:SetAsLastSibling()
+					if _G.Mod_RefreshKqPanelUI then _G.Mod_RefreshKqPanelUI() end
+				end
+			end
+		end
+		_G.Mod_ToggleKqPanel = function()
+			SetKqPanelVisible(not _G.Mod_KqPanelVisible)
+		end
+
+		local kqBtnComp = kqBtnGo:AddComponent(typeof(Button))
+		kqBtnComp.targetGraphic = kqBtnImg
+		kqBtnComp.onClick:AddListener(function()
+			_G.Mod_ToggleKqPanel()
+		end)
+
+		local cbBtnComp = closeBtnGo:AddComponent(typeof(Button))
+		cbBtnComp.targetGraphic = cbImg
+		cbBtnComp.onClick:AddListener(function()
+			SetKqPanelVisible(false)
+		end)
+	end)
+end
+EnsureKqResultPanelUI()
+LoadAccountTimeRecords(false)
+
+-- Khởi chạy bộ đếm thời gian phiên 1s/lần & thông báo giữa màn hình 5s/lần (Style Kundun)
+if _G.Mod_AccSessionTimer then
+	pcall(function() Timer.Stop(_G.Mod_AccSessionTimer) end)
+	_G.Mod_AccSessionTimer = nil
+end
+_G.Mod_AccSessionTimer = Timer.StartLoop(1.0, -1, function()
+	pcall(function()
+		EnsureKqResultPanelUI()
+		if not _G.Bot_Running or _G.Bot_PauseTask then
+			return
+		end
+		LoadAccountTimeRecords(false)
+		local srvId, email = ResolveCurrentSessionServerAndEmail()
+		if srvId <= 0 or email == "" or email == "Unknown" then
+			return
+		end
+
+		local key = string.format("S%d-%s", srvId, string.lower(email))
+		if _G.Mod_CurrentTrackingKey ~= key then
+			_G.Mod_CurrentTrackingKey = key
+			_G.Mod_CurrentSessionSec = 0
+		end
+		_G.Mod_CurrentSessionSec = (_G.Mod_CurrentSessionSec or 0) + 1
+
+		local rec = _G.Mod_AccTimeRecords[key]
+		if not (rec and rec.done) then
+			if not rec then
+				rec = {
+					key = key,
+					serverId = srvId,
+					email = email,
+					elapsedSec = 0,
+					done = false,
+				}
+				_G.Mod_AccTimeRecords[key] = rec
+			end
+			rec.elapsedSec = (tonumber(rec.elapsedSec) or 0) + 1
+			if _G.Mod_KqPanelVisible and _G.Mod_RefreshKqPanelUI and (_G.Mod_CurrentSessionSec % 2 == 0) then
+				_G.Mod_RefreshKqPanelUI()
+			end
+		end
+
+		-- Hiển thị bộ đếm thời gian ra giữa màn hình mỗi 5s/lần (style thông báo Kundun xuất hiện)
+		if _G.Mod_CurrentSessionSec % 5 == 0 then
+			if rec and not rec.done then
+				SaveAccountTimeRecords()
+			end
+			local curElapsed = (rec and rec.elapsedSec) or _G.Mod_CurrentSessionSec
+			local doneTag = (rec and rec.done) and "(done)" or ""
+			FlashAccTimeCenterAlert(string.format("S%d-%s: %s%s", srvId, email, FormatAccDuration(curElapsed), doneTag))
+		end
+	end)
+end)
+
 -- ====================================
 -- [MOD FEATURE]: BỘ CHUYỂN TÀI KHOẢN TỰ ĐỘNG KHI ĐẠT LEVEL MỤC TIÊU (50)
 -- Mô tả: Ghi nhận acc hoàn thành, logout và đăng nhập tài khoản tiếp theo trong danh sách.
@@ -322,6 +828,9 @@ _G.IsSwitchingAccount = false
 _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 	if _G.IsSwitchingAccount then return end
 	_G.IsSwitchingAccount = true
+	_G.Mod_FarmKCActive = false
+	if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+	if _G.StopFarmKCRoutine then pcall(_G.StopFarmKCRoutine) end
 	if _G.BotQuestMonitorTimer then
 		pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
 		_G.BotQuestMonitorTimer = nil
@@ -335,6 +844,9 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 	local curAccIdx = _G.CurrentAccountIndex or 1
 	local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
 	local sId, sName = _G.GetActualCurrentServerInfo()
+	if _G.FinalizeAccountTimeOnGoal then
+		_G.FinalizeAccountTimeOnGoal(curAccEmail, sId)
+	end
 	Log("=========================================================================", true)
 	Log(string.format(">>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [%d/%d] %s ĐẠT LEVEL %d/%d TRÊN %s! <<<",
 		curAccIdx, totalAccs, curAccEmail, lvl, targetLvl, tostring(sName)), true)
@@ -388,6 +900,863 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		end
 	end
 end
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MUA & HỌC ĐÁ KỸ NĂNG TẠI LV 80 VÀ LV 150
+-- Mô tả:
+--   - Tại Lv >= 80: Tự động mua & sử dụng đá "Thuật Hồn Thủ Hộ" (goodId=20432, itemId=4000690/4000190, skillId=12150101).
+--   - Tại Lv >= 150: Tự động mua & sử dụng đá "Thuật Sóng Rồng Đen Lv.2" (goodId=204161, itemId=4001660/4001160, skillId=12120102).
+-- =========================================================================
+local function HasLearnedTargetSkill(targetSkillId, targetGroupId, targetLevel)
+	local learned = false
+	pcall(function()
+		local me = _G.RoleManager and _G.RoleManager.me
+		local skills = me and me.skills
+		if not skills then return end
+		for k, v in pairs(skills) do
+			if type(v) == "table" then
+				local sId = tonumber(v.id or v.skillId or (v.cfg and v.cfg.id) or 0) or 0
+				local gId = tonumber((v.cfg and v.cfg.groupId) or v.groupId or math.floor(sId / 10000)) or 0
+				local sLv = tonumber(v.level or (v.cfg and v.cfg.level) or (sId % 100)) or 0
+				if sId == targetSkillId or (gId == targetGroupId and sLv >= targetLevel) then
+					learned = true
+					break
+				end
+			elseif tonumber(v) == targetSkillId or tonumber(k) == targetSkillId then
+				learned = true
+				break
+			end
+		end
+	end)
+	return learned
+end
+
+local function FindSkillStoneInBag(boundItemId, unboundItemId)
+	local found = nil
+	pcall(function()
+		if not (_G.BagInfoData and _G.BagInfoData.TotalItems) then return end
+		for _, item in pairs(_G.BagInfoData.TotalItems) do
+			if item and item.id and (tonumber(item.count) or 1) > 0 then
+				local cfgId = tonumber(item.itemId or (item.tblItem and item.tblItem.id) or 0) or 0
+				if cfgId == boundItemId or cfgId == unboundItemId then
+					found = item
+					break
+				end
+			end
+		end
+	end)
+	return found
+end
+
+local function UseSkillStoneFromBag(item, skillLabel)
+	if not item or not item.id then return false end
+	local cfgId = item.itemId or (item.tblItem and item.tblItem.id)
+	Log(string.format(">>> [HỌC KỸ NĂNG]: Sử dụng đá kỹ năng [%s] (bagId=%s, itemId=%s) để học ngay! <<<",
+		tostring(skillLabel), tostring(item.id), tostring(cfgId)), true)
+	SaveOutput()
+	pcall(function()
+		if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+			_G.BagInfoController.UseItemReq(1, item.id, nil, cfgId)
+		end
+		if _G.networkRequest and _G.networkRequest.ReqUseItem then
+			_G.networkRequest.ReqUseItem(1, item.id)
+		elseif _G.NetManager and _G.BagMessage and _G.BagMessage.ReqUseItem then
+			_G.NetManager.Send(_G.BagMessage.ReqUseItem, { itemId = item.id, count = 1, clientParams = {} })
+		end
+	end)
+	return true
+end
+
+local function BuyAndUseSkillStone(goodId, boundItemId, unboundItemId, skillLabel, onUsedFlagKey)
+	Log(string.format(">>> [MUA ĐÁ KỸ NĂNG]: Gửi gói mua [%s] từ Tiệm (goodId=%d)... <<<", tostring(skillLabel), goodId), true)
+	SaveOutput()
+	pcall(function()
+		if _G.networkRequest and _G.networkRequest.ReqBuy then
+			_G.networkRequest.ReqBuy(goodId, 1)
+		elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+			_G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = goodId, buyCount = 1 })
+		end
+	end)
+	if Timer and Timer.Start then
+		Timer.Start(0.8, function()
+			local stone = FindSkillStoneInBag(boundItemId, unboundItemId)
+			if stone and UseSkillStoneFromBag(stone, skillLabel) and onUsedFlagKey then
+				_G[onUsedFlagKey] = true
+			end
+		end)
+	end
+end
+
+local function CheckAndAutoBuyLearnSkills(curLvl)
+	if not _G.Bot_Running or _G.Bot_PauseTask then return end
+	curLvl = tonumber(curLvl) or 1
+	if curLvl < 80 then return end
+
+	local nowTime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+	if _G.Bot_LastSkillStoneBuyUseTime and (nowTime - _G.Bot_LastSkillStoneBuyUseTime) < 2.5 then
+		return
+	end
+	_G.Bot_LastSkillStoneBuyUseTime = nowTime
+
+	-- 1. Tại Lv >= 80: Mua & học đá kỹ năng "Thuật Hồn Thủ Hộ" (goodId=20432, itemId=4000690/4000190, skillId=12150101)
+	if curLvl >= 80 and not _G.Bot_HasLearnedSoulBarrier100 then
+		if HasLearnedTargetSkill(12150101, 1215, 1) then
+			_G.Bot_HasLearnedSoulBarrier100 = true
+		else
+			local stone80 = FindSkillStoneInBag(4000690, 4000190)
+			if stone80 then
+				UseSkillStoneFromBag(stone80, "Thuật Hồn Thủ Hộ (Lv80)")
+				_G.Bot_UsedSoulBarrierStone = true
+			elseif _G.Bot_UsedSoulBarrierStone then
+				_G.Bot_HasLearnedSoulBarrier100 = true
+			elseif (_G.Bot_BuySoulBarrierCount or 0) < 3 then
+				_G.Bot_BuySoulBarrierCount = (_G.Bot_BuySoulBarrierCount or 0) + 1
+				BuyAndUseSkillStone(20432, 4000690, 4000190, "Thuật Hồn Thủ Hộ (Lv80)", "Bot_UsedSoulBarrierStone")
+			end
+		end
+	end
+
+	-- 2. Tại Lv >= 150: Mua & học đá kỹ năng "Thuật Sóng Rồng Đen Lv.2" (goodId=204161, itemId=4001660/4001160, skillId=12120102)
+	if curLvl >= 150 and not _G.Bot_HasLearnedEvilSpiritLv2_150 then
+		if HasLearnedTargetSkill(12120102, 1212, 2) then
+			_G.Bot_HasLearnedEvilSpiritLv2_150 = true
+		else
+			if not HasLearnedTargetSkill(12120101, 1212, 1) then
+				local stoneLv1 = FindSkillStoneInBag(4000660, 4000160)
+				if stoneLv1 then
+					UseSkillStoneFromBag(stoneLv1, "Thuật Sóng Rồng Đen Lv.1")
+				else
+					BuyAndUseSkillStone(20428, 4000660, 4000160, "Thuật Sóng Rồng Đen Lv.1", nil)
+				end
+			end
+			local stone150 = FindSkillStoneInBag(4001660, 4001160)
+			if stone150 then
+				UseSkillStoneFromBag(stone150, "Thuật Sóng Rồng Đen Lv.2 (Lv150)")
+				_G.Bot_UsedEvilSpiritLv2Stone = true
+			elseif _G.Bot_UsedEvilSpiritLv2Stone then
+				_G.Bot_HasLearnedEvilSpiritLv2_150 = true
+			elseif (_G.Bot_BuyEvilSpiritLv2Count or 0) < 3 then
+				_G.Bot_BuyEvilSpiritLv2Count = (_G.Bot_BuyEvilSpiritLv2Count or 0) + 1
+				BuyAndUseSkillStone(204161, 4001660, 4001160, "Thuật Sóng Rồng Đen Lv.2 (Lv150)", "Bot_UsedEvilSpiritLv2Stone")
+			end
+		end
+	end
+end
+_G.CheckAndAutoBuyLearnSkills = CheckAndAutoBuyLearnSkills
+
+-- =========================================================================
+-- [MOD FEATURE]: QUY TRÌNH BUG NHIỆM VỤ BOSS PHÚC LỢI TÂN THỦ TẠI LV 80 (50007 -> 5024 -> 3103)
+-- Mô tả:
+--   1. Tại Lv >= 80 (sau khi mở khóa bộ 3 nhiệm vụ 3103, 50007, 5024), vào đánh Nữ Hoàng Tân Thủ (210100100 - Map 2101000)
+--      bằng cách kích hoạt làm nhiệm vụ qua UI (3103 / 50007 -> Arrest_BossUI:btn_goKillOnClick -> EnterSecret).
+--   2. Đánh chết Nữ Hoàng Tân Thủ -> Đứng nguyên trong Map 2101000, mở khóa và nhận thưởng nhiệm vụ Treo Thưởng đầu tiên
+--      "BOSS Treo Thưởng 1 Sao Băng Hậu" (50007) để nhận Nón đồ Bộ (2110007).
+--   3. Mặc Nón đồ Bộ vào người -> Nhiệm vụ nhánh "Mặc 1 món Bộ Trang Bị" (5024) hoàn thành (state=2).
+--      Ấn nhận thưởng nhiệm vụ 5024 ngay trong Map 2101000 -> Kiểm tra 5024 bị lag sang "Đang tiến hành (1/1)" (state=1).
+--   4. Khi 5024 đã bị lag (state=1), ấn nhận thưởng nhiệm vụ "Tiêu diệt BOSS Phúc Lợi-Nữ Hoàng Băng Giá" (3103) ->
+--      Kiểm tra 3103 bị lag sang "Đang tiến hành (1/1)" (state=1) và bật ngay chu trình Auto Farm KC!
+-- =========================================================================
+local function DoEnterNewbieBossViaQuest(callback)
+	if not _G.Bot_Running or _G.Bot_PauseTask then return end
+	if DismissBlockers then DismissBlockers() end
+
+	Log("[Bug Quest Lv80] Kích hoạt vào Nữ Hoàng Tân Thủ (2101000) qua luồng làm nhiệm vụ (3103 / 50007)...", true)
+	pcall(function()
+		if _G.networkRequest then
+			if _G.networkRequest.ReqGetBossMapAndCount then _G.networkRequest.ReqGetBossMapAndCount() end
+			if _G.networkRequest.ReqInstanceCoolDown then _G.networkRequest.ReqInstanceCoolDown(1106) end
+			if _G.networkRequest.ReqBossStateByType and _G.MonsterBossType then
+				_G.networkRequest.ReqBossStateByType(_G.MonsterBossType.secretBoss)
+			end
+		end
+		if _G.TaskManager and _G.TaskManager.TaskGo then
+			_G.TaskManager.TaskGo(3103, (_G.TaskTriggeringConditionType and _G.TaskTriggeringConditionType.OnClick) or 1)
+		end
+		local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (
+			_G.UIManager.GetUiByName("Task_TaskUI")
+			or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI))
+		)
+		if taskUI and taskUI.TaskItemClick then
+			taskUI:TaskItemClick(50007)
+		elseif _G.TaskData and _G.TaskData.OpenRewardsTask and _G.TaskData.AllTasks and _G.TaskData.AllTasks[50007] then
+			_G.TaskData:OpenRewardsTask(_G.IndexerEnum and _G.IndexerEnum.set, _G.TaskData.AllTasks[50007])
+			if _G.UIManager and _G.UIID and _G.UIID.Arrest_BossUI then
+				_G.UIManager.Show(_G.UIID.Arrest_BossUI)
+			end
+		end
+	end)
+
+	local timerObj = _G.Timer or Timer
+	if timerObj and timerObj.Start then
+		timerObj.Start(0.4, function()
+			if not _G.Bot_Running or _G.Bot_PauseTask then return end
+			pcall(function()
+				local clickedGoKill = false
+				local arrestUI = _G.UIManager and _G.UIManager.GetUiByName and (
+					(_G.UIID and _G.UIID.Arrest_BossUI and _G.UIManager.GetUiByName(_G.UIID.Arrest_BossUI))
+					or _G.UIManager.GetUiByName("Arrest_BossUI")
+				)
+				if arrestUI and arrestUI.allTaskTab then
+					local tab1 = arrestUI.allTaskTab[1]
+					if tab1 and tab1.btn_goKillOnClick then
+						tab1:btn_goKillOnClick()
+						clickedGoKill = true
+					end
+				end
+				if not clickedGoKill and _G.UIManager and _G.UIID then
+					if _G.UIID.Arrest_BossUI then _G.UIManager.Hide(_G.UIID.Arrest_BossUI) end
+					if _G.UIID.Instance_BossUI then
+						_G.UIManager.Show(_G.UIID.Instance_BossUI, { Monsterid = 210100100 })
+					end
+				end
+			end)
+
+			timerObj.Start(0.5, function()
+				if not _G.Bot_Running or _G.Bot_PauseTask then return end
+				pcall(function()
+					local bossUI = _G.UIManager and _G.UIManager.GetUiByName and (
+						(_G.UIID and _G.UIID.Instance_BossUI and _G.UIManager.GetUiByName(_G.UIID.Instance_BossUI))
+						or _G.UIManager.GetUiByName("Instance_BossUI")
+					)
+					local secretTemp = bossUI and bossUI.secretBossTemplate
+					if secretTemp and secretTemp.EnterSecret then
+						secretTemp:EnterSecret(210100001, { "31", "222" })
+					elseif _G.PathFinderManager and _G.PathFinderManager.FlyTransferScene then
+						_G.PathFinderManager.FlyTransferScene(210100001)
+					end
+					if _G.UIManager and _G.UIID then
+						if _G.UIID.Instance_BossUI then _G.UIManager.Hide(_G.UIID.Instance_BossUI) end
+						if _G.UIID.Arrest_BossUI then _G.UIManager.Hide(_G.UIID.Arrest_BossUI) end
+					end
+				end)
+				if callback then
+					timerObj.Start(2.0, function()
+						if _G.Bot_Running and not _G.Bot_PauseTask then callback() end
+					end)
+				end
+			end)
+		end)
+	elseif _G.DoEnterSecretRoom then
+		_G.DoEnterSecretRoom(callback)
+	end
+end
+_G.DoEnterNewbieBossViaQuest = DoEnterNewbieBossViaQuest
+
+local function GetBountyTask50007Info()
+	local foundTask, foundId, foundState = nil, nil, nil
+	pcall(function()
+		if not _G.TaskData then return end
+		local t = _G.TaskData.GetTaskById and _G.TaskData.GetTaskById(50007)
+		if not t and _G.TaskData.AllTasks then t = _G.TaskData.AllTasks[50007] end
+		if not t and _G.TaskData.activeTasks then t = _G.TaskData.activeTasks[50007] end
+		if not t and _G.TaskData.GetRewardsTask then
+			local rList = _G.TaskData.GetRewardsTask()
+			if rList then
+				for _, rt in ipairs(rList) do
+					local rId = rt and tonumber(rt.taskId or (rt.GetId and rt:GetId()))
+					local rName = tostring((rt and rt.GetName and rt:GetName()) or "")
+					if rId == 50007 or string.find(rName, "Băng Hậu") then
+						t = rt
+						break
+					end
+				end
+			end
+		end
+		if t then
+			foundTask = t
+			foundId = tonumber(t.taskId or (t.GetId and t:GetId()) or 50007)
+			foundState = tonumber((t.GetState and t:GetState()) or t.state or 0)
+		end
+	end)
+	return foundTask, foundId, foundState
+end
+_G.GetBountyTask50007Info = GetBountyTask50007Info
+
+local function GetWearSetTask5024Info()
+	local foundTask, foundId, foundState = nil, nil, nil
+	pcall(function()
+		if not _G.TaskData then return end
+		local t = _G.TaskData.GetTaskById and _G.TaskData.GetTaskById(5024)
+		if not t and _G.TaskData.AllTasks then t = _G.TaskData.AllTasks[5024] end
+		if not t and _G.TaskData.activeTasks then t = _G.TaskData.activeTasks[5024] end
+		if not t and _G.TaskData.GetBranchTask then
+			local bList = _G.TaskData.GetBranchTask()
+			if bList then
+				for _, bt in ipairs(bList) do
+					local bId = bt and tonumber(bt.taskId or (bt.GetId and bt:GetId()))
+					local bName = tostring((bt and bt.GetName and bt:GetName()) or "")
+					if bId == 5024 or string.find(bName, "Mặc 1 ") then
+						t = bt
+						break
+					end
+				end
+			end
+		end
+		if t then
+			foundTask = t
+			foundId = tonumber(t.taskId or (t.GetId and t:GetId()) or 5024)
+			foundState = tonumber((t.GetState and t:GetState()) or t.state or 0)
+		end
+	end)
+	return foundTask, foundId, foundState
+end
+_G.GetWearSetTask5024Info = GetWearSetTask5024Info
+
+local function IsTaskGoalFinished(task)
+	if not task then return false end
+	local finished = false
+	pcall(function()
+		if task.GetTaskGola then
+			if task:GetTaskGola() == nil then
+				finished = true
+				return
+			end
+		end
+		local goals = task.goals or task.taskGoals
+		if type(goals) == "table" and #goals > 0 then
+			local allDone = true
+			for _, g in ipairs(goals) do
+				local cur = (g.GetCurFinishCount and g:GetCurFinishCount()) or g.curCount or 0
+				local max = (g.GetCount and g:GetCount()) or g.count or 1
+				if cur < max then
+					allDone = false
+					break
+				end
+			end
+			if allDone then finished = true end
+		end
+	end)
+	return finished
+end
+_G.IsTaskGoalFinished = IsTaskGoalFinished
+
+local function EquipSetHelmet2110007()
+	pcall(function()
+		if AutoEquipBetterItems then AutoEquipBetterItems() end
+		if _G.RoleEquipUtility and _G.RoleEquipUtility.AutoWearAll then
+			_G.RoleEquipUtility.AutoWearAll()
+		end
+		if _G.BagInfoData and _G.BagInfoData.TotalItems then
+			for _, item in pairs(_G.BagInfoData.TotalItems) do
+				if item and item.id then
+					local cfgId = tonumber(item.itemId or (item.tblItem and item.tblItem.id) or 0) or 0
+					if cfgId == 2110007 then
+						if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+							_G.BagInfoController.UseItemReq(1, item.id, nil, cfgId)
+						end
+						if _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqPutOnTheEquip then
+							_G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, { position = 3, equipId = item.id })
+						end
+						break
+					end
+				end
+			end
+		end
+	end)
+end
+
+-- Chỉ gửi lệnh AutoFight khi chưa bật hoặc chưa có mục tiêu sống để tránh nhấp nháy thanh máu Boss
+local function EnsureAutoFightBossOnce()
+	pcall(function()
+		local me = _G.RoleManager and _G.RoleManager.me
+		if not me then return end
+		local af = me.meAutoFight
+		local isAlreadyAuto = af and _G.AutoFightStrKey and (af.autoKey == _G.AutoFightStrKey.AutoFight)
+		local curTarget = me.TargetAvatar or (me.GetTarget and me:GetTarget())
+		local hasLiveTarget = curTarget and not curTarget.isDead and (not curTarget.hp or curTarget.hp > 0)
+		if isAlreadyAuto and hasLiveTarget then
+			return
+		end
+		if me.SetAutoTaskFight and _G.AutoFightStrKey then
+			me:SetAutoTaskFight(_G.AutoFightStrKey.AutoFight)
+		end
+	end)
+end
+_G.EnsureAutoFightBossOnce = EnsureAutoFightBossOnce
+
+-- Hàm nhận nhiệm vụ theo đúng cơ chế gây Lag (Đang tiến hành 1/1):
+-- Gọi TaskItemClick + chỉ gửi Event.Task_BtnRewardClick / ReqCompleteTask (4007), TUYỆT ĐỐI KHÔNG gửi ReqSubmitTask (4005)
+local function TriggerLagQuestClaim(targetId)
+	pcall(function()
+		if _G.UIManager and _G.UIManager.GetUI and _G.UIID and _G.UIID.Task_TaskUI then
+			local okUI, taskUI = pcall(_G.UIManager.GetUI, _G.UIID.Task_TaskUI)
+			if okUI and taskUI and taskUI.TaskItemClick then
+				pcall(function() taskUI:TaskItemClick(targetId) end)
+			end
+		end
+		local taskUI2 = _G.UIManager and _G.UIManager.GetUiByName and (
+			_G.UIManager.GetUiByName("Task_TaskUI")
+			or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI))
+		)
+		if taskUI2 and taskUI2.TaskItemClick then
+			pcall(function() taskUI2:TaskItemClick(targetId) end)
+		end
+		if _G.EventManager and _G.Event and _G.Event.Task_BtnRewardClick then
+			_G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, targetId)
+		end
+		if _G.NetManager and _G.TaskMessage and _G.TaskMessage.ReqCompleteTask then
+			_G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = targetId })
+		end
+	end)
+end
+_G.TriggerLagQuestClaim = TriggerLagQuestClaim
+
+-- =========================================================================
+-- [MOD FEATURE]: BAY THẲNG VỀ BÃI FARM QUÁI TỐI ƯU TRONG LÚC CHỜ HỒI NỮ HOÀNG (FARM KC TỐI ƯU)
+-- Mô tả:
+--   1. Ngay khi đánh xong Nữ Hoàng (hoặc phòng trống), thoát phó bản 2101000 và bay thẳng (0ms ReqCallFlag/ReqTransmit)
+--      về bãi quái tối ưu phù hợp với Cấp độ & Phòng thủ hiện tại của nhân vật (Lost Tower 1/2/7, Atlantis, Tarkan...).
+--   2. Tự động bật AutoFight đánh quái + nhặt đồ liên tục trong suốt thời gian chờ Delay Nữ Hoàng (mặc định 20s).
+--   3. Đủ số giây chờ, tắt HookAutoFight và bay trực tiếp từ bãi farm vào lại phòng Nữ Hoàng!
+-- =========================================================================
+local function TeleportToQueenFarmSpot(bestPt, targetMap)
+	if not bestPt or not targetMap or targetMap <= 0 then return end
+	local lineId = (_G.SceneData and _G.SceneData.line) or 1
+	pcall(function()
+		if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+			_G.networkRequest.ReqCallFlag(1, 0, targetMap, lineId, bestPt.x, bestPt.y, 0)
+		end
+		if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+			_G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+				type = 1,
+				rid = 0,
+				mapId = targetMap,
+				line = lineId,
+				x = bestPt.x,
+				y = bestPt.y,
+				hostId = 0
+			})
+		end
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if curMap ~= targetMap and _G.networkRequest and _G.networkRequest.ReqTransmit then
+			_G.networkRequest.ReqTransmit(targetMap, lineId, bestPt.x, bestPt.y)
+		end
+	end)
+end
+
+local function ExitQueenAndGoFarmSpot()
+	_G.Bot_LastQueenFarmTeleTime = -10
+	local bestPt, targetMap = nil, nil
+	if GetBestMonsterFarmPoint then
+		bestPt, targetMap = GetBestMonsterFarmPoint(2101000)
+	end
+	local delaySec = tonumber(_G.Mod_QueenDelaySec) or 20
+	if bestPt and targetMap then
+		Log(string.format("[Farm KC] Thoát phó bản -> Bay thẳng về bãi farm tối ưu: Map %d (%s: %d#%d) cày quái trong %ds...",
+			tonumber(targetMap) or 0, tostring(bestPt.name or ""), bestPt.x or 0, bestPt.y or 0, delaySec), true)
+	else
+		Log(string.format("[Farm KC] Thoát phó bản -> Bay về bãi farm quái trong %ds...", delaySec), true)
+	end
+	SaveOutput()
+
+	pcall(function()
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if (_G.TranScriptData and _G.TranScriptData.InTranscript) or curMap == 2101000 or curMap == 2101001 then
+			if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+				_G.TranScriptController.ReqExitInstance()
+			elseif _G.networkRequest and _G.networkRequest.ReqExitInstance then
+				_G.networkRequest.ReqExitInstance()
+			end
+		end
+	end)
+
+	if bestPt and targetMap then
+		TeleportToQueenFarmSpot(bestPt, targetMap)
+	end
+end
+_G.ExitQueenAndGoFarmSpot = ExitQueenAndGoFarmSpot
+
+local function TickFarmBetweenQueenRuns(farmKcStateTime)
+	pcall(function()
+		if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+		local delaySec = tonumber(_G.Mod_QueenDelaySec) or 20
+		local t = tonumber(farmKcStateTime) or 0
+
+		-- Trước khi bay vào lại phòng Nữ Hoàng 0.6s: Tắt HookAutoFight ngoài bãi để vào phòng khóa mục tiêu Boss mượt mà
+		if t >= (delaySec - 0.6) then
+			local me = _G.RoleManager and _G.RoleManager.me
+			if me then
+				if me.SetAutoHookFight then me:SetAutoHookFight(false) end
+			end
+			if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then
+				_G.QiJiHelperData.SetAutoFightData(false)
+			end
+			return
+		end
+
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if (curMap == 2101000 or curMap == 2101001) and t >= 1.0 then
+			if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+				_G.TranScriptController.ReqExitInstance()
+			elseif _G.networkRequest and _G.networkRequest.ReqExitInstance then
+				_G.networkRequest.ReqExitInstance()
+			end
+		end
+
+		local bestPt, targetMap = nil, nil
+		if GetBestMonsterFarmPoint then
+			bestPt, targetMap = GetBestMonsterFarmPoint(2101000)
+		end
+		if not bestPt or not targetMap or targetMap <= 0 then return end
+
+		local me = _G.RoleManager and _G.RoleManager.me
+		local pos = (me and me.cellPos) or (me and me.serverCoord)
+		local dist = 999
+		if curMap == targetMap and pos and pos.x and pos.y then
+			dist = math.sqrt((tonumber(pos.x) - bestPt.x)^2 + (tonumber(pos.y) - bestPt.y)^2)
+		end
+
+		if curMap ~= targetMap or dist > 10 then
+			if t >= 0.8 and (t - (_G.Bot_LastQueenFarmTeleTime or -10)) >= 1.5 then
+				_G.Bot_LastQueenFarmTeleTime = t
+				TeleportToQueenFarmSpot(bestPt, targetMap)
+			end
+		else
+			-- Đã đứng tại bãi farm tối ưu: Bật AutoFight đánh quái (chỉ bật nếu chưa đánh để không ngắt chiêu)
+			EnsureAutoFightBossOnce()
+			if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
+				_G.QiJiHelperData.SetAutoFightData(true)
+			end
+		end
+	end)
+end
+_G.TickFarmBetweenQueenRuns = TickFarmBetweenQueenRuns
+
+local function CheckAndRunQueenBossBugLv80(curLvl, targetLvl)
+	if not _G.Mod_BugQuestActive or _G.Bot_QueenBugUnavailable or (tonumber(curLvl) or 0) < 80 then
+		return false
+	end
+
+	if _G.CheckAndAutoBuyLearnSkills then _G.CheckAndAutoBuyLearnSkills(curLvl) end
+
+	if _G.Bot_QueenBugState == "DONE" then
+		_G.Mod_FarmKCActive = true
+		if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+		if not _G.Mod_FarmKCRunning and _G.StartFarmKCRoutine then
+			_G.StartFarmKCRoutine()
+		end
+		return true
+	end
+
+	local qTask, qTaskId, qState = nil, nil, nil
+	if _G.GetQueenBranchTaskInfo then
+		qTask, qTaskId, qState = _G.GetQueenBranchTaskInfo()
+	end
+	local t50007, id50007, s50007 = GetBountyTask50007Info()
+	local t5024, id5024, s5024 = GetWearSetTask5024Info()
+
+	-- Khi vừa đạt Lv 80, chờ hoàn thành chuỗi nhiệm vụ chính tuyến đến 3107 (Đến Lost Tower 2) để mở khóa 3103, 50007, 5024
+	if _G.Bot_QueenBugState == "IDLE" then
+		if qTask == nil and t50007 == nil then
+			if curLvl > 101 then
+				Log(string.format(">>> [LV %d - KHÔNG CÓ NV BUG NỮ HOÀNG]: Không tìm thấy NV 3103/50007 -> Chuyển sang cày bãi quái tốt nhất đến Lv %d! <<<",
+					curLvl, targetLvl), true)
+				SaveOutput()
+				_G.Bot_QueenBugUnavailable = true
+			end
+			return false
+		end
+
+		-- Nhận diện nhanh: Nếu NV 3103 đã ở trạng thái lag Đang tiến hành (1/1, state=1) -> Bật thẳng Auto Farm KC!
+		if qTask ~= nil and qState == 1 and (IsTaskGoalFinished(qTask) or (t5024 ~= nil and s5024 == 1 and IsTaskGoalFinished(t5024))) then
+			Log("=========================================================================", true)
+			Log(string.format(">>> [PHÁT HIỆN NV NỮ HOÀNG ĐÃ BUG (ĐANG TIẾN HÀNH 1/1) TẠI LV %d]: Kích hoạt ngay AUTO FARM KC đến Lv %d! <<<", curLvl, targetLvl), true)
+			Log("=========================================================================", true)
+			_G.Bot_QueenBugState = "DONE"
+			_G.Mod_FarmKCActive = true
+			if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+			if _G.StartFarmKCRoutine then _G.StartFarmKCRoutine() end
+			return true
+		end
+
+		-- Nếu NV 5024 đã bị lag (state=1, 1/1) và NV 3103 đang chờ nhận thưởng (state=2) -> Chuyển thẳng sang Bước 4!
+		if t5024 ~= nil and s5024 == 1 and IsTaskGoalFinished(t5024) and qTask ~= nil and qState == 2 then
+			Log(">>> [PHÁT HIỆN NV 5024 ĐÃ BUG (ĐANG TIẾN HÀNH 1/1) & NV 3103 CHỜ HOÀN THÀNH]: Chuyển thẳng sang Bước 4 ấn hoàn thành NV 3103! <<<", true)
+			_G.Bot_AllowClaimTask5024 = false
+			_G.Bot_QueenBugState = "PHASE4_CLAIM_3103_AND_VERIFY"
+			_G.Bot_QueenBugStateTime = 0
+			_G.Bot_LastClaim3103AttemptTime = -10
+			return true
+		end
+
+		-- Tạm dừng đánh quái ngoài bãi và khởi động quy trình Bug tại Lv 80
+		pcall(function()
+			local me = _G.RoleManager and _G.RoleManager.me
+			if me then
+				if me.StopMove then me:StopMove() end
+				if me.SetAutoTaskFight and _G.AutoFightStrKey then me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight) end
+				if me.SetAutoHookFight then me:SetAutoHookFight(false) end
+				if me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(false) end
+			end
+			if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
+		end)
+
+		if qTask and qState == 0 and _G.networkRequest and _G.networkRequest.ReqAcceptTask then
+			pcall(function() _G.networkRequest.ReqAcceptTask(qTaskId or 3103) end)
+		end
+		if t50007 and s50007 == 0 and _G.networkRequest and _G.networkRequest.ReqAcceptTask then
+			pcall(function() _G.networkRequest.ReqAcceptTask(id50007 or 50007) end)
+		end
+		if t5024 and s5024 == 0 and _G.networkRequest and _G.networkRequest.ReqAcceptTask then
+			pcall(function() _G.networkRequest.ReqAcceptTask(id5024 or 5024) end)
+		end
+
+		if qState == 2 then
+			if t50007 ~= nil and s50007 == 2 then
+				_G.Bot_QueenBugState = "PHASE2_CLAIM_BOUNTY_50007"
+			else
+				_G.Bot_QueenBugState = "PHASE3_WEAR_SET_AND_CLAIM_5024"
+			end
+		else
+			_G.Bot_QueenBugState = "PHASE1_ENTER_NEWBIE_BOSS"
+		end
+		_G.Bot_QueenBugStateTime = 0
+		_G.Bot_LastClaim50007AttemptTime = -10
+		_G.Bot_LastClaim5024AttemptTime = -10
+		_G.Bot_LastClaim3103AttemptTime = -10
+		Log("=========================================================================", true)
+		Log(string.format(">>> [BẮT ĐẦU BUG QUEST TẠI LV %d]: Chuyển sang trạng thái %s! <<<", curLvl, tostring(_G.Bot_QueenBugState)), true)
+		Log("=========================================================================", true)
+		SaveOutput()
+		return true
+	end
+
+	-- Tạm dừng AutoTask mặc định của game trong lúc chạy kịch bản Bug Nữ Hoàng
+	pcall(function()
+		if _G.AutoTaskManage then
+			if _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+			if _G.AutoTaskManage.SetCurAutoTaskState then _G.AutoTaskManage.SetCurAutoTaskState(false) end
+		end
+		if _G.TaskManager and _G.TaskManager.TaskPathStop then
+			_G.TaskManager.TaskPathStop()
+		end
+	end)
+
+	local dt = 0.3
+	_G.Bot_QueenBugStateTime = (_G.Bot_QueenBugStateTime or 0) + dt
+
+	-- -------------------------------------------------------------------------
+	-- BƯỚC 1: VÀO ĐÁNH NỮ HOÀNG TÂN THỦ (210100100 - MAP 2101000) QUA LUỒNG LÀM NHIỆM VỤ
+	-- -------------------------------------------------------------------------
+	if _G.Bot_QueenBugState == "PHASE1_ENTER_NEWBIE_BOSS" then
+		_G.Bot_QueenBugState = "PHASE1_FIGHT_NEWBIE_BOSS"
+		_G.Bot_QueenBugStateTime = 0
+		_G.Bot_QueenBugActiveBoss = nil
+		DoEnterNewbieBossViaQuest(function()
+			pcall(function()
+				if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
+					_G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.AutoFight)
+				end
+			end)
+		end)
+		return true
+
+	elseif _G.Bot_QueenBugState == "PHASE1_FIGHT_NEWBIE_BOSS" then
+		if qState == 2 or (t50007 ~= nil and s50007 == 2) then
+			if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+			Log(">>> [BƯỚC 1 HOÀN TẤT]: Đã tiêu diệt Nữ Hoàng Tân Thủ! Giữ nguyên trong Map 2101000 -> Nhận thưởng NV Treo Thưởng Băng Hậu (50007)! <<<", true)
+			SaveOutput()
+			_G.Bot_QueenBugState = "PHASE2_CLAIM_BOUNTY_50007"
+			_G.Bot_QueenBugStateTime = 0
+			_G.Bot_LastClaim50007AttemptTime = -10
+			return true
+		end
+
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if curMap == 2101000 then
+			local boss = _G.FindBossNuHoangBangGia and _G.FindBossNuHoangBangGia()
+			if boss and boss.hp and boss.hp > 0 then
+				_G.Bot_QueenBugActiveBoss = boss
+				EnsureAutoFightBossOnce()
+			elseif _G.Bot_QueenBugActiveBoss then
+				local isAlive = false
+				pcall(function()
+					if _G.Bot_QueenBugActiveBoss.hp and _G.Bot_QueenBugActiveBoss.hp > 0 and not _G.Bot_QueenBugActiveBoss.isDead then
+						isAlive = true
+					end
+				end)
+				if not isAlive then
+					if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+					Log(">>> [BƯỚC 1 HOÀN TẤT]: Nữ Hoàng Tân Thủ (210100100) đã chết! Chuyển sang nhận thưởng NV Treo Thưởng Băng Hậu (50007)! <<<", true)
+					SaveOutput()
+					_G.Bot_QueenBugState = "PHASE2_CLAIM_BOUNTY_50007"
+					_G.Bot_QueenBugStateTime = 0
+					_G.Bot_LastClaim50007AttemptTime = -10
+					return true
+				end
+			end
+		elseif _G.Bot_QueenBugStateTime >= 10.0 then
+			_G.Bot_QueenBugState = "PHASE1_ENTER_NEWBIE_BOSS"
+			_G.Bot_QueenBugStateTime = 0
+		end
+		return true
+
+	-- -------------------------------------------------------------------------
+	-- BƯỚC 2: NHẬN THƯỞNG NHIỆM VỤ TREO THƯỞNG 1 SAO BĂNG HẬU (50007) ĐỂ LẤY NÓN ĐỒ BỘ (2110007)
+	-- -------------------------------------------------------------------------
+	elseif _G.Bot_QueenBugState == "PHASE2_CLAIM_BOUNTY_50007" then
+		if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if curMap ~= 2101000 then
+			if _G.Bot_QueenBugStateTime < 0.5 or _G.Bot_QueenBugStateTime >= 5.0 then
+				_G.Bot_QueenBugStateTime = 0.5
+				DoEnterNewbieBossViaQuest()
+			end
+			return true
+		end
+
+		-- Nếu đã nhận xong 50007 (50007 biến mất / chuyển sang 50008, hoặc s5024 đã hoàn thành 1/1)
+		if s5024 == 2 or (t5024 ~= nil and IsTaskGoalFinished(t5024)) or t50007 == nil or s50007 == 3 or (_G.Bot_HasClaimed50007Once and s50007 ~= 2 and _G.Bot_QueenBugStateTime >= 3.0) then
+			_G.Bot_AllowClaimTask50007 = false
+			Log(">>> [BƯỚC 2 HOÀN TẤT]: Đã nhận thưởng NV Treo Thưởng 1 Sao Băng Hậu (50007) -> Mặc Nón đồ Bộ & Bug NV 5024! <<<", true)
+			SaveOutput()
+			_G.Bot_QueenBugState = "PHASE3_WEAR_SET_AND_CLAIM_5024"
+			_G.Bot_QueenBugStateTime = 0
+			_G.Bot_LastClaim5024AttemptTime = -10
+			return true
+		end
+
+		if _G.Bot_QueenBugStateTime >= 1.2 and (_G.Bot_QueenBugStateTime - (_G.Bot_LastClaim50007AttemptTime or -10)) >= 2.0 then
+			_G.Bot_LastClaim50007AttemptTime = _G.Bot_QueenBugStateTime
+			local target50007Id = id50007 or 50007
+			Log(string.format(">>> [BƯỚC 2 - NHẬN THƯỞNG TREO THƯỞNG]: Mở khóa & nhận thưởng NV Treo Thưởng Băng Hậu (ID %s) lấy Nón đồ Bộ (2110007)... <<<", tostring(target50007Id)), true)
+			SaveOutput()
+
+			_G.Bot_AllowClaimTask50007 = true
+			_G.Bot_HasClaimed50007Once = true
+			pcall(function()
+				local taskUI = _G.UIManager and _G.UIManager.GetUiByName and (
+					_G.UIManager.GetUiByName("Task_TaskUI")
+					or (_G.UIID and _G.UIID.TaskUI and _G.UIManager.GetUiByName(_G.UIID.TaskUI))
+				)
+				if taskUI and taskUI.TaskItemClick then
+					taskUI:TaskItemClick(target50007Id)
+				end
+				local arrestUI = _G.UIManager and _G.UIManager.GetUiByName and (
+					(_G.UIID and _G.UIID.Arrest_BossUI and _G.UIManager.GetUiByName(_G.UIID.Arrest_BossUI))
+					or _G.UIManager.GetUiByName("Arrest_BossUI")
+				)
+				if arrestUI and arrestUI.allTaskTab then
+					for _, tab in pairs(arrestUI.allTaskTab) do
+						if tab and tab.btn_getItemOnClick then
+							pcall(function() tab:btn_getItemOnClick() end)
+						end
+					end
+				end
+				if _G.EventManager and _G.Event then
+					if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, target50007Id) end
+					if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, target50007Id) end
+				end
+				if _G.networkRequest then
+					if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(target50007Id) end
+					if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(target50007Id) end
+				end
+				if _G.NetManager and _G.TaskMessage then
+					if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = target50007Id, id = target50007Id }) end
+					if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = target50007Id, id = target50007Id }) end
+				end
+				if _G.UIManager and _G.UIID and _G.UIID.Arrest_BossUI then
+					_G.UIManager.Hide(_G.UIID.Arrest_BossUI)
+				end
+			end)
+			_G.Bot_AllowClaimTask50007 = false
+		end
+		return true
+
+	-- -------------------------------------------------------------------------
+	-- BƯỚC 3: MẶC NÓN ĐỒ BỘ (2110007), ẤN NHẬN THƯỞNG NV "MẶC 1 MÓN BỘ TRANG BỊ" (5024) & KIỂM TRA LAG (1/1)
+	-- -------------------------------------------------------------------------
+	elseif _G.Bot_QueenBugState == "PHASE3_WEAR_SET_AND_CLAIM_5024" then
+		local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+		if curMap ~= 2101000 then
+			if _G.Bot_QueenBugStateTime < 0.5 or _G.Bot_QueenBugStateTime >= 5.0 then
+				_G.Bot_QueenBugStateTime = 0.5
+				DoEnterNewbieBossViaQuest()
+			end
+			return true
+		end
+
+		EquipSetHelmet2110007()
+
+		-- Kiểm tra tính bug của nhiệm vụ 5024: Sau khi ấn nhận thưởng, 5024 chuyển về state == 1 (Đang tiến hành 1/1)
+		if _G.Bot_HasAttemptedClaim5024 and _G.Bot_QueenBugStateTime >= 1.2 and (s5024 == 1 or not t5024) then
+			_G.Bot_AllowClaimTask5024 = false
+			Log("=========================================================================", true)
+			Log(string.format(">>> [BƯỚC 3 HOÀN TẤT - BUG NV MẶC 1 MÓN BỘ TRANG BỊ (5024) THÀNH CÔNG]: Trạng thái Đang Tiến Hành (1/1, state=%s)! Chuyển sang ấn hoàn thành NV Boss Phúc Lợi (3103)... <<<", tostring(s5024)), true)
+			Log("=========================================================================", true)
+			SaveOutput()
+			_G.Bot_QueenBugState = "PHASE4_CLAIM_3103_AND_VERIFY"
+			_G.Bot_QueenBugStateTime = 0
+			_G.Bot_LastClaim3103AttemptTime = -10
+			return true
+		end
+
+		local target5024Id = id5024 or 5024
+		if s5024 == 2 or IsTaskGoalFinished(t5024) or _G.Bot_QueenBugStateTime >= 2.0 then
+			if (_G.Bot_QueenBugStateTime - (_G.Bot_LastClaim5024AttemptTime or -10)) >= 2.0 then
+				_G.Bot_LastClaim5024AttemptTime = _G.Bot_QueenBugStateTime
+				Log("=========================================================================", true)
+				Log(string.format(">>> [BƯỚC 3 - BUG NV MẶC 1 MÓN BỘ TRANG BỊ]: Đã mặc Nón đồ Bộ -> Ấn nhận thưởng NV 5024 (state=%s) tại Map 2101000 để gây lag! <<<", tostring(s5024)), true)
+				Log("=========================================================================", true)
+				SaveOutput()
+
+				_G.Bot_AllowClaimTask5024 = true
+				_G.Bot_HasAttemptedClaim5024 = true
+				TriggerLagQuestClaim(target5024Id)
+				if Timer and Timer.Start then
+					Timer.Start(0.25, function() _G.Bot_AllowClaimTask5024 = false end)
+				else
+					_G.Bot_AllowClaimTask5024 = false
+				end
+			end
+		end
+		return true
+
+	-- -------------------------------------------------------------------------
+	-- BƯỚC 4: ẤN NHẬN THƯỞNG NV BOSS PHÚC LỢI TÂN THỦ (3103), KIỂM TRA LAG (1/1) & BẬT AUTO FARM KC
+	-- -------------------------------------------------------------------------
+	elseif _G.Bot_QueenBugState == "PHASE4_CLAIM_3103_AND_VERIFY" then
+		if qState == 1 and _G.Bot_QueenBugStateTime >= 0.5 then
+			_G.Bot_AllowClaimTask3103 = false
+			_G.Bot_AllowClaimTask5024 = false
+			_G.Bot_AllowClaimTask50007 = false
+			_G.Bot_QueenBugState = "DONE"
+			_G.Mod_FarmKCActive = true
+			if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+			Log("=========================================================================", true)
+			Log(string.format(">>> [BƯỚC 4 HOÀN TẤT - BUG NV BOSS PHÚC LỢI TÂN THỦ (3103) THÀNH CÔNG]: Trạng thái hiển thị Đang Tiến Hành (1/1, state=%s)! Bật quy trình AUTO FARM KC đến Lv %d! <<<", tostring(qState), targetLvl), true)
+			Log("=========================================================================", true)
+			SaveOutput()
+			if _G.StartFarmKCRoutine then
+				_G.StartFarmKCRoutine()
+			end
+			return true
+		end
+
+		if (_G.Bot_QueenBugStateTime - (_G.Bot_LastClaim3103AttemptTime or -10)) >= 2.5 then
+			_G.Bot_LastClaim3103AttemptTime = _G.Bot_QueenBugStateTime
+			local target3103Id = qTaskId or 3103
+			Log("=========================================================================", true)
+			Log(string.format(">>> [BƯỚC 4 - BUG BOSS PHÚC LỢI TÂN THỦ]: NV 5024 đã bị lag -> Ấn hoàn thành NV Boss Phúc Lợi Tân Thủ (ID %s) theo kiểu gây lag và kiểm tra tính bug... <<<", tostring(target3103Id)), true)
+			Log("=========================================================================", true)
+			SaveOutput()
+
+			_G.Bot_AllowClaimTask3103 = true
+			TriggerLagQuestClaim(target3103Id)
+			if Timer and Timer.Start then
+				Timer.Start(0.25, function() _G.Bot_AllowClaimTask3103 = false end)
+			else
+				_G.Bot_AllowClaimTask3103 = false
+			end
+		end
+		return true
+	end
+
+	return false
+end
+_G.CheckAndRunQueenBossBugLv80 = CheckAndRunQueenBossBugLv80
+CheckAndRunQueenBossBug = CheckAndRunQueenBossBugLv80
+_G.CheckAndRunQueenBossBug = CheckAndRunQueenBossBugLv80
+
 StartNewbieQuestPipeline = function()
 	if not _G.Bot_Running or _G.Bot_PauseTask then
 		return
@@ -425,19 +1794,20 @@ StartNewbieQuestPipeline = function()
 			local me = _G.RoleManager and _G.RoleManager.me
 			local lvl = (me and me.level) or (me and me.data and me.data.level) or 1
 			local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
+			-- KIỂM TRA MỤC TIÊU CẤP ĐỘ FARM BOT (MẶC ĐỊNH LV 50):
+			if lvl >= targetLvl then
+				_G.OnAccountReachLevelGoal(lvl, targetLvl)
+				return
+			end
 			-- ====================================
 			-- [MOD FEATURE]: ƯU TIÊN TUYỆT ĐỐI CHẾ ĐỘ FARM KIM CƯƠNG KHI BẬT NÚT FARM KC
 			-- Mô tả: Tạm dừng toàn bộ chu trình làm quest chính để tập trung săn Boss Phúc Lợi Tầng 1
 			-- ====================================
 			if _G.Mod_FarmKCActive then
+				if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
 				if not _G.Mod_FarmKCRunning and _G.StartFarmKCRoutine then
 					_G.StartFarmKCRoutine()
 				end
-				return
-			end
-			-- KIỂM TRA MỤC TIÊU CẤP ĐỘ FARM BOT (MẶC ĐỊNH LV 50):
-			if lvl >= targetLvl then
-				_G.OnAccountReachLevelGoal(lvl, targetLvl)
 				return
 			end
 			-- ====================================
@@ -472,8 +1842,12 @@ StartNewbieQuestPipeline = function()
 				CheckAndRunBloodCastleOrDemonPlaza()
 			end
 			AutoAddAttributePoints()
+			if lvl >= 80 and CheckAndAutoBuyLearnSkills then
+				CheckAndAutoBuyLearnSkills(lvl)
+			end
 			-- Quét dùng Thẻ Đặc Quyền & Thuốc Tăng EXP & Nhận Phúc Lợi Cộng Đồng mỗi 5s
 			if loopTickCount % 5 == 0 then
+				if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 				if AutoUsePrivilegeCard then AutoUsePrivilegeCard() end
 				if AutoUseExpMedicine then AutoUseExpMedicine() end
 				if lvl >= 30 and AutoClaimCommunityWelfareAndMail then
@@ -504,7 +1878,7 @@ StartNewbieQuestPipeline = function()
 			end
 			if (lvl >= 101 and not _G.Bot_ClaimedUpgradePacksLvl101) then
 				_G.Bot_ClaimedUpgradePacksLvl101 = true
-				Log('>>> [MOC LEVEL 101]: Dung KC Khoa mua goi nang cap (Mo SV / Phuc Loi Ngay) & Dap do toi da! <<<', true)
+				Log('>>> [MOC LEVEL 99]: Dung KC Khoa mua goi nang cap (Mo SV / Phuc Loi Ngay) & Dap do toi da truoc khi danh Nu Hoang! <<<', true)
 				if AutoClaimCommunityWelfareAndMail then
 					AutoClaimCommunityWelfareAndMail(function()
 						if RunPeriodicUpgradeCycle then RunPeriodicUpgradeCycle() end
@@ -521,7 +1895,7 @@ StartNewbieQuestPipeline = function()
 				return
 			end
 			if SolveBranchAndRewardsTasks then SolveBranchAndRewardsTasks() end
-			if lvl >= 101 and CheckAndRunQueenBossBug then
+			if _G.Mod_BugQuestActive and lvl >= 80 and CheckAndRunQueenBossBug then
 				if CheckAndRunQueenBossBug(lvl, targetLvl) then
 					return
 				end
@@ -1312,6 +2686,15 @@ ConnectToTargetServer = function()
 		end
 		local serverName = tostring(targetServerData[1] or ("Server " .. tostring(targetServerData[5])))
 		local serverId = targetServerData[5]
+		local curAccForSrv = GetCurrentAccount and GetCurrentAccount()
+		if curAccForSrv and curAccForSrv.account then
+			_G.Bot_ActiveSessionEmail = tostring(curAccForSrv.account)
+		end
+		if serverId then
+			_G.Bot_ActiveSessionServer = tonumber(serverId)
+		end
+		_G.Bot_NeedReloginNewConfig = false
+		if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 		Log(string.format("--- [BƯỚC 4] KẾT NỐI MÁY CHỦ %s (ID: %s) (ACC %d/%d: %s | ROLE %d/4) ---",
 			serverName, tostring(serverId), _G.CurrentAccountIndex or 1, #_G.BotAccounts, tostring(GetCurrentAccount().account), _G.CurrentRoleIndex or 1))
 		-- 1. Thiết lập Server trong LoginData
@@ -1402,6 +2785,7 @@ ConnectToTargetServer = function()
 			Timer.Start(DELAY, function()
 				DismissBlockers()
 				ApplyFovAndSpeed()
+				if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 				local pMe = _G.RoleManager and _G.RoleManager.me
 				local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
 				Log(string.format("-> Level nhân vật hiện tại: %s", tostring(currentLevel)), true)
@@ -1510,6 +2894,11 @@ StartFullLoginProcess = function()
 	local curAcc = GetCurrentAccount()
 	local username = curAcc.account or "accmuvh0001@gmail.com"
 	local password = curAcc.password or "12345ZXC"
+	local targetSrv = tonumber(_G.TARGET_SERVER_ID or curAcc.targetServer or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
+	_G.Bot_ActiveSessionEmail = tostring(username)
+	_G.Bot_ActiveSessionServer = targetSrv
+	_G.Bot_NeedReloginNewConfig = false
+	if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 	Log(string.format("--- [BƯỚC 2] GỬI SDK AUTH (ACC %d/%d: %s | SERVER %s | ROLE %d/4) ---",
 		_G.CurrentAccountIndex or 1, #_G.BotAccounts, tostring(username), tostring(curAcc.targetServer or (_G.GetCurrentServerId and _G.GetCurrentServerId()) or 'Auto'), _G.CurrentRoleIndex or 1))
 	local equip = MD5("muvh_bot_device_equip_uuid_001")
@@ -1673,6 +3062,27 @@ _G.StartAutoFarmBot = function()
 	_G.HasCreatedRoleForTarget = false
 	_G.IsRoleCreating = false
 	if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
+
+	-- ====================================
+	-- [MOD FEATURE]: ĐỐI CHIẾU EMAIL & SERVER KHI BẮT ĐẦU (AUTO RELOGIN ON NEW CONFIG)
+	-- Mô tả: Khi bấm BẮT ĐẦU, lưu và đối chiếu Email + Server mục tiêu (targetEmail, targetSrv)
+	--        với phiên đang chạy (_G.Bot_ActiveSessionEmail, _G.Bot_ActiveSessionServer).
+	--        Nếu khác nhau (hoặc vừa ấn Lưu Cấu Hình với tài khoản/server mới), lập tức Logout
+	--        và thực hiện lại toàn bộ chu trình đăng nhập mới từ đầu!
+	-- ====================================
+	local curAcc = GetCurrentAccount and GetCurrentAccount()
+	local targetEmail = tostring((curAcc and curAcc.account) or "")
+	local targetSrv = tonumber(_G.TARGET_SERVER_ID or (curAcc and curAcc.targetServer) or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
+	local needReloginNewConfig = (_G.Bot_NeedReloginNewConfig == true)
+	if _G.Bot_ActiveSessionEmail and _G.Bot_ActiveSessionEmail ~= "" and targetEmail ~= "" then
+		if string.lower(tostring(_G.Bot_ActiveSessionEmail)) ~= string.lower(targetEmail) then
+			needReloginNewConfig = true
+		end
+	end
+	if _G.Bot_ActiveSessionServer and tonumber(_G.Bot_ActiveSessionServer) ~= targetSrv then
+		needReloginNewConfig = true
+	end
+
 	local isInGame = false
 	pcall(function()
 		if _G.LoginData and _G.LoginData.InGame then
@@ -1691,6 +3101,61 @@ _G.StartAutoFarmBot = function()
 			isInGame = true
 		end
 	end)
+
+	-- Nếu phát hiện cấu hình Email hoặc Server đã thay đổi so với phiên hiện tại:
+	if needReloginNewConfig then
+		local prevEmail = tostring(_G.Bot_ActiveSessionEmail or "None")
+		local prevSrv = tostring(_G.Bot_ActiveSessionServer or "None")
+		_G.Bot_ActiveSessionEmail = targetEmail
+		_G.Bot_ActiveSessionServer = targetSrv
+		_G.Bot_NeedReloginNewConfig = false
+		if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
+
+		local hasActiveConnectionOrScene = isInGame
+		pcall(function()
+			if _G.NetManager and _G.NetManager.IsConnect and _G.NetManager.IsConnect() then
+				hasActiveConnectionOrScene = true
+			end
+			if _G.LoginData and _G.LoginData.roleList and #_G.LoginData.roleList > 0 then
+				hasActiveConnectionOrScene = true
+			end
+			if _G.UIManager and _G.UIManager.IsVisible then
+				if _G.UIManager.IsVisible("Login_LoginRoleUI") or _G.UIManager.IsVisible("Login_LoginCreateRoleUI") then
+					hasActiveConnectionOrScene = true
+				end
+			end
+		end)
+
+		if hasActiveConnectionOrScene then
+			Log("=========================================================================", true)
+			Log(string.format(">>> [CẤU HÌNH MỚI]: Đổi từ (%s | S%s) sang (%s | S%d) -> Đăng xuất & Bắt đầu chu trình mới! <<<",
+				prevEmail, prevSrv, targetEmail, targetSrv), true)
+			Log("=========================================================================", true)
+			SaveOutput()
+			_G.CurrentRoleIndex = 1
+			_G.TargetRoleIndex = 1
+			_G.HasCreatedRoleForTarget = false
+			_G.IsRoleCreating = false
+			_G.Bot_IsInGameWorld = false
+			_G.IsSwitchingAccount = false
+			if ClearAllTaskDataAndState then ClearAllTaskDataAndState() end
+			ForceLogoutToLogin()
+			Timer.Start(2.5, function()
+				DismissBlockers()
+				StartFullLoginProcess()
+			end)
+			return
+		end
+	else
+		-- Lưu thông tin Email & Server của phiên hiện tại khi bắt đầu
+		if targetEmail ~= "" then
+			_G.Bot_ActiveSessionEmail = targetEmail
+		end
+		_G.Bot_ActiveSessionServer = targetSrv
+		_G.Bot_NeedReloginNewConfig = false
+		if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
+	end
+
 	if isInGame then
 		if _G.LoginData then _G.LoginData.InGame = true end
 		pcall(function()
@@ -1815,6 +3280,7 @@ _G.Bot_Start = _G.StartAutoFarmBot
 _G.StopAutoFarmBot = function()
 	_G.Bot_Running = false
 	_G.Bot_PauseTask = true
+	pcall(SaveAccountTimeRecords)
 	if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
 	if _G.BotQuestMonitorTimer then
 		pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)

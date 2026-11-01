@@ -1490,20 +1490,88 @@ local function CreateModUI()
 
         local serverTileRefs = {}
 
+        -- =========================================================================
+        -- [MOD FEATURE]: ĐỒNG BỘ & KIỂM TRA PHIÊN TÀI KHOẢN / SERVER HIỆN TẠI (ACTIVE SESSION GUARD)
+        -- Mô tả: Lưu trữ Email và Server thực tế đang chạy trong phiên (_G.Bot_ActiveSessionEmail,
+        --        _G.Bot_ActiveSessionServer). Khi người dùng bấm "LƯU CẤU HÌNH" hoặc đổi Acc/Server
+        --        khác với phiên hiện tại, đánh dấu _G.Bot_NeedReloginNewConfig = true để không gán
+        --        nhầm Level của nhân vật cũ cho Email mới, và tự động Logout -> Login lại từ đầu khi bấm BẮT ĐẦU.
+        -- =========================================================================
+        local function EnsureActiveSessionSnapshotBeforeChange()
+            pcall(function()
+                local inWorld = (_G.Bot_IsInGameWorld == true)
+                    or (_G.LoginData and _G.LoginData.InGame == true)
+                    or (_G.RoleManager and _G.RoleManager.me ~= nil)
+                if inWorld then
+                    if not _G.Bot_ActiveSessionEmail or _G.Bot_ActiveSessionEmail == "" then
+                        local getAccFn = _G.GetCurrentAccount or GetCurrentAccount
+                        local curAcc = getAccFn and getAccFn()
+                        local curEmail = curAcc and curAcc.account
+                        if curEmail and tostring(curEmail) ~= "" then
+                            _G.Bot_ActiveSessionEmail = tostring(curEmail)
+                        end
+                    end
+                    if not _G.Bot_ActiveSessionServer then
+                        local curSrv = tonumber(_G.TARGET_SERVER_ID)
+                            or (_G.LoginData and _G.LoginData.server and tonumber(_G.LoginData.server[5]))
+                            or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
+                        if curSrv then
+                            _G.Bot_ActiveSessionServer = tonumber(curSrv)
+                        end
+                    end
+                end
+            end)
+        end
+
+        local function CheckIfConfigChangedFromActiveSession()
+            local targetSrv = tonumber(_G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
+            local getAccFn = _G.GetCurrentAccount or GetCurrentAccount
+            local curAcc = getAccFn and getAccFn()
+            local curAccEmail = tostring((curAcc and curAcc.account) or "")
+            if _G.Bot_ActiveSessionEmail and _G.Bot_ActiveSessionEmail ~= "" and curAccEmail ~= "" then
+                if string.lower(curAccEmail) ~= string.lower(tostring(_G.Bot_ActiveSessionEmail)) then
+                    return true
+                end
+            end
+            if _G.Bot_ActiveSessionServer and tonumber(_G.Bot_ActiveSessionServer) ~= targetSrv then
+                return true
+            end
+            return false
+        end
+        _G.CheckIfConfigChangedFromActiveSession = CheckIfConfigChangedFromActiveSession
+
+        local function SyncReloginFlagAfterConfigUpdate()
+            if CheckIfConfigChangedFromActiveSession() then
+                _G.Bot_NeedReloginNewConfig = true
+                if _G.Bot_Running and _G.StopAutoFarmBot then
+                    pcall(_G.StopAutoFarmBot)
+                end
+            else
+                _G.Bot_NeedReloginNewConfig = false
+            end
+        end
+
         local function UpdateServerStatusUI()
             local targetSrv = _G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)
-            local curAcc = GetCurrentAccount and GetCurrentAccount()
+            local getAccFn = _G.GetCurrentAccount or GetCurrentAccount
+            local curAcc = getAccFn and getAccFn()
             local curAccEmail = (curAcc and curAcc.account) or "accvutmuvh0001@gmail.com"
             local curAccIdx = _G.CurrentAccountIndex or 1
             local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 10
             local targetLvl = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 50)
 
+            local isPendingNewLogin = (_G.Bot_NeedReloginNewConfig == true) or CheckIfConfigChangedFromActiveSession()
             local pMe = _G.RoleManager and _G.RoleManager.me
             local curLvl = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
 
             if statusTxt and not statusTxt:Equals(nil) then
-                statusTxt.text = string.format("Mục tiêu: <color=#00ff88>S%d</color> | Acc: <color=#ffff00>%d/%d</color> (%s) | Cày Lv: <color=#00ff88>%d/%d</color>",
-                    targetSrv, curAccIdx, totalAccs, curAccEmail, curLvl, targetLvl)
+                if isPendingNewLogin then
+                    statusTxt.text = string.format("Mục tiêu: <color=#00ff88>S%d</color> | Acc: <color=#ffff00>%d/%d</color> (%s) | Cày Lv: <color=#ffcc00>Mới/%d</color>",
+                        targetSrv, curAccIdx, totalAccs, curAccEmail, targetLvl)
+                else
+                    statusTxt.text = string.format("Mục tiêu: <color=#00ff88>S%d</color> | Acc: <color=#ffff00>%d/%d</color> (%s) | Cày Lv: <color=#00ff88>%d/%d</color>",
+                        targetSrv, curAccIdx, totalAccs, curAccEmail, curLvl, targetLvl)
+                end
             end
         end
         _G.Mod_UpdateServerStatusUI = UpdateServerStatusUI
@@ -1597,12 +1665,14 @@ local function CreateModUI()
                 local tBtn = tileGo:AddComponent(typeof(Button))
                 tBtn.targetGraphic = tImg
                 tBtn.onClick:AddListener(function()
+                    EnsureActiveSessionSnapshotBeforeChange()
                     _G.TARGET_SERVER_ID = sId
                     _G.TARGET_SERVER_NAME = "S" .. sId
                     CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", sId)
                     CS.UnityEngine.PlayerPrefs.Save()
 
                     if _G.BuildBotAccounts then _G.BuildBotAccounts() end
+                    SyncReloginFlagAfterConfigUpdate()
                     RefreshTileColors()
                     UpdateServerStatusUI()
 
@@ -1621,6 +1691,7 @@ local function CreateModUI()
         end
 
         local function SaveAccountSettingsFromUI()
+            EnsureActiveSessionSnapshotBeforeChange()
             local pfx = tostring(inPrefix.text or "accvutmuvh"):gsub("%s+", "")
             local aStart = tonumber(inAccStart.text) or 1
             local aEnd = tonumber(inAccEnd.text) or 10
@@ -1643,10 +1714,15 @@ local function CreateModUI()
             CS.UnityEngine.PlayerPrefs.Save()
 
             if _G.BuildBotAccounts then _G.BuildBotAccounts() end
+            SyncReloginFlagAfterConfigUpdate()
             UpdateServerStatusUI()
 
             if _G.FloatingWordUtility then
-                _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu: %s [STT %d➔%d] (Cày Lv %d) - Bắt đầu từ Acc 1!", pfx, aStart, aEnd, tLvl))
+                if _G.Bot_NeedReloginNewConfig then
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu cấu hình mới: %s [STT %d➔%d] (Lv %d) - Bấm BẮT ĐẦU để chạy Acc/Server mới!", pfx, aStart, aEnd, tLvl))
+                else
+                    _G.FloatingWordUtility.QuickMsg(string.format("Đã lưu: %s [STT %d➔%d] (Cày Lv %d) - Bắt đầu từ Acc 1!", pfx, aStart, aEnd, tLvl))
+                end
             end
         end
 
@@ -1662,12 +1738,14 @@ local function CreateModUI()
         end)
 
         bnBtn.onClick:AddListener(function()
+            EnsureActiveSessionSnapshotBeforeChange()
             local e = tonumber(inputFieldEnd.text) or 492
             _G.TARGET_SERVER_ID = e
             _G.TARGET_SERVER_NAME = "S" .. e
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", e)
             CS.UnityEngine.PlayerPrefs.Save()
             if _G.BuildBotAccounts then _G.BuildBotAccounts() end
+            SyncReloginFlagAfterConfigUpdate()
             RefreshTileColors()
             UpdateServerStatusUI()
             if _G.FloatingWordUtility then
@@ -1676,9 +1754,11 @@ local function CreateModUI()
         end)
 
         brBtn.onClick:AddListener(function()
+            EnsureActiveSessionSnapshotBeforeChange()
             _G.CurrentAccountIndex = 1
             CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", 1)
             CS.UnityEngine.PlayerPrefs.Save()
+            SyncReloginFlagAfterConfigUpdate()
             UpdateServerStatusUI()
             if _G.FloatingWordUtility then
                 _G.FloatingWordUtility.QuickMsg("Đã reset tiến độ về Tài khoản số 1!")
@@ -1698,6 +1778,7 @@ local function CreateModUI()
 
         -- 1. Hàm chuyển đổi chỉ định Account (chỉ chuyển mục tiêu chọn acc, KHÔNG logout)
         local function SelectAccountIndex(delta)
+            EnsureActiveSessionSnapshotBeforeChange()
             local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
             local curAccIdx = _G.CurrentAccountIndex or 1
             local targetAccIdx = curAccIdx + delta
@@ -1725,6 +1806,7 @@ local function CreateModUI()
                 end
             end
 
+            SyncReloginFlagAfterConfigUpdate()
             if _G.Mod_UpdateServerStatusUI then _G.Mod_UpdateServerStatusUI() end
             if UpdateServerStatusUI then UpdateServerStatusUI() end
         end
@@ -1737,6 +1819,12 @@ local function CreateModUI()
             local curAccIdx = _G.CurrentAccountIndex or 1
             local targetAcc = (_G.BotAccounts and _G.BotAccounts[curAccIdx]) or {}
             local email = targetAcc.account or "Unknown"
+            local targetSrv = tonumber(_G.TARGET_SERVER_ID or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
+
+            _G.Bot_ActiveSessionEmail = tostring(email)
+            _G.Bot_ActiveSessionServer = targetSrv
+            _G.Bot_NeedReloginNewConfig = false
+            if UpdateServerStatusUI then UpdateServerStatusUI() end
 
             if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                 _G.FloatingWordUtility.QuickMsg(string.format("Đang đăng nhập Acc [%d/%d]: %s...", curAccIdx, totalAccs, email))
@@ -1793,7 +1881,7 @@ local function CreateModUI()
         bcdsRt.anchorMax = Vector2(0, 0)
         bcdsRt.pivot = Vector2(0, 0)
         bcdsRt.anchoredPosition = Vector2(15, 64)
-        bcdsRt.sizeDelta = Vector2(210, 40)
+        bcdsRt.sizeDelta = Vector2(185, 40)
 
         local bcdsImg = btnBcdsGo:AddComponent(typeof(Image))
         bcdsImg.color = Color(0.28, 0.28, 0.32, 1)
@@ -1845,6 +1933,143 @@ local function CreateModUI()
                     _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT TỰ ĐỘNG VÀO HUYẾT LÂU / QUẢNG TRƯỜNG QUỶ!")
                 end
             end
+        end)
+
+        -- ---------------------------------------------------------------------
+        -- =========================================================================
+        -- [MOD FEATURE]: NÚT TOGGLE BUG QUEST & CẤU HÌNH DELAY NỮ HOÀNG (HÀNG Y = 64)
+        -- Mô tả:
+        --   1. BUG QUEST: BẬT (Auto chặn & nhận 3108 bằng Mod) / TẮT (Không chặn gì cả, nhận tay thoải mái)
+        --   2. [-] Delay Nữ Hoàng: Xs [+] (Default 15s, tăng/giảm 1s, dùng cho Auto Farm KC nghỉ tại Lorencia)
+        -- =========================================================================
+        if _G.Mod_BugQuestActive == nil then
+            local savedBug = 1
+            pcall(function() savedBug = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_BugQuest", 1) end)
+            _G.Mod_BugQuestActive = true
+        end
+        if _G.Mod_QueenDelaySec == nil then
+            local savedDelay = 20
+            pcall(function() savedDelay = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_QueenDelaySec_v2", 20) end)
+            _G.Mod_QueenDelaySec = math.max(1, tonumber(savedDelay) or 20)
+        end
+
+        local btnBugQGo = GameObject("BtnToggleBugQuest")
+        btnBugQGo.transform:SetParent(panelGo.transform, false)
+        local bugQRt = btnBugQGo:AddComponent(typeof(RectTransform))
+        bugQRt.anchorMin, bugQRt.anchorMax, bugQRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+        bugQRt.anchoredPosition = Vector2(210, 64)
+        bugQRt.sizeDelta = Vector2(195, 40)
+
+        local bugQImg = btnBugQGo:AddComponent(typeof(Image))
+        bugQImg.raycastTarget = true
+
+        local bugQTxtGo = GameObject("Text")
+        bugQTxtGo.transform:SetParent(btnBugQGo.transform, false)
+        local bugQtRt = bugQTxtGo:AddComponent(typeof(RectTransform))
+        bugQtRt.anchorMin, bugQtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+        bugQtRt.sizeDelta = Vector2(0, 0)
+        local bugQTxt = bugQTxtGo:AddComponent(typeof(Text))
+        bugQTxt.fontSize = 14
+        bugQTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        bugQTxt.alignment = TextAnchor.MiddleCenter
+        bugQTxt.raycastTarget = false
+        if defaultFont then bugQTxt.font = defaultFont end
+
+        _G.UpdateBugQuestBtnUI = function()
+            pcall(function()
+                if not bugQTxt or bugQTxt:Equals(nil) or not bugQImg or bugQImg:Equals(nil) then return end
+                if _G.Mod_BugQuestActive then
+                    bugQImg.color = Color(0.15, 0.65, 0.30, 1)
+                    bugQTxt.text = "BUG QUEST: BẬT"
+                    bugQTxt.color = Color.white
+                else
+                    bugQImg.color = Color(0.28, 0.28, 0.32, 1)
+                    bugQTxt.text = "BUG QUEST: TẮT"
+                    bugQTxt.color = Color(0.85, 0.85, 0.85, 1)
+                end
+            end)
+        end
+        _G.UpdateBugQuestBtnUI()
+
+        local bugQBtn = btnBugQGo:AddComponent(typeof(Button))
+        bugQBtn.targetGraphic = bugQImg
+        bugQBtn.onClick:AddListener(function()
+            _G.Mod_BugQuestActive = not _G.Mod_BugQuestActive
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_BugQuest", _G.Mod_BugQuestActive and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if _G.UpdateBugQuestBtnUI then _G.UpdateBugQuestBtnUI() end
+            if _G.Mod_BugQuestActive then
+                _G.Bot_QueenBugUnavailable = false
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT BUG QUEST (TỰ ĐỘNG CHẶN & NHẬN BẰNG MOD)!")
+                end
+            else
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT BUG QUEST (KHÔNG CHẶN NHẬN NHIỆM VỤ)!")
+                end
+            end
+        end)
+
+        local function CreateDelayStepBtn(btnName, label, posX, onClickFn)
+            local bGo = GameObject(btnName)
+            bGo.transform:SetParent(panelGo.transform, false)
+            local bRt = bGo:AddComponent(typeof(RectTransform))
+            bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            bRt.anchoredPosition = Vector2(posX, 64)
+            bRt.sizeDelta = Vector2(42, 40)
+            local bImg = bGo:AddComponent(typeof(Image))
+            bImg.color = Color(0.25, 0.25, 0.28, 1)
+            bImg.raycastTarget = true
+            local tGo = GameObject("Text")
+            tGo.transform:SetParent(bGo.transform, false)
+            local tRt = tGo:AddComponent(typeof(RectTransform))
+            tRt.anchorMin, tRt.anchorMax, tRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+            local tComp = tGo:AddComponent(typeof(Text))
+            tComp.text = label
+            tComp.color = Color.white
+            tComp.fontSize = 20
+            tComp.fontStyle = CS.UnityEngine.FontStyle.Bold
+            tComp.alignment = TextAnchor.MiddleCenter
+            tComp.raycastTarget = false
+            if defaultFont then tComp.font = defaultFont end
+            local btn = bGo:AddComponent(typeof(Button))
+            btn.targetGraphic = bImg
+            btn.onClick:AddListener(onClickFn)
+        end
+
+        local qDelayLblGo = GameObject("QueenDelayLabel")
+        qDelayLblGo.transform:SetParent(panelGo.transform, false)
+        local qDelayRt = qDelayLblGo:AddComponent(typeof(RectTransform))
+        qDelayRt.anchorMin, qDelayRt.anchorMax, qDelayRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+        qDelayRt.anchoredPosition = Vector2(466, 64)
+        qDelayRt.sizeDelta = Vector2(253, 40)
+        local qDelayTxt = qDelayLblGo:AddComponent(typeof(Text))
+        qDelayTxt.text = "Delay Nữ Hoàng: " .. tostring(_G.Mod_QueenDelaySec) .. "s"
+        qDelayTxt.color = Color(0.8, 1, 0.8, 1)
+        qDelayTxt.fontSize = 15
+        qDelayTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        qDelayTxt.alignment = TextAnchor.MiddleCenter
+        qDelayTxt.raycastTarget = false
+        if defaultFont then qDelayTxt.font = defaultFont end
+
+        local function SaveAndRefreshQueenDelay(newVal)
+            _G.Mod_QueenDelaySec = math.max(1, math.min(300, tonumber(newVal) or 20))
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_QueenDelaySec_v2", _G.Mod_QueenDelaySec)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if qDelayTxt and not qDelayTxt:Equals(nil) then
+                qDelayTxt.text = "Delay Nữ Hoàng: " .. tostring(_G.Mod_QueenDelaySec) .. "s"
+            end
+        end
+
+        CreateDelayStepBtn("BtnQueenDelayMinus", "-", 420, function()
+            SaveAndRefreshQueenDelay((tonumber(_G.Mod_QueenDelaySec) or 20) - 1)
+        end)
+        CreateDelayStepBtn("BtnQueenDelayPlus", "+", 723, function()
+            SaveAndRefreshQueenDelay((tonumber(_G.Mod_QueenDelaySec) or 20) + 1)
         end)
 
         -- ---------------------------------------------------------------------
@@ -2856,6 +3081,7 @@ local function GetCurrentAccount()
     return _G.BotAccounts[accIdx]
 end
 _G.GetCurrentAccount = GetCurrentAccount
+if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 
 -- Hàm lấy cấu hình hợp nhất cho Role hiện tại theo RoleIndex (1, 2, 3, 4) hoặc RoleName
 local function GetCurrentRoleConfig(roleIndex, roleName)
@@ -3336,7 +3562,21 @@ end
 --   3. Hook chặn trực tiếp tại tầng networkRequest & TaskController để cả Mod lẫn Game Client
 --      không bao giờ tự động nộp nhầm 2 nhiệm vụ này.
 -- =========================================================================
+if _G.Mod_BugQuestActive == nil then
+    local savedBug = 1
+    pcall(function() savedBug = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_BugQuest", 1) end)
+    _G.Mod_BugQuestActive = true
+end
+if _G.Mod_QueenDelaySec == nil then
+    local savedDelay = 20
+    pcall(function() savedDelay = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_QueenDelaySec_v2", 20) end)
+    _G.Mod_QueenDelaySec = math.max(1, tonumber(savedDelay) or 20)
+end
+
 local function IsTaskBlockedFromAutoClaim(taskId, taskObj)
+    if not _G.Mod_BugQuestActive then
+        return false
+    end
     local tId = tonumber(taskId)
     if not tId and taskObj then
         tId = tonumber(taskObj.taskId or (taskObj.GetId and taskObj:GetId()) or taskObj.id)
@@ -3347,12 +3587,12 @@ local function IsTaskBlockedFromAutoClaim(taskId, taskObj)
     if not tId then return false end
 
     -- 1. Tuyệt đối không bao giờ nhận thưởng Nhiệm Vụ Nhánh Nữ Hoàng Băng Giá (3103 / 20006)
-    if tId == 3103 or tId == 20006 then
+    if (tId == 3103 or tId == 20006) and not _G.Bot_AllowClaimTask3103 then
         return true
     end
 
     -- 2. Chặn nhận thưởng Nhiệm Vụ Chính Tuyến "Cấp đạt 100" (3108) cho đến khi bước Bug mở khóa
-    if tId == 3108 and not _G.Bot_AllowClaimTask3108 then
+    if (tId == 5024 and not _G.Bot_AllowClaimTask5024) or (tId == 50007 and not _G.Bot_AllowClaimTask50007) then
         return true
     end
 
@@ -3361,7 +3601,7 @@ local function IsTaskBlockedFromAutoClaim(taskId, taskObj)
     if tObj then
         local tName = tostring((tObj.GetName and tObj:GetName()) or tObj.name or "")
         local tDes = tostring((tObj.GetDes and tObj:GetDes()) or tObj.des or "")
-        if string.find(tName, "Nữ Hoàng Băng Giá") or string.find(tDes, "Nữ Hoàng Băng Giá") then
+        if ((string.find(tName, "Nữ Hoàng Băng Giá") or string.find(tDes, "Nữ Hoàng Băng Giá")) and not _G.Bot_AllowClaimTask3103) or ((string.find(tName, "Mặc 1 ") or string.find(tDes, "Mặc 1 món Bộ Trang Bị")) and not _G.Bot_AllowClaimTask5024) or ((string.find(tName, "Băng Hậu") or string.find(tDes, "Treo Thưởng Phúc Lợi")) and not _G.Bot_AllowClaimTask50007) then
             return true
         end
     end
@@ -3380,7 +3620,7 @@ local function InstallQueenBugTaskSubmitGuard()
                     if IsTaskBlockedFromAutoClaim(taskId) then
                         return
                     end
-                    return origSubmit(taskId, ...)
+                    if _G.Mod_BugQuestActive and (tonumber(taskId) == 3103 or tonumber(taskId) == 20006 or tonumber(taskId) == 5024) then return end; return origSubmit(taskId, ...)
                 end
             end
             local origComplete = _G.networkRequest.ReqCompleteTask
@@ -3400,7 +3640,7 @@ local function InstallQueenBugTaskSubmitGuard()
             if origUISubmit then
                 _G.TaskController.TaskUISubmit = function(id, taskId, ...)
                     if IsTaskBlockedFromAutoClaim(taskId) then return end
-                    return origUISubmit(id, taskId, ...)
+                    if _G.Mod_BugQuestActive and (tonumber(taskId) == 3103 or tonumber(taskId) == 20006 or tonumber(taskId) == 5024) then return end; return origUISubmit(id, taskId, ...)
                 end
             end
             local origUIReward = _G.TaskController.TaskUIReward
@@ -3968,6 +4208,14 @@ ClearAllTaskDataAndState = function()
     if _G.StopFarmKCRoutine then pcall(_G.StopFarmKCRoutine) end
     if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
     _G.Bot_AllowClaimTask3108 = false
+    _G.Bot_AllowClaimTask3103 = false
+    _G.Bot_AllowClaimTask5024 = false; _G.Bot_AllowClaimTask50007 = false; _G.Bot_HasAttemptedClaim5024 = false; _G.Bot_HasClaimed50007Once = false; _G.Bot_HasLearnedSoulBarrier100 = false
+    _G.Bot_UsedSoulBarrierStone = false
+    _G.Bot_BuySoulBarrierCount = 0
+    _G.Bot_HasLearnedEvilSpiritLv2_150 = false
+    _G.Bot_UsedEvilSpiritLv2Stone = false
+    _G.Bot_BuyEvilSpiritLv2Count = 0
+    _G.Bot_LastSkillStoneBuyUseTime = 0
     _G.Bot_QueenBugUnavailable = false
     _G.Bot_QueenBugState = "IDLE"
     _G.Bot_QueenBugStateTime = 0
@@ -5456,7 +5704,7 @@ local function SolveNewbieSpecialTasks()
                             end
                             if _G.NetManager and _G.TaskMessage then
                                 if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = targetTaskId, id = targetTaskId }) end
-                                if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = targetTaskId, id = targetTaskId }) end
+                                if _G.TaskMessage.ReqSubmitTask and not (_G.Mod_BugQuestActive and (tonumber(targetTaskId) == 3103 or tonumber(targetTaskId) == 20006 or tonumber(targetTaskId) == 5024)) then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = targetTaskId, id = targetTaskId }) end
                             end
                             if _G.EventManager and _G.Event then
                                 if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, targetTaskId) end
@@ -5655,7 +5903,7 @@ SolveBranchAndRewardsTasks = function()
                         end)
 
                     -- C. Đang tiến hành -> Nếu là nhiệm vụ mặc trang bị (Bộ Mây / Bộ Da...), tự động mặc đồ
-                    elseif bState == 1 or bState == (_G.TaskStateType and _G.TaskStateType.Accept or 1) then
+                    elseif (bState == 1 or bState == (_G.TaskStateType and _G.TaskStateType.Accept or 1)) and not IsTaskBlockedFromAutoClaim(bId, bTask) then
                         if string.find(string.lower(bName), "mặc") or string.find(string.lower(bName), "bộ mây") or string.find(string.lower(bName), "bộ da") then
                             pcall(function()
                                 if _G.RoleEquipUtility and _G.RoleEquipUtility.AutoWearAll then
@@ -5681,7 +5929,7 @@ SolveBranchAndRewardsTasks = function()
                     local rId = rTask.taskId or (rTask.GetId and rTask:GetId()) or 0
                     local rState = (rTask.GetState and rTask:GetState()) or rTask.state or 0
                     local rName = (rTask.GetName and rTask:GetName()) or ("Reward_" .. tostring(rId))
-                    if rState == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or rState == 2 or rState == 3 then
+                    if (rState == (_G.TaskStateType and _G.TaskStateType.Completed or 2) or rState == 2 or rState == 3) and not IsTaskBlockedFromAutoClaim(rId, rTask) then
                         Log(string.format("-> [NHIỆM VỤ THƯỞNG]: Đã xong nhiệm vụ [%s] \"%s\" -> Nộp thưởng!", tostring(rId), tostring(rName)), true)
                         pcall(function()
                             if _G.networkRequest then
@@ -6185,17 +6433,17 @@ GetBestMonsterFarmPoint = function(curMap)
             --        bot tự động quét danh sách map từ cao xuống thấp để lùi về map phù hợp với thủ!
             -- =========================================================================
             local MAP_STEP_DOWN_LIST = {
-                { mapId = 1009, name = "Tarkan", minDef = 260 },
-                { mapId = 100507, name = "Lost Tower 7", minDef = 277 },
-                { mapId = 1008, name = "Atlantis", minDef = 176 },
-                { mapId = 100502, name = "Lost Tower 2", minDef = 180 },
-                { mapId = 100501, name = "Lost Tower 1", minDef = 105 },
-                { mapId = 100201, name = "Dungeon 1", minDef = 80 },
-                { mapId = 1003, name = "Devias", minDef = 30 },
+                { mapId = 1009, name = "Tarkan", minDef = 260, minLvl = 150 },
+                { mapId = 100507, name = "Lost Tower 7", minDef = 277, minLvl = 80 },
+                { mapId = 1008, name = "Atlantis", minDef = 176, minLvl = 100 },
+                { mapId = 100502, name = "Lost Tower 2", minDef = 180, minLvl = 80 },
+                { mapId = 100501, name = "Lost Tower 1", minDef = 105, minLvl = 60 },
+                { mapId = 100201, name = "Dungeon 1", minDef = 80, minLvl = 40 },
+                { mapId = 1003, name = "Devias", minDef = 30, minLvl = 20 },
             }
 
             for _, cand in ipairs(MAP_STEP_DOWN_LIST) do
-                if cand.mapId ~= curMap and myDef >= cand.minDef then
+                local myLvl = tonumber((_G.RoleManager and _G.RoleManager.me and (_G.RoleManager.me.level or (_G.RoleManager.me.data and _G.RoleManager.me.data.level))) or 1) or 1; if cand.mapId ~= curMap and myLvl >= (cand.minLvl or 1) and myDef >= cand.minDef then
                     local candPts = nil
                     if _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetMonsterPointList then
                         candPts = _G.ClientTable.cfg_Map_minimapManager:GetMonsterPointList(cand.mapId)
@@ -8769,7 +9017,7 @@ local function JiggleLorencia(targetX, targetY)
 end
 
 local function ReturnToLorencia()
-    Log("[Farm KC] Thoát phó bản & CallFlag về Lorencia (141#123)...", true)
+    if _G.Mod_FarmKCActive and _G.ExitQueenAndGoFarmSpot then return _G.ExitQueenAndGoFarmSpot() end; Log("[Farm KC] Thoát phó bản & CallFlag về Lorencia (141#123)...", true)
     SaveOutput()
 
     -- 1. Thoát phó bản cũ
@@ -8828,7 +9076,7 @@ local function DoEnterSecretRoom(callback)
         timerObj.Start(0.6, function()
             if not _G.Bot_Running or _G.Bot_PauseTask then return end
             pcall(function()
-                local bossUI = UIManager and UIManager.GetUI and UIID and UIManager.GetUI(UIID.Instance_BossUI)
+                local bossUI = UIManager and UIManager.GetUiByName and ((UIID and UIID.Instance_BossUI and UIManager.GetUiByName(UIID.Instance_BossUI)) or UIManager.GetUiByName("Instance_BossUI"))
                 local secretTemp = bossUI and bossUI.secretBossTemplate
 
                 if secretTemp and secretTemp.EnterSecret then
@@ -8920,6 +9168,7 @@ local function FarmKCStepLoop()
         return
     end
 
+    if _G.CheckAndAutoBuyLearnSkills then _G.CheckAndAutoBuyLearnSkills(curLvl) end
     farmKcStateTime = farmKcStateTime + 0.5
 
     if farmKcState == "INIT" then
@@ -8973,14 +9222,14 @@ local function FarmKCStepLoop()
             end
 
             if not isAlive or farmKcStateTime >= 45.0 then
-                Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 5S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Mod_FarmKCCount), true)
+                Log(string.format(">>> BOSS #%d ĐÃ BỊ TIÊU DIỆT! CHỜ 2S NHẶT KC VÀ VẬT PHẨM... <<<", _G.Mod_FarmKCCount), true)
                 farmKcState = "LOOTING"
                 farmKcStateTime = 0
                 SaveOutput()
             else
                 pcall(function()
                     if RoleManager and RoleManager.me and RoleManager.me.SetAutoTaskFight and AutoFightStrKey then
-                        RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight)
+                        if not (RoleManager.me.meAutoFight and RoleManager.me.meAutoFight.autoKey == AutoFightStrKey.AutoFight and RoleManager.me.TargetAvatar and not RoleManager.me.TargetAvatar.isDead) then RoleManager.me:SetAutoTaskFight(AutoFightStrKey.AutoFight) end
                     end
                 end)
             end
@@ -8989,8 +9238,9 @@ local function FarmKCStepLoop()
     elseif farmKcState == "LOOTING" then
         -- Chờ 5s sau khi diệt Boss để nhặt KC và vật phẩm rơi
         if VacuumAllMapDropItems then VacuumAllMapDropItems() end
-        if farmKcStateTime >= 5.0 then
-            Log("[Farm KC] Đã nhặt xong 5s! Trở về Lorencia (141#123) nghỉ 10s...", false)
+        if farmKcStateTime >= 2.0 then
+            local delaySec = tonumber(_G.Mod_QueenDelaySec) or 20
+            Log(string.format("[Farm KC] Nhặt xong! Bay về bãi farm %ds...", delaySec), false)
             farmKcState = "REST_LORENCIA"
             farmKcStateTime = 0
             activeFarmBoss = nil
@@ -9000,7 +9250,7 @@ local function FarmKCStepLoop()
     elseif farmKcState == "REST_LORENCIA" then
         -- Sau khi về Lorencia: Jiggle 1-2 nhịp +-1 ô cho đỡ lag, nghỉ 10s trước khi vào lại
         -- [BƯỚC 5]: Luôn kiểm tra mua các gói cường hóa ưu tiên bằng KC Khóa & đập đồ cho khỏe
-        if farmKcStateTime >= 1.0 and farmKcStateTime < 1.6 then
+        if _G.TickFarmBetweenQueenRuns then _G.TickFarmBetweenQueenRuns(farmKcStateTime) end; if farmKcStateTime >= 1.0 and farmKcStateTime < 1.6 then
             if AutoUseExpMedicine then AutoUseExpMedicine() end
             local curBindKC = GetCurrentRoleDiamonds and GetCurrentRoleDiamonds() or 0
             if curBindKC >= 120 then
@@ -9024,14 +9274,15 @@ local function FarmKCStepLoop()
         end
         if farmKcStateTime >= 2.0 and farmKcStateTime < 2.6 then
             -- Jiggle nhịp 1: bước sang 142#123
-            JiggleLorencia(142, 123)
+            if not _G.TickFarmBetweenQueenRuns then JiggleLorencia(142, 123) end
         elseif farmKcStateTime >= 5.0 and farmKcStateTime < 5.6 then
             -- Jiggle nhịp 2: bước về 141#123
-            JiggleLorencia(141, 123)
+            if not _G.TickFarmBetweenQueenRuns then JiggleLorencia(141, 123) end
         end
 
-        if farmKcStateTime >= 10.0 then
-            Log("[Farm KC] Đã nghỉ đủ 10s tại Lorencia! Kích hoạt vào Secret Room mới...", false)
+        local delaySec = tonumber(_G.Mod_QueenDelaySec) or 20
+        if farmKcStateTime >= delaySec then
+            Log(string.format("[Farm KC] Đủ %ds! Bay vào Nữ Hoàng...", delaySec), false)
             farmKcState = "WAIT_MAP"
             farmKcStateTime = 0
             DoEnterSecretRoom(function()
@@ -9106,6 +9357,7 @@ end
 --   6. Nếu đã qua Lv 101 mà không có nhiệm vụ để bug thì fallback về bãi quái tốt nhất để farm đến Lv chỉ định.
 -- =========================================================================
 _G.Bot_AllowClaimTask3108 = _G.Bot_AllowClaimTask3108 or false
+_G.Bot_AllowClaimTask3103 = _G.Bot_AllowClaimTask3103 or false
 _G.Bot_QueenBugUnavailable = _G.Bot_QueenBugUnavailable or false
 _G.Bot_QueenBugState = _G.Bot_QueenBugState or "IDLE"
 _G.Bot_QueenBugStateTime = _G.Bot_QueenBugStateTime or 0
@@ -9264,7 +9516,7 @@ local function DoEnterNormalSecretFloor1(spotIdx)
 end
 
 local function CheckAndRunQueenBossBug(curLvl, targetLvl)
-    if _G.Bot_QueenBugUnavailable then
+    if _G.CheckAndRunQueenBossBugLv80 then return _G.CheckAndRunQueenBossBugLv80(curLvl, targetLvl) end; if not _G.Mod_BugQuestActive or _G.Bot_QueenBugUnavailable or (tonumber(curLvl) or 0) < 80 then
         return false
     end
 
@@ -9274,7 +9526,24 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
     -- Nhận diện nhanh: Nếu NV Chính 3108 đã nộp (không còn ở trạng thái 0/1/2) VÀ NV Nhánh 3103 đang ở trạng thái 1 (0/1)
     -- => Nhiệm vụ Nữ Hoàng ĐÃ BỊ BUG THÀNH CÔNG từ trước! Bật thẳng Auto Farm KC!
     local is3108ActiveOrCompleted = (m3108 ~= nil and (m3108State == 0 or m3108State == 1 or m3108State == 2))
-    if not is3108ActiveOrCompleted and qTask ~= nil and qState == 1 and _G.Bot_QueenBugState == "IDLE" then
+    if _G.CheckAndAutoBuyLearnSkills then _G.CheckAndAutoBuyLearnSkills(curLvl) end
+    if _G.Bot_QueenBugState == "DONE" then
+        _G.Mod_FarmKCActive = true
+        if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+        if not _G.Mod_FarmKCRunning and _G.StartFarmKCRoutine then
+            _G.StartFarmKCRoutine()
+        end
+        return true
+    end
+    if curLvl >= 100 and (not is3108ActiveOrCompleted or m3108State == 1) and qTask ~= nil and qState == 2 and _G.Bot_QueenBugState == "IDLE" then
+        Log(">>> [PHÁT HIỆN NV 3108 ĐÃ BUG (STATE=1) & NV 3103 ĐANG CHỜ HOÀN THÀNH]: Chuyển thẳng sang ấn hoàn thành NV 3103! <<<", true)
+        _G.Bot_AllowClaimTask3108 = false
+        _G.Bot_QueenBugState = "PHASE4_CLAIM_3103_AND_VERIFY"
+        _G.Bot_QueenBugStateTime = 0
+        _G.Bot_LastClaim3103AttemptTime = -10
+        return true
+    end
+    if curLvl >= 100 and (not is3108ActiveOrCompleted or m3108State == 1) and qTask ~= nil and qState == 1 and _G.Bot_QueenBugState == "IDLE" then
         Log("=========================================================================", true)
         Log(string.format(">>> [PHÁT HIỆN NV NỮ HOÀNG ĐÃ BUG (0/1) TẠI LV %d]: Kích hoạt ngay AUTO FARM KC đến Lv %d! <<<", curLvl, targetLvl), true)
         Log("=========================================================================", true)
@@ -9312,10 +9581,26 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
     -- BƯỚC 2: MUA HẾT GÓI QUÀ KC KHÓA, NHẬN THƯ, MỞ HỘP, THAY ĐỒ & CƯỜNG HÓA
     -- -------------------------------------------------------------------------
     if _G.Bot_QueenBugState == "IDLE" then
-        _G.Bot_QueenBugState = "WAIT_PREPARE"
+        _G.Bot_QueenBugState = (qState == 2) and "PHASE3_EXIT_AND_CLAIM_3108" or "PHASE1_ENTER_NEWBIE_BOSS"
         _G.Bot_QueenBugStateTime = 0
         _G.Bot_NormalQueenKillCount = 0
         _G.Bot_NormalQueenSpotIdx = 1
+
+        -- Dừng ngay đánh quái ngoài bãi & về Lorencia để không bị lên Lv 100 ngoài bãi trước khi vào Map Nữ Hoàng
+        pcall(function()
+            local me = _G.RoleManager and _G.RoleManager.me
+            if me then
+                if me.StopMove then me:StopMove() end
+                if me.SetAutoTaskFight and _G.AutoFightStrKey then me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight) end
+                if me.SetAutoHookFight then me:SetAutoHookFight(false) end
+                if me.meAutoFight and me.meAutoFight.SetAutoFightHookStart then me.meAutoFight:SetAutoFightHookStart(false) end
+            end
+            if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
+        end)
+        local curMapAt99 = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+        if false and curMapAt99 ~= 1001 and curMapAt99 ~= 2101000 then
+            ReturnToLorencia()
+        end
 
         Log("=========================================================================", true)
         Log(string.format(">>> [BƯỚC 1 & 2 - BUG NỮ HOÀNG (LV %d)]: Chặn nhận NV 3108 -> Mua gói KC Khóa, nhận thư & đập đồ tối đa! <<<", curLvl), true)
@@ -9328,7 +9613,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
         end
 
         if AutoClaimCommunityWelfareAndMail then
-            AutoClaimCommunityWelfareAndMail(function()
+            if false then AutoClaimCommunityWelfareAndMail(function()
                 if AutoUseExpMedicine then AutoUseExpMedicine() end
                 if StartStep5_MailAndUpgrade then
                     StartStep5_MailAndUpgrade()
@@ -9336,7 +9621,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
                     RunPeriodicUpgradeCycle()
                 end
             end)
-        elseif StartStep5_MailAndUpgrade then
+            end elseif false then
             StartStep5_MailAndUpgrade()
         end
         return true
@@ -9346,7 +9631,8 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
             if qState == 2 then
                 -- NV 3103 đã ở trạng thái Hoàn thành (1/1) -> Chuyển thẳng sang Bước 4 (Đánh 2 con Nữ Hoàng thường)
                 Log(">>> [BUG NỮ HOÀNG]: NV 3103 đã đạt 1/1 -> Chuyển sang Bước 4: Đánh 2 con Nữ Hoàng thường (giảm lượt 3 -> 1)! <<<", true)
-                _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+                -- _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+                _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
                 _G.Bot_QueenBugStateTime = 0
             else
                 -- NV 3103 đang ở 0/1 -> Bước 3: Vào đánh 1 con Nữ Hoàng Tân Thủ (210100100)
@@ -9379,7 +9665,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
         if qState == 2 then
             Log(">>> [BƯỚC 3 HOÀN TẤT]: NV Tiêu diệt BOSS Phúc Lợi-Nữ Hoàng Băng Giá đã Hoàn Thành (Chặn nhận thưởng)! Chờ 5s nhặt đồ... <<<", true)
             SaveOutput()
-            _G.Bot_QueenBugState = "PHASE1_LOOT_AND_EXIT"
+            _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
             _G.Bot_QueenBugStateTime = 0
             return true
         end
@@ -9404,7 +9690,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
                 if not isAlive then
                     Log(">>> [BƯỚC 3 HOÀN TẤT]: Đã diệt Nữ Hoàng Tân Thủ (210100100)! Chờ 5s nhặt đồ rồi thoát ra đánh 2 Boss thường... <<<", true)
                     SaveOutput()
-                    _G.Bot_QueenBugState = "PHASE1_LOOT_AND_EXIT"
+                    _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
                     _G.Bot_QueenBugStateTime = 0
                     return true
                 end
@@ -9424,7 +9710,8 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
         elseif _G.Bot_QueenBugStateTime >= 8.5 then
             local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
             if curMap ~= 2101000 then
-                _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+                -- _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+                _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
                 _G.Bot_QueenBugStateTime = 0
             else
                 ReturnToLorencia()
@@ -9434,127 +9721,136 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
         return true
 
     -- -------------------------------------------------------------------------
-    -- BƯỚC 4A: ĐÁNH 2 CON NỮ HOÀNG THƯỜNG (210100101 - MAP 2101001) ĐỂ LƯỢT GIẢM TỪ 3 VỀ 1
-    -- -------------------------------------------------------------------------
-    elseif _G.Bot_QueenBugState == "PHASE2_ENTER_NORMAL_BOSS" then
-        local remCount = GetSecretBossFloor1RemainCount()
-        if remCount <= 1 or (_G.Bot_NormalQueenKillCount or 0) >= 2 then
-            Log(string.format(">>> [BƯỚC 4A HOÀN TẤT]: Lượt Boss Phúc Lợi đã giảm về %d/3 (Đã diệt %d Boss thường)! Chuyển sang thoát phó bản & nhận NV 3108! <<<",
-                remCount, _G.Bot_NormalQueenKillCount or 0), true)
-            SaveOutput()
-            _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
-            _G.Bot_QueenBugStateTime = 0
-            return true
-        end
+    --     -- BƯỚC 4A: ĐÁNH 2 CON NỮ HOÀNG THƯỜNG (210100101 - MAP 2101001) ĐỂ LƯỢT GIẢM TỪ 3 VỀ 1
+    --     -- -------------------------------------------------------------------------
+    --     elseif _G.Bot_QueenBugState == "PHASE2_ENTER_NORMAL_BOSS" then
+    --         local remCount = GetSecretBossFloor1RemainCount()
+    --         if remCount <= 1 or (_G.Bot_NormalQueenKillCount or 0) >= 2 then
 
-        _G.Bot_QueenBugState = "PHASE2_FIGHT_NORMAL_BOSS"
-        _G.Bot_QueenBugStateTime = 0
-        _G.Bot_QueenBugActiveBoss = nil
-        _G.Bot_NormalBossStartRemCount = remCount
-        DoEnterNormalSecretFloor1(_G.Bot_NormalQueenSpotIdx)
-        return true
+    --                 remCount, _G.Bot_NormalQueenKillCount or 0), true)
+    --             SaveOutput()
+    --             _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
+    --             _G.Bot_QueenBugStateTime = 0
+    --             return true
+    --         end
 
-    elseif _G.Bot_QueenBugState == "PHASE2_FIGHT_NORMAL_BOSS" then
-        local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-        local remCount = GetSecretBossFloor1RemainCount()
+    --         _G.Bot_QueenBugState = "PHASE2_FIGHT_NORMAL_BOSS"
+    --         _G.Bot_QueenBugStateTime = 0
+    --         _G.Bot_QueenBugActiveBoss = nil
+    --         _G.Bot_NormalBossStartRemCount = remCount
+    --         DoEnterNormalSecretFloor1(_G.Bot_NormalQueenSpotIdx)
+    --         return true
 
-        -- Nếu số lượt còn lại trên Server đã giảm về <= 1
-        if remCount <= 1 then
-            Log(string.format(">>> [BƯỚC 4A]: Server ghi nhận lượt Boss Phúc Lợi còn %d/3! Dừng đánh, chờ 5s nhặt đồ rồi thoát phó bản! <<<", remCount), true)
-            pcall(function()
-                if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
-                    _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight)
-                end
-            end)
-            _G.Bot_NormalQueenKillCount = 2
-            _G.Bot_QueenBugState = "PHASE2_LOOT_NORMAL_BOSS"
-            _G.Bot_QueenBugStateTime = 0
-            return true
-        end
+    --     elseif _G.Bot_QueenBugState == "PHASE2_FIGHT_NORMAL_BOSS" then
+    --         local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+    --         local remCount = GetSecretBossFloor1RemainCount()
 
-        if curMap == 2101001 then
-            local boss = FindBossNuHoangBangGia()
-            if boss and boss.hp and boss.hp > 0 then
-                if not _G.Bot_QueenBugActiveBoss then
-                    _G.Bot_QueenBugActiveBoss = boss
-                    Log(string.format(">>> [BƯỚC 4A - ĐÁNH BOSS THƯỜNG #%d/2]: Đang tiêu diệt Nữ Hoàng Băng Giá (Lượt hiện tại: %d/3)... <<<",
-                        (_G.Bot_NormalQueenKillCount or 0) + 1, remCount), true)
-                    SaveOutput()
-                end
-                pcall(function()
-                    if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
-                        _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.AutoFight)
-                    end
-                end)
-            elseif _G.Bot_QueenBugActiveBoss then
-                local isAlive = false
-                pcall(function()
-                    if _G.Bot_QueenBugActiveBoss.hp and _G.Bot_QueenBugActiveBoss.hp > 0 and not _G.Bot_QueenBugActiveBoss.isDead then
-                        isAlive = true
-                    end
-                end)
-                if not isAlive then
-                    _G.Bot_NormalQueenKillCount = (_G.Bot_NormalQueenKillCount or 0) + 1
-                    pcall(function()
-                        if _G.networkRequest and _G.networkRequest.ReqGetBossMapAndCount then
-                            _G.networkRequest.ReqGetBossMapAndCount()
-                        end
-                    end)
-                    if (_G.Bot_NormalQueenKillCount or 0) >= 2 then
-                        pcall(function()
-                            if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
-                                _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight)
-                            end
-                        end)
-                    end
-                    Log(string.format(">>> [BƯỚC 4A]: Đã tiêu diệt Nữ Hoàng thường thứ %d/2! Chờ 5s nhặt đồ... <<<", _G.Bot_NormalQueenKillCount), true)
-                    SaveOutput()
-                    _G.Bot_QueenBugActiveBoss = nil
-                    _G.Bot_QueenBugState = "PHASE2_LOOT_NORMAL_BOSS"
-                    _G.Bot_QueenBugStateTime = 0
-                    return true
-                end
-            else
-                -- Chưa thấy Boss ở tọa độ hiện tại sau 6s -> Chuyển sang tọa độ tiếp theo trong 3 điểm trên Map 2101001
-                if _G.Bot_QueenBugStateTime >= 6.0 then
-                    _G.Bot_NormalQueenSpotIdx = ((_G.Bot_NormalQueenSpotIdx or 1) % #NORMAL_QUEEN_SPOTS) + 1
-                    _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
-                    _G.Bot_QueenBugStateTime = 0
-                end
-            end
-        elseif _G.Bot_QueenBugStateTime >= 8.0 then
-            -- Chưa vào được Map 2101001 -> Thử gọi vào lại
-            if curMap == 2101000 then
-                ReturnToLorencia()
-            end
-            _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
-            _G.Bot_QueenBugStateTime = 0
-        end
-        return true
+    --         -- Nếu số lượt còn lại trên Server đã giảm về <= 1
+    --         if remCount <= 1 then
 
-    elseif _G.Bot_QueenBugState == "PHASE2_LOOT_NORMAL_BOSS" then
-        if VacuumAllMapDropItems then VacuumAllMapDropItems() end
-        if _G.Bot_QueenBugStateTime >= 5.0 then
-            local remCount = GetSecretBossFloor1RemainCount()
-            if remCount <= 1 or (_G.Bot_NormalQueenKillCount or 0) >= 2 then
-                Log(string.format(">>> [BƯỚC 4B - BUG NỮ HOÀNG]: Đã đánh xong 2 con Nữ Hoàng (Lượt còn %d/3)! Thoát phó bản để nhận NV Cấp đạt Lv100 (3108)! <<<", remCount), true)
-                SaveOutput()
-                _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
-                _G.Bot_QueenBugStateTime = 0
-            else
-                _G.Bot_NormalQueenSpotIdx = ((_G.Bot_NormalQueenSpotIdx or 1) % #NORMAL_QUEEN_SPOTS) + 1
-                _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
-                _G.Bot_QueenBugStateTime = 0
-            end
-        end
-        return true
+    --             pcall(function()
+    --                 if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
+    --                     _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight)
+    --                 end
+    --             end)
+    --             _G.Bot_NormalQueenKillCount = 2
+    --             _G.Bot_QueenBugState = "PHASE2_LOOT_NORMAL_BOSS"
+    --             _G.Bot_QueenBugStateTime = 0
+    --             return true
+    --         end
+
+    --         if curMap == 2101001 then
+    --             local boss = FindBossNuHoangBangGia()
+    --             if boss and boss.hp and boss.hp > 0 then
+    --                 if not _G.Bot_QueenBugActiveBoss then
+    --                     _G.Bot_QueenBugActiveBoss = boss
+
+    --                         (_G.Bot_NormalQueenKillCount or 0) + 1, remCount), true)
+    --                     SaveOutput()
+    --                 end
+    --                 pcall(function()
+    --                     if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
+    --                         _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.AutoFight)
+    --                     end
+    --                 end)
+    --             elseif _G.Bot_QueenBugActiveBoss then
+    --                 local isAlive = false
+    --                 pcall(function()
+    --                     if _G.Bot_QueenBugActiveBoss.hp and _G.Bot_QueenBugActiveBoss.hp > 0 and not _G.Bot_QueenBugActiveBoss.isDead then
+    --                         isAlive = true
+    --                     end
+    --                 end)
+    --                 if not isAlive then
+    --                     _G.Bot_NormalQueenKillCount = (_G.Bot_NormalQueenKillCount or 0) + 1
+    --                     pcall(function()
+    --                         if _G.networkRequest and _G.networkRequest.ReqGetBossMapAndCount then
+    --                             _G.networkRequest.ReqGetBossMapAndCount()
+    --                         end
+    --                     end)
+    --                     if (_G.Bot_NormalQueenKillCount or 0) >= 2 then
+    --                         pcall(function()
+    --                             if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.SetAutoTaskFight and _G.AutoFightStrKey then
+    --                                 _G.RoleManager.me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight)
+    --                             end
+    --                         end)
+    --                     end
+
+    --                     SaveOutput()
+    --                     _G.Bot_QueenBugActiveBoss = nil
+    --                     _G.Bot_QueenBugState = "PHASE2_LOOT_NORMAL_BOSS"
+    --                     _G.Bot_QueenBugStateTime = 0
+    --                     return true
+    --                 end
+    --             else
+    --                 -- Chưa thấy Boss ở tọa độ hiện tại sau 6s -> Chuyển sang tọa độ tiếp theo trong 3 điểm trên Map 2101001
+    --                 if _G.Bot_QueenBugStateTime >= 6.0 then
+    --                     _G.Bot_NormalQueenSpotIdx = ((_G.Bot_NormalQueenSpotIdx or 1) % #NORMAL_QUEEN_SPOTS) + 1
+    --                     _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+    --                     _G.Bot_QueenBugStateTime = 0
+    --                 end
+    --             end
+    --         elseif _G.Bot_QueenBugStateTime >= 8.0 then
+    --             -- Chưa vào được Map 2101001 -> Thử gọi vào lại
+    --             if curMap == 2101000 then
+    --                 ReturnToLorencia()
+    --             end
+    --             _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+    --             _G.Bot_QueenBugStateTime = 0
+    --         end
+    --         return true
+
+    --     elseif _G.Bot_QueenBugState == "PHASE2_LOOT_NORMAL_BOSS" then
+    --         if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+    --         if _G.Bot_QueenBugStateTime >= 5.0 then
+    --             local remCount = GetSecretBossFloor1RemainCount()
+    --             if remCount <= 1 or (_G.Bot_NormalQueenKillCount or 0) >= 2 then
+
+    --                 SaveOutput()
+    --                 _G.Bot_QueenBugState = "PHASE3_EXIT_AND_CLAIM_3108"
+    --                 _G.Bot_QueenBugStateTime = 0
+    --             else
+    --                 _G.Bot_NormalQueenSpotIdx = ((_G.Bot_NormalQueenSpotIdx or 1) % #NORMAL_QUEEN_SPOTS) + 1
+    --                 _G.Bot_QueenBugState = "PHASE2_ENTER_NORMAL_BOSS"
+    --                 _G.Bot_QueenBugStateTime = 0
+    --             end
+    --         end
+    --         return true
 
     -- -------------------------------------------------------------------------
     -- BƯỚC 4B: THOÁT KHỎI PHÓ BẢN PHÚC LỢI & BẤM NHẬN NHIỆM VỤ CHÍNH TUYẾN CẤP ĐẠT LV100 (3108)
     -- -------------------------------------------------------------------------
     elseif _G.Bot_QueenBugState == "PHASE3_EXIT_AND_CLAIM_3108" then
         local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-        if curMap == 2101000 or curMap == 2101001 or (_G.TranScriptData and _G.TranScriptData.InTranscript) then
+        if VacuumAllMapDropItems then VacuumAllMapDropItems() end
+        if curMap ~= 2101000 then
+            if _G.Bot_QueenBugStateTime < 0.5 or _G.Bot_QueenBugStateTime >= 5.0 then
+                _G.Bot_QueenBugStateTime = 0.5
+                Log("[Bug Nữ Hoàng] Đưa nhân vật vào đứng trong Map Boss Tân Thủ (2101000) để bug NV Lv100 (3108)...", true)
+                DoEnterSecretRoom()
+            end
+            return true
+        end
+        if false then
             if _G.Bot_QueenBugStateTime < 0.5 or _G.Bot_QueenBugStateTime >= 4.0 then
                 _G.Bot_QueenBugStateTime = 0.5
                 pcall(function()
@@ -9570,11 +9866,11 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
             return true
         end
 
-        -- Đã thoát ra ngoài an toàn (Lorencia 1001): Chờ 2s ổn định map rồi bấm nhận thưởng NV 3108
-        if _G.Bot_QueenBugStateTime >= 2.5 then
+        -- Đang đứng trực tiếp trong Map Boss Tân Thủ (2101000) và NV 3103 đã Hoàn thành: Ấn nhận thưởng NV Lv100 (3108) để bug luôn!
+        if _G.Bot_QueenBugStateTime >= 2.0 and (m3108State == 2 or curLvl >= 100) then
             _G.Bot_AllowClaimTask3108 = true
             Log("=========================================================================", true)
-            Log(">>> [BƯỚC 4 HOÀN TẤT]: Đã thoát phó bản Phúc Lợi -> BẤM NHẬN THƯỞNG NV CHÍNH TUYẾN 'CẤP ĐẠT LV100' (ID 3108)! <<<", true)
+            Log(">>> [BƯỚC 4A - BUG TẠI MAP BOSS TÂN THỦ (2101000)]: NV Boss Phúc Lợi đã Hoàn Thành -> ẤN HOÀN THÀNH NV CHÍNH TUYẾN 'CẤP ĐẠT LV100' (ID 3108) ĐỂ BUG LUÔN! <<<", true)
             Log("=========================================================================", true)
             SaveOutput()
 
@@ -9593,7 +9889,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
                 end
             end)
 
-            _G.Bot_QueenBugState = "PHASE4_START_FARM_KC"
+            _G.Bot_QueenBugState = "PHASE3_VERIFY_3108_BUG"
             _G.Bot_QueenBugStateTime = 0
         end
         return true
@@ -9601,8 +9897,86 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
     -- -------------------------------------------------------------------------
     -- BƯỚC 5: KÍCH HOẠT CHU TRÌNH AUTO FARM KC LIÊN TỤC ĐẾN LEVEL CHỈ ĐỊNH
     -- -------------------------------------------------------------------------
+    elseif _G.Bot_QueenBugState == "PHASE3_VERIFY_3108_BUG" then
+        -- Kiểm tra tính bug của nhiệm vụ Lv100 (3108): Hiển thị là Đang Tiến Hành (state == 1)
+        if m3108State == 1 or (not m3108 and _G.Bot_QueenBugStateTime >= 1.5) then
+            _G.Bot_AllowClaimTask3108 = false
+            Log("=========================================================================", true)
+            Log(string.format(">>> [KIỂM TRA BUG NV LV100 (3108) THÀNH CÔNG]: Trạng thái hiển thị Đang Tiến Hành (state=%s)! Chuyển sang ấn hoàn thành NV Boss Phúc Lợi Tân Thủ (3103)... <<<", tostring(m3108State)), true)
+            Log("=========================================================================", true)
+            SaveOutput()
+            _G.Bot_QueenBugState = "PHASE4_CLAIM_3103_AND_VERIFY"
+            _G.Bot_QueenBugStateTime = 0
+            _G.Bot_LastClaim3103AttemptTime = -10
+        elseif _G.Bot_QueenBugStateTime >= 2.5 then
+            -- Nếu vẫn ở state == 2 sau 2.5s -> Gửi lại lệnh hoàn thành NV 3108
+            _G.Bot_AllowClaimTask3108 = true
+            Log("[Bug Nữ Hoàng] Nhắc lại lệnh hoàn thành NV Lv100 (3108) để kích hoạt trạng thái Đang Tiến Hành...", true)
+            pcall(function()
+                if _G.networkRequest then
+                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(3108) end
+                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(3108) end
+                end
+                if _G.NetManager and _G.TaskMessage then
+                    if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = 3108, id = 3108 }) end
+                    if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = 3108, id = 3108 }) end
+                end
+                if _G.EventManager and _G.Event then
+                    if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, 3108) end
+                    if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, 3108) end
+                end
+            end)
+            _G.Bot_QueenBugStateTime = 0
+        end
+        return true
+
+    elseif _G.Bot_QueenBugState == "PHASE4_CLAIM_3103_AND_VERIFY" then
+        -- Kiểm tra tính bug của nhiệm vụ Boss Phúc Lợi Tân Thủ (3103 / 20006): Hiển thị là Đang Tiến Hành (qState == 1)
+        if qState == 1 and _G.Bot_QueenBugStateTime >= 0.5 then
+            _G.Bot_AllowClaimTask3103 = false
+            _G.Bot_AllowClaimTask3108 = false
+            _G.Bot_QueenBugState = "DONE"
+            _G.Mod_FarmKCActive = true
+            if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
+            Log("=========================================================================", true)
+            Log(string.format(">>> [BƯỚC 5 - BUG NV BOSS PHÚC LỢI TÂN THỦ (3103) THÀNH CÔNG]: Trạng thái hiển thị Đang Tiến Hành (state=%s)! Bật quy trình AUTO FARM KC đến Lv %d! <<<", tostring(qState), targetLvl), true)
+            Log("=========================================================================", true)
+            SaveOutput()
+            if _G.StartFarmKCRoutine then
+                _G.StartFarmKCRoutine()
+            end
+            return true
+        end
+
+        if (_G.Bot_QueenBugStateTime - (_G.Bot_LastClaim3103AttemptTime or -10)) >= 2.5 then
+            _G.Bot_LastClaim3103AttemptTime = _G.Bot_QueenBugStateTime
+            local target3103Id = qTaskId or 3103
+            Log("=========================================================================", true)
+            Log(string.format(">>> [BƯỚC 4B - BUG BOSS PHÚC LỢI TÂN THỦ]: Ấn hoàn thành NV Boss Phúc Lợi Tân Thủ (ID %s) và kiểm tra tính bug... <<<", tostring(target3103Id)), true)
+            Log("=========================================================================", true)
+            SaveOutput()
+
+            _G.Bot_AllowClaimTask3103 = true
+            pcall(function()
+                if _G.networkRequest then
+                    if _G.networkRequest.ReqCompleteTask then _G.networkRequest.ReqCompleteTask(target3103Id) end
+                    if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(target3103Id) end
+                end
+                if _G.NetManager and _G.TaskMessage then
+                    if _G.TaskMessage.ReqCompleteTask then _G.NetManager.Send(_G.TaskMessage.ReqCompleteTask, { taskId = target3103Id, id = target3103Id }) end
+                    if _G.TaskMessage.ReqSubmitTask then _G.NetManager.Send(_G.TaskMessage.ReqSubmitTask, { taskId = target3103Id, id = target3103Id }) end
+                end
+                if _G.EventManager and _G.Event then
+                    if _G.Event.Task_BtnRewardClick then _G.EventManager.Dispatch(_G.Event.Task_BtnRewardClick, target3103Id) end
+                    if _G.Event.Task_BtnSubmitClick then _G.EventManager.Dispatch(_G.Event.Task_BtnSubmitClick, target3103Id) end
+                end
+            end)
+            _G.Bot_AllowClaimTask3103 = false
+        end
+        return true
+
     elseif _G.Bot_QueenBugState == "PHASE4_START_FARM_KC" then
-        if _G.Bot_QueenBugStateTime >= 2.5 then
+        if _G.Bot_QueenBugStateTime >= 2.0 and (m3108State == 2 or curLvl >= 100) then
             _G.Bot_QueenBugState = "DONE"
             _G.Mod_FarmKCActive = true
             if _G.UpdateFarmKCBtnUI then pcall(_G.UpdateFarmKCBtnUI) end
