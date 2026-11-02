@@ -1445,12 +1445,30 @@ local function SyncFarmNHBtnUI()
 		local Image = CS.UnityEngine.UI.Image
 		local Text = CS.UnityEngine.UI.Text
 
-		-- Ẩn cụm UI Delay Nữ Hoàng thủ công (vì đã dùng cơ chế tự động quét 2 biến hồi sinh từ quan tài)
-		local hideNames = { "QueenDelayLabel", "BtnQueenDelayMinus", "BtnQueenDelayPlus" }
-		for _, hName in ipairs(hideNames) do
-			local hGo = GameObject.Find(hName)
-			if hGo and not IsNil(hGo) and hGo.activeSelf then
-				hGo:SetActive(false)
+		-- Hiển thị lại cụm UI chỉnh Delay Nữ Hoàng: [-] Delay Nữ Hoàng: Xs [+]
+		local panelGo = GameObject.Find("ModMenuPanel")
+		local showNames = { "QueenDelayLabel", "BtnQueenDelayMinus", "BtnQueenDelayPlus" }
+		for _, sName in ipairs(showNames) do
+			local sGo = nil
+			if panelGo and not IsNil(panelGo) then
+				local sTr = panelGo.transform:Find(sName)
+				if sTr and not IsNil(sTr) then
+					sGo = sTr.gameObject
+				end
+			end
+			if not sGo or IsNil(sGo) then
+				sGo = GameObject.Find(sName)
+			end
+			if sGo and not IsNil(sGo) then
+				if not sGo.activeSelf then
+					sGo:SetActive(true)
+				end
+				if sName == "QueenDelayLabel" then
+					local qTxt = sGo:GetComponent(typeof(Text))
+					if qTxt and not IsNil(qTxt) then
+						qTxt.text = "Delay Nữ Hoàng: " .. tostring(tonumber(_G.Mod_QueenDelaySec) or 20) .. "s"
+					end
+				end
 			end
 		end
 
@@ -2896,269 +2914,82 @@ end
 _G.CanPlayerEnterMap = CanPlayerEnterMap
 
 -- =========================================================================
--- [MOD FEATURE]: DANH SÁCH TỌA ĐỘ LIÊN TỤC CỦA CÙNG 1 BÃI QUÁI & TỰ ĐỘNG ĐỔI TỌA ĐỘ KHI CÓ NGƯỜI CHƠI <= 3 Ô
+-- [MOD FEATURE]: BẢNG TỌA ĐỘ BÃI QUÁI TỐI ƯU CỐ ĐỊNH THEO LEVEL & PHÒNG THỦ
 -- Mô tả:
---   - Hàm `_G.GetMonsterSpotAllCoords(spot)` trích xuất chuỗi tọa độ liên tục `position` ("x1_y1#x2_y2#...")
---     từ bảng `cfg_Map_transfer` theo `transferId` của từng bãi quái (kèm chuỗi fallback chuẩn).
---   - Sửa chuẩn tọa độ Bãi Quái Lv140 Atlantis (`transferId = 100835`) thành `154#159` (thay cho `157#156` / `160#153`).
---   - Khi nhân vật bay đến bãi quái mà quét thấy có người chơi khác đứng cạnh trong phạm vi `<= 3 ô`,
---     tự động chuyển sang tọa độ kế tiếp trong danh sách tọa độ của cùng bãi quái level đó.
+--   - Chọn bãi quái cố định tốt nhất theo cấp độ nhân vật (`minLvl`) và phòng thủ (`defenseReq`).
+--   - Giữ cố định tọa độ chuẩn của từng bãi quái (ví dụ Lost Tower 1 Lv90: 194#106,
+--     Lost Tower 2 Lv90: 171#231, Atlantis Lv140: 154#159, Atlantis Lv145: 145#201),
+--     không nhảy sang tọa độ phụ khi có người chơi khác đứng cạnh.
 -- =========================================================================
 local ALL_PROGRESSION_FARM_SPOTS = {
 	-- 10. Di Chỉ Kanturu 1 (1039 - Yêu cầu Lv 350)
-	{ mapId = 1039,   minLvl = 350, transferId = 103936, x = 148, y = 145, name = "Di Chỉ Kanturu (Quái Lv395 EXP x4.0: 148#145)", monsterLvl = 395, defenseReq = 3156, expScore = 395, posStr = "148_145#157_151#170_169#198_174#196_190" },
-	{ mapId = 1039,   minLvl = 350, transferId = 103935, x = 173, y = 129, name = "Di Chỉ Kanturu (Quái Lv390 EXP x3.0: 173#129)", monsterLvl = 390, defenseReq = 2869, expScore = 390, posStr = "173_129#202_147#209_135#200_113#198_95#153_137" },
-	{ mapId = 1039,   minLvl = 350, transferId = 103934, x = 155, y = 115, name = "Di Chỉ Kanturu (Quái Lv380 EXP x2.5: 155#115)", monsterLvl = 380, defenseReq = 2582, expScore = 380, posStr = "155_115#140_121#171_95#174_78#171_63" },
-	{ mapId = 1039,   minLvl = 350, transferId = 103933, x = 135, y = 98,  name = "Di Chỉ Kanturu (Quái Lv370 EXP x2.0: 135#98)",  monsterLvl = 370, defenseReq = 2295, expScore = 370, posStr = "135_98#126_127#136_104#144_77#143_62" },
-	{ mapId = 1039,   minLvl = 350, transferId = 103932, x = 122, y = 79,  name = "Di Chỉ Kanturu (Quái Lv360 EXP x1.5: 122#79)",  monsterLvl = 360, defenseReq = 2008, expScore = 360, posStr = "122_79#108_134#123_87#106_71#123_62" },
-	{ mapId = 1039,   minLvl = 350, transferId = 103931, x = 98,  y = 106, name = "Di Chỉ Kanturu (Quái Lv350 EXP x1.0: 98#106)",  monsterLvl = 350, defenseReq = 1721, expScore = 350, posStr = "98_106#84_118#91_96#105_101#105_115#98_133" },
+	{ mapId = 1039,   minLvl = 350, x = 148, y = 145, name = "Di Chỉ Kanturu (Quái Lv395 EXP x4.0: 148#145)", monsterLvl = 395, defenseReq = 3156, expScore = 395 },
+	{ mapId = 1039,   minLvl = 350, x = 173, y = 129, name = "Di Chỉ Kanturu (Quái Lv390 EXP x3.0: 173#129)", monsterLvl = 390, defenseReq = 2869, expScore = 390 },
+	{ mapId = 1039,   minLvl = 350, x = 155, y = 115, name = "Di Chỉ Kanturu (Quái Lv380 EXP x2.5: 155#115)", monsterLvl = 380, defenseReq = 2582, expScore = 380 },
+	{ mapId = 1039,   minLvl = 350, x = 135, y = 98,  name = "Di Chỉ Kanturu (Quái Lv370 EXP x2.0: 135#98)",  monsterLvl = 370, defenseReq = 2295, expScore = 370 },
+	{ mapId = 1039,   minLvl = 350, x = 122, y = 79,  name = "Di Chỉ Kanturu (Quái Lv360 EXP x1.5: 122#79)",  monsterLvl = 360, defenseReq = 2008, expScore = 360 },
+	{ mapId = 1039,   minLvl = 350, x = 98,  y = 106, name = "Di Chỉ Kanturu (Quái Lv350 EXP x1.0: 98#106)",  monsterLvl = 350, defenseReq = 1721, expScore = 350 },
 
 	-- 9. Phế Tích Kanturu 1 (1038 - Yêu cầu Lv 300)
-	{ mapId = 1038,   minLvl = 300, transferId = 103836, x = 58,  y = 82,  name = "Phế Tích Kanturu (Quái Lv345 EXP x4.0: 58#82)",   monsterLvl = 345, defenseReq = 1721, expScore = 345, posStr = "58_82#77_115#39_114#52_89#80_64#44_57" },
-	{ mapId = 1038,   minLvl = 300, transferId = 103835, x = 97,  y = 66,  name = "Phế Tích Kanturu (Quái Lv340 EXP x3.0: 97#66)",   monsterLvl = 340, defenseReq = 1549, expScore = 340, posStr = "97_66#130_51#121_70#93_72#98_91#66_140" },
-	{ mapId = 1038,   minLvl = 300, transferId = 103834, x = 152, y = 61,  name = "Phế Tích Kanturu (Quái Lv330 EXP x2.5: 152#61)",  monsterLvl = 330, defenseReq = 1378, expScore = 330, posStr = "152_61#149_122#182_93#176_69#174_44#144_68" },
-	{ mapId = 1038,   minLvl = 300, transferId = 103833, x = 230, y = 106, name = "Phế Tích Kanturu (Quái Lv320 EXP x2.0: 230#106)", monsterLvl = 320, defenseReq = 1206, expScore = 320, posStr = "230_106#215_167#215_139#225_112#230_79#202_60#179_117#147_141" },
-	{ mapId = 1038,   minLvl = 300, transferId = 103832, x = 178, y = 178, name = "Phế Tích Kanturu (Quái Lv310 EXP x1.5: 178#178)", monsterLvl = 310, defenseReq = 1035, expScore = 310, posStr = "178_178#120_169#146_166#154_190#169_204#177_223#171_169#198_195" },
-	{ mapId = 1038,   minLvl = 300, transferId = 103831, x = 133, y = 224, name = "Phế Tích Kanturu (Quái Lv300 EXP x1.0: 133#224)", monsterLvl = 300, defenseReq = 863,  expScore = 300, posStr = "133_224#52_224#77_233#86_207#106_224#127_227#145_223#98_191" },
+	{ mapId = 1038,   minLvl = 300, x = 58,  y = 82,  name = "Phế Tích Kanturu (Quái Lv345 EXP x4.0: 58#82)",   monsterLvl = 345, defenseReq = 1721, expScore = 345 },
+	{ mapId = 1038,   minLvl = 300, x = 97,  y = 66,  name = "Phế Tích Kanturu (Quái Lv340 EXP x3.0: 97#66)",   monsterLvl = 340, defenseReq = 1549, expScore = 340 },
+	{ mapId = 1038,   minLvl = 300, x = 152, y = 61,  name = "Phế Tích Kanturu (Quái Lv330 EXP x2.5: 152#61)",  monsterLvl = 330, defenseReq = 1378, expScore = 330 },
+	{ mapId = 1038,   minLvl = 300, x = 230, y = 106, name = "Phế Tích Kanturu (Quái Lv320 EXP x2.0: 230#106)", monsterLvl = 320, defenseReq = 1206, expScore = 320 },
+	{ mapId = 1038,   minLvl = 300, x = 178, y = 178, name = "Phế Tích Kanturu (Quái Lv310 EXP x1.5: 178#178)", monsterLvl = 310, defenseReq = 1035, expScore = 310 },
+	{ mapId = 1038,   minLvl = 300, x = 133, y = 224, name = "Phế Tích Kanturu (Quái Lv300 EXP x1.0: 133#224)", monsterLvl = 300, defenseReq = 863,  expScore = 300 },
 
 	-- 8. Icarus 1 (1011 - Yêu cầu Lv 250)
-	{ mapId = 1011,   minLvl = 250, transferId = 101135, x = 48,  y = 204, name = "Icarus (Quái Lv295 EXP x4.0: 48#204)", monsterLvl = 295, defenseReq = 863, expScore = 295, posStr = "48_204#41_165#54_195#42_208#72_212#83_213#95_216" },
-	{ mapId = 1011,   minLvl = 250, transferId = 101135, x = 42,  y = 163, name = "Icarus (Quái Lv290 EXP x3.0: 42#163)", monsterLvl = 290, defenseReq = 792, expScore = 290, posStr = "42_163#41_165#54_195#42_208#72_212#83_213#95_216" },
-	{ mapId = 1011,   minLvl = 250, transferId = 101134, x = 31,  y = 101, name = "Icarus (Quái Lv280 EXP x2.5: 31#101)", monsterLvl = 280, defenseReq = 721, expScore = 280, posStr = "31_101#31_96#43_109#32_119#44_142" },
-	{ mapId = 1011,   minLvl = 250, transferId = 101133, x = 59,  y = 69,  name = "Icarus (Quái Lv270 EXP x2.0: 59#69)",  monsterLvl = 270, defenseReq = 651, expScore = 270, posStr = "59_69#99_76#98_89#75_79#52_73#30_71#29_83" },
-	{ mapId = 1011,   minLvl = 250, transferId = 101132, x = 82,  y = 32,  name = "Icarus (Quái Lv260 EXP x1.5: 82#32)",  monsterLvl = 260, defenseReq = 580, expScore = 260, posStr = "82_32#96_36#79_42#93_50#80_58#98_63" },
-	{ mapId = 1011,   minLvl = 250, transferId = 101131, x = 54,  y = 29,  name = "Icarus (Quái Lv250 EXP x1.0: 54#29)",  monsterLvl = 250, defenseReq = 509, expScore = 250, posStr = "54_29#50_31#58_41#38_42#25_36#42_24" },
+	{ mapId = 1011,   minLvl = 250, x = 48,  y = 204, name = "Icarus (Quái Lv295 EXP x4.0: 48#204)", monsterLvl = 295, defenseReq = 863, expScore = 295 },
+	{ mapId = 1011,   minLvl = 250, x = 42,  y = 163, name = "Icarus (Quái Lv290 EXP x3.0: 42#163)", monsterLvl = 290, defenseReq = 792, expScore = 290 },
+	{ mapId = 1011,   minLvl = 250, x = 31,  y = 101, name = "Icarus (Quái Lv280 EXP x2.5: 31#101)", monsterLvl = 280, defenseReq = 721, expScore = 280 },
+	{ mapId = 1011,   minLvl = 250, x = 59,  y = 69,  name = "Icarus (Quái Lv270 EXP x2.0: 59#69)",  monsterLvl = 270, defenseReq = 651, expScore = 270 },
+	{ mapId = 1011,   minLvl = 250, x = 82,  y = 32,  name = "Icarus (Quái Lv260 EXP x1.5: 82#32)",  monsterLvl = 260, defenseReq = 580, expScore = 260 },
+	{ mapId = 1011,   minLvl = 250, x = 54,  y = 29,  name = "Icarus (Quái Lv250 EXP x1.0: 54#29)",  monsterLvl = 250, defenseReq = 509, expScore = 250 },
 
 	-- 7. Aida (1034 - Yêu cầu Lv 200)
-	{ mapId = 1034,   minLvl = 200, transferId = 103436, x = 116, y = 75,  name = "Aida (Quái Lv245 EXP x4.0: 116#75)",  monsterLvl = 245, defenseReq = 509, expScore = 245, posStr = "116_75#142_152#104_150#97_117#94_92#121_75" },
-	{ mapId = 1034,   minLvl = 200, transferId = 103435, x = 168, y = 117, name = "Aida (Quái Lv240 EXP x3.0: 168#117)", monsterLvl = 240, defenseReq = 485, expScore = 240, posStr = "168_117#163_124#183_142#147_172#123_167#98_170" },
-	{ mapId = 1034,   minLvl = 200, transferId = 103434, x = 220, y = 93,  name = "Aida (Quái Lv230 EXP x2.5: 220#93)",  monsterLvl = 230, defenseReq = 461, expScore = 230, posStr = "220_93#228_69#216_96#237_115#215_129#232_142#213_169" },
-	{ mapId = 1034,   minLvl = 200, transferId = 103433, x = 198, y = 109, name = "Aida (Quái Lv220 EXP x2.0: 198#109)", monsterLvl = 220, defenseReq = 438, expScore = 220, posStr = "198_109#164_73#151_95#188_94#193_115#220_47" },
-	{ mapId = 1034,   minLvl = 200, transferId = 103432, x = 194, y = 38,  name = "Aida (Quái Lv210 EXP x1.5: 194#38)",  monsterLvl = 210, defenseReq = 414, expScore = 210, posStr = "194_38#223_13#198_14#201_35#193_63#167_50" },
-	{ mapId = 1034,   minLvl = 200, transferId = 103431, x = 146, y = 35,  name = "Aida (Quái Lv200 EXP x1.0: 146#35)",  monsterLvl = 200, defenseReq = 390, expScore = 200, posStr = "146_35#122_19#141_35#161_28#173_17" },
+	{ mapId = 1034,   minLvl = 200, x = 116, y = 75,  name = "Aida (Quái Lv245 EXP x4.0: 116#75)",  monsterLvl = 245, defenseReq = 509, expScore = 245 },
+	{ mapId = 1034,   minLvl = 200, x = 168, y = 117, name = "Aida (Quái Lv240 EXP x3.0: 168#117)", monsterLvl = 240, defenseReq = 485, expScore = 240 },
+	{ mapId = 1034,   minLvl = 200, x = 220, y = 93,  name = "Aida (Quái Lv230 EXP x2.5: 220#93)",  monsterLvl = 230, defenseReq = 461, expScore = 230 },
+	{ mapId = 1034,   minLvl = 200, x = 198, y = 109, name = "Aida (Quái Lv220 EXP x2.0: 198#109)", monsterLvl = 220, defenseReq = 438, expScore = 220 },
+	{ mapId = 1034,   minLvl = 200, x = 194, y = 38,  name = "Aida (Quái Lv210 EXP x1.5: 194#38)",  monsterLvl = 210, defenseReq = 414, expScore = 210 },
+	{ mapId = 1034,   minLvl = 200, x = 146, y = 35,  name = "Aida (Quái Lv200 EXP x1.0: 146#35)",  monsterLvl = 200, defenseReq = 390, expScore = 200 },
 
 	-- 6. Tarkan (1009 - Yêu cầu Lv 150)
-	{ mapId = 1009,   minLvl = 150, transferId = 100936, x = 166, y = 196, name = "Tarkan (Quái Lv195 EXP x4.0: 166#196)", monsterLvl = 195, defenseReq = 390, expScore = 195, posStr = "166_196#135_212#151_222#159_192#175_200#184_215#200_197" },
-	{ mapId = 1009,   minLvl = 150, transferId = 100935, x = 88,  y = 138, name = "Tarkan (Quái Lv190 EXP x3.0: 88#138)",  monsterLvl = 190, defenseReq = 372, expScore = 190, posStr = "88_138#56_133#56_166#83_145#95_171#90_198#113_199" },
-	{ mapId = 1009,   minLvl = 150, transferId = 100934, x = 63,  y = 89,  name = "Tarkan (Quái Lv180 EXP x2.5: 63#89)",   monsterLvl = 180, defenseReq = 355, expScore = 180, posStr = "63_89#82_93#85_118#59_96#43_110#43_74#62_63#66_37" },
-	{ mapId = 1009,   minLvl = 150, transferId = 100933, x = 105, y = 77,  name = "Tarkan (Quái Lv170 EXP x2.0: 105#77)",  monsterLvl = 170, defenseReq = 337, expScore = 170, posStr = "105_77#91_38#93_66#112_85#113_113#108_142#127_165" },
-	{ mapId = 1009,   minLvl = 150, transferId = 100932, x = 148, y = 62,  name = "Tarkan (Quái Lv160 EXP x1.5: 148#62)",  monsterLvl = 160, defenseReq = 320, expScore = 160, posStr = "148_62#198_42#176_38#144_34#120_34#123_60#146_69#172_66" },
-	{ mapId = 1009,   minLvl = 150, transferId = 100931, x = 162, y = 102, name = "Tarkan (Quái Lv150 EXP x1.0: 162#102)", monsterLvl = 150, defenseReq = 260, expScore = 150, posStr = "162_102#154_163#151_140#154_115#182_125#166_96#197_99#205_73" },
+	{ mapId = 1009,   minLvl = 150, x = 166, y = 196, name = "Tarkan (Quái Lv195 EXP x4.0: 166#196)", monsterLvl = 195, defenseReq = 390, expScore = 195 },
+	{ mapId = 1009,   minLvl = 150, x = 88,  y = 138, name = "Tarkan (Quái Lv190 EXP x3.0: 88#138)",  monsterLvl = 190, defenseReq = 372, expScore = 190 },
+	{ mapId = 1009,   minLvl = 150, x = 63,  y = 89,  name = "Tarkan (Quái Lv180 EXP x2.5: 63#89)",   monsterLvl = 180, defenseReq = 355, expScore = 180 },
+	{ mapId = 1009,   minLvl = 150, x = 105, y = 77,  name = "Tarkan (Quái Lv170 EXP x2.0: 105#77)",  monsterLvl = 170, defenseReq = 337, expScore = 170 },
+	{ mapId = 1009,   minLvl = 150, x = 148, y = 62,  name = "Tarkan (Quái Lv160 EXP x1.5: 148#62)",  monsterLvl = 160, defenseReq = 320, expScore = 160 },
+	{ mapId = 1009,   minLvl = 150, x = 162, y = 102, name = "Tarkan (Quái Lv150 EXP x1.0: 162#102)", monsterLvl = 150, defenseReq = 260, expScore = 150 },
 
 	-- 5. Atlantis (1008 - Yêu cầu Lv 100)
-	{ mapId = 1008,   minLvl = 100, transferId = 100836, x = 145, y = 201, name = "Atlantis (Bãi Đôi Lv145 EXP x4.0: 145#201)", monsterLvl = 145, defenseReq = 302, expScore = 145, posStr = "145_201#39_211#68_220#103_212#134_206#156_197" },
-	{ mapId = 1008,   minLvl = 100, transferId = 100835, x = 154, y = 159, name = "Atlantis (Bãi Đôi Lv140 EXP x3.0: 154#159)", monsterLvl = 140, defenseReq = 277, expScore = 140, posStr = "154_159#230_173#224_143#227_118#231_94#199_106#169_145#152_162#114_182" },
-	{ mapId = 1008,   minLvl = 100, transferId = 100834, x = 34,  y = 162, name = "Atlantis (Bãi Đôi Lv130 EXP x2.5: 34#162)",  monsterLvl = 130, defenseReq = 252, expScore = 130, posStr = "34_162#178_93#147_113#122_143#91_150#85_174#64_183#41_156#28_168" },
-	{ mapId = 1008,   minLvl = 100, transferId = 100833, x = 185, y = 54,  name = "Atlantis (Quái Lv120 EXP x2.0: 185#54)",     monsterLvl = 120, defenseReq = 226, expScore = 120, posStr = "185_54#60_143#77_118#113_99#130_61#162_60#202_50#220_59#235_49" },
-	{ mapId = 1008,   minLvl = 100, transferId = 100832, x = 112, y = 40,  name = "Atlantis (Quái Lv110 EXP x1.5: 112#40)",     monsterLvl = 110, defenseReq = 201, expScore = 110, posStr = "112_40#239_15#216_14#189_28#167_17#142_16#107_21#96_58#74_74#48_93" },
-	{ mapId = 1008,   minLvl = 100, transferId = 100831, x = 48,  y = 46,  name = "Atlantis (Quái Lv100 EXP x1.0: 48#46)",      monsterLvl = 100, defenseReq = 176, expScore = 100, posStr = "48_46#72_43#69_18#57_33#49_10#39_25#23_49#46_63#23_79#25_106" },
+	{ mapId = 1008,   minLvl = 100, x = 145, y = 201, name = "Atlantis (Bãi Đôi Lv145 EXP x4.0: 145#201)", monsterLvl = 145, defenseReq = 302, expScore = 145 },
+	{ mapId = 1008,   minLvl = 100, x = 154, y = 159, name = "Atlantis (Bãi Đôi Lv140 EXP x3.0: 154#159)", monsterLvl = 140, defenseReq = 277, expScore = 140 },
+	{ mapId = 1008,   minLvl = 100, x = 34,  y = 162, name = "Atlantis (Bãi Đôi Lv130 EXP x2.5: 34#162)",  monsterLvl = 130, defenseReq = 252, expScore = 130 },
+	{ mapId = 1008,   minLvl = 100, x = 185, y = 54,  name = "Atlantis (Quái Lv120 EXP x2.0: 185#54)",     monsterLvl = 120, defenseReq = 226, expScore = 120 },
+	{ mapId = 1008,   minLvl = 100, x = 112, y = 40,  name = "Atlantis (Quái Lv110 EXP x1.5: 112#40)",     monsterLvl = 110, defenseReq = 201, expScore = 110 },
+	{ mapId = 1008,   minLvl = 100, x = 48,  y = 46,  name = "Atlantis (Quái Lv100 EXP x1.0: 48#46)",      monsterLvl = 100, defenseReq = 176, expScore = 100 },
 
 	-- 4. Lost Tower 2 (100502 - Yêu cầu Lv 80 | EXP 2.40K/phút gấp đôi Lost Tower 1)
-	{ mapId = 100502, minLvl = 80,  transferId = 200033, x = 171, y = 231, name = "Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231)", monsterLvl = 95, defenseReq = 170, expScore = 98, posStr = "171_231#166_230#178_234#199_147" },
-	{ mapId = 100502, minLvl = 80,  transferId = 200032, x = 185, y = 210, name = "Lost Tower 2 (Bãi Đôi Lv75 EXP x2.0: 185#210)", monsterLvl = 88, defenseReq = 140, expScore = 88, posStr = "185_210#180_211#191_208#198_174" },
-	{ mapId = 100502, minLvl = 80,  transferId = 200031, x = 214, y = 217, name = "Lost Tower 2 (Bãi Đôi Lv60 EXP x1.0: 214#217)", monsterLvl = 78, defenseReq = 110, expScore = 78, posStr = "214_217#213_224#216_210#215_187#211_160" },
+	{ mapId = 100502, minLvl = 80,  x = 171, y = 231, name = "Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231)", monsterLvl = 95, defenseReq = 170, expScore = 98 },
+	{ mapId = 100502, minLvl = 80,  x = 185, y = 210, name = "Lost Tower 2 (Bãi Đôi Lv75 EXP x2.0: 185#210)", monsterLvl = 88, defenseReq = 140, expScore = 88 },
+	{ mapId = 100502, minLvl = 80,  x = 214, y = 217, name = "Lost Tower 2 (Bãi Đôi Lv60 EXP x1.0: 214#217)", monsterLvl = 78, defenseReq = 110, expScore = 78 },
 
 	-- 3. Lost Tower 1 (100501 - Yêu cầu Lv 60)
-	{ mapId = 100501, minLvl = 60,  transferId = 200024, x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106)", monsterLvl = 85, defenseReq = 105, expScore = 85, posStr = "194_106#190_107#199_105#166_79" },
-	{ mapId = 100501, minLvl = 60,  transferId = 200023, x = 199, y = 80,  name = "Lost Tower 1 (Bãi Đôi Lv75: 199#80)",     monsterLvl = 72, defenseReq = 90,  expScore = 72, posStr = "199_80#207_78#191_82#213_61" },
-	{ mapId = 100501, minLvl = 60,  transferId = 200021, x = 193, y = 42,  name = "Lost Tower 1 (Quái Lv60: 193#42)",        monsterLvl = 60, defenseReq = 80,  expScore = 60, posStr = "193_42#211_21#201_41" },
+	{ mapId = 100501, minLvl = 60,  x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106)", monsterLvl = 85, defenseReq = 105, expScore = 85 },
+	{ mapId = 100501, minLvl = 60,  x = 199, y = 80,  name = "Lost Tower 1 (Bãi Đôi Lv75: 199#80)",     monsterLvl = 72, defenseReq = 90,  expScore = 72 },
+	{ mapId = 100501, minLvl = 60,  x = 193, y = 42,  name = "Lost Tower 1 (Quái Lv60: 193#42)",        monsterLvl = 60, defenseReq = 80,  expScore = 60 },
 
 	-- 2. Dungeon 1 (100201 - Yêu cầu Lv 40)
-	{ mapId = 100201, minLvl = 40,  transferId = 200014, x = 66,  y = 236, name = "Dungeon 1 (Bãi Đôi Lv50: 66#236)", monsterLvl = 50, defenseReq = 75, expScore = 55, posStr = "66_236#59_238#73_234#40_223#46_186#64_186" },
-	{ mapId = 100201, minLvl = 40,  transferId = 200012, x = 96,  y = 189, name = "Dungeon 1 (Quái Lv45: 96#189)",    monsterLvl = 45, defenseReq = 55, expScore = 45, posStr = "96_189#80_211#98_202" },
-	{ mapId = 100201, minLvl = 40,  transferId = 200011, x = 99,  y = 235, name = "Dungeon 1 (Quái Lv40: 99#235)",    monsterLvl = 40, defenseReq = 40, expScore = 40, posStr = "99_235#113_232#90_234" },
+	{ mapId = 100201, minLvl = 40,  x = 66,  y = 236, name = "Dungeon 1 (Bãi Đôi Lv50: 66#236)", monsterLvl = 50, defenseReq = 75, expScore = 55 },
+	{ mapId = 100201, minLvl = 40,  x = 96,  y = 189, name = "Dungeon 1 (Quái Lv45: 96#189)",    monsterLvl = 45, defenseReq = 55, expScore = 45 },
+	{ mapId = 100201, minLvl = 40,  x = 99,  y = 235, name = "Dungeon 1 (Quái Lv40: 99#235)",    monsterLvl = 40, defenseReq = 40, expScore = 40 },
 
 	-- 1. Devias (1003 - Yêu cầu Lv 20) & Lorencia (1001 - Yêu cầu Lv 1)
-	{ mapId = 1003,   minLvl = 20,  transferId = 200004, x = 140, y = 230, name = "Devias (Kẻ Ám Sát Lv30: 140#230)", monsterLvl = 30, defenseReq = 25, expScore = 30, posStr = "140_230#137_141#174_195#157_233" },
-	{ mapId = 1003,   minLvl = 20,  transferId = 200001, x = 215, y = 45,  name = "Devias (Bọ Tuyết Lv20: 215#45)",   monsterLvl = 20, defenseReq = 0,  expScore = 20, posStr = "215_45#200_51#178_37#158_29" },
-	{ mapId = 1001,   minLvl = 1,   transferId = 0,      x = 134, y = 206, name = "Lorencia (Khô Lâu Binh: 134#206)", monsterLvl = 15, defenseReq = 0,  expScore = 15, posStr = "134_206#148_202#122_198" },
+	{ mapId = 1003,   minLvl = 20,  x = 140, y = 230, name = "Devias (Kẻ Ám Sát Lv30: 140#230)", monsterLvl = 30, defenseReq = 25, expScore = 30 },
+	{ mapId = 1003,   minLvl = 20,  x = 215, y = 45,  name = "Devias (Bọ Tuyết Lv20: 215#45)",   monsterLvl = 20, defenseReq = 0,  expScore = 20 },
+	{ mapId = 1001,   minLvl = 1,   x = 134, y = 206, name = "Lorencia (Khô Lâu Binh: 134#206)", monsterLvl = 15, defenseReq = 0,  expScore = 15 },
 }
-
-_G.Mod_SpotCoordsCache = _G.Mod_SpotCoordsCache or {}
-_G.Mod_CurrentSpotCoordIdx = _G.Mod_CurrentSpotCoordIdx or {}
-
-local function GetSpotUniqueKey(spot)
-	if not spot then return "0_0" end
-	return tostring(spot.mapId or 0) .. "_" .. tostring(spot.monsterLvl or 0) .. "_" .. tostring(spot.transferId or 0)
-end
-
--- Hàm lấy danh sách tất cả tọa độ của cùng 1 bãi quái từ chuỗi tọa độ liên tục trong cfg_Map_transfer
-local function GetMonsterSpotAllCoords(spot)
-	if not spot then return {} end
-	local spotKey = GetSpotUniqueKey(spot)
-	if _G.Mod_SpotCoordsCache[spotKey] and #_G.Mod_SpotCoordsCache[spotKey] > 0 then
-		return _G.Mod_SpotCoordsCache[spotKey]
-	end
-
-	local coords = {}
-	local seen = {}
-	local isAtlantis140 = (tonumber(spot.mapId) == 1008 and tonumber(spot.monsterLvl) == 140)
-
-	local function AddPoint(px, py)
-		px = tonumber(px)
-		py = tonumber(py)
-		if not px or not py then return end
-		-- Bãi quái Lv140 Atlantis: tọa độ 157#156 hoặc 160#153 đứng hơi xa bãi, chuẩn hóa về 154#159
-		if isAtlantis140 and ((px == 157 and py == 156) or (px == 160 and py == 153)) then
-			px, py = 154, 159
-		end
-		local k = tostring(px) .. "_" .. tostring(py)
-		if not seen[k] then
-			seen[k] = true
-			table.insert(coords, { x = px, y = py })
-		end
-	end
-
-	-- Ưu tiên tọa độ chuẩn đầu tiên của bãi
-	if spot.x and spot.y then
-		AddPoint(spot.x, spot.y)
-	end
-
-	-- Lấy chuỗi tọa độ liên tục ("x1_y1#x2_y2#...") trực tiếp từ bảng cfg_Map_transfer trong game
-	local rawPosStr = ""
-	local tId = tonumber(spot.transferId) or 0
-	if tId > 0 then
-		pcall(function()
-			local cfg = nil
-			if _G.ClientTable and _G.ClientTable.cfg_Map_transferManager and _G.ClientTable.cfg_Map_transferManager.TryGetValue then
-				cfg = _G.ClientTable.cfg_Map_transferManager:TryGetValue(tId)
-			end
-			if not cfg and _G.ConfigManager and _G.ConfigManager.FindConfigs then
-				local list = _G.ConfigManager.FindConfigs("cfg_Map_transfer", "id", tId)
-				if list and list[1] then cfg = list[1] end
-			end
-			if cfg and cfg.position and tostring(cfg.position) ~= "" then
-				rawPosStr = tostring(cfg.position)
-			end
-		end)
-	end
-
-	if rawPosStr ~= "" then
-		for token in string.gmatch(rawPosStr, "([^#]+)") do
-			local xStr, yStr = string.match(token, "(%d+)_(%d+)")
-			if xStr and yStr then
-				AddPoint(xStr, yStr)
-			end
-		end
-	end
-
-	-- Bổ sung chuỗi tọa độ fallback (nếu bảng game chưa load hoặc có thêm tọa độ phụ)
-	if spot.posStr and tostring(spot.posStr) ~= "" then
-		for token in string.gmatch(tostring(spot.posStr), "([^#]+)") do
-			local xStr, yStr = string.match(token, "(%d+)_(%d+)")
-			if xStr and yStr then
-				AddPoint(xStr, yStr)
-			end
-		end
-	end
-
-	_G.Mod_SpotCoordsCache[spotKey] = coords
-	return coords
-end
-_G.GetMonsterSpotAllCoords = GetMonsterSpotAllCoords
-
--- Kiểm tra tại tọa độ (checkX, checkY) có người chơi khác đứng trong phạm vi <= maxCells (mặc định 3 ô) không
-local function HasOtherPlayerNearCoord(checkX, checkY, maxCells)
-	maxCells = tonumber(maxCells) or 3
-	local foundPlayer = false
-	local nearName = nil
-	local nearDist = nil
-	pcall(function()
-		local me = _G.RoleManager and _G.RoleManager.me
-		if not me then return end
-		local myId = me.id or (me.data and (me.data.roleId or me.data.id))
-		local cx = tonumber(checkX)
-		local cy = tonumber(checkY)
-		if not cx or not cy then
-			local myPos = me.cellPos or me.serverCoord
-			cx = myPos and tonumber(myPos.x)
-			cy = myPos and tonumber(myPos.y)
-		end
-		if not cx or not cy then return end
-
-		local function CheckRoleObj(r)
-			if not r or r == me or foundPlayer then return end
-			local rId = r.id or (r.data and (r.data.roleId or r.data.id))
-			if myId and rId and tostring(rId) == tostring(myId) then return end
-			local rPos = r.cellPos or r.serverCoord
-			local rx = rPos and tonumber(rPos.x)
-			local ry = rPos and tonumber(rPos.y)
-			if rx and ry then
-				local dx = math.abs(rx - cx)
-				local dy = math.abs(ry - cy)
-				local cellDist = math.max(dx, dy)
-				if cellDist <= maxCells then
-					foundPlayer = true
-					nearName = tostring(r.name or (r.data and r.data.name) or rId or "Player")
-					nearDist = cellDist
-				end
-			end
-		end
-
-		if _G.RoleManager.GetRolesByType and _G.ERoleType and _G.ERoleType.Player then
-			local pList = _G.RoleManager.GetRolesByType(_G.ERoleType.Player)
-			if pList then
-				for _, r in pairs(pList) do
-					CheckRoleObj(r)
-					if foundPlayer then return end
-				end
-			end
-		end
-
-		local allRoles = _G.RoleManager.roles or _G.RoleManager.roleList or _G.RoleManager.dicRole
-		if not foundPlayer and type(allRoles) == "table" then
-			for _, r in pairs(allRoles) do
-				if r and r ~= me then
-					local rType = r.roleType or (r.GetRoleType and r:GetRoleType()) or (r.data and r.data.roleType)
-					if (_G.ERoleType and rType == _G.ERoleType.Player) or rType == 1 then
-						CheckRoleObj(r)
-						if foundPlayer then return end
-					end
-				end
-			end
-		end
-	end)
-	return foundPlayer, nearName, nearDist
-end
-_G.HasOtherPlayerNearCoord = HasOtherPlayerNearCoord
-
-local function HasOtherPlayerWithinCells(maxCells)
-	return HasOtherPlayerNearCoord(nil, nil, maxCells or 3)
-end
-_G.HasOtherPlayerWithinCells = HasOtherPlayerWithinCells
-
-local function BuildFarmPointFromSpot(spot)
-	if not spot then return nil, 0 end
-	local spotKey = GetSpotUniqueKey(spot)
-	local allCoords = GetMonsterSpotAllCoords(spot)
-	local total = #allCoords
-	local curIdx = tonumber(_G.Mod_CurrentSpotCoordIdx[spotKey]) or 1
-	if total > 0 then
-		curIdx = ((curIdx - 1) % total) + 1
-	else
-		curIdx = 1
-	end
-	_G.Mod_CurrentSpotCoordIdx[spotKey] = curIdx
-	local activeCoord = (allCoords and allCoords[curIdx]) or { x = spot.x, y = spot.y }
-	local baseName = string.gsub(tostring(spot.name or ""), ":%s*%d+#%d+%)", "")
-	if baseName ~= tostring(spot.name or "") then
-		baseName = string.format("%s: %d#%d [%d/%d])", baseName, activeCoord.x, activeCoord.y, curIdx, math.max(1, total))
-	end
-	return {
-		id = spot.mapId,
-		name = baseName,
-		x = activeCoord.x,
-		y = activeCoord.y,
-		defenseReq = spot.defenseReq,
-		monsterLvl = spot.monsterLvl,
-		efficiency = 6,
-		mapId = spot.mapId,
-		spotKey = spotKey,
-		spotRef = spot,
-		coordIdx = curIdx,
-		totalCoords = total
-	}, spot.mapId
-end
 
 GetBestMonsterFarmPoint = function(requestedMap, strictSingleMap)
 	local myLvl = GetAccuratePlayerLevel()
@@ -3182,7 +3013,16 @@ GetBestMonsterFarmPoint = function(requestedMap, strictSingleMap)
 		end
 		local chosen = bestInMap or fallbackInMap
 		if chosen then
-			return BuildFarmPointFromSpot(chosen)
+			return {
+				id = chosen.mapId,
+				name = chosen.name,
+				x = chosen.x,
+				y = chosen.y,
+				defenseReq = chosen.defenseReq,
+				monsterLvl = chosen.monsterLvl,
+				efficiency = 6,
+				mapId = chosen.mapId
+			}, chosen.mapId
 		end
 	end
 
@@ -3205,89 +3045,19 @@ GetBestMonsterFarmPoint = function(requestedMap, strictSingleMap)
 	end
 
 	local finalSpot = bestSpot or lowestDefValidMapSpot or ALL_PROGRESSION_FARM_SPOTS[#ALL_PROGRESSION_FARM_SPOTS]
-	return BuildFarmPointFromSpot(finalSpot)
+	return {
+		id = finalSpot.mapId,
+		name = finalSpot.name,
+		x = finalSpot.x,
+		y = finalSpot.y,
+		defenseReq = finalSpot.defenseReq,
+		monsterLvl = finalSpot.monsterLvl,
+		efficiency = 6,
+		mapId = finalSpot.mapId
+	}, finalSpot.mapId
 end
 _G.GetBestMonsterFarmPoint = GetBestMonsterFarmPoint
-
--- Quét người chơi xung quanh <= 3 ô khi đang đứng ở bãi quái và tự động chuyển sang tọa độ tiếp theo của cùng bãi quái đó
-local function CheckAndSwitchSpotIfPlayerNearby(bestPt, targetMap)
-	if not bestPt or not bestPt.spotRef or not targetMap then return false end
-	local allCoords = GetMonsterSpotAllCoords(bestPt.spotRef)
-	if not allCoords or #allCoords <= 1 then return false end
-
-	local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-	if curMap ~= tonumber(targetMap) then return false end
-
-	local me = _G.RoleManager and _G.RoleManager.me
-	local pos = (me and me.cellPos) or (me and me.serverCoord)
-	if not pos or not pos.x or not pos.y then return false end
-
-	-- Chỉ kiểm tra khi nhân vật đã bay đến đứng trong bãi quái hiện tại (cách tâm tọa độ <= 6 ô)
-	local distToSpot = math.max(math.abs(tonumber(pos.x) - bestPt.x), math.abs(tonumber(pos.y) - bestPt.y))
-	if distToSpot > 6 then return false end
-
-	local nowT = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
-	if (nowT - (_G.Mod_LastSwitchSpotForPlayerTime or 0)) < 3.0 then
-		return false
-	end
-
-	local hasPlayer, nearPlayerName, nearCellDist = HasOtherPlayerWithinCells(3)
-	if not hasPlayer then
-		return false
-	end
-
-	local spotKey = bestPt.spotKey or GetSpotUniqueKey(bestPt.spotRef)
-	local curIdx = tonumber(_G.Mod_CurrentSpotCoordIdx[spotKey]) or 1
-	local nextIdx = (curIdx % #allCoords) + 1
-
-	-- Tìm tọa độ tiếp theo trong danh sách chưa có người chơi đứng trong tầm 3 ô (nếu nằm trong tầm nhìn)
-	for step = 1, #allCoords - 1 do
-		local candIdx = ((curIdx + step - 1) % #allCoords) + 1
-		local candCoord = allCoords[candIdx]
-		if candCoord then
-			local occupied = HasOtherPlayerNearCoord(candCoord.x, candCoord.y, 3)
-			if not occupied then
-				nextIdx = candIdx
-				break
-			end
-		end
-	end
-
-	_G.Mod_CurrentSpotCoordIdx[spotKey] = nextIdx
-	_G.Mod_LastSwitchSpotForPlayerTime = nowT
-	local newCoord = allCoords[nextIdx]
-	Log(string.format("[Đổi Tọa Độ Bãi Quái] Phát hiện người chơi [%s] đứng cách %s ô (<= 3 ô) tại %d#%d -> Chuyển sang tọa độ [%d/%d] (%d#%d) của bãi Lv%s!",
-		tostring(nearPlayerName or "Player"), tostring(nearCellDist or 0), bestPt.x, bestPt.y,
-		nextIdx, #allCoords, newCoord.x, newCoord.y, tostring(bestPt.monsterLvl or "")), true)
-	SaveOutput()
-
-	local lineId = (_G.SceneData and _G.SceneData.line) or 1
-	pcall(function()
-		if _G.networkRequest and _G.networkRequest.ReqCallFlag then
-			_G.networkRequest.ReqCallFlag(1, 0, targetMap, lineId, newCoord.x, newCoord.y, 0)
-		end
-		if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
-			_G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
-				type = 1,
-				rid = 0,
-				mapId = targetMap,
-				line = lineId,
-				x = newCoord.x,
-				y = newCoord.y,
-				hostId = 0
-			})
-		end
-	end)
-	if _G.Mod_PerformStopMoveJiggle then
-		if Timer and Timer.Start then
-			Timer.Start(0.4, function() _G.Mod_PerformStopMoveJiggle(newCoord.x, newCoord.y) end)
-		else
-			_G.Mod_PerformStopMoveJiggle(newCoord.x, newCoord.y)
-		end
-	end
-	return true
-end
-_G.CheckAndSwitchSpotIfPlayerNearby = CheckAndSwitchSpotIfPlayerNearby
+_G.CheckAndSwitchSpotIfPlayerNearby = nil
 
 TeleportToBestFarmPoint = function(forcedMap)
 	local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
@@ -3648,11 +3418,6 @@ local function TickFarmBetweenQueenRuns(farmKcStateTime, remainWaitSec)
 				end
 			end
 		else
-			-- Nếu tại tọa độ bãi farm hiện tại có người chơi khác đứng cạnh <= 3 ô -> Đổi sang tọa độ kế tiếp của bãi quái đó!
-			if _G.CheckAndSwitchSpotIfPlayerNearby and _G.CheckAndSwitchSpotIfPlayerNearby(bestPt, targetMap) then
-				_G.Bot_LastQueenFarmTeleTime = t
-				return
-			end
 			-- Đã đứng tại bãi farm tối ưu: Bật AutoFight đánh quái (chỉ bật nếu chưa đánh để không ngắt chiêu)
 			EnsureAutoFightBossOnce()
 			if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
@@ -4635,8 +4400,6 @@ StartNewbieQuestPipeline = function()
 										SaveOutput()
 									end
 								end)
-							elseif not isFarFromSpot and _G.CheckAndSwitchSpotIfPlayerNearby then
-								_G.CheckAndSwitchSpotIfPlayerNearby(bestPt, targetMap)
 							end
 							-- Vô hiệu hóa tìm đường của quest để giữ nhân vật đứng yên tại bãi cày
 							pcall(function()
@@ -4948,8 +4711,6 @@ StartNewbieQuestPipeline = function()
 												_G.networkRequest.ReqCallFlag(1, 0, 1009, lineId, targetX, targetY, 0)
 											end
 										end)
-									elseif not isFar and _G.CheckAndSwitchSpotIfPlayerNearby then
-										_G.CheckAndSwitchSpotIfPlayerNearby(bestPt, 1009)
 									end
 									-- Luôn bật AutoFight để đánh quái gom 20 Sách Đế Vương
 									pcall(function()
@@ -5077,9 +4838,6 @@ StartNewbieQuestPipeline = function()
 								SaveOutput()
 							end
 						end)
-					elseif _G.CheckAndSwitchSpotIfPlayerNearby then
-						local bestPt, targetMap = GetBestMonsterFarmPoint(curMap)
-						_G.CheckAndSwitchSpotIfPlayerNearby(bestPt, targetMap or curMap)
 					end
 					pcall(function()
 						local me = _G.RoleManager and _G.RoleManager.me
