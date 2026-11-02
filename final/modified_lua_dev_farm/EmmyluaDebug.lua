@@ -6,7 +6,7 @@
 EmmyluaDebug = {}
 _G.Mod_IsAdmin = true
 _G.Mod_IsDev = true
-_G.Mod_ExecBtn_Visible = true
+_G.Mod_ExecBtn_Visible = false
 
 -- =========================================================================
 -- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
@@ -15,7 +15,7 @@ _G.Mod_ExecBtn_Visible = true
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsAdmin = true
     _G.Mod_IsDev = true
-    _G.Mod_ExecBtn_Visible = true
+    _G.Mod_ExecBtn_Visible = false
 
     _G.Mod_IsDebug = true
     _G.Mod_DebugMsg = function(msg)
@@ -1030,9 +1030,9 @@ local function CreateModUI()
         -- 1. Floating Execute Script Button (Chỉ hiện cho Admin / Dev)
         if _G.Mod_ExecBtn_Visible == nil then
             pcall(function()
-                _G.Mod_ExecBtn_Visible = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ExecBtn_Visible", 1) == 1
+                _G.Mod_ExecBtn_Visible = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ExecBtn_Visible", 0) == 1
             end)
-            if _G.Mod_ExecBtn_Visible == nil then _G.Mod_ExecBtn_Visible = true end
+            if _G.Mod_ExecBtn_Visible == nil then _G.Mod_ExecBtn_Visible = false end
         end
 
         local execBtnGo = GameObject("FloatingExecBtn")
@@ -2259,7 +2259,7 @@ local function CreateModUI()
         fkctRt.anchorMin, fkctRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         fkctRt.sizeDelta = Vector2(0, 0)
         local fkcTxt = fkcTxtGo:AddComponent(typeof(Text))
-        fkcTxt.text = "Farm KC"
+        fkcTxt.text = "Farm NH"
         fkcTxt.color = Color.white
         fkcTxt.fontSize = 14
         fkcTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
@@ -2276,13 +2276,13 @@ local function CreateModUI()
                 if _G.Mod_FarmKCActive then
                     fkcImg.color = Color(0.12, 0.65, 0.45, 1)
                     if _G.Mod_FarmKCCount and _G.Mod_FarmKCCount > 0 then
-                        fkcTxt.text = string.format("Farm KC (%d)", _G.Mod_FarmKCCount)
+                        fkcTxt.text = string.format("Farm NH (%d)", _G.Mod_FarmKCCount)
                     else
-                        fkcTxt.text = "Farm KC"
+                        fkcTxt.text = "Farm NH"
                     end
                 else
                     fkcImg.color = Color(0.85, 0.50, 0.05, 1)
-                    fkcTxt.text = "Farm KC"
+                    fkcTxt.text = "Farm NH"
                 end
             end)
         end
@@ -2290,12 +2290,12 @@ local function CreateModUI()
         local fkcBtn = farmKcBtnGo:AddComponent(typeof(Button))
         fkcBtn.targetGraphic = fkcImg
         fkcBtn.onClick:AddListener(function()
-            _G.Mod_FarmKCActive = not _G.Mod_FarmKCActive
+            if _G.Bot_Running then return end; _G.Mod_FarmKCActive = not _G.Mod_FarmKCActive
             if _G.Mod_FarmKCActive then
                 _G.Mod_FarmKCCount = 0
                 if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT TỰ ĐỘNG FARM KIM CƯƠNG!")
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT FARM NỮ HOÀNG!")
                 end
                 -- =========================================================================
                 -- [MOD FEATURE]: KÍCH HOẠT FARM KIM CƯƠNG NGAY KHI BẤM NÚT (KHÔNG GIỚI HẠN LEVEL)
@@ -2312,7 +2312,7 @@ local function CreateModUI()
                 _G.Mod_FarmKCCount = 0
                 if _G.UpdateFarmKCBtnUI then _G.UpdateFarmKCBtnUI() end
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT FARM KIM CƯƠNG (RESET ĐẾM VỀ 0)!")
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT FARM NỮ HOÀNG!")
                 end
             end
         end)
@@ -5179,7 +5179,7 @@ AutoRecycleBagItems = function()
         local itemNames = {}
 
         for _, item in pairs(itemsList) do
-            if item and item.id and IsRecyclableEquipment(item) then
+            if item and item.id and _G.IsRecyclableEquipment(item) then
                 local tblItem = item.tblItem or (item.data and item.data.tblItem) or {}
                 local c = item.count or (item.data and item.data.count) or 1
                 sendItems[item.id] = c
@@ -6443,7 +6443,7 @@ GetBestMonsterFarmPoint = function(curMap)
             }
 
             for _, cand in ipairs(MAP_STEP_DOWN_LIST) do
-                local myLvl = tonumber((_G.RoleManager and _G.RoleManager.me and (_G.RoleManager.me.level or (_G.RoleManager.me.data and _G.RoleManager.me.data.level))) or 1) or 1; if cand.mapId ~= curMap and myLvl >= (cand.minLvl or 1) and myDef >= cand.minDef then
+                if cand.mapId ~= curMap and myDef >= cand.minDef then
                     local candPts = nil
                     if _G.ClientTable and _G.ClientTable.cfg_Map_minimapManager and _G.ClientTable.cfg_Map_minimapManager.GetMonsterPointList then
                         candPts = _G.ClientTable.cfg_Map_minimapManager:GetMonsterPointList(cand.mapId)
@@ -6863,7 +6863,7 @@ local function CanEnhanceItem(eqItem)
 end
 _G.CanEnhanceItem = CanEnhanceItem
 
-AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished)
+AutoEvenEnhanceEquipments = function(maxTargetLvl, onFinished) if _G.Mod_TimerEnhanceEquipments then return _G.Mod_TimerEnhanceEquipments(maxTargetLvl, onFinished) end
     if _G.AutoEvenEnhanceRunning then
         _G.Log("-> [CƯỜNG HÓA] Đang có tiến trình cường hóa đang chạy, vui lòng đợi!", true)
         return
@@ -7086,7 +7086,7 @@ _G.AutoEvenEnhanceEquipments = AutoEvenEnhanceEquipments
 -- =========================================================================
 -- [MOD FEATURE]: TỰ ĐỘNG MẶC TRANG BỊ MẠNH HƠN TỪ TÚI ĐỒ (AUTO EQUIP BETTER GEAR)
 -- =========================================================================
-AutoEquipBetterItems = function()
+AutoEquipBetterItems = function() if _G.Mod_AutoEquipBetterItems then return _G.Mod_AutoEquipBetterItems() end
     pcall(function()
         if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id then
             _G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
@@ -7094,8 +7094,8 @@ AutoEquipBetterItems = function()
         end
 
         -- =========================================================================
-        -- [MOD FEATURE]: ƯU TIÊN PHÂN BỔ ĐIỂM TIỀM NĂNG TRƯỚC KHI QUÉT TRANG BỊ
-        -- Mô tả: Phân bổ sạch điểm tiềm năng còn tồn trước để nhân vật đạt chỉ số tối đa
+        -- [MOD]: ƯU TIÊN PHÂN BỔ ĐIỂM TIỀM NĂNG
+        -- Phân bổ điểm tiềm năng trước
         -- =========================================================================
         if AutoAddAttributePoints then
             pcall(AutoAddAttributePoints)
@@ -8975,13 +8975,13 @@ StartGlobal30sUpgradePipeline = function()
     _G.Global30sUpgradeTimer = Timer.StartLoop(30.0, -1, function()
         if not _G.Bot_Running or _G.Bot_PauseTask then return end
         if _G.Bot_PauseTask then return end
-        RunPeriodicUpgradeCycle()
+        _G.RunPeriodicUpgradeCycle()
     end)
     Log("-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!", true)
     SaveOutput()
 
     -- Thực thi ngay lập tức 1 chu kỳ đầu tiên không cần chờ 30 giây
-    RunPeriodicUpgradeCycle()
+    _G.RunPeriodicUpgradeCycle()
 end
 _G.StartGlobal30sUpgradePipeline = StartGlobal30sUpgradePipeline
 
@@ -9618,7 +9618,7 @@ local function CheckAndRunQueenBossBug(curLvl, targetLvl)
                 if StartStep5_MailAndUpgrade then
                     StartStep5_MailAndUpgrade()
                 elseif RunPeriodicUpgradeCycle then
-                    RunPeriodicUpgradeCycle()
+                    _G.RunPeriodicUpgradeCycle()
                 end
             end)
             end elseif false then
