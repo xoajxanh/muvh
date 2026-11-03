@@ -1,77 +1,113 @@
-$luaFile = "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_farm\Main.lua"
-$text = [System.IO.File]::ReadAllText($luaFile, [System.Text.Encoding]::UTF8)
+Add-Type -TypeDefinition @"
+using System;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
-$sb = New-Object System.Text.StringBuilder
-$i = 0
-$n = $text.Length
-while ($i -lt $n) {
-    if ($i + 3 -lt $n -and $text.Substring($i, 4) -eq "--[[") {
-        $end = $text.IndexOf("]]", $i + 4)
-        if ($end -eq -1) { break }
-        for ($k = $i; $k -lt $end + 2; $k++) {
-            if ($text[$k] -eq "`n") { [void]$sb.Append("`n") }
+public class LuaChecker {
+    public static void Verify(string path) {
+        string code = File.ReadAllText(path, Encoding.UTF8);
+        int i = 0, n = code.Length, line = 1;
+        StringBuilder sb = new StringBuilder(n);
+        while (i < n) {
+            char c = code[i];
+            if (c == '\n') { line++; sb.Append('\n'); i++; continue; }
+            if (c == '-' && i + 1 < n && code[i + 1] == '-') {
+                var m = Regex.Match(code.Substring(i, Math.Min(20, n - i)), @"^--\[(=*)\[");
+                if (m.Success) {
+                    string endPat = "]" + m.Groups[1].Value + "]";
+                    int idx = code.IndexOf(endPat, i + m.Length);
+                    if (idx < 0) throw new Exception(path + ":" + line + ": Unclosed long comment");
+                    for (int k = i; k < idx + endPat.Length; k++) if (code[k] == '\n') { line++; sb.Append('\n'); }
+                    i = idx + endPat.Length;
+                    continue;
+                } else {
+                    int idx = code.IndexOf('\n', i);
+                    if (idx < 0) break;
+                    i = idx;
+                    continue;
+                }
+            }
+            if (c == '[') {
+                var m = Regex.Match(code.Substring(i, Math.Min(20, n - i)), @"^\[(=*)\[");
+                if (m.Success) {
+                    string endPat = "]" + m.Groups[1].Value + "]";
+                    int idx = code.IndexOf(endPat, i + m.Length);
+                    if (idx < 0) throw new Exception(path + ":" + line + ": Unclosed long string");
+                    sb.Append("\"\"");
+                    for (int k = i; k < idx + endPat.Length; k++) if (code[k] == '\n') { line++; sb.Append('\n'); }
+                    i = idx + endPat.Length;
+                    continue;
+                }
+            }
+            if (c == '"' || c == '\'') {
+                char q = c; i++;
+                while (i < n) {
+                    if (code[i] == '\\') {
+                        if (i + 1 < n && code[i + 1] == '\n') { line++; sb.Append('\n'); }
+                        i += 2; continue;
+                    }
+                    if (code[i] == '\n') throw new Exception(path + ":" + line + ": Unclosed string");
+                    if (code[i] == q) { i++; break; }
+                    i++;
+                }
+                sb.Append("\"\"");
+                continue;
+            }
+            sb.Append(c);
+            i++;
         }
-        $i = $end + 2
-    }
-    elseif ($i + 1 -lt $n -and $text.Substring($i, 2) -eq "--") {
-        $end = $text.IndexOf("`n", $i + 2)
-        if ($end -eq -1) { break }
-        $i = $end
-    }
-    elseif ($text[$i] -eq '"' -or $text[$i] -eq "'") {
-        $q = $text[$i]
-        $i++
-        while ($i -lt $n -and $text[$i] -ne $q) {
-            if ($text[$i] -eq '\') { $i += 2 } else { $i++ }
+        string clean = sb.ToString();
+        var stack = new Stack<Tuple<char, int>>();
+        int curLine = 1;
+        foreach (char ch in clean) {
+            if (ch == '\n') curLine++;
+            else if (ch == '(' || ch == '{' || ch == '[') stack.Push(Tuple.Create(ch, curLine));
+            else if (ch == ')' || ch == '}' || ch == ']') {
+                if (stack.Count == 0) throw new Exception(path + ":" + curLine + ": Unexpected " + ch);
+                var top = stack.Pop();
+                if ((top.Item1 == '(' && ch != ')') || (top.Item1 == '{' && ch != '}') || (top.Item1 == '[' && ch != ']'))
+                    throw new Exception(path + ":" + curLine + ": Mismatched " + top.Item1 + " (line " + top.Item2 + ") and " + ch);
+            }
         }
-        $i++
-    }
-    elseif ($i + 1 -lt $n -and $text.Substring($i, 2) -eq "[[") {
-        $end = $text.IndexOf("]]", $i + 2)
-        if ($end -eq -1) { break }
-        for ($k = $i; $k -lt $end + 2; $k++) {
-            if ($text[$k] -eq "`n") { [void]$sb.Append("`n") }
-        }
-        $i = $end + 2
-    }
-    else {
-        [void]$sb.Append($text[$i])
-        $i++
-    }
-}
+        if (stack.Count > 0) throw new Exception(path + ":" + stack.Peek().Item2 + ": Unclosed " + stack.Peek().Item1);
 
-$clean = $sb.ToString()
-$matchesList = [regex]::Matches($clean, '\b(?:function|if|for|while|repeat|do|end|until)\b')
-$stack = New-Object System.Collections.Generic.List[string]
-for ($m = 0; $m -lt $matchesList.Count; $m++) {
-    $t = $matchesList[$m].Value
-    if ($t -eq "function" -or $t -eq "if" -or $t -eq "repeat") {
-        $stack.Add($t)
-    }
-    elseif ($t -eq "for" -or $t -eq "while") {
-        $stack.Add($t)
-        if ($m + 1 -lt $matchesList.Count -and $matchesList[$m + 1].Value -eq "do") {
-            $m++
+        var bstack = new Stack<Tuple<string, int>>();
+        string expectLoopDo = null;
+        int scanLine = 1;
+        int lastPos = 0;
+        foreach (Match m in Regex.Matches(clean, @"(?<![.\w])(function|if|while|for|do|repeat|end|until)(?![.\w])")) {
+            for (int k = lastPos; k < m.Index; k++) if (clean[k] == '\n') scanLine++;
+            lastPos = m.Index;
+            string kw = m.Groups[1].Value;
+            if (kw == "while" || kw == "for") expectLoopDo = kw;
+            else if (kw == "do") {
+                if (expectLoopDo != null) { bstack.Push(Tuple.Create(expectLoopDo + "_do", scanLine)); expectLoopDo = null; }
+                else bstack.Push(Tuple.Create("do", scanLine));
+            }
+            else if (kw == "function" || kw == "if" || kw == "repeat") bstack.Push(Tuple.Create(kw, scanLine));
+            else if (kw == "end") {
+                if (bstack.Count == 0) throw new Exception(path + ":" + scanLine + ": Extra end");
+                var top = bstack.Pop();
+                if (top.Item1 == "repeat") throw new Exception(path + ":" + scanLine + ": Expected until for repeat at line " + top.Item2);
+            }
+            else if (kw == "until") {
+                if (bstack.Count == 0) throw new Exception(path + ":" + scanLine + ": Extra until");
+                var top = bstack.Pop();
+                if (top.Item1 != "repeat") throw new Exception(path + ":" + scanLine + ": until does not match " + top.Item1 + " at line " + top.Item2);
+            }
         }
-    }
-    elseif ($t -eq "do") {
-        $stack.Add("do")
-    }
-    elseif ($t -eq "end") {
-        if ($stack.Count -eq 0 -or $stack[$stack.Count - 1] -eq "repeat") {
-            throw "MISMATCH AT end"
-        }
-        $stack.RemoveAt($stack.Count - 1)
-    }
-    elseif ($t -eq "until") {
-        if ($stack.Count -eq 0 -or $stack[$stack.Count - 1] -ne "repeat") {
-            throw "MISMATCH AT until"
-        }
-        $stack.RemoveAt($stack.Count - 1)
+        if (bstack.Count > 0) throw new Exception(path + ":" + bstack.Peek().Item2 + ": Unclosed block " + bstack.Peek().Item1);
+        Console.WriteLine("[OK] Verified syntax & blocks: " + path + " (" + line + " lines)");
     }
 }
-if ($stack.Count -ne 0) {
-    throw "Unclosed blocks: $($stack -join ', ')"
+"@
+
+$files = @(
+    "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_farm\EmmyluaDebug.lua",
+    "d:\MUVH\android\mu-decompiled\final\modified_lua_dev_farm\Main.lua"
+)
+foreach ($f in $files) {
+    [LuaChecker]::Verify($f)
 }
-$lineCount = ($text -split "`n").Count
-Write-Output "LUA_BLOCK_BALANCE_OK | Total lines: $lineCount | Unclosed stack: $($stack.Count)"

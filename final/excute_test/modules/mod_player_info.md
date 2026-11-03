@@ -58,4 +58,14 @@ print(string.format("Tọa độ hiện tại: %d#%d", pos.cellX, pos.cellY))
 
 local guild = PlayerInfo.GetGuildInfo()
 print(string.format("Bang hội: %s (HasGuild: %s)", guild.guildName, tostring(guild.hasGuild)))
+
+-- Kiểm tra có người chơi khác đứng trong phạm vi <= 2 ô quanh tâm bãi (162#102) không:
+local hasPlayer, pName, dist = PlayerInfo.HasOtherPlayerNearSpot(162, 102, 2)
+if hasPlayer then
+    print(string.format("Có người chơi %s đang đứng cách tâm bãi %d ô!", pName, dist))
+end
+
+-- Lấy số dư Kim Cương Khóa (1000050) & Cộng điểm tiềm năng theo mốc Level (Trước Lv120: 70% Trí Lực / 30% Nhanh Nhẹn; Từ Lv120+: 50/50):
+local kcKhoa = PlayerInfo.GetBoundDiamonds()
+local addedPts = PlayerInfo.AllocateAttributePointsByLevel()
 ```

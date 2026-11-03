@@ -10,13 +10,13 @@ Mục đích: **Tránh việc Agent đi mày mò lại các hàm đã có hoặc
 
 | STT | File Module | Mục Đích & Nội Dung Chính | Trạng Thái |
 |:---:|:---|:---|:---:|
-| 1 | [`mod_player_info.lua`](./mod_player_info.lua) / [MD](./mod_player_info.md) | Lấy Tên, Cấp, Career, Guild/Bang, HP/MP, Tọa độ (World/Cell/Server), PK Mode | ✅ Đã kiểm định |
+| 1 | [`mod_player_info.lua`](./mod_player_info.lua) / [MD](./mod_player_info.md) | Lấy Tên, Cấp, Career, Guild/Bang, HP/MP, Tọa độ, PK Mode, Quét người chơi lân cận (`GetNearbyPlayers`), KC Khóa (`1000050`), Cộng điểm 7/3 (<Lv120) & 50/50 (>=Lv120) | ✅ Đã kiểm định |
 | 2 | [`mod_bag_items.lua`](./mod_bag_items.lua) / [MD](./mod_bag_items.md) | Quét túi đồ, đếm số lượng item, tìm item theo ID/tên/loại, cấu trúc ItemData | ✅ Đã kiểm định |
 | 3 | [`mod_item_use.lua`](./mod_item_use.lua) / [MD](./mod_item_use.md) | Gọi lệnh dùng item: Thẻ Buff EXP, Thuốc, Mở rương, Đá truyền tống, ItemUtility | ✅ Đã kiểm định |
-| 4 | [`mod_teleport_townscroll.lua`](./mod_teleport_townscroll.lua) / [MD](./mod_teleport_townscroll.md) | Bùa về thành (20000021), Phù ngẫu nhiên (20000022), ReqCallFlag, FlyTransfer | ✅ Đã kiểm định |
+| 4 | [`mod_teleport_townscroll.lua`](./mod_teleport_townscroll.lua) / [MD](./mod_teleport_townscroll.md) | Bùa về thành (20000021), Phù ngẫu nhiên (20000022), `reqCallFlag` kèm `lineId` (`1..3`) & tọa độ tâm bãi `cfg_Map_minimap` | ✅ Đã kiểm định |
 | 5 | [`mod_item_attributes.lua`](./mod_item_attributes.lua) / [MD](./mod_item_attributes.md) | Lấy dòng Trác Việt (Excellence), Cường hóa, Gia cường, Cấp sao, Tẩy luyện, Ngọc | ✅ Đã kiểm định |
-| 6 | [`mod_movement_combat.lua`](./mod_movement_combat.lua) / [MD](./mod_movement_combat.md) | Di chuyển (MoveTo), Dừng đánh khi chạy (StopAutoFight), Xóa mục tiêu, Bật Auto | ✅ Đã kiểm định |
-| 7 | [`mod_dungeon_helper.lua`](./mod_dungeon_helper.lua) / [MD](./mod_dungeon_helper.md) | Nhận diện map Huyết Lâu / QTQ / Hang Động Vàng (260001), ReqSkipWait, ReqJoinGoldCaves, ReqExitInstance | ✅ Đã kiểm định |
+| 6 | [`mod_movement_combat.lua`](./mod_movement_combat.lua) / [MD](./mod_movement_combat.lua) | Di chuyển (MoveTo), Dừng đánh khi chạy (StopAutoFight), Xóa mục tiêu, Bật Auto | ✅ Đã kiểm định |
+| 7 | [`mod_dungeon_helper.lua`](./mod_dungeon_helper.lua) / [MD](./mod_dungeon_helper.md) | Map HL/QTQ/Hang Vàng, Mua vé 75 KC Khóa (`goodId=30107/30106`), Đếm ngược 10s sảnh chờ HL & Xếp hàng `FirstPlayer` chống trùng phòng | ✅ Đã kiểm định |
 | 8 | [`mod_core_utils.lua`](./mod_core_utils.lua) / [MD](./mod_core_utils.md) | Quản lý Timer chuẩn, Tạo Toggle/Button/Input UI, Lưu PlayerPrefs, Ghi output.txt | ✅ Đã kiểm định |
 | 9 | [`mod_ground_pickup.lua`](./mod_ground_pickup.lua) / [MD](./mod_ground_pickup.md) | Quét vật phẩm rơi trên đất đa nguồn (`ViewData` + `VipManager` + `DropItemManager`) & Vét đồ (`ReqPickUpMapItem` / `ReqPickUpMapItems`) | ✅ Đã kiểm định |
 

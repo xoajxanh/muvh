@@ -151,4 +151,110 @@ function ModPlayerInfo.GetPKMode()
     return (me and me.PKMode) or 0
 end
 
+--- Quét danh sách người chơi khác xung quanh tọa độ (refX, refY) trong bán kính ô gạch maxTileRadius (Chebyshev)
+--- Tham chiếu: Auto PK / Auto Buff trong modified_lua_dev_client\EmmyluaDebug.lua (RoleManager.GetRolesByType(1))
+function ModPlayerInfo.GetNearbyPlayers(maxTileRadius, refX, refY)
+    maxTileRadius = tonumber(maxTileRadius) or 12
+    local me = ModPlayerInfo.GetMe()
+    local meId = (me and me.data and me.data.id) or (me and me.id) or 0
+    local myPos = ModPlayerInfo.GetPosition()
+    local centerX = tonumber(refX) or myPos.serverX or myPos.cellX or 0
+    local centerY = tonumber(refY) or myPos.serverY or myPos.cellY or 0
+
+    local results = {}
+    local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
+    if not allPlayers then return results end
+
+    for _, p in pairs(allPlayers) do
+        if p and not p.isDead and (not p.hp or p.hp > 0) then
+            local pId = (p.data and p.data.id) or p.id or 0
+            if pId ~= 0 and pId ~= meId then
+                local pCell = p.serverCoord or (p.cellPos and { x = p.cellPos.x, y = p.cellPos.y })
+                if pCell and pCell.x and pCell.y then
+                    local px = tonumber(pCell.x) or 0
+                    local py = tonumber(pCell.y) or 0
+                    local dist = math.max(math.abs(px - centerX), math.abs(py - centerY))
+                    if dist <= maxTileRadius then
+                        table.insert(results, {
+                            role = p,
+                            id = pId,
+                            name = (p.data and p.data.name) or p.name or tostring(pId),
+                            x = px,
+                            y = py,
+                            dist = dist
+                        })
+                    end
+                end
+            end
+        end
+    end
+
+    if #results > 1 then
+        table.sort(results, function(a, b) return a.dist < b.dist end)
+    end
+    return results
+end
+
+--- Kiểm tra nhanh có người chơi khác đứng trong phạm vi <= maxTileRadius (mặc định 2 ô) quanh tọa độ (spotX, spotY) không
+function ModPlayerInfo.HasOtherPlayerNearSpot(spotX, spotY, maxTileRadius)
+    local list = ModPlayerInfo.GetNearbyPlayers(maxTileRadius or 2, spotX, spotY)
+    if #list > 0 then
+        return true, list[1].name, list[1].dist, list[1]
+    end
+    return false, nil, nil, nil
+end
+
+--- Lấy số lượng Kim Cương Khóa (ID 1000050 / bindDiamond), tuyệt đối không cộng gộp KC không khóa (1000040)
+function ModPlayerInfo.GetBoundDiamonds()
+    local curDiamonds = 0
+    pcall(function()
+        if _G.BagInfoData and _G.BagInfoData.CoinInfos and _G.BagInfoData.CoinInfos[1000050] ~= nil then
+            curDiamonds = tonumber(_G.BagInfoData.CoinInfos[1000050]) or 0
+        end
+        if curDiamonds <= 0 and _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+            curDiamonds = tonumber(_G.BagInfoData.GetItemTotalCountByItemId(1000050)) or 0
+        end
+        if curDiamonds <= 0 and _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.GetAttribute then
+            curDiamonds = tonumber(_G.EAttributeType and _G.ViewData.meData:GetAttribute(_G.EAttributeType.bindDiamond)) or 0
+        end
+        if curDiamonds <= 0 and _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data then
+            curDiamonds = tonumber(_G.RoleManager.me.data.diamond_bind) or 0
+        end
+    end)
+    return curDiamonds
+end
+
+--- Tự động cộng điểm tiềm năng theo mốc Level:
+--- + Trước Lv 120 (curLvl < 120): Tỷ lệ 7/3 (70% Trí Lực - energy, 30% Nhanh Nhẹn - agility)
+--- + Từ Lv 120 trở đi (curLvl >= 120): Tỷ lệ 50/50 (50% Trí Lực - energy, 50% Nhanh Nhẹn - agility)
+function ModPlayerInfo.AllocateAttributePointsByLevel()
+    local added = 0
+    pcall(function()
+        local viewAttr = (_G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData and _G.QuickFind.LuaMainPlayerViewAttrData())
+        local validPoints = (viewAttr and viewAttr.validAttributePoint) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.validAttributePoint) or 0
+        if validPoints > 0 and _G.EAttributeType then
+            local basic = ModPlayerInfo.GetBasicInfo()
+            local curLvl = tonumber(basic and basic.level) or 1
+            local agiRatio = (curLvl < 120) and 0.3 or 0.5
+            local agiPts = math.floor(validPoints * agiRatio)
+            local enePts = validPoints - agiPts
+            local attrMap = {}
+            if agiPts > 0 then attrMap[_G.EAttributeType.agility] = agiPts end
+            if enePts > 0 then attrMap[_G.EAttributeType.energy] = enePts end
+            if _G.MeController and _G.MeController.ReqAttributeModify then
+                _G.MeController.ReqAttributeModify(attrMap)
+            elseif _G.NetManager and _G.NetManager.Send and _G.RoleMessage and _G.RoleMessage.ReqAttributeModify then
+                local req = {}
+                for k, v in pairs(attrMap) do
+                    table.insert(req, { choose = k, num = v })
+                end
+                _G.NetManager.Send(_G.RoleMessage.ReqAttributeModify, { modify = req })
+            end
+            added = validPoints
+        end
+    end)
+    return added
+end
+ModPlayerInfo.AllocateAttributePoints5050 = ModPlayerInfo.AllocateAttributePointsByLevel
+
 return ModPlayerInfo

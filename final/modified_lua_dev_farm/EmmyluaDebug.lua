@@ -1459,7 +1459,7 @@ local function CreateModUI()
         sRt.anchorMax = Vector2(1, 1)
         sRt.pivot = Vector2(0.5, 1)
         sRt.anchoredPosition = Vector2(0, -146)
-        sRt.sizeDelta = Vector2(-20, 315)
+        sRt.sizeDelta = Vector2(-20, 122)
 
         local scrollRect = scrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
         scrollRect.horizontal = false
@@ -1874,14 +1874,30 @@ local function CreateModUI()
         -- =========================================================================
         _G.Mod_AutoBCDSActive = false
 
-        local btnBcdsGo = GameObject("BtnToggleBCDS")
+        -- =========================================================================
+        -- [MOD FEATURE]: TÁCH 2 NÚT ĐỘC LẬP AUTO HL & AUTO QTQ (Y = 64, HEIGHT = 40)
+        -- Mô tả: Cho phép bật/tắt riêng AUTO HL (_G.Mod_AutoBCActive) và AUTO QTQ (_G.Mod_AutoDSActive).
+        -- =========================================================================
+        if _G.Mod_AutoBCActive == nil then
+            local savedBC = 0
+            pcall(function() savedBC = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AutoBC", 0) end)
+            _G.Mod_AutoBCActive = (savedBC == 1)
+        end
+        if _G.Mod_AutoDSActive == nil then
+            local savedDS = 0
+            pcall(function() savedDS = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_AutoDS", 0) end)
+            _G.Mod_AutoDSActive = (savedDS == 1)
+        end
+        _G.Mod_AutoBCDSActive = (_G.Mod_AutoBCActive or _G.Mod_AutoDSActive)
+
+        local btnBcdsGo = GameObject("BtnToggleAutoBC")
         btnBcdsGo.transform:SetParent(panelGo.transform, false)
         local bcdsRt = btnBcdsGo:AddComponent(typeof(RectTransform))
         bcdsRt.anchorMin = Vector2(0, 0)
         bcdsRt.anchorMax = Vector2(0, 0)
         bcdsRt.pivot = Vector2(0, 0)
         bcdsRt.anchoredPosition = Vector2(15, 64)
-        bcdsRt.sizeDelta = Vector2(185, 40)
+        bcdsRt.sizeDelta = Vector2(124, 40)
 
         local bcdsImg = btnBcdsGo:AddComponent(typeof(Image))
         bcdsImg.color = Color(0.28, 0.28, 0.32, 1)
@@ -1893,15 +1909,122 @@ local function CreateModUI()
         bcdstRt.anchorMin, bcdstRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         bcdstRt.sizeDelta = Vector2(0, 0)
         local bcdsTxt = bcdsTxtGo:AddComponent(typeof(Text))
-        bcdsTxt.text = "HL / QTQ: TẮT"
+        bcdsTxt.text = _G.Mod_AutoBCActive and "AUTO HL: BẬT" or "AUTO HL: TẮT"
         bcdsTxt.color = Color(0.85, 0.85, 0.85, 1)
-        bcdsTxt.fontSize = 14
+        bcdsTxt.fontSize = 13
         bcdsTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bcdsTxt.alignment = TextAnchor.MiddleCenter
         bcdsTxt.raycastTarget = false
         if defaultFont then bcdsTxt.font = defaultFont end
 
+        _G.UpdateAutoBCBtnUI = function()
+            pcall(function()
+                if not bcdsTxt or bcdsTxt:Equals(nil) or not bcdsImg or bcdsImg:Equals(nil) then return end
+                if _G.Mod_AutoBCActive then
+                    bcdsImg.color = Color(0.15, 0.65, 0.30, 1)
+                    bcdsTxt.text = "AUTO HL: BẬT"
+                    bcdsTxt.color = Color.white
+                else
+                    bcdsImg.color = Color(0.28, 0.28, 0.32, 1)
+                    bcdsTxt.text = "AUTO HL: TẮT"
+                    bcdsTxt.color = Color(0.85, 0.85, 0.85, 1)
+                end
+            end)
+        end
+        _G.UpdateAutoBCBtnUI()
+
+        local bcdsBtn = btnBcdsGo:AddComponent(typeof(Button))
+        bcdsBtn.targetGraphic = bcdsImg
+        bcdsBtn.onClick:AddListener(function()
+            _G.Mod_AutoBCActive = not _G.Mod_AutoBCActive
+            _G.Mod_AutoBCDSActive = (_G.Mod_AutoBCActive or _G.Mod_AutoDSActive)
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AutoBC", _G.Mod_AutoBCActive and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if _G.UpdateAutoBCBtnUI then _G.UpdateAutoBCBtnUI() end
+            if _G.Mod_AutoBCActive then
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT AUTO HUYẾT LÂU (TỰ MUA VÉ 75 KC & XẾP HÀNG SOLO)!")
+                end
+                if _G.Bot_Running and not _G.Mod_IsRunningInstance and _G.CheckAndRunBloodCastleOrDemonPlaza then
+                    _G.CheckAndRunBloodCastleOrDemonPlaza()
+                end
+            else
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT AUTO HUYẾT LÂU!")
+                end
+            end
+        end)
+
+        local btnAutoDsGo = GameObject("BtnToggleAutoDS")
+        btnAutoDsGo.transform:SetParent(panelGo.transform, false)
+        local adsRt = btnAutoDsGo:AddComponent(typeof(RectTransform))
+        adsRt.anchorMin, adsRt.anchorMax, adsRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+        adsRt.anchoredPosition = Vector2(145, 64)
+        adsRt.sizeDelta = Vector2(130, 40)
+        local adsImg = btnAutoDsGo:AddComponent(typeof(Image))
+        adsImg.color = Color(0.28, 0.28, 0.32, 1)
+        adsImg.raycastTarget = true
+        local adsTxtGo = GameObject("Text")
+        adsTxtGo.transform:SetParent(btnAutoDsGo.transform, false)
+        local adstRt = adsTxtGo:AddComponent(typeof(RectTransform))
+        adstRt.anchorMin, adstRt.anchorMax, adstRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+        local adsTxt = adsTxtGo:AddComponent(typeof(Text))
+        adsTxt.text = _G.Mod_AutoDSActive and "AUTO QTQ: BẬT" or "AUTO QTQ: TẮT"
+        adsTxt.color = Color(0.85, 0.85, 0.85, 1)
+        adsTxt.fontSize = 13
+        adsTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        adsTxt.alignment = TextAnchor.MiddleCenter
+        adsTxt.raycastTarget = false
+        if defaultFont then adsTxt.font = defaultFont end
+
+        _G.UpdateAutoDSBtnUI = function()
+            pcall(function()
+                if not adsTxt or adsTxt:Equals(nil) or not adsImg or adsImg:Equals(nil) then return end
+                if _G.Mod_AutoDSActive then
+                    adsImg.color = Color(0.15, 0.65, 0.30, 1)
+                    adsTxt.text = "AUTO QTQ: BẬT"
+                    adsTxt.color = Color.white
+                else
+                    adsImg.color = Color(0.28, 0.28, 0.32, 1)
+                    adsTxt.text = "AUTO QTQ: TẮT"
+                    adsTxt.color = Color(0.85, 0.85, 0.85, 1)
+                end
+            end)
+        end
+        _G.UpdateAutoDSBtnUI()
+
         _G.UpdateAutoBCDSBtnUI = function()
+            if _G.UpdateAutoBCBtnUI then _G.UpdateAutoBCBtnUI() end
+            if _G.UpdateAutoDSBtnUI then _G.UpdateAutoDSBtnUI() end
+        end
+
+        local adsBtn = btnAutoDsGo:AddComponent(typeof(Button))
+        adsBtn.targetGraphic = adsImg
+        adsBtn.onClick:AddListener(function()
+            _G.Mod_AutoDSActive = not _G.Mod_AutoDSActive
+            _G.Mod_AutoBCDSActive = (_G.Mod_AutoBCActive or _G.Mod_AutoDSActive)
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AutoDS", _G.Mod_AutoDSActive and 1 or 0)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if _G.UpdateAutoDSBtnUI then _G.UpdateAutoDSBtnUI() end
+            if _G.Mod_AutoDSActive then
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT AUTO QUẢNG TRƯỜNG QUỶ (TỰ MUA VÉ 75 KC)!")
+                end
+                if _G.Bot_Running and not _G.Mod_IsRunningInstance and _G.CheckAndRunBloodCastleOrDemonPlaza then
+                    _G.CheckAndRunBloodCastleOrDemonPlaza()
+                end
+            else
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT AUTO QUẢNG TRƯỜNG QUỶ!")
+                end
+            end
+        end)
+
+        if false then _G.UpdateAutoBCDSBtnUI_Old = function()
             pcall(function()
                 if not bcdsTxt or bcdsTxt:Equals(nil) or not bcdsImg or bcdsImg:Equals(nil) then return end
                 if _G.Mod_AutoBCDSActive then
@@ -1910,7 +2033,7 @@ local function CreateModUI()
                     bcdsTxt.color = Color.white
                 else
                     bcdsImg.color = Color(0.28, 0.28, 0.32, 1)
-                    bcdsTxt.text = "HL / QTQ: TẮT"
+                    bcdsTxt.text = _G.Mod_AutoBCActive and "AUTO HL: BẬT" or "AUTO HL: TẮT"
                     bcdsTxt.color = Color(0.85, 0.85, 0.85, 1)
                 end
             end)
@@ -1937,6 +2060,7 @@ local function CreateModUI()
 
         -- ---------------------------------------------------------------------
         -- =========================================================================
+        end -- End if false legacy BCDS
         -- [MOD FEATURE]: NÚT TOGGLE BUG QUEST & CẤU HÌNH DELAY NỮ HOÀNG (HÀNG Y = 64)
         -- Mô tả:
         --   1. BUG QUEST: BẬT (Auto chặn & nhận 3108 bằng Mod) / TẮT (Không chặn gì cả, nhận tay thoải mái)
@@ -1957,8 +2081,8 @@ local function CreateModUI()
         btnBugQGo.transform:SetParent(panelGo.transform, false)
         local bugQRt = btnBugQGo:AddComponent(typeof(RectTransform))
         bugQRt.anchorMin, bugQRt.anchorMax, bugQRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-        bugQRt.anchoredPosition = Vector2(210, 64)
-        bugQRt.sizeDelta = Vector2(195, 40)
+        bugQRt.anchoredPosition = Vector2(281, 64)
+        bugQRt.sizeDelta = Vector2(132, 40)
 
         local bugQImg = btnBugQGo:AddComponent(typeof(Image))
         bugQImg.raycastTarget = true
@@ -1969,7 +2093,7 @@ local function CreateModUI()
         bugQtRt.anchorMin, bugQtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
         bugQtRt.sizeDelta = Vector2(0, 0)
         local bugQTxt = bugQTxtGo:AddComponent(typeof(Text))
-        bugQTxt.fontSize = 14
+        bugQTxt.fontSize = 13
         bugQTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
         bugQTxt.alignment = TextAnchor.MiddleCenter
         bugQTxt.raycastTarget = false
@@ -2012,12 +2136,12 @@ local function CreateModUI()
             end
         end)
 
-        local function CreateDelayStepBtn(btnName, label, posX, onClickFn)
+        local function CreateDelayStepBtn(btnName, label, posX, onClickFn, posY)
             local bGo = GameObject(btnName)
             bGo.transform:SetParent(panelGo.transform, false)
             local bRt = bGo:AddComponent(typeof(RectTransform))
             bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-            bRt.anchoredPosition = Vector2(posX, 64)
+            bRt.anchoredPosition = Vector2(posX, posY or 64)
             bRt.sizeDelta = Vector2(42, 40)
             local bImg = bGo:AddComponent(typeof(Image))
             bImg.color = Color(0.25, 0.25, 0.28, 1)
@@ -2038,6 +2162,97 @@ local function CreateModUI()
             btn.targetGraphic = bImg
             btn.onClick:AddListener(onClickFn)
         end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: CẤU HÌNH % VƯỢT THỦ TỪ LV 145+ (NGAY TRÊN DELAY NỮ HOÀNG)
+        -- Mô tả: Mặc định 10%, tăng/giảm 1 đơn vị mỗi lần bấm, lưu vào PlayerPrefs ("Mod_Farm_OverDefPct").
+        -- =========================================================================
+        if _G.Mod_OverDefPct == nil then
+            pcall(function()
+                _G.Mod_OverDefPct = tonumber(CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_OverDefPct", 10))
+            end)
+            if _G.Mod_OverDefPct == nil then _G.Mod_OverDefPct = 10 end
+        end
+
+        -- =========================================================================
+        -- [MOD FEATURE]: CẤU HÌNH LV BỎ NH (NGAY TRÊN % VƯỢT THỦ, Y = 160)
+        -- Mô tả: Mặc định Lv 145, tăng/giảm 1 đơn vị mỗi lần bấm, lưu vào PlayerPrefs ("Mod_Farm_StopQueenLevel").
+        --        Khi nhân vật đạt >= Lv Bỏ NH: Ngắt chu trình Farm Nữ Hoàng và mở khóa điều kiện vào AUTO HL / AUTO QTQ.
+        -- =========================================================================
+        if _G.Mod_StopQueenLevel == nil then
+            pcall(function()
+                _G.Mod_StopQueenLevel = tonumber(CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_StopQueenLevel", 145))
+            end)
+            if not _G.Mod_StopQueenLevel or _G.Mod_StopQueenLevel < 1 then
+                _G.Mod_StopQueenLevel = 145
+            end
+        end
+
+        local stopQueenLblGo = GameObject("StopQueenLvlLabel")
+        stopQueenLblGo.transform:SetParent(panelGo.transform, false)
+        local stopQueenRt = stopQueenLblGo:AddComponent(typeof(RectTransform))
+        stopQueenRt.anchorMin, stopQueenRt.anchorMax, stopQueenRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+        stopQueenRt.anchoredPosition = Vector2(466, 160)
+        stopQueenRt.sizeDelta = Vector2(253, 40)
+        local stopQueenTxt = stopQueenLblGo:AddComponent(typeof(Text))
+        stopQueenTxt.text = "Lv Bỏ NH: " .. tostring(_G.Mod_StopQueenLevel)
+        stopQueenTxt.color = Color(0.55, 0.92, 1.0, 1)
+        stopQueenTxt.fontSize = 15
+        stopQueenTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        stopQueenTxt.alignment = TextAnchor.MiddleCenter
+        stopQueenTxt.raycastTarget = false
+        if defaultFont then stopQueenTxt.font = defaultFont end
+
+        local function SaveAndRefreshStopQueenLvl(newVal)
+            _G.Mod_StopQueenLevel = math.max(1, math.min(400, tonumber(newVal) or 145))
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_StopQueenLevel", _G.Mod_StopQueenLevel)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if stopQueenTxt and not stopQueenTxt:Equals(nil) then
+                stopQueenTxt.text = "Lv Bỏ NH: " .. tostring(_G.Mod_StopQueenLevel)
+            end
+        end
+
+        CreateDelayStepBtn("BtnStopQueenLvlMinus", "-", 420, function()
+            SaveAndRefreshStopQueenLvl((tonumber(_G.Mod_StopQueenLevel) or 145) - 1)
+        end, 160)
+        CreateDelayStepBtn("BtnStopQueenLvlPlus", "+", 723, function()
+            SaveAndRefreshStopQueenLvl((tonumber(_G.Mod_StopQueenLevel) or 145) + 1)
+        end, 160)
+
+        local overDefLblGo = GameObject("OverDefLabel")
+        overDefLblGo.transform:SetParent(panelGo.transform, false)
+        local overDefRt = overDefLblGo:AddComponent(typeof(RectTransform))
+        overDefRt.anchorMin, overDefRt.anchorMax, overDefRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+        overDefRt.anchoredPosition = Vector2(466, 112)
+        overDefRt.sizeDelta = Vector2(253, 40)
+        local overDefTxt = overDefLblGo:AddComponent(typeof(Text))
+        overDefTxt.text = "% Vượt Thủ: " .. tostring(_G.Mod_OverDefPct) .. "%"
+        overDefTxt.color = Color(1, 0.9, 0.55, 1)
+        overDefTxt.fontSize = 15
+        overDefTxt.fontStyle = CS.UnityEngine.FontStyle.Normal
+        overDefTxt.alignment = TextAnchor.MiddleCenter
+        overDefTxt.raycastTarget = false
+        if defaultFont then overDefTxt.font = defaultFont end
+
+        local function SaveAndRefreshOverDefPct(newVal)
+            _G.Mod_OverDefPct = math.max(0, math.min(100, tonumber(newVal) or 10))
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_OverDefPct", _G.Mod_OverDefPct)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            if overDefTxt and not overDefTxt:Equals(nil) then
+                overDefTxt.text = "% Vượt Thủ: " .. tostring(_G.Mod_OverDefPct) .. "%"
+            end
+        end
+
+        CreateDelayStepBtn("BtnOverDefMinus", "-", 420, function()
+            SaveAndRefreshOverDefPct((tonumber(_G.Mod_OverDefPct) or 10) - 1)
+        end, 112)
+        CreateDelayStepBtn("BtnOverDefPlus", "+", 723, function()
+            SaveAndRefreshOverDefPct((tonumber(_G.Mod_OverDefPct) or 10) + 1)
+        end, 112)
 
         local qDelayLblGo = GameObject("QueenDelayLabel")
         qDelayLblGo.transform:SetParent(panelGo.transform, false)
@@ -5328,7 +5543,8 @@ end
 _G.TeleportToTrainMapAndFarm = TeleportToTrainMapAndFarm
 
 -- =========================================================================
--- 10. TỰ ĐỘNG PHÂN BỔ ĐIỂM TIỀM NĂNG (ĐỀ XUẤT TĂNG ĐIỂM THÔNG MINH)
+-- [MOD FEATURE]: 10. TỰ ĐỘNG PHÂN BỔ ĐIỂM TIỀM NĂNG THEO MỐC LEVEL (TRƯỚC LV120: 70% TRÍ LỰC / 30% NHANH NHẸN | TỪ LV120+: 50/50)
+-- Mô tả: Chia đều 50% điểm tiềm năng vào Nhanh Nhẹn (Agility) và 50% vào Trí Lực (Energy).
 -- =========================================================================
 local function AutoAddAttributePoints()
     pcall(function()
@@ -5371,6 +5587,21 @@ local function AutoAddAttributePoints()
             if agiPts > 0 then attrMap[EAttributeType.agility] = agiPts end
         end
 
+        -- =========================================================================
+        -- [MOD FEATURE]: CỘNG ĐIỂM TIỀM NĂNG 50/50 (50% NHANH NHẸN + 50% TRÍ LỰC)
+        -- =========================================================================
+        -- [MOD FEATURE]: CỘNG ĐIỂM TIỀM NĂNG (TRƯỚC LV 120: 70% TRÍ LỰC + 30% NHANH NHẸN | TỪ LV 120+: 50% TRÍ LỰC + 50% NHANH NHẸN)
+        local pMe = _G.RoleManager and _G.RoleManager.me
+        local curLvl = (_G.GetAccuratePlayerLevel and _G.GetAccuratePlayerLevel())
+            or tonumber((viewAttr and viewAttr.level) or (ViewData and ViewData.meData and ViewData.meData.level) or (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1) or 1
+        local agiRatio = (curLvl < 120) and 0.3 or 0.5
+        local ratioLabel = (curLvl < 120) and "7/3 (70% Trí Lực - 30% Nhanh Nhẹn)" or "50/50"
+        local agiPts50 = math.floor(validPoints * agiRatio)
+        local enePts50 = validPoints - agiPts50
+        attrMap = {}
+        if agiPts50 > 0 then attrMap[EAttributeType.agility] = agiPts50 end
+        if enePts50 > 0 then attrMap[EAttributeType.energy] = enePts50 end
+
         if MeController and MeController.ReqAttributeModify then
             MeController.ReqAttributeModify(attrMap)
         else
@@ -5383,7 +5614,7 @@ local function AutoAddAttributePoints()
             end
         end
 
-        Log(string.format("-> [ĐỀ XUẤT TĂNG ĐIỂM] Đã tự động phân bổ %d điểm tiềm năng cho Class %s!", validPoints, tostring(career)))
+        Log(string.format("-> [TĂNG ĐIỂM %s | LV %d] Đã tự động phân bổ %d điểm tiềm năng (Trí Lực: +%d | Nhanh Nhẹn: +%d) cho Class %s!", ratioLabel, curLvl, validPoints, enePts50, agiPts50, tostring(career)))
         SaveOutput()
 
         -- Đóng popup gợi ý tăng điểm nếu đang hiện

@@ -34,7 +34,30 @@ Module này chuyên trách việc nhận diện bản đồ phó bản, kiểm t
    * **Giờ chẵn (0h, 2h, 4h, 6h...)**: Quảng Trường Quỷ (Demon Plaza).
    * **Phút 00 -> 14**: Cửa phó bản mở, bot ưu tiên vào phó bản trước bãi train.
 
-5. **Hang Động Vàng (Gold Cave - Auto Kim Phiếu)**:
+5. **Mua Vé Huyết Lâu / Quảng Trường Quỷ Bằng 75 Kim Cương Khóa (`cfg_Item_buy.lua`)**:
+   * **Vé Huyết Lâu (`Áo Choàng Trong Suốt`)**:
+     * Item ID: `8000050` (không khóa) / `8000057` (khóa).
+     * Shop `goodId`: **`30107`** | Giá: **`1000050#75`** (75 Kim Cương Khóa).
+   * **Vé Quảng Trường Quỷ (`Vé Thông Hành Quảng Trường Quỷ`)**:
+     * Item ID: `8000040` (không khóa) / `8000047` (khóa).
+     * Shop `goodId`: **`30106`** | Giá: **`1000050#75`** (75 Kim Cương Khóa).
+   * **Gửi lệnh mua trực tiếp**:
+     ```lua
+     _G.networkRequest.ReqBuy(30107, 1) -- Mua Áo Choàng Trong Suốt (HL)
+     _G.networkRequest.ReqBuy(30106, 1) -- Mua Vé Thông Hành QTQ
+     ```
+
+6. **Cơ Chế Sảnh Chờ 10 Giây Huyết Lâu & Xếp Hàng Solo (`FirstPlayer` Anti-Overlap)**:
+   * *Tham chiếu `Instance_GoalUI.lua` lines 140-146, 1114-1126*:
+     * Giai đoạn 1 (`BloodCastleStage.INIT == 1`, panel `self.wait`): Đứng ở sảnh chờ **10 giây** (`initWaitTime`), đếm ngược `totalTime = math.floor(self.args.basic.nextStateTime - Time.GetServerTime() / 1000)` trên `lab_prepareTimeValue`. Lúc này nút `[Mở Ngay]` (`btn_rightnow`) **chưa hiển thị**.
+     * Giai đoạn 2 (`BloodCastleStage.WAITING == 2`, panel `self.prepare`): Sau 10 giây, nút `[Mở Ngay]` (`btn_rightnow` / `ReqSkipWait`) mới xuất hiện.
+     * Giai đoạn 3 (`BloodCastleStage.RUNNING == 3`, panel `self.underway`): Khi bấm `[Mở Ngay]`, phó bản bắt đầu tính điểm đánh quái và đóng sảnh chờ (người vào sau sẽ được xếp sang phòng mới).
+   * **Quy tắc xếp hàng nhiều Acc (`FirstPlayer`)**:
+     * Ngay khi vào sảnh HL (`0.5s .. 1.0s`), quét người chơi xung quanh (`ModPlayerInfo.GetNearbyPlayers()`).
+     * Nếu **không có ai (`#otherPlayers == 0`)**: Đánh dấu `isFirstPlayer = true`, đứng chờ hết 10s `INIT` rồi bấm `[Mở Ngay]` (`ReqSkipWait`) và cắm đầu chạy thẳng lên `14#30` (chỉ khi `dist <= 1.5m` mới bật `AutoFight`).
+     * Nếu **thấy có người chơi khác (`#otherPlayers > 0` và chưa phải `isFirstPlayer`)**: Ghi nhớ thời gian đếm ngược còn lại (`nextStateTime - Time.GetServerTime()/1000 + 2s`), lập tức thoát HL (`ReqExitInstance()`, thoát ở sảnh không mất vé/lượt), chờ bên ngoài cho người đầu tiên mở phòng xong rồi mới vào lại.
+
+7. **Hang Động Vàng (Gold Cave - Auto Kim Phiếu)**:
    * **Map ID**: `260001`
    * **Vé vào cổng**: `1000193` (Kim Phiếu)
    * **Boss**: `20220001` (Thần Rồng Vàng)

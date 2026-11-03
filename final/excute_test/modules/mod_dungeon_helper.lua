@@ -120,11 +120,24 @@ function ModDungeonHelper.CheckDungeonEligibility(dungeonType, curLvl)
 
     local haveTicket = 0
     pcall(function()
-        if ticketId > 0 and _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
-            haveTicket = _G.BagInfoData.GetItemTotalCountByItemId(ticketId) or 0
+        if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+            if ticketId > 0 then
+                haveTicket = _G.BagInfoData.GetItemTotalCountByItemId(ticketId) or 0
+            end
+            if dungeonType == "BloodCastle" then
+                local c1 = _G.BagInfoData.GetItemTotalCountByItemId(8000050) or 0
+                local c2 = _G.BagInfoData.GetItemTotalCountByItemId(8000057) or 0
+                haveTicket = math.max(haveTicket, c1 + c2)
+            elseif dungeonType == "DemonPlaza" then
+                local c1 = _G.BagInfoData.GetItemTotalCountByItemId(8000040) or 0
+                local c2 = _G.BagInfoData.GetItemTotalCountByItemId(8000047) or 0
+                haveTicket = math.max(haveTicket, c1 + c2)
+            end
         end
     end)
 
+    local shopGoodId = (dungeonType == "BloodCastle") and 30107 or 30106
+    local shopCostDiamond = 75
     local canEnter = (targetMapId > 0) and (leftCount > 0) and (haveTicket >= needTicket)
 
     return {
@@ -133,7 +146,95 @@ function ModDungeonHelper.CheckDungeonEligibility(dungeonType, curLvl)
         leftCount = leftCount,
         ticketId = ticketId,
         haveTicket = haveTicket,
-        needTicket = needTicket
+        needTicket = needTicket,
+        shopGoodId = shopGoodId,
+        shopCostDiamond = shopCostDiamond
+    }
+end
+
+--- Cấu hình mua vé phó bản bằng Kim Cương Khóa (ID 1000050) trong Shop (cfg_Item_buy.lua)
+ModDungeonHelper.TICKET_SHOP_CONFIG = {
+    BloodCastle = {
+        goodId = 30107,
+        costDiamond = 75,
+        ticketIds = { 8000050, 8000057 },
+        name = "Áo Choàng Trong Suốt"
+    },
+    DemonPlaza = {
+        goodId = 30106,
+        costDiamond = 75,
+        ticketIds = { 8000040, 8000047 },
+        name = "Vé Thông Hành Quảng Trường Quỷ"
+    }
+}
+
+--- Tự động mua vé Huyết Lâu (goodId=30107) hoặc Quảng Trường Quỷ (goodId=30106) bằng 75 Kim Cương Khóa (1000050)
+-- @param dungeonType string: "BloodCastle" hoặc "DemonPlaza"
+-- @param curBoundDiamonds number|nil: Số KC khóa hiện có (tự lấy nếu nil)
+-- @return boolean, number: bought, goodId
+function ModDungeonHelper.BuyDungeonTicketWithBoundDiamonds(dungeonType, curBoundDiamonds)
+    local shopCfg = ModDungeonHelper.TICKET_SHOP_CONFIG[dungeonType]
+    if not shopCfg then return false, 0 end
+
+    if curBoundDiamonds == nil then
+        curBoundDiamonds = 0
+        pcall(function()
+            if _G.BagInfoData and _G.BagInfoData.CoinInfos and _G.BagInfoData.CoinInfos[1000050] ~= nil then
+                curBoundDiamonds = tonumber(_G.BagInfoData.CoinInfos[1000050]) or 0
+            elseif _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+                curBoundDiamonds = tonumber(_G.BagInfoData.GetItemTotalCountByItemId(1000050)) or 0
+            end
+        end)
+    end
+
+    if (tonumber(curBoundDiamonds) or 0) < shopCfg.costDiamond then
+        return false, shopCfg.goodId
+    end
+
+    local sent = false
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqBuy then
+            _G.networkRequest.ReqBuy(shopCfg.goodId, 1)
+            sent = true
+        elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = shopCfg.goodId, buyCount = 1 })
+            sent = true
+        end
+    end)
+    return sent, shopCfg.goodId
+end
+
+--- Lấy trạng thái sảnh chờ Huyết Lâu (INIT = 1 chờ 10s mở nút Mở Ngay, WAITING = 2 đã hiện nút Mở Ngay, RUNNING = 3 đang đánh)
+-- và thời gian đếm ngược còn lại (giây) của giai đoạn hiện tại
+-- @return table: { stage = number, remainSec = number, isInitLobby = bool, isReadyToSkipWait = bool, isRunning = bool }
+function ModDungeonHelper.GetBloodCastleLobbyStateAndCountdown()
+    local stage = 0
+    local remainSec = 10
+    pcall(function()
+        local inData = _G.TranScriptData and _G.TranScriptData.InTranscriptData
+        if inData and inData.basic then
+            local basic = inData.basic
+            local innerBasic = basic.basic or basic
+            stage = tonumber(innerBasic.state or _G.TranScriptData.InTranscriptStage or 0) or 0
+            local nextStateTime = tonumber(basic.nextStateTime) or 0
+            local srvSec = (_G.Time and _G.Time.GetServerTime and (_G.Time.GetServerTime() / 1000)) or os.time()
+            if nextStateTime > 0 and srvSec > 0 then
+                local diff = math.ceil(nextStateTime - srvSec)
+                if diff >= 0 and diff <= 600 then
+                    remainSec = diff
+                end
+            end
+        end
+    end)
+    local initStage = (_G.BloodCastleStage and _G.BloodCastleStage.INIT) or 1
+    local waitStage = (_G.BloodCastleStage and _G.BloodCastleStage.WAITING) or 2
+    local runStage = (_G.BloodCastleStage and _G.BloodCastleStage.RUNNING) or 3
+    return {
+        stage = stage,
+        remainSec = remainSec,
+        isInitLobby = (stage == initStage or stage == 0),
+        isReadyToSkipWait = (stage == waitStage),
+        isRunning = (stage == runStage)
     }
 end
 

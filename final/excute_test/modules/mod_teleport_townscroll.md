@@ -31,3 +31,8 @@ Module này chuyên trách việc sử dụng Bùa Về Thành Lorencia, Phù Ba
      ```lua
      _G.EventManager.Dispatch(_G.Event.Map_ChangeMap, { mapId = targetMapId })
      ```
+
+4. **Dịch Chuyển Chính Xác Tới Tâm Bãi Quái (`cfg_Map_minimap.lua`) Kèm Đổi Kênh (`Line 1..3`)**:
+   * Dùng `ModTeleport.TeleportToSpotWithLine(mapId, lineId, x, y)`:
+     * Gọi `_G.networkRequest.reqCallFlag(mapId, lineId, x, y, 1)` (hoặc `MapMessage.ReqCallFlag`).
+     * Nếu nhân vật đang đứng cùng `mapId` nhưng khác `lineId` (`SceneData.line ~= lineId`), gọi kèm `_G.Scene.ReqChangeLine(lineId)` để ép chuyển sang đúng kênh `1..3` (ví dụ Atlantis `1008` và Tarkan `1009` đều có 3 kênh `lineNum = 3` trong `cfg_Map_map.lua`, nhân 5–6 điểm tâm bãi trong `cfg_Map_minimap.lua` thành 15–18 bãi farm độc lập).

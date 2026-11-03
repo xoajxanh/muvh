@@ -132,4 +132,46 @@ function ModTeleport.FlyToMap(mapId, targetPos)
     return false
 end
 
+--- Dịch chuyển chính xác tới Bản đồ + Kênh (Line 1..3) + Tọa độ (x, y) bằng reqCallFlag
+-- Nếu đang cùng map nhưng khác kênh (line), tự động gửi thêm Scene.ReqChangeLine(lineId)
+-- @param mapId number: ID bản đồ (ví dụ 1008: Atlantis, 1009: Tarkan)
+-- @param lineId number: Kênh đích (1, 2, 3...)
+-- @param x number: Tọa độ X tâm bãi quái (từ cfg_Map_minimap.lua)
+-- @param y number: Tọa độ Y tâm bãi quái (từ cfg_Map_minimap.lua)
+function ModTeleport.TeleportToSpotWithLine(mapId, lineId, x, y)
+    mapId = tonumber(mapId) or 0
+    lineId = tonumber(lineId) or (_G.SceneData and _G.SceneData.line) or 1
+    local sx = math.floor(tonumber(x) or 0)
+    local sy = math.floor(tonumber(y) or 0)
+    if mapId <= 0 or sx <= 0 or sy <= 0 then return false end
+
+    local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
+    local curLine = tonumber((_G.SceneData and _G.SceneData.line) or 1) or 1
+
+    if curMap == mapId and curLine ~= lineId then
+        pcall(function()
+            if _G.Scene and _G.Scene.ReqChangeLine then
+                _G.Scene.ReqChangeLine(lineId)
+            elseif _G.networkRequest and _G.networkRequest.ReqChangeLine then
+                _G.networkRequest.ReqChangeLine(lineId)
+            end
+        end)
+    end
+
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.reqCallFlag then
+            _G.networkRequest.reqCallFlag(mapId, lineId, sx, sy, 1)
+        elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+            _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                mapId = mapId,
+                line = lineId,
+                x = sx,
+                y = sy,
+                type = 1
+            })
+        end
+    end)
+    return true
+end
+
 return ModTeleport
