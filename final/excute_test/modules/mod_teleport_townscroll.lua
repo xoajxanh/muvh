@@ -132,42 +132,63 @@ function ModTeleport.FlyToMap(mapId, targetPos)
     return false
 end
 
---- Dịch chuyển chính xác tới Bản đồ + Kênh (Line 1..3) + Tọa độ (x, y) bằng reqCallFlag
--- Nếu đang cùng map nhưng khác kênh (line), tự động gửi thêm Scene.ReqChangeLine(lineId)
+--- Lấy số Kênh (Tuyến 1..3) hiện tại của nhân vật chuẩn xác từ SceneData.cline
+function ModTeleport.GetCurrentMapLine()
+    if _G.SceneData then
+        local cl = tonumber(_G.SceneData.cline)
+        if cl and cl > 0 then return cl end
+        local ln = tonumber(_G.SceneData.line or _G.SceneData.lineIndex)
+        if ln and ln > 0 then return ln end
+    end
+    return 1
+end
+
+--- Dịch chuyển chính xác tới Bản đồ + Kênh (Line 1..3) + Tọa độ (x, y) bằng ReqCallFlag
+-- Nếu đang cùng map nhưng khác kênh (line), tự động gửi thêm ReqTransferTransmit(transferId, lineId, true)
+-- và cập nhật mỏ neo QiJiHelperData.meCellPos để AutoFight không kéo nhân vật chạy ngược về bãi cũ.
 -- @param mapId number: ID bản đồ (ví dụ 1008: Atlantis, 1009: Tarkan)
 -- @param lineId number: Kênh đích (1, 2, 3...)
 -- @param x number: Tọa độ X tâm bãi quái (từ cfg_Map_minimap.lua)
 -- @param y number: Tọa độ Y tâm bãi quái (từ cfg_Map_minimap.lua)
 function ModTeleport.TeleportToSpotWithLine(mapId, lineId, x, y)
     mapId = tonumber(mapId) or 0
-    lineId = tonumber(lineId) or (_G.SceneData and _G.SceneData.line) or 1
+    local curLine = ModTeleport.GetCurrentMapLine()
+    lineId = tonumber(lineId) or curLine or 1
     local sx = math.floor(tonumber(x) or 0)
     local sy = math.floor(tonumber(y) or 0)
     if mapId <= 0 or sx <= 0 or sy <= 0 then return false end
 
     local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-    local curLine = tonumber((_G.SceneData and _G.SceneData.line) or 1) or 1
-
-    if curMap == mapId and curLine ~= lineId then
-        pcall(function()
-            if _G.Scene and _G.Scene.ReqChangeLine then
-                _G.Scene.ReqChangeLine(lineId)
-            elseif _G.networkRequest and _G.networkRequest.ReqChangeLine then
-                _G.networkRequest.ReqChangeLine(lineId)
-            end
-        end)
-    end
 
     pcall(function()
-        if _G.networkRequest and _G.networkRequest.reqCallFlag then
-            _G.networkRequest.reqCallFlag(mapId, lineId, sx, sy, 1)
+        local me = _G.RoleManager and _G.RoleManager.me
+        if me then
+            if me.StopMove then me:StopMove() end
+            me.TargetAvatar = nil
+        end
+        if _G.QiJiHelperData and CS and CS.UnityEngine and CS.UnityEngine.Vector2Int then
+            _G.QiJiHelperData.meCellPos = CS.UnityEngine.Vector2Int(sx, sy)
+        end
+
+        if curMap == mapId and curLine ~= lineId then
+            local groupId = (_G.SceneData and _G.SceneData.groupId) or mapId
+            local transferId = _G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(groupId)
+            if transferId and _G.networkRequest and _G.networkRequest.ReqTransferTransmit then
+                _G.networkRequest.ReqTransferTransmit(transferId, lineId, true)
+            end
+        end
+
+        if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+            _G.networkRequest.ReqCallFlag(1, 0, mapId, lineId, sx, sy, 0)
         elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
             _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                type = 1,
+                rid = 0,
                 mapId = mapId,
                 line = lineId,
                 x = sx,
                 y = sy,
-                type = 1
+                hostId = 0
             })
         end
     end)

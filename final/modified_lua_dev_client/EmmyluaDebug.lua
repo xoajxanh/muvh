@@ -2642,27 +2642,31 @@ local function CreateModUI()
         end
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
 
+        -- =========================================================================
+        -- [MOD FEATURE]: HỖ TRỢ CẤP CHUYỂN TỪ C1 ĐẾN C15 (TIER RANGE C1-C15)
+        -- Mô tả: Mở rộng dải cấp chuyển Chính/Phụ từ C3-C12 sang C1-C15 cho Client & Admin.
+        -- =========================================================================
         local function GetAvailableTiers()
             if _G.Mod_Config_Reincarnation_Primary == nil then
                 pcall(function()
                     local p = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
-                    if p >= 3 and p <= 12 then _G.Mod_Config_Reincarnation_Primary = p end
+                    if p >= 1 and p <= 15 then _G.Mod_Config_Reincarnation_Primary = p end
                 end)
             end
             if _G.Mod_Config_Reincarnation_Secondary == nil then
                 pcall(function()
                     local s = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0)
-                    if s >= 3 and s <= 12 then _G.Mod_Config_Reincarnation_Secondary = s end
+                    if s >= 1 and s <= 15 then _G.Mod_Config_Reincarnation_Secondary = s end
                 end)
             end
             local p = _G.Mod_Config_Reincarnation_Primary or GetPlayerReincarnationLevel() or 8
             local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
 
             local tiers = {}
-            if s >= 3 and s <= 12 then
+            if s >= 1 and s <= 15 then
                 table.insert(tiers, "C" .. tostring(s))
             end
-            if p >= 3 and p <= 12 and p ~= s then
+            if p >= 1 and p <= 15 and p ~= s then
                 table.insert(tiers, "C" .. tostring(p))
             end
             if #tiers == 0 then
@@ -2715,15 +2719,21 @@ local function CreateModUI()
         _G.GetKundunTiers = GetKundunTiers
 
         -- =========================================================================
-        -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C3-C12 (BOSS WATCHER & CONFIG)
+        -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & THEO DÕI BOSS CÁC TẦNG C1-C15 (BOSS WATCHER & CONFIG)
         -- Mô tả: Cấu hình chuẩn cho Auto Boss và cấu hình chi tiết đa vị trí riêng cho Tab Thông Tin Boss Cơ Bản.
         -- =========================================================================
         -- =========================================================================
-        -- [MOD FEATURE]: TỌA ĐỘ CHUẨN CỔNG TRUYỀN TỐNG BOSS C3-C12 CHO REQCALLFLAG
+        -- [MOD FEATURE]: TỌA ĐỘ CHUẨN CỔNG TRUYỀN TỐNG BOSS C1-C15 CHO REQCALLFLAG
         -- Mô tả: Ánh xạ 100% transferId của Boss Trang Sức, Thí Luyện, Luyện Ngục sang tọa độ (x, y)
         --        từ cfg_Map_transfer để phục vụ ReqCallFlag bay thẳng trong Auto Hunt & Boss Watcher.
         -- =========================================================================
         local Mod_BossTransferCoords = {
+            [105201101] = { x = 197, y = 151 },
+            [105201102] = { x = 172, y = 77 },
+            [105201103] = { x = 85, y = 54 },
+            [105202101] = { x = 197, y = 151 },
+            [105202102] = { x = 172, y = 77 },
+            [105202103] = { x = 85, y = 54 },
             [105203101] = { x = 197, y = 151 },
             [105203102] = { x = 85, y = 54 },
             [105204101] = { x = 197, y = 151 },
@@ -2744,6 +2754,15 @@ local function CreateModUI()
             [105211102] = { x = 85, y = 54 },
             [105212101] = { x = 197, y = 151 },
             [105212102] = { x = 85, y = 54 },
+            [105213101] = { x = 197, y = 151 },
+            [105213102] = { x = 85, y = 54 },
+            [105214101] = { x = 197, y = 151 },
+            [105214102] = { x = 85, y = 54 },
+            [105215101] = { x = 197, y = 151 },
+            [105215102] = { x = 85, y = 54 },
+            [10640101] = { x = 132, y = 140 },
+            [10640102] = { x = 88, y = 66 },
+            [10640103] = { x = 112, y = 36 },
             [10640201] = { x = 100, y = 146 },
             [10640202] = { x = 68, y = 84 },
             [10640203] = { x = 206, y = 152 },
@@ -2774,6 +2793,15 @@ local function CreateModUI()
             [10641101] = { x = 90, y = 98 },
             [10641102] = { x = 158, y = 78 },
             [10641103] = { x = 126, y = 234 },
+            [10641201] = { x = 90, y = 98 },
+            [10641202] = { x = 158, y = 78 },
+            [10641203] = { x = 126, y = 234 },
+            [10641301] = { x = 90, y = 98 },
+            [10641302] = { x = 158, y = 78 },
+            [10641303] = { x = 126, y = 234 },
+            [10641401] = { x = 90, y = 98 },
+            [10641402] = { x = 158, y = 78 },
+            [10641403] = { x = 126, y = 234 },
             [106701101] = { x = 150, y = 101 },
             [106701102] = { x = 115, y = 107 },
             [106701103] = { x = 146, y = 120 },
@@ -2810,6 +2838,15 @@ local function CreateModUI()
             [106710101] = { x = 150, y = 101 },
             [106710102] = { x = 146, y = 120 },
             [106710103] = { x = 108, y = 150 },
+            [106711101] = { x = 150, y = 101 },
+            [106711102] = { x = 146, y = 120 },
+            [106711103] = { x = 108, y = 150 },
+            [106712101] = { x = 150, y = 101 },
+            [106712102] = { x = 146, y = 120 },
+            [106712103] = { x = 108, y = 150 },
+            [106713101] = { x = 150, y = 101 },
+            [106713102] = { x = 146, y = 120 },
+            [106713103] = { x = 108, y = 150 },
         }
         _G.Mod_BossTransferCoords = Mod_BossTransferCoords
 
@@ -2861,7 +2898,64 @@ local function CreateModUI()
         end
         _G.GetBossSpotCount = GetBossSpotCount
 
-        -- 1. Cấu hình Chuẩn & Đa Vị Trí (Dành cho Auto Boss & Tab Thông Tin Boss C3-C12)
+        -- =========================================================================
+        -- [MOD FEATURE]: BỔ SUNG CẤU HÌNH BẢN ĐỒ BOSS C1 & C2 (MOD_MAPSCONFIG_C1 & C2)
+        -- Mô tả:
+        --   - C1: Hoang Dã C1 (101058) + Trang Sức C1 (105201, hiển thị đủ 3 Boss, ẩn nút Thoát PB).
+        --   - C2: Hoang Dã C2 (101057) + Trang Sức C2 (105202, hiển thị đủ 3 Boss, ẩn nút Thoát PB) + Thí Luyện Cánh 1 (106401).
+        -- =========================================================================
+        _G.Mod_MapsConfig_c1 = {
+            {
+                mapId = 101058,
+                title = "Hoang Dã C1",
+                bosses = {
+                    { id = 10175807, name = "Hồn Nhện Băng", col = 1, posX = 125, posY = 87, spots = { { x = 125, y = 87 } }, useCallFlag = true },
+                    { id = 10175808, name = "Phẫn Nộ", col = 2, posX = 226, posY = 153, spots = { { x = 226, y = 153 } }, useCallFlag = true },
+                    { id = 10175809, name = "Cuồng Bạo", col = 3, posX = 199, posY = 25, spots = { { x = 199, y = 25 } }, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105201,
+                title = "Trang Sức C1",
+                bosses = {
+                    { id = 10520101, name = "Nhện Băng", col = 1, transferId = 105201101 },
+                    { id = 10520102, name = "Phẫn Nộ", col = 2, transferId = 105201102 },
+                    { id = 10520103, name = "Cuồng Bạo", col = 3, transferId = 105201103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c2 = {
+            {
+                mapId = 101057,
+                title = "Hoang Dã C2",
+                bosses = {
+                    { id = 10175707, name = "Khổng Lồ Lửa", col = 1, posX = 214, posY = 87, spots = { { x = 214, y = 87 } }, useCallFlag = true },
+                    { id = 10175708, name = "Phẫn Nộ", col = 2, posX = 54, posY = 19, spots = { { x = 54, y = 19 } }, useCallFlag = true },
+                    { id = 10175709, name = "Cuồng Bạo", col = 3, posX = 17, posY = 213, spots = { { x = 17, y = 213 } }, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105202,
+                title = "Trang Sức C2",
+                bosses = {
+                    { id = 10520201, name = "Nhện U Linh", col = 1, transferId = 105202101 },
+                    { id = 10520202, name = "Phẫn Nộ", col = 2, transferId = 105202102 },
+                    { id = 10520203, name = "Cuồng Bạo", col = 3, transferId = 105202103 },
+                }
+            },
+            {
+                mapId = 106401,
+                title = "Thí Luyện Cánh 1",
+                bosses = {
+                    { id = 10640101, name = "CS Tôm Hùm", col = 1, transferId = 10640101 },
+                    { id = 10640102, name = "Ngang Ngược", col = 2, transferId = 10640102 },
+                    { id = 10640103, name = "Tà Ác", col = 3, transferId = 10640103 },
+                }
+            },
+        }
+
+        -- 1. Cấu hình Chuẩn & Đa Vị Trí (Dành cho Auto Boss & Tab Thông Tin Boss C1-C12)
         _G.Mod_MapsConfig_c3 = {
             {
                 mapId = 101094,
@@ -3252,13 +3346,134 @@ local function CreateModUI()
             },
         }
 
+        -- =========================================================================
+        -- [MOD FEATURE]: HỖ TRỢ CẤP CHUYỂN C13, C14, C15 (REINCARNATION TIER C13-C15)
+        -- Mô tả: Bổ sung cấu hình bản đồ và boss cho Chuyển 13, Chuyển 14 và Chuyển 15.
+        -- =========================================================================
+        _G.Mod_MapsConfig_c13 = {
+            {
+                mapId = 10132,
+                title = "Hoang Dã C13",
+                bosses = {
+                    { id = 1013207, name = "T.Quân Mammon", col = 1, posX = 160, posY = 98, spots = { { x = 160, y = 98 }, { x = 217, y = 233 } }, useCallFlag = true },
+                    { id = 1013208, name = "Phẫn Nộ", col = 2, posX = 49, posY = 192, spots = { { x = 49, y = 192 }, { x = 157, y = 33 } }, useCallFlag = true },
+                    { id = 1013209, name = "Cuồng Bạo", col = 3, posX = 20, posY = 94, spots = { { x = 20, y = 94 }, { x = 46, y = 48 } }, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105213,
+                title = "Trang Sức C13",
+                bosses = {
+                    { id = 10521301, name = "T.Quân Mammon", col = 1, transferId = 105213101 },
+                    { id = 10521302, name = "Phẫn Nộ", col = 2, transferId = 105213102 },
+                    { id = 999105213, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
+                }
+            },
+            {
+                mapId = 106412,
+                title = "Thí Luyện Cánh 12",
+                bosses = {
+                    { id = 10641201, name = "N.Cá Hai Ngạnh", col = 1, transferId = 10641201 },
+                    { id = 10641202, name = "Ngang Ngược", col = 2, transferId = 10641202 },
+                    { id = 10641203, name = "Tà Ác", col = 3, transferId = 10641203 },
+                }
+            },
+            {
+                mapId = 106711,
+                title = "Luyện Ngục C13",
+                bosses = {
+                    { id = 10671201, name = "Q.Đốc Ma Tinh", col = 1, transferId = 106711101 },
+                    { id = 10671202, name = "Ngang Ngược", col = 2, transferId = 106711102 },
+                    { id = 10671203, name = "Tà Ác", col = 3, transferId = 106711103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c14 = {
+            {
+                mapId = 10133,
+                title = "Hoang Dã C14",
+                bosses = {
+                    { id = 1013307, name = "M.Vương Asmodeus", col = 1, posX = 160, posY = 98, spots = { { x = 160, y = 98 }, { x = 217, y = 233 } }, useCallFlag = true },
+                    { id = 1013308, name = "Phẫn Nộ", col = 2, posX = 49, posY = 192, spots = { { x = 49, y = 192 }, { x = 157, y = 33 } }, useCallFlag = true },
+                    { id = 1013309, name = "Cuồng Bạo", col = 3, posX = 20, posY = 94, spots = { { x = 20, y = 94 }, { x = 46, y = 48 } }, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105214,
+                title = "Trang Sức C14",
+                bosses = {
+                    { id = 10521401, name = "M.Vương Asmodeus", col = 1, transferId = 105214101 },
+                    { id = 10521402, name = "Phẫn Nộ", col = 2, transferId = 105214102 },
+                    { id = 999105214, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
+                }
+            },
+            {
+                mapId = 106413,
+                title = "Thí Luyện Cánh 13",
+                bosses = {
+                    { id = 10641301, name = "Nô Bộc N.Cá", col = 1, transferId = 10641301 },
+                    { id = 10641302, name = "Ngang Ngược", col = 2, transferId = 10641302 },
+                    { id = 10641303, name = "Tà Ác", col = 3, transferId = 10641303 },
+                }
+            },
+            {
+                mapId = 106712,
+                title = "Luyện Ngục C14",
+                bosses = {
+                    { id = 10671301, name = "Thủ Vệ Ma Tinh", col = 1, transferId = 106712101 },
+                    { id = 10671302, name = "Ngang Ngược", col = 2, transferId = 106712102 },
+                    { id = 10671303, name = "Tà Ác", col = 3, transferId = 106712103 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c15 = {
+            {
+                mapId = 10137,
+                title = "Hoang Dã C15",
+                bosses = {
+                    { id = 1013707, name = "Kinh Hãi Fenrir", col = 1, posX = 221, posY = 40, spots = { { x = 221, y = 40 }, { x = 38, y = 13 } }, useCallFlag = true },
+                    { id = 1013708, name = "Phẫn Nộ", col = 2, posX = 215, posY = 133, spots = { { x = 215, y = 133 }, { x = 13, y = 133 } }, useCallFlag = true },
+                    { id = 1013709, name = "Cuồng Bạo", col = 3, posX = 219, posY = 188, spots = { { x = 219, y = 188 }, { x = 97, y = 220 } }, useCallFlag = true },
+                }
+            },
+            {
+                mapId = 105215,
+                title = "Trang Sức C15",
+                bosses = {
+                    { id = 10521501, name = "Kinh Hãi Fenrir", col = 1, transferId = 105215101 },
+                    { id = 10521502, name = "Phẫn Nộ", col = 2, transferId = 105215102 },
+                    { id = 999105215, name = "[ THOÁT PB ]", col = 3, isExitBtn = true },
+                }
+            },
+            {
+                mapId = 106414,
+                title = "Thí Luyện Cánh 14",
+                bosses = {
+                    { id = 10641401, name = "Thủ Hộ N.Cá", col = 1, transferId = 10641401 },
+                    { id = 10641402, name = "Ngang Ngược", col = 2, transferId = 10641402 },
+                    { id = 10641403, name = "Tà Ác", col = 3, transferId = 10641403 },
+                }
+            },
+            {
+                mapId = 106713,
+                title = "Luyện Ngục C15",
+                bosses = {
+                    { id = 10671401, name = "Muff", col = 1, transferId = 106713101 },
+                    { id = 10671402, name = "Ngang Ngược", col = 2, transferId = 106713102 },
+                    { id = 10671403, name = "Tà Ác", col = 3, transferId = 106713103 },
+                }
+            },
+        }
+
         local function GetMapsConfigByTier(tierTag)
             if not tierTag or tierTag == "" then
                 local p = _G.Mod_Config_Reincarnation_Primary
                 if not p then
                     pcall(function()
                         local prefP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0)
-                        if prefP >= 3 and prefP <= 12 then p = prefP end
+                        if prefP >= 1 and prefP <= 15 then p = prefP end
                     end)
                 end
                 p = p or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
@@ -3435,10 +3650,26 @@ local function CreateModUI()
                 local sepIdx = 1
 
                 -- =========================================================================
-                -- [MOD FEATURE]: HIỂN THỊ ĐA TAB BOSS CƠ BẢN CHO ADMIN (ADMIN MULTI-TIER BOSS TABS)
-                -- Mô tả: Quyền Admin load 4 tab tương tự Kundun Info (GetKundunTiers), User thường load 2 tab (GetAvailableTiers).
+                -- [MOD FEATURE]: HIỂN THỊ ĐA TAB BOSS CƠ BẢN CHO ADMIN (ADMIN MULTI-TIER BOSS TABS C1-C15)
+                -- Mô tả: Quyền Admin load tối đa 4 tab (hỗ trợ từ C1 đến C15), User thường load 2 tab (GetAvailableTiers).
                 -- =========================================================================
-                local tierTags = (_G.Mod_IsAdmin and GetKundunTiers and GetKundunTiers()) or (GetAvailableTiers and GetAvailableTiers()) or { "C7", "C8" }
+                local tierTags = nil
+                if _G.Mod_IsAdmin then
+                    tierTags = {}
+                    local p = _G.Mod_Config_Reincarnation_Primary or (GetPlayerReincarnationLevel and GetPlayerReincarnationLevel()) or 8
+                    local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
+                    if s >= 1 and s <= 15 and s < (p - 3) then
+                        table.insert(tierTags, "C" .. tostring(s))
+                    end
+                    for i = p - 3, p do
+                        if i >= 1 and i <= 15 then
+                            table.insert(tierTags, "C" .. tostring(i))
+                        end
+                    end
+                    if #tierTags == 0 then tierTags = { "C7", "C8" } end
+                else
+                    tierTags = (GetAvailableTiers and GetAvailableTiers()) or { "C7", "C8" }
+                end
                 local isTabValid = false
                 for _, tag in ipairs(tierTags) do
                     if _G.ModBossTab == tag then
@@ -5140,7 +5371,7 @@ local function CreateModUI()
                                 end
 
                                 -- 2. Cấu hình Tách Đồ Bộ theo SubType & Tier (Không áp dụng cho Trang Sức Trác Việt 18, 19, 26)
-                                if prefix and tier >= 3 and tier <= 12 then
+                                if prefix and tier >= 1 and tier <= 15 then
                                     local varName = prefix .. "_C" .. tostring(tier)
                                     if _G.Mod_SmeltConfig[varName] then
                                         shouldSmelt = true
@@ -5160,11 +5391,11 @@ local function CreateModUI()
                                     if isJewelryTracViet then
                                         local tvTier = (quality and quality > 0) and quality or tier
                                         evalTier = tvTier
-                                        if tvTier and tvTier >= 3 and tvTier <= 12 then
+                                        if tvTier and tvTier >= 1 and tvTier <= 15 then
                                             keepGoodVar = "KeepGoodTV_C" .. tostring(tvTier)
                                         end
                                     else
-                                        if tier and tier >= 3 and tier <= 12 then
+                                        if tier and tier >= 1 and tier <= 15 then
                                             keepGoodVar = "KeepGood_C" .. tostring(tier)
                                         end
                                     end
@@ -5981,7 +6212,7 @@ local function CreateModUI()
 
                             local mapTypeRules = {
                                 [1] = { name = "Hoang Dã", cols = { 3, 2, 1 } },
-                                [2] = { name = "Trang Sức", cols = { 2, 1 } },
+                                [2] = { name = "Trang Sức", cols = { 3, 2, 1 } },
                                 [3] = { name = "Thí Luyện", cols = { 3, 2, 1 } },
                                 [4] = { name = "Luyện Ngục", cols = { 3, 2, 1 } },
                             }
@@ -11849,7 +12080,7 @@ local function CreateModUI()
                     Grade_8 = false,
                     Grade_9Plus = false,
                 }
-                for t = 3, 12 do
+                for t = 1, 15 do
                     _G.Mod_SmeltConfig["KeepGood_C" .. t] = true
                     _G.Mod_SmeltConfig["KeepGoodTV_C" .. t] = true
                 end
@@ -15420,8 +15651,8 @@ local function CreateModUI()
                 return { go = btnGo, img = img, txt = txt, btn = btn, tabName = tabName }
             end
 
-            -- Tạo sẵn Pool cho tất cả Tier từ C3 tới C12
-            local allTiers = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
+            -- Tạo sẵn Pool cho tất cả Tier từ C1 tới C15
+            local allTiers = { "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15" }
             local tierTabBtns = {}
             for _, tag in ipairs(allTiers) do
                 local tBtn = CreateTierTab("[ BOSS " .. tag .. " ]", tag)
@@ -15488,7 +15719,7 @@ local function CreateModUI()
                 local tracVietTiers = {}
                 for _, offset in ipairs({ 3, 2, 1, 0 }) do
                     local tierNum = x - offset
-                    if tierNum >= 3 and tierNum <= 12 then
+                    if tierNum >= 1 and tierNum <= 15 then
                         table.insert(tracVietTiers, "C" .. tostring(tierNum))
                     end
                 end
@@ -15498,7 +15729,7 @@ local function CreateModUI()
                 local doBoTiers = {}
                 for _, offset in ipairs({ 2, 1, 0, -1 }) do
                     local tierNum = x - offset
-                    if tierNum >= 3 and tierNum <= 12 then
+                    if tierNum >= 1 and tierNum <= 15 then
                         table.insert(doBoTiers, "C" .. tostring(tierNum))
                     end
                 end
@@ -17607,14 +17838,14 @@ local function CreateModUI()
                 local curPriVal = _G.Mod_Config_Reincarnation_Primary
                 if not curPriVal then
                     pcall(function() curPriVal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_PrimaryTier", 0) end)
-                    if not curPriVal or curPriVal < 3 or curPriVal > 12 then curPriVal = nil end
+                    if not curPriVal or curPriVal < 1 or curPriVal > 15 then curPriVal = nil end
                 end
                 curPriVal = curPriVal or _G.Mod_Admin_PrimaryTier or 8
 
                 local curSecVal = _G.Mod_Config_Reincarnation_Secondary
                 if not curSecVal then
                     pcall(function() curSecVal = CS.UnityEngine.PlayerPrefs.GetInt("Mod_SecondaryTier", 0) end)
-                    if not curSecVal or curSecVal < 3 or curSecVal > 12 then curSecVal = nil end
+                    if not curSecVal or curSecVal < 1 or curSecVal > 15 then curSecVal = nil end
                 end
                 curSecVal = curSecVal or _G.Mod_Admin_SecondaryTier or 7
 
@@ -17707,8 +17938,8 @@ local function CreateModUI()
                 applyBtn.onClick:AddListener(function()
                     local pVal = tonumber(priInField.text) or 8
                     local sVal = tonumber(secInField.text) or 7
-                    if pVal < 3 or pVal > 12 then pVal = 8 end
-                    if sVal < 3 or sVal > 12 then sVal = 7 end
+                    if pVal < 1 or pVal > 15 then pVal = 8 end
+                    if sVal < 1 or sVal > 15 then sVal = 7 end
                     priInField.text = tostring(pVal)
                     secInField.text = tostring(sVal)
 
@@ -18075,7 +18306,7 @@ local function CreateModUI()
                 trLbl2Rt.anchoredPosition = Vector2(210, 0)
                 trLbl2Rt.sizeDelta = Vector2(150, 32)
                 local trLbl2Txt = trLbl2Go:AddComponent(typeof(Text))
-                trLbl2Txt.text = "4. Chuyển phụ (3-12):"
+                trLbl2Txt.text = "4. Chuyển phụ (1-15):"
                 trLbl2Txt.color, trLbl2Txt.fontSize = Color.white, 14
                 trLbl2Txt.alignment = TextAnchor.MiddleLeft
                 if defaultFont then trLbl2Txt.font = defaultFont end
@@ -18561,8 +18792,8 @@ local function CreateModUI()
 
                     local pMain = tonumber(kg.mainTier) or 8
                     local pSub = tonumber(kg.subTier) or 7
-                    if pMain < 3 or pMain > 12 then pMain = 8 end
-                    if pSub < 3 or pSub > 12 then pSub = 7 end
+                    if pMain < 1 or pMain > 15 then pMain = 8 end
+                    if pSub < 1 or pSub > 15 then pSub = 7 end
 
                     -- Xác định Thời Hạn (Duration)
                     local durInputVal = (customDaysField and customDaysField.text and customDaysField.text ~= "") and customDaysField.text or kg.customDaysStr

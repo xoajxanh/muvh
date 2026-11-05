@@ -111,4 +111,114 @@ function ModMovementCombat.RushToCoord(tx, ty, threshold, onArrived)
     end
 end
 
+--- Kiểm tra xem role có phải là "Rồng Con-Vàng" (ID 164001..164099, 100113) hay không
+-- @param role table: Đối tượng quái
+-- @return boolean
+function ModMovementCombat.IsGoldenBabyDragon(role)
+    if not role then return false end
+    local rType = role.RoleType
+    local monsterRoleType = (_G.ERoleType and _G.ERoleType.Monster) or 2
+    if rType ~= nil and rType ~= monsterRoleType then
+        return false
+    end
+
+    local cfgId = tonumber(
+        (role.GetConfigId and role:GetConfigId())
+        or role.configId
+        or (role.data and (role.data.configId or (role.data.configData and role.data.configData.id) or (role.data.config_Monster and role.data.config_Monster.id)))
+        or 0
+    ) or 0
+
+    if (cfgId >= 164001 and cfgId <= 164099) or cfgId == 100113 then
+        return true
+    end
+
+    local roleName = tostring(
+        role.name
+        or (role.data and (role.data.name or (role.data.configData and role.data.configData.name) or (role.data.config_Monster and role.data.config_Monster.name)))
+        or ""
+    )
+    if roleName == "" and cfgId > 0 and _G.ClientTable and _G.ClientTable.cfg_Monster_monsterManager then
+        local okCfg, mCfg = pcall(function()
+            return _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId, "id")
+                or _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId)
+        end)
+        if okCfg and mCfg and mCfg.name then
+            roleName = tostring(mCfg.name)
+        end
+    end
+
+    if roleName ~= "" then
+        if string.find(roleName, "Rồng Con-Vàng", 1, true)
+            or string.find(roleName, "Rồng Con Vàng", 1, true)
+            or string.find(roleName, "Rong Con-Vang", 1, true)
+            or string.find(roleName, "Rong Con Vang", 1, true) then
+            return true
+        end
+    end
+
+    return false
+end
+
+--- Hook RoleTargetManager & Me.SetTarget để chặn chọn mục tiêu Rồng Con-Vàng khi _G.Bot_Running == true
+function ModMovementCombat.EnsureGoldenDragonTargetFilterHooked()
+    pcall(function()
+        local rtm = _G.RoleTargetManager
+        if rtm and not rtm._modHookedGoldenDragonFilter then
+            rtm._modHookedGoldenDragonFilter = true
+            local origIsCanAttackMonster = rtm.IsCanAttackMonster
+            if type(origIsCanAttackMonster) == "function" then
+                rtm.IsCanAttackMonster = function(role)
+                    if _G.Bot_Running and ModMovementCombat.IsGoldenBabyDragon(role) then return false end
+                    return origIsCanAttackMonster(role)
+                end
+            end
+            local origGetCanAttackRole = rtm.GetCanAttackRole
+            if type(origGetCanAttackRole) == "function" then
+                rtm.GetCanAttackRole = function(role)
+                    if _G.Bot_Running and ModMovementCombat.IsGoldenBabyDragon(role) then return false end
+                    return origGetCanAttackRole(role)
+                end
+            end
+            local origGetCanAttackRoleOnHookTime = rtm.GetCanAttackRoleOnHookTime
+            if type(origGetCanAttackRoleOnHookTime) == "function" then
+                rtm.GetCanAttackRoleOnHookTime = function(role)
+                    if _G.Bot_Running and ModMovementCombat.IsGoldenBabyDragon(role) then return false end
+                    return origGetCanAttackRoleOnHookTime(role)
+                end
+            end
+        end
+
+        local meClass = _G.Me
+        if meClass and not meClass._modHookedGoldenDragonTarget then
+            meClass._modHookedGoldenDragonTarget = true
+            local origSetTarget = meClass.SetTarget
+            if type(origSetTarget) == "function" then
+                meClass.SetTarget = function(self, avatar, ...)
+                    if _G.Bot_Running and avatar ~= nil and ModMovementCombat.IsGoldenBabyDragon(avatar) then return end
+                    return origSetTarget(self, avatar, ...)
+                end
+            end
+            local origSetTargetAvatar = meClass.SetTargetAvatar
+            if type(origSetTargetAvatar) == "function" then
+                meClass.SetTargetAvatar = function(self, avatar, ...)
+                    if _G.Bot_Running and avatar ~= nil and ModMovementCombat.IsGoldenBabyDragon(avatar) then return end
+                    return origSetTargetAvatar(self, avatar, ...)
+                end
+            end
+        end
+
+        if _G.Bot_Running then
+            local me = _G.RoleManager and _G.RoleManager.me
+            if me and me.TargetAvatar and ModMovementCombat.IsGoldenBabyDragon(me.TargetAvatar) then
+                if me.CloseTarget then pcall(function() me:CloseTarget() end) end
+                me.TargetAvatar = nil
+                if _G.RoleTargetManager and _G.RoleTargetManager.ClearSelectMonsterTarget then
+                    pcall(_G.RoleTargetManager.ClearSelectMonsterTarget)
+                end
+            end
+        end
+    end)
+end
+
 return ModMovementCombat

@@ -47,6 +47,7 @@ _G.Mod_InstanceMonitorTimer = _G.Mod_InstanceMonitorTimer or nil
 _G.Mod_IsRunningInstance = _G.Mod_IsRunningInstance or false
 _G.Mod_BC_AllowSkipWait = _G.Mod_BC_AllowSkipWait or false
 _G.Mod_BC_NextRetryTime = _G.Mod_BC_NextRetryTime or 0
+_G.Mod_DS_NextRetryTime = _G.Mod_DS_NextRetryTime or 0
 
 local function GetConfiguredStopQueenLevel()
 	local stopLv = tonumber(_G.Mod_StopQueenLevel)
@@ -84,14 +85,15 @@ end
 _G.GetCurrentBoundDiamonds = GetCurrentBoundDiamonds
 
 -- Lắng nghe sự kiện cập nhật trạng thái phó bản:
--- Riêng Huyết Lâu (1012000..1012099) chỉ bấm Mở Ngay khi đã xác nhận FirstPlayer và hết 10s sảnh chờ
+-- Cả Huyết Lâu (1012000..1012099) và Quảng Trường Quỷ (1010000..1010099) chỉ bấm Mở Ngay khi đã xác nhận FirstPlayer và hết 10s sảnh chờ
 pcall(function()
 	if _G.EventManager and _G.Event and _G.Event.UpdateCopyDataInfo then
 		_G.EventManager.RegistEvent(_G.Event.UpdateCopyDataInfo, function(id, msg)
 			if not _G.Bot_Running or _G.Bot_PauseTask then return end
 			local cMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
 			local inBC = (cMap >= 1012000 and cMap <= 1012099)
-			if inBC and not _G.Mod_BC_AllowSkipWait then
+			local inDS = (cMap >= 1010000 and cMap <= 1010099)
+			if (inBC or inDS) and not _G.Mod_BC_AllowSkipWait then
 				return
 			end
 			pcall(function()
@@ -150,13 +152,60 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 		end
 		_G.Mod_IsRunningInstance = true
 		_G.Mod_BC_AllowSkipWait = false
-		Log("[Phó Bản] : Đang giám sát phó bản (Kiểm tra sảnh chờ & mục tiêu cấp độ)...", true)
+		Log("[Phó Bản] : Đang giám sát phó bản (Kiểm tra sảnh chờ FirstPlayer & mục tiêu cấp độ)...", true)
 		SaveOutput()
 		local monitorTicks = 0
 		local hasSkippedWait = false
-		local bcLobbyChecked = false
 		local bcIsFirstPlayer = false
+		local bcConfirmedOwner = false
 		local bcEntryRealTime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+
+		-- Quét đa nguồn (RoleManager + ViewData) tất cả người chơi khác trong phó bản để không bị miss dữ liệu khi model 3D chưa kịp khởi tạo
+		local function ScanOtherPlayersInLobby(myRoleId)
+			local seenIds = {}
+			local otherPlayerCount = 0
+			local otherPlayerName = nil
+			local minOtherRoleId = nil
+			pcall(function()
+				local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
+				if allPlayers then
+					for _, p in pairs(allPlayers) do
+						if p and not p.isDead then
+							local pId = tonumber((p.data and p.data.id) or p.id or 0) or 0
+							if pId ~= 0 and pId ~= myRoleId and not seenIds[pId] then
+								seenIds[pId] = true
+								otherPlayerCount = otherPlayerCount + 1
+								if not otherPlayerName then
+									otherPlayerName = (p.data and p.data.name) or p.name or tostring(pId)
+								end
+								if not minOtherRoleId or pId < minOtherRoleId then
+									minOtherRoleId = pId
+								end
+							end
+						end
+					end
+				end
+				local viewObjs = _G.ViewData and _G.ViewData.GetGameObjectsInView and _G.ViewData.GetGameObjectsInView()
+				if viewObjs then
+					for _, obj in pairs(viewObjs) do
+						if obj and (obj.realPlayer == true or obj.roleType == 1 or (_G.ERoleType and obj.roleType == _G.ERoleType.Player)) then
+							local pId = tonumber(obj.id or obj.roleId or 0) or 0
+							if pId ~= 0 and pId ~= myRoleId and (not obj.hp or obj.hp > 0) and not seenIds[pId] then
+								seenIds[pId] = true
+								otherPlayerCount = otherPlayerCount + 1
+								if not otherPlayerName then
+									otherPlayerName = obj.name or tostring(pId)
+								end
+								if not minOtherRoleId or pId < minOtherRoleId then
+									minOtherRoleId = pId
+								end
+							end
+						end
+					end
+				end
+			end)
+			return otherPlayerCount, otherPlayerName, minOtherRoleId
+		end
 
 		-- Hàm dừng đánh & xóa mục tiêu chuẩn bản Client (để nhân vật cắm đầu chạy thẳng tới điểm hẹn không bị quái/cổng kéo lại)
 		local function StopFightAndClearTargetInDungeon()
@@ -210,7 +259,7 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 			end)
 		end
 
-		-- Quét 0.5s/lần để kiểm tra cấp mục tiêu, quét sảnh chờ 10s Huyết Lâu và giám sát chiến đấu
+		-- Quét 0.5s/lần để kiểm tra cấp mục tiêu, quét sảnh chờ 10s (cả Huyết Lâu & Quảng Trường Quỷ) và giám sát chiến đấu
 		_G.Mod_InstanceMonitorTimer = Timer.StartLoop(0.5, -1, function()
 			if not _G.Bot_Running or _G.Bot_PauseTask then return end
 			monitorTicks = monitorTicks + 1
@@ -263,121 +312,118 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 				return
 			end
 
-			if inTrans then
-				if inBC then
-					-- =========================================================================
-					-- [MOD FEATURE]: CHỐNG TRÙNG HUYẾT LÂU NHIỀU ACC (FIRSTPLAYER 10S LOBBY CHECK)
-					-- =========================================================================
-					local bcState = 0
-					local bcRemainCountdown = 10
-					pcall(function()
-						local basic = _G.TranScriptData and _G.TranScriptData.InTranscriptData and _G.TranScriptData.InTranscriptData.basic
-						if basic then
-							bcState = tonumber(basic.state) or 0
-							local srvMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
-							if basic.nextStateTime and srvMs > 0 then
-								local diff = math.ceil((tonumber(basic.nextStateTime) - tonumber(srvMs)) / 1000)
-								if diff >= 0 and diff <= 60 then
-									bcRemainCountdown = diff
-								end
+			if inTrans and (inBC or inDS) then
+				-- =========================================================================
+				-- [MOD FEATURE]: CHỐNG TRÙNG HUYẾT LÂU & QUẢNG TRƯỜNG QUỶ NHIỀU ACC (FIRSTPLAYER 10S LOBBY CHECK)
+				-- Mô tả:
+				--   - Áp dụng đồng nhất cho cả Huyết Lâu (1012000..1012099) và Quảng Trường Quỷ (1010000..1010099).
+				--   - Trong 10s sảnh chờ: Dừng AutoFight, quét đa nguồn (RoleManager + ViewData) liên tục mỗi 0.5s.
+				--   - Người vào trước (đứng sảnh >= 2.5s không có ai) khóa cờ `bcConfirmedOwner = true`.
+				--   - Người vào sau phát hiện đã có người trong sảnh lập tức `ReqExitInstance` (không mất vé/lượt),
+				--     chờ hết đếm ngược sảnh + 3s rồi tự động báo danh vào phòng mới!
+				-- =========================================================================
+				local instTitle = inBC and "Huyết Lâu" or "Quảng Trường Quỷ"
+				local instState = 0
+				local instRemainCountdown = 10
+				pcall(function()
+					local basic = _G.TranScriptData and _G.TranScriptData.InTranscriptData and _G.TranScriptData.InTranscriptData.basic
+					if basic then
+						instState = tonumber(basic.state) or 0
+						local srvMs = (_G.Time and _G.Time.GetServerTime and _G.Time.GetServerTime()) or 0
+						if basic.nextStateTime and srvMs > 0 then
+							local diff = math.ceil((tonumber(basic.nextStateTime) - tonumber(srvMs)) / 1000)
+							if diff >= 0 and diff <= 60 then
+								instRemainCountdown = diff
 							end
-						end
-					end)
-
-					-- Quét người chơi khác trong sảnh chờ ngay sau khi load map (monitorTicks >= 2 ~ 1.0s)
-					if not bcLobbyChecked and monitorTicks >= 2 then
-						bcLobbyChecked = true
-						local otherPlayerCount = 0
-						local otherPlayerName = nil
-						local minOtherRoleId = nil
-						local myRoleId = (liveMe and liveMe.data and liveMe.data.id) or (liveMe and liveMe.id) or 0
-						pcall(function()
-							local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
-							if allPlayers then
-								for _, p in pairs(allPlayers) do
-									if p and not p.isDead then
-										local pId = (p.data and p.data.id) or p.id or 0
-										if pId ~= 0 and pId ~= myRoleId then
-											otherPlayerCount = otherPlayerCount + 1
-											if not otherPlayerName then
-												otherPlayerName = (p.data and p.data.name) or p.name or tostring(pId)
-											end
-											if not minOtherRoleId or pId < minOtherRoleId then
-												minOtherRoleId = pId
-											end
-										end
-									end
-								end
-							end
-						end)
-
-						if otherPlayerCount == 0 or (bcRemainCountdown >= 9 and myRoleId > 0 and minOtherRoleId and myRoleId < minOtherRoleId) then
-							bcIsFirstPlayer = true
-							bcEntryRealTime = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
-							Log(string.format("[Huyết Lâu] : Quét sảnh không có người vào trước -> Đánh dấu [FirstPlayer]! Đứng chờ %ds sảnh rồi bấm [Mở Ngay]...", bcRemainCountdown), true)
-							SaveOutput()
-						else
-							-- Phát hiện có người chơi khác đã ở trong sảnh trước -> Thoát ngay và chờ họ mở xong
-							local waitSec = math.max(4, math.min(12, bcRemainCountdown)) + 2
-							local nowSec = os.time()
-							_G.Mod_BC_NextRetryTime = nowSec + waitSec
-							if _G.Mod_InstanceMonitorTimer then
-								pcall(function() Timer.Stop(_G.Mod_InstanceMonitorTimer) end)
-								_G.Mod_InstanceMonitorTimer = nil
-							end
-							_G.Mod_IsRunningInstance = false
-							_G.Mod_BC_AllowSkipWait = false
-							Log(string.format("[Huyết Lâu] : Phát hiện người chơi \"%s\" đang ở trong sảnh -> Thoát Huyết Lâu, chờ %ds để FirstPlayer mở xong rồi vào lại!",
-								tostring(otherPlayerName or "Player"), waitSec), true)
-							SaveOutput()
-							pcall(function()
-								if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
-									_G.TranScriptController.ReqExitInstance()
-								elseif _G.networkRequest and _G.networkRequest.ReqExitInstance then
-									_G.networkRequest.ReqExitInstance()
-								end
-							end)
-							Timer.Start(1.0, function()
-								DismissBlockers()
-								if onFinished then onFinished() end
-							end)
-							return
 						end
 					end
+				end)
 
-					-- Nếu là FirstPlayer: Chờ hết 10s đếm ngược sảnh (bcState >= 2 hoặc đủ 10s) rồi mới bấm Mở Ngay và chạy thẳng lên 14#30
-					if bcIsFirstPlayer then
-						local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
-						local waitedLobbySec = nowReal - bcEntryRealTime
-						if bcState >= 2 or waitedLobbySec >= 10.2 then
-							_G.Mod_BC_AllowSkipWait = true
-							TriggerDungeonSkipWait()
-							if not hasSkippedWait then
-								hasSkippedWait = true
-								Log("[Huyết Lâu - FirstPlayer] : Đã hết 10s chờ sảnh -> Kích hoạt [Mở Ngay] và chạy thẳng tới 14#30 mới đánh!", true)
+				local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+				local waitedLobbySec = nowReal - bcEntryRealTime
+				local myRoleId = tonumber((liveMe and liveMe.data and liveMe.data.id) or (liveMe and liveMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or 0) or 0
+
+				-- Khi vẫn đang trong giai đoạn 10s sảnh chờ (chưa bấm Mở Ngay)
+				if not hasSkippedWait and instState < 2 and waitedLobbySec < 10.2 then
+					StopFightAndClearTargetInDungeon()
+
+					-- Chờ ít nhất 3 tick (~1.5s) để ViewData & RoleManager đồng bộ xong danh sách người chơi trong sảnh,
+					-- sau đó quét liên tục mỗi tick (0.5s) trong suốt thời gian chờ sảnh!
+					if monitorTicks >= 3 then
+						local otherPlayerCount, otherPlayerName, minOtherRoleId = ScanOtherPlayersInLobby(myRoleId)
+						if otherPlayerCount == 0 then
+							if not bcIsFirstPlayer then
+								bcIsFirstPlayer = true
+								Log(string.format("[%s] : Quét sảnh không có người vào trước -> Đánh dấu [FirstPlayer]! Đứng chờ %ds sảnh rồi bấm [Mở Ngay]...", instTitle, instRemainCountdown), true)
 								SaveOutput()
 							end
-							-- =========================================================================
-							-- [MOD FEATURE]: CHẠY THẲNG TỚI TỌA ĐỘ 14#30 TRONG HUYẾT LÂU MỚI BẬT ĐÁNH
-							-- Mô tả: Áp dụng quy tắc chuẩn bản Client (dist > 1.5m tắt đánh & xóa mục tiêu,
-							--        chỉ khi tiếp cận 14#30 với dist <= 1.5m mới bật AutoFight).
-							-- =========================================================================
-							RushToDungeonCoordAndFight(14, 30, 1.5)
+							if waitedLobbySec >= 2.5 then
+								bcConfirmedOwner = true
+							end
 						else
-							-- Đang trong 10s chờ sảnh: Giữ trạng thái dừng AutoFight
-							StopFightAndClearTargetInDungeon()
+							-- Nếu mình đã đứng một mình >= 2.5s trước khi người kia vào (bcConfirmedOwner == true),
+							-- hoặc cả 2 vào cùng lúc (waitedLobbySec < 2.5) nhưng mình có RoleId nhỏ hơn -> Mình giữ phòng!
+							local canKeepRoom = bcConfirmedOwner or (waitedLobbySec < 2.5 and instRemainCountdown >= 8 and myRoleId > 0 and minOtherRoleId and myRoleId < minOtherRoleId)
+							if canKeepRoom then
+								if not bcIsFirstPlayer then
+									bcIsFirstPlayer = true
+									Log(string.format("[%s] : Trùng thời điểm vào sảnh nhưng ưu tiên giữ phòng [FirstPlayer] -> Đứng chờ %ds sảnh rồi bấm [Mở Ngay]...", instTitle, instRemainCountdown), true)
+									SaveOutput()
+								end
+							else
+								-- Phát hiện có người chơi khác đã ở trong sảnh trước -> Thoát ngay và chờ họ mở xong
+								local waitSec = math.max(5, math.min(14, instRemainCountdown)) + 3
+								local nowSec = os.time()
+								if inBC then
+									_G.Mod_BC_NextRetryTime = nowSec + waitSec
+								else
+									_G.Mod_DS_NextRetryTime = nowSec + waitSec
+								end
+								if _G.Mod_InstanceMonitorTimer then
+									pcall(function() Timer.Stop(_G.Mod_InstanceMonitorTimer) end)
+									_G.Mod_InstanceMonitorTimer = nil
+								end
+								_G.Mod_IsRunningInstance = false
+								_G.Mod_BC_AllowSkipWait = false
+								Log(string.format("[%s] : Phát hiện người chơi \"%s\" đang ở trong sảnh -> Thoát %s, chờ %ds để FirstPlayer mở xong rồi vào lại!",
+									instTitle, tostring(otherPlayerName or "Player"), instTitle, waitSec), true)
+								SaveOutput()
+								pcall(function()
+									if _G.TranScriptController and _G.TranScriptController.ReqExitInstance then
+										_G.TranScriptController.ReqExitInstance()
+									elseif _G.networkRequest and _G.networkRequest.ReqExitInstance then
+										_G.networkRequest.ReqExitInstance()
+									end
+								end)
+								Timer.Start(1.0, function()
+									DismissBlockers()
+									if onFinished then onFinished() end
+								end)
+								return
+							end
 						end
 					end
-				elseif inDS then
-					-- Quảng Trường Quỷ: Bấm [Mở Ngay] và chạy thẳng tới tâm phó bản mới bật đánh
+				else
+					-- Đã hết 10s chờ sảnh (instState >= 2 hoặc waitedLobbySec >= 10.2): Bấm [Mở Ngay] và chạy tới tọa độ đánh!
+					_G.Mod_BC_AllowSkipWait = true
 					TriggerDungeonSkipWait()
-					if not hasSkippedWait and monitorTicks >= 2 then
-						hasSkippedWait = true
-						Log("[Quảng Trường Quỷ] : Đã bấm [Mở Ngay] bỏ qua chờ đợi!", true)
+					if inBC then
+						if not hasSkippedWait then
+							hasSkippedWait = true
+							Log("[Huyết Lâu - FirstPlayer] : Đã hết 10s chờ sảnh -> Kích hoạt [Mở Ngay] và chạy thẳng tới 14#30 mới đánh!", true)
+							SaveOutput()
+						end
+						RushToDungeonCoordAndFight(14, 30, 1.5)
+					elseif inDS then
+						local cx, cy = 137, 167
+						if liveLvl >= 150 then cx, cy = 135, 97 end
+						if not hasSkippedWait then
+							hasSkippedWait = true
+							Log(string.format("[Quảng Trường Quỷ - FirstPlayer] : Đã hết 10s chờ sảnh -> Kích hoạt [Mở Ngay] và chạy thẳng tới %d#%d mới đánh!", cx, cy), true)
+							SaveOutput()
+						end
+						RushToDungeonCoordAndFight(cx, cy, 1.5)
 					end
-					local cx, cy = 137, 167
-					if liveLvl >= 150 then cx, cy = 135, 97 end
-					RushToDungeonCoordAndFight(cx, cy, 1.5)
 				end
 			end
 		end)
@@ -385,7 +431,6 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 
 	if isInInstance then
 		Log(string.format("[Phó Bản] : Đang ở trong phó bản (Map %s)!", tostring(curMapId)), true)
-		if isCurInDS then TriggerDungeonSkipWait() end
 		StartInstanceMonitorLoop()
 		return
 	end
@@ -423,6 +468,11 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 		})
 	else
 		if not _G.Mod_AutoDSActive then
+			if onFinished then onFinished() end
+			return
+		end
+		local nowSec = os.time()
+		if _G.Mod_DS_NextRetryTime and nowSec < _G.Mod_DS_NextRetryTime then
 			if onFinished then onFinished() end
 			return
 		end
@@ -530,9 +580,6 @@ CheckAndRunBloodCastleOrDemonPlaza = function(onFinished)
 		end)
 		Timer.Start(2.0, function()
 			DismissBlockers()
-			if targetInst.subType == (_G.TranScriptData and _G.TranScriptData.TranScriptSubType and _G.TranScriptData.TranScriptSubType.DemonPlaza) then
-				TriggerDungeonSkipWait()
-			end
 			StartInstanceMonitorLoop()
 		end)
 	end
@@ -4097,7 +4144,7 @@ local ALL_PROGRESSION_FARM_SPOTS = {
 		}
 	},
 
-	-- 5. Atlantis (1008 - Yêu cầu Lv 100 | Lv140 & Lv145 dùng 100% tâm bãi chuẩn cfg_Map_minimap × 3 Kênh)
+	-- 5. Atlantis (1008 - Yêu cầu Lv 100 | Dùng 100% tâm bãi chuẩn cfg_Map_minimap × 3 Kênh)
 	{
 		mapId = 1008, minLvl = 100, x = 39, y = 211, maxLines = 3,
 		name = "Atlantis (Quái Lv145 EXP x4.0)", monsterLvl = 145, defenseReq = 302, expScore = 145,
@@ -4114,10 +4161,34 @@ local ALL_PROGRESSION_FARM_SPOTS = {
 			{ x = 199, y = 106 }, { x = 169, y = 145 }, { x = 152, y = 162 }, { x = 114, y = 182 }
 		}
 	},
-	{ mapId = 1008,   minLvl = 100, x = 34,  y = 162, name = "Atlantis (Bãi Đôi Lv130 EXP x2.5: 34#162)",  monsterLvl = 130, defenseReq = 252, expScore = 130 },
-	{ mapId = 1008,   minLvl = 100, x = 185, y = 54,  name = "Atlantis (Quái Lv120 EXP x2.0: 185#54)",     monsterLvl = 120, defenseReq = 226, expScore = 120 },
-	{ mapId = 1008,   minLvl = 100, x = 112, y = 40,  name = "Atlantis (Quái Lv110 EXP x1.5: 112#40)",     monsterLvl = 110, defenseReq = 201, expScore = 110 },
-	{ mapId = 1008,   minLvl = 100, x = 48,  y = 46,  name = "Atlantis (Quái Lv100 EXP x1.0: 48#46)",      monsterLvl = 100, defenseReq = 176, expScore = 100 },
+	{
+		mapId = 1008, minLvl = 100, x = 34, y = 162, maxLines = 3,
+		name = "Atlantis (Bãi Đôi Lv130 EXP x2.5: 34#162)", monsterLvl = 130, defenseReq = 252, expScore = 130,
+		coords = {
+			{ x = 34, y = 162 }, { x = 33, y = 182 }, { x = 25, y = 146 }, { x = 25, y = 118 }
+		}
+	},
+	{
+		mapId = 1008, minLvl = 100, x = 185, y = 54, maxLines = 3,
+		name = "Atlantis (Quái Lv120 EXP x2.0: 185#54)", monsterLvl = 120, defenseReq = 226, expScore = 120,
+		coords = {
+			{ x = 185, y = 54 }, { x = 205, y = 45 }, { x = 174, y = 40 }, { x = 154, y = 48 }
+		}
+	},
+	{
+		mapId = 1008, minLvl = 100, x = 112, y = 40, maxLines = 3,
+		name = "Atlantis (Quái Lv110 EXP x1.5: 112#40)", monsterLvl = 110, defenseReq = 201, expScore = 110,
+		coords = {
+			{ x = 112, y = 40 }, { x = 105, y = 62 }, { x = 126, y = 51 }, { x = 91, y = 46 }
+		}
+	},
+	{
+		mapId = 1008, minLvl = 100, x = 48, y = 46, maxLines = 3,
+		name = "Atlantis (Quái Lv100 EXP x1.0: 48#46)", monsterLvl = 100, defenseReq = 176, expScore = 100,
+		coords = {
+			{ x = 48, y = 46 }, { x = 68, y = 53 }, { x = 68, y = 35 }, { x = 35, y = 31 }
+		}
+	},
 
 	-- 4. Lost Tower 2 (100502 - Yêu cầu Lv 80 | EXP 2.40K/phút gấp đôi Lost Tower 1)
 	{ mapId = 100502, minLvl = 80,  x = 171, y = 231, name = "Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231)", monsterLvl = 95, defenseReq = 170, expScore = 98 },
@@ -4169,30 +4240,60 @@ local function BuildTierCandidates(spot)
 	return candidates
 end
 
+local function GetCurrentMapLine()
+	if _G.SceneData then
+		local cl = tonumber(_G.SceneData.cline)
+		if cl and cl > 0 then return cl end
+		local ln = tonumber(_G.SceneData.line or _G.SceneData.lineIndex)
+		if ln and ln > 0 then return ln end
+	end
+	return 1
+end
+_G.GetCurrentMapLine = GetCurrentMapLine
+
 local function ResolveSpotWithRotation(chosenSpot, myLvl)
 	if not chosenSpot then return nil end
 	local tierKey = tostring(chosenSpot.mapId) .. "_" .. tostring(chosenSpot.monsterLvl)
 	local selX = chosenSpot.x
 	local selY = chosenSpot.y
-	local selLine = tonumber((_G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex)) or 1) or 1
+	local selLine = GetCurrentMapLine()
 	local candIdx = 1
 	local totalCands = 1
 	local isExhausted = false
 
-	-- Từ Lv 145 trở đi: Nếu bãi quái có danh sách coords & đa kênh, lấy vị trí theo bộ xoay vòng chống trùng bãi
-	if myLvl >= 145 and chosenSpot.coords and #chosenSpot.coords > 0 then
+	-- Mọi cấp độ khi farm tại bãi quái có danh sách coords & đa kênh (Atlantis Lv100-145 & Tarkan Lv150-195) đều áp dụng xoay vòng chống trùng bãi
+	if chosenSpot.coords and #chosenSpot.coords > 0 then
 		local candidates = BuildTierCandidates(chosenSpot)
 		totalCands = #candidates
 		_G.Mod_TierRotationState = _G.Mod_TierRotationState or {}
 		local st = _G.Mod_TierRotationState[tierKey]
 		if not st then
-			st = { idx = 1, exhausted = false, lastTeleTime = 0 }
+			st = {
+				idx = 1,
+				exhausted = false,
+				exhaustedTime = 0,
+				lastTeleTime = 0,
+				arrivedIdx = nil,
+				arrivedTime = nil,
+				claimedOwner = false,
+				overlapStartTime = nil
+			}
 			_G.Mod_TierRotationState[tierKey] = st
+		end
+		local nowTime = (CS and CS.UnityEngine and CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+		if st.exhausted and (nowTime - (st.exhaustedTime or 0)) >= 45.0 then
+			st.exhausted = false
+			st.idx = 1
+			st.arrivedIdx = nil
+			st.arrivedTime = nil
+			st.claimedOwner = false
+			st.overlapStartTime = nil
 		end
 		if st.idx < 1 then st.idx = 1 end
 		if st.idx > totalCands then
 			st.idx = totalCands
 			st.exhausted = true
+			st.exhaustedTime = nowTime
 		end
 		local cand = candidates[st.idx] or candidates[totalCands]
 		if cand then
@@ -4223,33 +4324,92 @@ local function ResolveSpotWithRotation(chosenSpot, myLvl)
 	}
 end
 
--- Quét người chơi khác đứng trong phạm vi <= maxTileRadius (mặc định 2 ô) quanh tọa độ (spotX, spotY)
--- Sử dụng chuẩn `_G.RoleManager.GetRolesByType(1)` từ Auto PK Client & `modules/mod_player_info.lua`
+-- =========================================================================
+-- [MOD FEATURE]: QUÉT ĐA NGUỒN NGƯỜI CHƠI XUNG QUANH BÃI FARM (ROLEMANAGER + VIEWDATA)
+-- Mô tả:
+--   - Quét đồng thời cả `_G.RoleManager.GetRolesByType(1)` (`p.cellPos`, `p.data.serverCoord`)
+--     VÀ `_G.ViewData.GetGameObjectsInView()` (`obj.serverCoord`, `obj.x/y`) để bắt được người chơi
+--     ngay cả khi model 3D chưa khởi tạo xong hoặc người chơi đang bước ra đánh quái/nhặt đồ quanh tâm bãi.
+--   - Mặc định bán kính `maxTileRadius = 7` ô quanh tâm bãi.
+-- =========================================================================
 local function HasOtherPlayerNearSpot(spotX, spotY, maxTileRadius)
-	maxTileRadius = tonumber(maxTileRadius) or 2
+	maxTileRadius = tonumber(maxTileRadius) or 7
 	local me = _G.RoleManager and _G.RoleManager.me
-	local meId = (me and me.data and me.data.id) or (me and me.id) or 0
-	local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
-	if not allPlayers then return false, nil, nil end
+	local meId = tonumber((me and me.data and me.data.id) or (me and me.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or 0) or 0
+	local bestName = nil
+	local bestDist = nil
+	local minOtherRoleId = nil
+	local seenIds = {}
+	local countPlayers = 0
 
-	for _, p in pairs(allPlayers) do
-		if p and not p.isDead and (not p.hp or p.hp > 0) then
-			local pId = (p.data and p.data.id) or p.id or 0
-			if pId ~= 0 and pId ~= meId then
-				local pCell = p.serverCoord or (p.cellPos and { x = p.cellPos.x, y = p.cellPos.y })
-				if pCell and pCell.x and pCell.y then
-					local px = tonumber(pCell.x) or 0
-					local py = tonumber(pCell.y) or 0
-					local dist = math.max(math.abs(px - spotX), math.abs(py - spotY))
-					if dist <= maxTileRadius then
+	local function CheckCandidateCoord(pId, pName, cx, cy)
+		local px = tonumber(cx)
+		local py = tonumber(cy)
+		if not px or not py or (px == 0 and py == 0) then return end
+		local dist = math.max(math.abs(px - spotX), math.abs(py - spotY))
+		if dist <= maxTileRadius then
+			if not seenIds[pId] then
+				seenIds[pId] = true
+				countPlayers = countPlayers + 1
+			end
+			if not minOtherRoleId or pId < minOtherRoleId then
+				minOtherRoleId = pId
+			end
+			if not bestDist or dist < bestDist then
+				bestDist = dist
+				bestName = pName
+			end
+		end
+	end
+
+	pcall(function()
+		local allPlayers = _G.RoleManager and _G.RoleManager.GetRolesByType and _G.RoleManager.GetRolesByType(1)
+		if allPlayers then
+			for _, p in pairs(allPlayers) do
+				if p and not p.isDead and (not p.hp or p.hp > 0) then
+					local pId = tonumber((p.data and p.data.id) or p.id or 0) or 0
+					if pId ~= 0 and pId ~= meId then
 						local pName = (p.data and p.data.name) or p.name or tostring(pId)
-						return true, pName, dist
+						if p.cellPos and p.cellPos.x and p.cellPos.y then
+							CheckCandidateCoord(pId, pName, p.cellPos.x, p.cellPos.y)
+						end
+						if p.data and p.data.serverCoord and p.data.serverCoord.x and p.data.serverCoord.y then
+							CheckCandidateCoord(pId, pName, p.data.serverCoord.x, p.data.serverCoord.y)
+						end
+						if p.serverCoord and p.serverCoord.x and p.serverCoord.y then
+							CheckCandidateCoord(pId, pName, p.serverCoord.x, p.serverCoord.y)
+						end
+						if p.data and p.data.x and p.data.y then
+							CheckCandidateCoord(pId, pName, p.data.x, p.data.y)
+						end
 					end
 				end
 			end
 		end
+
+		local viewObjs = _G.ViewData and _G.ViewData.GetGameObjectsInView and _G.ViewData.GetGameObjectsInView()
+		if viewObjs then
+			for _, obj in pairs(viewObjs) do
+				if obj and (obj.realPlayer == true or obj.roleType == 1 or (_G.ERoleType and obj.roleType == _G.ERoleType.Player)) then
+					local pId = tonumber(obj.id or obj.roleId or 0) or 0
+					if pId ~= 0 and pId ~= meId and (not obj.hp or obj.hp > 0) then
+						local pName = obj.name or tostring(pId)
+						if obj.serverCoord and obj.serverCoord.x and obj.serverCoord.y then
+							CheckCandidateCoord(pId, pName, obj.serverCoord.x, obj.serverCoord.y)
+						end
+						if obj.x and obj.y then
+							CheckCandidateCoord(pId, pName, obj.x, obj.y)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	if countPlayers > 0 then
+		return true, bestName, bestDist, minOtherRoleId, countPlayers
 	end
-	return false, nil, nil
+	return false, nil, nil, nil, 0
 end
 _G.HasOtherPlayerNearSpot = HasOtherPlayerNearSpot
 
@@ -4304,101 +4464,217 @@ _G.GetBestMonsterFarmPoint = GetBestMonsterFarmPoint
 
 local function SendTeleportWithLine(targetMap, targetLine, targetX, targetY)
 	local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-	local curLine = tonumber((_G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex)) or 1) or 1
+	local curLine = GetCurrentMapLine()
 	targetLine = tonumber(targetLine) or curLine or 1
 
 	pcall(function()
-		-- Nếu đang ở cùng bản đồ nhưng khác Kênh (Line), gửi thêm ReqChangeLine để ép chuyển kênh chính xác
+		-- Ngắt mục tiêu quái cũ và cập nhật ngay tọa độ neo của QiJiHelperData để AutoFight không kéo ngược về bãi cũ
+		local me = _G.RoleManager and _G.RoleManager.me
+		if me then
+			if curLine ~= targetLine and me.StopAutoFight then
+				pcall(function() me:StopAutoFight() end)
+			end
+			if me.StopMove then me:StopMove() end
+			me.TargetAvatar = nil
+		end
+		if _G.AutoTaskManage then
+			if _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+			if _G.AutoTaskManage.SetCurAutoTaskState then _G.AutoTaskManage.SetCurAutoTaskState(false) end
+		end
+		if _G.TaskManager and _G.TaskManager.TaskPathStop then
+			_G.TaskManager.TaskPathStop()
+		end
+		if _G.QiJiHelperData and CS and CS.UnityEngine and CS.UnityEngine.Vector2Int then
+			_G.QiJiHelperData.meCellPos = CS.UnityEngine.Vector2Int(targetX, targetY)
+		end
+
+		local function DoSendCallFlag()
+			if _G.networkRequest and _G.networkRequest.ReqCallFlag then
+				_G.networkRequest.ReqCallFlag(1, 0, targetMap, targetLine, targetX, targetY, 0)
+			end
+			if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+				_G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+					type = 1,
+					rid = 0,
+					mapId = targetMap,
+					line = targetLine,
+					x = targetX,
+					y = targetY,
+					hostId = 0
+				})
+			end
+		end
+
+		-- Nếu đang ở cùng bản đồ nhưng khác Kênh (Line), gửi ReqTransferTransmit với đúng transferId (ví dụ 100801 cho Atlantis, 100901 cho Tarkan)
 		if curMap == targetMap and curLine ~= targetLine then
-			if _G.networkRequest and _G.networkRequest.ReqChangeLine then
-				pcall(function() _G.networkRequest.ReqChangeLine(targetLine) end)
+			local groupId = (_G.SceneData and _G.SceneData.groupId) or targetMap
+			local transferId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and (_G.PathFinderManager.GetTransIdByGroupId(groupId) or _G.PathFinderManager.GetTransIdByGroupId(targetMap))) or (targetMap * 100 + 1)
+			if transferId then
+				if _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
+					pcall(function()
+						_G.SceneController.OnReqTransferTransmitMap(nil, {
+							mapId = transferId,
+							line = targetLine,
+							changeLine = true
+						})
+					end)
+				elseif _G.networkRequest and _G.networkRequest.ReqTransferTransmit then
+					pcall(function() _G.networkRequest.ReqTransferTransmit(transferId, targetLine, true) end)
+				elseif _G.NetManager and _G.MapMessage and _G.MapMessage.ReqTransferTransmit then
+					pcall(function()
+						_G.NetManager.Send(_G.MapMessage.ReqTransferTransmit, {
+							transferId = transferId,
+							line = targetLine,
+							changeLine = true
+						})
+					end)
+				end
 			end
-			if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqChangeLine then
-				pcall(function() _G.NetManager.Send(_G.MapMessage.ReqChangeLine, { line = targetLine }) end)
-			end
 		end
-		if _G.networkRequest and _G.networkRequest.ReqCallFlag then
-			_G.networkRequest.ReqCallFlag(1, 0, targetMap, targetLine, targetX, targetY, 0)
-		end
-		if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
-			_G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
-				type = 1,
-				rid = 0,
-				mapId = targetMap,
-				line = targetLine,
-				x = targetX,
-				y = targetY,
-				hostId = 0
-			})
-		end
+
+		DoSendCallFlag()
 		if curMap ~= targetMap and _G.networkRequest and _G.networkRequest.ReqTransmit then
 			_G.networkRequest.ReqTransmit(targetMap, targetLine, targetX, targetY)
 		end
-		-- Nếu vừa đổi kênh trên cùng map, bắn bồi lại ReqCallFlag sau 0.6s để đáp chuẩn vào tâm bãi của kênh mới
-		if curMap == targetMap and curLine ~= targetLine and Timer and Timer.Start then
-			Timer.Start(0.6, function()
-				pcall(function()
-					if _G.networkRequest and _G.networkRequest.ReqCallFlag then
-						_G.networkRequest.ReqCallFlag(1, 0, targetMap, targetLine, targetX, targetY, 0)
-					end
-					if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
-						_G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
-							type = 1,
-							rid = 0,
-							mapId = targetMap,
-							line = targetLine,
-							x = targetX,
-							y = targetY,
-							hostId = 0
-						})
-					end
+
+		-- Bồi lại ReqCallFlag + cập nhật mỏ neo AutoFight sau khi đáp xuống bãi/kênh mới
+		if Timer and Timer.Start then
+			if curMap == targetMap and curLine ~= targetLine then
+				for _, dSec in ipairs({ 0.5, 1.1, 1.7 }) do
+					Timer.Start(dSec, function()
+						pcall(function()
+							DoSendCallFlag()
+							if _G.QiJiHelperData and CS and CS.UnityEngine and CS.UnityEngine.Vector2Int then
+								_G.QiJiHelperData.meCellPos = CS.UnityEngine.Vector2Int(targetX, targetY)
+							end
+							if _G.Mod_PerformStopMoveJiggle then
+								_G.Mod_PerformStopMoveJiggle(targetX, targetY)
+							end
+						end)
+					end)
+				end
+			else
+				Timer.Start(0.4, function()
+					pcall(function()
+						if _G.QiJiHelperData and CS and CS.UnityEngine and CS.UnityEngine.Vector2Int then
+							_G.QiJiHelperData.meCellPos = CS.UnityEngine.Vector2Int(targetX, targetY)
+						end
+						if _G.Mod_PerformStopMoveJiggle then
+							_G.Mod_PerformStopMoveJiggle(targetX, targetY)
+						end
+					end)
 				end)
-			end)
+			end
 		end
 	end)
 end
 _G.SendTeleportWithLine = SendTeleportWithLine
 
--- Kiểm tra nếu có người chơi khác đứng trong phạm vi <= 2 ô tại bãi farm (chỉ áp dụng từ Lv 145+)
--- thì xoay sang vị trí/kênh tiếp theo; nếu hết danh sách (15-18 vị trí) thì chấp nhận đứng ở vị trí cuối.
+-- =========================================================================
+-- [MOD FEATURE]: XOAY VÒNG CHỐNG TRÙNG BÃI QUÁI ĐA KÊNH (ĐỢI ĐÁP ỔN ĐỊNH + KHÓA CHỦ BÃI + BÁN KÍNH 7 Ô)
+-- Mô tả:
+--   1. Mở cho mọi cấp độ có bãi `coords` (bao gồm cả Bãi 145 từ Lv 100+).
+--   2. Chỉ phán quyết khi nhân vật đã thực sự đáp xuống đúng Kênh (`curLine == targetLine`)
+--      và cách tâm bãi `<= 8 ô` ít nhất `2.6s + jitter` để `ViewData` & `RoleManager` đồng bộ 100% người chơi.
+--   3. Nếu sau khi đáp ổn định không có người chơi khác trong bán kính `7 ô`: Khóa cờ `st.claimedOwner = true`
+--      (chủ bãi sẽ giữ nguyên vị trí, không bị nhảy dây chuyền khi có acc khác vừa bay tới kiểm tra bãi).
+--   4. Acc đến sau (`st.claimedOwner == false`) phát hiện đã có người trong bán kính `7 ô` sẽ lập tức xoay sang
+--      vị trí/kênh tiếp theo!
+-- =========================================================================
 local function CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap)
 	local myLvl = GetAccuratePlayerLevel()
-	if myLvl < 145 then return false end
 	if not bestPt or not bestPt.rawSpot or not bestPt.rawSpot.coords or #bestPt.rawSpot.coords <= 1 then
 		return false
 	end
 	local tierKey = bestPt.tierKey
 	if not tierKey then return false end
 
+	local nowTime = (CS and CS.UnityEngine and CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
 	_G.Mod_TierRotationState = _G.Mod_TierRotationState or {}
 	local st = _G.Mod_TierRotationState[tierKey]
-	if not st or st.exhausted then
-		return false
+	if not st then return false end
+
+	if st.exhausted then
+		if (nowTime - (st.exhaustedTime or 0)) >= 45.0 then
+			st.exhausted = false
+			st.idx = 1
+			st.arrivedIdx = nil
+			st.arrivedTime = nil
+			st.claimedOwner = false
+			st.overlapStartTime = nil
+		else
+			return false
+		end
 	end
 
 	local curMap = tonumber((_G.SceneData and _G.SceneData.mapId) or 0) or 0
-	local curLine = tonumber((_G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex)) or 1) or 1
-	if curMap ~= targetMap or curLine ~= (bestPt.line or 1) then
-		return false
-	end
-
-	-- Chỉ kiểm tra khi nhân vật đã đứng gần tâm bãi (<= 5 ô) và đã qua ít nhất 1.6s từ lần dịch chuyển trước
-	local nowTime = (CS and CS.UnityEngine and CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
-	if (nowTime - (st.lastTeleTime or 0)) < 1.6 then
+	if curMap ~= targetMap then
+		st.arrivedIdx = nil
+		st.arrivedTime = nil
+		st.claimedOwner = false
+		st.overlapStartTime = nil
 		return false
 	end
 
 	local me = _G.RoleManager and _G.RoleManager.me
-	local myPos = (me and me.serverCoord) or (me and me.cellPos)
+	local myPos = (me and me.cellPos) or (me and me.serverCoord)
 	if not myPos or not myPos.x or not myPos.y then return false end
-	local myDistToSpot = math.max(math.abs((tonumber(myPos.x) or 0) - bestPt.x), math.abs((tonumber(myPos.y) or 0) - bestPt.y))
-	if myDistToSpot > 5 then
+	local myX = tonumber(myPos.x) or 0
+	local myY = tonumber(myPos.y) or 0
+	local myDistToSpot = math.max(math.abs(myX - bestPt.x), math.abs(myY - bestPt.y))
+	local curLine = GetCurrentMapLine()
+	local targetLine = tonumber(bestPt.line) or 1
+
+	-- Nếu chưa sang đúng Kênh mục tiêu hoặc còn cách xa tâm bãi > 8 ô (ví dụ vừa đổi kênh đang đứng ở cửa map):
+	-- Chưa tính là đã đáp xuống bãi, bồi lại dịch chuyển nếu đã quá 2.8s mà chưa tới nơi!
+	if curLine ~= targetLine or myDistToSpot > 8 then
+		st.arrivedTime = nil
+		st.overlapStartTime = nil
+		if (nowTime - (st.lastTeleTime or 0)) >= 2.8 then
+			st.lastTeleTime = nowTime
+			SendTeleportWithLine(targetMap, targetLine, bestPt.x, bestPt.y)
+		end
 		return false
 	end
 
-	local hasPlayer, pName, pDist = HasOtherPlayerNearSpot(bestPt.x, bestPt.y, 2)
-	if not hasPlayer then
+	-- Ghi nhận thời điểm thực sự đáp xuống đúng tâm bãi & đúng kênh của st.idx hiện tại
+	if st.arrivedIdx ~= st.idx or not st.arrivedTime then
+		st.arrivedIdx = st.idx
+		st.arrivedTime = nowTime
+		st.claimedOwner = false
+		st.overlapStartTime = nil
+	end
+
+	-- Tính thời gian chờ đồng bộ dữ liệu sau khi đáp (2.6s + độ lệch nhỏ theo RoleId để 2 acc bay tới cùng lúc không nhảy đồng thời)
+	local myRoleId = tonumber((me and me.data and me.data.id) or (me and me.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or 0) or 0
+	local roleJitter = ((myRoleId % 19) * 0.12)
+	local waitSettleSec = 2.6 + roleJitter
+	if (nowTime - (st.arrivedTime or nowTime)) < waitSettleSec or (nowTime - (st.lastTeleTime or 0)) < 2.2 then
 		return false
+	end
+
+	-- Quét người chơi khác trong phạm vi <= 7 ô quanh tâm bãi (bestPt.x, bestPt.y) hoặc <= 6 ô quanh nhân vật (myX, myY)
+	local hasPlayer, pName, pDist, minOtherRoleId = HasOtherPlayerNearSpot(bestPt.x, bestPt.y, 7)
+	if not hasPlayer then
+		hasPlayer, pName, pDist, minOtherRoleId = HasOtherPlayerNearSpot(myX, myY, 6)
+	end
+
+	if not hasPlayer then
+		-- Bãi hoàn toàn trống sau khi đã chờ đồng bộ đủ dữ liệu -> Khóa quyền chủ bãi!
+		st.claimedOwner = true
+		st.overlapStartTime = nil
+		return false
+	end
+
+	-- Nếu mình ĐÃ là chủ bãi ổn định trước đó (st.claimedOwner == true):
+	-- Giữ nguyên vị trí để người mới bay tới tự động xoay đi (chỉ nhường nếu có người cố tình đứng đè liên tục >= 10s)
+	if st.claimedOwner then
+		if not st.overlapStartTime then
+			st.overlapStartTime = nowTime
+			return false
+		elseif (nowTime - st.overlapStartTime) < 10.0 then
+			return false
+		end
 	end
 
 	local candidates = BuildTierCandidates(bestPt.rawSpot)
@@ -4406,16 +4682,21 @@ local function CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap)
 	if st.idx < totalCands then
 		st.idx = st.idx + 1
 		st.lastTeleTime = nowTime
+		st.arrivedIdx = nil
+		st.arrivedTime = nil
+		st.claimedOwner = false
+		st.overlapStartTime = nil
 		local nextCand = candidates[st.idx]
-		Log(string.format("-> [TRÁNH TRÙNG BÃI LV%d]: Phát hiện người chơi \"%s\" cách tâm bãi (%d#%d Kênh %d) %d ô (<= 2 ô) -> Dịch chuyển sang vị trí [%d/%d]: Kênh %d (%d#%d)!",
-			myLvl, tostring(pName), bestPt.x, bestPt.y, bestPt.line or 1, tonumber(pDist) or 0, st.idx, totalCands, nextCand.line, nextCand.x, nextCand.y), true)
+		Log(string.format("-> [TRÁNH TRÙNG BÃI LV%d]: Phát hiện người chơi \"%s\" cách bãi (%d#%d Kênh %d) %d ô (<= 7 ô) -> Dịch chuyển sang vị trí [%d/%d]: Kênh %d (%d#%d)!",
+			myLvl, tostring(pName), bestPt.x, bestPt.y, curLine, tonumber(pDist) or 0, st.idx, totalCands, nextCand.line, nextCand.x, nextCand.y), true)
 		SaveOutput()
 		SendTeleportWithLine(targetMap, nextCand.line, nextCand.x, nextCand.y)
 		return true
 	else
 		st.exhausted = true
-		Log(string.format("-> [TRÁNH TRÙNG BÃI LV%d]: Đã kiểm tra hết %d/%d vị trí (3 Kênh) của %s đều có người -> Chấp nhận đứng farm tại vị trí cuối Kênh %d (%d#%d)!",
-			myLvl, totalCands, totalCands, tostring(bestPt.baseName or bestPt.name), bestPt.line or 1, bestPt.x, bestPt.y), true)
+		st.exhaustedTime = nowTime
+		Log(string.format("-> [TRÁNH TRÙNG BÃI LV%d]: Đã kiểm tra hết %d/%d vị trí (3 Kênh) của %s đều có người -> Tạm đứng tại Kênh %d (%d#%d) và quét lại sau 45s!",
+			myLvl, totalCands, totalCands, tostring(bestPt.baseName or bestPt.name), curLine, bestPt.x, bestPt.y), true)
 		SaveOutput()
 		return false
 	end
@@ -5280,24 +5561,23 @@ local function TickFarmBetweenQueenRuns(farmKcStateTime, remainWaitSec)
 		local bestPt, targetMap = GetBestMonsterFarmPoint(0, false)
 		if not bestPt or not targetMap or targetMap <= 0 then return end
 
-		local curLine = tonumber((_G.SceneData and (_G.SceneData.line or _G.SceneData.cline or _G.SceneData.lineIndex)) or 1) or 1
-		local targetLine = tonumber(bestPt.line) or curLine or 1
-
 		local me = _G.RoleManager and _G.RoleManager.me
 		local pos = (me and me.cellPos) or (me and me.serverCoord)
 		local dist = 999
 		if curMap == targetMap and pos and pos.x and pos.y then
 			dist = math.sqrt((tonumber(pos.x) - bestPt.x)^2 + (tonumber(pos.y) - bestPt.y)^2)
 		end
+		local curLine = GetCurrentMapLine()
+		local targetLine = tonumber(bestPt.line) or 1
 
-		if curMap ~= targetMap or curLine ~= targetLine or dist > 10 then
-			if t >= 0.6 and (t - (_G.Bot_LastQueenFarmTeleTime or -10)) >= 1.5 then
+		if curMap ~= targetMap or dist > 10 or curLine ~= targetLine then
+			if t >= 0.6 and (t - (_G.Bot_LastQueenFarmTeleTime or -10)) >= 2.8 then
 				if TeleportToQueenFarmSpot(bestPt, targetMap) then
 					_G.Bot_LastQueenFarmTeleTime = t
 				end
 			end
 		else
-			-- Từ Lv 145+: Nếu phát hiện người chơi khác trong phạm vi <= 2 ô tại tâm bãi thì xoay sang bãi/kênh tiếp theo
+			-- Kiểm tra người chơi khác trong phạm vi <= 7 ô quanh tâm bãi (sau khi đã đáp ổn định >= 2.6s) để xoay sang bãi/kênh tiếp theo
 			if _G.CheckAndRotateSpotIfPlayerNearby and _G.CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap) then
 				_G.Bot_LastQueenFarmTeleTime = t
 				return
@@ -6161,6 +6441,27 @@ StartNewbieQuestPipeline = function()
 					end
 				end
 			end)
+			-- =========================================================================
+			-- [MOD FEATURE]: KHI ĐÃ ĐẠT `LV BỎ NH` (MẶC ĐỊNH 145+): CHỈ TIẾP TỤC CHU TRÌNH FARM BÃI TỐI ƯU & XOAY BÃI
+			-- Mô tả: Sau khi dừng vào phòng Nữ Hoàng, nhân vật không quay lại làm các nhiệm vụ cấp thấp
+			--        mà tập trung đứng farm bãi quái tối ưu (Atlantis / Tarkan), tự động né người chơi <= 2 ô
+			--        (TickFarmBetweenQueenRuns) và kết hợp đi AUTO HL / AUTO QTQ cho đến khi đạt cấp mục tiêu.
+			-- =========================================================================
+			if lvl >= stopQueenLvl then
+				pcall(function()
+					if _G.AutoTaskManage then
+						if _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
+						if _G.AutoTaskManage.SetCurAutoTaskState then _G.AutoTaskManage.SetCurAutoTaskState(false) end
+						if _G.AutoTaskManage.RemoveAutoTask then _G.AutoTaskManage.RemoveAutoTask(true) end
+					end
+					if _G.TaskManager and _G.TaskManager.TaskPathStop then
+						_G.TaskManager.TaskPathStop()
+					end
+				end)
+				local nowReal = (CS.UnityEngine.Time and CS.UnityEngine.Time.realtimeSinceStartup) or os.time()
+				TickFarmBetweenQueenRuns(nowReal, 999)
+				return
+			end
 			if _G.TaskData then
 				local curTask = _G.TaskData.GetOrderMainTask and _G.TaskData.GetOrderMainTask()
 				if not curTask and _G.TaskData.activeTasks then
@@ -6446,26 +6747,30 @@ StartNewbieQuestPipeline = function()
 						elseif behavior == TASK_BEHAVIOR.LEVEL_UP then
 							local curMap = (_G.SceneData and _G.SceneData.mapId) or 0
 							curMap = tonumber(curMap) or 0
-							local bestPt, targetMap = GetBestMonsterFarmPoint(curMap)
+							local bestPt, targetMap = GetBestMonsterFarmPoint(0, false)
 							targetMap = targetMap or curMap
+							local curLine = GetCurrentMapLine()
+							local targetLine = tonumber(bestPt and bestPt.line) or 1
 							local isNewTask = (_G.Bot_CurrentTaskId ~= taskId)
 							local nowSec = os.time()
 							_G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
 							local isFarFromSpot = false
 							if targetMap ~= curMap and targetMap > 0 then
 								isFarFromSpot = true
+							elseif curLine ~= targetLine then
+								isFarFromSpot = true
 							elseif bestPt and bestPt.x and bestPt.y then
 								local pMe = _G.RoleManager and _G.RoleManager.me
 								local pos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
 								if pos and pos.x and pos.y then
 									local dist = math.sqrt((pos.x - bestPt.x)^2 + (pos.y - bestPt.y)^2)
-									if dist > 15 then
+									if dist > 10 then
 										isFarFromSpot = true
 									end
 								end
 							end
-							-- Truyền tống đến bãi cày tối ưu: khi nhận quest mới, hoặc sau khi hồi sinh/bị văng xa (>15 ô sau 3s), hoặc sau 60s nếu bị kẹt
-							if isNewTask or (isFarFromSpot and (nowSec - _G.Bot_LastFarmTeleportTime >= 3)) or (nowSec - _G.Bot_LastFarmTeleportTime >= 60) then
+							-- Truyền tống đến bãi cày tối ưu: khi nhận quest mới, hoặc sau khi hồi sinh/bị văng xa (>10 ô sau 3s)
+							if isNewTask or (isFarFromSpot and (nowSec - _G.Bot_LastFarmTeleportTime >= 3)) then
 								_G.Bot_CurrentTaskId = taskId
 								_G.Bot_LastFarmTeleportTime = nowSec
 								pcall(function()
@@ -6476,6 +6781,10 @@ StartNewbieQuestPipeline = function()
 										SaveOutput()
 									end
 								end)
+							elseif bestPt and targetMap and _G.CheckAndRotateSpotIfPlayerNearby then
+								if _G.CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap) then
+									_G.Bot_LastFarmTeleportTime = nowSec
+								end
 							end
 							-- Vô hiệu hóa tìm đường của quest để giữ nhân vật đứng yên tại bãi cày
 							pcall(function()
@@ -6763,15 +7072,16 @@ StartNewbieQuestPipeline = function()
 										SendTeleportWithLine(1009, targetLine, targetX, targetY)
 									end)
 								elseif curSceneMap == 1009 then
-									-- 2. Đã ở Tarkan: Kiểm tra khoảng cách/kênh tới bãi tối ưu, nếu cách xa > 20 ô hoặc lệch kênh thì bay lại
+									-- 2. Đã ở Tarkan: Kiểm tra khoảng cách & kênh tới bãi tối ưu, nếu cách xa > 10 ô hoặc lệch kênh thì bay lại
 									local pMe = _G.RoleManager and _G.RoleManager.me
 									local myPos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
-									local isFar = (curLine ~= targetLine)
+									local curActualLine = GetCurrentMapLine()
+									local isFar = (curActualLine ~= targetLine)
 									if not isFar and myPos and myPos.x and myPos.y then
 										local dist = math.sqrt((myPos.x - targetX)^2 + (myPos.y - targetY)^2)
-										if dist > 20 then isFar = true end
+										if dist > 10 then isFar = true end
 									end
-									if (isFar or isNewTask) and (nowSec - _G.Bot_LastCS1TeleTime >= 6) then
+									if (isFar or isNewTask) and (nowSec - _G.Bot_LastCS1TeleTime >= 4) then
 										_G.Bot_LastCS1TeleTime = nowSec
 										_G.Bot_CurrentTaskId = taskId
 										if bestPt and bestPt.tierKey and _G.Mod_TierRotationState and _G.Mod_TierRotationState[bestPt.tierKey] then
@@ -6782,9 +7092,11 @@ StartNewbieQuestPipeline = function()
 										SaveOutput()
 										SendTeleportWithLine(1009, targetLine, targetX, targetY)
 									else
-										-- Nếu đã đứng tại bãi Tarkan: Kiểm tra người chơi khác <= 2 ô để xoay bãi/kênh
+										-- Nếu đã đứng tại bãi Tarkan: Kiểm tra người chơi khác <= 7 ô (sau khi đáp ổn định) để xoay bãi/kênh
 										if _G.CheckAndRotateSpotIfPlayerNearby and bestPt then
-											_G.CheckAndRotateSpotIfPlayerNearby(bestPt, 1009)
+											if _G.CheckAndRotateSpotIfPlayerNearby(bestPt, 1009) then
+												_G.Bot_LastCS1TeleTime = nowSec
+											end
 										end
 									end
 									-- Luôn bật AutoFight để đánh quái gom 20 Sách Đế Vương
@@ -6922,27 +7234,31 @@ StartNewbieQuestPipeline = function()
 						end)
 						_G.Bot_LastFarmTeleportTime = _G.Bot_LastFarmTeleportTime or 0
 						local nowSec = os.time()
-						if (not isMoving and not isFighting) or (nowSec - _G.Bot_LastFarmTeleportTime >= 8) then
-							_G.Bot_LastFarmTeleportTime = nowSec
-							pcall(function()
-								local bestPt, targetMap = GetBestMonsterFarmPoint(curMap, false)
-								if bestPt and targetMap and _G.CheckAndRotateSpotIfPlayerNearby and _G.CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap) then
-									return
-								end
-								local hasTele = TeleportToBestFarmPoint(curMap)
+						pcall(function()
+							local bestPt, targetMap = GetBestMonsterFarmPoint(curMap, false)
+							if not bestPt or not targetMap then return end
+							local pMe = _G.RoleManager and _G.RoleManager.me
+							local myPos = (pMe and pMe.cellPos) or (pMe and pMe.serverCoord)
+							local curActualLine = GetCurrentMapLine()
+							local targetLine = tonumber(bestPt.line) or 1
+							local isFar = (curMap ~= targetMap) or (curActualLine ~= targetLine)
+							if not isFar and myPos and myPos.x and myPos.y then
+								local dist = math.sqrt((myPos.x - bestPt.x)^2 + (myPos.y - bestPt.y)^2)
+								if dist > 10 then isFar = true end
+							end
+							if isFar and ((not isMoving and not isFighting) or (nowSec - _G.Bot_LastFarmTeleportTime >= 4)) then
+								_G.Bot_LastFarmTeleportTime = nowSec
+								local hasTele = TeleportToBestFarmPoint(targetMap)
 								if hasTele then
-									Log(string.format("[Luyện Cấp] : Chưa có nhiệm vụ mới -> Tự động train bãi tối ưu tại Map %d!", curMap), true)
+									Log(string.format("[Luyện Cấp] : Chưa có nhiệm vụ mới -> Tự động train bãi tối ưu tại Map %d!", targetMap), true)
 									SaveOutput()
 								end
-							end)
-						elseif lvl >= 145 and _G.CheckAndRotateSpotIfPlayerNearby then
-							pcall(function()
-								local bestPt, targetMap = GetBestMonsterFarmPoint(curMap, false)
-								if bestPt and targetMap then
-									_G.CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap)
+							elseif _G.CheckAndRotateSpotIfPlayerNearby then
+								if _G.CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap) then
+									_G.Bot_LastFarmTeleportTime = nowSec
 								end
-							end)
-						end
+							end
+						end)
 						pcall(function()
 							local me = _G.RoleManager and _G.RoleManager.me
 							if me and me.SetAutoFight then me:SetAutoFight(_G.AutoFightStrKey and _G.AutoFightStrKey.AutoFight or "AutoFight") end
@@ -7453,9 +7769,149 @@ end
 _G.Bot_Running = false
 _G.Bot_PauseTask = false
 
+-- =========================================================================
+-- [MOD FEATURE]: CHẶN KHÓA MỤC TIÊU RỒNG CON-VÀNG KHI CHU TRÌNH AUTO ĐANG CHẠY
+-- Mô tả:
+--   - Khi sự kiện Rồng Vàng xâm lược diễn ra trên bãi farm, "Rồng Con-Vàng" (ID 164001..164099, 100113,
+--     monsterType = goldBoss / 2002) có độ hiếm cao nhất (BESTRARE = 1000) và cờ IsBoss() == true.
+--   - Nếu không chặn, RoleTargetManager sẽ ép khóa mục tiêu vào Rồng Con-Vàng khiến MeAutoFight
+--     nhận diện IsAttackBoss() == true -> ngắt skill quần thể (Hắc Long Ba) và chuyển sang gõ skill đơn (Thiên Thạch) 1 máu.
+--   - Giải pháp: Khi _G.Bot_Running == true, lọc bỏ Rồng Con-Vàng khỏi RoleTargetManager (IsCanAttackMonster,
+--     GetCanAttackRole, GetCanAttackRoleOnHookTime), chặn Me:SetTarget / SetTargetAvatar vào Rồng Con-Vàng,
+--     và tự động gỡ TargetAvatar nếu lỡ dính vào Rồng Con-Vàng.
+-- =========================================================================
+local function IsGoldenBabyDragon(role)
+	if not role then return false end
+	local rType = role.RoleType
+	local monsterRoleType = (_G.ERoleType and _G.ERoleType.Monster) or 2
+	if rType ~= nil and rType ~= monsterRoleType then
+		return false
+	end
+
+	local cfgId = tonumber(
+		(role.GetConfigId and role:GetConfigId())
+		or role.configId
+		or (role.data and (role.data.configId or (role.data.configData and role.data.configData.id) or (role.data.config_Monster and role.data.config_Monster.id)))
+		or 0
+	) or 0
+
+	if (cfgId >= 164001 and cfgId <= 164099) or cfgId == 100113 then
+		return true
+	end
+
+	local roleName = tostring(
+		role.name
+		or (role.data and (role.data.name or (role.data.configData and role.data.configData.name) or (role.data.config_Monster and role.data.config_Monster.name)))
+		or ""
+	)
+	if roleName == "" and cfgId > 0 and _G.ClientTable and _G.ClientTable.cfg_Monster_monsterManager then
+		local okCfg, mCfg = pcall(function()
+			return _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId, "id")
+				or _G.ClientTable.cfg_Monster_monsterManager:TryGetValue(cfgId)
+		end)
+		if okCfg and mCfg and mCfg.name then
+			roleName = tostring(mCfg.name)
+		end
+	end
+
+	if roleName ~= "" then
+		if string.find(roleName, "Rồng Con-Vàng", 1, true)
+			or string.find(roleName, "Rồng Con Vàng", 1, true)
+			or string.find(roleName, "Rong Con-Vang", 1, true)
+			or string.find(roleName, "Rong Con Vang", 1, true) then
+			return true
+		end
+	end
+
+	return false
+end
+_G.IsGoldenBabyDragon = IsGoldenBabyDragon
+
+local function EnsureGoldenDragonTargetFilterHooked()
+	pcall(function()
+		-- 1. Hook RoleTargetManager để lọc bỏ Rồng Con-Vàng khỏi mọi hàm quét mục tiêu
+		local rtm = _G.RoleTargetManager
+		if rtm and not rtm._modHookedGoldenDragonFilter then
+			rtm._modHookedGoldenDragonFilter = true
+
+			local origIsCanAttackMonster = rtm.IsCanAttackMonster
+			if type(origIsCanAttackMonster) == "function" then
+				rtm.IsCanAttackMonster = function(role)
+					if _G.Bot_Running and IsGoldenBabyDragon(role) then
+						return false
+					end
+					return origIsCanAttackMonster(role)
+				end
+			end
+
+			local origGetCanAttackRole = rtm.GetCanAttackRole
+			if type(origGetCanAttackRole) == "function" then
+				rtm.GetCanAttackRole = function(role)
+					if _G.Bot_Running and IsGoldenBabyDragon(role) then
+						return false
+					end
+					return origGetCanAttackRole(role)
+				end
+			end
+
+			local origGetCanAttackRoleOnHookTime = rtm.GetCanAttackRoleOnHookTime
+			if type(origGetCanAttackRoleOnHookTime) == "function" then
+				rtm.GetCanAttackRoleOnHookTime = function(role)
+					if _G.Bot_Running and IsGoldenBabyDragon(role) then
+						return false
+					end
+					return origGetCanAttackRoleOnHookTime(role)
+				end
+			end
+		end
+
+		-- 2. Hook Me.SetTarget & Me.SetTargetAvatar để chặn gán trực tiếp Rồng Con-Vàng làm mục tiêu
+		local meClass = _G.Me
+		if meClass and not meClass._modHookedGoldenDragonTarget then
+			meClass._modHookedGoldenDragonTarget = true
+
+			local origSetTarget = meClass.SetTarget
+			if type(origSetTarget) == "function" then
+				meClass.SetTarget = function(self, avatar, ...)
+					if _G.Bot_Running and avatar ~= nil and IsGoldenBabyDragon(avatar) then
+						return
+					end
+					return origSetTarget(self, avatar, ...)
+				end
+			end
+
+			local origSetTargetAvatar = meClass.SetTargetAvatar
+			if type(origSetTargetAvatar) == "function" then
+				meClass.SetTargetAvatar = function(self, avatar, ...)
+					if _G.Bot_Running and avatar ~= nil and IsGoldenBabyDragon(avatar) then
+						return
+					end
+					return origSetTargetAvatar(self, avatar, ...)
+				end
+			end
+		end
+
+		-- 3. Nếu nhân vật hiện tại đang lỡ khóa mục tiêu vào Rồng Con-Vàng khi chu trình đang chạy -> Gỡ ngay lập tức
+		if _G.Bot_Running then
+			local me = _G.RoleManager and _G.RoleManager.me
+			if me and me.TargetAvatar and IsGoldenBabyDragon(me.TargetAvatar) then
+				if me.CloseTarget then
+					pcall(function() me:CloseTarget() end)
+				end
+				me.TargetAvatar = nil
+				if _G.RoleTargetManager and _G.RoleTargetManager.ClearSelectMonsterTarget then
+					pcall(_G.RoleTargetManager.ClearSelectMonsterTarget)
+				end
+			end
+		end
+	end)
+end
+_G.EnsureGoldenDragonTargetFilterHooked = EnsureGoldenDragonTargetFilterHooked
+
 _G.StartAutoFarmBot = function()
 	_G.Bot_Running = true
 	_G.Bot_PauseTask = false
+	EnsureGoldenDragonTargetFilterHooked()
 	_G.IsSwitchingAccount = false
 	_G.HasCreatedRoleForTarget = false
 	_G.IsRoleCreating = false
@@ -7839,6 +8295,9 @@ function Main.Update(deltaTime, unscaledDeltaTime)
   Profiler.BeginSample("GameLogic.Update")
   GameLogic.Update()
   Profiler.EndSample()
+  if _G.Bot_Running and _G.EnsureGoldenDragonTargetFilterHooked then
+    _G.EnsureGoldenDragonTargetFilterHooked()
+  end
   Profiler.BeginSample("GamePlay.Update")
   GamePlay.Update()
   Profiler.EndSample()

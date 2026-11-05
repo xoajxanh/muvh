@@ -731,40 +731,51 @@ export default function SvipTokensPage() {
                 />
               </div>
 
-              {/* Cấp Chuyển Chính / Phụ */}
+              {/* ========================================================================= */}
+              {/* [MOD FEATURE]: CHỌN CẤP CHUYỂN CHÍNH / PHỤ SVIP TOKEN (C1 - C15)          */}
+              {/* Mô tả: Đổi từ input number (3-12) sang select dropdown (C1-C15) đồng bộ   */}
+              {/* ========================================================================= */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Cấp Chuyển Chính (3-12)
+                    Cấp Chuyển Chính (C1-C15)
                   </label>
-                  <input
-                    type="number"
-                    min={3}
-                    max={12}
+                  <select
                     value={formData.mainTier}
                     onChange={(e) => {
-                      const mainVal = parseInt(e.target.value, 10) || 8;
+                      const mainVal = Number(e.target.value) || 8;
                       setFormData({
                         ...formData,
                         mainTier: mainVal,
                         subTier: mainVal > 1 ? mainVal - 1 : 1,
                       });
                     }}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
-                  />
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-cyan-300 text-sm font-semibold focus:outline-none focus:border-amber-500"
+                    title="Chuyển chính (Primary)"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        Chính: C{lvl}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">
-                    Cấp Chuyển Phụ (3-12)
+                    Cấp Chuyển Phụ (C1-C15)
                   </label>
-                  <input
-                    type="number"
-                    min={3}
-                    max={12}
+                  <select
                     value={formData.subTier}
-                    onChange={(e) => setFormData({ ...formData, subTier: parseInt(e.target.value, 10) || 7 })}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:outline-none focus:border-amber-500"
-                  />
+                    onChange={(e) => setFormData({ ...formData, subTier: Number(e.target.value) || 1 })}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-amber-300 text-sm font-semibold focus:outline-none focus:border-amber-500"
+                    title="Chuyển phụ (Secondary)"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lvl) => (
+                      <option key={lvl} value={lvl}>
+                        Phụ: C{lvl}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
