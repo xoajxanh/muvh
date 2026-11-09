@@ -3983,6 +3983,12 @@ local function CreateModUI()
                 for _, md in ipairs(_G.SceneData.MonsterMapData) do
                     if md.mapCount then
                         for _, v in ipairs(md.mapCount) do
+                          -- =========================================================================
+                          -- [MOD FEATURE]: CHỈ LẤY THÔNG TIN BOSS KÊNH (LINE) 1
+                          -- Mô tả: Mod chỉ đánh Boss ở Line 1 -> bỏ qua dữ liệu Line 2+ (gộp server/mở thêm kênh)
+                          --        để không bị chọn Boss "sống" ở Line khác rồi chạy đi chạy lại Map Line 1.
+                          -- =========================================================================
+                          if (v.line or 1) == 1 then
                             local mapId = v.mapId
                             if not tempBosses[mapId] then tempBosses[mapId] = {} end
 
@@ -4010,6 +4016,7 @@ local function CreateModUI()
                             bData.deadTimes[lineNum] = deadTimes
                             bData.bossStates = bData.bossStates or {}
                             bData.bossStates[lineNum] = v.bossState or {}
+                          end -- [MOD FEATURE]: hết lọc Line 1
                         end
                     end
                 end

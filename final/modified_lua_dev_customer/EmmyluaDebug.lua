@@ -2902,6 +2902,12 @@ local function CreateModUI()
                 for _, md in ipairs(_G.SceneData.MonsterMapData) do
                     if md.mapCount then
                         for _, v in ipairs(md.mapCount) do
+                          -- =========================================================================
+                          -- [MOD FEATURE]: CHỈ LẤY THÔNG TIN BOSS KÊNH (LINE) 1
+                          -- Mô tả: Mod chỉ đánh Boss ở Line 1 -> bỏ qua dữ liệu Line 2+ (gộp server/mở thêm kênh)
+                          --        để không bị chọn Boss "sống" ở Line khác rồi chạy đi chạy lại Map Line 1.
+                          -- =========================================================================
+                          if (v.line or 1) == 1 then
                             local mapId = v.mapId
                             if not tempBosses[mapId] then tempBosses[mapId] = {} end
 
@@ -2932,6 +2938,7 @@ local function CreateModUI()
                             bData.aliveCount[lineNum] = v.count or 0
                             bData.deadTimes[lineNum] = deadTimes
                             bData.deadInfos[lineNum] = deadInfos
+                          end -- [MOD FEATURE]: hết lọc Line 1
                         end
                     end
                 end
@@ -4805,6 +4812,7 @@ local function CreateModUI()
                             end)
                             _G.Mod_AutoFarmBoss_IconReqSeq = _G.Mod_BossStateSeq or 0
                             _G.Mod_AutoFarmBoss_IconReqTime = nowRealtime
+                            _G.Mod_AutoFarmBoss_MountTriedMap = nil -- [MOD FEATURE]: cho phép tự cưỡi thú lại ở lần vào map này
 
                             if _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqBossIcon then
                                 pcall(function() _G.NetManager.Send(_G.MapMessage.ReqBossIcon) end)
@@ -4855,6 +4863,49 @@ local function CreateModUI()
                             (_G.GetBossPosition and _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId))
                         local posLog = target.currentPos and
                             string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "(cổng)"
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ CƯỠI THÚ KHI VỪA VÀO ĐẦU MAP BOSS (TRƯỚC KHI DÙNG ĐÁ / CHẠY BỘ)
+                        -- Mô tả: Giống nút cưỡi thú của game (Main_MainSkillUI:SetMountOnclick):
+                        --        ReqChangeHorseState { position = bagGridIndex, ride = true }.
+                        --        Đang cưỡi / chưa đặt thú mặc định / khu an toàn / map cấm cưỡi -> bỏ qua.
+                        --        Mỗi lần vào map chỉ thử 1 lần, chờ 0.6s rồi đi tiếp. Không log/không Msg.
+                        -- =========================================================================
+                        if _G.Mod_AutoFarmBoss_MountTriedMap ~= currentMapId then
+                            _G.Mod_AutoFarmBoss_MountTriedMap = currentMapId
+                            local sentMount = false
+                            pcall(function()
+                                local meM = _G.RoleManager and _G.RoleManager.me
+                                if not meM or not meM.data or (meM.hp and meM.hp <= 0) then return end
+                                if meM.data.rideMount then return end
+                                local MD = _G.MountData
+                                if not MD or not MD.DefaultMount or MD.DefaultMount == 0 then return end
+                                local mDataMgr = meM.data.mountData
+                                local mountData = mDataMgr and mDataMgr.GetidMountData and mDataMgr:GetidMountData(MD.DefaultMount)
+                                if not mountData then return end
+                                if meM.IsCurSafeZone and meM:IsCurSafeZone() and mountData.cityride ~= 1 then return end
+                                local mapMgr = _G.ClientTable and _G.ClientTable.cfg_Map_mapManager
+                                local mapTable = mapMgr and mapMgr:TryGetValue(_G.SceneData and _G.SceneData.mapId)
+                                if mapTable then
+                                    if mapTable.mountType == 1 then return end
+                                    if mapTable.mountType == 2 and mapMgr.IsNowMapChangeHorseState
+                                        and mapMgr:IsNowMapChangeHorseState(mapTable, mountData.itemId) == false then
+                                        return
+                                    end
+                                end
+                                if _G.NetManager and _G.NetManager.Send and _G.EquipMessage and _G.EquipMessage.ReqChangeHorseState then
+                                    _G.NetManager.Send(_G.EquipMessage.ReqChangeHorseState, {
+                                        position = mountData.bagGridIndex,
+                                        ride = true
+                                    })
+                                    sentMount = true
+                                end
+                            end)
+                            if sentMount then
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.6
+                                return
+                            end
+                        end
 
                         -- =========================================================================
                         -- [MOD FEATURE]: TỰ ĐỘNG DÙNG ĐÁ DỊCH CHUYỂN MAP HOANG DÃ KHI CÁCH > 50M
