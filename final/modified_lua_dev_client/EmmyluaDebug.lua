@@ -5890,6 +5890,59 @@ local function CreateModUI()
                         if _G.Mod_SaveFarmStats then _G.Mod_SaveFarmStats() end
                         if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
                         LogMsg("[MAP ẨN] Đã vào Map Ẩn! Ghi nhận thống kê +1 Map.")
+
+                        -- =========================================================================
+                        -- [MOD FEATURE]: DÙNG 1 THẺ EXP KHI VÀO MAP ẨN (BUFF EXP CÒN < 5 PHÚT)
+                        -- Mô tả: Bật bằng nút "DÙNG THẺ EXP KHI VÀO ẨN" (mặc định TẮT). Sau khi tăng bộ đếm
+                        --        Map Ẩn, nếu Buff EXP còn dưới 300s (hoặc đã hết) -> dùng 1 Thẻ Buff EXP (3000400).
+                        -- =========================================================================
+                        if _G.Mod_MapAn_UseExpCard then
+                            pcall(function()
+                                local myRoleId = _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id
+                                local buffs = (_G.BuffData and _G.BuffData.GetBuffs and _G.BuffData.GetBuffs(myRoleId)) or {}
+                                local expBuffRemainTime = 0
+                                for _, b in pairs(buffs) do
+                                    if b and b.buffConfig and b.buffConfig.name and b.buffConfig.name:find("EXP") then
+                                        local rTime = tonumber(b.time) or 0
+                                        if rTime > expBuffRemainTime then expBuffRemainTime = rTime end
+                                    end
+                                end
+
+                                if expBuffRemainTime >= 300 then
+                                    return
+                                end
+
+                                local cardItem = nil
+                                if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
+                                    pcall(function() cardItem = _G.BagInfoData.GetItemByConfigID(3000400) end)
+                                end
+                                if not cardItem and _G.BagInfoData and _G.BagInfoData.TotalItems then
+                                    for _, item in pairs(_G.BagInfoData.TotalItems) do
+                                        if item and (item.itemId == 3000400 or (item.tblItem and item.tblItem.name and item.tblItem.name:find("Buff EXP"))) then
+                                            cardItem = item
+                                            break
+                                        end
+                                    end
+                                end
+
+                                if not cardItem then
+                                    return
+                                end
+
+                                if _G.ItemUtility and _G.ItemUtility.UseItem then
+                                    _G.ItemUtility.UseItem({
+                                        useCount = 1,
+                                        useItemId = cardItem.id,
+                                        configId = cardItem.itemId,
+                                        useParam = cardItem.tblItem and cardItem.tblItem.useParam,
+                                        params = nil,
+                                        itemInfo = cardItem
+                                    })
+                                elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
+                                    _G.BagInfoController.UseItemReq(1, cardItem.id, nil, cardItem.itemId)
+                                end
+                            end)
+                        end
                     end
 
                     if not _G.Mod_MapAn_SkillsApplied then
@@ -11889,9 +11942,20 @@ local function CreateModUI()
                                 req:Dispose()
                             end)
 
+                            -- =========================================================================
+                            -- [MOD FEATURE]: KHÔNG HỦY XÁC THỰC NGAY KHI CHECK NGẦM 60S THẤT BẠI
+                            -- Mô tả: Chỉ lần check đăng nhập (isInitialLogin) mới hủy cờ xác thực ngay.
+                            --        Check ngầm định kỳ để vòng giám sát tự đếm lỗi (quá 5 lần mới văng).
+                            -- =========================================================================
+                            local function MarkAuthInvalid()
+                                if isInitialLogin then
+                                    _G.ModAuthValid = false
+                                    _G.Mod_IsOnlineVerified = false
+                                end
+                            end
+
                             if not isSuccess or payload == "" then
-                                _G.ModAuthValid = false
-                                _G.Mod_IsOnlineVerified = false
+                                MarkAuthInvalid()
                                 if callback then callback(false, false, "Không thể kết nối máy chủ xác thực!") end
                                 return
                             end
@@ -11904,19 +11968,16 @@ local function CreateModUI()
                                     _G.Mod_ActiveStatusMsg = "Đã kích hoạt SVIP thành công!"
                                     if callback then callback(true, true, _G.Mod_ActiveStatusMsg) end
                                 else
-                                    _G.ModAuthValid = false
-                                    _G.Mod_IsOnlineVerified = false
+                                    MarkAuthInvalid()
                                     _G.Mod_ActiveStatusMsg = "Token từ máy chủ không hợp lệ cho thiết bị này!"
                                     if callback then callback(true, false, _G.Mod_ActiveStatusMsg) end
                                 end
                             elseif apiObj and apiObj.error then
-                                _G.ModAuthValid = false
-                                _G.Mod_IsOnlineVerified = false
+                                MarkAuthInvalid()
                                 _G.Mod_ActiveStatusMsg = tostring(apiObj.error)
                                 if callback then callback(true, false, _G.Mod_ActiveStatusMsg) end
                             else
-                                _G.ModAuthValid = false
-                                _G.Mod_IsOnlineVerified = false
+                                MarkAuthInvalid()
                                 _G.Mod_ActiveStatusMsg = "Phản hồi từ máy chủ không hợp lệ!"
                                 if callback then callback(false, false, _G.Mod_ActiveStatusMsg) end
                             end
@@ -11971,7 +12032,8 @@ local function CreateModUI()
                     "Mod_LockTarget_Name", "Mod_DisableVisuals", "Mod_AutoOpenGoldenChest_Enabled",
                     "Mod_TeleNotify_Enabled", "Mod_AutoBoss_SkipHpPct", "Mod_AutoHunt_Enabled",
                     "Mod_AutoBloodCastle_Enabled", "Mod_Coord_BloodCastle",
-                    "Mod_AutoDemonPlaza_Enabled", "Mod_Coord_DemonPlaza", "Mod_AutoUseExpCard_Enabled"
+                    "Mod_AutoDemonPlaza_Enabled", "Mod_Coord_DemonPlaza", "Mod_AutoUseExpCard_Enabled",
+                    "Mod_MapAn_UseExpCard" -- [MOD FEATURE]: nút Dùng Thẻ EXP khi vào Ẩn
                 }
 
                 for _, key in ipairs(modKeys) do
@@ -12050,6 +12112,7 @@ local function CreateModUI()
                 _G.Mod_AutoDemonPlaza_Enabled = false
                 _G.Mod_Coord_DemonPlaza = ""
                 _G.Mod_AutoUseExpCard_Enabled = false
+                _G.Mod_MapAn_UseExpCard = false -- [MOD FEATURE]: reset nút Dùng Thẻ EXP khi vào Ẩn
                 _G.Mod_IsRunningDungeon = false
                 _G.Mod_IsPriorityDungeon = false
                 _G.Mod_DungeonExpCardsUsed = 0
@@ -12127,6 +12190,21 @@ local function CreateModUI()
             end)
         end
         _G.Mod_ClearAllPlayerPrefs = _G.Mod_ClearAuthToken
+
+        -- =========================================================================
+        -- [MOD FEATURE]: CHỈ XÓA TOKEN XÁC THỰC (GIỮ NGUYÊN CÀI ĐẶT NGƯỜI DÙNG)
+        -- Mô tả: Dùng khi check ngầm thất bại quá 5 lần -> chỉ xóa Mod_AuthToken & cờ xác thực,
+        --        không xóa các cài đặt khác để user active lại không bị mất cấu hình.
+        --        (Nút Watermark vẫn dùng Mod_ClearAuthToken để xóa toàn bộ.)
+        -- =========================================================================
+        _G.Mod_ClearAuthTokenOnly = function()
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_AuthToken")
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+            _G.ModAuthValid = false
+            _G.Mod_IsOnlineVerified = false
+        end
 
         -- =========================================================================
         -- [MOD FEATURE]: GIAO DIỆN XÁC THỰC BẢN QUYỀN ONLINE SVIP (AUTH UI)
@@ -13006,6 +13084,30 @@ local function CreateModUI()
                     _G.Mod_IgnoredDropItems = {}
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ SET TỐC CHẠY 3.0 & PHÁT HIỆN ĐỊCH 15 KHI BẬT TỰ ĐỘNG NHẶT (CLIENT NON-ADMIN)
+                    -- Mô tả: Chỉ áp dụng khi không phải Admin. Bật nhặt nhanh -> Tốc Chạy 3.0x, Phát Hiện Địch 15.
+                    --        Chỉ refresh UI 2 nhãn Tốc Chạy & Phát Hiện Địch. Tắt nhặt không revert.
+                    -- =========================================================================
+                    if not _G.Mod_IsAdmin then
+                        pcall(function()
+                            _G.RunSpeedMultiplier = 3.0
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 3.0)
+                            _G.Mod_CustomAttackRange = 15
+                            CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 15)
+                            CS.UnityEngine.PlayerPrefs.Save()
+
+                            -- Áp dụng tốc chạy ngay lập tức qua hook SetMoveSpeed
+                            local me = _G.RoleManager and _G.RoleManager.me
+                            if me and me.SetMoveSpeed then
+                                me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true)
+                            end
+                            if CS.UnityEngine.Application then CS.UnityEngine.Application.targetFrameRate = 60 end
+                        end)
+                        if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+                        if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
+                    end
                 end
 
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
@@ -14647,6 +14749,17 @@ local function CreateModUI()
                         _G.Mod_ActiveSpamItems = nil
                         _G.Mod_AdminBurstDropItems = nil
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: BẬT AUTO BOSS -> ĐƯA TỐC CHẠY VỀ 1.0
+                        -- =========================================================================
+                        _G.RunSpeedMultiplier = 1.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.0)
+                        local meSpd = _G.RoleManager and _G.RoleManager.me
+                        if meSpd and meSpd.SetMoveSpeed then
+                            meSpd:SetMoveSpeed(meSpd._modBaseMoveSpeed or 5.0, true)
+                        end
+                        if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+
                         CS.UnityEngine.PlayerPrefs.Save()
 
                         -- Refresh UI nhanh chỉ số chiến đấu
@@ -14840,6 +14953,71 @@ local function CreateModUI()
                 if _G.Mod_SaveMapAnSkills then
                     _G.Mod_SaveMapAnSkills()
                 end
+            end)
+
+            -- =========================================================================
+            -- [MOD FEATURE]: NÚT "DÙNG THẺ EXP KHI VÀO ẨN" (CỘT TRÁI - HÀNG 4, y = -138)
+            -- Mô tả: Mặc định TẮT, lưu PlayerPrefs "Mod_MapAn_UseExpCard".
+            --        Content header nới chiều cao 138 -> 172 (ScrollView tự cuộn).
+            -- =========================================================================
+            hcRt.sizeDelta = Vector2(0, 172)
+
+            local mapAnExpGo = GameObject("MapAnUseExpCardToggle")
+            mapAnExpGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, mapAnExpGo)
+            local meRt = mapAnExpGo:AddComponent(typeof(RectTransform))
+            meRt.anchorMin, meRt.anchorMax, meRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            mapAnExpGo.transform:SetParent(headerContentGo.transform, false)
+            meRt.anchoredPosition = Vector2(0, -138)
+            meRt.sizeDelta = Vector2(200, 30)
+
+            local meBg = GameObject("Bg")
+            meBg.transform:SetParent(mapAnExpGo.transform, false)
+            local meBgRt = meBg:AddComponent(typeof(RectTransform))
+            meBgRt.anchorMin, meBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            meBgRt.sizeDelta = Vector2(0, 0)
+            local meBgImg = meBg:AddComponent(typeof(Image))
+
+            local meTxtGo = GameObject("Text")
+            meTxtGo.transform:SetParent(mapAnExpGo.transform, false)
+            local meTxtRt = meTxtGo:AddComponent(typeof(RectTransform))
+            meTxtRt.anchorMin, meTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            meTxtRt.sizeDelta = Vector2(0, 0)
+            local meTxt = meTxtGo:AddComponent(typeof(Text))
+            meTxt.raycastTarget = false
+            meTxt.fontSize = 13
+            meTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then meTxt.font = defaultFont end
+
+            local meBtn = mapAnExpGo:AddComponent(typeof(Button))
+
+            local function UpdateMapAnExpToggle()
+                if _G.Mod_MapAn_UseExpCard then
+                    meBgImg.color = Color(0.2, 0.4, 0.6, 1)
+                    meTxt.text = "DÙNG THẺ EXP KHI VÀO ẨN: BẬT"
+                    meTxt.color = Color.white
+                else
+                    meBgImg.color = Color(0.3, 0.3, 0.3, 1)
+                    meTxt.text = "DÙNG THẺ EXP KHI VÀO ẨN: TẮT"
+                    meTxt.color = Color(0.8, 0.8, 0.8, 1)
+                end
+            end
+
+            if _G.Mod_MapAn_UseExpCard == nil then
+                pcall(function()
+                    _G.Mod_MapAn_UseExpCard = (CS.UnityEngine.PlayerPrefs.GetInt("Mod_MapAn_UseExpCard", 0) == 1)
+                end)
+                if _G.Mod_MapAn_UseExpCard == nil then _G.Mod_MapAn_UseExpCard = false end
+            end
+            UpdateMapAnExpToggle()
+
+            meBtn.onClick:AddListener(function()
+                _G.Mod_MapAn_UseExpCard = not _G.Mod_MapAn_UseExpCard
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_MapAn_UseExpCard", _G.Mod_MapAn_UseExpCard and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateMapAnExpToggle()
             end)
 
             -- CỘT PHẢI - HÀNG 1: TỌA ĐỘ TRAIN InputField (x=230, w=105) + Nút XY HIỆN TẠI (x=340, w=110)
@@ -22105,6 +22283,7 @@ if not _G.Mod_LicenseMonitor_Started then
                             if isActive then
                                 _G.Mod_IsOnlineVerified = true
                                 _G.ModAuthValid = true
+                                _G.Mod_LicenseFailCount = 0 -- [MOD FEATURE]: reset bộ đếm lỗi check ngầm khi login xác thực OK
                                 if _G.authPanelGo and _G.authPanelGo.activeSelf then
                                     _G.authPanelGo:SetActive(false)
                                 end
@@ -22148,21 +22327,35 @@ if not _G.Mod_LicenseMonitor_Started then
                     _lastBackgroundSvipCheck = nowTime
                 elseif (nowTime - _lastBackgroundSvipCheck) >= 60.0 then
                     _lastBackgroundSvipCheck = nowTime
+                    -- =========================================================================
+                    -- [MOD FEATURE]: ĐẾM LỖI CHECK NGẦM - QUÁ 5 LẦN MỚI VĂNG RA MÀN HÌNH ACTIVE
+                    -- Mô tả: Mỗi lần thất bại (mất mạng / hết hạn / phản hồi lỗi) tăng bộ đếm.
+                    --        Thành công -> reset về 0. Đủ 5 lần -> chỉ xóa Token (giữ cài đặt) và hiện Active.
+                    -- =========================================================================
                     if _G.Mod_FetchSvipConfigFromAPI then
                         _G.Mod_FetchSvipConfigFromAPI(false, function(success, isActive, msg)
-                            if success and not isActive then
-                                -- Server trả về không active (thu hồi hoặc hết hạn)
+                            if success and isActive then
+                                _G.Mod_LicenseFailCount = 0
+                                return
+                            end
+
+                            _G.Mod_LicenseFailCount = (_G.Mod_LicenseFailCount or 0) + 1
+                            local failCount = _G.Mod_LicenseFailCount
+                            if failCount < 5 then
+                                return -- im lặng, không hiện Msg
+                            end
+
+                            _G.Mod_LicenseFailCount = 0
+                            if _G.Mod_ClearAuthTokenOnly then
+                                pcall(_G.Mod_ClearAuthTokenOnly)
+                            else
                                 _G.Mod_IsOnlineVerified = false
                                 _G.ModAuthValid = false
-                                if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
-                                if _G.authPanelGo and not _G.authPanelGo.activeSelf then
-                                    _G.authPanelGo:SetActive(true)
-                                    if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
-                                end
-                                if _G.Mod_ClearAuthToken then pcall(_G.Mod_ClearAuthToken) end
-                                if _G.FloatingWordUtility then
-                                    _G.FloatingWordUtility.QuickMsg("Bản quyền SVIP đã hết hạn hoặc bị thu hồi!")
-                                end
+                            end
+                            if _G.panelGo and _G.panelGo.activeSelf then _G.panelGo:SetActive(false) end
+                            if _G.authPanelGo and not _G.authPanelGo.activeSelf then
+                                _G.authPanelGo:SetActive(true)
+                                if _G.Mod_RefreshAuthUI then pcall(_G.Mod_RefreshAuthUI) end
                             end
                         end)
                     end

@@ -2136,6 +2136,108 @@ local function CreateModUI()
             end
         end)
 
+        -- =========================================================================
+        -- [MOD FEATURE]: BỘ NÚT BẬT/TẮT MUA GÓI KIM CƯƠNG KHÓA (MỞ SV & PHÚC LỢI NGÀY)
+        -- Mô tả: 5 nút toggle ở cột trái (dưới danh sách server), mặc định BẬT, lưu PlayerPrefs
+        --        "Mod_Farm_Pack_<key>". Gói nào TẮT thì bot bỏ qua (không mua, không giữ KC chờ).
+        --        - Sự Kiện Mở SV: Quà Thuốc 120 KC | Quà Cường Hóa 180 KC (gộp 2 gói 180) | Quà Cường Hóa 300 KC
+        --        - Phúc Lợi Ngày: Quà KC I 180 KC | Quà KC II 480 KC
+        -- =========================================================================
+        _G.Mod_PackToggleState = _G.Mod_PackToggleState or {}
+        local PACK_TOGGLE_UI = {
+            { key = "OpenExp120", label = "Thuốc 120KC",   x = 15,  y = 254 },
+            { key = "OpenEnh180", label = "CH 180KC",      x = 145, y = 254 },
+            { key = "OpenEnh300", label = "CH 300KC",      x = 275, y = 254 },
+            { key = "DailyKC1",   label = "KC I 180KC",    x = 15,  y = 186 },
+            { key = "DailyKC2",   label = "KC II 480KC",   x = 145, y = 186 },
+        }
+        local function GetPackToggleUIState(key)
+            local v = _G.Mod_PackToggleState[key]
+            if v == nil then
+                local saved = 1
+                pcall(function() saved = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Pack_" .. key, 1) end)
+                v = (tonumber(saved) or 1) ~= 0
+                _G.Mod_PackToggleState[key] = v
+            end
+            return v
+        end
+        local function CreatePackHeader(hName, hText, posY)
+            local hGo = GameObject(hName)
+            hGo.transform:SetParent(panelGo.transform, false)
+            local hRt = hGo:AddComponent(typeof(RectTransform))
+            hRt.anchorMin, hRt.anchorMax, hRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            hRt.anchoredPosition = Vector2(15, posY)
+            hRt.sizeDelta = Vector2(390, 24)
+            local hTxt = hGo:AddComponent(typeof(Text))
+            hTxt.text = hText
+            hTxt.fontSize = 13
+            hTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            hTxt.alignment = TextAnchor.MiddleLeft
+            hTxt.color = Color(1, 0.85, 0.35, 1)
+            hTxt.raycastTarget = false
+            if defaultFont then hTxt.font = defaultFont end
+        end
+        CreatePackHeader("LblPackOpenServer", "SỰ KIỆN MỞ SV (MUA KHI BẬT):", 290)
+        CreatePackHeader("LblPackDaily", "PHÚC LỢI NGÀY (MUA KHI BẬT):", 222)
+
+        local packToggleRefreshers = {}
+        for _, def in ipairs(PACK_TOGGLE_UI) do
+            local pGo = GameObject("BtnPack_" .. def.key)
+            pGo.transform:SetParent(panelGo.transform, false)
+            local pRt = pGo:AddComponent(typeof(RectTransform))
+            pRt.anchorMin, pRt.anchorMax, pRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            pRt.anchoredPosition = Vector2(def.x, def.y)
+            pRt.sizeDelta = Vector2(126, 34)
+            local pImg = pGo:AddComponent(typeof(Image))
+            pImg.raycastTarget = true
+
+            local pTxtGo = GameObject("Text")
+            pTxtGo.transform:SetParent(pGo.transform, false)
+            local pTxtRt = pTxtGo:AddComponent(typeof(RectTransform))
+            pTxtRt.anchorMin, pTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            pTxtRt.sizeDelta = Vector2(0, 0)
+            local pTxt = pTxtGo:AddComponent(typeof(Text))
+            pTxt.fontSize = 13
+            pTxt.alignment = TextAnchor.MiddleCenter
+            pTxt.raycastTarget = false
+            if defaultFont then pTxt.font = defaultFont end
+
+            local function Refresh()
+                pcall(function()
+                    if not pTxt or pTxt:Equals(nil) or not pImg or pImg:Equals(nil) then return end
+                    if GetPackToggleUIState(def.key) then
+                        pImg.color = Color(0.15, 0.65, 0.30, 1)
+                        pTxt.text = def.label .. ": BẬT"
+                        pTxt.color = Color.white
+                    else
+                        pImg.color = Color(0.28, 0.28, 0.32, 1)
+                        pTxt.text = def.label .. ": TẮT"
+                        pTxt.color = Color(0.85, 0.85, 0.85, 1)
+                    end
+                end)
+            end
+            packToggleRefreshers[#packToggleRefreshers + 1] = Refresh
+            Refresh()
+
+            local pBtn = pGo:AddComponent(typeof(Button))
+            pBtn.targetGraphic = pImg
+            pBtn.onClick:AddListener(function()
+                local newVal = not GetPackToggleUIState(def.key)
+                _G.Mod_PackToggleState[def.key] = newVal
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_Pack_" .. def.key, newVal and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                Refresh()
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg((newVal and "ĐÃ BẬT MUA " or "ĐÃ TẮT MUA ") .. def.label)
+                end
+            end)
+        end
+        _G.UpdatePackToggleBtnUI = function()
+            for _, fn in ipairs(packToggleRefreshers) do fn() end
+        end
+
         local function CreateDelayStepBtn(btnName, label, posX, onClickFn, posY)
             local bGo = GameObject(btnName)
             bGo.transform:SetParent(panelGo.transform, false)
@@ -4691,22 +4793,23 @@ local function IsRecyclableEquipment(item)
     end
 
     if isOtherCareer then
-        -- Khác hệ phái: DW vĩnh viễn không thể mặc -> Thu hồi ngay lập tức (chỉ giữ nếu cường hóa siêu cao >= +7)
-        if item.intensify and item.intensify >= 7 then return false end
+        -- Khác hệ phái: DW vĩnh viễn không thể mặc -> Thu hồi ngay lập tức (nhưng vẫn bảo vệ nếu đang có cường hóa/bồi dưỡng)
+        if (item.intensify and item.intensify > 0) or (item.additional and item.additional > 0) then return false end
         return true
     end
 
     -- 7. ĐỐI VỚI ĐỒ CÙNG HỆ PHÁI:
-    -- 7.1. TUYỆT ĐỐI KHÔNG THU HỒI TRANG BỊ CÓ THỂ MẶC TĂNG LỰC CHIẾN (CAN WEAR UP FIGHT)
+    -- 7.1. TUYỆT ĐỐI KHÔNG THU HỒI TRANG BỊ CÓ THỂ MẶC TĂNG LỰC CHIẾN (CAN WEAR UP FIGHT / CANT WEAR UP FIGHT)
     if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
         local upState = _G.RoleEquipUtility.CanUpFight(item)
-        if upState == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1) then
+        if upState == (_G.EquipUpState and _G.EquipUpState.CanWearUpFight or 1)
+            or upState == (_G.EquipUpState and _G.EquipUpState.CantWearUpFight or 2) then
             return false
         end
     end
 
     -- 7.2. Bỏ qua trang bị có cấp cường hóa cao (>= +7) hoặc tiến cấp cao (>= 7)
-    -- Các đồ cũ thay ra có intensify <= 6 và không tăng lực chiến -> CHO PHÉP THU HỒI để không bị kẹt túi
+    -- Các đồ cũ +1..+6 sẽ được hàm bọc _G.IsRecyclableEquipment ở Main.lua kiểm tra đối chiếu với đồ đang mặc trước khi thu hồi
     if item.intensify and item.intensify >= 7 then return false end
     if item.additional and item.additional >= 7 then return false end
 
@@ -4822,7 +4925,10 @@ local function PerformRecycleExcellence()
                         end
 
                         local GUID = item.id or (item.data and item.data.id)
-                        if not isGood and GUID then
+                        local hasHighEnhance = ((tonumber(item.intensify or 0) or 0) >= 7) or ((tonumber(item.additional or 0) or 0) >= 7)
+                        local upSt = (_G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight and _G.RoleEquipUtility.CanUpFight(item)) or 0
+                        local isUpFight = (upSt == 1 or upSt == 2)
+                        if not isGood and not hasHighEnhance and not isUpFight and GUID and (not _G.IsRecyclableEquipment or _G.IsRecyclableEquipment(item)) then
                             recycleMap[GUID] = itemCount
                             recycleCount = recycleCount + 1
                         end
@@ -4913,7 +5019,10 @@ local function PerformSmeltEquipments()
                         end
                     end
 
-                    if shouldSmelt and item.id then
+                    local hasHighEnhance = ((tonumber(item.intensify or 0) or 0) >= 7) or ((tonumber(item.additional or 0) or 0) >= 7)
+                    local upSt = (_G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight and _G.RoleEquipUtility.CanUpFight(item)) or 0
+                    local isUpFight = (upSt == 1 or upSt == 2)
+                    if shouldSmelt and not hasHighEnhance and not isUpFight and item.id and (not _G.IsRecyclableEquipment or _G.IsRecyclableEquipment(item)) then
                         table.insert(smeltItems, item.id)
                     end
                 end
@@ -8550,6 +8659,24 @@ local function IsOpenServerPackBought(countKey, prefKey)
 end
 _G.IsOpenServerPackBought = IsOpenServerPackBought
 
+-- =========================================================================
+-- [MOD FEATURE]: KIỂM TRA TOGGLE BẬT/TẮT MUA GÓI KC KHÓA
+-- Mô tả: Đọc trạng thái nút (mặc định BẬT) từ _G.Mod_PackToggleState / PlayerPrefs "Mod_Farm_Pack_<key>".
+--        Key: OpenExp120 | OpenEnh180 | OpenEnh300 | DailyKC1 | DailyKC2
+-- =========================================================================
+local function IsPackToggleOn(key)
+    _G.Mod_PackToggleState = _G.Mod_PackToggleState or {}
+    local v = _G.Mod_PackToggleState[key]
+    if v == nil then
+        local saved = 1
+        pcall(function() saved = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_Pack_" .. key, 1) end)
+        v = (tonumber(saved) or 1) ~= 0
+        _G.Mod_PackToggleState[key] = v
+    end
+    return v
+end
+_G.Mod_IsPackToggleOn = IsPackToggleOn
+
 local function AutoBuyNewServerExpMedicinePack(onFinished)
     pcall(function()
         local pMe = _G.RoleManager and _G.RoleManager.me
@@ -8583,6 +8710,7 @@ local function AutoBuyNewServerExpMedicinePack(onFinished)
                 cost = 120,
                 minLvl = 60,
                 prefKey = "Mod_BoughtOpenServerExpPack_" .. roleId,
+                toggleKey = "OpenExp120",
                 name = "Quà Thuốc Mở SV (120 KC - Thuốc EXP 12h)"
             },
             {
@@ -8591,6 +8719,7 @@ local function AutoBuyNewServerExpMedicinePack(onFinished)
                 cost = 180,
                 minLvl = 65,
                 prefKey = "Mod_BoughtOpenServerEnhPack1_" .. roleId,
+                toggleKey = "OpenEnh180",
                 name = "Quà Cường Hóa Mở SV 1 (180 KC - 120 Chúc Phúc + 40 Linh Hồn)"
             },
             {
@@ -8598,6 +8727,7 @@ local function AutoBuyNewServerExpMedicinePack(onFinished)
                 countKey = 4010536,
                 cost = 180,
                 prefKey = "Mod_BoughtOpenServerEnhPack150_" .. roleId,
+                toggleKey = "OpenEnh180",
                 minLvl = 65,
                 name = "Quà Cường Hóa Mở SV 2 (180 KC - 120 Chúc Phúc + 40 Linh Hồn)"
             },
@@ -8607,13 +8737,18 @@ local function AutoBuyNewServerExpMedicinePack(onFinished)
                 cost = 300,
                 minLvl = 65,
                 prefKey = "Mod_BoughtOpenServerEnhPack2_" .. roleId,
+                toggleKey = "OpenEnh300",
                 name = "Quà Cường Hóa Mở SV 2 (300 KC - 210 Chúc Phúc + 70 Linh Hồn)"
             }
         }
 
         local targetPack = nil
         for _, pack in ipairs(OPEN_SERVER_PACK_QUEUE) do
-            local isBought = IsOpenServerPackBought(pack.countKey, pack.prefKey)
+            -- =========================================================================
+            -- [MOD FEATURE]: BỎ QUA GÓI MỞ SV ĐANG TẮT TOGGLE (KHÔNG MUA, KHÔNG GIỮ KC CHỜ)
+            -- =========================================================================
+            local packEnabled = (not pack.toggleKey) or IsPackToggleOn(pack.toggleKey)
+            local isBought = (not packEnabled) or IsOpenServerPackBought(pack.countKey, pack.prefKey)
             if not isBought then
                 if curLvl >= pack.minLvl and curDiamonds >= pack.cost then
                     targetPack = pack
@@ -8895,8 +9030,19 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
         end
 
         local roleId = tostring((pMe and pMe.id) or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.id) or "default")
-        local buy180Key = "Mod_Bought180PackCount_" .. roleId
-        local buy480Key = "Mod_Bought480PackCount_" .. roleId
+        -- =========================================================================
+        -- [MOD FEATURE]: BỘ ĐẾM GÓI PHÚC LỢI NGÀY LƯU THEO NGÀY (TỰ RESET MỖI NGÀY)
+        -- Mô tả: Key PlayerPrefs gắn thêm hậu tố ngày (YYYYMMDD) -> sang ngày mới bộ đếm tự về 0.
+        -- =========================================================================
+        local todayStr = os.date("%Y%m%d")
+        local buy180Key = "Mod_Bought180PackCount_" .. roleId .. "_" .. todayStr
+        local buy480Key = "Mod_Bought480PackCount_" .. roleId .. "_" .. todayStr
+        local kc1On = IsPackToggleOn("DailyKC1")
+        local kc2On = IsPackToggleOn("DailyKC2")
+        if not kc1On and not kc2On then
+            if onFinished then onFinished() end
+            return
+        end
         local bought180Count = CS.UnityEngine.PlayerPrefs.GetInt(buy180Key, 0)
         local bought480Count = CS.UnityEngine.PlayerPrefs.GetInt(buy480Key, 0)
 
@@ -8947,10 +9093,16 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
         if isNewSv then
             -- [NHÁNH SERVER MỚI]:
             -- Phải hoàn tất mua Quà Thuốc 120 KC (4010501) + 2 Gói Cường Hóa Mở SV (4010526 & 4010536) trước!
-            local boughtExp = IsOpenServerPackBought(4010501, "Mod_BoughtOpenServerExpPack_" .. roleId)
-            local boughtEnh1 = IsOpenServerPackBought(4010526, "Mod_BoughtOpenServerEnhPack1_" .. roleId)
-            local boughtEnh2 = IsOpenServerPackBought(4010536, "Mod_BoughtOpenServerEnhPack150_" .. roleId)
-                            or IsOpenServerPackBought(4010527, "Mod_BoughtOpenServerEnhPack2_" .. roleId)
+            -- =========================================================================
+            -- [MOD FEATURE]: GÓI MỞ SV ĐANG TẮT TOGGLE COI NHƯ ĐÃ XONG (KHÔNG GIỮ KC CHỜ)
+            -- =========================================================================
+            local enh180On = IsPackToggleOn("OpenEnh180")
+            local enh300On = IsPackToggleOn("OpenEnh300")
+            local boughtExp = (not IsPackToggleOn("OpenExp120")) or IsOpenServerPackBought(4010501, "Mod_BoughtOpenServerExpPack_" .. roleId)
+            local boughtEnh1 = (not enh180On) or IsOpenServerPackBought(4010526, "Mod_BoughtOpenServerEnhPack1_" .. roleId)
+            local boughtEnh2 = ((not enh180On) and (not enh300On))
+                            or (enh180On and IsOpenServerPackBought(4010536, "Mod_BoughtOpenServerEnhPack150_" .. roleId))
+                            or (enh300On and IsOpenServerPackBought(4010527, "Mod_BoughtOpenServerEnhPack2_" .. roleId))
 
             if not (boughtExp and boughtEnh1 and boughtEnh2) then
                 -- Giữ KC để mua các gói bên Sự Kiện Mở SV trước!
@@ -8959,7 +9111,7 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
             end
 
             -- Đã mua xong các gói bên Sự Kiện Mở SV -> Nếu còn KC thì mua tiếp tối đa 2 gói 180 KC ở Quà Phúc Lợi Ngày
-            if bought180Count < 2 and remainKC1 > 0 and curDiamonds >= 180 then
+            if kc1On and bought180Count < 2 and remainKC1 > 0 and curDiamonds >= 180 then
                 local nextCount = bought180Count + 1
                 Log(string.format(">>> [QUÀ PHÚC LỢI NGÀY - SV MỚI]: Cấp %d (Còn %d KC) -> Mua tiếp QUÀ KC I lần %d/2 (GoodId: %d | 180 KC)! <<<",
                     curLvl, curDiamonds, nextCount, packKC1_Id), true)
@@ -8987,7 +9139,13 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
         else
             -- [NHÁNH SERVER CŨ (KHÔNG CÓ SỰ KIỆN MỞ SV)]:
             -- Mua theo đúng thứ tự: 180 KC (Lần 1) -> 480 KC (Lần 1) -> 180 KC (Lần 2)
-            if bought180Count == 0 and remainKC1 > 0 and curDiamonds >= 180 then
+            -- =========================================================================
+            -- [MOD FEATURE]: BỎ QUA BƯỚC CỦA GÓI ĐANG TẮT TOGGLE (KHÔNG KẸT CHỜ)
+            -- Mô tả: Tắt KC I -> chỉ mua 480. Tắt KC II -> mua 180 rồi 180 lần 2 luôn.
+            -- =========================================================================
+            local step1Done = (not kc1On) or bought180Count >= 1 or remainKC1 <= 0
+            local step2Done = (not kc2On) or bought480Count >= 1 or remainKC2 <= 0
+            if kc1On and bought180Count == 0 and remainKC1 > 0 and curDiamonds >= 180 then
                 -- Bước 1: Mua Gói 180 KC (Lần 1)
                 local nextCount = 1
                 Log(string.format(">>> [QUÀ PHÚC LỢI NGÀY - SV CŨ]: Cấp %d (Có %d KC) -> Bước 1: Mua QUÀ KC I lần 1 (GoodId: %d | 180 KC)! <<<",
@@ -9006,13 +9164,13 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
                 CS.UnityEngine.PlayerPrefs.SetInt(buy180Key, nextCount)
                 CS.UnityEngine.PlayerPrefs.Save()
 
-                if curDiamonds - 180 >= 480 then
+                if curDiamonds - 180 >= (kc2On and 480 or 180) then
                     Timer.Start(1.2, function()
                         AutoBuyDailyDiamondGiftPacks(onFinished)
                     end)
                     return
                 end
-            elseif bought180Count >= 1 and bought480Count == 0 and remainKC2 > 0 then
+            elseif kc2On and step1Done and bought480Count == 0 and remainKC2 > 0 then
                 -- Bước 2: Mua Gói 480 KC (Lần 1) khi đủ >= 480 KC
                 if curDiamonds >= 480 then
                     local next480 = 1
@@ -9032,14 +9190,14 @@ AutoBuyDailyDiamondGiftPacks = function(onFinished)
                     CS.UnityEngine.PlayerPrefs.SetInt(buy480Key, next480)
                     CS.UnityEngine.PlayerPrefs.Save()
 
-                    if curDiamonds - 480 >= 180 then
+                    if kc1On and curDiamonds - 480 >= 180 then
                         Timer.Start(1.2, function()
                             AutoBuyDailyDiamondGiftPacks(onFinished)
                         end)
                         return
                     end
                 end
-            elseif bought180Count == 1 and bought480Count >= 1 and remainKC1 > 0 and curDiamonds >= 180 then
+            elseif kc1On and bought180Count == 1 and step2Done and remainKC1 > 0 and curDiamonds >= 180 then
                 -- Bước 3: Mua Gói 180 KC (Lần 2)
                 local nextCount = 2
                 Log(string.format(">>> [QUÀ PHÚC LỢI NGÀY - SV CŨ]: Cấp %d (Có %d KC) -> Bước 3: Mua QUÀ KC I lần 2 (GoodId: %d | 180 KC)! <<<",

@@ -692,6 +692,8 @@ if _G.EventManager and _G.EventManager.Regist and _G.Event and _G.Event.Map_Boss
                     end
                 end
             end
+            -- [MOD FEATURE]: ĐÁNH DẤU ĐÃ NHẬN PHẢN HỒI ResBossIcon (để State 3 chờ dữ liệu mới thay vì chờ cứng 2s)
+            _G.Mod_BossStateSeq = (_G.Mod_BossStateSeq or 0) + 1
         end)
     end)
 end
@@ -1030,6 +1032,116 @@ _G.GetBossPosition = function(bossId, mapId)
     local all = _G.GetAllBossPositions(bossId, mapId)
     if all and #all > 0 then
         return all[1]
+    end
+    return nil
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: TÌM SPOT BOSS SẮP HỒI SINH ĐỂ ĐÓN ĐẦU (GetSoonRespawnBossPosition)
+-- Mô tả: Trả về (pos, giây còn lại, nguồn) của spot Boss hồi sớm nhất trong <= maxWait giây.
+--   (a) SceneData.SmallIconData (ResBossSmallIcon): có sẵn x, y, state, reliveTime từng spot.
+--   (b) Danh sách Boss (bossState.transferId + reliveTime) -> cfg_Map_transfer.position
+--       -> chọn spot Minimap đang chết gần nhất với vị trí transfer.
+--   (c) Không map được transfer -> chọn spot Minimap đang chết gần nhân vật nhất.
+-- =========================================================================
+_G.GetSoonRespawnBossPosition = function(bossId, mapId, line, maxWait)
+    if not bossId then return nil end
+    maxWait = maxWait or 25
+    local nowSec = (_G.Time and _G.Time.GetServerSecondTime and _G.Time.GetServerSecondTime()) or os.time()
+    local function NormT(t)
+        t = tonumber(t) or 0
+        if t > 100000000000 then t = math.floor(t / 1000) end -- timestamp mili-giây -> giây
+        return t
+    end
+
+    -- (a) SmallIconData
+    local bestPos, bestWait = nil, nil
+    pcall(function()
+        local sid = _G.SceneData and _G.SceneData.SmallIconData
+        if not sid then return end
+        for _, grp in pairs(sid) do
+            if grp and tonumber(grp.bossID) == tonumber(bossId) and grp.list then
+                for _, it in pairs(grp.list) do
+                    if it and it.state ~= 1 and it.x and it.y then
+                        local rt = NormT(it.reliveTime)
+                        if rt > 0 then
+                            local w = math.max(0, rt - nowSec)
+                            if w <= maxWait and (not bestWait or w < bestWait) then
+                                bestPos, bestWait = { x = tonumber(it.x), y = tonumber(it.y) }, w
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+    if bestPos then return bestPos, bestWait, "SmallIcon" end
+
+    -- (b)/(c) Danh sách Boss theo Line
+    local soonInfo = nil
+    pcall(function()
+        local bData = _G.Mod_MapBosses and _G.Mod_MapBosses[mapId] and _G.Mod_MapBosses[mapId][bossId]
+        local infos = bData and bData.deadInfos and bData.deadInfos[line or 1]
+        if infos and infos[1] then
+            local w = math.max(0, (tonumber(infos[1].t) or 0) - nowSec)
+            if w <= maxWait then soonInfo = { wait = w, transferId = infos[1].transferId } end
+        end
+    end)
+    if not soonInfo then return nil end
+
+    -- Các spot Minimap của Boss đang chết
+    local deadSpots = {}
+    pcall(function()
+        if _G.SceneData and _G.SceneData.bossPosDataList then
+            for _, v in pairs(_G.SceneData.bossPosDataList) do
+                if (v.Param == bossId or tonumber(v.Param) == tonumber(bossId)) and v.position then
+                    local parts = string.split(v.position, "#")
+                    local px, py = tonumber(parts[1]), tonumber(parts[2])
+                    if px and py and (_G.Mod_BossStateMap[v.id] ~= 1) then
+                        table.insert(deadSpots, { x = px, y = py })
+                    end
+                end
+            end
+        end
+    end)
+
+    -- (b) Vị trí transfer của mốc hồi sớm nhất
+    local transferPts = {}
+    pcall(function()
+        if soonInfo.transferId and _G.ConfigManager and _G.ConfigManager.FindConfigs then
+            local tr = _G.ConfigManager.FindConfigs("cfg_Map_transfer", "id", tonumber(soonInfo.transferId))
+            tr = tr and tr[1]
+            if tr and tr.position then
+                for sx, sy in string.gmatch(tostring(tr.position), "(%d+)_(%d+)") do
+                    table.insert(transferPts, { x = tonumber(sx), y = tonumber(sy) })
+                end
+            end
+        end
+    end)
+
+    local function D2(a, b) return (a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) end
+
+    if #transferPts > 0 then
+        if #deadSpots == 0 then return transferPts[1], soonInfo.wait, "Transfer" end
+        local best, bestD = nil, nil
+        for _, s in ipairs(deadSpots) do
+            for _, tp in ipairs(transferPts) do
+                local d = D2(s, tp)
+                if not bestD or d < bestD then best, bestD = s, d end
+            end
+        end
+        return best, soonInfo.wait, "Transfer+Minimap"
+    end
+
+    -- (c) Spot chết gần nhân vật nhất
+    if #deadSpots > 0 then
+        local me = _G.RoleManager and _G.RoleManager.me
+        local mePos = me and (me.cellPos or me.serverCoord)
+        if mePos and mePos.x and mePos.y then
+            local meXY = { x = mePos.x, y = mePos.y }
+            table.sort(deadSpots, function(a, b) return D2(a, meXY) < D2(b, meXY) end)
+        end
+        return deadSpots[1], soonInfo.wait, "NearestDead"
     end
     return nil
 end
@@ -2794,19 +2906,23 @@ local function CreateModUI()
                             if not tempBosses[mapId] then tempBosses[mapId] = {} end
 
                             local deadTimes = {}
+                            -- [MOD FEATURE]: LƯU KÈM transferId THEO MỐC HỒI SINH (phục vụ Đón Đầu Boss theo spot)
+                            local deadInfos = {}
                             if v.bossState then
                                 for _, state in ipairs(v.bossState) do
                                     if state.reliveTime and state.reliveTime > 0 then
                                         table.insert(deadTimes, state.reliveTime)
+                                        table.insert(deadInfos, { t = state.reliveTime, transferId = state.transferId })
                                     end
                                 end
                                 -- Sort deadTimes ascending so it shows smaller time first
                                 table.sort(deadTimes)
+                                table.sort(deadInfos, function(a, b) return a.t < b.t end)
                             end
 
                             local lineNum = v.line or 1
                             if not tempBosses[mapId][md.bossId] then
-                                tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {} }
+                                tempBosses[mapId][md.bossId] = { lines = {}, lineNums = {}, aliveCount = {}, deadTimes = {}, deadInfos = {} }
                             end
                             local bData = tempBosses[mapId][md.bossId]
                             if not bData.lines[lineNum] then
@@ -2815,6 +2931,7 @@ local function CreateModUI()
                             end
                             bData.aliveCount[lineNum] = v.count or 0
                             bData.deadTimes[lineNum] = deadTimes
+                            bData.deadInfos[lineNum] = deadInfos
                         end
                     end
                 end
@@ -4673,13 +4790,34 @@ local function CreateModUI()
                                 end)
                             end
 
+                            -- =========================================================================
+                            -- [MOD FEATURE]: XÓA TRẠNG THÁI SPOT CŨ & CHỜ PHẢN HỒI ResBossIcon THẬT
+                            -- Mô tả: Xóa state cũ của các spot Minimap thuộc map hiện tại (tránh đọc dữ liệu
+                            --        lần vào trước), ghi nhận mốc Seq rồi gửi ReqBossIcon. Bước B2 chỉ đọc khi
+                            --        đã nhận phản hồi mới (Seq tăng), tối đa chờ 5s. Không log/không hiện Msg.
+                            -- =========================================================================
+                            pcall(function()
+                                if _G.SceneData and _G.SceneData.bossPosDataList then
+                                    for _, v in pairs(_G.SceneData.bossPosDataList) do
+                                        if v and v.id then _G.Mod_BossStateMap[v.id] = nil end
+                                    end
+                                end
+                            end)
+                            _G.Mod_AutoFarmBoss_IconReqSeq = _G.Mod_BossStateSeq or 0
+                            _G.Mod_AutoFarmBoss_IconReqTime = nowRealtime
+
                             if _G.NetManager and _G.NetManager.Send and _G.MapMessage and _G.MapMessage.ReqBossIcon then
                                 pcall(function() _G.NetManager.Send(_G.MapMessage.ReqBossIcon) end)
                             end
 
-                            LogMsg(string.format("Đã tới Map %s (Jiggle xóa lag)! Đang xin dữ liệu Minimap trạng thái Boss...",
-                                GetMapName(target.mapCfg.mapId)))
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.0
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
+                            return
+                        end
+
+                        -- [MOD FEATURE]: Chưa nhận phản hồi ResBossIcon mới -> chờ tiếp (tối đa 5s rồi đọc dữ liệu đang có)
+                        if (_G.Mod_BossStateSeq or 0) <= (_G.Mod_AutoFarmBoss_IconReqSeq or 0)
+                            and (nowRealtime - (_G.Mod_AutoFarmBoss_IconReqTime or 0)) < 5.0 then
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.3
                             return
                         end
 
@@ -4689,16 +4827,30 @@ local function CreateModUI()
                             alivePos, aliveCount, totalCandidates = _G.GetAliveBossPosition(target.cfg.id, target.mapCfg.mapId)
                         end
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: ĐÓN ĐẦU BOSS SẮP HỒI SINH TẠI ĐẦU MAP (FIX BAY VỀ LORENCIA)
+                        -- Mô tả: Minimap báo tất cả spot đã chết nhưng có spot sắp hồi trong <= 25s
+                        --        -> Chạy tới spot đó chờ (State 4) thay vì bỏ về State 1.
+                        -- =========================================================================
+                        local soonPos = nil
+                        target.respawnAt = nil
                         if totalCandidates > 0 and aliveCount == 0 then
-                            LogMsg(string.format("Minimap xác nhận tất cả điểm của Boss %s đã bị hạ. Trở về State 1...",
-                                target.cfg.name or ""))
-                            _G.Mod_AutoFarmBoss_Target = nil
-                            SetBossState(1, "Minimap xác nhận Boss đã chết")
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
-                            return
+                            local soonWait = nil
+                            if _G.GetSoonRespawnBossPosition then
+                                soonPos, soonWait = _G.GetSoonRespawnBossPosition(target.cfg.id,
+                                    target.mapCfg.mapId, target.line, 25)
+                            end
+                            if soonPos then
+                                target.respawnAt = currentSec + (soonWait or 0)
+                            else
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                SetBossState(1, "Minimap xác nhận Boss đã chết")
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                return
+                            end
                         end
 
-                        target.currentPos = alivePos or
+                        target.currentPos = alivePos or soonPos or
                             (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
                             (_G.GetBossPosition and _G.GetBossPosition(target.cfg.id, target.mapCfg.mapId))
                         local posLog = target.currentPos and
@@ -5032,18 +5184,18 @@ local function CreateModUI()
 
                         -- Trường hợp B: Đã tới tọa độ cự ly <= 2m nhưng chưa thấy Boss -> Đón đầu chờ Boss xuất hiện
                         _G.Mod_AutoFarmBoss_BossWait = (_G.Mod_AutoFarmBoss_BossWait or 0) + 1
-                        if _G.Mod_AutoFarmBoss_BossWait <= 20 then
-                            if _G.Mod_AutoFarmBoss_BossWait % 5 == 1 then
-                                LogMsg(string.format("[ĐÓN ĐẦU] Đã tới tọa độ %s (cách %.1fm), đang chờ Boss %s xuất hiện (%ds/20s)...",
-                                    target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or "",
-                                    dist,
-                                    target.cfg.name or "",
-                                    _G.Mod_AutoFarmBoss_BossWait))
-                            end
+                        -- =========================================================================
+                        -- [MOD FEATURE]: THỜI GIAN CHỜ ĐÓN ĐẦU THEO MỐC HỒI SINH (MỐC HỒI + 10S, TỐI THIỂU 20S)
+                        -- =========================================================================
+                        local waitLimit = 20
+                        if target.respawnAt then
+                            local byRespawn = _G.Mod_AutoFarmBoss_BossWait + (target.respawnAt - currentSec) + 10
+                            if byRespawn > waitLimit then waitLimit = math.min(byRespawn, 60) end
+                        end
+                        -- [MOD FEATURE]: Đón đầu chạy im lặng - không log/không hiện Msg
+                        if _G.Mod_AutoFarmBoss_BossWait <= waitLimit then
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         else
-                            LogMsg(string.format("Đã đứng chờ 20s tại tọa độ %s nhưng Boss không xuất hiện. Trở về State 1...",
-                                target.currentPos and string.format("(%d, %d)", target.currentPos.x, target.currentPos.y) or ""))
                             _G.Mod_AutoFarmBoss_BossWait = 0
                             _G.Mod_AutoFarmBoss_Target = nil
                             SetBossState(1, "Chờ Boss quá 20s không thấy")
@@ -6434,6 +6586,15 @@ local function CreateModUI()
             local function UpdateLabel()
                 vTxt.text = string.format("%s%.1fx", prefix, _G[valueVarName])
             end
+            -- =========================================================================
+            -- [MOD FEATURE]: EXPOSE HÀM REFRESH NHÃN TỐC CHẠY (CUSTOMER)
+            -- Mô tả: Cho phép logic khác (Tự Động Nhặt) chỉ refresh riêng nhãn Tốc Chạy
+            -- =========================================================================
+            if valueVarName == "RunSpeedMultiplier" then
+                _G.ModUpdateSpeedLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
@@ -6588,6 +6749,15 @@ local function CreateModUI()
             local function UpdateLabel()
                 vTxt.text = string.format("%s%d", prefix, _G[valueVarName])
             end
+            -- =========================================================================
+            -- [MOD FEATURE]: EXPOSE HÀM REFRESH NHÃN PHÁT HIỆN ĐỊCH (CUSTOMER)
+            -- Mô tả: Cho phép logic khác (Tự Động Nhặt / Auto Boss) chỉ refresh riêng nhãn Phát Hiện Địch
+            -- =========================================================================
+            if valueVarName == "Mod_CustomAttackRange" then
+                _G.ModUpdateDetectRangeLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(0, _G[valueVarName] - step)
@@ -6739,6 +6909,30 @@ local function CreateModUI()
                     _G.Mod_IgnoredDropItems = {}
                     _G.Mod_AllDropItems = {}
                     _G.Mod_PickedItems = {}
+
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TỰ SET TỐC CHẠY 3.0 & PHÁT HIỆN ĐỊCH 15 KHI BẬT TỰ ĐỘNG NHẶT (CUSTOMER)
+                    -- Mô tả: Bật nhặt nhanh -> Tốc Chạy = min(3.0, cap token), Phát Hiện Địch = min(15, cap token).
+                    --        Chỉ refresh UI 2 nhãn Tốc Chạy & Phát Hiện Địch. Tắt nhặt không revert.
+                    -- =========================================================================
+                    pcall(function()
+                        local speedCap = _G.Mod_Config_MaxMoveSpeed or 2.5
+                        _G.RunSpeedMultiplier = math.min(3.0, speedCap)
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", _G.RunSpeedMultiplier)
+
+                        local rangeCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
+                        _G.Mod_CustomAttackRange = math.min(15, rangeCap)
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", _G.Mod_CustomAttackRange)
+                        CS.UnityEngine.PlayerPrefs.Save()
+
+                        -- Áp dụng tốc chạy ngay lập tức qua hook SetMoveSpeed
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then
+                            me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true)
+                        end
+                    end)
+                    if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+                    if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
                 end
 
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
@@ -7589,7 +7783,41 @@ local function CreateModUI()
 
             mtBtn.onClick:AddListener(function()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
-                if not _G.Mod_AutoFarmBoss_Enabled then
+                if _G.Mod_AutoFarmBoss_Enabled then
+                    -- =========================================================================
+                    -- [MOD FEATURE]: TẮT TỰ ĐỘNG NHẶT & PHÁT HIỆN ĐỊCH = 0 KHI BẬT AUTO BOSS (CUSTOMER)
+                    -- Mô tả: Bật Auto Boss -> tắt nhặt nhanh, xóa hàng đợi nhặt, Phát Hiện Địch = 0.
+                    --        Chỉ refresh UI nút Tự Động Nhặt & nhãn Phát Hiện Địch.
+                    -- =========================================================================
+                    pcall(function()
+                        _G.AutoPick_Enabled = false
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
+                        _G.Mod_ActiveSpamItems = nil
+
+                        _G.Mod_CustomAttackRange = 0
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+
+                        if _G.EventManager and _G.Event and _G.Event.QiJiHelper_SetAutoPickup then
+                            _G.EventManager.Dispatch(_G.Event.QiJiHelper_SetAutoPickup)
+                        end
+                    end)
+                    -- =========================================================================
+                    -- [MOD FEATURE]: BẬT AUTO BOSS -> ĐƯA TỐC CHẠY VỀ 1.0 (CUSTOMER)
+                    -- =========================================================================
+                    pcall(function()
+                        _G.RunSpeedMultiplier = 1.0
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                        local meSpd = _G.RoleManager and _G.RoleManager.me
+                        if meSpd and meSpd.SetMoveSpeed then
+                            meSpd:SetMoveSpeed(meSpd._modBaseMoveSpeed or 5.0, true)
+                        end
+                    end)
+                    if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+                    if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
+                    if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
+                else
                     _G.Mod_AutoFarmBoss_State = 0
                     _G.Mod_AutoFarmBoss_Target = nil
                     pcall(function()

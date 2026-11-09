@@ -68,16 +68,27 @@ _G.GetConfiguredStopQueenLevel = GetConfiguredStopQueenLevel
 local function GetCurrentBoundDiamonds()
 	local kc = 0
 	pcall(function()
-		if _G.RoleUtility and _G.RoleUtility.GetCoinNum then
-			local c = _G.RoleUtility.GetCoinNum(1000050)
-			if c and tonumber(c) then kc = tonumber(c); return end
+		if _G.BagInfoData and _G.BagInfoData.CoinInfos then
+			local bindGemId = (_G.ECoinsType and _G.ECoinsType.gemNotTrade) or 1000050
+			local c1 = tonumber(_G.BagInfoData.CoinInfos[bindGemId] or 0) or 0
+			local c2 = tonumber(_G.BagInfoData.CoinInfos[1000050] or 0) or 0
+			kc = math.max(kc, c1, c2)
 		end
-		if _G.BagInfoData and _G.BagInfoData.GetCoinNum then
-			local c = _G.BagInfoData.GetCoinNum(1000050)
-			if c and tonumber(c) then kc = tonumber(c); return end
+		if _G.BagInfoData and _G.BagInfoData.GetItemCountByItemConfigId then
+			local c3 = tonumber(_G.BagInfoData.GetItemCountByItemConfigId(1000050) or 0) or 0
+			if c3 > kc then kc = c3 end
+		end
+		if _G.BagInfoData and _G.BagInfoData.GetItemTotalCountByItemId then
+			local c4 = tonumber(_G.BagInfoData.GetItemTotalCountByItemId(1000050) or 0) or 0
+			if c4 > kc then kc = c4 end
+		end
+		if _G.RoleUtility and _G.RoleUtility.GetCoinNum then
+			local c5 = tonumber(_G.RoleUtility.GetCoinNum(1000050) or 0) or 0
+			if c5 > kc then kc = c5 end
 		end
 		if _G.ViewData and _G.ViewData.meData and _G.ViewData.meData.boundIngot then
-			kc = tonumber(_G.ViewData.meData.boundIngot) or 0
+			local c6 = tonumber(_G.ViewData.meData.boundIngot or 0) or 0
+			if c6 > kc then kc = c6 end
 		end
 	end)
 	return kc
@@ -2722,32 +2733,117 @@ local function GetTargetSlotForEquip(item, tblItem)
 	end)
 	if not canPos and tblItem and tblItem.subType then
 		local st = tonumber(tblItem.subType) or 0
-		if st == 13 then canPos = 3
-		elseif st == 14 then canPos = 4
-		elseif st == 15 then canPos = 6
-		elseif st == 16 then canPos = 7
-		elseif st == 17 then canPos = 8
-		elseif st >= 1 and st <= 12 then canPos = 1
-		elseif (st >= 23 and st <= 25) or st == 56 or st == 57 or st == 81 then canPos = 5
+		if st == 13 then canPos = 2      -- helm
+		elseif st == 20 then canPos = 3  -- wing
+		elseif st == 14 then canPos = 6  -- armor
+		elseif st == 18 then canPos = 7  -- necklace
+		elseif st == 16 then canPos = 8  -- glove
+		elseif st == 15 then canPos = 9  -- pant
+		elseif st == 17 then canPos = 10 -- boot
+		elseif st == 19 then canPos = 11 -- ring
+		elseif st == 26 then canPos = 12 -- earring
+		elseif st == 8 or (st >= 23 and st <= 25) or st == 56 or st == 57 or st == 81 then canPos = 5 -- shield / off-hand
+		elseif st >= 1 and st <= 12 then canPos = 4 -- main weapon
 		end
 	end
 	return canPos
 end
 
-local function IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip)
-	if not tblEquip then return false end
-	if not oldEquip then return true end
+local function IsTwoHandedWeapon(item, tblItem, tblEquip)
+	if not tblItem and item then
+		tblItem, tblEquip = ResolveItemAndEquipTables(item)
+	end
+	local st = tonumber((tblItem and tblItem.subType) or (item and item.subType) or 0) or 0
+	if _G.WeaponCondition and _G.WeaponCondition[st] == 2 then
+		return true
+	end
+	-- TwoHandedSword(2), Spear(3), TwoHandedAxe(5), TwoHandedStick(7), Arch(9), CrossBow(10)
+	if st == 2 or st == 3 or st == 5 or st == 7 or st == 9 or st == 10 then
+		return true
+	end
+	if tblEquip and tblEquip.equipPosition then
+		local posStr = tostring(tblEquip.equipPosition)
+		if posStr == "4" and (st >= 1 and st <= 12) and (_G.WeaponCondition and _G.WeaponCondition[st] == 2) then
+			return true
+		end
+	end
+	return false
+end
 
-	local canUpFight = false
+local function GetEquipBaseFightRating(item)
+	local rating = 0
+	if not item then return 0 end
 	pcall(function()
-		if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
-			local st = _G.RoleEquipUtility.CanUpFight(item)
-			if st == ((_G.EquipUpState and _G.EquipUpState.CanWearUpFight) or 1) then
-				canUpFight = true
+		if _G.gameMgr and _G.gameMgr.GetAvatarManager then
+			local mainPlayer = _G.gameMgr:GetAvatarManager():GetMainPlayer()
+			if mainPlayer and mainPlayer.GetEquipItemFightCalculator then
+				local calc = mainPlayer:GetEquipItemFightCalculator()
+				if calc and calc.GetEquipDataRating then
+					local r = tonumber(calc:GetEquipDataRating(item) or 0) or 0
+					if r > 0 then rating = r end
+				end
 			end
 		end
 	end)
-	if canUpFight then return true end
+	return rating
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: ĐÁNH GIÁ TRANG BỊ TÚI SO VỚI ĐỒ ĐANG MẶC (ƯU TIÊN MŨI TÊN XANH CANUPFIGHT & CHỐNG KHIÊN ĐÁ VŨ KHÍ 2 TAY)
+-- Mô tả:
+--   1. Nếu vị trí kiểm tra là Tay Trái (`canPos == 5` - Khiên/Sách) mà nhân vật đang cầm Vũ Khí 2 Tay ở Slot 4:
+--      Tuyệt đối KHÔNG coi Slot 5 là trống (`not oldEquip`), không cho phép Khiên lẻ tự ý mặc vào đá Vũ Khí 2 Tay +19 ra túi!
+--   2. Ưu tiên tuyệt đối kết quả tính điểm Lực Chiến gốc của game (`RoleEquipUtility.CanUpFight(item)`):
+--      - `CanWearUpFight (1)` (Mũi tên xanh `↑`): Thực sự mạnh hơn đồ đang mặc -> Trả về `true`.
+--      - Khi đã có đồ đang mặc (`oldEquip ~= nil`) và `CanUpFight(item)` trả về `0 (None)` hoặc `3/4` (không có mũi tên xanh):
+--        Trả về `false` ngay! Ngăn chặn triệt để lỗi đồ Set (`suitId > 0`) cấp thấp hơn đá đồ Trác lam `+19` xịn hơn ra ngoài!
+-- =========================================================================
+local function IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip, equipsData, canPos, allowFutureWearUpFight)
+	if not tblEquip then return false end
+
+	if not equipsData then
+		equipsData = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.equipsData and _G.RoleManager.me.data.equipsData.Data)
+			or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.equipsData and _G.ViewData.meData.equipsData.Data)
+	end
+	if not canPos then
+		canPos = GetTargetSlotForEquip(item, tblItem)
+	end
+
+	-- Nếu đang kiểm tra vũ khí phụ/khiên (Slot 5) mà Slot 5 trống do đang đeo Vũ Khí 2 Tay ở Slot 4:
+	-- Lấy chính Vũ Khí 2 Tay ở Slot 4 làm đối chiếu và chặn Khiên lẻ tự động mặc đè mất Vũ Khí 2 Tay!
+	if canPos == 5 and not oldEquip and equipsData and equipsData[4] then
+		if IsTwoHandedWeapon(equipsData[4]) then
+			if not allowFutureWearUpFight then
+				return false
+			end
+			oldEquip = equipsData[4]
+		end
+	end
+
+	local upState = nil
+	pcall(function()
+		if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
+			upState = _G.RoleEquipUtility.CanUpFight(item)
+		end
+	end)
+
+	local canWearUp = (_G.EquipUpState and _G.EquipUpState.CanWearUpFight) or 1
+	local cantWearUp = (_G.EquipUpState and _G.EquipUpState.CantWearUpFight) or 2
+	if upState == canWearUp then
+		return true
+	end
+	if allowFutureWearUpFight and upState == cantWearUp then
+		return true
+	end
+
+	if not oldEquip then
+		return true
+	end
+
+	-- Nếu game đã tính toán `CanUpFight` và khẳng định món này KHÔNG tăng lực chiến so với đồ đang mặc -> Không thay!
+	if upState ~= nil then
+		return false
+	end
 
 	local oldTblItem, oldTblEquip = ResolveItemAndEquipTables(oldEquip)
 	local newClass = tonumber(tblEquip.equipClass or 0) or 0
@@ -2756,10 +2852,10 @@ local function IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, old
 		return newClass > oldClass
 	end
 
-	local newSuit = ((tonumber(tblEquip.suitId or 0) or 0) > 0) and 1 or 0
-	local oldSuit = ((tonumber((oldTblEquip and oldTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
-	if newSuit ~= oldSuit then
-		return newSuit > oldSuit
+	local newRating = GetEquipBaseFightRating(item)
+	local oldRating = GetEquipBaseFightRating(oldEquip)
+	if newRating > 0 and oldRating > 0 and newRating ~= oldRating then
+		return newRating > oldRating
 	end
 
 	local newQuality = tonumber((tblItem and tblItem.quality) or 0) or 0
@@ -2774,6 +2870,12 @@ local function IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, old
 		return newExc > oldExc
 	end
 
+	local newSuit = ((tonumber(tblEquip.suitId or 0) or 0) > 0) and 1 or 0
+	local oldSuit = ((tonumber((oldTblEquip and oldTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
+	if newSuit ~= oldSuit then
+		return newSuit > oldSuit
+	end
+
 	return false
 end
 
@@ -2785,9 +2887,11 @@ local function CompareTwoBagEquips(aItem, bItem)
 	local bClass = tonumber((bTblEquip and bTblEquip.equipClass) or 0) or 0
 	if aClass ~= bClass then return aClass > bClass end
 
-	local aSuit = ((tonumber((aTblEquip and aTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
-	local bSuit = ((tonumber((bTblEquip and bTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
-	if aSuit ~= bSuit then return aSuit > bSuit end
+	local aRating = GetEquipBaseFightRating(aItem)
+	local bRating = GetEquipBaseFightRating(bItem)
+	if aRating > 0 and bRating > 0 and aRating ~= bRating then
+		return aRating > bRating
+	end
 
 	local aQual = tonumber((aTblItem and aTblItem.quality) or 0) or 0
 	local bQual = tonumber((bTblItem and bTblItem.quality) or 0) or 0
@@ -2796,6 +2900,10 @@ local function CompareTwoBagEquips(aItem, bItem)
 	local aExc = GetEquipExcellenceLineCount(aItem, aTblEquip)
 	local bExc = GetEquipExcellenceLineCount(bItem, bTblEquip)
 	if aExc ~= bExc then return aExc > bExc end
+
+	local aSuit = ((tonumber((aTblEquip and aTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
+	local bSuit = ((tonumber((bTblEquip and bTblEquip.suitId) or 0) or 0) > 0) and 1 or 0
+	if aSuit ~= bSuit then return aSuit > bSuit end
 
 	local aInt = tonumber(aItem.intensify or 0) or 0
 	local bInt = tonumber(bItem.intensify or 0) or 0
@@ -2877,6 +2985,36 @@ end
 local orig_IsRecyclableEquipment = _G.IsRecyclableEquipment
 _G.IsRecyclableEquipment = function(item)
 	if not item or not item.id then return false end
+	local itemInt = tonumber(item.intensify or 0) or 0
+	local itemAdd = tonumber(item.additional or 0) or 0
+	if itemInt >= 7 or itemAdd >= 7 then
+		return false
+	end
+	if itemInt > 0 or itemAdd > 0 then
+		local needProtectForTransfer = true
+		pcall(function()
+			local tblItem, tblEquip = ResolveItemAndEquipTables(item)
+			local canPos = GetTargetSlotForEquip(item, tblItem)
+			local equipsData = (_G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.data and _G.RoleManager.me.data.equipsData and _G.RoleManager.me.data.equipsData.Data)
+				or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.equipsData and _G.ViewData.meData.equipsData.Data)
+			if canPos and equipsData then
+				local eqNow = equipsData[canPos]
+				if not eqNow and (canPos == 4 or canPos == 5) then
+					eqNow = equipsData[4] or equipsData[5]
+				end
+				if eqNow and eqNow.id ~= item.id then
+					local eqInt = tonumber(eqNow.intensify or 0) or 0
+					local eqAdd = tonumber(eqNow.additional or 0) or 0
+					if eqInt >= itemInt and eqAdd >= itemAdd then
+						needProtectForTransfer = false
+					end
+				end
+			end
+		end)
+		if needProtectForTransfer then
+			return false
+		end
+	end
 	if orig_IsRecyclableEquipment and not orig_IsRecyclableEquipment(item) then
 		return false
 	end
@@ -2884,6 +3022,15 @@ _G.IsRecyclableEquipment = function(item)
 	-- Bảo vệ bổ sung: Không bao giờ thu hồi món đồ cùng hệ tốt nhất trong túi cho mỗi vị trí nếu nó xịn hơn đồ đang mặc
 	local keepItem = false
 	pcall(function()
+		if _G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight then
+			local st = _G.RoleEquipUtility.CanUpFight(item)
+			if st == ((_G.EquipUpState and _G.EquipUpState.CanWearUpFight) or 1)
+				or st == ((_G.EquipUpState and _G.EquipUpState.CantWearUpFight) or 2) then
+				keepItem = true
+				return
+			end
+		end
+
 		local tblItem, tblEquip, itemId = ResolveItemAndEquipTables(item)
 		if not tblItem or not tblEquip then return end
 		if not IsItemMatchingMyCareer(tblItem, itemId) then return end
@@ -2895,7 +3042,7 @@ _G.IsRecyclableEquipment = function(item)
 			or (_G.ViewData and _G.ViewData.meData and _G.ViewData.meData.equipsData and _G.ViewData.meData.equipsData.Data)
 		local oldEquip = equipsData and equipsData[canPos]
 
-		if not IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip) then
+		if not IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip, equipsData, canPos, true) then
 			return
 		end
 
@@ -2907,7 +3054,7 @@ _G.IsRecyclableEquipment = function(item)
 					local oTblItem, oTblEquip, oItemId = ResolveItemAndEquipTables(other)
 					if oTblItem and oTblEquip and IsItemMatchingMyCareer(oTblItem, oItemId) then
 						local oPos = GetTargetSlotForEquip(other, oTblItem)
-						if oPos == canPos and IsBagEquipStrictlyBetterThanEquipped(other, oTblItem, oTblEquip, oldEquip) then
+						if oPos == canPos and IsBagEquipStrictlyBetterThanEquipped(other, oTblItem, oTblEquip, oldEquip, equipsData, canPos, true) then
 							if CompareTwoBagEquips(other, item) then
 								return
 							end
@@ -2926,8 +3073,66 @@ _G.IsRecyclableEquipment = function(item)
 	return true
 end
 
+local function EnsureEquipTransferMaxHooked()
+	pcall(function()
+		if _G.MeEquipController and _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel and not _G.Mod_HookedGetEquipIntensifyMax then
+			_G.Mod_HookedGetEquipIntensifyMax = true
+			local origFn = _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel
+			_G.MeEquipController.GetEquipIntensifyAndAddMaxLevel = function(equipData, ...)
+				local iMax, aMax = 30, 15
+				local ok, r1, r2 = pcall(origFn, equipData, ...)
+				if ok then
+					if tonumber(r1) and tonumber(r1) > iMax then iMax = tonumber(r1) end
+					if tonumber(r2) and tonumber(r2) > aMax then aMax = tonumber(r2) end
+				end
+				return math.max(iMax, 30), math.max(aMax, 15)
+			end
+		end
+	end)
+end
+EnsureEquipTransferMaxHooked()
+
+local function BuildSafeTransferTypes(sourceEquip, targetEquip)
+	local types = {}
+	local srcInt = tonumber((sourceEquip and sourceEquip.intensify) or 0) or 0
+	local dstInt = tonumber((targetEquip and targetEquip.intensify) or 0) or 0
+	local srcAdd = tonumber((sourceEquip and sourceEquip.additional) or 0) or 0
+	local dstAdd = tonumber((targetEquip and targetEquip.additional) or 0) or 0
+	if srcInt > dstInt then
+		table.insert(types, 1)
+	end
+	if srcAdd > dstAdd then
+		table.insert(types, 2)
+	end
+	pcall(function()
+		if _G.GlobalConfig and _G.GlobalConfig.GetFunctionIsOpen and _G.GlobalConfig.GetFunctionIsOpen(2090004) then
+			if sourceEquip and sourceEquip.regenerateInfo and #sourceEquip.regenerateInfo > 0 then
+				table.insert(types, 3)
+			end
+		end
+	end)
+	if #types == 0 then
+		table.insert(types, 1)
+	end
+	return types, math.max(30, srcInt), math.max(15, srcAdd)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: TỰ ĐỘNG MẶC ĐỒ TỐT HƠN & CỨU HỘ KẾ THỪA CƯỜNG HÓA 1 TAY <-> 2 TAY (MOD_AUTOEQUIPBETTERITEMS)
+-- Mô tả:
+--   1. Tắt popup `Equip_TIpsUI` (không gọi `Btn_quickequip` hay `RoleEquipUtility.OnWearEquip` vì hàm gốc
+--      tự động gửi `ReqTakeOffTheEquip` tháo vũ khí cũ ra túi mà chưa chuyển cường hóa!).
+--   2. Đồng bộ Slot 4 (Vũ khí chính) & Slot 5 (Vũ khí phụ/Khiên):
+--      - Nếu đang mặc hoặc chuẩn bị mặc Vũ Khí 2 Tay ở Slot 4, khóa `bestCandidateBySlot[5] = nil`.
+--      - Khi đổi giữa Vũ Khí 1 Tay + Khiên <-> Vũ Khí 2 Tay, tự động lấy nguồn cường hóa cao nhất từ cả
+--        Slot 4, Slot 5 và các trang bị cũ nằm trong túi để chuyển `+19` sang vũ khí mới trước khi mặc!
+--   3. Quét Cứu Hộ Cường Hóa Túi (`Bag Intensify Rescue`): Nếu trong túi còn sót bất kỳ trang bị nào có
+--      `intensify > đồ đang mặc` (cùng vị trí hoặc nhóm Vũ Khí Slot 4/5), lập tức gửi `ReqEquipTransfer`
+--      chuyển toàn bộ cấp cường hóa sang đồ đang mặc!
+-- =========================================================================
 _G.Mod_AutoEquipBetterItems = function()
 	pcall(function()
+		EnsureEquipTransferMaxHooked()
 		if _G.RoleManager and _G.RoleManager.me and _G.RoleManager.me.id and _G.PlayerPrefs then
 			_G.PlayerPrefs.SetString(tostring(_G.RoleManager.me.id), "noFirst")
 			_G.PlayerPrefs.Save()
@@ -2937,9 +3142,18 @@ _G.Mod_AutoEquipBetterItems = function()
 			pcall(AutoAddAttributePoints)
 		end
 
+		-- Đóng Equip_TIpsUI và hủy timer tự mặc của popup để tránh OnWearEquip tháo vũ khí 1 tay/2 tay mất +19
 		local tipUI = _G.UIManager and _G.UIID and _G.UIID.Equip_TIpsUI and _G.UIManager.GetUiByName(_G.UIID.Equip_TIpsUI)
-		if tipUI and tipUI.Btn_quickequip then
-			pcall(function() tipUI:Btn_quickequip() end)
+		if tipUI then
+			pcall(function()
+				if tipUI.timer and Timer and Timer.Stop then
+					Timer.Stop(tipUI.timer)
+					tipUI.timer = nil
+				end
+				if _G.UIManager and _G.UIID and _G.UIID.Equip_TIpsUI and _G.UIManager.IsVisible(_G.UIID.Equip_TIpsUI) then
+					_G.UIManager.Hide(_G.UIID.Equip_TIpsUI)
+				end
+			end)
 		end
 
 		local bag = (_G.BagInfoData and _G.BagInfoData.GetTotalBag and _G.BagInfoData.GetTotalBag())
@@ -2958,7 +3172,7 @@ _G.Mod_AutoEquipBetterItems = function()
 					local canPos = GetTargetSlotForEquip(item, tblItem)
 					if canPos and CanPlayerWearEquipNow(item, tblItem, itemId) then
 						local oldEquip = equipsData and equipsData[canPos]
-						if IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip) then
+						if IsBagEquipStrictlyBetterThanEquipped(item, tblItem, tblEquip, oldEquip, equipsData, canPos, false) then
 							local curBest = bestCandidateBySlot[canPos]
 							if not curBest or CompareTwoBagEquips(item, curBest.item) then
 								bestCandidateBySlot[canPos] = {
@@ -2976,43 +3190,93 @@ _G.Mod_AutoEquipBetterItems = function()
 			end
 		end
 
-		for canPos, entry in pairs(bestCandidateBySlot) do
-			local item = entry.item
-			local oldEquip = entry.oldEquip
-			local iName = tostring((entry.tblItem and entry.tblItem.name) or item.name or item.id)
+		-- Đồng bộ Vũ Khí 2 Tay (Slot 4) và Khiên/Sách (Slot 5):
+		-- Nếu ứng viên Slot 4 là Vũ Khí 2 Tay, hoặc đang đeo Vũ Khí 2 Tay ở Slot 4 mà không thay vũ khí 1 tay mới -> Bỏ qua Slot 5!
+		if bestCandidateBySlot[4] and IsTwoHandedWeapon(bestCandidateBySlot[4].item, bestCandidateBySlot[4].tblItem, bestCandidateBySlot[4].tblEquip) then
+			bestCandidateBySlot[5] = nil
+		elseif not bestCandidateBySlot[4] and equipsData and equipsData[4] and IsTwoHandedWeapon(equipsData[4]) then
+			bestCandidateBySlot[5] = nil
+		end
 
-			local isNeedTransfer = false
-			if oldEquip and ((tonumber(oldEquip.intensify or 0) or 0) > 0 or (tonumber(oldEquip.additional or 0) or 0) > 0) then
-				isNeedTransfer = true
-				if _G.MeEquipController and _G.MeEquipController.IsCanTransfer then
-					pcall(function()
-						local okTrans = _G.MeEquipController.IsCanTransfer(oldEquip, item, canPos)
-						if okTrans ~= nil then isNeedTransfer = okTrans end
-					end)
+		-- Hàm tìm nguồn kế thừa có cấp cường hóa cao nhất cho trang bị mới
+		local function FindBestTransferSource(targetItem, canPos, defaultOldEquip)
+			local bestSrc = nil
+			local bestInt = tonumber((targetItem and targetItem.intensify) or 0) or 0
+			local bestAdd = tonumber((targetItem and targetItem.additional) or 0) or 0
+
+			local function ConsiderSource(cand)
+				if not cand or not cand.id or cand.id == targetItem.id then return end
+				local cInt = tonumber(cand.intensify or 0) or 0
+				local cAdd = tonumber(cand.additional or 0) or 0
+				if cInt > bestInt or (cInt == bestInt and cInt > 0 and cAdd > bestAdd) or (bestInt == 0 and cAdd > bestAdd) then
+					bestSrc = cand
+					bestInt = cInt
+					bestAdd = cAdd
 				end
 			end
 
-			if isNeedTransfer and oldEquip and _G.NetManager and _G.EquipMessage then
-				local intensifyMaxLevel, addMaxLevel = 30, 15
-				pcall(function()
-					if _G.MeEquipController and _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel then
-						intensifyMaxLevel, addMaxLevel = _G.MeEquipController.GetEquipIntensifyAndAddMaxLevel(item)
+			ConsiderSource(defaultOldEquip)
+			if canPos == 4 or canPos == 5 then
+				if equipsData then
+					ConsiderSource(equipsData[4])
+					ConsiderSource(equipsData[5])
+				end
+			end
+			for _, bItem in pairs(bag) do
+				if bItem and bItem.id and bItem.id ~= targetItem.id and (not bItem.bagGridIndex or bItem.bagGridIndex < 100) then
+					if (tonumber(bItem.intensify or 0) or 0) > 0 or (tonumber(bItem.additional or 0) or 0) > 0 then
+						local bTblItem, bTblEquip = ResolveItemAndEquipTables(bItem)
+						if bTblItem and bTblEquip then
+							local bPos = GetTargetSlotForEquip(bItem, bTblItem)
+							if bPos == canPos or ((canPos == 4 or canPos == 5) and (bPos == 4 or bPos == 5)) then
+								ConsiderSource(bItem)
+							end
+						end
 					end
-				end)
+				end
+			end
+			return bestSrc
+		end
+
+		local orderedSlots = { 4, 5, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1 }
+		local handledSlots = {}
+		local function ProcessSlotCandidate(canPos, entry)
+			if not entry or handledSlots[canPos] then return end
+			handledSlots[canPos] = true
+			local item = entry.item
+			local iName = tostring((entry.tblItem and entry.tblItem.name) or item.name or item.id)
+			local transferSrc = FindBestTransferSource(item, canPos, entry.oldEquip)
+
+			if transferSrc and _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqEquipTransfer then
+				local transTypes, maxInt, maxAdd = BuildSafeTransferTypes(transferSrc, item)
 				Log(string.format("[Trang Bị] : Kế thừa cường hóa (%s +%d -> %s) & Mặc lên người (Slot %d)!",
-					tostring((oldEquip.tblItem and oldEquip.tblItem.name) or oldEquip.name or "Đồ cũ"),
-					tonumber(oldEquip.intensify or 0) or 0, iName, canPos), true)
+					tostring((transferSrc.tblItem and transferSrc.tblItem.name) or transferSrc.name or "Đồ cũ"),
+					tonumber(transferSrc.intensify or 0) or 0, iName, canPos), true)
 				_G.NetManager.Send(_G.EquipMessage.ReqEquipTransfer, {
 					equipId = item.id,
-					traEquipId = oldEquip.id,
-					type = { 1, 2, 3 },
-					maxIntensify = intensifyMaxLevel or 30,
-					maxAdditional = addMaxLevel or 15
+					traEquipId = transferSrc.id,
+					type = transTypes,
+					maxIntensify = maxInt,
+					maxAdditional = maxAdd
 				})
 				_G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
 					position = canPos,
 					equipId = item.id
 				})
+				if Timer and Timer.Start then
+					local wearPos = canPos
+					local wearId = item.id
+					Timer.Start(0.45, function()
+						pcall(function()
+							if _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqPutOnTheEquip then
+								_G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, {
+									position = wearPos,
+									equipId = wearId
+								})
+							end
+						end)
+					end)
+				end
 			else
 				Log(string.format("[Trang Bị] : Mặc trang bị tốt hơn [%s] vào Slot %d!", iName, canPos), true)
 				if _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqPutOnTheEquip then
@@ -3020,16 +3284,72 @@ _G.Mod_AutoEquipBetterItems = function()
 						position = canPos,
 						equipId = item.id
 					})
-				end
-				if _G.BagInfoController and _G.BagInfoController.UseItemReq then
+				elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
 					pcall(function() _G.BagInfoController.UseItemReq(1, item.id, nil, entry.itemId) end)
 				end
 			end
-
-			if _G.RoleEquipUtility and _G.RoleEquipUtility.OnWearEquip then
-				pcall(function() _G.RoleEquipUtility.OnWearEquip(item) end)
-			end
 			SaveOutput()
+		end
+
+		for _, sPos in ipairs(orderedSlots) do
+			if bestCandidateBySlot[sPos] then
+				ProcessSlotCandidate(sPos, bestCandidateBySlot[sPos])
+			end
+		end
+		for canPos, entry in pairs(bestCandidateBySlot) do
+			ProcessSlotCandidate(canPos, entry)
+		end
+
+		-- CỨU HỘ CƯỜNG HÓA TRONG TÚI (BAG INTENSIFY RESCUE):
+		-- Nếu trong túi có món đồ cũ đang mang cấp cường hóa cao hơn đồ đang mặc trên người (ví dụ Vũ Khí 1 Tay +19 bị tháo ra túi khi mặc Vũ Khí 2 Tay +1/+2, hoặc Bao Tay +19 nằm trong túi):
+		-- Tự động chuyển cấp cường hóa từ món trong túi sang món đang mặc trên người!
+		if equipsData and _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqEquipTransfer then
+			for _, bagItem in pairs(bag) do
+				if bagItem and bagItem.id and (not bagItem.bagGridIndex or bagItem.bagGridIndex < 100) then
+					local bInt = tonumber(bagItem.intensify or 0) or 0
+					local bAdd = tonumber(bagItem.additional or 0) or 0
+					if bInt > 0 or bAdd > 0 then
+						local bTblItem, bTblEquip = ResolveItemAndEquipTables(bagItem)
+						local subT = tonumber((bTblItem and bTblItem.subType) or bagItem.subType or 0) or 0
+						if bTblItem and bTblEquip and subT ~= 20 and subT ~= 18 and subT ~= 19 and subT ~= 26 and subT ~= 21 and subT ~= 22 then
+							local bPos = GetTargetSlotForEquip(bagItem, bTblItem)
+							local targetEquipped = nil
+							local targetSlot = nil
+							if bPos and equipsData[bPos] and equipsData[bPos].id ~= bagItem.id then
+								targetEquipped = equipsData[bPos]
+								targetSlot = bPos
+							elseif (bPos == 4 or bPos == 5) then
+								if equipsData[4] and equipsData[4].id ~= bagItem.id then
+									targetEquipped = equipsData[4]
+									targetSlot = 4
+								elseif equipsData[5] and equipsData[5].id ~= bagItem.id then
+									targetEquipped = equipsData[5]
+									targetSlot = 5
+								end
+							end
+							if targetEquipped and targetEquipped.id then
+								local eqInt = tonumber(targetEquipped.intensify or 0) or 0
+								local eqAdd = tonumber(targetEquipped.additional or 0) or 0
+								if bInt > eqInt or (bInt == eqInt and bAdd > eqAdd and eqInt == 0) then
+									local transTypes, maxInt, maxAdd = BuildSafeTransferTypes(bagItem, targetEquipped)
+									Log(string.format("[Cứu Hộ Kế Thừa] : Chuyển cường hóa từ túi (%s +%d) sang đồ đang mặc (%s +%d, Slot %s)!",
+										tostring((bTblItem and bTblItem.name) or bagItem.name or bagItem.id), bInt,
+										tostring((targetEquipped.tblItem and targetEquipped.tblItem.name) or targetEquipped.name or targetEquipped.id), eqInt,
+										tostring(targetSlot)), true)
+									_G.NetManager.Send(_G.EquipMessage.ReqEquipTransfer, {
+										equipId = targetEquipped.id,
+										traEquipId = bagItem.id,
+										type = transTypes,
+										maxIntensify = maxInt,
+										maxAdditional = maxAdd
+									})
+									SaveOutput()
+								end
+							end
+						end
+					end
+				end
+			end
 		end
 
 		-- Xác nhận đóng popup Kế thừa cường hóa nếu đang hiện
@@ -3192,6 +3512,11 @@ _G.Mod_TimerEnhanceEquipments = function(maxTargetLvl, onFinished)
 			if not _G.Bot_Running or _G.Bot_PauseTask or tickCount > maxTotalTicks or curTierIdx > #activeTiers then
 				StopEnhanceLoop()
 				return
+			end
+
+			-- Trước khi đập đồ ở tick đầu: Chạy mặc đồ & cứu hộ kế thừa cường hóa trong túi để không đập nhầm đồ +0 khi túi còn đồ +19
+			if tickCount == 1 and _G.Mod_AutoEquipBetterItems then
+				pcall(_G.Mod_AutoEquipBetterItems)
 			end
 
 			local equips = _G.GetEquippedItemsForEnhance and _G.GetEquippedItemsForEnhance()
@@ -3841,19 +4166,14 @@ _G.IsTaskGoalFinished = IsTaskGoalFinished
 local function EquipSetHelmet2110007()
 	pcall(function()
 		if AutoEquipBetterItems then AutoEquipBetterItems() end
-		if _G.RoleEquipUtility and _G.RoleEquipUtility.AutoWearAll then
-			_G.RoleEquipUtility.AutoWearAll()
-		end
 		if _G.BagInfoData and _G.BagInfoData.TotalItems then
 			for _, item in pairs(_G.BagInfoData.TotalItems) do
 				if item and item.id then
 					local cfgId = tonumber(item.itemId or (item.tblItem and item.tblItem.id) or 0) or 0
 					if cfgId == 2110007 then
-						if _G.BagInfoController and _G.BagInfoController.UseItemReq then
-							_G.BagInfoController.UseItemReq(1, item.id, nil, cfgId)
-						end
+						if AutoEquipBetterItems then pcall(AutoEquipBetterItems) end
 						if _G.NetManager and _G.EquipMessage and _G.EquipMessage.ReqPutOnTheEquip then
-							_G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, { position = 3, equipId = item.id })
+							_G.NetManager.Send(_G.EquipMessage.ReqPutOnTheEquip, { position = 2, equipId = item.id })
 						end
 						break
 					end
@@ -3868,12 +4188,19 @@ local function EnsureAutoFightBossOnce()
 	pcall(function()
 		local me = _G.RoleManager and _G.RoleManager.me
 		if not me then return end
+		if _G.QiJiHelperData and not _G.QiJiHelperData.isAutoFight and _G.QiJiHelperData.SetAutoFightData then
+			_G.QiJiHelperData.SetAutoFightData(true)
+		end
 		local af = me.meAutoFight
-		local isAlreadyAuto = af and _G.AutoFightStrKey and (af.autoKey == _G.AutoFightStrKey.AutoFight)
+		local openState = (_G.AutoFightStateEnum and _G.AutoFightStateEnum.Open) or 1
+		local isAlreadyAuto = af and _G.AutoFightStrKey and (af.autoKey == _G.AutoFightStrKey.AutoFight) and (af.autoFightState == openState)
 		local curTarget = me.TargetAvatar or (me.GetTarget and me:GetTarget())
 		local hasLiveTarget = curTarget and not curTarget.isDead and (not curTarget.hp or curTarget.hp > 0)
 		if isAlreadyAuto and hasLiveTarget then
 			return
+		end
+		if me.SetAutoFight and _G.AutoFightStrKey then
+			me:SetAutoFight(_G.AutoFightStrKey.AutoFight)
 		end
 		if me.SetAutoTaskFight and _G.AutoFightStrKey then
 			me:SetAutoTaskFight(_G.AutoFightStrKey.AutoFight)
@@ -4190,18 +4517,45 @@ local ALL_PROGRESSION_FARM_SPOTS = {
 		}
 	},
 
+	-- =========================================================================
+	-- [MOD FEATURE]: XOAY VÒNG ĐA BÃI/ĐA KÊNH CHO DUNGEON 1 LV50, LOST TOWER 1 & 2 LV90/95
+	-- Mô tả: Vị trí đầu tiên là Bãi Đôi gốc, tiếp theo là các tâm bãi chuẩn cfg_Map_minimap cùng mức quái.
+	--        Mỗi map có 3 kênh (cfg_Map_map line = 3) -> xoay vòng chống trùng bãi qua Kênh 1 -> 2 -> 3.
+	--        Đã loại các tâm bãi nằm trong bán kính quét 7 ô quanh Bãi Đôi để tránh nhảy bãi dây chuyền.
+	--        Dungeon 1 Lv50: 4 vị trí × 3 = 12 | Lost Tower 1 Lv90: 1 × 3 = 3 (chỉ xoay kênh) | Lost Tower 2 Lv90/95: 3 × 3 = 9
+	-- =========================================================================
 	-- 4. Lost Tower 2 (100502 - Yêu cầu Lv 80 | EXP 2.40K/phút gấp đôi Lost Tower 1)
-	{ mapId = 100502, minLvl = 80,  x = 171, y = 231, name = "Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231)", monsterLvl = 95, defenseReq = 170, expScore = 98 },
+	{
+		mapId = 100502, minLvl = 80, x = 171, y = 231, maxLines = 3,
+		name = "Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231)", monsterLvl = 95, defenseReq = 170, expScore = 98,
+		coords = {
+			{ x = 171, y = 231 }, -- Bãi Đôi
+			{ x = 185, y = 240 }, { x = 185, y = 226 }
+		}
+	},
 	{ mapId = 100502, minLvl = 80,  x = 185, y = 210, name = "Lost Tower 2 (Bãi Đôi Lv75 EXP x2.0: 185#210)", monsterLvl = 88, defenseReq = 140, expScore = 88 },
 	{ mapId = 100502, minLvl = 80,  x = 214, y = 217, name = "Lost Tower 2 (Bãi Đôi Lv60 EXP x1.0: 214#217)", monsterLvl = 78, defenseReq = 110, expScore = 78 },
 
 	-- 3. Lost Tower 1 (100501 - Yêu cầu Lv 60)
-	{ mapId = 100501, minLvl = 60,  x = 194, y = 106, name = "Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106)", monsterLvl = 85, defenseReq = 105, expScore = 85 },
+	{
+		mapId = 100501, minLvl = 60, x = 194, y = 106, maxLines = 3,
+		name = "Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106)", monsterLvl = 85, defenseReq = 105, expScore = 85,
+		coords = {
+			{ x = 194, y = 106 } -- Giữa 2 Bãi (Bãi Đôi) - chỉ xoay kênh 1 -> 2 -> 3
+		}
+	},
 	{ mapId = 100501, minLvl = 60,  x = 199, y = 80,  name = "Lost Tower 1 (Bãi Đôi Lv75: 199#80)",     monsterLvl = 72, defenseReq = 90,  expScore = 72 },
 	{ mapId = 100501, minLvl = 60,  x = 193, y = 42,  name = "Lost Tower 1 (Quái Lv60: 193#42)",        monsterLvl = 60, defenseReq = 80,  expScore = 60 },
 
 	-- 2. Dungeon 1 (100201 - Yêu cầu Lv 40)
-	{ mapId = 100201, minLvl = 40,  x = 66,  y = 236, name = "Dungeon 1 (Bãi Đôi Lv50: 66#236)", monsterLvl = 50, defenseReq = 75, expScore = 55 },
+	{
+		mapId = 100201, minLvl = 40, x = 66, y = 236, maxLines = 3,
+		name = "Dungeon 1 (Bãi Đôi Lv50: 66#236)", monsterLvl = 50, defenseReq = 75, expScore = 55,
+		coords = {
+			{ x = 66, y = 236 }, -- Bãi Đôi
+			{ x = 65, y = 201 }, { x = 63, y = 214 }, { x = 68, y = 223 }
+		}
+	},
 	{ mapId = 100201, minLvl = 40,  x = 96,  y = 189, name = "Dungeon 1 (Quái Lv45: 96#189)",    monsterLvl = 45, defenseReq = 55, expScore = 45 },
 	{ mapId = 100201, minLvl = 40,  x = 99,  y = 235, name = "Dungeon 1 (Quái Lv40: 99#235)",    monsterLvl = 40, defenseReq = 40, expScore = 40 },
 
@@ -4583,7 +4937,14 @@ _G.SendTeleportWithLine = SendTeleportWithLine
 -- =========================================================================
 local function CheckAndRotateSpotIfPlayerNearby(bestPt, targetMap)
 	local myLvl = GetAccuratePlayerLevel()
-	if not bestPt or not bestPt.rawSpot or not bestPt.rawSpot.coords or #bestPt.rawSpot.coords <= 1 then
+	-- =========================================================================
+	-- [MOD FEATURE]: CHO PHÉP XOAY KÊNH VỚI BÃI CHỈ CÓ 1 TÂM (LOST TOWER 1 LV90)
+	-- Mô tả: Bãi có 1 tọa độ nhưng maxLines > 1 vẫn được xoay vòng qua các kênh 1 -> 2 -> 3.
+	-- =========================================================================
+	if not bestPt or not bestPt.rawSpot or not bestPt.rawSpot.coords or #bestPt.rawSpot.coords < 1 then
+		return false
+	end
+	if #bestPt.rawSpot.coords == 1 and (tonumber(bestPt.rawSpot.maxLines) or 1) <= 1 then
 		return false
 	end
 	local tierKey = bestPt.tierKey
@@ -6227,7 +6588,8 @@ StartNewbieQuestPipeline = function()
 		return
 	end
 	local pMe = _G.RoleManager and _G.RoleManager.me
-	local currentLevel = (pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1
+	local currentLevel = GetAccuratePlayerLevel and GetAccuratePlayerLevel() or tonumber((pMe and pMe.level) or (pMe and pMe.data and pMe.data.level) or 1) or 1
+	local stopQueenLvlInit = GetConfiguredStopQueenLevel and GetConfiguredStopQueenLevel() or 145
 	-- CHỈ KÍCH HOẠT CHU KỲ NÂNG CẤP & THU HỒI ĐỒ ĐỊNH KỲ SAU LEVEL 20:
 	if currentLevel >= 20 then
 		StartGlobal30sUpgradePipeline()
@@ -6238,12 +6600,14 @@ StartNewbieQuestPipeline = function()
 	Log(string.format(">>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL %s] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<", tostring(currentLevel)), true)
 	Log("=========================================================================")
 	SaveOutput()
-	pcall(function()
-		if _G.AutoTaskManage then
-			_G.AutoTaskManage.SetAutoTask(true)
-			_G.AutoTaskManage.StartCurAutoTask(true)
-		end
-	end)
+	if currentLevel < stopQueenLvlInit then
+		pcall(function()
+			if _G.AutoTaskManage then
+				_G.AutoTaskManage.SetAutoTask(true)
+				_G.AutoTaskManage.StartCurAutoTask(true)
+			end
+		end)
+	end
 	if _G.BotQuestMonitorTimer then
 		pcall(function() Timer.Stop(_G.BotQuestMonitorTimer) end)
 		_G.BotQuestMonitorTimer = nil
@@ -6933,56 +7297,66 @@ StartNewbieQuestPipeline = function()
 									if _G.networkRequest.ReqSubmitTask then _G.networkRequest.ReqSubmitTask(taskId) end
 								end
 							end)
-						-- ====================================
-						-- [MOD FEATURE]: TỰ ĐỘNG THU HỒI ĐỒ TÂN THỦ (TASK 3010, 3061...)
-						-- ====================================
+						-- =========================================================================
+						-- [MOD FEATURE]: TỰ ĐỘNG THU HỒI ĐỒ TÂN THỦ (TASK 3010, 3061...) - ÉP BLACKSMITH TYPE 2 (KHÔNG CẦN VIP)
+						-- Mô tả:
+						--   - Luôn ép `wayType = 2` (`RecycleWayType.BlackSmith`), tuyệt đối không lấy `sellUI:GetRecycleWayType()`
+						--     hay gọi `sellUI:btn_sellOnClick()` (vì UI mở nhanh không có `npcConfigID` sẽ gửi `RecycleWayType.Bag = 1`
+						--     gây lỗi "Cấp VIP không đủ" ở dưới Lv 50!).
+						--   - Không bao giờ chọn trang bị đã cường hóa (`intensify > 0`) hoặc có mũi tên tăng lực chiến (`CanUpFight == 1/2`).
+						-- =========================================================================
 						elseif behavior == TASK_BEHAVIOR.RECYCLE then
 							local nowSec = os.time()
 							_G.Bot_LastRecycleTaskTime = _G.Bot_LastRecycleTaskTime or 0
 							if nowSec - _G.Bot_LastRecycleTaskTime >= 2 then
 								_G.Bot_LastRecycleTaskTime = nowSec
-								-- 1. Tìm 1 vật phẩm trong túi để thu hồi (ưu tiên trang bị rác, nếu không có thì lấy 1 bình mana/máu)
+								if _G.EnsureRecycleBlackSmithHooked then pcall(_G.EnsureRecycleBlackSmithHooked) end
+								-- 1. Tìm 1 vật phẩm an toàn trong túi để thu hồi (ưu tiên trang bị rác +0 không tăng LC, hoặc bình mana/máu)
 								local candidate = nil
 								if _G.BagInfoData and _G.BagInfoData.TotalItems then
 									for _, item in pairs(_G.BagInfoData.TotalItems) do
 										if item and item.id and item.count and item.count > 0 and item.tblItem then
-											if item.tblItem.type == 1 then
+											local iType = tonumber(item.tblItem.type or 0) or 0
+											local iInt = tonumber(item.intensify or 0) or 0
+											local iAdd = tonumber(item.additional or 0) or 0
+											if iType == 1 and iInt == 0 and iAdd == 0 then
 												candidate = item
 												break
+											elseif iType == 2 and iInt == 0 and iAdd == 0 then
+												local upSt = (_G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight and _G.RoleEquipUtility.CanUpFight(item)) or 0
+												if upSt ~= 1 and upSt ~= 2 and not string.isNullOrEmpty(item.tblItem.sell) then
+													candidate = item
+													break
+												end
 											end
 										end
 									end
 									if not candidate then
 										for _, item in pairs(_G.BagInfoData.TotalItems) do
 											if item and item.id and item.count and item.count > 0 then
-												candidate = item
-												break
+												local iInt = tonumber(item.intensify or 0) or 0
+												local iAdd = tonumber(item.additional or 0) or 0
+												local upSt = (_G.RoleEquipUtility and _G.RoleEquipUtility.CanUpFight and _G.RoleEquipUtility.CanUpFight(item)) or 0
+												if iInt == 0 and iAdd == 0 and upSt ~= 1 and upSt ~= 2 then
+													candidate = item
+													break
+												end
 											end
 										end
 									end
 								end
-								local sellUI = nil
-								pcall(function()
-									if _G.UIManager and _G.UIManager.GetUiByName then
-										sellUI = _G.UIManager.GetUiByName("Bag_SellInfoUI")
-									end
-								end)
 								local wayType = (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
-								if sellUI and sellUI.GetRecycleWayType then
-									pcall(function() wayType = sellUI:GetRecycleWayType() end)
-								end
 								if candidate then
 									local sendMap = {}
 									sendMap[candidate.id] = 1
-									Log(string.format("-> [THU HỒI TASK %d]: Thu hồi 1 vật phẩm (%s) để hoàn thành nhiệm vụ!", taskId, tostring(candidate.tblItem and candidate.tblItem.name or candidate.id)), true)
+									Log(string.format("-> [THU HỒI TASK %d]: Thu hồi 1 vật phẩm (%s) qua BlackSmith (Type 2 - Không cần VIP) để hoàn thành nhiệm vụ!",
+										taskId, tostring(candidate.tblItem and candidate.tblItem.name or candidate.id)), true)
 									SaveOutput()
 									if _G.networkRequest and _G.networkRequest.ReqItemRecycle then
 										_G.networkRequest.ReqItemRecycle(sendMap, wayType)
 									elseif _G.NetManager and _G.ItemRecycleMessage and _G.ItemRecycleMessage.ReqItemRecycle then
 										_G.NetManager.Send(_G.ItemRecycleMessage.ReqItemRecycle, { recycleItems = sendMap, recycleType = wayType })
 									end
-								elseif sellUI and sellUI.btn_sellOnClick then
-									sellUI:btn_sellOnClick()
 								end
 								-- 2. Nộp / Trả nhiệm vụ sau khi thu hồi và đóng UI
 								Timer.Start(1.0, function()
@@ -6993,6 +7367,7 @@ StartNewbieQuestPipeline = function()
 										end
 										if _G.UIManager then
 											if _G.UIID and _G.UIID.Bag_SellInfoUI then _G.UIManager.Hide(_G.UIID.Bag_SellInfoUI) end
+											if _G.UIID and _G.UIID.BagSellInfoUI then _G.UIManager.Hide(_G.UIID.BagSellInfoUI) end
 											if _G.UIID and _G.UIID.BagUI then _G.UIManager.Hide(_G.UIID.BagUI) end
 											_G.UIManager.Hide("Bag_SellInfoUI")
 											_G.UIManager.Hide("Bag_3DBagInfoUI")
@@ -7908,10 +8283,62 @@ local function EnsureGoldenDragonTargetFilterHooked()
 end
 _G.EnsureGoldenDragonTargetFilterHooked = EnsureGoldenDragonTargetFilterHooked
 
+-- =========================================================================
+-- [MOD FEATURE]: CHẶN THU HỒI VIP (RECYCLEWAYTYPE.BAG = 1) -> ÉP BLACKSMITH (TYPE 2)
+-- Mô tả: Khi chu trình Auto đang chạy (`_G.Bot_Running == true`), mọi gói tin thu hồi từ
+--        `Bag_SellInfoUI`, `BagInfoController.ReqRecycleEquipment` hoặc `networkRequest.ReqItemRecycle`
+--        đều bị ép sang `RecycleWayType.BlackSmith (2)` để không bao giờ bị báo "Cấp VIP không đủ"!
+-- =========================================================================
+local function EnsureRecycleBlackSmithHooked()
+	pcall(function()
+		if _G.Bag_SellInfoUI and _G.Bag_SellInfoUI.GetRecycleWayType and not _G.Mod_HookedSellInfoWayType then
+			_G.Mod_HookedSellInfoWayType = true
+			local origGetWay = _G.Bag_SellInfoUI.GetRecycleWayType
+			_G.Bag_SellInfoUI.GetRecycleWayType = function(self, ...)
+				if _G.Bot_Running then
+					return (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
+				end
+				return origGetWay(self, ...)
+			end
+		end
+		if _G.BagInfoController and _G.BagInfoController.ReqRecycleEquipment and not _G.Mod_HookedBagCtrlRecycleWay then
+			_G.Mod_HookedBagCtrlRecycleWay = true
+			local origReqRec = _G.BagInfoController.ReqRecycleEquipment
+			_G.BagInfoController.ReqRecycleEquipment = function(wayType, ...)
+				if _G.Bot_Running then
+					wayType = (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
+				end
+				return origReqRec(wayType, ...)
+			end
+		end
+		if _G.networkRequest and _G.networkRequest.ReqItemRecycle and not _G.Mod_HookedNetReqItemRecycle then
+			_G.Mod_HookedNetReqItemRecycle = true
+			local origNetRec = _G.networkRequest.ReqItemRecycle
+			_G.networkRequest.ReqItemRecycle = function(recycleItems, recycleType, ...)
+				if _G.Bot_Running then
+					recycleType = (_G.RecycleWayType and _G.RecycleWayType.BlackSmith) or 2
+				end
+				return origNetRec(recycleItems, recycleType, ...)
+			end
+		end
+	end)
+end
+_G.EnsureRecycleBlackSmithHooked = EnsureRecycleBlackSmithHooked
+EnsureRecycleBlackSmithHooked()
+
 _G.StartAutoFarmBot = function()
 	_G.Bot_Running = true
 	_G.Bot_PauseTask = false
+	_G.Mod_IsRunningInstance = false
+	_G.Mod_BC_AllowSkipWait = false
+	_G.Mod_BC_NextRetryTime = 0
+	_G.Mod_DS_NextRetryTime = 0
+	_G.Bot_LastFarmTeleportTime = 0
+	_G.Bot_LastQueenFarmTeleTime = -10
+	_G.Bot_LastTaskNavTime = 0
 	EnsureGoldenDragonTargetFilterHooked()
+	EnsureRecycleBlackSmithHooked()
+	EnsureEquipTransferMaxHooked()
 	_G.IsSwitchingAccount = false
 	_G.HasCreatedRoleForTarget = false
 	_G.IsRoleCreating = false
@@ -8134,6 +8561,10 @@ _G.Bot_Start = _G.StartAutoFarmBot
 _G.StopAutoFarmBot = function()
 	_G.Bot_Running = false
 	_G.Bot_PauseTask = true
+	_G.Mod_IsRunningInstance = false
+	_G.Mod_BC_AllowSkipWait = false
+	_G.Mod_BC_NextRetryTime = 0
+	_G.Mod_DS_NextRetryTime = 0
 	pcall(SaveAccountTimeRecords)
 	if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
 	if _G.BotQuestMonitorTimer then
@@ -8164,13 +8595,16 @@ _G.StopAutoFarmBot = function()
 	pcall(function()
 		local me = _G.RoleManager and _G.RoleManager.me
 		if me then
-			if me.StopMove then me:StopMove() end
-			if me.SetAutoTaskFight and _G.AutoFightStrKey then me:SetAutoTaskFight(_G.AutoFightStrKey.UnAutoFight) end
-			if me.SetAutoHookFight then me:SetAutoHookFight(false) end
+			if me.StopMove then pcall(function() me:StopMove() end) end
+			if me.StopAutoFight then pcall(function() me:StopAutoFight() end) end
+			if me.SetAutoTaskFight and _G.AutoFightStrKey and _G.AutoFightStrKey.None then
+				pcall(function() me:SetAutoTaskFight(_G.AutoFightStrKey.None) end)
+			end
+			if me.SetAutoHookFight then pcall(function() me:SetAutoHookFight(false) end) end
 		end
-		if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then _G.QiJiHelperData.SetAutoFightData(false) end
-		if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then _G.AutoTaskManage.SetAutoTask(false) end
-		if _G.TaskManager and _G.TaskManager.TaskPathStop then _G.TaskManager.TaskPathStop() end
+		if _G.QiJiHelperData and _G.QiJiHelperData.SetAutoFightData then pcall(function() _G.QiJiHelperData.SetAutoFightData(false) end) end
+		if _G.AutoTaskManage and _G.AutoTaskManage.SetAutoTask then pcall(function() _G.AutoTaskManage.SetAutoTask(false) end) end
+		if _G.TaskManager and _G.TaskManager.TaskPathStop then pcall(function() _G.TaskManager.TaskPathStop() end) end
 	end)
 	Log(">>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<", true)
 	SaveOutput()
