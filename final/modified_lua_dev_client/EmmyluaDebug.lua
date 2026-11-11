@@ -3742,13 +3742,10 @@ local function CreateModUI()
                             end
                         end
                     elseif targetTransferId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                        local curLine = _G.SceneData and _G.SceneData.lineIndex or 1
-                        local tgtLine = validLineNum or 1
-                        local needChangeLine = (curLine ~= tgtLine)
+                        -- [MOD FEATURE]: bay đúng kênh thô - KHÔNG gửi changeLine (giống bảng Boss của game)
                         _G.SceneController.OnReqTransferTransmitMap(nil, {
                             mapId = targetTransferId,
-                            line = tgtLine,
-                            changeLine = needChangeLine
+                            line = validLineNum or 1
                         })
                         if _G.FloatingWordUtility then
                             _G.FloatingWordUtility.QuickMsg(string.format("Đang chuyển map tới %s (Boss %d)", tostring(cfg.name), spotIdx))
@@ -3834,7 +3831,18 @@ local function CreateModUI()
 
                                     if bossData then
                                         local bestLine = nil
-                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: BẢNG THEO DÕI BOSS ƯU TIÊN KÊNH CÓ BOSS SỐNG (TẤT CẢ KÊNH)
+                                        -- Mô tả: Đưa kênh có Boss sống lên đầu danh sách duyệt, sau đó mới tới kênh đang chờ hồi.
+                                        -- =========================================================================
+                                        local orderedLines = {}
+                                        for _, ln in ipairs(bossData.lineNums) do
+                                            if (bossData.aliveCount[ln] or 0) > 0 then table.insert(orderedLines, ln) end
+                                        end
+                                        for _, ln in ipairs(bossData.lineNums) do
+                                            if (bossData.aliveCount[ln] or 0) <= 0 then table.insert(orderedLines, ln) end
+                                        end
+                                        for _, lineNum in ipairs(orderedLines) do
                                             local totalAlive = bossData.aliveCount[lineNum] or 0
                                             local deadList = bossData.deadTimes[lineNum] or {}
                                             local expectedTotal = cfg.total or 1
@@ -3984,11 +3992,11 @@ local function CreateModUI()
                     if md.mapCount then
                         for _, v in ipairs(md.mapCount) do
                           -- =========================================================================
-                          -- [MOD FEATURE]: CHỈ LẤY THÔNG TIN BOSS KÊNH (LINE) 1
-                          -- Mô tả: Mod chỉ đánh Boss ở Line 1 -> bỏ qua dữ liệu Line 2+ (gộp server/mở thêm kênh)
-                          --        để không bị chọn Boss "sống" ở Line khác rồi chạy đi chạy lại Map Line 1.
+                          -- [MOD FEATURE]: SĂN BOSS TẤT CẢ CÁC KÊNH (LINE THÔ) - BỎ LỌC CHỈ LINE 1
+                          -- Mô tả: Giữ dữ liệu Boss của mọi kênh thô (raw line). ReqCallFlag kèm line đã test
+                          --        bay đúng kênh (kể cả map liên server) nên săn được cả Line 2.
                           -- =========================================================================
-                          if (v.line or 1) == 1 then
+                          do
                             local mapId = v.mapId
                             if not tempBosses[mapId] then tempBosses[mapId] = {} end
 
@@ -4016,7 +4024,7 @@ local function CreateModUI()
                             bData.deadTimes[lineNum] = deadTimes
                             bData.bossStates = bData.bossStates or {}
                             bData.bossStates[lineNum] = v.bossState or {}
-                          end -- [MOD FEATURE]: hết lọc Line 1
+                          end -- [MOD FEATURE]: hết khối dữ liệu mọi Line
                         end
                     end
                 end
@@ -6307,7 +6315,13 @@ local function CreateModUI()
                                                             if _G.Mod_AutoFarmBoss_Config[cfg.id] then
                                                                 local numSpots = GetBossSpotCount and GetBossSpotCount(cfg) or 1
                                                                 local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
-                                                                local bestLine = (bossData and bossData.lineNums and bossData.lineNums[1]) or 1
+                                                                -- [MOD FEATURE]: Auto Hunt tất cả kênh - ưu tiên kênh có Boss sống, không có thì Line 1
+                                                                local bestLine = 1
+                                                                if bossData and bossData.lineNums then
+                                                                    for _, ln in ipairs(bossData.lineNums) do
+                                                                        if (bossData.aliveCount[ln] or 0) > 0 then bestLine = ln; break end
+                                                                    end
+                                                                end
 
                                                                 for sIdx = 1, numSpots do
                                                                     totalBossChecked = totalBossChecked + 1
@@ -6421,7 +6435,13 @@ local function CreateModUI()
                                                     --        cứ đúng thứ tự lựa chọn của người chơi mà lập tức nhảy tới điểm Boss.
                                                     -- =========================================================================
                                                     local bossData = mapBosses[mapCfg.mapId] and mapBosses[mapCfg.mapId][cfg.id]
-                                                    local bestLine = (bossData and bossData.lineNums and bossData.lineNums[1]) or 1
+                                                    -- [MOD FEATURE]: Auto Hunt tất cả kênh - ưu tiên kênh có Boss sống, không có thì Line 1
+                                                    local bestLine = 1
+                                                    if bossData and bossData.lineNums then
+                                                        for _, ln in ipairs(bossData.lineNums) do
+                                                            if (bossData.aliveCount[ln] or 0) > 0 then bestLine = ln; break end
+                                                        end
+                                                    end
                                                     local huntOrderScore = 1000000 - autoHuntOrder
 
                                                     table.insert(candidates, {
@@ -6479,19 +6499,26 @@ local function CreateModUI()
                                                                 end
                                                             end
 
+                                                            -- =========================================================================
+                                                            -- [MOD FEATURE]: CHỌN KÊNH TỐT NHẤT TRÊN TẤT CẢ CÁC KÊNH
+                                                            -- Mô tả: Kênh có Boss SỐNG luôn thắng (ưu tiên kênh thô nhân vật đang đứng);
+                                                            --        không kênh nào sống -> kênh hồi sinh sớm nhất (<= 30s). Không break sớm.
+                                                            -- =========================================================================
                                                             if totalAlive > 0 then
-                                                                bestLine = lineNum
-                                                                isAlive = true
-                                                                respawnWait = 0
-                                                                break
-                                                            end
-
-                                                            if not isAlive and #deadList > 0 then
+                                                                local isCurLine = (currentMapId == mapCfg.mapId and _G.SceneData and _G.SceneData.line == lineNum)
+                                                                if not isAlive or isCurLine then
+                                                                    bestLine = lineNum
+                                                                    isAlive = true
+                                                                    respawnWait = 0
+                                                                end
+                                                            elseif not isAlive and #deadList > 0 then
                                                                 local rt = deadList[1]
                                                                 if rt <= currentSec + 30 then
-                                                                    bestLine = lineNum
-                                                                    respawnWait = math.max(0, rt - currentSec)
-                                                                    break
+                                                                    local w = math.max(0, rt - currentSec)
+                                                                    if w < respawnWait then
+                                                                        bestLine = lineNum
+                                                                        respawnWait = w
+                                                                    end
                                                                 end
                                                             end
                                                         end
@@ -6502,7 +6529,8 @@ local function CreateModUI()
                                                             local tierScore = tierIndex * 100000
                                                             local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
 
-                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
+                                                            -- [MOD FEATURE]: so kênh bằng kênh thô SceneData.line (lineIndex luôn nil)
+                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.line == bestLine) then
                                                                 finalScore = finalScore + 5000
                                                             end
 
@@ -6800,9 +6828,10 @@ local function CreateModUI()
 
                                 local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
                                     target.mapCfg.mapId
+                                -- [MOD FEATURE]: bay đúng kênh thô - KHÔNG gửi changeLine (changeLine=true bị server bỏ qua line)
                                 if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                     _G.SceneController.OnReqTransferTransmitMap(nil,
-                                        { mapId = transId, line = target.line or 1, changeLine = true })
+                                        { mapId = transId, line = target.line or 1 })
                                 elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
                                     local initialPos = (target.currentPosX and target.currentPosY and { x = target.currentPosX, y = target.currentPosY }) or
                                         (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
@@ -7053,13 +7082,10 @@ local function CreateModUI()
                         else
                             local transId = target.currentTransferId or target.cfg.transferId
                             if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                local curLine = _G.SceneData and _G.SceneData.lineIndex or 1
-                                local tgtLine = target.line or 1
-                                local needChangeLine = (curLine ~= tgtLine)
+                                -- [MOD FEATURE]: bay đúng kênh thô - KHÔNG gửi changeLine (giống bảng Boss của game)
                                 _G.SceneController.OnReqTransferTransmitMap(nil, {
                                     mapId = transId,
-                                    line = tgtLine,
-                                    changeLine = needChangeLine
+                                    line = target.line or 1
                                 })
                             end
                         end
@@ -7104,11 +7130,19 @@ local function CreateModUI()
                             if target.line and currentLine ~= target.line then
                                 LogMsg(string.format("Sai Line (Hiện tại: %s, Cần: %s). Đang chuyển sang Line %d...",
                                     tostring(currentLine), tostring(target.line), target.line))
-                                if _G.NetManager and _G.MapMessage and _G.MapMessage.ReqChangeLine then
-                                    _G.NetManager.Send(_G.MapMessage.ReqChangeLine, { line = target.line })
+                                -- =========================================================================
+                                -- [MOD FEATURE]: ĐỔI KÊNH BẰNG ReqCallFlag / CỔNG KHÔNG changeLine (BỎ ReqChangeLine)
+                                -- Mô tả: Đã test: ReqCallFlag {mapId, line, x, y} và cổng không changeLine vào đúng kênh thô.
+                                -- =========================================================================
+                                local fixX = target.currentPosX or target.cfg.posX
+                                local fixY = target.currentPosY or target.cfg.posY
+                                if fixX and fixY and _G.NetManager and _G.MapMessage and _G.MapMessage.ReqCallFlag then
+                                    _G.NetManager.Send(_G.MapMessage.ReqCallFlag, {
+                                        mapId = target.mapCfg.mapId, line = target.line, x = fixX, y = fixY
+                                    })
                                 elseif _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
                                     local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or target.mapCfg.mapId
-                                    _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = transId, line = target.line, changeLine = true })
+                                    _G.SceneController.OnReqTransferTransmitMap(nil, { mapId = transId, line = target.line })
                                 end
                                 _G.Mod_AutoFarmBoss_State = 3
                                 _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 2.5

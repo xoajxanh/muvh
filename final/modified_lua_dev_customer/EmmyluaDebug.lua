@@ -335,7 +335,7 @@ _G.SetCameraFOV = SetCameraFOV
 _G.Mod_ResetSavedModConfigs = function()
     _G.Mod_AutoFarmBoss_Config = {}
     _G.Mod_SmeltConfig = {}
-    for t = 3, 12 do
+    for t = 3, 15 do -- [MOD FEATURE]: mở rộng C13-C15
         _G.Mod_SmeltConfig["KeepGood_C" .. t] = true
         _G.Mod_SmeltConfig["KeepGoodTV_C" .. t] = true
     end
@@ -405,14 +405,15 @@ local function Mod_ApplyConfig(config)
     local reincSecondary = tonumber(config.character_reincarnation_secondary)
         or (reincPrimary > 1 and (reincPrimary - 1) or 1)
 
-    if reincPrimary and reincPrimary >= 3 and reincPrimary <= 12 then
+    -- [MOD FEATURE]: HỖ TRỢ CẤP CHUYỂN C13-C15 CHO CUSTOMER (nới giới hạn 12 -> 15)
+    if reincPrimary and reincPrimary >= 3 and reincPrimary <= 15 then
         _G.Mod_Config_Reincarnation_Primary = reincPrimary
         _G.Mod_Config_CurrentRebirth = reincPrimary
         _G.ModBossTab = "C" .. tostring(reincPrimary)
         _G.ModAutoBossConfigTab = "C" .. tostring(reincPrimary)
         _G.ModKundunBossTab = "C" .. tostring(reincPrimary)
     end
-    if reincSecondary and reincSecondary >= 1 and reincSecondary <= 12 then
+    if reincSecondary and reincSecondary >= 1 and reincSecondary <= 15 then
         _G.Mod_Config_Reincarnation_Secondary = reincSecondary
     end
 
@@ -2063,8 +2064,12 @@ local function CreateModUI()
 
 
 
+        -- =========================================================================
+        -- [MOD FEATURE]: HỖ TRỢ CẤP CHUYỂN C13-C15 CHO CUSTOMER (TIER RANGE C3-C15)
+        -- Mô tả: Nới giới hạn cấp chuyển 3..12 -> 3..15 (đồng bộ bản Client).
+        -- =========================================================================
         local function GetPlayerReincarnationLevel()
-            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth >= 3 and _G.Mod_Config_CurrentRebirth <= 12 then
+            if _G.Mod_Config_CurrentRebirth and _G.Mod_Config_CurrentRebirth >= 3 and _G.Mod_Config_CurrentRebirth <= 15 then
                 return _G.Mod_Config_CurrentRebirth
             end
             local res = nil
@@ -2072,13 +2077,13 @@ local function CreateModUI()
                 if _G.RoleManager and _G.RoleManager.me then
                     local me = _G.RoleManager.me
                     local lvl = me.level or me.lv or 0
-                    if me.changeLife and me.changeLife >= 3 and me.changeLife <= 12 then
+                    if me.changeLife and me.changeLife >= 3 and me.changeLife <= 15 then
                         res = me.changeLife
                         return
                     end
                     if lvl > 0 then
                         local r = math.floor(lvl / 100)
-                        if r >= 3 and r <= 12 then res = r; return end
+                        if r >= 3 and r <= 15 then res = r; return end
                     end
                 end
                 if _G.QuickFind and _G.QuickFind.LuaMainPlayerViewAttrData then
@@ -2086,14 +2091,14 @@ local function CreateModUI()
                     if attr and attr.level and attr.level > 0 then
                         if _G.ClientTable and _G.ClientTable.cfg_Character_levelManager then
                             local r = _G.ClientTable.cfg_Character_levelManager:GetReincarnationLevel(attr.level)
-                            if r and r >= 3 and r <= 12 then res = r; return end
+                            if r and r >= 3 and r <= 15 then res = r; return end
                         end
                         local r = math.floor(attr.level / 100)
-                        if r and r >= 3 and r <= 12 then res = r; return end
+                        if r and r >= 3 and r <= 15 then res = r; return end
                     end
                 end
             end)
-            if res and res >= 3 and res <= 12 then return res end
+            if res and res >= 3 and res <= 15 then return res end
             return 8
         end
         _G.GetPlayerReincarnationLevel = GetPlayerReincarnationLevel
@@ -2103,10 +2108,10 @@ local function CreateModUI()
             local s = _G.Mod_Config_Reincarnation_Secondary or (p > 1 and (p - 1) or 1)
 
             local tiers = {}
-            if s >= 3 and s <= 12 then
+            if s >= 3 and s <= 15 then
                 table.insert(tiers, "C" .. tostring(s))
             end
-            if p >= 3 and p <= 12 and p ~= s then
+            if p >= 3 and p <= 15 and p ~= s then
                 table.insert(tiers, "C" .. tostring(p))
             end
             if #tiers == 0 then
@@ -2511,6 +2516,128 @@ local function CreateModUI()
             },
         }
 
+        -- =========================================================================
+        -- [MOD FEATURE]: CẤU HÌNH BẢN ĐỒ & BOSS C13, C14, C15 CHO CUSTOMER
+        -- Mô tả: Clone từ bản Client. Boss Hoang Dã dùng transferId cổng truyền tống
+        --        (cfg_Monster_boss: C13 400244-400246, C14 400247-400249, C15 400250-400252).
+        --        Customer chạy bộ: vị trí chính xác lấy runtime từ cfg_Map_minimap (Param=bossId,
+        --        mid=mapId - đã kiểm tra đủ 100% boss C13-C15 giống C12). posX/posY = tọa độ
+        --        spot đầu tiên từ cfg_Map_minimap, dùng làm dự phòng khi Minimap chưa có dữ liệu.
+        -- =========================================================================
+        _G.Mod_MapsConfig_c13 = {
+            {
+                mapId = 10132,
+                title = "Hoang Dã C13",
+                bosses = {
+                    { id = 1013207, name = "T.Quân Mammon", col = 1, transferId = 400244, posX = 160, posY = 98 },
+                    { id = 1013208, name = "Phẫn Nộ", col = 2, transferId = 400245, posX = 49, posY = 192 },
+                    { id = 1013209, name = "Cuồng Bạo", col = 3, transferId = 400246, posX = 20, posY = 94 },
+                }
+            },
+            {
+                mapId = 105213,
+                title = "Trang Sức C13",
+                bosses = {
+                    { id = 10521301, name = "T.Quân Mammon", col = 1, transferId = 105213101, posX = 197, posY = 151 },
+                    { id = 10521302, name = "Phẫn Nộ", col = 2, transferId = 105213102, posX = 85, posY = 54 },
+                }
+            },
+            {
+                mapId = 106412,
+                title = "Thí Luyện Cánh 12",
+                bosses = {
+                    { id = 10641201, name = "N.Cá Hai Ngạnh", col = 1, transferId = 10641201, posX = 90, posY = 98 },
+                    { id = 10641202, name = "Ngang Ngược", col = 2, transferId = 10641202, posX = 158, posY = 78 },
+                    { id = 10641203, name = "Tà Ác", col = 3, transferId = 10641203, posX = 126, posY = 234 },
+                }
+            },
+            {
+                mapId = 106711,
+                title = "Luyện Ngục C13",
+                bosses = {
+                    { id = 10671201, name = "Q.Đốc Ma Tinh", col = 1, transferId = 106711101, posX = 150, posY = 101 },
+                    { id = 10671202, name = "Ngang Ngược", col = 2, transferId = 106711102, posX = 146, posY = 120 },
+                    { id = 10671203, name = "Tà Ác", col = 3, transferId = 106711103, posX = 108, posY = 150 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c14 = {
+            {
+                mapId = 10133,
+                title = "Hoang Dã C14",
+                bosses = {
+                    { id = 1013307, name = "M.Vương Asmodeus", col = 1, transferId = 400247, posX = 160, posY = 98 },
+                    { id = 1013308, name = "Phẫn Nộ", col = 2, transferId = 400248, posX = 49, posY = 192 },
+                    { id = 1013309, name = "Cuồng Bạo", col = 3, transferId = 400249, posX = 20, posY = 94 },
+                }
+            },
+            {
+                mapId = 105214,
+                title = "Trang Sức C14",
+                bosses = {
+                    { id = 10521401, name = "M.Vương Asmodeus", col = 1, transferId = 105214101, posX = 197, posY = 151 },
+                    { id = 10521402, name = "Phẫn Nộ", col = 2, transferId = 105214102, posX = 85, posY = 54 },
+                }
+            },
+            {
+                mapId = 106413,
+                title = "Thí Luyện Cánh 13",
+                bosses = {
+                    { id = 10641301, name = "Nô Bộc N.Cá", col = 1, transferId = 10641301, posX = 90, posY = 98 },
+                    { id = 10641302, name = "Ngang Ngược", col = 2, transferId = 10641302, posX = 158, posY = 78 },
+                    { id = 10641303, name = "Tà Ác", col = 3, transferId = 10641303, posX = 126, posY = 234 },
+                }
+            },
+            {
+                mapId = 106712,
+                title = "Luyện Ngục C14",
+                bosses = {
+                    { id = 10671301, name = "Thủ Vệ Ma Tinh", col = 1, transferId = 106712101, posX = 150, posY = 101 },
+                    { id = 10671302, name = "Ngang Ngược", col = 2, transferId = 106712102, posX = 146, posY = 120 },
+                    { id = 10671303, name = "Tà Ác", col = 3, transferId = 106712103, posX = 108, posY = 150 },
+                }
+            },
+        }
+
+        _G.Mod_MapsConfig_c15 = {
+            {
+                mapId = 10137,
+                title = "Hoang Dã C15",
+                bosses = {
+                    { id = 1013707, name = "Kinh Hãi Fenrir", col = 1, transferId = 400250, posX = 221, posY = 40 },
+                    { id = 1013708, name = "Phẫn Nộ", col = 2, transferId = 400251, posX = 215, posY = 133 },
+                    { id = 1013709, name = "Cuồng Bạo", col = 3, transferId = 400252, posX = 219, posY = 188 },
+                }
+            },
+            {
+                mapId = 105215,
+                title = "Trang Sức C15",
+                bosses = {
+                    { id = 10521501, name = "Kinh Hãi Fenrir", col = 1, transferId = 105215101, posX = 197, posY = 151 },
+                    { id = 10521502, name = "Phẫn Nộ", col = 2, transferId = 105215102, posX = 85, posY = 54 },
+                }
+            },
+            {
+                mapId = 106414,
+                title = "Thí Luyện Cánh 14",
+                bosses = {
+                    { id = 10641401, name = "Thủ Hộ N.Cá", col = 1, transferId = 10641401, posX = 90, posY = 98 },
+                    { id = 10641402, name = "Ngang Ngược", col = 2, transferId = 10641402, posX = 158, posY = 78 },
+                    { id = 10641403, name = "Tà Ác", col = 3, transferId = 10641403, posX = 126, posY = 234 },
+                }
+            },
+            {
+                mapId = 106713,
+                title = "Luyện Ngục C15",
+                bosses = {
+                    { id = 10671401, name = "Muff", col = 1, transferId = 106713101, posX = 150, posY = 101 },
+                    { id = 10671402, name = "Ngang Ngược", col = 2, transferId = 106713102, posX = 146, posY = 120 },
+                    { id = 10671403, name = "Tà Ác", col = 3, transferId = 106713103, posX = 108, posY = 150 },
+                }
+            },
+        }
+
         local function GetMapsConfigByTier(tierTag)
             if not tierTag then return _G.Mod_MapsConfig_c7 or {} end
             local tagLower = string.lower(tierTag)
@@ -2743,7 +2870,18 @@ local function CreateModUI()
 
                                     if bossData then
                                         local bestLine = nil
-                                        for _, lineNum in ipairs(bossData.lineNums) do
+                                        -- =========================================================================
+                                        -- [MOD FEATURE]: BẢNG THEO DÕI BOSS ƯU TIÊN KÊNH CÓ BOSS SỐNG (TẤT CẢ KÊNH)
+                                        -- Mô tả: Đưa kênh có Boss sống lên đầu danh sách duyệt, sau đó mới tới kênh đang chờ hồi.
+                                        -- =========================================================================
+                                        local orderedLines = {}
+                                        for _, ln in ipairs(bossData.lineNums) do
+                                            if (bossData.aliveCount[ln] or 0) > 0 then table.insert(orderedLines, ln) end
+                                        end
+                                        for _, ln in ipairs(bossData.lineNums) do
+                                            if (bossData.aliveCount[ln] or 0) <= 0 then table.insert(orderedLines, ln) end
+                                        end
+                                        for _, lineNum in ipairs(orderedLines) do
                                             local totalAlive = bossData.aliveCount[lineNum] or 0
                                             local deadList = bossData.deadTimes[lineNum] or {}
 
@@ -2812,9 +2950,9 @@ local function CreateModUI()
 
                                                 local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(targetMapId)) or
                                                     targetTransferId or targetMapId
-                                                if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                                    _G.SceneController.OnReqTransferTransmitMap(nil,
-                                                        { mapId = transId, line = targetLine, changeLine = true })
+                                                -- [MOD FEATURE]: bay đúng kênh thô bằng FlyTransferScene (KHÔNG changeLine)
+                                                if transId and _G.PathFinderManager and _G.PathFinderManager.FlyTransferScene then
+                                                    _G.PathFinderManager.FlyTransferScene(transId, targetLine or 1, nil, nil, nil)
                                                 elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
                                                     local initialPos = (staticPosX and staticPosY and { x = staticPosX, y = staticPosY }) or
                                                         { x = 100, y = 100 }
@@ -2903,11 +3041,11 @@ local function CreateModUI()
                     if md.mapCount then
                         for _, v in ipairs(md.mapCount) do
                           -- =========================================================================
-                          -- [MOD FEATURE]: CHỈ LẤY THÔNG TIN BOSS KÊNH (LINE) 1
-                          -- Mô tả: Mod chỉ đánh Boss ở Line 1 -> bỏ qua dữ liệu Line 2+ (gộp server/mở thêm kênh)
-                          --        để không bị chọn Boss "sống" ở Line khác rồi chạy đi chạy lại Map Line 1.
+                          -- [MOD FEATURE]: SĂN BOSS TẤT CẢ CÁC KÊNH (LINE THÔ) - BỎ LỌC CHỈ LINE 1
+                          -- Mô tả: Giữ dữ liệu Boss của mọi kênh thô (raw line). Bay vào đúng kênh bằng
+                          --        FlyTransferScene (KHÔNG changeLine) nên săn được cả Line 2 của map liên server.
                           -- =========================================================================
-                          if (v.line or 1) == 1 then
+                          do
                             local mapId = v.mapId
                             if not tempBosses[mapId] then tempBosses[mapId] = {} end
 
@@ -2938,7 +3076,7 @@ local function CreateModUI()
                             bData.aliveCount[lineNum] = v.count or 0
                             bData.deadTimes[lineNum] = deadTimes
                             bData.deadInfos[lineNum] = deadInfos
-                          end -- [MOD FEATURE]: hết lọc Line 1
+                          end -- [MOD FEATURE]: hết khối dữ liệu mọi Line
                         end
                     end
                 end
@@ -3889,7 +4027,7 @@ local function CreateModUI()
                                 end
 
                                 -- 2. Cấu hình Tách Đồ Bộ theo SubType & Tier (Không áp dụng cho Trang Sức Trác Việt 18, 19, 26)
-                                if prefix and tier >= 3 and tier <= 12 then
+                                if prefix and tier >= 3 and tier <= 15 then -- [MOD FEATURE]: C13-C15
                                     local varName = prefix .. "_C" .. tostring(tier)
                                     if _G.Mod_SmeltConfig[varName] then
                                         shouldSmelt = true
@@ -3909,11 +4047,11 @@ local function CreateModUI()
                                     if isJewelryTracViet then
                                         local tvTier = (quality and quality > 0) and quality or tier
                                         evalTier = tvTier
-                                        if tvTier and tvTier >= 3 and tvTier <= 12 then
+                                        if tvTier and tvTier >= 3 and tvTier <= 15 then -- [MOD FEATURE]: C13-C15
                                             keepGoodVar = "KeepGoodTV_C" .. tostring(tvTier)
                                         end
                                     else
-                                        if tier and tier >= 3 and tier <= 12 then
+                                        if tier and tier >= 3 and tier <= 15 then -- [MOD FEATURE]: C13-C15
                                             keepGoodVar = "KeepGood_C" .. tostring(tier)
                                         end
                                     end
@@ -4359,22 +4497,32 @@ local function CreateModUI()
                                                         local isAlive = false
                                                         local respawnWait = 9999
 
+                                                        -- =========================================================================
+                                                        -- [MOD FEATURE]: CHỌN KÊNH TỐT NHẤT TRÊN TẤT CẢ CÁC KÊNH
+                                                        -- Mô tả: Duyệt hết các kênh thô: kênh có Boss SỐNG luôn thắng (ưu tiên kênh
+                                                        --        nhân vật đang đứng); nếu không kênh nào sống -> kênh hồi sinh sớm nhất (<= 30s).
+                                                        -- =========================================================================
+                                                        local curRawLine = _G.SceneData and _G.SceneData.line
                                                         for _, lineNum in ipairs(bossData.lineNums) do
                                                             local totalAlive = bossData.aliveCount[lineNum] or 0
                                                             if totalAlive > 0 then
-                                                                bestLine = lineNum
-                                                                isAlive = true
-                                                                respawnWait = 0
-                                                                break
-                                                            end
-
-                                                            local deadList = bossData.deadTimes[lineNum] or {}
-                                                            if not isAlive and #deadList > 0 then
-                                                                local rt = deadList[1]
-                                                                if rt <= currentSec + 30 then
+                                                                local isCurLine = (currentMapId == mapCfg.mapId and curRawLine == lineNum)
+                                                                if not isAlive or isCurLine then
                                                                     bestLine = lineNum
-                                                                    respawnWait = math.max(0, rt - currentSec)
-                                                                    break
+                                                                    isAlive = true
+                                                                    respawnWait = 0
+                                                                end
+                                                            elseif not isAlive then
+                                                                local deadList = bossData.deadTimes[lineNum] or {}
+                                                                if #deadList > 0 then
+                                                                    local rt = deadList[1]
+                                                                    if rt <= currentSec + 30 then
+                                                                        local w = math.max(0, rt - currentSec)
+                                                                        if w < respawnWait then
+                                                                            bestLine = lineNum
+                                                                            respawnWait = w
+                                                                        end
+                                                                    end
                                                                 end
                                                             end
                                                         end
@@ -4386,7 +4534,8 @@ local function CreateModUI()
 
                                                             local finalScore = aliveScore + tierScore + mapPriority + colPriority + waitScore
 
-                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.lineIndex == bestLine) then
+                                                            -- [MOD FEATURE]: so kênh bằng kênh thô SceneData.line (lineIndex luôn nil)
+                                                            if currentMapId == mapCfg.mapId and (_G.SceneData and _G.SceneData.line == bestLine) then
                                                                 finalScore = finalScore + 5000
                                                             end
 
@@ -4733,9 +4882,15 @@ local function CreateModUI()
 
                             local transId = (_G.PathFinderManager and _G.PathFinderManager.GetTransIdByGroupId and _G.PathFinderManager.GetTransIdByGroupId(target.mapCfg.mapId)) or
                                 target.mapCfg.mapId
-                            if transId and _G.SceneController and _G.SceneController.OnReqTransferTransmitMap then
-                                _G.SceneController.OnReqTransferTransmitMap(nil,
-                                    { mapId = transId, line = target.line, changeLine = true })
+                            -- =========================================================================
+                            -- [MOD FEATURE]: BAY VÀO ĐÚNG KÊNH THÔ BẰNG FlyTransferScene (KHÔNG changeLine)
+                            -- Mô tả: Giống hệt bấm ô kênh trong bảng Boss. changeLine=true khiến server bỏ qua
+                            --        line ở map liên server (luôn về Line 1) -> đã test: vào đúng Line 2.
+                            -- =========================================================================
+                            if transId and _G.PathFinderManager and _G.PathFinderManager.FlyTransferScene then
+                                _G.PathFinderManager.FlyTransferScene(transId, target.line or 1, nil, nil, nil)
+                            elseif transId and _G.EventManager and _G.Event and _G.Event.Map_ChangeMap then
+                                _G.EventManager.Dispatch(_G.Event.Map_ChangeMap, { mapId = transId, line = target.line or 1 })
                             elseif _G.PathFinderManager and _G.PathFinderManager.MoveToLinePos then
                                 local initialPos = (target.cfg.posX and target.cfg.posY and { x = target.cfg.posX, y = target.cfg.posY }) or
                                     { x = 100, y = 100 }
@@ -7411,7 +7566,7 @@ local function CreateModUI()
             end
 
             local kundunTabY = currentY
-            local tierTags = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
+            local tierTags = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15" } -- [MOD FEATURE]: C13-C15
             _G.NangCaoTabBtns = {}
             for tIdx, tag in ipairs(tierTags) do
                 local tabBtn = CreateTabBtn("[ BOSS " .. tag .. " ]", tag, leftColX + (tIdx - 1) * 110, kundunTabY)
@@ -8881,7 +9036,7 @@ local function CreateModUI()
             end
 
             -- Tạo sẵn Pool cho tất cả Tier từ C3 tới C12
-            local allTiers = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12" }
+            local allTiers = { "C3", "C4", "C5", "C6", "C7", "C8", "C9", "C10", "C11", "C12", "C13", "C14", "C15" } -- [MOD FEATURE]: C13-C15
             local tierTabBtns = {}
             for _, tag in ipairs(allTiers) do
                 local tBtn = CreateTierTab("[ BOSS " .. tag .. " ]", tag)
@@ -8980,7 +9135,7 @@ local function CreateModUI()
                 local tracVietTiers = {}
                 for _, offset in ipairs({ 3, 2, 1, 0 }) do
                     local tierNum = x - offset
-                    if tierNum >= 3 and tierNum <= 12 then
+                    if tierNum >= 3 and tierNum <= 15 then -- [MOD FEATURE]: C13-C15
                         table.insert(tracVietTiers, "C" .. tostring(tierNum))
                     end
                 end
@@ -8990,7 +9145,7 @@ local function CreateModUI()
                 local doBoTiers = {}
                 for _, offset in ipairs({ 2, 1, 0, -1 }) do
                     local tierNum = x - offset
-                    if tierNum >= 3 and tierNum <= 12 then
+                    if tierNum >= 3 and tierNum <= 15 then -- [MOD FEATURE]: C13-C15
                         table.insert(doBoTiers, "C" .. tostring(tierNum))
                     end
                 end
