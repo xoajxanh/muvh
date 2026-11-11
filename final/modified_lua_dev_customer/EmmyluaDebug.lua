@@ -4320,6 +4320,7 @@ local function CreateModUI()
                 local status, err = pcall(function()
                     -- STATE 0: BOOT & COMBAT CHECK
                     if _G.Mod_AutoFarmBoss_State == 0 then
+                        _G.Mod_AutoFarmBoss_RescanOnMap = false -- [MOD FEATURE]: reset cờ quét tại chỗ khi khởi động
                         local foundCombatBoss = nil
                         if _G.RoleManager and _G.RoleManager.GetRolesByType then
                             local monsterRoles = _G.RoleManager.GetRolesByType(2)
@@ -4789,6 +4790,24 @@ local function CreateModUI()
                         end
                         _G.Mod_PerformAutoTrainAndSmelt = Mod_PerformAutoTrainAndSmelt
 
+                        -- =========================================================================
+                        -- [MOD FEATURE]: QUÉT LẠI TẠI CHỖ - BOSS KẾ TIẾP CÙNG MAP THÌ KHÔNG VỀ LORENCIA
+                        -- Mô tả: Khi vừa xong Boss / Boss bị KS / chờ không ra / Minimap báo chết, bot quét lại
+                        --        ngay tại map đang đứng (cờ Mod_AutoFarmBoss_RescanOnMap).
+                        --        - Mục tiêu cùng map (kể cả khác kênh) -> State 3 chạy bộ / đổi kênh luôn.
+                        --        - Mục tiêu khác map hoặc chưa có mục tiêu -> về Lorencia như luồng cũ.
+                        -- =========================================================================
+                        if _G.Mod_AutoFarmBoss_RescanOnMap then
+                            _G.Mod_AutoFarmBoss_RescanOnMap = false
+                            local hasReadyTarget = bestBoss and (bestBoss.isAlive or (bestBoss.wait and bestBoss.wait <= 20))
+                            if not hasReadyTarget or bestBoss.mapCfg.mapId ~= currentMapId then
+                                _G.Mod_AutoFarmBoss_Target = nil
+                                SetBossState(1, "Quét tại chỗ: không có Boss cùng map -> Về Lorencia")
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
+                                return
+                            end
+                        end
+
                         if bestBoss then
                             _G.Mod_AutoFarmBoss_Target = bestBoss
                             if _G.ModRefreshAutoBossConfigUI then _G.ModRefreshAutoBossConfigUI() end
@@ -5006,9 +5025,13 @@ local function CreateModUI()
                             if soonPos then
                                 target.respawnAt = currentSec + (soonWait or 0)
                             else
+                                -- [MOD FEATURE]: Quét lại tại chỗ (không về Lorencia), bỏ qua Boss này 30s chống lặp
+                                _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 30
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                SetBossState(1, "Minimap xác nhận Boss đã chết")
-                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                _G.Mod_AutoFarmBoss_RescanOnMap = true
+                                _G.Mod_AutoFarmBoss_NextReqTime = 0
+                                SetBossState(2, "Minimap xác nhận Boss đã chết -> Quét lại tại chỗ")
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                                 return
                             end
                         end
@@ -5381,9 +5404,12 @@ local function CreateModUI()
                                 LogMsg(string.format("Boss bị Ks (HP < %d%%). Bỏ qua 6 phút", skipThresh))
                                 _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 360
                                 _G.Mod_AutoFarmBoss_Target = nil
-                                SetBossState(1, "Boss bị KS")
+                                -- [MOD FEATURE]: Quét lại tại chỗ (không về Lorencia)
+                                _G.Mod_AutoFarmBoss_RescanOnMap = true
+                                _G.Mod_AutoFarmBoss_NextReqTime = 0
+                                SetBossState(2, "Boss bị KS -> Quét lại tại chỗ")
                                 _G.Mod_AutoFarmBoss_TargetWait = 0
-                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                                _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                             end
                             return
                         end
@@ -5403,10 +5429,14 @@ local function CreateModUI()
                             _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
                         else
                             _G.Mod_AutoFarmBoss_BossWait = 0
+                            -- [MOD FEATURE]: Quét lại tại chỗ (không về Lorencia), bỏ qua Boss này 30s chống lặp
+                            _G.Mod_AutoFarmBoss_Ignore[target.cfg.id .. "_" .. target.mapCfg.mapId] = currentSec + 30
                             _G.Mod_AutoFarmBoss_Target = nil
-                            SetBossState(1, "Chờ Boss quá 20s không thấy")
+                            _G.Mod_AutoFarmBoss_RescanOnMap = true
+                            _G.Mod_AutoFarmBoss_NextReqTime = 0
+                            SetBossState(2, "Chờ Boss không thấy -> Quét lại tại chỗ")
                             _G.Mod_AutoFarmBoss_TargetWait = 0
-                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.0
+                            _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                         end
 
                         -- STATE 5: COMBAT
@@ -5504,7 +5534,14 @@ local function CreateModUI()
                         LogMsg("Đã xong 7s nhặt đồ! Rút về Lorencia...")
                         _G.Mod_AutoFarmBoss_Target = nil
                         _G.Mod_AutoFarmBoss_LootStartTime = nil
-                        SetBossState(1, "Xong 7s nhặt đồ -> Về Lorencia")
+                        -- =========================================================================
+                        -- [MOD FEATURE]: XONG NHẶT ĐỒ -> QUÉT LẠI TẠI CHỖ (CÙNG MAP KHÔNG VỀ LORENCIA)
+                        -- Mô tả: Chuyển thẳng State 2 xin Data Boss mới. Boss kế tiếp cùng map (kể cả khác kênh)
+                        --        -> chạy bộ / đổi kênh luôn; khác map hoặc chưa có Boss -> về Lorencia như cũ.
+                        -- =========================================================================
+                        _G.Mod_AutoFarmBoss_RescanOnMap = true
+                        _G.Mod_AutoFarmBoss_NextReqTime = 0
+                        SetBossState(2, "Xong 7s nhặt đồ -> Quét lại tại chỗ")
                         _G.Mod_AutoFarmBoss_TargetWait = 0
                         _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 0.5
                     end
