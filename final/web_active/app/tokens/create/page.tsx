@@ -390,7 +390,8 @@ export default function TokenCreatePage() {
                         className="w-full h-10 px-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-cyan-300 font-semibold"
                         title="Chuyển chính (Primary)"
                       >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                        {/* [MOD FEATURE]: CẤP CHUYỂN CUSTOMER C1-C15 (thêm C13, C14, C15) */}
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lvl) => (
                           <option key={lvl} value={lvl}>
                             Chính: C{lvl}
                           </option>
@@ -402,7 +403,7 @@ export default function TokenCreatePage() {
                         className="w-full h-10 px-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300 font-semibold"
                         title="Chuyển phụ (Secondary)"
                       >
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((lvl) => (
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((lvl) => (
                           <option key={lvl} value={lvl}>
                             Phụ: C{lvl}
                           </option>
