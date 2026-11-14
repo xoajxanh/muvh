@@ -12,6 +12,12 @@ _G.Mod_IsAdmin = true
 _G.Mod_IsDev = true
 
 -- =========================================================================
+-- [MOD FEATURE]: SỐ PHIÊN BẢN MOD (HIỂN THỊ Ở WATERMARK)
+-- Mô tả: Mỗi lần build tăng số này lên 1 nấc (1.0 -> 1.1 -> 1.2 ...) để dễ theo dõi phiên bản.
+-- =========================================================================
+_G.Mod_Version = "1.0"
+
+-- =========================================================================
 -- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
 -- Mô tả: Khởi tạo biến toàn cục mod, phân quyền Admin/Debug, dọn dẹp file bundle cũ.
 -- =========================================================================
@@ -12555,7 +12561,7 @@ local function CreateModUI()
             authWmRt.sizeDelta = Vector2(200, 25)
             local authWmTxt = authWmGo:AddComponent(typeof(Text))
             authWmTxt.raycastTarget = false
-            authWmTxt.text = "<i>Modded by Xoài</i>"
+            authWmTxt.text = "<i>Modded by Xoài v" .. tostring(_G.Mod_Version or "1.0") .. "</i>" -- [MOD FEATURE]: kèm số phiên bản
             authWmTxt.color = Color(0.3, 0.6, 0.2, 1)
             authWmTxt.fontSize = 15
             authWmTxt.alignment = TextAnchor.LowerLeft
@@ -14791,15 +14797,17 @@ local function CreateModUI()
                         _G.Mod_AdminBurstDropItems = nil
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: BẬT AUTO BOSS -> ĐƯA TỐC CHẠY VỀ 1.0
+                        -- [MOD FEATURE]: BẬT AUTO BOSS -> ĐƯA TỐC CHẠY VỀ 1.0 (ADMIN GIỮ NGUYÊN TỐC CŨ)
                         -- =========================================================================
-                        _G.RunSpeedMultiplier = 1.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.0)
-                        local meSpd = _G.RoleManager and _G.RoleManager.me
-                        if meSpd and meSpd.SetMoveSpeed then
-                            meSpd:SetMoveSpeed(meSpd._modBaseMoveSpeed or 5.0, true)
+                        if not _G.Mod_IsAdmin then
+                            _G.RunSpeedMultiplier = 1.0
+                            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.0)
+                            local meSpd = _G.RoleManager and _G.RoleManager.me
+                            if meSpd and meSpd.SetMoveSpeed then
+                                meSpd:SetMoveSpeed(meSpd._modBaseMoveSpeed or 5.0, true)
+                            end
+                            if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
                         end
-                        if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
 
                         CS.UnityEngine.PlayerPrefs.Save()
 
@@ -19741,7 +19749,7 @@ local function CreateModUI()
         wmTxtRt.sizeDelta = Vector2(0, 0)
         local wmTxt = wmTxtGo:AddComponent(typeof(Text))
         wmTxt.raycastTarget = false
-        wmTxt.text = "<i>Modded by Xoài</i>"
+        wmTxt.text = "<i>Modded by Xoài v" .. tostring(_G.Mod_Version or "1.0") .. "</i>" -- [MOD FEATURE]: kèm số phiên bản
         wmTxt.color = Color(0.215, 0.490, 0.133, 0.9)
         wmTxt.fontSize = 15
         wmTxt.alignment = TextAnchor.LowerRight
@@ -21934,6 +21942,8 @@ _G.Mod_StartAutoKimPhieuLoop = function()
         _G.Mod_AutoKimPhieu_LastJoinTime = 0
         if _G.Mod_AutoKimPhieu_EnterMapTime == 0 then
             _G.Mod_AutoKimPhieu_EnterMapTime = nowTime
+            -- [MOD FEATURE]: GHI NHẬN VÀNG KHÓA LÚC VỪA VÀO HANG (để báo Vàng cũ -> Vàng mới khi xong lượt)
+            _G.Mod_AutoKimPhieu_GoldBefore = Mod_GetBoundGoldCount()
         end
 
         -- Nếu vừa gửi lệnh thoát map thì chờ chuyển cảnh (tối đa 1.5s)
@@ -22000,12 +22010,21 @@ _G.Mod_StartAutoKimPhieuLoop = function()
             -- Khi đã thấy vàng và hút sạch (isClean == true) hoặc quá 1.5s sau khi rồng chết mà sàn sạch bóng vàng
             if _G.Mod_AutoKimPhieu_SawGold or elapsedSinceDead >= 1.5 then
                 _G.Mod_AutoKimPhieu_Kills = (_G.Mod_AutoKimPhieu_Kills or 0) + 1
-                local curGoldStr = Mod_FormatNumber(Mod_GetBoundGoldCount())
                 local remainTickets = Mod_GetKimPhieuCount()
 
+                -- =========================================================================
+                -- [MOD FEATURE]: BÁO VÀNG CŨ -> VÀNG MỚI SAU MỖI LƯỢT KIM PHIẾU
+                -- Mô tả: So vàng khóa lúc vừa vào hang với vàng khóa sau khi nhặt sạch.
+                -- =========================================================================
+                local goldNow = tonumber(Mod_GetBoundGoldCount()) or 0
+                local goldOld = tonumber(_G.Mod_AutoKimPhieu_GoldBefore) or goldNow
+                local goldGain = goldNow - goldOld
                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                    _G.FloatingWordUtility.QuickMsg(string.format("✅ XONG LƯỢT #%d! Vàng khóa: %s (Còn %d vé)", _G.Mod_AutoKimPhieu_Kills, curGoldStr, remainTickets))
+                    _G.FloatingWordUtility.QuickMsg(string.format("✅ XONG LƯỢT #%d | Vàng cũ: %s → Vàng mới: %s (%s%s) | Còn %d vé",
+                        _G.Mod_AutoKimPhieu_Kills, Mod_FormatNumber(goldOld), Mod_FormatNumber(goldNow),
+                        goldGain >= 0 and "+" or "", Mod_FormatNumber(goldGain), remainTickets))
                 end
+                _G.Mod_AutoKimPhieu_GoldBefore = nil
 
                 _G.Mod_AutoKimPhieu_DragonDeadTime = nil
                 _G.Mod_AutoKimPhieu_SawDragonAlive = false

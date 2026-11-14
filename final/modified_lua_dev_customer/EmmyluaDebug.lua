@@ -5,6 +5,12 @@
 -- Bắt buộc phải có để Main.lua gọi không bị lỗi
 EmmyluaDebug = {}
 
+-- =========================================================================
+-- [MOD FEATURE]: SỐ PHIÊN BẢN MOD (HIỂN THỊ Ở WATERMARK)
+-- Mô tả: Mỗi lần build tăng số này lên 1 nấc (1.0 -> 1.1 -> 1.2 ...) để dễ theo dõi phiên bản.
+-- =========================================================================
+_G.Mod_Version = "1.0"
+
 --------------------------------------------------------------------------------
 -- ACTIVE SYSTEM CORE (Remote Config & Active Validation)
 --------------------------------------------------------------------------------
@@ -444,10 +450,25 @@ local function Mod_ApplyConfig(config)
         _G.AutoPick_Limit = math.min(_G.AutoPick_Limit, _G.Mod_Config_MaxPickupCount)
     end
 
-    -- Clamping current FOV to new remote config boundaries
+    -- =========================================================================
+    -- [MOD FEATURE]: KHÔI PHỤC FOV ĐÃ LƯU TRƯỚC KHI ĐỒNG BỘ GIỚI HẠN TOKEN WEB
+    -- Mô tả: Khi thoát ra vào lại (_G.currentFOV == nil), ưu tiên đọc FOV người chơi
+    --        đã lưu trong PlayerPrefs("Mod_FOV") thay vì tự đẩy lên maxFov (100).
+    -- =========================================================================
     local maxFov = _G.Mod_Config_FOV_Max or 50
     local minFov = _G.Mod_Config_FOV_Min or 35
-    _G.currentFOV = _G.currentFOV or maxFov
+    if _G.currentFOV == nil then
+        pcall(function()
+            if CS.UnityEngine.PlayerPrefs.HasKey("Mod_FOV") then
+                local savedPrefFov = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_FOV", maxFov)
+                if savedPrefFov and savedPrefFov > 0 then
+                    _G.SavedFOV = math.floor(savedPrefFov + 0.5)
+                    _G.currentFOV = _G.SavedFOV
+                end
+            end
+        end)
+    end
+    _G.currentFOV = _G.currentFOV or _G.SavedFOV or math.min(55, maxFov)
     if _G.currentFOV > maxFov then _G.currentFOV = maxFov end
     if _G.currentFOV < minFov then _G.currentFOV = minFov end
     if _G.fovValTxt and not _G.fovValTxt:Equals(nil) then
@@ -1189,6 +1210,22 @@ local function CreateModUI()
         end
         if _G.Mod_ShowKundunHP == nil then
             pcall(function() _G.Mod_ShowKundunHP = CS.UnityEngine.PlayerPrefs.GetInt("Mod_ShowKundunHP", 0) == 1 end)
+        end
+        -- =========================================================================
+        -- [MOD FEATURE]: KHỞI TẠO SỚM FOV ĐÃ LƯU TỪ PLAYERPREFS CHO CUSTOMER UI
+        -- Mô tả: Nạp sẵn _G.SavedFOV & _G.currentFOV trước khi tạo nhãn FOVValText,
+        --        chưa gọi SetCameraFOV sớm để không bị trần tạm (50) cắt mất FOV cao.
+        -- =========================================================================
+        if _G.currentFOV == nil then
+            pcall(function()
+                if CS.UnityEngine.PlayerPrefs.HasKey("Mod_FOV") then
+                    local savedFov = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_FOV", 55)
+                    if savedFov and savedFov > 0 then
+                        _G.SavedFOV = math.floor(savedFov + 0.5)
+                        _G.currentFOV = _G.SavedFOV
+                    end
+                end
+            end)
         end
 
         _G.Mod_SaveFarmStats = _G.Mod_SaveFarmStats or function()
@@ -3090,14 +3127,24 @@ local function CreateModUI()
         _G.ParseBossData = ParseBossData
         ParseBossData()
 
-        if _G.SavedFOV == nil then
-            pcall(function()
-                _G.SavedFOV = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_FOV", 35)
+        pcall(function()
+            if _G.SavedFOV == nil and CS.UnityEngine.PlayerPrefs.HasKey("Mod_FOV") then
+                local savedFov = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_FOV", 55)
+                if savedFov and savedFov > 0 then
+                    _G.SavedFOV = math.floor(savedFov + 0.5)
+                    _G.currentFOV = _G.currentFOV or _G.SavedFOV
+                end
+            end
+            if _G.IsAutoRefresh == nil then
                 _G.IsAutoRefresh = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoRefresh", 0) == 1
+            end
+            if _G.AutoRefreshInterval == nil then
                 _G.AutoRefreshInterval = CS.UnityEngine.PlayerPrefs.GetInt("Mod_RefreshInterval", 5)
+            end
+            if _G.LastRefreshSec == nil then
                 _G.LastRefreshSec = 0
-            end)
-        end
+            end
+        end)
 
         if not _G.BossHooked then
             _G.BossHooked = true
@@ -6310,9 +6357,13 @@ local function CreateModUI()
 
         local function UpdateFOVLabel()
             pcall(function()
+                if _G.currentFOV then
+                    fovValTxt.text = "FOV: " .. tostring(math.floor(_G.currentFOV + 0.5))
+                    return
+                end
                 local cam = CS.UnityEngine.Camera.main
                 if cam then
-                    fovValTxt.text = "FOV: " .. tostring(math.floor(cam.fieldOfView))
+                    fovValTxt.text = "FOV: " .. tostring(math.floor(cam.fieldOfView + 0.5))
                 end
             end)
         end
@@ -10378,10 +10429,10 @@ local function CreateModUI()
         wmRt.anchorMax = Vector2(1, 0)
         wmRt.pivot = Vector2(1, 0)
         wmRt.anchoredPosition = Vector2(-20, 10)
-        wmRt.sizeDelta = Vector2(200, 30)
+        wmRt.sizeDelta = Vector2(240, 30) -- [MOD FEATURE]: nới rộng cho đủ chỗ số phiên bản
         local wmTxt = watermarkGo:AddComponent(typeof(Text))
         wmTxt.raycastTarget = false
-        wmTxt.text = "<i>Modded by VỤT Team</i>"
+        wmTxt.text = "<i>Modded by VỤT Team v" .. tostring(_G.Mod_Version or "1.0") .. "</i>" -- [MOD FEATURE]: kèm số phiên bản
         wmTxt.color = Color(0.215, 0.490, 0.133, 1.0)
         wmTxt.fontSize = 16
         wmTxt.alignment = TextAnchor.LowerRight
@@ -10660,7 +10711,10 @@ local function CreateModUI()
                         if mainPanel and not mainPanel:Equals(nil) then
                             isExpanded = not isExpanded
                             mainPanel:SetActive(isExpanded)
-                            if isExpanded and _G.RefreshMainTabs then _G.RefreshMainTabs() end
+                            if isExpanded then
+                                if UpdateFOVLabel then UpdateFOVLabel() end
+                                if _G.RefreshMainTabs then _G.RefreshMainTabs() end
+                            end
                         end
                     else
                         if mainPanel and not mainPanel:Equals(nil) then mainPanel:SetActive(false) end
@@ -10681,6 +10735,7 @@ local function CreateModUI()
                             if mainPanel and not mainPanel:Equals(nil) then
                                 isExpanded = true
                                 mainPanel:SetActive(true)
+                                if UpdateFOVLabel then UpdateFOVLabel() end
                                 if _G.RefreshMainTabs then _G.RefreshMainTabs() end
                             end
                         else
