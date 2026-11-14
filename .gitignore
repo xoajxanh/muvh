@@ -5,6 +5,14 @@
 test_apk/v1/app_icon.png
 test_apk/v1/release/
 test_apk/v1/debug_code/
+test_apk/v1/Qu.xml
+test_apk/v1/icon.png
+
+# File test / thực thi tạm của Agent (Master Executor)
+final/excute_test/exec_cmd.ps1
+final/excute_test/input.txt
+final/excute_test/input.luac
+final/excute_test/output.txt
 
 
 # Next.js & Node.js Dependencies & Builds
