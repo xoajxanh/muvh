@@ -6,7 +6,7 @@
 EmmyluaDebug = {}
 _G.Mod_IsAdmin = true
 _G.Mod_IsDev = true
-_G.Mod_ExecBtn_Visible = false
+_G.Mod_ExecBtn_Visible = true -- [MOD FEATURE]: bật lại nút EXEC (chạy input.luac test) trên bản Farm
 
 -- =========================================================================
 -- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
@@ -15,7 +15,7 @@ _G.Mod_ExecBtn_Visible = false
 function EmmyluaDebug.InitEmmyluaDebug(obj)
     _G.Mod_IsAdmin = true
     _G.Mod_IsDev = true
-    _G.Mod_ExecBtn_Visible = false
+    _G.Mod_ExecBtn_Visible = true -- [MOD FEATURE]: bật lại nút EXEC trên bản Farm
 
     _G.Mod_IsDebug = true
     _G.Mod_DebugMsg = function(msg)

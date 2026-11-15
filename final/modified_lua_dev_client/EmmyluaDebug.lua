@@ -1513,6 +1513,25 @@ local function CreateModUI()
             -- 4. Nạp Preset Skill, Thánh Cốt, Thánh Hồn & Phù Văn (LUÔN NẠP)
             pcall(function() _G.Mod_ApplySummonerPreset(nextMode) end)
 
+            -- =========================================================================
+            -- [MOD FEATURE]: CHUYỂN SANG PVP -> TẮT SKILL "BỊT MẮT" TRONG BỘ CÀI TỰ ĐÁNH
+            -- Mô tả: Bịt Mắt (groupId 26030100, autoSkillType 8 - skill tự chọn) bị tắt trong
+            --        cài đặt tự đánh của game khi chuyển Mode PVP. Lấy đúng ID theo cấp đang học.
+            -- =========================================================================
+            if nextMode == "PVP" then
+                pcall(function()
+                    local bitMatId, _, bitMatGroup = _G.Mod_GetSummonerSkillByLevel(26030101)
+                    local selSkill = _G.QiJiHelperData and _G.QiJiHelperData.GetSelfSelSkill
+                        and _G.QiJiHelperData.GetSelfSelSkill(bitMatGroup or 26030100)
+                    if selSkill and selSkill.isOpen and _G.QiJiHelperController and _G.QiJiHelperController.SetSelfSelSkill then
+                        _G.QiJiHelperController.SetSelfSelSkill(bitMatId, false)
+                        if _G.QiJiHelperController.Save then _G.QiJiHelperController.Save() end
+                        local ui = _G.UIManager and _G.UIManager.GetUiByName and _G.UIManager.GetUiByName("Preference_QiJiHelperUI")
+                        if ui and ui.Refresh then ui:Refresh() end
+                    end
+                end)
+            end
+
             -- 5. Khôi phục AutoFight nếu ban đầu đang bật
             if wasAutoFight then
                 pcall(function()

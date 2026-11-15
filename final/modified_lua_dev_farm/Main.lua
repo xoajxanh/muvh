@@ -1304,14 +1304,17 @@ _G.FinalizeAccountTimeOnFailed = function(emailArg, srvArg, lvlArg)
 	end)
 end
 
--- Tắt nút EXEC trên bản Farm và tự động đẩy nút [KQ] xuống Y=140 (ngay trên nút [VỤT] Y=60)
-_G.Mod_ExecBtn_Visible = false
+-- =========================================================================
+-- [MOD FEATURE]: BẬT LẠI NÚT EXEC TRÊN BẢN FARM (CHẠY SCRIPT TEST input.luac)
+-- Mô tả: EXEC ở Y=140 (trên nút VỤT), nút [KQ] tự đẩy lên Y=220 khi EXEC hiện.
+-- =========================================================================
+_G.Mod_ExecBtn_Visible = true
 pcall(function()
 	if _G.EmmyluaDebug and _G.EmmyluaDebug.InitEmmyluaDebug and not _G.EmmyluaDebug._Orig_InitEmmyluaDebug then
 		_G.EmmyluaDebug._Orig_InitEmmyluaDebug = _G.EmmyluaDebug.InitEmmyluaDebug
 		_G.EmmyluaDebug.InitEmmyluaDebug = function(obj)
 			local res = _G.EmmyluaDebug._Orig_InitEmmyluaDebug(obj)
-			_G.Mod_ExecBtn_Visible = false
+			_G.Mod_ExecBtn_Visible = true
 			return res
 		end
 	end
