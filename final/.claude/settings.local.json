@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(& d:\\\\MUVH\\\\android\\\\mu-decompiled\\\\final\\\\excute_test\\\\executor.ps1)",
+      "PowerShell(& *excute_test*executor.ps1)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File *excute_test*executor.ps1)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File d:\\\\MUVH\\\\android\\\\mu-decompiled\\\\final\\\\excute_test\\\\executor.ps1)",
+      "PowerShell(powershell -ExecutionPolicy Bypass -File D:\\\\MUVH\\\\android\\\\mu-decompiled\\\\final\\\\excute_test\\\\executor.ps1)"
+    ]
+  }
+}
