@@ -35,9 +35,18 @@ export async function POST(req: NextRequest) {
       token,
     });
 
+    // =========================================================================
+    // [MOD FEATURE]: CHO PHEP DANG NHAP QUA HTTP TRONG MOI TRUONG TEST
+    // Mô tả: Cờ secure chỉ bật khi chạy production VÀ biến USE_HTTPS = "true".
+    //        Server test chạy HTTP thì đặt USE_HTTPS=false để trình duyệt chịu
+    //        lưu cookie phiên.
+    // CẢNH BÁO: khi secure = false, token JWT (chứa userId, role, hạn 7 ngày)
+    //           đi qua mạng dưới dạng không mã hóa. CHỈ dùng trong mạng nội bộ.
+    //           Khi chạy thật phải đặt USE_HTTPS=true và phục vụ qua HTTPS.
+    // =========================================================================
     response.cookies.set('muvh_session', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' && process.env.USE_HTTPS === 'true',
       sameSite: 'lax',
       path: '/',
       maxAge: 60 * 60 * 24 * 7, // 7 days

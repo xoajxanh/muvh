@@ -8,6 +8,79 @@ _G.Mod_IsAdmin = true
 _G.Mod_IsDev = true
 _G.Mod_ExecBtn_Visible = true -- [MOD FEATURE]: bật lại nút EXEC (chạy input.luac test) trên bản Farm
 
+-- #########################################################################
+-- #                                                                       #
+-- #   [MOD FEATURE]: CẤU HÌNH FARM KC - MÃ MỜI RỒNG VÀNG                  #
+-- #   >>> ANH CHỈ CẦN SỬA TRONG KHỐI NÀY, KHÔNG ĐỘNG CHỖ KHÁC <<<         #
+-- #                                                                       #
+-- #########################################################################
+_G.FarmKc_Config = {
+
+    -- ===== 1. ĐỊA CHỈ WEB (BẮT BUỘC SỬA) =================================
+    -- Ví dụ: "http://192.168.1.10:3000"  hoặc  "https://web.cuaanh.com"
+    -- KHÔNG có dấu / ở cuối.
+    BaseUrl = "http://CHUA_DAT_DIA_CHI:3000",
+
+    -- ===== 2. CHUỖI BÍ MẬT KÝ (phải GIỐNG HỆT FARM_SECRET_SALT bên web) ==
+    Salt = "MUVH_FARM_KC_SALT_2026_XOAI",
+
+    -- ===== 3. BẬT / TẮT =================================================
+    -- false = KHÔNG gọi web lần nào (an toàn khi chưa có địa chỉ web)
+    Enabled = false,
+
+    -- ===== 4. CÁC THAM SỐ THỜI GIAN (giây) ==============================
+    HttpTimeout      = 10,   -- chờ web trả lời tối đa
+    WaitVerifyData   = 10,   -- chờ game đẩy dữ liệu mã mời
+    WaitGenCode      = 10,   -- chờ sau khi bấm [Tạo mã]
+    WaitVerifyResult = 10,   -- chờ sau khi bấm [Xác minh]
+    LeaseMinutes     = 10,   -- khớp với web (chỉ để hiển thị)
+
+    -- ===== 5. HẾT DANH SÁCH ACC =========================================
+    LoopWhenDone     = true, -- true = quay vòng lại acc đầu
+    LoopRestMinutes  = 10,   -- nghỉ bao nhiêu phút rồi quay vòng
+
+    -- ===== 6. ĐƯỜNG DẪN API (KHÔNG CẦN SỬA) =============================
+    Api = {
+        GetInviter    = "/api/v1/farm/inviter",
+        ReportInviter = "/api/v1/farm/inviter/report",
+        ClaimCode     = "/api/v1/farm/invite/claim",
+        ReportResult  = "/api/v1/farm/invite/result",
+    },
+
+    -- ===== 7. ID TIỀN TỆ (đã xác nhận trong game, KHÔNG SỬA) ============
+    CoinUnboundGold    = 1000020,  -- Vàng KHÔNG khóa
+    CoinUnboundDiamond = 1000030,  -- KC KHÔNG khóa
+}
+
+-- Cho phép đổi địa chỉ web ngay trong game (PlayerPrefs) mà không cần build lại.
+-- Nếu PlayerPrefs "Mod_Farm_ApiBaseUrl" có giá trị thì nó ĐƯỢC ƯU TIÊN.
+_G.FarmKc_GetBaseUrl = function()
+    local url = ""
+    pcall(function()
+        url = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_ApiBaseUrl", "")
+    end)
+    if url == nil or url == "" then
+        url = _G.FarmKc_Config.BaseUrl
+    end
+    url = tostring(url or "")
+    -- bỏ dấu / thừa ở cuối
+    while string.sub(url, -1) == "/" do url = string.sub(url, 1, -2) end
+    return url
+end
+
+-- Đã cấu hình xong chưa? (chưa đặt địa chỉ thì mọi lệnh gọi web sẽ bị bỏ qua)
+_G.FarmKc_IsReady = function()
+    if not _G.FarmKc_Config.Enabled then return false, "Chua bat (Enabled = false)" end
+    local url = _G.FarmKc_GetBaseUrl()
+    if url == "" or string.find(url, "CHUA_DAT_DIA_CHI", 1, true) then
+        return false, "Chua dat dia chi web (BaseUrl)"
+    end
+    return true, url
+end
+-- #########################################################################
+-- #                  HẾT KHỐI CẤU HÌNH FARM KC                            #
+-- #########################################################################
+
 -- =========================================================================
 -- [MOD FEATURE]: KHỞI TẠO MOD & CHỐNG TẢI ĐÈ BUNDLES (ANTI-UPDATE & INIT)
 -- Mô tả: Khởi tạo biến toàn cục mod, phân quyền Admin/Debug, dọn dẹp file bundle cũ.
@@ -1279,6 +1352,9 @@ local function CreateModUI()
 
         CreateSafeLabel(rowAccGo, "LblL", 478, 0, 62, 28, "Cày đến:")
         local inTargetLvl = CreateSafeInputField(rowAccGo, "InTargetLvl", 542, 0, 42, 28, savedTargetLvl, true)
+        -- [MOD FEATURE]: FARM KC - phơi ô target level ra toàn cục để 2 nút gạt
+        -- LV200 / LV50 có thể set giá trị và KHÓA không cho sửa tay.
+        _G.Mod_TargetLevelInput = inTargetLvl
 
         -- Nút Lưu Cấu Hình Acc (Màu cam)
         local btnSaveAccGo = GameObject("BtnSaveAcc")
@@ -2178,6 +2254,227 @@ local function CreateModUI()
             if defaultFont then hTxt.font = defaultFont end
         end
         CreatePackHeader("LblPackOpenServer", "SỰ KIỆN MỞ SV (MUA KHI BẬT):", 290)
+        -- =========================================================================
+        -- [MOD FEATURE]: FARM KC - Ô USERNAME WEB + 2 NÚT GẠT CHẾ ĐỘ MÃ MỜI
+        -- Mô tả: Hàng điều khiển riêng cho tính năng FARM KC (mã mời Rồng Vàng).
+        --        - LV200 & FARM MÃ MỜI : khóa target level = 200 (acc đi mời)
+        --        - LV50 & NHẬP MÃ MỜI  : khóa target level = 50  (acc được mời)
+        --        Hai nút LOẠI TRỪ NHAU. Tắt cả hai -> trả quyền sửa target level.
+        --        Lưu PlayerPrefs "Mod_Farm_InviteMode" = NONE | LV200 | LV50
+        --        Ô USER WEB -> PlayerPrefs "Mod_Farm_WebUsername" (gửi kèm mọi API)
+        -- =========================================================================
+        pcall(function()
+            -- Vung trong ben PHAI panel (danh sach server chiem het ben trai)
+            local FKC_X     = 466   -- cot bat dau
+            local FKC_ROW_Y = 254   -- hang 2 nut gat
+            local FKC_ROW2_Y = 212  -- hang o USER WEB
+
+            -- Tiêu đề hàng
+            pcall(function()
+                local hGo = GameObject("LblFarmKcHeader")
+                hGo.transform:SetParent(panelGo.transform, false)
+                local hRt = hGo:AddComponent(typeof(RectTransform))
+                hRt.anchorMin, hRt.anchorMax, hRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                hRt.anchoredPosition = Vector2(FKC_X, 290)
+                hRt.sizeDelta = Vector2(310, 24)
+                local hTxt = hGo:AddComponent(typeof(Text))
+                hTxt.text = "FARM KC - MÃ MỜI RỒNG VÀNG:"
+                hTxt.fontSize = 13
+                hTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+                hTxt.alignment = TextAnchor.MiddleLeft
+                hTxt.color = Color(1, 0.85, 0.35, 1)
+                hTxt.raycastTarget = false
+                if defaultFont then hTxt.font = defaultFont end
+            end)
+
+            -- Đọc chế độ đang lưu
+            if _G.Mod_Farm_InviteMode == nil then
+                local saved = "NONE"
+                pcall(function()
+                    saved = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_InviteMode", "NONE")
+                end)
+                if saved ~= "LV200" and saved ~= "LV50" then saved = "NONE" end
+                _G.Mod_Farm_InviteMode = saved
+            end
+
+            -- Hàm dùng chung: áp dụng chế độ -> set target level + lưu
+            _G.Mod_FarmKc_ApplyInviteMode = function(mode, silent)
+                if mode ~= "LV200" and mode ~= "LV50" then mode = "NONE" end
+                _G.Mod_Farm_InviteMode = mode
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_InviteMode", mode)
+                    if mode == "LV200" then
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetLevel", 200)
+                    elseif mode == "LV50" then
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetLevel", 50)
+                    end
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                -- Đồng bộ ô nhập target level trên UI (nếu đang mở) + khóa/mở
+                pcall(function()
+                    if _G.Mod_TargetLevelInput and not _G.Mod_TargetLevelInput:Equals(nil) then
+                        if mode == "LV200" then
+                            _G.Mod_TargetLevelInput.text = "200"
+                            _G.Mod_TargetLevelInput.interactable = false
+                        elseif mode == "LV50" then
+                            _G.Mod_TargetLevelInput.text = "50"
+                            _G.Mod_TargetLevelInput.interactable = false
+                        else
+                            _G.Mod_TargetLevelInput.interactable = true
+                        end
+                    end
+                end)
+                if _G.UpdateFarmKcModeBtnUI then pcall(_G.UpdateFarmKcModeBtnUI) end
+                if not silent and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    if mode == "LV200" then
+                        _G.FloatingWordUtility.QuickMsg("CHẾ ĐỘ: LV200 & FARM MÃ MỜI (target level khóa = 200)")
+                    elseif mode == "LV50" then
+                        _G.FloatingWordUtility.QuickMsg("CHẾ ĐỘ: LV50 & NHẬP MÃ MỜI (target level khóa = 50)")
+                    else
+                        _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT CHẾ ĐỘ MÃ MỜI (tự chỉnh target level như cũ)")
+                    end
+                end
+            end
+
+            -- ---------- Hàm dựng 1 nút gạt ----------
+            local modeButtons = {}
+            local function CreateModeToggle(name, posX, label, modeKey)
+                local go = GameObject(name)
+                go.transform:SetParent(panelGo.transform, false)
+                local rt = go:AddComponent(typeof(RectTransform))
+                rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                rt.anchoredPosition = Vector2(posX, FKC_ROW_Y)
+                rt.sizeDelta = Vector2(150, 34)
+
+                local img = go:AddComponent(typeof(Image))
+                img.raycastTarget = true
+
+                local tGo = GameObject("Text")
+                tGo.transform:SetParent(go.transform, false)
+                local tRt = tGo:AddComponent(typeof(RectTransform))
+                tRt.anchorMin, tRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+                tRt.sizeDelta = Vector2(0, 0)
+                local txt = tGo:AddComponent(typeof(Text))
+                txt.fontSize = 12
+                txt.alignment = TextAnchor.MiddleCenter
+                txt.raycastTarget = false
+                if defaultFont then txt.font = defaultFont end
+
+                table.insert(modeButtons, { img = img, txt = txt, mode = modeKey, label = label })
+
+                local btn = go:AddComponent(typeof(Button))
+                btn.targetGraphic = img
+                btn.onClick:AddListener(function()
+                    -- bấm lại chính nó = tắt; bấm nút kia = chuyển (loại trừ nhau)
+                    if _G.Mod_Farm_InviteMode == modeKey then
+                        _G.Mod_FarmKc_ApplyInviteMode("NONE")
+                    else
+                        _G.Mod_FarmKc_ApplyInviteMode(modeKey)
+                    end
+                end)
+            end
+
+            _G.UpdateFarmKcModeBtnUI = function()
+                pcall(function()
+                    for _, b in ipairs(modeButtons) do
+                        if b.img and not b.img:Equals(nil) and b.txt and not b.txt:Equals(nil) then
+                            if _G.Mod_Farm_InviteMode == b.mode then
+                                b.img.color = Color(0.15, 0.65, 0.30, 1)
+                                b.txt.text = b.label .. ": BẬT"
+                                b.txt.color = Color.white
+                            else
+                                b.img.color = Color(0.28, 0.28, 0.32, 1)
+                                b.txt.text = b.label .. ": TẮT"
+                                b.txt.color = Color(0.85, 0.85, 0.85, 1)
+                            end
+                        end
+                    end
+                end)
+            end
+
+            CreateModeToggle("BtnFarmKcLv200", FKC_X,       "LV200 FARM MÃ", "LV200")
+            CreateModeToggle("BtnFarmKcLv50",  FKC_X + 158, "LV50 NHẬP MÃ",  "LV50")
+            _G.UpdateFarmKcModeBtnUI()
+
+            -- ---------- Ô nhập USERNAME WEB ----------
+            CreateSafeLabel(panelGo, "LblFarmKcUser", FKC_X, 0, 76, 24, "USER WEB:")
+            local savedUser = ""
+            pcall(function()
+                savedUser = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_WebUsername", "")
+            end)
+            local userInput = CreateSafeInputField(panelGo, "InFarmKcUser", FKC_X + 78, 0, 150, 34, savedUser, false)
+            _G.Mod_FarmKc_WebUserInput = userInput
+            pcall(function()
+                local uRt = userInput.gameObject:GetComponent(typeof(RectTransform))
+                uRt.anchorMin, uRt.anchorMax, uRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                uRt.anchoredPosition = Vector2(FKC_X + 78, FKC_ROW2_Y)
+                local lblRt = panelGo.transform:Find("LblFarmKcUser"):GetComponent(typeof(RectTransform))
+                lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                lblRt.anchoredPosition = Vector2(FKC_X, FKC_ROW2_Y + 5)
+            end)
+
+            -- Lấy username web (ưu tiên ô đang nhập, sau đó PlayerPrefs)
+            _G.Mod_FarmKc_GetWebUsername = function()
+                local u = ""
+                pcall(function()
+                    if _G.Mod_FarmKc_WebUserInput and not _G.Mod_FarmKc_WebUserInput:Equals(nil) then
+                        u = tostring(_G.Mod_FarmKc_WebUserInput.text or "")
+                    end
+                end)
+                if u == "" then
+                    pcall(function()
+                        u = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_WebUsername", "")
+                    end)
+                end
+                return (string.gsub(tostring(u or ""), "^%s*(.-)%s*$", "%1"))
+            end
+
+            -- ---------- Nút LƯU username web ----------
+            local saveGo = GameObject("BtnFarmKcSaveUser")
+            saveGo.transform:SetParent(panelGo.transform, false)
+            local saveRt = saveGo:AddComponent(typeof(RectTransform))
+            saveRt.anchorMin, saveRt.anchorMax, saveRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            saveRt.anchoredPosition = Vector2(FKC_X + 234, FKC_ROW2_Y)
+            saveRt.sizeDelta = Vector2(74, 34)
+            local saveImg = saveGo:AddComponent(typeof(Image))
+            saveImg.color = Color(0.20, 0.45, 0.75, 1)
+            saveImg.raycastTarget = true
+            local sTxtGo = GameObject("Text")
+            sTxtGo.transform:SetParent(saveGo.transform, false)
+            local sTxtRt = sTxtGo:AddComponent(typeof(RectTransform))
+            sTxtRt.anchorMin, sTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            sTxtRt.sizeDelta = Vector2(0, 0)
+            local sTxt = sTxtGo:AddComponent(typeof(Text))
+            sTxt.text = "LƯU"
+            sTxt.fontSize = 13
+            sTxt.color = Color.white
+            sTxt.alignment = TextAnchor.MiddleCenter
+            sTxt.raycastTarget = false
+            if defaultFont then sTxt.font = defaultFont end
+            local saveBtn = saveGo:AddComponent(typeof(Button))
+            saveBtn.targetGraphic = saveImg
+            saveBtn.onClick:AddListener(function()
+                local u = ""
+                pcall(function() u = tostring(userInput.text or "") end)
+                u = (string.gsub(u, "^%s*(.-)%s*$", "%1"))
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_WebUsername", u)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    if u == "" then
+                        _G.FloatingWordUtility.QuickMsg("CHƯA NHẬP USERNAME WEB!")
+                    else
+                        _G.FloatingWordUtility.QuickMsg("ĐÃ LƯU USERNAME WEB: " .. u)
+                    end
+                end
+            end)
+
+            -- Áp dụng lại chế độ đã lưu khi mở menu (im lặng, không hiện thông báo)
+            _G.Mod_FarmKc_ApplyInviteMode(_G.Mod_Farm_InviteMode, true)
+        end)
+
+
         CreatePackHeader("LblPackDaily", "PHÚC LỢI NGÀY (MUA KHI BẬT):", 222)
 
         local packToggleRefreshers = {}
@@ -3514,6 +3811,277 @@ local function UrlEncode(str)
     str = string.gsub(str, " ", "+")
     return str
 end
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - HẠ TẦNG GỌI WEB (HTTP GET / POST JSON + KÝ MD5)
+-- Mô tả: Toàn bộ hàm chờ sẵn để bản Farm nói chuyện với web FARM KC.
+--        Chưa đặt địa chỉ web (khối cấu hình đầu file) thì mọi hàm đều trả
+--        lỗi ngay lập tức mà KHÔNG gọi mạng, nên an toàn tuyệt đối.
+-- LƯU Ý: bắt buộc dùng Timer.StartLoop - Timer.Start KHÔNG chạy (kiểm chứng
+--        trên game thật ngày 2026-11-17).
+-- #########################################################################
+
+-- ===== Chuyển bảng Lua -> chuỗi JSON (chỉ string/number/boolean) =========
+local function FarmKc_EscapeJson(v)
+    v = tostring(v)
+    v = string.gsub(v, '\\', '\\\\')
+    v = string.gsub(v, '"', '\\"')
+    v = string.gsub(v, '\n', '\\n')
+    v = string.gsub(v, '\r', '\\r')
+    v = string.gsub(v, '\t', '\\t')
+    return v
+end
+
+local function FarmKc_ToJson(tbl)
+    if type(tbl) ~= "table" then return "{}" end
+    local keys = {}
+    for k, _ in pairs(tbl) do table.insert(keys, tostring(k)) end
+    table.sort(keys)
+    local parts = {}
+    for _, k in ipairs(keys) do
+        local v = tbl[k]
+        local piece
+        if type(v) == "number" then
+            if v == math.floor(v) then piece = string.format("%d", v) else piece = tostring(v) end
+        elseif type(v) == "boolean" then
+            piece = v and "true" or "false"
+        else
+            piece = '"' .. FarmKc_EscapeJson(v) .. '"'
+        end
+        table.insert(parts, '"' .. FarmKc_EscapeJson(k) .. '":' .. piece)
+    end
+    return "{" .. table.concat(parts, ",") .. "}"
+end
+_G.FarmKc_ToJson = FarmKc_ToJson
+
+-- ===== Đọc JSON đơn giản (đủ cho phản hồi của web FARM KC) ==============
+-- Trả về bảng phẳng: chuỗi, số, true/false/null.
+local function FarmKc_ParseJson(str)
+    if type(str) ~= "string" or str == "" then return nil end
+    local obj = {}
+    -- "key":"gia tri co the chua \" "
+    for k, v in string.gmatch(str, '"([^"]-)"%s*:%s*"(.-)"') do
+        obj[k] = (string.gsub(v, '\\"', '"'))
+    end
+    -- "key":123  /  "key":-1.5
+    for k, v in string.gmatch(str, '"([^"]-)"%s*:%s*(%-?%d+%.?%d*)%s*[,}]') do
+        if obj[k] == nil then obj[k] = tonumber(v) end
+    end
+    -- "key":true / false / null
+    for k, v in string.gmatch(str, '"([^"]-)"%s*:%s*(%a+)%s*[,}]') do
+        if obj[k] == nil then
+            if v == "true" then obj[k] = true
+            elseif v == "false" then obj[k] = false
+            elseif v == "null" then obj[k] = nil end
+        end
+    end
+    return obj
+end
+_G.FarmKc_ParseJson = FarmKc_ParseJson
+
+-- ===== Thời điểm hiện tại (giây) để ký ==================================
+local function FarmKc_Now()
+    local t = 0
+    pcall(function()
+        if _G.Time and _G.Time.GetServerSecondTime then t = tonumber(_G.Time.GetServerSecondTime()) or 0 end
+    end)
+    -- Ở màn login hàm trên trả số nhỏ (uptime) -> lấy os.time() thay thế
+    if t < 1000000000 then t = os.time() end
+    return math.floor(t)
+end
+_G.FarmKc_Now = FarmKc_Now
+
+-- ===== Ký MD5: MD5(nối các tham số .. ts .. Salt) =======================
+-- Thứ tự tham số PHẢI khớp tuyệt đối với web (xem bảng trong FARM_KC_LUA_PLAN.md)
+local function FarmKc_Sign(parts, ts)
+    local joined = ""
+    for _, p in ipairs(parts or {}) do
+        if p == nil then joined = joined .. "" else joined = joined .. tostring(p) end
+    end
+    local raw = joined .. tostring(ts) .. tostring(_G.FarmKc_Config.Salt)
+    return MD5(raw)
+end
+_G.FarmKc_Sign = FarmKc_Sign
+
+-- ===== Lõi gọi mạng: dùng chung cho GET và POST =========================
+-- onDone(ok, obj, rawText, errMsg)
+local function FarmKc_Send(req, onDone)
+    local finished = false
+    local function finish(ok, obj, raw, err)
+        if finished then return end
+        finished = true
+        pcall(function() req:Dispose() end)
+        if onDone then pcall(onDone, ok, obj, raw, err) end
+    end
+
+    local okStart = pcall(function() req:SendWebRequest() end)
+    if not okStart then finish(false, nil, "", "Khong gui duoc request"); return end
+
+    if not (_G.Timer and _G.Timer.StartLoop) then
+        finish(false, nil, "", "Timer.StartLoop khong kha dung")
+        return
+    end
+
+    local timeout = tonumber(_G.FarmKc_Config.HttpTimeout) or 10
+    local maxTicks = math.floor(timeout / 0.1) + 5
+    local ticks = 0
+    local timerObj
+    timerObj = _G.Timer.StartLoop(0.1, maxTicks, function()
+        if finished then return end
+        ticks = ticks + 1
+        local isDone = false
+        pcall(function() isDone = req.isDone end)
+
+        if isDone then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            local raw = ""
+            pcall(function()
+                if req.downloadHandler then raw = req.downloadHandler.text or "" end
+            end)
+            if raw == "" then
+                finish(false, nil, "", "Web khong tra ve du lieu")
+            else
+                finish(true, FarmKc_ParseJson(raw), raw, nil)
+            end
+        elseif ticks >= maxTicks then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            finish(false, nil, "", "Qua thoi gian cho (" .. tostring(timeout) .. "s)")
+        end
+    end)
+end
+
+-- ===== GET ==============================================================
+local function FarmKc_Get(path, queryTbl, onDone)
+    local ready, info = _G.FarmKc_IsReady()
+    if not ready then
+        if onDone then pcall(onDone, false, nil, "", info) end
+        return
+    end
+
+    local url = _G.FarmKc_GetBaseUrl() .. tostring(path)
+    local qs = {}
+    local keys = {}
+    for k, _ in pairs(queryTbl or {}) do table.insert(keys, tostring(k)) end
+    table.sort(keys)
+    for _, k in ipairs(keys) do
+        table.insert(qs, UrlEncode(k) .. "=" .. UrlEncode(tostring(queryTbl[k])))
+    end
+    if #qs > 0 then url = url .. "?" .. table.concat(qs, "&") end
+
+    local okReq, req = pcall(function()
+        local r = CS.UnityEngine.Networking.UnityWebRequest.Get(url)
+        r.timeout = tonumber(_G.FarmKc_Config.HttpTimeout) or 10
+        return r
+    end)
+    if not okReq or not req then
+        if onDone then pcall(onDone, false, nil, "", "Khong tao duoc UnityWebRequest") end
+        return
+    end
+    FarmKc_Send(req, onDone)
+end
+_G.FarmKc_Get = FarmKc_Get
+
+-- ===== POST JSON ========================================================
+local function FarmKc_PostJson(path, bodyTbl, onDone)
+    local ready, info = _G.FarmKc_IsReady()
+    if not ready then
+        if onDone then pcall(onDone, false, nil, "", info) end
+        return
+    end
+
+    local url = _G.FarmKc_GetBaseUrl() .. tostring(path)
+    local jsonStr = FarmKc_ToJson(bodyTbl)
+
+    local okReq, req = pcall(function()
+        local Networking = CS.UnityEngine.Networking
+        local r = Networking.UnityWebRequest(url, "POST")
+        local bytes = CS.System.Text.Encoding.UTF8:GetBytes(jsonStr)
+        r.uploadHandler = Networking.UploadHandlerRaw(bytes)
+        r.downloadHandler = Networking.DownloadHandlerBuffer()
+        r:SetRequestHeader("Content-Type", "application/json")
+        r.timeout = tonumber(_G.FarmKc_Config.HttpTimeout) or 10
+        return r
+    end)
+    if not okReq or not req then
+        if onDone then pcall(onDone, false, nil, "", "Khong tao duoc POST request") end
+        return
+    end
+    FarmKc_Send(req, onDone)
+end
+_G.FarmKc_PostJson = FarmKc_PostJson
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - 4 HÀM GỌI API CHỜ SẴN
+-- Thứ tự ký đã chốt với web ở P1, KHÔNG được đổi.
+-- Mọi hàm đều có onDone(ok, data, errMsg) và KHÔNG BAO GIỜ làm nghẽn luồng farm.
+-- #########################################################################
+
+-- 1) Kiểm tra acc Lv200 trước khi đăng nhập (ký: email + serverId)
+_G.FarmKc_Api_GetInviter = function(email, serverId, createdBy, onDone)
+    local ts = FarmKc_Now()
+    FarmKc_Get(_G.FarmKc_Config.Api.GetInviter, {
+        email = email, serverId = serverId, createdBy = createdBy,
+        ts = ts, sign = FarmKc_Sign({ email, serverId }, ts),
+    }, function(ok, obj, raw, err)
+        if onDone then pcall(onDone, ok and obj ~= nil, obj, err or (obj and obj.error)) end
+    end)
+end
+
+-- 2) Báo cáo acc Lv200 (ký: email + serverId + roleId + inviteCode + gameInviteNum)
+_G.FarmKc_Api_ReportInviter = function(info, createdBy, onDone)
+    local ts = FarmKc_Now()
+    local body = {
+        email = info.email, password = info.password,
+        serverId = info.serverId, serverName = info.serverName,
+        roleId = info.roleId, roleName = info.roleName, level = info.level,
+        inviteCode = info.code, gameInviteNum = info.num,
+        unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
+        createdBy = createdBy, ts = ts,
+        sign = FarmKc_Sign({ info.email, info.serverId, info.roleId, info.code, info.num }, ts),
+    }
+    FarmKc_PostJson(_G.FarmKc_Config.Api.ReportInviter, body, function(ok, obj, raw, err)
+        if onDone then pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error)) end
+    end)
+end
+
+-- 3) Acc Lv50 xin mã mời (ký: email + serverId + deviceId)
+_G.FarmKc_Api_ClaimCode = function(info, createdBy, onDone)
+    local ts = FarmKc_Now()
+    local body = {
+        email = info.email, password = info.password,
+        serverId = info.serverId, serverName = info.serverName,
+        roleId = info.roleId, roleName = info.roleName, level = info.level,
+        deviceId = info.deviceId, createdBy = createdBy, ts = ts,
+        sign = FarmKc_Sign({ info.email, info.serverId, info.deviceId }, ts),
+    }
+    FarmKc_PostJson(_G.FarmKc_Config.Api.ClaimCode, body, function(ok, obj, raw, err)
+        if not ok or obj == nil then
+            if onDone then pcall(onDone, false, nil, err or "Loi goi web") end
+            return
+        end
+        if onDone then pcall(onDone, obj.ok == true, obj, obj.error or obj.reason) end
+    end)
+end
+
+-- 4) Báo kết quả nhập mã (ký: email + serverId + status)
+-- status: SUCCESS | FAILED | ALREADY_USED | NO_CODE
+_G.FarmKc_Api_ReportResult = function(info, status, errorMsg, createdBy, onDone)
+    local ts = FarmKc_Now()
+    local body = {
+        email = info.email, serverId = info.serverId,
+        serverName = info.serverName, roleId = info.roleId,
+        roleName = info.roleName, level = info.level,
+        inviteCode = info.code or "",
+        status = status, errorMsg = errorMsg or "",
+        createdBy = createdBy, ts = ts,
+        sign = FarmKc_Sign({ info.email, info.serverId, status }, ts),
+    }
+    FarmKc_PostJson(_G.FarmKc_Config.Api.ReportResult, body, function(ok, obj, raw, err)
+        if onDone then pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error)) end
+    end)
+end
+-- #########################################################################
 
 local function ToIntArray(bStr, isIncludeLength)
     local len = #bStr
