@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from './auth';
+import { FARM_KC_TABLES_SQL, FARM_KC_SP_STUB_SQL, FARM_KC_CLAIM_SP_SQL } from './farm-schema';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -11,11 +12,23 @@ export const prisma =
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
-let seedExecuted = false;
+// =========================================================================
+// [MOD FEATURE]: CHONG CHAY SONG SONG ensureInitialSeed
+// Mô tả: Trước đây cờ seedExecuted bật ngay lập tức nên các request song song
+//        return luôn mà KHÔNG chờ lần khởi tạo đầu tiên chạy xong -> chúng có
+//        thể truy vấn vào lúc bảng/stored procedure chưa kịp tạo.
+//        Nay giữ lại promise và cho mọi caller cùng await một promise đó.
+// =========================================================================
+let seedPromise: Promise<void> | null = null;
 
-export async function ensureInitialSeed() {
-  if (seedExecuted) return;
-  seedExecuted = true;
+export async function ensureInitialSeed(): Promise<void> {
+  if (!seedPromise) {
+    seedPromise = runInitialSeed();
+  }
+  return seedPromise;
+}
+
+async function runInitialSeed(): Promise<void> {
   try {
     // Safely ensure missing columns exist and types are FLOAT on live DB without dropping any data
     try {
@@ -52,6 +65,19 @@ export async function ensureInitialSeed() {
       `);
     } catch (migErr) {
       console.error('Column check warning:', migErr);
+    }
+
+    // =========================================================================
+    // [MOD FEATURE]: FARM KC - TAO BANG FarmInviter/FarmInvitee + SP CLAIM
+    // Mô tả: Chạy idempotent mỗi lần khởi động, không ảnh hưởng dữ liệu cũ.
+    // =========================================================================
+    try {
+      await prisma.$executeRawUnsafe(FARM_KC_TABLES_SQL);
+      await prisma.$executeRawUnsafe(FARM_KC_SP_STUB_SQL);
+      await prisma.$executeRawUnsafe(FARM_KC_CLAIM_SP_SQL);
+      console.log('[FARM KC] Schema & stored procedure ready.');
+    } catch (farmErr) {
+      console.error('[FARM KC] Schema setup warning:', farmErr);
     }
 
     const userCount = await prisma.user.count();

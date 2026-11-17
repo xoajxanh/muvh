@@ -22,7 +22,64 @@ if (-not (Test-Path "$rootDir\.git")) {
 }
 Set-Location $rootDir
 
+# =========================================================================
+# [MOD FEATURE]: TỰ DÒ PYTHON CÓ SẴN UNITYPY ĐỂ BUILD (DYNAMIC PYTHON)
+# Mô tả: Không phụ thuộc lệnh "python" mặc định của máy (có thể là bản quá mới,
+#        chưa có wheel UnityPy, vd 3.15). Thứ tự ưu tiên:
+#          1. Biến môi trường MU_PYTHON (đường dẫn python.exe chỉ định tay)
+#          2. Lệnh python / python3 trong PATH
+#          3. Các bản Python do launcher "py" quản lý (py -0p)
+#        Lấy bản ĐẦU TIÊN import được UnityPy. Không có bản nào -> báo cách cài rồi dừng.
+# =========================================================================
+function Resolve-BuildPython {
+    $candidates = New-Object System.Collections.Generic.List[string]
+
+    if ($env:MU_PYTHON) { $candidates.Add($env:MU_PYTHON) }
+
+    foreach ($cmd in @("python", "python3")) {
+        if (Get-Command $cmd -ErrorAction SilentlyContinue) {
+            # Lấy đường dẫn thật (lệnh alias WindowsApps chỉ là lối tắt)
+            $real = & $cmd -c "import sys; print(sys.executable)" 2>$null
+            if ($LASTEXITCODE -eq 0 -and $real) { $candidates.Add(($real | Select-Object -First 1).Trim()) }
+        }
+    }
+
+    if (Get-Command py -ErrorAction SilentlyContinue) {
+        $pyList = & py -0p 2>$null
+        foreach ($line in $pyList) {
+            if ($line -match '([A-Za-z]:\\.*?python[w]?\.exe)\s*$') { $candidates.Add($Matches[1]) }
+        }
+    }
+
+    $checked = @()
+    foreach ($exe in ($candidates | Select-Object -Unique)) {
+        if (-not (Test-Path $exe)) { continue }
+        $checked += $exe
+        & $exe -c "import UnityPy" 2>$null | Out-Null
+        if ($LASTEXITCODE -eq 0) { return $exe }
+    }
+
+    Write-Host "[LOI] Khong tim thay ban Python nao da cai UnityPy (can cho buoc dong goi lua.mu2)." -ForegroundColor Red
+    if ($checked.Count -gt 0) {
+        Write-Host "Da kiem tra:" -ForegroundColor Yellow
+        $checked | ForEach-Object { Write-Host "   - $_" -ForegroundColor Yellow }
+    }
+    Write-Host "Cach khac phuc: cai UnityPy vao 1 ban Python co san wheel (khuyen nghi 3.10 - 3.13), vd:" -ForegroundColor Yellow
+    Write-Host "   py -3.12 -m pip install UnityPy" -ForegroundColor Cyan
+    Write-Host "   (Python qua moi nhu 3.15 chua co wheel -> pip doi Microsoft C++ Build Tools)" -ForegroundColor Yellow
+    Write-Host "Hoac chi dinh tay: `$env:MU_PYTHON = 'C:\duong\dan\python.exe'" -ForegroundColor Yellow
+    return $null
+}
+
+$PyExe = Resolve-BuildPython
+if (-not $PyExe) {
+    Pause
+    exit 1
+}
+Write-Host "-> Python dung de build: $PyExe" -ForegroundColor Green
+
 Clear-Host
+Write-Host "Python build: $PyExe" -ForegroundColor DarkGray
 Write-Host "==========================================================" -ForegroundColor Cyan
 Write-Host "     MU ORIGIN BUILD & DEPLOYMENT UTILITY" -ForegroundColor Yellow
 Write-Host "==========================================================" -ForegroundColor Cyan
@@ -60,11 +117,100 @@ if (-not (Test-Path $baseApk)) {
 }
 
 $signerJar = Join-Path $rootDir "test_apk\uber-apk-signer.jar"
-$winrar = "C:\Program Files\WinRAR\WinRAR.exe"
-if (-not (Test-Path $winrar)) {
-    if (Test-Path "C:\Program Files (x86)\WinRAR\WinRAR.exe") {
-        $winrar = "C:\Program Files (x86)\WinRAR\WinRAR.exe"
+# =========================================================================
+# [MOD FEATURE]: TỰ DÒ ĐƯỜNG DẪN WINRAR (DYNAMIC WINRAR PATH)
+# Mô tả: Không ghi cứng 1 đường dẫn. Thứ tự: biến MU_WINRAR -> registry
+#        (HKLM/HKCU\SOFTWARE\WinRAR exe64/exe32, App Paths\WinRAR.exe)
+#        -> Program Files / Program Files (x86) -> lệnh WinRAR trong PATH.
+#        Không tìm thấy -> báo lỗi rõ ràng và dừng trước khi build.
+# =========================================================================
+function Resolve-WinRar {
+    $cands = New-Object System.Collections.Generic.List[string]
+    if ($env:MU_WINRAR) { $cands.Add($env:MU_WINRAR) }
+    foreach ($k in @("HKLM:\SOFTWARE\WinRAR", "HKLM:\SOFTWARE\WOW6432Node\WinRAR", "HKCU:\SOFTWARE\WinRAR")) {
+        $p = Get-ItemProperty $k -ErrorAction SilentlyContinue
+        if ($p) { foreach ($n in @("exe64", "exe32")) { if ($p.$n) { $cands.Add($p.$n) } } }
     }
+    foreach ($k in @("HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\WinRAR.exe",
+                     "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\WinRAR.exe")) {
+        $p = Get-ItemProperty $k -ErrorAction SilentlyContinue
+        if ($p -and $p.'(default)') { $cands.Add($p.'(default)') }
+    }
+    $cands.Add("$env:ProgramFiles\WinRAR\WinRAR.exe")
+    if (${env:ProgramFiles(x86)}) { $cands.Add("${env:ProgramFiles(x86)}\WinRAR\WinRAR.exe") }
+    $cmd = Get-Command WinRAR.exe -ErrorAction SilentlyContinue
+    if ($cmd) { $cands.Add($cmd.Source) }
+
+    foreach ($c in ($cands | Select-Object -Unique)) {
+        if ($c -and (Test-Path $c)) { return $c }
+    }
+    return $null
+}
+
+$winrar = Resolve-WinRar
+if (-not $winrar) {
+    Write-Host "[LOI] Khong tim thay WinRAR.exe! Hay cai WinRAR hoac chi dinh tay: `$env:MU_WINRAR = 'C:\duong\dan\WinRAR.exe'" -ForegroundColor Red
+    Pause
+    exit 1
+}
+Write-Host "WinRAR: $winrar" -ForegroundColor DarkGray
+
+# =========================================================================
+# [MOD FEATURE]: WINRAR CHÈN FILE VÀO APK CÓ THỬ LẠI (CHỐNG LỖI KHÓA FILE)
+# Mô tả: ExitCode 6 (Open error) / 5 (Write error) / 9 (Create error) thường do file APK 334MB
+#        hoặc lua.mu2 vừa copy/ghi xong đang bị Windows Defender / chương trình
+#        khác giữ khóa. Tự thử lại tối đa 8 lần, mỗi lần cách 5s. Hỏng hẳn thì
+#        in nội dung log của WinRAR để biết file nào không mở được.
+#        Máy có antivirus bên thứ 3 (360 Total Security, Reason...) hay mở APK ra quét
+#        ngay sau khi copy/ghi -> WinRAR không đổi tên được file tạm .rartemp đè lên APK.
+#        => Trước mỗi lần chạy: chờ tới khi APK + file nguồn mở độc quyền được (tối đa 60s).
+#        -inul: không bật popup lỗi của WinRAR (popup sẽ chặn build), lỗi vẫn ghi vào -ilog.
+# =========================================================================
+function Wait-FileUnlocked {
+    param([string]$Path, [int]$TimeoutSec = 60)
+    if (-not (Test-Path $Path)) { return $true }
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $warned = $false
+    while ($sw.Elapsed.TotalSeconds -lt $TimeoutSec) {
+        try {
+            $fs = [System.IO.File]::Open($Path, 'Open', 'ReadWrite', 'None')
+            $fs.Close()
+            return $true
+        } catch {
+            if (-not $warned) {
+                Write-Host "   [CHO] $([System.IO.Path]::GetFileName($Path)) dang bi chuong trinh khac giu (antivirus?) - dang cho..." -ForegroundColor Yellow
+                $warned = $true
+            }
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    return $false
+}
+
+function Invoke-WinRarAdd {
+    param([string]$ApkPath, [string]$FilePath, [string]$ApPath)
+    $logFile = Join-Path $env:TEMP "mu_build_winrar.log"
+    $code = -1
+    $maxTry = 8
+    for ($i = 1; $i -le $maxTry; $i++) {
+        [void](Wait-FileUnlocked -Path $ApkPath)
+        [void](Wait-FileUnlocked -Path $FilePath)
+        Remove-Item $logFile -Force -ErrorAction SilentlyContinue
+        $rarArgs = "a -m0 -ep -o+ -ibck -inul -ilog`"$logFile`" -ap$ApPath `"$ApkPath`" `"$FilePath`""
+        $p = Start-Process -FilePath $winrar -ArgumentList $rarArgs -Wait -PassThru -NoNewWindow
+        $code = $p.ExitCode
+        if ($code -eq 0) { return 0 }
+        if (@(5, 6, 9) -notcontains $code) { break }
+        Write-Host "   [CANH BAO] WinRAR ExitCode $code (file dang bi khoa) - thu lai lan $i/$maxTry sau 5s..." -ForegroundColor Yellow
+        Start-Sleep -Seconds 5
+    }
+    # Dọn file tạm .rartemp WinRAR bỏ lại khi đổi tên thất bại
+    Get-ChildItem (Split-Path $ApkPath) -Filter "__rzi_*.rartemp" -Force -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
+    if (Test-Path $logFile) {
+        Write-Host "   Log WinRAR:" -ForegroundColor Yellow
+        Get-Content $logFile | ForEach-Object { Write-Host "   $_" -ForegroundColor Yellow }
+    }
+    return $code
 }
 $tempBuildDir = Join-Path $rootDir "final\temp_build"
 
@@ -127,7 +273,7 @@ function Build-ApkTask {
         exit 1
     }
     $env:LUA_SRC_DIR = $luaSrc
-    python compile_lua.py
+    & $PyExe compile_lua.py
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[LOI] Bien dich Lua that bai cho version: $Ver" -ForegroundColor Red
         Pause
@@ -135,7 +281,7 @@ function Build-ApkTask {
     }
 
     Write-Host "2. Dong goi LUA Bundle cho $Ver..."
-    python pack_lua.py
+    & $PyExe pack_lua.py
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[LOI] Dong goi LUA bundle that bai cho version: $Ver" -ForegroundColor Red
         Pause
@@ -157,7 +303,7 @@ function Build-ApkTask {
     $size = (Get-Item $packedFile).Length
     $bundlesSrc = (Join-Path $rootDir "test_apk\bundles.txt") -replace '\\', '/'
     $bundlesDst = (Join-Path $newBundlesDir "bundles.txt") -replace '\\', '/'
-    python -c "
+    & $PyExe -c "
 import sys
 with open('$bundlesSrc', 'r', encoding='utf-8') as f:
     lines = f.readlines()
@@ -171,19 +317,17 @@ with open('$bundlesDst', 'w', encoding='utf-8') as f:
 
     # D. Inject with WinRAR
     Write-Host "4. Injecting lua.mu2 & bundles.txt into $OutputApkName..."
-    $argsLua = "a -m0 -ep -o+ -ibck -inul -apassets\Bundles `"$tempApkPath`" `"$packedFile`""
-    $pLua = Start-Process -FilePath $winrar -ArgumentList $argsLua -Wait -PassThru -NoNewWindow
-    if ($pLua.ExitCode -ne 0) {
-        Write-Host "[LOI] WinRAR inject lua.mu2 that bai! (ExitCode: $($pLua.ExitCode))" -ForegroundColor Red
+    $pLua = Invoke-WinRarAdd -ApkPath $tempApkPath -FilePath $packedFile -ApPath "assets\Bundles"
+    if ($pLua -ne 0) {
+        Write-Host "[LOI] WinRAR inject lua.mu2 that bai! (ExitCode: $pLua)" -ForegroundColor Red
         Pause
         exit 1
     }
 
     $newBundlesFile = Join-Path $newBundlesDir "bundles.txt"
-    $argsBundles = "a -m0 -ep -o+ -ibck -inul -apassets `"$tempApkPath`" `"$newBundlesFile`""
-    $pBundles = Start-Process -FilePath $winrar -ArgumentList $argsBundles -Wait -PassThru -NoNewWindow
-    if ($pBundles.ExitCode -ne 0) {
-        Write-Host "[LOI] WinRAR inject bundles.txt that bai! (ExitCode: $($pBundles.ExitCode))" -ForegroundColor Red
+    $pBundles = Invoke-WinRarAdd -ApkPath $tempApkPath -FilePath $newBundlesFile -ApPath "assets"
+    if ($pBundles -ne 0) {
+        Write-Host "[LOI] WinRAR inject bundles.txt that bai! (ExitCode: $pBundles)" -ForegroundColor Red
         Pause
         exit 1
     }

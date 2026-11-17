@@ -136,3 +136,46 @@ function PlatformData.GetServerlistUrl()
   end
   return defaultUrl
 end
+
+-- =========================================================================
+-- [MOD FIX]: KHOI PHUC 4 HAM BI THIEU CUA PlatformData
+-- Ly do: Main_MainMenuUI:OnShow() -> InitCheckCanFouceUpdate() goi
+--        PlatformData.GetCanForceUpdateULR(). Ham bi mat => loi "call a nil value"
+--        => HUD chinh khong hien => game treo o man ngoai, khong vao duoc.
+-- Ghi chu: GetCanForceUpdateULR / GetCanForceUpdate tra ve "" de GIU nguyen y do mod
+--          (chan ep update, an nut tai ban moi). GetCanPay / GetAppid khoi phuc nguyen ban.
+-- =========================================================================
+
+function PlatformData.GetCanForceUpdateULR()
+  return ""
+end
+
+function PlatformData.GetCanForceUpdate()
+  return ""
+end
+
+function PlatformData.GetCanPay()
+  local defaultUrl = ""
+  local config = PlatformData.GetVersionConfig()
+  if not config then
+    return defaultUrl
+  end
+  if not string.isNullOrEmpty(config.iswebpay) then
+    defaultUrl = config.iswebpay
+    return defaultUrl
+  end
+  return ""
+end
+
+function PlatformData.GetAppid()
+  local defaultUrl = ""
+  local config = PlatformData.GetVersionConfig()
+  if not config then
+    return defaultUrl
+  end
+  if not string.isNullOrEmpty(config.Appid) then
+    defaultUrl = config.Appid
+    return defaultUrl
+  end
+  return ""
+end

@@ -18,6 +18,8 @@ model User {
   tokens       Token[]     @relation("UserTokens")
   tokenNotes   TokenNote[] @relation("UserTokenNotes")
   messageTemplates MessageTemplate[] @relation("UserMessageTemplates")
+  farmInviters     FarmInviter[]     @relation("UserFarmInviters")
+  farmInvitees     FarmInvitee[]     @relation("UserFarmInvitees")
 }
 
 model VipPackage {
@@ -139,4 +141,70 @@ model DeviceLoginHistory {
   @@index([deviceSnMd5])
   @@index([createdAt])
   @@index([type])
+}
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - MA MOI RONG VANG (FarmInviter / FarmInvitee)
+// Mo ta: Luu acc Lv200 (nguoi moi) va acc Lv50 (nguoi duoc moi) do ban Farm
+//        day len, kem co che giu cho (lease) chong vuot 5 luot moi.
+// =========================================================================
+
+model FarmInviter {
+  id              String        @id @default(uuid())
+  email           String
+  password        String        @default("")
+  serverId        Int
+  serverName      String        @default("")
+  roleId          String        @default("")
+  roleName        String        @default("")
+  level           Int           @default(0)
+  inviteCode      String?
+  gameInviteNum   Int           @default(0)
+  confirmedCount  Int           @default(0)
+  reservedCount   Int           @default(0)
+  maxInvites      Int           @default(5)
+  unboundGold     BigInt        @default(0)
+  unboundDiamond  BigInt        @default(0)
+  status          String        @default("ACTIVE") // ACTIVE | COMPLETE | DONE | ERROR
+  failCount       Int           @default(0)
+  lastError       String?
+  lastSyncAt      DateTime?
+  createdById     String
+  createdBy       User          @relation("UserFarmInviters", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  invitees        FarmInvitee[] @relation("InviterInvitees")
+
+  @@unique([email, serverId])
+  @@index([serverId, status])
+  @@index([createdById])
+}
+
+model FarmInvitee {
+  id          String       @id @default(uuid())
+  email       String
+  password    String       @default("")
+  serverId    Int
+  serverName  String       @default("")
+  roleId      String       @default("")
+  roleName    String       @default("")
+  level       Int          @default(0)
+  inviterId   String?
+  inviter     FarmInviter? @relation("InviterInvitees", fields: [inviterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inviteCode  String?
+  status      String       @default("RESERVED") // RESERVED | SUCCESS | FAILED | EXPIRED | ALREADY_USED | NO_CODE
+  deviceId    String?
+  reservedAt  DateTime?
+  expireAt    DateTime?
+  confirmedAt DateTime?
+  errorMsg    String?
+  createdById String
+  createdBy   User         @relation("UserFarmInvitees", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@unique([email, serverId])
+  @@index([serverId, status])
+  @@index([inviterId])
+  @@index([createdById])
 }
