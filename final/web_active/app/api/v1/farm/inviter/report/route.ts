@@ -40,9 +40,16 @@ export async function POST(req: NextRequest) {
       where: { email_serverId: { email, serverId } },
     });
 
-    const confirmedCount = existing?.confirmedCount ?? 0;
     const maxInvites = existing?.maxInvites ?? 5;
-    const used = Math.max(gameInviteNum, confirmedCount);
+
+    // =========================================================================
+    // [MOD FEATURE]: MOC CHUAN LA SO GAME BAO VE
+    // Mô tả: gameInviteNum là TỔNG THẬT tại thời điểm acc Lv200 đăng nhập, nên
+    //        nó đã bao gồm cả những lượt web cấp trước đó -> RESET confirmedCount
+    //        về 0 để không đếm trùng. Từ giờ confirmedCount chỉ đếm phần PHÁT
+    //        SINH SAU mốc này, và tổng đã dùng = gameInviteNum + confirmedCount.
+    // =========================================================================
+    const used = gameInviteNum;
 
     // Giữ nguyên DONE nếu đã có (bước nhận thưởng/mua đồ làm sau)
     let status = existing?.status === 'DONE' ? 'DONE' : (used >= maxInvites ? 'COMPLETE' : 'ACTIVE');
@@ -55,6 +62,7 @@ export async function POST(req: NextRequest) {
       level: parseInt(String(body.level ?? 0), 10) || 0,
       inviteCode: inviteCode === '' ? null : inviteCode,
       gameInviteNum,
+      confirmedCount: 0,   // reset: gameInviteNum đã gồm mọi lượt tính tới lúc này
       unboundGold: BigInt(Math.trunc(Number(body.unboundGold) || 0)),
       unboundDiamond: BigInt(Math.trunc(Number(body.unboundDiamond) || 0)),
       status,

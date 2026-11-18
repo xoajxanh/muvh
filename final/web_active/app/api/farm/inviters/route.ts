@@ -69,8 +69,8 @@ export async function GET(req: NextRequest) {
       confirmedCount: r.confirmedCount,
       reservedCount: r.reservedCount,
       maxInvites: r.maxInvites,
-      // Số lượt đã dùng hiệu dụng = MAX(game báo, DB ghi nhận)
-      usedCount: Math.max(r.gameInviteNum, r.confirmedCount),
+      // Tổng đã dùng = mốc game báo lần cuối + phần web cấp thêm sau đó
+      usedCount: r.gameInviteNum + r.confirmedCount,
       unboundGold: safeNum(r.unboundGold),
       unboundDiamond: safeNum(r.unboundDiamond),
       status: r.status,

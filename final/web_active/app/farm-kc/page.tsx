@@ -294,12 +294,26 @@ export default function FarmKcPage() {
                         {laAcc200 ? (
                           <>
                             <td className="px-4 py-3 text-center whitespace-nowrap">
-                              <span className={`font-semibold ${r.usedCount >= r.maxInvites ? 'text-emerald-400' : 'text-slate-200'}`}>
-                                {r.usedCount}/{r.maxInvites}
-                              </span>
-                              {r.reservedCount > 0 && (
-                                <span className="ml-1 text-[11px] text-amber-400">(+{r.reservedCount})</span>
-                              )}
+                              <div>
+                                <span className={`font-semibold ${r.usedCount >= r.maxInvites ? 'text-emerald-400' : 'text-slate-200'}`}>
+                                  {r.usedCount}/{r.maxInvites}
+                                </span>
+                                {r.reservedCount > 0 && (
+                                  <span className="ml-1 text-[11px] text-amber-400">(+{r.reservedCount})</span>
+                                )}
+                              </div>
+                              {/* Tổng = mốc game báo lần đăng nhập cuối + phần web cấp thêm sau đó.
+                                  Còn số "web" > 0 nghĩa là acc Lv200 chưa đăng nhập lại để chốt sổ. */}
+                              <div
+                                className="text-[10px] mt-0.5"
+                                title="game = số acc Lv200 báo về lần đăng nhập cuối · web = số lượt web cấp thêm sau đó (chưa được game xác nhận)"
+                              >
+                                <span className="text-slate-500">game {r.gameInviteNum}</span>
+                                <span className="text-slate-600"> + </span>
+                                <span className={r.confirmedCount > 0 ? 'text-amber-400' : 'text-slate-500'}>
+                                  web {r.confirmedCount}
+                                </span>
+                              </div>
                             </td>
                             <td className="px-4 py-3 text-right text-slate-300 font-mono text-xs">{fmtNum(r.unboundGold)}</td>
                             <td className="px-4 py-3 text-right text-cyan-300 font-mono text-xs">{fmtNum(r.unboundDiamond)}</td>

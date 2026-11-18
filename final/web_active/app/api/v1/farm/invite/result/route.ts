@@ -91,7 +91,8 @@ export async function POST(req: NextRequest) {
 
       const newReserved = Math.max(0, inviter.reservedCount - 1);
       const newConfirmed = status === 'SUCCESS' ? inviter.confirmedCount + 1 : inviter.confirmedCount;
-      const used = Math.max(inviter.gameInviteNum, newConfirmed);
+      // Tổng đã dùng = mốc game báo + phần web cấp thêm sau mốc đó (KHÔNG dùng MAX)
+      const used = inviter.gameInviteNum + newConfirmed;
       const newStatus =
         inviter.status === 'DONE' ? 'DONE' : (used >= inviter.maxInvites ? 'COMPLETE' : inviter.status);
 

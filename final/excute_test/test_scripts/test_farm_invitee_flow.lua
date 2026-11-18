@@ -20,7 +20,7 @@ local WEB_USER = "admin"
 local CHO_VERIFY_DATA  = 10
 local CHO_KET_QUA      = 10
 local CHO_PHAN_HOI     = 15
-local CHO_PHEP_NHAP_MA = false   -- << doi thanh true khi muon nhap ma THAT
+local CHO_PHEP_NHAP_MA = true    -- << doi thanh true khi muon nhap ma THAT
 -- ======================
 
 local logs = {}

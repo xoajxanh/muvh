@@ -147,10 +147,11 @@ BEGIN
         WHERE I.[serverId] = @serverId
           AND I.[status] = 'ACTIVE'
           AND I.[inviteCode] IS NOT NULL AND I.[inviteCode] <> ''
-          AND (CASE WHEN I.[gameInviteNum] > I.[confirmedCount] THEN I.[gameInviteNum] ELSE I.[confirmedCount] END)
-              + I.[reservedCount] < I.[maxInvites]
-        ORDER BY (CASE WHEN I.[gameInviteNum] > I.[confirmedCount] THEN I.[gameInviteNum] ELSE I.[confirmedCount] END)
-                 + I.[reservedCount] DESC, I.[createdAt] ASC
+          -- So luot da dung = gameInviteNum (moc that luc acc Lv200 dang nhap lan cuoi)
+          --                   + confirmedCount (so web cap THEM sau moc do)
+          -- KHONG dung MAX: hai con so do hai thu khac nhau, lay MAX se cap vuot suat.
+          AND (I.[gameInviteNum] + I.[confirmedCount] + I.[reservedCount]) < I.[maxInvites]
+        ORDER BY (I.[gameInviteNum] + I.[confirmedCount] + I.[reservedCount]) DESC, I.[createdAt] ASC
     )
     UPDATE pick
        SET [reservedCount] = [reservedCount] + 1, [updatedAt] = @now

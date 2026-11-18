@@ -122,6 +122,25 @@ Chạy thật trên acc Tedyg4 / server 517 / `http://test.guntop.net`:
 
 → Không còn ẩn số kỹ thuật. Phần còn lại chỉ là ghép luồng.
 
+### ✅ T5 ĐẠT — LUỒNG LV50 CHẠY THẬT (2026-11-18)
+
+Acc `accmuvhfang00001@gmail.com` / nhân vật `Ianty7` Lv216 / server 517 nhập mã
+`hFek6LlTdvgSdj6Z517` của Tedyg4:
+
+| Bước | Kết quả |
+|---|---|
+| Xin mã từ web | ✅ HTTP 200, lease 10 phút |
+| `ReqRoleVerifyCode(mã)` | ✅ gửi được |
+| **`isCode` đổi false → true** | ✅ **ngay giây 1** |
+| Báo kết quả về web | ✅ `adjusted: true` — DB trừ giữ chỗ, cộng người mời |
+| Acc Lv200 | 2/5 → 3/5 |
+
+**SỬA SO VỚI TÀI LIỆU GỐC:** mục 2.4 ghi *"nhập mã thành công không thấy toast rõ ràng"*
+— THỰC TẾ game **CÓ** báo popup **`"Xác minh thành công"`**.
+Dù vậy vẫn giữ `isCode` làm tín hiệu chính (kiểm tra TRƯỚC khi xét popup), vì:
+- `isCode` là trạng thái dữ liệu, chắc chắn hơn chuỗi văn bản
+- Bộ lọc popup chỉ bắt `mã mời` / `đã dùng` / `lỗi` nên không nhận nhầm popup thành công
+
 ### Hạ tầng mạng — ĐÃ XÁC NHẬN CÓ ĐỦ
 `UnityWebRequest` ✅ · `UploadHandlerRaw` ✅ · `DownloadHandlerBuffer` ✅ ·
 `Timer.StartLoop` ✅ → **POST JSON khả thi**, rủi ro lớn nhất của P5 đã được gỡ.
