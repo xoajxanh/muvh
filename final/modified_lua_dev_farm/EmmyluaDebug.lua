@@ -19,14 +19,14 @@ _G.FarmKc_Config = {
     -- ===== 1. ĐỊA CHỈ WEB (BẮT BUỘC SỬA) =================================
     -- Ví dụ: "http://192.168.1.10:3000"  hoặc  "https://web.cuaanh.com"
     -- KHÔNG có dấu / ở cuối.
-    BaseUrl = "http://CHUA_DAT_DIA_CHI:3000",
+    BaseUrl = "http://test.guntop.net",
 
     -- ===== 2. CHUỖI BÍ MẬT KÝ (phải GIỐNG HỆT FARM_SECRET_SALT bên web) ==
     Salt = "MUVH_FARM_KC_SALT_2026_XOAI",
 
     -- ===== 3. BẬT / TẮT =================================================
     -- false = KHÔNG gọi web lần nào (an toàn khi chưa có địa chỉ web)
-    Enabled = false,
+    Enabled = true,
 
     -- ===== 4. CÁC THAM SỐ THỜI GIAN (giây) ==============================
     HttpTimeout      = 10,   -- chờ web trả lời tối đa
@@ -3983,6 +3983,32 @@ end
 _G.FarmKc_Get = FarmKc_Get
 
 -- ===== POST JSON ========================================================
+-- Base64 thuan Lua - dung cho cach du phong tao mang byte.
+-- (CS.System.Text.Encoding.UTF8:GetBytes KHONG chay duoc tren XLua ban nay:
+--  loi "invalid arguments to GetBytes" - da kiem chung 2026-11-18.)
+local FARMKC_B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+local function FarmKc_LuaBase64(data)
+    local result = {}
+    local len = #data
+    for i = 1, len, 3 do
+        local b1 = string.byte(data, i)
+        local b2 = (i + 1 <= len) and string.byte(data, i + 1) or 0
+        local b3 = (i + 2 <= len) and string.byte(data, i + 2) or 0
+        local n = (b1 << 16) | (b2 << 8) | b3
+        local c1, c2, c3, c4 = (n >> 18) & 63, (n >> 12) & 63, (n >> 6) & 63, n & 63
+        table.insert(result, string.sub(FARMKC_B64, c1 + 1, c1 + 1))
+        table.insert(result, string.sub(FARMKC_B64, c2 + 1, c2 + 1))
+        table.insert(result, (i + 1 <= len) and string.sub(FARMKC_B64, c3 + 1, c3 + 1) or "=")
+        table.insert(result, (i + 2 <= len) and string.sub(FARMKC_B64, c4 + 1, c4 + 1) or "=")
+    end
+    return table.concat(result)
+end
+
+-- ===== POST JSON ========================================================
+-- CACH CHINH: UnityWebRequest.Put(url, chuoi) roi doi method = "POST".
+--   Put nhan THANG chuoi nen khong can GetBytes (ham do hong tren XLua).
+-- CACH DU PHONG: Convert.FromBase64String(base64 tu Lua) -> UploadHandlerRaw.
+-- Ca hai da kiem chung tren game that ngay 2026-11-18 (T3c).
 local function FarmKc_PostJson(path, bodyTbl, onDone)
     local ready, info = _G.FarmKc_IsReady()
     if not ready then
@@ -3992,17 +4018,32 @@ local function FarmKc_PostJson(path, bodyTbl, onDone)
 
     local url = _G.FarmKc_GetBaseUrl() .. tostring(path)
     local jsonStr = FarmKc_ToJson(bodyTbl)
+    local timeout = tonumber(_G.FarmKc_Config.HttpTimeout) or 10
+    local N = CS.UnityEngine.Networking
 
+    -- Cach chinh: Put + doi method
     local okReq, req = pcall(function()
-        local Networking = CS.UnityEngine.Networking
-        local r = Networking.UnityWebRequest(url, "POST")
-        local bytes = CS.System.Text.Encoding.UTF8:GetBytes(jsonStr)
-        r.uploadHandler = Networking.UploadHandlerRaw(bytes)
-        r.downloadHandler = Networking.DownloadHandlerBuffer()
+        local r = N.UnityWebRequest.Put(url, jsonStr)
+        r.method = "POST"
+        r.downloadHandler = N.DownloadHandlerBuffer()
         r:SetRequestHeader("Content-Type", "application/json")
-        r.timeout = tonumber(_G.FarmKc_Config.HttpTimeout) or 10
+        r.timeout = timeout
         return r
     end)
+
+    -- Cach du phong: base64 -> byte[] -> UploadHandlerRaw
+    if not okReq or not req then
+        okReq, req = pcall(function()
+            local bytes = CS.System.Convert.FromBase64String(FarmKc_LuaBase64(jsonStr))
+            local r = N.UnityWebRequest(url, "POST")
+            r.uploadHandler = N.UploadHandlerRaw(bytes)
+            r.downloadHandler = N.DownloadHandlerBuffer()
+            r:SetRequestHeader("Content-Type", "application/json")
+            r.timeout = timeout
+            return r
+        end)
+    end
+
     if not okReq or not req then
         if onDone then pcall(onDone, false, nil, "", "Khong tao duoc POST request") end
         return
@@ -4079,6 +4120,485 @@ _G.FarmKc_Api_ReportResult = function(info, status, errorMsg, createdBy, onDone)
     }
     FarmKc_PostJson(_G.FarmKc_Config.Api.ReportResult, body, function(ok, obj, raw, err)
         if onDone then pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error)) end
+    end)
+end
+-- #########################################################################
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - THU THAP THONG TIN & LUONG ACC LV200 (NGUOI MOI)
+-- Mo ta: 3 ham phuc vu che do "LV200 & FARM MA MOI":
+--          _G.Mod_FarmInvite_CollectInfo()              - gom moi thong tin
+--          _G.Mod_FarmInvite_WaitVerifyData(sec, cb)    - cho goi 1029
+--          _G.RunInviterStep(onDone)                    - luong day du
+-- Da kiem chung tren game that 2026-11-17/18 (T1, T1b, T2, T3c).
+-- NGUYEN TAC: onDone() LUON duoc goi dung 1 lan, du loi gi xay ra
+--             -> bot KHONG BAO GIO ket o 1 acc.
+-- #########################################################################
+
+-- ===== Thu thap thong tin =====
+local function Mod_FarmInvite_CollectInfo()
+    local info = {
+        email = "", password = "", serverId = 0, serverName = "",
+        roleId = "", roleName = "", level = 0,
+        code = "", num = 0, isCode = false,
+        unboundGold = 0, unboundDiamond = 0, deviceId = "",
+        canGenCode = false, hasVerifyData = false, inGame = false,
+    }
+
+    pcall(function()
+        local acc = _G.GetCurrentAccount and _G.GetCurrentAccount()
+        if acc then
+            info.email = tostring(acc.account or "")
+            info.password = tostring(acc.password or "")
+        end
+    end)
+
+    -- roleId la int64 RAT LON: PHAI tostring thang, KHONG tonumber/%.0f (se lam tron)
+    pcall(function()
+        local meData = _G.ViewData and _G.ViewData.meData
+        local me = _G.RoleManager and _G.RoleManager.me
+        info.inGame = (meData ~= nil) or (me ~= nil)
+        local rid = (meData and meData.id) or (me and me.id)
+        if rid ~= nil then info.roleId = (string.gsub(tostring(rid), "%.0*$", "")) end
+        info.roleName = tostring((meData and meData.name) or (me and me.name) or "")
+        info.level = tonumber((meData and meData.level) or (me and me.level) or 0) or 0
+    end)
+
+    pcall(function()
+        if _G.GetActualCurrentServerInfo then
+            local sId, sName = _G.GetActualCurrentServerInfo()
+            info.serverId = tonumber(sId) or 0
+            info.serverName = tostring(sName or "")
+        end
+    end)
+    if info.serverId == 0 then
+        pcall(function()
+            local LD = _G.LoginData
+            if LD then
+                info.serverId = tonumber(LD.serverId) or 0
+                if LD.GetServerName then info.serverName = tostring(LD.GetServerName() or "") end
+            end
+        end)
+    end
+
+    pcall(function()
+        local coins = _G.BagInfoData and _G.BagInfoData.CoinInfos
+        if coins then
+            info.unboundGold = tonumber(coins[_G.FarmKc_Config.CoinUnboundGold] or 0) or 0
+            info.unboundDiamond = tonumber(coins[_G.FarmKc_Config.CoinUnboundDiamond] or 0) or 0
+        end
+    end)
+
+    pcall(function()
+        local mgr = _G.QuickFind and _G.QuickFind:GetTask_EarlyGoldManager()
+        local vd = mgr and mgr.GetVerifyData and mgr:GetVerifyData()
+        if vd then
+            info.hasVerifyData = true
+            info.code = tostring(vd.code or "")
+            info.num = tonumber(vd.num or 0) or 0
+            info.isCode = (vd.isCode == true)
+        end
+    end)
+
+    pcall(function()
+        local func = _G.ClientTable.cfg_Function_functionManager:TryGetValue(5100001, "id")
+        if func and _G.ConditionManager and _G.ConditionManager.Check4D then
+            info.canGenCode = (_G.ConditionManager.Check4D(func.condition) == true)
+        end
+    end)
+
+    pcall(function()
+        info.deviceId = tostring(CS.UnityEngine.SystemInfo.deviceUniqueIdentifier or "")
+    end)
+
+    return info
+end
+_G.Mod_FarmInvite_CollectInfo = Mod_FarmInvite_CollectInfo
+
+-- ===== Cho du lieu ma moi (server tu day goi 1029 khi vao game) =====
+-- BAT BUOC Timer.StartLoop: Timer.Start KHONG chay (kiem chung T1).
+local function Mod_FarmInvite_WaitVerifyData(maxSec, onDone)
+    maxSec = tonumber(maxSec) or 10
+    local finished, ticks = false, 0
+    local maxTicks = math.max(1, math.floor(maxSec))
+
+    local function finish(ok)
+        if finished then return end
+        finished = true
+        if onDone then pcall(onDone, ok, Mod_FarmInvite_CollectInfo()) end
+    end
+
+    local first = Mod_FarmInvite_CollectInfo()
+    if first.hasVerifyData then finish(true); return end
+    if not (_G.Timer and _G.Timer.StartLoop) then finish(false); return end
+
+    local timerObj
+    timerObj = _G.Timer.StartLoop(1.0, maxTicks, function()
+        if finished then return end
+        ticks = ticks + 1
+        if Mod_FarmInvite_CollectInfo().hasVerifyData then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            finish(true)
+        elseif ticks >= maxTicks then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            finish(false)
+        end
+    end)
+end
+_G.Mod_FarmInvite_WaitVerifyData = Mod_FarmInvite_WaitVerifyData
+
+-- ===== Cho tao ma xong (poll den khi co code) =====
+local function Mod_FarmInvite_WaitCode(maxSec, onDone)
+    maxSec = tonumber(maxSec) or 10
+    local finished, ticks = false, 0
+    local maxTicks = math.max(1, math.floor(maxSec))
+
+    local function finish(ok, info)
+        if finished then return end
+        finished = true
+        if onDone then pcall(onDone, ok, info or Mod_FarmInvite_CollectInfo()) end
+    end
+
+    if not (_G.Timer and _G.Timer.StartLoop) then finish(false); return end
+    local timerObj
+    timerObj = _G.Timer.StartLoop(1.0, maxTicks, function()
+        if finished then return end
+        ticks = ticks + 1
+        local cur = Mod_FarmInvite_CollectInfo()
+        if cur.code ~= nil and cur.code ~= "" then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            finish(true, cur)
+        elseif ticks >= maxTicks then
+            if timerObj and timerObj.Stop then pcall(function() timerObj:Stop() end) end
+            finish(false, cur)
+        end
+    end)
+end
+_G.Mod_FarmInvite_WaitCode = Mod_FarmInvite_WaitCode
+
+-- ===== Ghi log rieng cua FARM KC (chi khi bat Debug) =====
+local function FarmKc_Log(msg)
+    pcall(function()
+        if _G.Log then _G.Log("[FARM KC] " .. tostring(msg), true) end
+    end)
+end
+_G.FarmKc_Log = FarmKc_Log
+
+-- ===== Hang doi gui bu khi mat mang =====
+local function FarmKc_QueuePending(payloadJson)
+    pcall(function()
+        local path = CS.UnityEngine.Application.persistentDataPath .. "/farm_invite_pending.txt"
+        CS.System.IO.File.AppendAllText(path, tostring(payloadJson) .. "\r\n", CS.System.Text.Encoding.UTF8)
+    end)
+end
+_G.FarmKc_QueuePending = FarmKc_QueuePending
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - LUONG ACC LV200 (INVITER)
+-- Goi tu Main.lua trong OnAccountReachLevelGoal, TRUOC khi chuyen acc.
+-- onDone() LUON duoc goi dung 1 lan -> bot khong bao gio ket.
+-- #########################################################################
+_G.RunInviterStep = function(onDone)
+    local finished = false
+    local function done(ketQua)
+        if finished then return end
+        finished = true
+        if ketQua then FarmKc_Log(ketQua) end
+        if onDone then pcall(onDone) end
+    end
+
+    -- Khong o che do LV200 -> bo qua ngay
+    if _G.Mod_Farm_InviteMode ~= "LV200" then done(nil); return end
+
+    local ready, lyDo = _G.FarmKc_IsReady()
+    if not ready then done("Bo qua: " .. tostring(lyDo)); return end
+
+    local webUser = ""
+    pcall(function()
+        if _G.Mod_FarmKc_GetWebUsername then webUser = _G.Mod_FarmKc_GetWebUsername() end
+    end)
+    if webUser == "" then done("Bo qua: chua nhap USER WEB"); return end
+
+    local cfg = _G.FarmKc_Config
+
+    -- Luoi an toan: du co ket o dau cung thoat sau 45s
+    pcall(function()
+        if _G.Timer and _G.Timer.StartLoop then
+            local n = 0
+            local t
+            t = _G.Timer.StartLoop(1.0, 45, function()
+                n = n + 1
+                if finished then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                elseif n >= 45 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    done("Qua han tong the 45s -> chuyen acc")
+                end
+            end)
+        end
+    end)
+
+    -- Buoc cuoi: gui bao cao len web
+    local function guiBaoCao(info)
+        _G.FarmKc_Api_ReportInviter(info, webUser, function(ok, obj, err)
+            if ok then
+                local tt = (obj and obj.status) or "?"
+                done(string.format("Da bao cao: ma=%s | so nguoi moi=%s | trang thai=%s",
+                    tostring(info.code), tostring(info.num), tostring(tt)))
+            else
+                -- Loi mang -> luu lai gui bu, VAN chuyen acc
+                FarmKc_QueuePending(_G.FarmKc_ToJson({
+                    loai = "inviter_report", email = info.email, serverId = info.serverId,
+                    roleId = info.roleId, roleName = info.roleName, level = info.level,
+                    inviteCode = info.code, gameInviteNum = info.num,
+                    unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
+                    createdBy = webUser,
+                }))
+                done("Loi gui bao cao (" .. tostring(err) .. ") -> da luu cho gui bu")
+            end
+        end)
+    end
+
+    -- Buoc 1: cho du lieu ma moi
+    Mod_FarmInvite_WaitVerifyData(cfg.WaitVerifyData, function(coDuLieu, info)
+        if not coDuLieu then
+            done("Khong nhan duoc du lieu ma moi sau " .. tostring(cfg.WaitVerifyData) .. "s -> chuyen acc")
+            return
+        end
+
+        -- Da co ma roi -> bao cao luon
+        if info.code ~= nil and info.code ~= "" then
+            guiBaoCao(info)
+            return
+        end
+
+        -- Chua co ma + chua du dieu kien Lv200 -> khong tao duoc
+        if not info.canGenCode then
+            done("Chua du dieu kien tao ma (can Lv200) -> chuyen acc")
+            return
+        end
+
+        -- Buoc 2: bam [Tao ma]
+        FarmKc_Log("Chua co ma -> gui ReqRoleCode()")
+        local okGui = pcall(function() _G.networkRequest.ReqRoleCode() end)
+        if not okGui then done("Goi ReqRoleCode that bai -> chuyen acc"); return end
+
+        Mod_FarmInvite_WaitCode(cfg.WaitGenCode, function(coMa, info2)
+            if not coMa then
+                done("Tao ma qua han " .. tostring(cfg.WaitGenCode) .. "s -> chuyen acc")
+                return
+            end
+            FarmKc_Log("Da tao duoc ma: " .. tostring(info2.code))
+            guiBaoCao(info2)
+        end)
+    end)
+end
+-- #########################################################################
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - LUONG ACC LV50 (INVITEE - NGUOI DUOC MOI)
+-- Goi tu Main.lua trong OnAccountReachLevelGoal, TRUOC khi chuyen acc.
+-- Luong:
+--   1. Cho du lieu ma moi
+--   2. isCode == true  -> acc da nhap ma tu truoc -> bao ALREADY_USED
+--   3. Xin ma tu web   -> het ma -> ghi NO_CODE
+--   4. Gai bay bat popup loi + gui ReqRoleVerifyCode(ma)
+--   5. Theo doi isCode moi giay (toi da 10s):
+--        isCode false->true  = THANH CONG
+--        bat duoc popup loi  = THAT BAI + noi dung loi
+--        het gio             = THAT BAI (qua han)
+--   6. Bao ket qua -> GO BAY -> chuyen acc
+-- onDone() LUON duoc goi dung 1 lan. Bay LUON duoc go du loi gi.
+-- #########################################################################
+
+-- Gai bay bat popup "Nhac nho" cua game (UIManager.Show -> args.textContent)
+local function FarmKc_HookPopup(onPopup)
+    local restore = {}
+    pcall(function()
+        local UM = _G.UIManager
+        if UM and UM.Show then
+            local origShow = UM.Show
+            UM.Show = function(uiId, args, ...)
+                pcall(function()
+                    if type(args) == "table" and (args.textContent or args.title) then
+                        if onPopup then pcall(onPopup, tostring(args.textContent or args.title or "")) end
+                    end
+                end)
+                return origShow(uiId, args, ...)
+            end
+            table.insert(restore, function() UM.Show = origShow end)
+        end
+    end)
+    -- Bat them thong bao noi (phong truong hop game bao bang FloatingTip)
+    for _, uName in ipairs({ "FloatingTipUtility", "FloatingWordUtility" }) do
+        pcall(function()
+            local U = _G[uName]
+            if U and U.QuickMsg then
+                local orig = U.QuickMsg
+                U.QuickMsg = function(msg, ...)
+                    pcall(function()
+                        if onPopup then pcall(onPopup, tostring(msg or "")) end
+                    end)
+                    return orig(msg, ...)
+                end
+                table.insert(restore, function() U.QuickMsg = orig end)
+            end
+        end)
+    end
+    return function()
+        for _, fn in ipairs(restore) do pcall(fn) end
+    end
+end
+_G.FarmKc_HookPopup = FarmKc_HookPopup
+
+_G.RunInviteeStep = function(onDone)
+    local finished = false
+    local goBay = nil          -- ham go bay, luon duoc goi khi ket thuc
+
+    local function done(ketQua)
+        if finished then return end
+        finished = true
+        if goBay then pcall(goBay); goBay = nil end   -- GO BAY trong MOI truong hop
+        if ketQua and _G.FarmKc_Log then _G.FarmKc_Log(ketQua) end
+        if onDone then pcall(onDone) end
+    end
+
+    if _G.Mod_Farm_InviteMode ~= "LV50" then done(nil); return end
+
+    local ready, lyDo = _G.FarmKc_IsReady()
+    if not ready then done("Bo qua: " .. tostring(lyDo)); return end
+
+    local webUser = ""
+    pcall(function()
+        if _G.Mod_FarmKc_GetWebUsername then webUser = _G.Mod_FarmKc_GetWebUsername() end
+    end)
+    if webUser == "" then done("Bo qua: chua nhap USER WEB"); return end
+
+    local cfg = _G.FarmKc_Config
+
+    -- Luoi an toan tong the 60s
+    pcall(function()
+        if _G.Timer and _G.Timer.StartLoop then
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(1.0, 60, function()
+                n = n + 1
+                if finished then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                elseif n >= 60 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    done("Qua han tong the 60s -> chuyen acc")
+                end
+            end)
+        end
+    end)
+
+    -- Gui ket qua len web roi chuyen acc
+    local function baoKetQua(info, trangThai, loi, ghiChu)
+        _G.FarmKc_Api_ReportResult(info, trangThai, loi, webUser, function(ok, obj, err)
+            if ok then
+                done(string.format("%s | da bao web", tostring(ghiChu or trangThai)))
+            else
+                _G.FarmKc_QueuePending(_G.FarmKc_ToJson({
+                    loai = "invite_result", email = info.email, serverId = info.serverId,
+                    status = trangThai, errorMsg = loi or "", createdBy = webUser,
+                }))
+                done(string.format("%s | loi bao web (%s) -> da luu cho gui bu",
+                    tostring(ghiChu or trangThai), tostring(err)))
+            end
+        end)
+    end
+
+    -- Buoc 1: cho du lieu ma moi
+    _G.Mod_FarmInvite_WaitVerifyData(cfg.WaitVerifyData, function(coDuLieu, info)
+        if not coDuLieu then
+            done("Khong nhan duoc du lieu ma moi sau " .. tostring(cfg.WaitVerifyData) .. "s -> chuyen acc")
+            return
+        end
+
+        -- Buoc 2: acc nay da tung nhap ma roi
+        if info.isCode == true then
+            baoKetQua(info, "ALREADY_USED", nil, "Acc da nhap ma tu truoc")
+            return
+        end
+
+        -- Buoc 3: xin ma tu web
+        _G.FarmKc_Api_ClaimCode(info, webUser, function(okXin, obj, loiXin)
+            if not okXin then
+                -- Het ma cung server
+                if obj and obj.reason == "NO_CODE" then
+                    done("Khong con ma moi cung server -> chuyen acc, vong sau thu lai")
+                else
+                    done("Loi xin ma (" .. tostring(loiXin) .. ") -> chuyen acc")
+                end
+                return
+            end
+
+            -- Web bao acc nay da xong tu truoc
+            if obj and obj.alreadySuccess == true then
+                done("Web bao acc nay da nhap ma truoc do -> chuyen acc")
+                return
+            end
+
+            local maMoi = obj and obj.inviteCode
+            if maMoi == nil or maMoi == "" then
+                done("Web khong tra ve ma -> chuyen acc")
+                return
+            end
+
+            -- Buoc 4: gai bay bat popup loi roi gui [Xac minh]
+            local loiPopup = nil
+            goBay = FarmKc_HookPopup(function(noiDung)
+                if noiDung and noiDung ~= "" then
+                    -- chi quan tam thong bao lien quan ma moi
+                    if string.find(noiDung, "mã mời") or string.find(noiDung, "Mã mời")
+                       or string.find(noiDung, "đã dùng") or string.find(noiDung, "lỗi") then
+                        loiPopup = noiDung
+                    end
+                end
+            end)
+
+            if _G.FarmKc_Log then _G.FarmKc_Log("Nhap ma moi: " .. tostring(maMoi)) end
+            local okGui = pcall(function() _G.networkRequest.ReqRoleVerifyCode(maMoi) end)
+            if not okGui then
+                baoKetQua(info, "FAILED", "Goi ReqRoleVerifyCode that bai", "Loi goi tin")
+                return
+            end
+
+            -- Buoc 5: theo doi isCode moi giay
+            local soGiay = tonumber(cfg.WaitVerifyResult) or 10
+            local ticks, tObj = 0, nil
+            local xong = false
+            local function ketThucTheoDoi(trangThai, loi, ghiChu)
+                if xong then return end
+                xong = true
+                if tObj and tObj.Stop then pcall(function() tObj:Stop() end) end
+                local moi = _G.Mod_FarmInvite_CollectInfo()
+                moi.code = maMoi      -- ghi lai ma da nhap de bao len web
+                baoKetQua(moi, trangThai, loi, ghiChu)
+            end
+
+            if not (_G.Timer and _G.Timer.StartLoop) then
+                ketThucTheoDoi("FAILED", "Khong co Timer", "Thieu Timer")
+                return
+            end
+
+            tObj = _G.Timer.StartLoop(1.0, soGiay, function()
+                if xong or finished then return end
+                ticks = ticks + 1
+                local cur = _G.Mod_FarmInvite_CollectInfo()
+
+                if cur.isCode == true then
+                    ketThucTheoDoi("SUCCESS", nil, "NHAP MA THANH CONG: " .. tostring(maMoi))
+                elseif loiPopup ~= nil then
+                    ketThucTheoDoi("FAILED", loiPopup, "Game bao loi khi nhap ma")
+                elseif ticks >= soGiay then
+                    ketThucTheoDoi("FAILED", "Qua han " .. tostring(soGiay) .. "s khong thay isCode doi",
+                        "Khong xac nhan duoc ket qua")
+                end
+            end)
+        end)
     end)
 end
 -- #########################################################################

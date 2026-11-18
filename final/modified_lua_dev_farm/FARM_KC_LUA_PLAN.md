@@ -83,6 +83,45 @@ có dự phòng `os.time()`.
 ### Trường KHÔNG dùng được (trả nil, đã loại khỏi kế hoạch)
 `masterLevel`, `fight` (lực chiến), `isDead`, `LoginData.sid`, `LoginData.account`.
 
+### BẪY XLUA ĐÃ GẶP — POST JSON (kiểm chứng 2026-11-18, T3b + T3c)
+
+**`CS.System.Text.Encoding.UTF8:GetBytes(str)` KHÔNG CHẠY** trên bản XLua này:
+`invalid arguments to GetBytes`. Đây là thủ phạm thật khi POST thất bại, KHÔNG
+phải do `UnityWebRequest` hay `UploadHandlerRaw` (cả hai đều có và dựng được).
+
+Bảng kết quả dò thật:
+
+| Cách | Kết quả |
+|---|---|
+| `Encoding.UTF8:GetBytes(str)` | ❌ invalid arguments |
+| `Encoding.GetBytes(enc, str)` | ❌ field 'GetBytes' là nil |
+| `UTF8Encoding():GetBytes(str)` | ❌ invalid arguments |
+| **`Convert.FromBase64String(base64 tự mã hoá bằng Lua)`** | ✅ **chạy** |
+| `Array.CreateInstance + SetValue` | ❌ method 'SetValue' là nil |
+| `UnityWebRequest.Post(url, ...)` | ❌ invalid arguments (mọi biến thể) |
+| `UnityWebRequest(url, "POST")` | ✅ dựng được |
+| `UnityWebRequest.Put(url, bytes)` + `method="POST"` | ✅ dựng được |
+| **`UnityWebRequest.Put(url, CHUỖI)` + `method="POST"`** | ✅ **chạy — cách đang dùng** |
+
+→ `FarmKc_PostJson` dùng **`Put(url, chuỗi)` + đổi method**, dự phòng bằng
+base64 → `Convert.FromBase64String` → `UploadHandlerRaw`.
+→ **KHÔNG dùng `UnityWebRequest.Post` và `Encoding.*.GetBytes` ở bất kỳ đâu.**
+
+### ✅ T2 + T3 ĐẠT — TOÀN TUYẾN GAME → WEB → DB ĐÃ THÔNG (2026-11-18)
+
+Chạy thật trên acc Tedyg4 / server 517 / `http://test.guntop.net`:
+
+| Bước | Kết quả |
+|---|---|
+| Máy ảo ra internet, tới được domain | ✅ |
+| 4 route đã deploy | ✅ |
+| **Chữ ký MD5 khớp game ↔ web** | ✅ (không trả 401) |
+| GET `/api/v1/farm/inviter` | ✅ `{"ok":true,"exists":false}` |
+| **POST `/api/v1/farm/inviter/report`** | ✅ **HTTP 200**, DB đã lưu |
+| Dữ liệu vào DB | ✅ mã `hFek6LlTdvgSdj6Z517`, num 2, vàng 41071 |
+
+→ Không còn ẩn số kỹ thuật. Phần còn lại chỉ là ghép luồng.
+
 ### Hạ tầng mạng — ĐÃ XÁC NHẬN CÓ ĐỦ
 `UnityWebRequest` ✅ · `UploadHandlerRaw` ✅ · `DownloadHandlerBuffer` ✅ ·
 `Timer.StartLoop` ✅ → **POST JSON khả thi**, rủi ro lớn nhất của P5 đã được gỡ.

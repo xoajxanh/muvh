@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote, Crown, History } from 'lucide-react';
+import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote, Crown, History, Gift } from 'lucide-react';
 
 interface SidebarProps {
   userRole?: 'ADMIN' | 'SALE';
@@ -19,6 +19,8 @@ export default function Sidebar({ userRole }: SidebarProps) {
     { label: 'Mẫu Tin Nhắn', href: '/templates', icon: MessageSquareQuote },
     { label: 'Gói Cước VIP', href: '/packages', icon: Package },
     { label: 'Telegram CSKH', href: '/telegrams', icon: Send },
+    // [MOD FEATURE]: FARM KC - MA MOI RONG VANG (1 menu, doi bang ngay trong trang)
+    { label: 'Farm KC', href: '/farm-kc', icon: Gift },
     ...(userRole === 'ADMIN'
       ? [{ label: 'Quản Lý Tài Khoản', href: '/users', icon: Users }]
       : []),

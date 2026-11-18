@@ -2431,6 +2431,12 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		local outDir = Application.persistentDataPath
 		File.AppendAllText(outDir .. "/farm_success_accounts.txt", logLine, CS.System.Text.Encoding.UTF8)
 	end)
+	-- =========================================================================
+	-- [MOD FEATURE]: FARM KC - BOC PHAN CHUYEN ACC VAO MOT HAM
+	-- Mô tả: Nội dung bên trong GIỮ NGUYÊN 100% so với bản cũ. Bọc lại để
+	--        chế độ mã mời chạy xong mới gọi chuyển acc.
+	-- =========================================================================
+	local function FarmKc_ChuyenAccKeTiep()
 	local nextAccIdx = curAccIdx + 1
 	if nextAccIdx <= totalAccs then
 		_G.CurrentAccountIndex = nextAccIdx
@@ -2467,6 +2473,29 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
 			_G.FloatingWordUtility.QuickMsg(string.format("ĐÃ HOÀN THÀNH TẤT CẢ %d ACC LÊN LV %d!", totalAccs, targetLvl))
 		end
+	end
+	end
+
+	-- =========================================================================
+	-- [MOD FEATURE]: FARM KC - DIEM CHEN LUONG MA MOI (ACC LV200)
+	-- Mô tả: Chỉ chạy khi bật nút gạt "LV200 & FARM MÃ MỜI". RunInviterStep
+	--        có lưới an toàn 45s bên trong và luôn gọi callback đúng 1 lần,
+	--        nên bot KHÔNG BAO GIỜ kẹt ở một acc. Tắt chế độ hoặc thiếu hàm
+	--        thì chuyển acc ngay như cũ.
+	-- =========================================================================
+	local daChuyen = false
+	local function FarmKc_XongThiChuyen()
+		if daChuyen then return end
+		daChuyen = true
+		FarmKc_ChuyenAccKeTiep()
+	end
+
+	if _G.Mod_Farm_InviteMode == "LV200" and _G.RunInviterStep then
+		_G.RunInviterStep(FarmKc_XongThiChuyen)
+	elseif _G.Mod_Farm_InviteMode == "LV50" and _G.RunInviteeStep then
+		_G.RunInviteeStep(FarmKc_XongThiChuyen)
+	else
+		FarmKc_XongThiChuyen()
 	end
 end
 
