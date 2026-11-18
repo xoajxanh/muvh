@@ -1140,6 +1140,8 @@ local function GetSortedAccountTimeRecords()
 end
 
 local function SaveAccountTimeRecords()
+	-- [MOD FEATURE]: FARM KC - tat ghi nhan ket qua khi toggle DEBUG KQ = OFF
+	if _G.Mod_Farm_DebugResult == false then return end
 	pcall(function()
 		local list = GetSortedAccountTimeRecords()
 		local lines = {}
@@ -1217,6 +1219,8 @@ local function FinalizeAccountLevelDetailOnEnd(key, srvId, email, finalLv, queen
 end
 
 _G.FinalizeAccountTimeOnGoal = function(emailArg, srvArg, lvlArg)
+	-- [MOD FEATURE]: FARM KC - tat ghi nhan ket qua khi toggle DEBUG KQ = OFF
+	if _G.Mod_Farm_DebugResult == false then return end
 	pcall(function()
 		LoadAccountTimeRecords(false)
 		local defSrv, defEmail = ResolveCurrentSessionServerAndEmail()
@@ -1264,6 +1268,8 @@ end
 --        quay lại trạng thái Hoàn Thành, đánh dấu (failed) với màu đỏ button #D93838.
 -- =========================================================================
 _G.FinalizeAccountTimeOnFailed = function(emailArg, srvArg, lvlArg)
+	-- [MOD FEATURE]: FARM KC - tat ghi nhan ket qua khi toggle DEBUG KQ = OFF
+	if _G.Mod_Farm_DebugResult == false then return end
 	pcall(function()
 		LoadAccountTimeRecords(false)
 		local defSrv, defEmail = ResolveCurrentSessionServerAndEmail()
@@ -1374,6 +1380,15 @@ local function EnsureKqResultPanelUI()
 		-- 1. Nút nổi [KQ] bên trái màn hình (Tự động đẩy xuống Y=140 ngay trên nút VỤT khi tắt EXEC, hoặc Y=220 nếu bật EXEC)
 		local kqBtnGo = GameObject("FloatingKqBtn")
 		kqBtnGo.transform:SetParent(modRoot.transform, false)
+		-- [MOD FEATURE]: FARM KC - phoi nut [KQ] ra toan cuc de nut gat DEBUG an/hien
+		_G.Mod_KqBtnGo = kqBtnGo
+		pcall(function()
+			if _G.Mod_Farm_DebugResult == nil then
+				local saved = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_DebugResult", 1)
+				_G.Mod_Farm_DebugResult = (tonumber(saved) or 1) ~= 0
+			end
+			kqBtnGo:SetActive(_G.Mod_Farm_DebugResult ~= false)
+		end)
 		local kqBtnRt = kqBtnGo:AddComponent(typeof(RectTransform))
 		kqBtnRt.anchorMin = Vector2(0, 0)
 		kqBtnRt.anchorMax = Vector2(0, 0)
@@ -2421,7 +2436,8 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 	if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
 		_G.FloatingWordUtility.QuickMsg(string.format("Hoàn tất %s (Lv %d | NH:%d)! Chuyển sang acc kế tiếp...", curAccEmail, lvl, finishedQueenCount))
 	end
-	-- Ghi nhật ký vào file thành công
+	-- Ghi nhật ký vào file thành công (bỏ qua khi tắt DEBUG KQ)
+	if _G.Mod_Farm_DebugResult ~= false then
 	pcall(function()
 		local Application = CS.UnityEngine.Application
 		local File = CS.System.IO.File
@@ -2431,6 +2447,7 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		local outDir = Application.persistentDataPath
 		File.AppendAllText(outDir .. "/farm_success_accounts.txt", logLine, CS.System.Text.Encoding.UTF8)
 	end)
+	end
 	-- =========================================================================
 	-- [MOD FEATURE]: FARM KC - BOC PHAN CHUYEN ACC VAO MOT HAM
 	-- Mô tả: Nội dung bên trong GIỮ NGUYÊN 100% so với bản cũ. Bọc lại để
@@ -2538,6 +2555,7 @@ _G.OnAccountFailedAndSkip = function(reason)
 		curAccIdx, totalAccs, curAccEmail, curLv, finishedQueenCount, tostring(sName), tostring(reason or "Bug NV Nữ Hoàng thất bại")), true)
 	Log("=========================================================================", true)
 	SaveOutput()
+	if _G.Mod_Farm_DebugResult ~= false then
 	pcall(function()
 		local Application = CS.UnityEngine.Application
 		local File = CS.System.IO.File
@@ -2547,6 +2565,7 @@ _G.OnAccountFailedAndSkip = function(reason)
 		local outDir = Application.persistentDataPath
 		File.AppendAllText(outDir .. "/farm_failed_accounts.txt", logLine, CS.System.Text.Encoding.UTF8)
 	end)
+	end
 	local nextAccIdx = curAccIdx + 1
 	if nextAccIdx <= totalAccs then
 		_G.CurrentAccountIndex = nextAccIdx
@@ -5790,6 +5809,53 @@ _G.LoginCurrentSelectedAccount = function()
 	local targetAcc = (_G.BotAccounts and _G.BotAccounts[curAccIdx]) or (GetCurrentAccount and GetCurrentAccount()) or {}
 	local email = targetAcc.account or "Unknown"
 	local targetSrv = tonumber(_G.TARGET_SERVER_ID or targetAcc.targetServer or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
+
+	-- =========================================================================
+	-- [MOD FEATURE]: FARM KC - BO QUA ACC DA DU 5 NGUOI MOI
+	-- Mô tả: hỏi web trước khi đăng nhập. Acc đã COMPLETE/DONE thì nhảy sang
+	--        acc kế tiếp luôn, không tốn thời gian đăng nhập + vào game.
+	--        Web lỗi / tắt chế độ -> đăng nhập bình thường như cũ.
+	--        Chống lặp: bỏ qua liên tiếp quá số acc trong danh sách thì thôi.
+	-- =========================================================================
+	if _G.FarmKc_KiemTraBoQuaAcc and not _G.FarmKc_DangKiemTraBoQua then
+		_G.FarmKc_DangKiemTraBoQua = true
+		_G.FarmKc_KiemTraBoQuaAcc(email, targetSrv, function(boQua)
+			_G.FarmKc_DangKiemTraBoQua = false
+			if not boQua then
+				_G.FarmKc_SoAccBoQua = 0
+				_G.LoginCurrentSelectedAccount()
+				return
+			end
+
+			_G.FarmKc_SoAccBoQua = (_G.FarmKc_SoAccBoQua or 0) + 1
+			if _G.FarmKc_SoAccBoQua >= totalAccs then
+				-- Da bo qua het ca danh sach -> dung lai, tranh lap vo tan
+				_G.FarmKc_SoAccBoQua = 0
+				Log(">>> [FARM KC] TAT CA ACC DEU DA DU 5 NGUOI MOI - DUNG BOT <<<", true)
+				SaveOutput()
+				if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+					_G.FloatingWordUtility.QuickMsg("Tat ca acc da du 5 nguoi moi - dung bot")
+				end
+				_G.StopAutoFarmBot()
+				return
+			end
+
+			-- Nhay sang acc ke tiep (quay vong ve 1 neu het)
+			local ke = curAccIdx + 1
+			if ke > totalAccs then ke = 1 end
+			_G.CurrentAccountIndex = ke
+			pcall(function()
+				CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", ke)
+				CS.UnityEngine.PlayerPrefs.Save()
+			end)
+			Log(string.format(">>> [FARM KC] Bo qua acc %s (da du 5 nguoi moi) -> sang acc [%d/%d] <<<",
+				tostring(email), ke, totalAccs), true)
+			SaveOutput()
+			_G.LoginCurrentSelectedAccount()
+		end)
+		return
+	end
+	_G.FarmKc_DangKiemTraBoQua = false
 
 	_G.Bot_ActiveSessionEmail = tostring(email)
 	_G.Bot_ActiveSessionServer = targetSrv

@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [total, rows, agg] = await Promise.all([
+    const [total, rows, moc, agg] = await Promise.all([
       prisma.farmInviter.count({ where }),
       prisma.farmInviter.findMany({
         where,
@@ -81,6 +81,11 @@ export async function GET(req: NextRequest) {
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: { createdBy: { select: { username: true, displayName: true } } },
+      }),
+      // [MOD FEATURE]: TIEN DO CHI TIEU - lay cac cot so de tinh du / chua du
+      prisma.farmInviter.findMany({
+        where,
+        select: { gameInviteNum: true, confirmedCount: true, maxInvites: true },
       }),
       // [MOD FEATURE]: TONG HOP TOAN BO (theo dung bo loc dang xem, khong chi trang hien tai)
       prisma.farmInviter.aggregate({
@@ -95,6 +100,27 @@ export async function GET(req: NextRequest) {
         } as any,
       }),
     ]);
+
+    // =====================================================================
+    // [MOD FEATURE]: CHI TIEU MOI DU 5 NGUOI
+    //   soDu       = so nick da moi du chi tieu
+    //   soChuaDu   = so nick chua du
+    //   conThieu   = tong so luot moi con thieu de TAT CA nick deu du
+    // =====================================================================
+    let soDu = 0;
+    let conThieu = 0;
+    for (const m of moc as any[]) {
+      const daMoi = (m.gameInviteNum || 0) + (m.confirmedCount || 0);
+      const canCo = m.maxInvites || 5;
+      if (daMoi >= canCo) soDu++;
+      else conThieu += canCo - daMoi;
+    }
+    const chiTieu = {
+      soNick: total,
+      soDu,
+      soChuaDu: total - soDu,
+      conThieu,
+    };
 
     const sum: any = (agg as any)?._sum || {};
     const totals = {
@@ -124,6 +150,7 @@ export async function GET(req: NextRequest) {
       unboundGold: safeNum(r.unboundGold),
       unboundDiamond: safeNum(r.unboundDiamond),
       goldVoucher: safeNum(r.goldVoucher),
+      packBought: r.packBought,
       status: r.status,
       failCount: r.failCount,
       lastError: r.lastError,
@@ -139,6 +166,7 @@ export async function GET(req: NextRequest) {
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
       totals,
+      chiTieu,
       sortBy,
       sortDir,
       isAdmin: session.role === 'ADMIN',

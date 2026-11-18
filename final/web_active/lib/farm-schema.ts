@@ -25,6 +25,7 @@ BEGIN
         [unboundGold] BIGINT NOT NULL DEFAULT 0,
         [unboundDiamond] BIGINT NOT NULL DEFAULT 0,
         [goldVoucher] BIGINT NOT NULL DEFAULT 0,
+        [packBought] INT NOT NULL DEFAULT 0,
         [status] NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
         [failCount] INT NOT NULL DEFAULT 0,
         [lastError] NVARCHAR(1000) NULL,
@@ -46,6 +47,26 @@ IF NOT EXISTS (
 BEGIN
     ALTER TABLE [dbo].[FarmInviter] ADD [goldVoucher] BIGINT NOT NULL DEFAULT 0;
 END;
+
+IF NOT EXISTS (
+    SELECT * FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'packBought'
+)
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [packBought] INT NOT NULL DEFAULT 0;
+END;
+
+-- Chuyen du lieu cu sang bo trang thai moi (chay mot lan, idempotent):
+--   COMPLETE cu = du 5 nguoi moi nhung CHUA chac da mua kim cuong
+--   -> packBought = 0 thi la INVITED, > 0 thi la DONE
+UPDATE [dbo].[FarmInviter]
+SET [status] = CASE WHEN [packBought] > 0 THEN 'DONE' ELSE 'INVITED' END
+WHERE [status] = 'COMPLETE';
+
+-- Acc chua co ma moi -> NEW (khong dung NO_CODE vi ten do danh cho bang ACC 50)
+UPDATE [dbo].[FarmInviter]
+SET [status] = 'NEW'
+WHERE [status] = 'ACTIVE' AND ([inviteCode] IS NULL OR [inviteCode] = '');
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInvitee')
 BEGIN
@@ -155,7 +176,7 @@ BEGIN
         SELECT TOP (1) I.*
         FROM [dbo].[FarmInviter] I WITH (UPDLOCK, ROWLOCK)
         WHERE I.[serverId] = @serverId
-          AND I.[status] = 'ACTIVE'
+          AND I.[status] = 'ACTIVE'   -- chi acc dang gom nguoi moi moi duoc cap ma
           AND I.[inviteCode] IS NOT NULL AND I.[inviteCode] <> ''
           -- So luot da dung = gameInviteNum (moc that luc acc Lv200 dang nhap lan cuoi)
           --                   + confirmedCount (so web cap THEM sau moc do)

@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
       unboundGold: safeNum(row.unboundGold),
       unboundDiamond: safeNum(row.unboundDiamond),
       goldVoucher: safeNum(row.goldVoucher),
+      packBought: row.packBought,
       failCount: row.failCount,
     });
   } catch (err: any) {

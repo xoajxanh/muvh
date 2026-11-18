@@ -2495,6 +2495,77 @@ local function CreateModUI()
                 end
             end)
 
+            -- ---------- Nút gạt DEBUG KẾT QUẢ FARM ----------
+            -- Mô tả: TẮT thì bỏ qua toàn bộ việc ghi file kết quả / thời gian farm
+            --        (account_level_details.json, farm_success/failed_accounts.txt)
+            --        và ẩn nút nổi [KQ] -> giảm đọc ghi file, đỡ lag khi chạy nhiều acc.
+            if _G.Mod_Farm_DebugResult == nil then
+                local saved = 1
+                pcall(function()
+                    saved = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_DebugResult", 1)
+                end)
+                _G.Mod_Farm_DebugResult = (tonumber(saved) or 1) ~= 0
+            end
+
+            local dbgGo = GameObject("BtnFarmKcDebug")
+            dbgGo.transform:SetParent(panelGo.transform, false)
+            local dbgRt = dbgGo:AddComponent(typeof(RectTransform))
+            dbgRt.anchorMin, dbgRt.anchorMax, dbgRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            dbgRt.anchoredPosition = Vector2(FKC_X, FKC_ROW2_Y - 40)
+            dbgRt.sizeDelta = Vector2(308, 32)
+            local dbgImg = dbgGo:AddComponent(typeof(Image))
+            dbgImg.raycastTarget = true
+            local dbgTxtGo = GameObject("Text")
+            dbgTxtGo.transform:SetParent(dbgGo.transform, false)
+            local dbgTxtRt = dbgTxtGo:AddComponent(typeof(RectTransform))
+            dbgTxtRt.anchorMin, dbgTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            dbgTxtRt.sizeDelta = Vector2(0, 0)
+            local dbgTxt = dbgTxtGo:AddComponent(typeof(Text))
+            dbgTxt.fontSize = 12
+            dbgTxt.alignment = TextAnchor.MiddleCenter
+            dbgTxt.raycastTarget = false
+            if defaultFont then dbgTxt.font = defaultFont end
+
+            _G.UpdateFarmKcDebugBtnUI = function()
+                pcall(function()
+                    if not dbgTxt or dbgTxt:Equals(nil) or not dbgImg or dbgImg:Equals(nil) then return end
+                    if _G.Mod_Farm_DebugResult then
+                        dbgImg.color = Color(0.15, 0.65, 0.30, 1)
+                        dbgTxt.text = "DEBUG KẾT QUẢ FARM: BẬT"
+                        dbgTxt.color = Color.white
+                    else
+                        dbgImg.color = Color(0.28, 0.28, 0.32, 1)
+                        dbgTxt.text = "DEBUG KẾT QUẢ FARM: TẮT"
+                        dbgTxt.color = Color(0.85, 0.85, 0.85, 1)
+                    end
+                end)
+            end
+            _G.UpdateFarmKcDebugBtnUI()
+
+            local dbgBtn = dbgGo:AddComponent(typeof(Button))
+            dbgBtn.targetGraphic = dbgImg
+            dbgBtn.onClick:AddListener(function()
+                _G.Mod_Farm_DebugResult = not _G.Mod_Farm_DebugResult
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_DebugResult", _G.Mod_Farm_DebugResult and 1 or 0)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                if _G.UpdateFarmKcDebugBtnUI then _G.UpdateFarmKcDebugBtnUI() end
+                -- Ẩn/hiện nút nổi [KQ] theo trạng thái
+                pcall(function()
+                    if _G.Mod_KqBtnGo and not _G.Mod_KqBtnGo:Equals(nil) then
+                        _G.Mod_KqBtnGo:SetActive(_G.Mod_Farm_DebugResult)
+                    end
+                end)
+                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    if _G.Mod_Farm_DebugResult then
+                        _G.FloatingWordUtility.QuickMsg("ĐÃ BẬT GHI NHẬN KẾT QUẢ FARM")
+                    else
+                        _G.FloatingWordUtility.QuickMsg("ĐÃ TẮT GHI NHẬN KẾT QUẢ FARM (giảm lag)")
+                    end
+                end
+            end)
+
             -- Áp dụng lại chế độ đã lưu khi mở menu (im lặng, không hiện thông báo)
             _G.Mod_FarmKc_ApplyInviteMode(_G.Mod_Farm_InviteMode, true)
         end)
@@ -4104,6 +4175,7 @@ _G.FarmKc_Api_ReportInviter = function(info, createdBy, onDone)
         inviteCode = info.code, gameInviteNum = info.num,
         unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
         goldVoucher = info.goldVoucher or 0,
+        packBought = info.packBought or 0,   -- so goi kim cuong vua mua duoc lan nay
         createdBy = createdBy, ts = ts,
         sign = FarmKc_Sign({ info.email, info.serverId, info.roleId, info.code, info.num }, ts),
     }
@@ -4254,6 +4326,9 @@ local function Mod_FarmInvite_CollectInfo()
         end
         info.goldVoucher = tong
     end)
+
+    -- So goi kim cuong vua mua trong luot nay (web dung de tinh trang thai DONE)
+    info.packBought = tonumber(_G.FarmKc_SoGoiVuaMua) or 0
 
     pcall(function()
         local mgr = _G.QuickFind and _G.QuickFind:GetTask_EarlyGoldManager()
@@ -4530,6 +4605,9 @@ _G.RunInviterStep = function(onDone)
         if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
     end)
 
+    -- Reset bo dem goi vua mua (chi tinh trong luot nay)
+    _G.FarmKc_SoGoiVuaMua = 0
+
     local cfg = _G.FarmKc_Config
 
     -- Luoi an toan: du co ket o dau cung thoat sau 45s
@@ -4566,6 +4644,7 @@ _G.RunInviterStep = function(onDone)
                     inviteCode = info.code, gameInviteNum = info.num,
                     unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
                     goldVoucher = info.goldVoucher or 0,
+                    packBought = info.packBought or 0,
                     createdBy = webUser,
                 }))
                 done("Loi gui bao cao (" .. tostring(err) .. ") -> da luu cho gui bu")
@@ -4618,6 +4697,8 @@ _G.RunInviterStep = function(onDone)
         end
         _G.FarmKc_MuaGoiNhieuLan(c.PackPriceVoucher, c.PackCode, c.PackMaxBuy or 1,
             function(soLan)
+                -- Nho lai so goi vua mua de bao len web (quyet dinh trang thai DONE)
+                _G.FarmKc_SoGoiVuaMua = tonumber(soLan) or 0
                 if _G.FarmKc_Log then
                     _G.FarmKc_Log("Da mua " .. tostring(soLan) .. " goi bang Kim Phieu")
                 end
@@ -5183,6 +5264,7 @@ _G.FarmKc_GuiBuPending = function(onDone)
                 unboundGold = tonumber(FarmKc_LayTruong(dong, "unboundGold") or 0) or 0,
                 unboundDiamond = tonumber(FarmKc_LayTruong(dong, "unboundDiamond") or 0) or 0,
                 goldVoucher = tonumber(FarmKc_LayTruong(dong, "goldVoucher") or 0) or 0,
+                packBought = tonumber(FarmKc_LayTruong(dong, "packBought") or 0) or 0,
             }
             _G.FarmKc_Api_ReportInviter(info, createdBy, function(ok) xong(ok) end)
 
@@ -5598,7 +5680,9 @@ _G.FarmKc_KiemTraBoQuaAcc = function(email, serverId, onKetQua)
     _G.FarmKc_Api_GetInviter(email, serverId, webUser, function(ok, obj)
         if not ok or obj == nil or obj.exists ~= true then traMotLan(false); return end
         local tt = tostring(obj.status or "")
-        if tt == "COMPLETE" or tt == "DONE" then
+        -- CHI bo qua acc da HOAN THIEN TOAN BO (DONE = du 5 nguoi + da mua kim cuong).
+        -- INVITED (du 5 nguoi nhung CHUA mua) van phai dang nhap de mua not.
+        if tt == "DONE" then
             if _G.FarmKc_Log then
                 _G.FarmKc_Log(string.format("Acc %s da %s -> BO QUA", tostring(email), tt))
             end

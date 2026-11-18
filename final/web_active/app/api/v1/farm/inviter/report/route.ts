@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
-import { verifyFarmRequest, safeNum } from '@/lib/farm-auth';
+import { verifyFarmRequest, safeNum, tinhTrangThaiInviter } from '@/lib/farm-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,10 +49,19 @@ export async function POST(req: NextRequest) {
     //        về 0 để không đếm trùng. Từ giờ confirmedCount chỉ đếm phần PHÁT
     //        SINH SAU mốc này, và tổng đã dùng = gameInviteNum + confirmedCount.
     // =========================================================================
-    const used = gameInviteNum;
 
-    // Giữ nguyên DONE nếu đã có (bước nhận thưởng/mua đồ làm sau)
-    let status = existing?.status === 'DONE' ? 'DONE' : (used >= maxInvites ? 'COMPLETE' : 'ACTIVE');
+    // Số gói kim cương đã mua: cộng dồn số mod báo về lần này
+    const packMoi = parseInt(String(body.packBought ?? 0), 10) || 0;
+    const packBought = (existing?.packBought ?? 0) + packMoi;
+
+    const status = tinhTrangThaiInviter({
+      inviteCode: inviteCode === '' ? null : inviteCode,
+      gameInviteNum,
+      confirmedCount: 0,   // vừa reset ở dưới
+      packBought,
+      maxInvites,
+      statusHienTai: existing?.status,
+    });
 
     const common = {
       password: String(body.password || ''),
@@ -66,6 +75,7 @@ export async function POST(req: NextRequest) {
       unboundGold: BigInt(Math.trunc(Number(body.unboundGold) || 0)),
       unboundDiamond: BigInt(Math.trunc(Number(body.unboundDiamond) || 0)),
       goldVoucher: BigInt(Math.trunc(Number(body.goldVoucher) || 0)),
+      packBought,
       status,
       failCount: 0,
       lastError: null,
@@ -95,6 +105,7 @@ export async function POST(req: NextRequest) {
       unboundGold: safeNum(row.unboundGold),
       unboundDiamond: safeNum(row.unboundDiamond),
       goldVoucher: safeNum(row.goldVoucher),
+      packBought: row.packBought,
     });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message || 'Lỗi máy chủ' }, { status: 500 });

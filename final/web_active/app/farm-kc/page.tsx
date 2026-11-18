@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
-import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus, ArrowUp, ArrowDown, ChevronsUpDown, Coins, Gem, Ticket, Users } from 'lucide-react';
+import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus, ArrowUp, ArrowDown, ChevronsUpDown, Coins, Gem, Ticket, Users, CheckCircle2, CircleDashed, Target } from 'lucide-react';
 
 // =========================================================================
 // [MOD FEATURE]: FARM KC - TRANG MA MOI RONG VANG (GOP 2 BANG VAO 1 MENU)
@@ -16,9 +16,12 @@ import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown,
 type Tab = 'inviters' | 'invitees';
 
 const STATUS_STYLE: Record<string, string> = {
+  // --- ACC 200 (người mời) ---
+  NEW: 'bg-slate-500/15 text-slate-300 border-slate-500/40',
   ACTIVE: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  COMPLETE: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  DONE: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
+  INVITED: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
+  DONE: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
+  COMPLETE: 'bg-amber-500/15 text-amber-300 border-amber-500/40',
   ERROR: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
   SUCCESS: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
   RESERVED: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
@@ -30,9 +33,12 @@ const STATUS_STYLE: Record<string, string> = {
 };
 
 const STATUS_LABEL: Record<string, string> = {
-  ACTIVE: 'Còn suất mời',
-  COMPLETE: 'Đã đủ 5 người mời',
-  DONE: 'Đã nhận thưởng xong',
+  // --- ACC 200: nghĩa + điều kiện + việc cần làm ---
+  NEW: 'BƯỚC KHỞI TẠO — chưa có mã mời\n• Điều kiện: chưa tạo được mã\n• Việc cần làm: bot đăng nhập, đạt Lv200 rồi tạo mã',
+  ACTIVE: 'ĐANG GOM NGƯỜI MỜI\n• Điều kiện: đã có mã, số người mời < 5\n• Việc cần làm: chờ acc Lv50 nhập mã',
+  INVITED: 'ĐỦ 5 NGƯỜI — CHƯA mua kim cương\n• Điều kiện: đủ 5 người mời, chưa mua gói nào\n• Việc cần làm: nhận thưởng mốc rồi mua gói 60 kim cương',
+  DONE: 'HOÀN THIỆN TOÀN BỘ CHU TRÌNH\n• Điều kiện: đủ 5 người mời VÀ đã mua ≥ 1 gói kim cương\n• Không còn việc gì — bot sẽ bỏ qua acc này',
+  COMPLETE: 'TRẠNG THÁI CŨ — tương đương INVITED\n• Tự chuyển sang INVITED hoặc DONE khi web khởi động lại',
   ERROR: 'Lỗi, cần xem lại',
   SUCCESS: 'Nhập mã thành công',
   RESERVED: 'Đang giữ chỗ',
@@ -45,9 +51,10 @@ const STATUS_LABEL: Record<string, string> = {
 const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
   inviters: [
     { value: '', label: 'Tất cả' },
-    { value: 'ACTIVE', label: 'Còn suất' },
-    { value: 'COMPLETE', label: 'Đủ 5 người' },
-    { value: 'DONE', label: 'Đã xong' },
+    { value: 'NEW', label: 'Chưa có mã' },
+    { value: 'ACTIVE', label: 'Đang gom người' },
+    { value: 'INVITED', label: 'Đủ 5, chưa mua' },
+    { value: 'DONE', label: 'Hoàn thiện' },
     { value: 'ERROR', label: 'Lỗi' },
   ],
   invitees: [
@@ -80,6 +87,7 @@ export default function FarmKcPage() {
   const [sortBy, setSortBy] = useState('email');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [totals, setTotals] = useState<any>(null);
+  const [chiTieu, setChiTieu] = useState<any>(null);
   // Số lượng của CẢ HAI bảng, hiện ngay trên nút gạt
   const [counts, setCounts] = useState<{ inviters: number; invitees: number }>({ inviters: 0, invitees: 0 });
   const pageSize = 20;
@@ -130,6 +138,7 @@ export default function FarmKcPage() {
         setTotalPages(j.totalPages || 1);
         setIsAdmin(!!j.isAdmin);
         setTotals(j.totals || null);
+        setChiTieu(j.chiTieu || null);
         setPage(j.page || p);
       }
     } catch (e) {
@@ -164,6 +173,7 @@ export default function FarmKcPage() {
     setKeyword('');
     setItems([]);
     setTotals(null);
+    setChiTieu(null);
     setHienMatKhauDong({});
     // ACC 50 mac dinh gom nhom theo nguoi moi; ACC 200 mac dinh Email giam dan
     setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
@@ -301,7 +311,9 @@ export default function FarmKcPage() {
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800">
       <span className={mau}>{icon}</span>
       <span className="text-[11px] text-slate-500">{nhan}</span>
-      <span className={`text-xs font-bold font-mono ${mau}`}>{fmtNum(gt)}</span>
+      <span className={`text-xs font-bold font-mono ${mau}`}>
+        {typeof gt === 'string' ? gt : fmtNum(gt)}
+      </span>
     </div>
   );
 
@@ -423,6 +435,49 @@ export default function FarmKcPage() {
             )}
           </div>
 
+          {/* =====================================================================
+              [MOD FEATURE]: THANH THONG KE CHI TIEU (chi bang ACC 200)
+              Mô tả: Tính trên TOÀN BỘ dữ liệu theo bộ lọc đang xem, không phải
+                     chỉ trang hiện tại.
+             ===================================================================== */}
+          {laAcc200 && chiTieu && (
+            <div className="shrink-0 flex items-center flex-wrap gap-2">
+              <O
+                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
+                nhan="Nick đã mời đủ"
+                gt={`${fmtNum(chiTieu.soDu)}/${fmtNum(chiTieu.soNick)}`}
+                mau="text-emerald-300"
+              />
+              <O
+                icon={<CircleDashed className="w-3.5 h-3.5" />}
+                nhan="Nick chưa đủ"
+                gt={fmtNum(chiTieu.soChuaDu)}
+                mau="text-amber-300"
+              />
+              <O
+                icon={<Target className="w-3.5 h-3.5" />}
+                nhan="Còn cần mời"
+                gt={`${fmtNum(chiTieu.conThieu)} lượt`}
+                mau="text-sky-300"
+              />
+
+              {/* Thanh tien do tong the */}
+              <div className="flex items-center gap-2 min-w-[180px] flex-1 max-w-[320px]">
+                <div className="h-1.5 flex-1 rounded-full bg-slate-800 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
+                    style={{
+                      width: `${chiTieu.soNick > 0 ? Math.round((chiTieu.soDu / chiTieu.soNick) * 100) : 0}%`,
+                    }}
+                  />
+                </div>
+                <span className="text-[11px] font-bold text-emerald-300 font-mono shrink-0">
+                  {chiTieu.soNick > 0 ? Math.round((chiTieu.soDu / chiTieu.soNick) * 100) : 0}%
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* BANG: chi cuon ben trong, header dinh tren, pagination dinh duoi */}
           <div className="flex-1 min-h-0 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-auto">
@@ -472,9 +527,9 @@ export default function FarmKcPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {loading ? (
-                    <tr><td colSpan={14} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
+                    <tr><td colSpan={15} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
                   ) : items.length === 0 ? (
-                    <tr><td colSpan={14} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
+                    <tr><td colSpan={15} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
                   ) : (
                     items.map((r) => (
                       <tr

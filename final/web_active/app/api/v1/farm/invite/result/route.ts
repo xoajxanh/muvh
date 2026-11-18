@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { prisma, ensureInitialSeed } from '@/lib/db';
-import { verifyFarmRequest } from '@/lib/farm-auth';
+import { verifyFarmRequest, tinhTrangThaiInviter } from '@/lib/farm-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,10 +91,17 @@ export async function POST(req: NextRequest) {
 
       const newReserved = Math.max(0, inviter.reservedCount - 1);
       const newConfirmed = status === 'SUCCESS' ? inviter.confirmedCount + 1 : inviter.confirmedCount;
-      // Tổng đã dùng = mốc game báo + phần web cấp thêm sau mốc đó (KHÔNG dùng MAX)
-      const used = inviter.gameInviteNum + newConfirmed;
-      const newStatus =
-        inviter.status === 'DONE' ? 'DONE' : (used >= inviter.maxInvites ? 'COMPLETE' : inviter.status);
+
+      // Tính lại trạng thái theo bộ mới: NO_CODE / ACTIVE / INVITED / DONE
+      // Đủ 5 người mà chưa mua kim cương thì mới chỉ là INVITED, CHƯA phải DONE.
+      const newStatus = tinhTrangThaiInviter({
+        inviteCode: inviter.inviteCode,
+        gameInviteNum: inviter.gameInviteNum,
+        confirmedCount: newConfirmed,
+        packBought: inviter.packBought,
+        maxInvites: inviter.maxInvites,
+        statusHienTai: inviter.status,
+      });
 
       await tx.farmInviter.update({
         where: { id: inviter.id },

@@ -26,6 +26,8 @@
 | 14 | **Tự mua gói bằng Kim Phiếu** | `ReqUseItem` — đã test thật: 30.000 → 5.000 |
 | 15 | **Tự nhận thư sau khi mua** | Chỉ thư nạp (`rechargeId ≠ 0`), không đụng thư khác |
 | 16 | **Dọn popup "Nhắc nhở"** | Tự bấm Xác nhận, tránh treo bot |
+| 17 | **B2 — Bỏ qua acc đã đủ 5 người** | Hỏi web trước khi đăng nhập; web lỗi thì vẫn login bình thường |
+| 18 | **B1 — Nút gạt DEBUG KẾT QUẢ FARM** | Chặn 5 cửa ngõ ghi file + ẩn nút [KQ] |
 
 ---
 
@@ -43,8 +45,6 @@
 
 | # | Việc | Vì sao |
 |---|---|---|
-| B1 | **Nút gạt DEBUG KẾT QUẢ FARM** | Tắt để giảm ghi file, đỡ lag. Đụng nhiều điểm rải rác trong `Main.lua`, cần rà kỹ |
-| B2 | **Bỏ qua acc đã đủ 5 người** | Hỏi web trước khi đăng nhập → acc `COMPLETE` thì bỏ qua, tiết kiệm vài phút mỗi acc |
 | B3 | **Chạy thật cả dàn acc** | Kiểm tra: không acc nào vượt 5 lượt, không acc nào kẹt |
 
 ### C. Việc để sau (đã thống nhất hoãn)

@@ -79,3 +79,37 @@ export function safeNum(v: any): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
 }
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - TINH TRANG THAI ACC LV200
+// Bộ trạng thái (USER chốt 2026-11-19):
+//   NEW      : chưa có mã mời          -> bước khởi tạo
+//              (KHÔNG dùng NO_CODE vì tên đó đã dành cho bảng ACC 50)
+//   ACTIVE   : có mã, chưa đủ 5 người  -> đang gom người mời
+//   INVITED  : đủ 5 người, CHƯA mua    -> còn phải nhận thưởng + mua kim cương
+//   DONE     : đủ 5 người + ĐÃ mua     -> hoàn thiện toàn bộ chu trình
+//   ERROR    : lỗi, giữ nguyên không tính lại
+//
+// "Đã mua" xác định bằng packBought > 0 (số gói kim cương đã mua bằng Kim Phiếu),
+// KHÔNG dựa vào số kim cương trong túi vì acc có thể đã có sẵn hoặc đã tiêu.
+// =========================================================================
+export function tinhTrangThaiInviter(opts: {
+  inviteCode: string | null;
+  gameInviteNum: number;
+  confirmedCount: number;
+  packBought: number;
+  maxInvites: number;
+  statusHienTai?: string | null;
+}): string {
+  // Lỗi thì giữ nguyên, cần người xem lại
+  if (opts.statusHienTai === 'ERROR') return 'ERROR';
+
+  const coMa = !!(opts.inviteCode && opts.inviteCode.trim() !== '');
+  if (!coMa) return 'NEW';
+
+  const daMoi = (opts.gameInviteNum || 0) + (opts.confirmedCount || 0);
+  if (daMoi < (opts.maxInvites || 5)) return 'ACTIVE';
+
+  // Đủ người mời rồi -> còn phụ thuộc đã mua kim cương chưa
+  return (opts.packBought || 0) > 0 ? 'DONE' : 'INVITED';
+}
