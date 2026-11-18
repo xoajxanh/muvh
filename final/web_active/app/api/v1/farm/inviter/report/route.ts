@@ -65,6 +65,7 @@ export async function POST(req: NextRequest) {
       confirmedCount: 0,   // reset: gameInviteNum đã gồm mọi lượt tính tới lúc này
       unboundGold: BigInt(Math.trunc(Number(body.unboundGold) || 0)),
       unboundDiamond: BigInt(Math.trunc(Number(body.unboundDiamond) || 0)),
+      goldVoucher: BigInt(Math.trunc(Number(body.goldVoucher) || 0)),
       status,
       failCount: 0,
       lastError: null,
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
       maxInvites: row.maxInvites,
       unboundGold: safeNum(row.unboundGold),
       unboundDiamond: safeNum(row.unboundDiamond),
+      goldVoucher: safeNum(row.goldVoucher),
     });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message || 'Lỗi máy chủ' }, { status: 500 });

@@ -50,6 +50,17 @@ _G.FarmKc_Config = {
     -- ===== 7. ID TIỀN TỆ (đã xác nhận trong game, KHÔNG SỬA) ============
     CoinUnboundGold    = 1000020,  -- Vàng KHÔNG khóa
     CoinUnboundDiamond = 1000030,  -- KC KHÔNG khóa
+    -- Kim Phiếu = VẬT PHẨM TRONG TÚI (không nằm ở bảng tiền tệ).
+    -- Đã xác minh 2026-11-18 bằng GetBoxItemTbl của 3 gift mốc mời:
+    --   6600001 -> itemId 1000250 x5.000
+    --   6600002 -> itemId 1000250 x10.000
+    --   6600003 -> itemId 1000250 x15.000
+    ItemGoldVoucher    = 1000250,
+
+    -- ===== 8. TỰ ĐỘNG NHẬN THƯỞNG MỐC MỜI ==============================
+    -- true = acc Lv200 đủ mốc nào thì tự nhận Kim Phiếu mốc đó
+    --        (trạng thái vẫn giữ COMPLETE, KHÔNG chuyển DONE)
+    AutoClaimGift = true,
 }
 
 -- Cho phép đổi địa chỉ web ngay trong game (PlayerPrefs) mà không cần build lại.
@@ -4078,6 +4089,7 @@ _G.FarmKc_Api_ReportInviter = function(info, createdBy, onDone)
         roleId = info.roleId, roleName = info.roleName, level = info.level,
         inviteCode = info.code, gameInviteNum = info.num,
         unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
+        goldVoucher = info.goldVoucher or 0,
         createdBy = createdBy, ts = ts,
         sign = FarmKc_Sign({ info.email, info.serverId, info.roleId, info.code, info.num }, ts),
     }
@@ -4142,7 +4154,7 @@ local function Mod_FarmInvite_CollectInfo()
         email = "", password = "", serverId = 0, serverName = "",
         roleId = "", roleName = "", level = 0,
         code = "", num = 0, isCode = false,
-        unboundGold = 0, unboundDiamond = 0, deviceId = "",
+        unboundGold = 0, unboundDiamond = 0, goldVoucher = 0, deviceId = "",
         canGenCode = false, hasVerifyData = false, inGame = false,
     }
 
@@ -4187,7 +4199,46 @@ local function Mod_FarmInvite_CollectInfo()
         if coins then
             info.unboundGold = tonumber(coins[_G.FarmKc_Config.CoinUnboundGold] or 0) or 0
             info.unboundDiamond = tonumber(coins[_G.FarmKc_Config.CoinUnboundDiamond] or 0) or 0
+
         end
+    end)
+
+    -- =====================================================================
+    -- [MOD FEATURE]: DOC SO KIM PHIEU (vật phẩm trong túi, KHÔNG phải tiền tệ)
+    -- Thử lần lượt nhiều cách vì cấu trúc túi có thể khác nhau giữa các bản.
+    -- =====================================================================
+    pcall(function()
+        local maKP = _G.FarmKc_Config.ItemGoldVoucher or 1000250
+        local tong = 0
+        -- Cách 1: hàm tra cứu sẵn có của game
+        pcall(function()
+            if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
+                local it = _G.BagInfoData.GetItemByConfigID(maKP)
+                if it then tong = tonumber(it.count or it.num or it.number or 0) or 0 end
+            end
+        end)
+        -- Cách 2: quét túi, cộng dồn mọi ô cùng mã
+        if tong == 0 then
+            pcall(function()
+                local bag = _G.BagInfoData and _G.BagInfoData.TotalItems
+                if bag then
+                    for _, it in pairs(bag) do
+                        local cid = tonumber(it.configId or it.cfgId or it.itemId or 0) or 0
+                        if cid == maKP then
+                            tong = tong + (tonumber(it.count or it.num or it.number or 0) or 0)
+                        end
+                    end
+                end
+            end)
+        end
+        -- Cách 3: dự phòng, lỡ bản nào đó lại để ở bảng tiền tệ
+        if tong == 0 then
+            pcall(function()
+                local c = _G.BagInfoData and _G.BagInfoData.CoinInfos
+                if c then tong = tonumber(c[maKP] or 0) or 0 end
+            end)
+        end
+        info.goldVoucher = tong
     end)
 
     pcall(function()
@@ -4294,6 +4345,140 @@ local function FarmKc_QueuePending(payloadJson)
 end
 _G.FarmKc_QueuePending = FarmKc_QueuePending
 
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - TU DONG NHAN THUONG MOC MOI BAN BE (KIM PHIEU)
+-- Nguon nghien cuu: InviteReward_ItemTemplate.lua + Task_EarlyGoldData.lua
+--   Danh sach moc : cfg_Global_globalManager:TryGetValue(68000001).effect
+--                   tach "#" -> cfg_Gift_giftManager:TryGetValue(id)
+--   Moc 6600001 can 1 nguoi · 6600002 can 3 · 6600003 can 5
+--   Da nhan chua  : QuickFind:GetTask_EarlyGoldManager():GetRefreshCountFun(gift)
+--   Nhan          : networkRequest.ReqGetGift({ gift.id })
+-- LUU Y: KHONG doi trang thai sang DONE - giu nguyen COMPLETE (USER chot).
+-- onDone(soMocDaNhan) LUON duoc goi dung 1 lan.
+-- #########################################################################
+
+-- So nguoi moi can co cho tung moc
+local FARMKC_MOC_CAN_MOI = { [6600001] = 1, [6600002] = 3, [6600003] = 5 }
+
+-- Doc danh sach moc thuong tu cau hinh game
+local function FarmKc_DocDanhSachMoc()
+    local ds = {}
+    pcall(function()
+        local g = _G.ClientTable.cfg_Global_globalManager:TryGetValue(68000001)
+        if not g or not g.effect then return end
+        for v in string.gmatch(tostring(g.effect), "[^#]+") do
+            local gift = _G.ClientTable.cfg_Gift_giftManager:TryGetValue(tonumber(v))
+            if gift then table.insert(ds, gift) end
+        end
+    end)
+    return ds
+end
+_G.FarmKc_DocDanhSachMoc = FarmKc_DocDanhSachMoc
+
+-- Liet ke cac moc DU DIEU KIEN va CHUA NHAN
+local function FarmKc_LocMocCoTheNhan(soNguoiMoi)
+    local ketQua = {}
+    local mgr = nil
+    pcall(function() mgr = _G.QuickFind:GetTask_EarlyGoldManager() end)
+    if not mgr then return ketQua end
+
+    for _, gift in ipairs(FarmKc_DocDanhSachMoc()) do
+        local id = tonumber(gift.id)
+        local can = FARMKC_MOC_CAN_MOI[id]
+        if can == nil then can = 0 end
+
+        local daNhan = false
+        pcall(function()
+            if mgr.GetRefreshCountFun then daNhan = (mgr:GetRefreshCountFun(gift) == true) end
+        end)
+
+        if (soNguoiMoi >= can) and (not daNhan) then
+            table.insert(ketQua, gift)
+        end
+    end
+    return ketQua
+end
+_G.FarmKc_LocMocCoTheNhan = FarmKc_LocMocCoTheNhan
+
+-- =========================================================================
+-- Nhan toan bo moc du dieu kien. Gui lan luot, cach nhau 1.5s.
+-- onDone(soMocDaNhan)
+-- =========================================================================
+_G.FarmKc_NhanThuongMoc = function(soNguoiMoi, onDone)
+    local xong = false
+    local function ketThuc(soMoc)
+        if xong then return end
+        xong = true
+        if onDone then pcall(onDone, soMoc or 0) end
+    end
+
+    local cfg = _G.FarmKc_Config
+    if cfg and cfg.AutoClaimGift == false then
+        ketThuc(0); return
+    end
+
+    soNguoiMoi = tonumber(soNguoiMoi) or 0
+    local ds = FarmKc_LocMocCoTheNhan(soNguoiMoi)
+
+    if #ds == 0 then
+        ketThuc(0); return
+    end
+
+    if _G.FarmKc_Log then
+        _G.FarmKc_Log(string.format("Co %d moc thuong du dieu kien (da moi %d nguoi) -> nhan", #ds, soNguoiMoi))
+    end
+
+    -- Luoi an toan: toi da 20s cho ca qua trinh nhan
+    pcall(function()
+        if _G.Timer and _G.Timer.StartLoop then
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(1.0, 20, function()
+                n = n + 1
+                if xong then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                elseif n >= 20 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    ketThuc(0)
+                end
+            end)
+        end
+    end)
+
+    local i, soNhan = 0, 0
+    local function guiTiep()
+        if xong then return end
+        i = i + 1
+        if i > #ds then
+            if _G.FarmKc_Log then
+                _G.FarmKc_Log(string.format("Da gui nhan %d moc thuong", soNhan))
+            end
+            ketThuc(soNhan)
+            return
+        end
+
+        local gift = ds[i]
+        local ok = pcall(function() _G.networkRequest.ReqGetGift({ gift.id }) end)
+        if ok then soNhan = soNhan + 1 end
+        if _G.FarmKc_Log then
+            _G.FarmKc_Log(string.format("  ReqGetGift(%s) -> %s", tostring(gift.id), tostring(ok)))
+        end
+
+        -- cho 1.5s roi gui moc tiep theo
+        if not (_G.Timer and _G.Timer.StartLoop) then ketThuc(soNhan); return end
+        local n, t = 0, nil
+        t = _G.Timer.StartLoop(0.5, 4, function()
+            n = n + 1
+            if n >= 3 then
+                if t and t.Stop then pcall(function() t:Stop() end) end
+                guiTiep()
+            end
+        end)
+    end
+
+    guiTiep()
+end
+
 -- #########################################################################
 -- [MOD FEATURE]: FARM KC - LUONG ACC LV200 (INVITER)
 -- Goi tu Main.lua trong OnAccountReachLevelGoal, TRUOC khi chuyen acc.
@@ -4333,19 +4518,20 @@ _G.RunInviterStep = function(onDone)
         if _G.Timer and _G.Timer.StartLoop then
             local n = 0
             local t
-            t = _G.Timer.StartLoop(1.0, 45, function()
+            t = _G.Timer.StartLoop(1.0, 75, function()
                 n = n + 1
                 if finished then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                elseif n >= 45 then
+                elseif n >= 75 then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                    done("Qua han tong the 45s -> chuyen acc")
+                    done("Qua han tong the 75s -> chuyen acc")
                 end
             end)
         end
     end)
 
     -- Buoc cuoi: gui bao cao len web
+    -- (goi sau khi da nhan thuong -> so Kim Phieu gui len la so MOI NHAT)
     local function guiBaoCao(info)
         _G.FarmKc_Api_ReportInviter(info, webUser, function(ok, obj, err)
             if ok then
@@ -4360,10 +4546,43 @@ _G.RunInviterStep = function(onDone)
                     roleId = info.roleId, roleName = info.roleName, level = info.level,
                     inviteCode = info.code, gameInviteNum = info.num,
                     unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
+                    goldVoucher = info.goldVoucher or 0,
                     createdBy = webUser,
                 }))
                 done("Loi gui bao cao (" .. tostring(err) .. ") -> da luu cho gui bu")
             end
+        end)
+    end
+
+    -- =====================================================================
+    -- [MOD FEATURE]: NHAN THUONG MOC MOI BAN BE ROI MOI BAO CAO
+    -- Mô tả: đủ mốc nào thì nhận mốc đó, chờ 1.5s cho server cập nhật số
+    --        tiền, rồi ĐỌC LẠI thông tin để số Kim Phiếu gửi lên là mới nhất.
+    --        Trạng thái acc KHÔNG đổi sang DONE - vẫn để COMPLETE.
+    -- =====================================================================
+    local function nhanThuongRoiBaoCao(info)
+        if not _G.FarmKc_NhanThuongMoc then guiBaoCao(info); return end
+
+        _G.FarmKc_NhanThuongMoc(info.num, function(soMoc)
+            if soMoc == nil or soMoc == 0 then
+                guiBaoCao(info)   -- khong nhan moc nao -> bao cao luon
+                return
+            end
+            -- Cho server cong tien roi doc lai thong tin
+            if not (_G.Timer and _G.Timer.StartLoop) then guiBaoCao(info); return end
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(0.5, 6, function()
+                n = n + 1
+                if n >= 4 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    local moi = Mod_FarmInvite_CollectInfo()
+                    if _G.FarmKc_Log then
+                        _G.FarmKc_Log(string.format("Da nhan %d moc | Kim Phieu hien co: %s",
+                            soMoc, tostring(moi.goldVoucher)))
+                    end
+                    guiBaoCao(moi)
+                end
+            end)
         end)
     end
 
@@ -4374,9 +4593,9 @@ _G.RunInviterStep = function(onDone)
             return
         end
 
-        -- Da co ma roi -> bao cao luon
+        -- Da co ma roi -> nhan thuong moc (neu du) roi bao cao
         if info.code ~= nil and info.code ~= "" then
-            guiBaoCao(info)
+            nhanThuongRoiBaoCao(info)
             return
         end
 
@@ -4397,7 +4616,7 @@ _G.RunInviterStep = function(onDone)
                 return
             end
             FarmKc_Log("Da tao duoc ma: " .. tostring(info2.code))
-            guiBaoCao(info2)
+            nhanThuongRoiBaoCao(info2)
         end)
     end)
 end
@@ -4854,6 +5073,7 @@ _G.FarmKc_GuiBuPending = function(onDone)
                 num = tonumber(FarmKc_LayTruong(dong, "gameInviteNum") or 0) or 0,
                 unboundGold = tonumber(FarmKc_LayTruong(dong, "unboundGold") or 0) or 0,
                 unboundDiamond = tonumber(FarmKc_LayTruong(dong, "unboundDiamond") or 0) or 0,
+                goldVoucher = tonumber(FarmKc_LayTruong(dong, "goldVoucher") or 0) or 0,
             }
             _G.FarmKc_Api_ReportInviter(info, createdBy, function(ok) xong(ok) end)
 

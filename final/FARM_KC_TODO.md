@@ -21,6 +21,8 @@
 | 9 | **Trang web Farm KC** | 1 menu, đổi bảng ACC 200 / ACC 50 bằng nút gạt |
 | 10 | **A2 — Quay vòng khi hết acc** | Nghỉ `LoopRestMinutes` phút rồi quay lại acc 1. Bấm dừng bot thì huỷ hẹn |
 | 11 | **A3 — Gửi bù khi mất mạng** | Đọc lại `farm_invite_pending.txt`, gửi tuần tự, dòng nào lỗi giữ lại cho lần sau |
+| 12 | **Tự nhận Kim Phiếu mốc mời** | Nằm trong luồng LV200, nhận xong đọc lại số rồi mới báo cáo. Trạng thái giữ `COMPLETE` |
+| 13 | **Cột Kim Phiếu trên web** | Đọc vật phẩm `1000250` từ túi, hiển thị cạnh cột KC |
 
 ---
 
@@ -46,7 +48,6 @@
 
 | # | Việc |
 |---|---|
-| C1 | Nhận thưởng mốc 1 / 3 / 5 người (`ReqGetGift` 6600001-3) rồi chuyển trạng thái `DONE` |
 | C2 | Gom menu web thành phân hệ "MOD MU VH" / "FARM KC" + phân quyền theo phân hệ |
 | C3 | Trang quản lý phân hệ cho ADMIN (bật/tắt phân hệ) |
 | C4 | Bộ lọc nâng cao trên web |
@@ -88,6 +89,49 @@ thật nên bật HTTPS và đặt `USE_HTTPS=true`, vì token phiên đi qua m�
 **Mỗi nhân vật chỉ nhập mã mời được một lần**, không hoàn tác được. Cẩn thận khi test.
 
 **Mã mời chỉ dùng trong cùng server.** Acc Lv50 phải cùng server với acc Lv200.
+
+---
+
+## NHẬN THƯỞNG MỐC MỜI — ĐÃ NGHIÊN CỨU XONG CODE GAME (2026-11-18)
+
+Nguồn: `extracted_lua/InviteReward_ItemTemplate.lua` · `Task_EarlyGoldData.lua`
+
+**Danh sách mốc** không hardcode, đọc từ cấu hình:
+```lua
+cfg_Global_globalManager:TryGetValue(68000001).effect   -- "6600001#6600002#6600003"
+  → tách "#" → cfg_Gift_giftManager:TryGetValue(id)
+```
+
+| Mốc | Gift ID | Cần số người mời |
+|---|---|---|
+| 5.000 Kim Phiếu | `6600001` | ≥ 1 |
+| 10.000 | `6600002` | ≥ 3 |
+| 15.000 | `6600003` | ≥ 5 |
+
+**Điều kiện nhận:** `VerifyData.num >= targetNum` VÀ chưa nhận.
+
+**Kiểm tra đã nhận:** `RefreshData.GetRefreshByKey(gift.countKey)` → `total == count` là đã nhận.
+
+**Lệnh nhận:** `networkRequest.ReqGetGift({ gift.id })`
+
+**KIM PHIẾU = vật phẩm `itemId 1000250`** (xác minh 2026-11-18 qua `GetBoxItemTbl`):
+`6600001` → 5.000 · `6600002` → 10.000 · `6600003` → 15.000 (tổng 30.000).
+**KHÔNG nằm trong bảng tiền tệ `CoinInfos`** — phải đọc từ TÚI ĐỒ
+(`BagInfoData.GetItemByConfigID(1000250)` hoặc quét `TotalItems`).
+
+**`GetRefreshCountFun` đáng tin:** sau khi nhận, cả 3 mốc đổi `false → true`,
+nên bot không gửi trùng.
+
+**Script kiểm chứng:** `test_farm_claim_gift.lua` (VIEW/CLAIM) · `test_farm_find_voucher.lua`
+(tìm mã Kim Phiếu) · `test_farm_check_voucher.lua` (kiểm chứng cách đọc)
+
+**ĐÃ KIỂM CHỨNG TRÊN GAME THẬT 2026-11-18** (acc Ace1iw, 5 người mời):
+nhận đủ 3 mốc → túi có đúng 30.000 Kim Phiếu → `GetItemByConfigID` và quét
+`TotalItems` đều đọc ra đúng số.
+
+> **USER chốt:** khi làm phần này, CHỈ nhận thưởng và ghi nhận số Kim Phiếu về web.
+> **KHÔNG chuyển trạng thái sang `DONE`** — giữ nguyên `COMPLETE`, vì còn việc khác
+> cần làm trên acc sau khi nhận thưởng.
 
 ---
 

@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
       usedCount: r.gameInviteNum + r.confirmedCount,
       unboundGold: safeNum(r.unboundGold),
       unboundDiamond: safeNum(r.unboundDiamond),
+      goldVoucher: safeNum(r.goldVoucher),
       status: r.status,
       failCount: r.failCount,
       lastError: r.lastError,

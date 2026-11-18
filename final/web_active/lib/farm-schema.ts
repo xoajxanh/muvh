@@ -24,6 +24,7 @@ BEGIN
         [maxInvites] INT NOT NULL DEFAULT 5,
         [unboundGold] BIGINT NOT NULL DEFAULT 0,
         [unboundDiamond] BIGINT NOT NULL DEFAULT 0,
+        [goldVoucher] BIGINT NOT NULL DEFAULT 0,
         [status] NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
         [failCount] INT NOT NULL DEFAULT 0,
         [lastError] NVARCHAR(1000) NULL,
@@ -35,6 +36,15 @@ BEGIN
     CREATE UNIQUE INDEX [FarmInviter_email_serverId_key] ON [dbo].[FarmInviter]([email], [serverId]);
     CREATE INDEX [FarmInviter_serverId_status_idx] ON [dbo].[FarmInviter]([serverId], [status]);
     CREATE INDEX [FarmInviter_createdById_idx] ON [dbo].[FarmInviter]([createdById]);
+END;
+
+-- Them cot moi cho DB da tao tu truoc (idempotent)
+IF NOT EXISTS (
+    SELECT * FROM sys.columns
+    WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'goldVoucher'
+)
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [goldVoucher] BIGINT NOT NULL DEFAULT 0;
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInvitee')

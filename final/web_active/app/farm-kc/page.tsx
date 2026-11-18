@@ -302,6 +302,7 @@ export default function FarmKcPage() {
                         <th className="px-4 py-3 text-center font-semibold">Đã mời</th>
                         <th className="px-4 py-3 text-right font-semibold">Vàng</th>
                         <th className="px-4 py-3 text-right font-semibold">KC</th>
+                        <th className="px-4 py-3 text-right font-semibold">Kim Phiếu</th>
                       </>
                     ) : (
                       <>
@@ -316,9 +317,9 @@ export default function FarmKcPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {loading ? (
-                    <tr><td colSpan={13} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
+                    <tr><td colSpan={14} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
                   ) : items.length === 0 ? (
-                    <tr><td colSpan={13} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
+                    <tr><td colSpan={14} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
                   ) : (
                     items.map((r) => (
                       <tr key={r.id} className={`transition ${layMauDong(r)}`}>
@@ -363,6 +364,11 @@ export default function FarmKcPage() {
                             </td>
                             <td className="px-4 py-3 text-right text-slate-300 font-mono text-xs">{fmtNum(r.unboundGold)}</td>
                             <td className="px-4 py-3 text-right text-cyan-300 font-mono text-xs">{fmtNum(r.unboundDiamond)}</td>
+                            <td className="px-4 py-3 text-right font-mono text-xs">
+                              <span className={r.goldVoucher > 0 ? 'text-amber-300 font-semibold' : 'text-slate-600'}>
+                                {fmtNum(r.goldVoucher)}
+                              </span>
+                            </td>
                           </>
                         ) : (
                           <>

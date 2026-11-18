@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
       maxInvites: row.maxInvites,
       unboundGold: safeNum(row.unboundGold),
       unboundDiamond: safeNum(row.unboundDiamond),
+      goldVoucher: safeNum(row.goldVoucher),
       failCount: row.failCount,
     });
   } catch (err: any) {

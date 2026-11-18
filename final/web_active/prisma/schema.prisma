@@ -165,6 +165,7 @@ model FarmInviter {
   maxInvites      Int           @default(5)
   unboundGold     BigInt        @default(0)
   unboundDiamond  BigInt        @default(0)
+  goldVoucher     BigInt        @default(0)   // Kim Phiếu (thưởng mốc mời bạn bè)
   status          String        @default("ACTIVE") // ACTIVE | COMPLETE | DONE | ERROR
   failCount       Int           @default(0)
   lastError       String?
