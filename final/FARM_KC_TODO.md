@@ -23,6 +23,9 @@
 | 11 | **A3 — Gửi bù khi mất mạng** | Đọc lại `farm_invite_pending.txt`, gửi tuần tự, dòng nào lỗi giữ lại cho lần sau |
 | 12 | **Tự nhận Kim Phiếu mốc mời** | Nằm trong luồng LV200, nhận xong đọc lại số rồi mới báo cáo. Trạng thái giữ `COMPLETE` |
 | 13 | **Cột Kim Phiếu trên web** | Đọc vật phẩm `1000250` từ túi, hiển thị cạnh cột KC |
+| 14 | **Tự mua gói bằng Kim Phiếu** | `ReqUseItem` — đã test thật: 30.000 → 5.000 |
+| 15 | **Tự nhận thư sau khi mua** | Chỉ thư nạp (`rechargeId ≠ 0`), không đụng thư khác |
+| 16 | **Dọn popup "Nhắc nhở"** | Tự bấm Xác nhận, tránh treo bot |
 
 ---
 
@@ -147,7 +150,14 @@ msgId 203003  BagPackage.UseItem
   clientParams = { 100001 }                 -- mã gói, trùng rechargeId trong thư
 ```
 
-→ Gọi: `networkRequest.ReqUseItem(giá, <id ô Kim Phiếu>, { mã gói })`
+→ Gọi: `networkRequest.ReqUseItem(giá, <id ô Kim Phiếu>, { "mã gói" })`
+
+⚠️ **`clientParams` PHẢI là mảng CHUỖI**, truyền số sẽ lỗi:
+`bad argument #2 to 'encode' (string expected for field 'clientParams', got number)`
+Công cụ bắt gói tin in ra `clientParams={1=100001}` nhìn như số, nhưng thực tế là chuỗi.
+
+⚠️ **`itemId` là `id` của Ô trong túi** (vd `5945036051196359711`), lấy qua
+`BagInfoData.GetItemByConfigID(1000250).id` — KHÔNG phải mã vật phẩm `1000250`.
 
 **Mua gói KHÔNG phải lệnh nạp** (nhóm 20xxx) mà là **dùng vật phẩm** — đây là lý do
 dò mãi trong `NetworkRequest_Recharge` không ra.

@@ -70,6 +70,11 @@ _G.FarmKc_Config = {
     PackPriceVoucher = 25000,   -- giá gói tính bằng Kim Phiếu
     PackCode         = 100001,  -- mã gói "60 kim cương / 25K VND"
     PackMaxBuy       = 1,       -- mua tối đa mấy lần mỗi acc
+
+    -- ===== 10. BỎ QUA ACC ĐÃ XONG ========================================
+    -- true = trước khi đăng nhập, hỏi web xem acc đã đủ 5 người mời chưa;
+    --        đủ rồi thì bỏ qua luôn, không tốn thời gian đăng nhập.
+    SkipCompletedAcc = true,
 }
 
 -- Cho phép đổi địa chỉ web ngay trong game (PlayerPrefs) mà không cần build lại.
@@ -4520,6 +4525,11 @@ _G.RunInviterStep = function(onDone)
         if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
     end)
 
+    -- Don popup dang chan (neu co) truoc khi bat dau
+    pcall(function()
+        if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+    end)
+
     local cfg = _G.FarmKc_Config
 
     -- Luoi an toan: du co ket o dau cung thoat sau 45s
@@ -5322,6 +5332,68 @@ _G.FarmKc_NhanTatCaThu = function(onDone)
 end
 
 
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - DON POPUP CHAN LUONG
+-- Mo ta: Popup "Nhac nho" (PromptTipUI) co 2 nut Huy/Xac nhan se CHAN bot.
+--        Ham nay bam "Xac nhan" neu popup dang hien, roi goi DismissBlockers
+--        de dong cac popup chan khac.
+--        Goi TRUOC va SAU moi buoc cua luong FARM KC.
+-- #########################################################################
+_G.FarmKc_DonPopup = function()
+    -- 1. Bam nut xac nhan tren popup "Nhac nho" neu dang hien
+    pcall(function()
+        if _G.UIID and _G.UIID.PromptTipUI and _G.UIManager
+           and _G.UIManager.IsVisible and _G.UIManager.IsVisible(_G.UIID.PromptTipUI) then
+            local promptUI = _G.UIManager.GetUiByName and _G.UIManager.GetUiByName(_G.UIID.PromptTipUI)
+            if promptUI then
+                local daBam = false
+                -- thu bam nut OK / Xac nhan theo nhieu ten goi
+                pcall(function()
+                    if promptUI.btn_okOnClick and promptUI.btn_ok then
+                        promptUI:btn_okOnClick(promptUI.btn_ok)
+                        daBam = true
+                    end
+                end)
+                if not daBam then
+                    pcall(function()
+                        if promptUI.btn_sureOnClick and promptUI.btn_sure then
+                            promptUI:btn_sureOnClick(promptUI.btn_sure)
+                            daBam = true
+                        end
+                    end)
+                end
+                if not daBam then
+                    pcall(function() _G.UIManager.Hide(_G.UIID.PromptTipUI) end)
+                end
+                if _G.FarmKc_Log then _G.FarmKc_Log("Da xu ly popup Nhac nho") end
+            end
+        end
+    end)
+
+    -- 2. Dong cac popup chan khac bang ham san co cua mod
+    pcall(function()
+        if _G.DismissBlockers then _G.DismissBlockers() end
+    end)
+end
+
+-- Don popup roi moi chay tiep (cho 0.5s cho UI kip dong)
+_G.FarmKc_DonPopupRoiChay = function(tiepTheo)
+    _G.FarmKc_DonPopup()
+    if not (_G.Timer and _G.Timer.StartLoop) then
+        if tiepTheo then pcall(tiepTheo) end
+        return
+    end
+    local n, t = 0, nil
+    t = _G.Timer.StartLoop(0.5, 3, function()
+        n = n + 1
+        if n >= 1 then
+            if t and t.Stop then pcall(function() t:Stop() end) end
+            if tiepTheo then pcall(tiepTheo) end
+        end
+    end)
+end
+
 -- #########################################################################
 -- [MOD FEATURE]: FARM KC - MUA GOI BANG KIM PHIEU
 -- PHAT HIEN QUAN TRONG (bat goi tin that ngay 2026-11-18):
@@ -5329,7 +5401,7 @@ end
 --     msgId 203003 BagPackage.UseItem
 --       count        = 25000              (so Kim Phieu tieu)
 --       itemId       = <id O KIM PHIEU trong tui>  (KHONG phai ma 1000250)
---       clientParams = { 100001 }         (ma goi, trung rechargeId trong thu)
+--       clientParams = { "100001" }       (ma goi dang CHUOI, trung rechargeId trong thu)
 --   => networkRequest.ReqUseItem(count, itemId, clientParams)
 --
 --   Vat pham mua duoc GUI QUA THU -> phai goi FarmKc_NhanThu() sau do.
@@ -5391,8 +5463,10 @@ _G.FarmKc_MuaGoiBangKimPhieu = function(giaKimPhieu, maGoi, onDone)
     local idO = o.id or o.uid or o.itemUid
     if idO == nil then ketThuc(false, "khong lay duoc id o Kim Phieu"); return end
 
+    -- clientParams phai la mang CHUOI (protobuf yeu cau string), KHONG phai so.
+    -- Truyen so se loi: "string expected for field 'clientParams', got number"
     local ok = pcall(function()
-        _G.networkRequest.ReqUseItem(giaKimPhieu, idO, { maGoi })
+        _G.networkRequest.ReqUseItem(giaKimPhieu, idO, { tostring(maGoi) })
     end)
 
     if not ok then ketThuc(false, "goi ReqUseItem that bai"); return end
@@ -5402,11 +5476,20 @@ _G.FarmKc_MuaGoiBangKimPhieu = function(giaKimPhieu, maGoi, onDone)
             maGoi, giaKimPhieu, dangCo - giaKimPhieu))
     end
 
+    -- Game co the hien popup "Nhac nho" xac nhan -> tu bam xac nhan, tranh treo bot
+    pcall(function()
+        if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+    end)
+
     -- Cho 2s cho server tru tien roi bao xong
     if not (_G.Timer and _G.Timer.StartLoop) then ketThuc(true, "da gui"); return end
     local n, t = 0, nil
     t = _G.Timer.StartLoop(0.5, 6, function()
         n = n + 1
+        -- don popup lien tuc trong luc cho, phong game hien cham
+        pcall(function()
+            if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+        end)
         if n >= 4 then
             if t and t.Stop then pcall(function() t:Stop() end) end
             local sau = _G.FarmKc_LayOKimPhieu()
@@ -5454,6 +5537,76 @@ _G.FarmKc_MuaGoiNhieuLan = function(giaKimPhieu, maGoi, soLanToiDa, onDone)
         end)
     end
     tiep()
+end
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - BO QUA ACC DA DU 5 NGUOI MOI (B2)
+-- Mo ta: O che do LV200, truoc khi dang nhap mot acc thi hoi web xem acc do
+--        da COMPLETE/DONE chua. Neu roi -> bo qua luon, khong ton thoi gian
+--        dang nhap + vao game + farm.
+-- An toan: neu web loi / tat che do / chua bat -> LUON dang nhap binh thuong.
+-- Chong lap: bo qua lien tiep qua so acc trong danh sach -> dung bo qua.
+-- #########################################################################
+
+-- onKetQua(boQua)  -> true = bo qua acc nay
+_G.FarmKc_KiemTraBoQuaAcc = function(email, serverId, onKetQua)
+    local function tra(boQua)
+        if onKetQua then pcall(onKetQua, boQua == true) end
+    end
+
+    -- Chi ap dung cho che do LV200
+    if _G.Mod_Farm_InviteMode ~= "LV200" then tra(false); return end
+
+    local cfg = _G.FarmKc_Config
+    if not (cfg and cfg.SkipCompletedAcc) then tra(false); return end
+
+    local ready = _G.FarmKc_IsReady and _G.FarmKc_IsReady()
+    if not ready then tra(false); return end
+
+    local webUser = ""
+    pcall(function()
+        if _G.Mod_FarmKc_GetWebUsername then webUser = _G.Mod_FarmKc_GetWebUsername() end
+    end)
+    if webUser == "" then tra(false); return end
+
+    if email == nil or email == "" or tonumber(serverId or 0) == 0 then tra(false); return end
+
+    -- Luoi an toan: web khong tra loi trong 8s -> cu dang nhap binh thuong
+    local daTra = false
+    local function traMotLan(boQua)
+        if daTra then return end
+        daTra = true
+        tra(boQua)
+    end
+
+    pcall(function()
+        if _G.Timer and _G.Timer.StartLoop then
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(1.0, 9, function()
+                n = n + 1
+                if daTra then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                elseif n >= 8 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    traMotLan(false)
+                end
+            end)
+        end
+    end)
+
+    _G.FarmKc_Api_GetInviter(email, serverId, webUser, function(ok, obj)
+        if not ok or obj == nil or obj.exists ~= true then traMotLan(false); return end
+        local tt = tostring(obj.status or "")
+        if tt == "COMPLETE" or tt == "DONE" then
+            if _G.FarmKc_Log then
+                _G.FarmKc_Log(string.format("Acc %s da %s -> BO QUA", tostring(email), tt))
+            end
+            traMotLan(true)
+        else
+            traMotLan(false)
+        end
+    end)
 end
 
 local function ToIntArray(bStr, isIncludeLength)
