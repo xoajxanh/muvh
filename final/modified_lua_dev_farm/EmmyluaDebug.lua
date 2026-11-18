@@ -4320,6 +4320,12 @@ _G.RunInviterStep = function(onDone)
     end)
     if webUser == "" then done("Bo qua: chua nhap USER WEB"); return end
 
+    -- [MOD FEATURE]: FARM KC - gui bu hang doi cu (neu co), chay song song
+    -- KHONG cho ket qua -> khong lam cham luong farm.
+    pcall(function()
+        if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
+    end)
+
     local cfg = _G.FarmKc_Config
 
     -- Luoi an toan: du co ket o dau cung thoat sau 45s
@@ -4349,7 +4355,8 @@ _G.RunInviterStep = function(onDone)
             else
                 -- Loi mang -> luu lai gui bu, VAN chuyen acc
                 FarmKc_QueuePending(_G.FarmKc_ToJson({
-                    loai = "inviter_report", email = info.email, serverId = info.serverId,
+                    loai = "inviter_report", email = info.email, password = info.password,
+                    serverId = info.serverId, serverName = info.serverName,
                     roleId = info.roleId, roleName = info.roleName, level = info.level,
                     inviteCode = info.code, gameInviteNum = info.num,
                     unboundGold = info.unboundGold, unboundDiamond = info.unboundDiamond,
@@ -4476,6 +4483,12 @@ _G.RunInviteeStep = function(onDone)
     end)
     if webUser == "" then done("Bo qua: chua nhap USER WEB"); return end
 
+    -- [MOD FEATURE]: FARM KC - gui bu hang doi cu (neu co), chay song song
+    -- KHONG cho ket qua -> khong lam cham luong farm.
+    pcall(function()
+        if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
+    end)
+
     local cfg = _G.FarmKc_Config
 
     -- Luoi an toan tong the 60s
@@ -4502,6 +4515,9 @@ _G.RunInviteeStep = function(onDone)
             else
                 _G.FarmKc_QueuePending(_G.FarmKc_ToJson({
                     loai = "invite_result", email = info.email, serverId = info.serverId,
+                    serverName = info.serverName, roleId = info.roleId,
+                    roleName = info.roleName, level = info.level,
+                    inviteCode = info.code or "",
                     status = trangThai, errorMsg = loi or "", createdBy = webUser,
                 }))
                 done(string.format("%s | loi bao web (%s) -> da luu cho gui bu",
@@ -4602,6 +4618,271 @@ _G.RunInviteeStep = function(onDone)
     end)
 end
 -- #########################################################################
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - QUAY VONG KHI HET DANH SACH ACC (A2)
+-- Mo ta: Het acc thi NGHI <LoopRestMinutes> phut roi quay lai acc dau tien,
+--        thay vi dung han. Tat quay vong (LoopWhenDone = false) -> dung nhu cu.
+--        Dung Timer.StartLoop (Timer.Start khong chay trong mod).
+-- Tra ve: true  = da hen gio quay vong, KHONG duoc goi StopAutoFarmBot
+--         false = khong quay vong, cu dung nhu cu
+-- #########################################################################
+_G.FarmKc_HenQuayVong = function(tongSoAcc, mucTieuLv)
+    local cfg = _G.FarmKc_Config
+    if not cfg or cfg.LoopWhenDone ~= true then return false end
+
+    -- Dang trong phien cho quay vong roi thi khong hen chong len
+    if _G.FarmKc_DangChoQuayVong then return true end
+
+    local soPhut = tonumber(cfg.LoopRestMinutes) or 10
+    if soPhut < 0 then soPhut = 0 end
+
+    _G.FarmKc_DangChoQuayVong = true
+
+    local function batDauLai()
+        _G.FarmKc_DangChoQuayVong = false
+        if _G.FarmKc_HuyQuayVongTimer then
+            pcall(function() _G.FarmKc_HuyQuayVongTimer:Stop() end)
+            _G.FarmKc_HuyQuayVongTimer = nil
+        end
+
+        -- Quay lai acc dau tien
+        _G.CurrentAccountIndex = 1
+        pcall(function()
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", 1)
+            CS.UnityEngine.PlayerPrefs.Save()
+        end)
+        _G.CurrentRoleIndex = 1
+        _G.TargetRoleIndex = 1
+        _G.HasCreatedRoleForTarget = false
+        _G.IsRoleCreating = false
+        _G.Bot_IsInGameWorld = false
+        _G.IsSwitchingAccount = false
+
+        -- [MOD FEATURE]: FARM KC - tranh thu gui bu hang doi truoc khi chay tiep
+        pcall(function()
+            if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
+        end)
+
+        if _G.Log then
+            _G.Log(">>> [FARM KC] HET NGHI - QUAY VONG LAI TU ACC 1 <<<", true)
+        end
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg("QUAY VONG: bat dau lai tu acc 1")
+        end
+
+        -- Dang nhap acc dau tien
+        pcall(function()
+            if _G.LoginCurrentSelectedAccount then
+                _G.LoginCurrentSelectedAccount()
+            else
+                if _G.ForceLogoutToLogin then _G.ForceLogoutToLogin() end
+                local n2, t2 = 0, nil
+                t2 = _G.Timer.StartLoop(1.0, 3, function()
+                    n2 = n2 + 1
+                    if n2 >= 3 then
+                        if t2 and t2.Stop then pcall(function() t2:Stop() end) end
+                        if _G.DismissBlockers then pcall(_G.DismissBlockers) end
+                        if _G.StartFullLoginProcess then pcall(_G.StartFullLoginProcess) end
+                    end
+                end)
+            end
+        end)
+    end
+
+    if _G.Log then
+        _G.Log(string.format(">>> [FARM KC] XONG %d ACC (muc tieu Lv%s) - NGHI %d PHUT ROI QUAY VONG <<<",
+            tonumber(tongSoAcc) or 0, tostring(mucTieuLv), soPhut), true)
+    end
+    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+        _G.FloatingWordUtility.QuickMsg(string.format("Het acc - nghi %d phut roi quay vong lai tu dau", soPhut))
+    end
+
+    -- Nghi 0 phut -> quay lai ngay
+    if soPhut == 0 then
+        batDauLai()
+        return true
+    end
+
+    -- Dem nguoc tung phut (StartLoop, KHONG dung Timer.Start)
+    local conLai = soPhut
+    local t
+    t = _G.Timer.StartLoop(60.0, soPhut + 1, function()
+        -- Nguoi dung bam dung bot trong luc nghi -> huy quay vong
+        if _G.Bot_Running == false and _G.FarmKc_DangChoQuayVong then
+            _G.FarmKc_DangChoQuayVong = false
+            if t and t.Stop then pcall(function() t:Stop() end) end
+            if _G.Log then _G.Log(">>> [FARM KC] Bot da dung - huy quay vong <<<", true) end
+            return
+        end
+        conLai = conLai - 1
+        if conLai <= 0 then
+            if t and t.Stop then pcall(function() t:Stop() end) end
+            batDauLai()
+        elseif _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg(string.format("Quay vong sau %d phut nua...", conLai))
+        end
+    end)
+    _G.FarmKc_HuyQuayVongTimer = t
+    return true
+end
+
+-- Huy quay vong (goi khi nguoi dung bam dung bot)
+_G.FarmKc_HuyQuayVong = function()
+    if _G.FarmKc_HuyQuayVongTimer then
+        pcall(function() _G.FarmKc_HuyQuayVongTimer:Stop() end)
+        _G.FarmKc_HuyQuayVongTimer = nil
+    end
+    _G.FarmKc_DangChoQuayVong = false
+end
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - GUI BU DU LIEU KHI MAT MANG (A3)
+-- Mo ta: Khi goi web that bai, du lieu duoc ghi vao
+--          persistentDataPath/farm_invite_pending.txt  (moi dong 1 ban ghi JSON)
+--        Ham nay doc lai file do va gui len web, gui duoc dong nao thi bo dong
+--        do ra khoi file. Gui lan luot, KHONG lam nghen luong farm.
+-- Goi o 2 thoi diem: truoc khi bao cao acc moi, va sau khi quay vong.
+-- #########################################################################
+
+local PENDING_FILE = "/farm_invite_pending.txt"
+
+local function FarmKc_DuongDanPending()
+    local p = ""
+    pcall(function() p = CS.UnityEngine.Application.persistentDataPath .. PENDING_FILE end)
+    return p
+end
+
+-- Doc toan bo dong trong file cho
+local function FarmKc_DocPending()
+    local ds = {}
+    pcall(function()
+        local path = FarmKc_DuongDanPending()
+        if path == "" then return end
+        if not CS.System.IO.File.Exists(path) then return end
+        local noiDung = CS.System.IO.File.ReadAllText(path, CS.System.Text.Encoding.UTF8)
+        if noiDung == nil or noiDung == "" then return end
+        for dong in string.gmatch(tostring(noiDung), "[^\r\n]+") do
+            if dong ~= "" and string.find(dong, "{", 1, true) then
+                table.insert(ds, dong)
+            end
+        end
+    end)
+    return ds
+end
+
+-- Ghi de lai file cho bang danh sach moi (rong = xoa sach)
+local function FarmKc_GhiPending(ds)
+    pcall(function()
+        local path = FarmKc_DuongDanPending()
+        if path == "" then return end
+        if ds == nil or #ds == 0 then
+            if CS.System.IO.File.Exists(path) then
+                CS.System.IO.File.WriteAllText(path, "", CS.System.Text.Encoding.UTF8)
+            end
+            return
+        end
+        CS.System.IO.File.WriteAllText(path, table.concat(ds, "\r\n") .. "\r\n", CS.System.Text.Encoding.UTF8)
+    end)
+end
+
+-- Lay 1 truong chuoi trong dong JSON
+local function FarmKc_LayTruong(json, ten)
+    local v = string.match(json, '"' .. ten .. '"%s*:%s*"(.-)"')
+    if v ~= nil then return v end
+    local n = string.match(json, '"' .. ten .. '"%s*:%s*(%-?%d+)')
+    return n
+end
+
+-- =========================================================================
+-- Gui bu toan bo hang doi. onDone(soGuiDuoc, soConLai)
+-- Gui TUAN TU tung dong, dong nao loi thi giu lai cho lan sau.
+-- =========================================================================
+_G.FarmKc_GuiBuPending = function(onDone)
+    local ready = _G.FarmKc_IsReady and _G.FarmKc_IsReady()
+    if not ready then if onDone then pcall(onDone, 0, 0) end; return end
+
+    local ds = FarmKc_DocPending()
+    if #ds == 0 then if onDone then pcall(onDone, 0, 0) end; return end
+
+    if _G.FarmKc_Log then
+        _G.FarmKc_Log("Hang doi gui bu: " .. tostring(#ds) .. " ban ghi")
+    end
+
+    local conLai = {}
+    local soGuiDuoc = 0
+    local i = 0
+
+    local function tiepTuc()
+        i = i + 1
+        if i > #ds then
+            FarmKc_GhiPending(conLai)
+            if _G.FarmKc_Log then
+                _G.FarmKc_Log(string.format("Gui bu xong: %d thanh cong, %d con lai", soGuiDuoc, #conLai))
+            end
+            if onDone then pcall(onDone, soGuiDuoc, #conLai) end
+            return
+        end
+
+        local dong = ds[i]
+        local loai = FarmKc_LayTruong(dong, "loai")
+        local email = FarmKc_LayTruong(dong, "email")
+        local serverId = tonumber(FarmKc_LayTruong(dong, "serverId") or 0) or 0
+        local createdBy = FarmKc_LayTruong(dong, "createdBy") or ""
+
+        -- Ban ghi hong -> bo luon, khong giu lai
+        if email == nil or email == "" or serverId == 0 or createdBy == "" then
+            tiepTuc()
+            return
+        end
+
+        local function xong(ok)
+            if ok then soGuiDuoc = soGuiDuoc + 1 else table.insert(conLai, dong) end
+            tiepTuc()
+        end
+
+        if loai == "inviter_report" then
+            local info = {
+                email = email, password = FarmKc_LayTruong(dong, "password") or "",
+                serverId = serverId, serverName = FarmKc_LayTruong(dong, "serverName") or "",
+                roleId = FarmKc_LayTruong(dong, "roleId") or "",
+                roleName = FarmKc_LayTruong(dong, "roleName") or "",
+                level = tonumber(FarmKc_LayTruong(dong, "level") or 0) or 0,
+                code = FarmKc_LayTruong(dong, "inviteCode") or "",
+                num = tonumber(FarmKc_LayTruong(dong, "gameInviteNum") or 0) or 0,
+                unboundGold = tonumber(FarmKc_LayTruong(dong, "unboundGold") or 0) or 0,
+                unboundDiamond = tonumber(FarmKc_LayTruong(dong, "unboundDiamond") or 0) or 0,
+            }
+            _G.FarmKc_Api_ReportInviter(info, createdBy, function(ok) xong(ok) end)
+
+        elseif loai == "invite_result" then
+            local info = {
+                email = email, serverId = serverId,
+                serverName = FarmKc_LayTruong(dong, "serverName") or "",
+                roleId = FarmKc_LayTruong(dong, "roleId") or "",
+                roleName = FarmKc_LayTruong(dong, "roleName") or "",
+                level = tonumber(FarmKc_LayTruong(dong, "level") or 0) or 0,
+                code = FarmKc_LayTruong(dong, "inviteCode") or "",
+            }
+            local tt = FarmKc_LayTruong(dong, "status") or "FAILED"
+            local loi = FarmKc_LayTruong(dong, "errorMsg") or ""
+            _G.FarmKc_Api_ReportResult(info, tt, loi, createdBy, function(ok) xong(ok) end)
+
+        else
+            -- Khong biet loai -> bo
+            tiepTuc()
+        end
+    end
+
+    tiepTuc()
+end
+
+-- Dem so ban ghi dang cho (de hien thi / kiem tra)
+_G.FarmKc_DemPending = function()
+    return #FarmKc_DocPending()
+end
 
 local function ToIntArray(bStr, isIncludeLength)
     local len = #bStr

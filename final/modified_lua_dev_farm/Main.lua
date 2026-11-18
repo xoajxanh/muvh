@@ -2469,6 +2469,10 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		Log("=========================================================================", true)
 		SaveOutput()
 		_G.IsSwitchingAccount = false
+		-- [MOD FEATURE]: FARM KC - QUAY VONG thay vi dung han (neu bat LoopWhenDone)
+		if _G.FarmKc_HenQuayVong and _G.FarmKc_HenQuayVong(totalAccs, targetLvl) then
+			return
+		end
 		_G.StopAutoFarmBot()
 		if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
 			_G.FloatingWordUtility.QuickMsg(string.format("ĐÃ HOÀN THÀNH TẤT CẢ %d ACC LÊN LV %d!", totalAccs, targetLvl))
@@ -2575,6 +2579,10 @@ _G.OnAccountFailedAndSkip = function(reason)
 		Log("=========================================================================", true)
 		SaveOutput()
 		_G.IsSwitchingAccount = false
+		-- [MOD FEATURE]: FARM KC - QUAY VONG thay vi dung han
+		if _G.FarmKc_HenQuayVong and _G.FarmKc_HenQuayVong(totalAccs, nil) then
+			return
+		end
 		_G.StopAutoFarmBot()
 	end
 end
@@ -8593,6 +8601,8 @@ _G.Bot_Start = _G.StartAutoFarmBot
 _G.StopAutoFarmBot = function()
 	_G.Bot_Running = false
 	_G.Bot_PauseTask = true
+	-- [MOD FEATURE]: FARM KC - huy hen quay vong khi nguoi dung bam dung bot
+	if _G.FarmKc_HuyQuayVong then pcall(_G.FarmKc_HuyQuayVong) end
 	_G.Mod_IsRunningInstance = false
 	_G.Mod_BC_AllowSkipWait = false
 	_G.Mod_BC_NextRetryTime = 0

@@ -19,6 +19,8 @@
 | 7 | **Luồng LV200** (người mời) | Đã test thật đạt — HTTP 200, DB nhận dữ liệu |
 | 8 | **Luồng LV50** (được mời) | Đã test thật đạt 2026-11-18 — isCode đổi true, DB nhận SUCCESS |
 | 9 | **Trang web Farm KC** | 1 menu, đổi bảng ACC 200 / ACC 50 bằng nút gạt |
+| 10 | **A2 — Quay vòng khi hết acc** | Nghỉ `LoopRestMinutes` phút rồi quay lại acc 1. Bấm dừng bot thì huỷ hẹn |
+| 11 | **A3 — Gửi bù khi mất mạng** | Đọc lại `farm_invite_pending.txt`, gửi tuần tự, dòng nào lỗi giữ lại cho lần sau |
 
 ---
 
@@ -30,8 +32,7 @@
 
 | # | Việc | Vì sao cần |
 |---|---|---|
-| A2 | **Quay vòng khi hết danh sách acc** | Đã có cấu hình `LoopWhenDone` / `LoopRestMinutes` nhưng **CHƯA viết code**. Hiện hết acc là bot dừng hẳn |
-| A3 | **Gửi bù khi mất mạng** | Hiện chỉ **ghi** vào `farm_invite_pending.txt`, **chưa có code đọc lại và gửi lại** |
+> A2, A3 ĐÃ XONG 2026-11-18 (chưa test thật).
 
 ### B. Việc nên làm
 
