@@ -73,6 +73,8 @@ export default function FarmKcPage() {
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  // Số lượng của CẢ HAI bảng, hiện ngay trên nút gạt
+  const [counts, setCounts] = useState<{ inviters: number; invitees: number }>({ inviters: 0, invitees: 0 });
   const pageSize = 20;
 
   useEffect(() => {
@@ -85,6 +87,15 @@ export default function FarmKcPage() {
       .catch(() => router.push('/login'));
   }, [router]);
 
+  const loadCounts = async () => {
+    try {
+      const res = await fetch('/api/farm/counts');
+      if (res.ok) setCounts(await res.json());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const load = async (p = 1, t: Tab = tab, st: string = status) => {
     setLoading(true);
     try {
@@ -94,6 +105,7 @@ export default function FarmKcPage() {
       if (showPassword) q.set('showPassword', '1');
 
       const res = await fetch(`/api/farm/${t}?${q}`);
+      loadCounts();
       if (res.ok) {
         const j = await res.json();
         setItems(j.items || []);
@@ -127,6 +139,34 @@ export default function FarmKcPage() {
     try { return new Date(v).toLocaleString('vi-VN'); } catch { return '-'; }
   };
   const fmtNum = (v: any) => (typeof v === 'number' ? v.toLocaleString('vi-VN') : '0');
+
+  // =========================================================================
+  // [MOD FEATURE]: TO MAU XEN KE THEO NGUOI MOI (bang ACC 50)
+  // Mô tả: Mỗi người mời (inviter) được gán một màu, hai màu xen kẽ nhau theo
+  //        thứ tự xuất hiện. Cùng một người mời thì các dòng luôn cùng màu,
+  //        nên nhìn là biết ngay nhóm nào thuộc acc Lv200 nào.
+  // =========================================================================
+  const mauTheoNguoiMoi = React.useMemo(() => {
+    const map = new Map<string, number>();
+    let i = 0;
+    for (const r of items) {
+      const key = r.inviterEmail || r.inviterId || '(khong ro)';
+      if (!map.has(key)) {
+        map.set(key, i % 2);
+        i++;
+      }
+    }
+    return map;
+  }, [items]);
+
+  const layMauDong = (r: any) => {
+    if (laAcc200) return 'hover:bg-slate-800/30';
+    const key = r.inviterEmail || r.inviterId || '(khong ro)';
+    const nhom = mauTheoNguoiMoi.get(key) ?? 0;
+    return nhom === 0
+      ? 'bg-fuchsia-950/50 hover:bg-fuchsia-900/40'
+      : 'bg-slate-800/70 hover:bg-slate-700/60';
+  };
 
   const Badge = ({ st }: { st: string }) => (
     <span
@@ -183,6 +223,9 @@ export default function FarmKcPage() {
             >
               <Crown className="w-4 h-4" />
               ACC 200 · Người mời
+              <span className={`text-xs font-bold ${laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
+                ({fmtNum(counts.inviters)})
+              </span>
             </button>
             <button
               onClick={() => doiTab('invitees')}
@@ -194,6 +237,9 @@ export default function FarmKcPage() {
             >
               <UserPlus className="w-4 h-4" />
               ACC 50 · Được mời
+              <span className={`text-xs font-bold ${!laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
+                ({fmtNum(counts.invitees)})
+              </span>
             </button>
           </div>
 
@@ -275,7 +321,7 @@ export default function FarmKcPage() {
                     <tr><td colSpan={13} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
                   ) : (
                     items.map((r) => (
-                      <tr key={r.id} className="hover:bg-slate-800/30 transition">
+                      <tr key={r.id} className={`transition ${layMauDong(r)}`}>
                         <td className="px-4 py-3 text-slate-200 whitespace-nowrap">{r.email}</td>
                         {showPassword && <td className="px-4 py-3 text-rose-300 font-mono text-xs">{r.password || '-'}</td>}
                         <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{r.serverName || r.serverId}</td>
@@ -302,16 +348,16 @@ export default function FarmKcPage() {
                                   <span className="ml-1 text-[11px] text-amber-400">(+{r.reservedCount})</span>
                                 )}
                               </div>
-                              {/* Tổng = mốc game báo lần đăng nhập cuối + phần web cấp thêm sau đó.
-                                  Còn số "web" > 0 nghĩa là acc Lv200 chưa đăng nhập lại để chốt sổ. */}
+                              {/* Đã nhận = số game đã xác nhận (acc Lv200 báo về lần đăng nhập cuối)
+                                  Chờ nhận = số web đã cấp nhưng game chưa xác nhận lại */}
                               <div
                                 className="text-[10px] mt-0.5"
-                                title="game = số acc Lv200 báo về lần đăng nhập cuối · web = số lượt web cấp thêm sau đó (chưa được game xác nhận)"
+                                title="Đã nhận = game đã xác nhận · Chờ nhận = web đã cấp, chờ acc Lv200 đăng nhập lại để chốt"
                               >
-                                <span className="text-slate-500">game {r.gameInviteNum}</span>
-                                <span className="text-slate-600"> + </span>
+                                <span className="text-slate-500">Đã nhận {r.gameInviteNum}</span>
+                                <span className="text-slate-600"> · </span>
                                 <span className={r.confirmedCount > 0 ? 'text-amber-400' : 'text-slate-500'}>
-                                  web {r.confirmedCount}
+                                  Chờ nhận {r.confirmedCount}
                                 </span>
                               </div>
                             </td>
@@ -320,7 +366,18 @@ export default function FarmKcPage() {
                           </>
                         ) : (
                           <>
-                            <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">{r.inviterEmail || '-'}</td>
+                            <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
+                              {r.inviterEmail ? (
+                                <span className="flex items-center gap-1.5">
+                                  <span
+                                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                                      (mauTheoNguoiMoi.get(r.inviterEmail) ?? 0) === 0 ? 'bg-fuchsia-400' : 'bg-slate-400'
+                                    }`}
+                                  />
+                                  {r.inviterEmail}
+                                </span>
+                              ) : '-'}
+                            </td>
                             <td className="px-4 py-3 text-rose-400 text-xs max-w-[200px] truncate" title={r.errorMsg || ''}>
                               {r.errorMsg || '-'}
                             </td>

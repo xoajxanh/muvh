@@ -46,7 +46,8 @@ export async function GET(req: NextRequest) {
       prisma.farmInvitee.count({ where }),
       prisma.farmInvitee.findMany({
         where,
-        orderBy: { updatedAt: 'desc' },
+        // Nhóm các acc cùng một người mời nằm cạnh nhau để tô màu xen kẽ dễ nhìn
+        orderBy: [{ inviterId: 'asc' }, { updatedAt: 'desc' }],
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
