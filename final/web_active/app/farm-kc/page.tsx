@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
-import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus } from 'lucide-react';
+import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus, ArrowUp, ArrowDown, ChevronsUpDown, Coins, Gem, Ticket, Users } from 'lucide-react';
 
 // =========================================================================
 // [MOD FEATURE]: FARM KC - TRANG MA MOI RONG VANG (GOP 2 BANG VAO 1 MENU)
@@ -25,7 +25,8 @@ const STATUS_STYLE: Record<string, string> = {
   FAILED: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
   EXPIRED: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
   ALREADY_USED: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
-  NO_CODE: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+  // [MOD FEATURE]: NO_CODE = luc xin khong con ma -> to mau canh bao rieng
+  NO_CODE: 'bg-orange-500/20 text-orange-300 border-orange-500/50',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -72,7 +73,13 @@ export default function FarmKcPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [status, setStatus] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+  // Hien mat khau: toan bo (bam con mat o header cot) hoac tung dong (bam vao o)
+  const [showAllPassword, setShowAllPassword] = useState(false);
+  const [hienMatKhauDong, setHienMatKhauDong] = useState<Record<string, boolean>>({});
+  // Sap xep theo cot - mac dinh Email giam dan
+  const [sortBy, setSortBy] = useState('email');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [totals, setTotals] = useState<any>(null);
   // Số lượng của CẢ HAI bảng, hiện ngay trên nút gạt
   const [counts, setCounts] = useState<{ inviters: number; invitees: number }>({ inviters: 0, invitees: 0 });
   const pageSize = 20;
@@ -96,13 +103,23 @@ export default function FarmKcPage() {
     }
   };
 
-  const load = async (p = 1, t: Tab = tab, st: string = status) => {
+  const load = async (
+    p = 1,
+    t: Tab = tab,
+    st: string = status,
+    sb: string = sortBy,
+    sd: 'asc' | 'desc' = sortDir,
+  ) => {
     setLoading(true);
     try {
-      const q = new URLSearchParams({ page: String(p), pageSize: String(pageSize) });
+      const q = new URLSearchParams({
+        page: String(p),
+        pageSize: String(pageSize),
+        sortBy: sb,
+        sortDir: sd,
+      });
       if (keyword.trim()) q.set('q', keyword.trim());
       if (st) q.set('status', st);
-      if (showPassword) q.set('showPassword', '1');
 
       const res = await fetch(`/api/farm/${t}?${q}`);
       loadCounts();
@@ -112,6 +129,7 @@ export default function FarmKcPage() {
         setTotal(j.total || 0);
         setTotalPages(j.totalPages || 1);
         setIsAdmin(!!j.isAdmin);
+        setTotals(j.totals || null);
         setPage(j.page || p);
       }
     } catch (e) {
@@ -122,9 +140,22 @@ export default function FarmKcPage() {
   };
 
   useEffect(() => {
-    if (user) load(1, tab, status);
+    if (user) load(1, tab, status, sortBy, sortDir);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, tab, status, showPassword]);
+  }, [user, tab, status, sortBy, sortDir]);
+
+  // =========================================================================
+  // [MOD FEATURE]: SAP XEP THEO COT
+  // Mô tả: Bấm lần đầu vào tiêu đề cột -> giảm dần, bấm lại -> tăng dần.
+  // =========================================================================
+  const doiSort = (key: string) => {
+    if (sortBy === key) {
+      setSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortBy(key);
+      setSortDir('desc');
+    }
+  };
 
   const doiTab = (t: Tab) => {
     if (t === tab) return;
@@ -132,7 +163,14 @@ export default function FarmKcPage() {
     setStatus('');
     setKeyword('');
     setItems([]);
+    setTotals(null);
+    setHienMatKhauDong({});
+    // ACC 50 mac dinh gom nhom theo nguoi moi; ACC 200 mac dinh Email giam dan
+    setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
+    setSortDir(t === 'invitees' ? 'asc' : 'desc');
   };
+
+  const laAcc200 = tab === 'inviters';
 
   const fmtTime = (v: any) => {
     if (!v) return '-';
@@ -141,31 +179,39 @@ export default function FarmKcPage() {
   const fmtNum = (v: any) => (typeof v === 'number' ? v.toLocaleString('vi-VN') : '0');
 
   // =========================================================================
-  // [MOD FEATURE]: TO MAU XEN KE THEO NGUOI MOI (bang ACC 50)
-  // Mô tả: Mỗi người mời (inviter) được gán một màu, hai màu xen kẽ nhau theo
-  //        thứ tự xuất hiện. Cùng một người mời thì các dòng luôn cùng màu,
-  //        nên nhìn là biết ngay nhóm nào thuộc acc Lv200 nào.
+  // [MOD FEATURE]: GOM NHOM THEO NGUOI MOI (bang ACC 50)
+  // Mô tả: Khi đang sắp xếp theo cột "Người mời", các acc cùng một người mời
+  //        nằm liền nhau. Dòng đầu mỗi nhóm được kẻ vạch ngăn + in đậm email
+  //        kèm số acc của nhóm, các dòng sau làm mờ đi cho dễ nhìn ra khối.
   // =========================================================================
-  const mauTheoNguoiMoi = React.useMemo(() => {
-    const map = new Map<string, number>();
-    let i = 0;
+  const gomNhom = !laAcc200 && sortBy === 'inviterEmail';
+
+  const thongTinNhom = React.useMemo(() => {
+    const kq = new Map<string, { dauNhom: boolean; soDong: number }>();
+    const dem = new Map<string, number>();
     for (const r of items) {
-      const key = r.inviterEmail || r.inviterId || '(khong ro)';
-      if (!map.has(key)) {
-        map.set(key, i % 2);
-        i++;
-      }
+      const k = r.inviterEmail || '(khong ro)';
+      dem.set(k, (dem.get(k) || 0) + 1);
     }
-    return map;
+    let truoc: string | null = null;
+    for (const r of items) {
+      const k = r.inviterEmail || '(khong ro)';
+      kq.set(r.id, { dauNhom: k !== truoc, soDong: dem.get(k) || 1 });
+      truoc = k;
+    }
+    return kq;
   }, [items]);
 
+  // =========================================================================
+  // [MOD FEATURE]: MAU DONG - CHI TO RIENG BAN GHI NO_CODE
+  // Mô tả: Bỏ cách tô xen kẽ theo người mời (gây rối mắt). Giờ các dòng dùng
+  //        nền chung, chỉ dòng NO_CODE (lúc xin không còn mã) được tô cảnh báo.
+  // =========================================================================
   const layMauDong = (r: any) => {
-    if (laAcc200) return 'hover:bg-slate-800/30';
-    const key = r.inviterEmail || r.inviterId || '(khong ro)';
-    const nhom = mauTheoNguoiMoi.get(key) ?? 0;
-    return nhom === 0
-      ? 'bg-fuchsia-950/50 hover:bg-fuchsia-900/40'
-      : 'bg-slate-800/70 hover:bg-slate-700/60';
+    if (r.status === 'NO_CODE') {
+      return 'bg-orange-950/60 hover:bg-orange-900/50 border-l-2 border-l-orange-500';
+    }
+    return 'hover:bg-slate-800/30';
   };
 
   const Badge = ({ st }: { st: string }) => (
@@ -179,103 +225,177 @@ export default function FarmKcPage() {
     </span>
   );
 
+  // =========================================================================
+  // [MOD FEATURE]: TIEU DE COT BAM DE SAP XEP
+  // =========================================================================
+  const Th = ({
+    k,
+    children,
+    align = 'left',
+    extra,
+  }: {
+    k?: string;
+    children: React.ReactNode;
+    align?: 'left' | 'center' | 'right';
+    extra?: React.ReactNode;
+  }) => {
+    const dangSort = !!k && sortBy === k;
+    const canh = align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start';
+    const canhText = align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : 'text-left';
+    return (
+      <th className={`px-4 py-2.5 font-semibold ${canhText} select-none`}>
+        <span className={`inline-flex items-center gap-1 ${canh} w-full`}>
+          {k ? (
+            <button
+              onClick={() => doiSort(k)}
+              className={`inline-flex items-center gap-1 transition ${
+                dangSort ? 'text-sky-300' : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Bấm để sắp xếp"
+            >
+              {children}
+              {dangSort ? (
+                sortDir === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+              ) : (
+                <ChevronsUpDown className="w-3 h-3 opacity-40" />
+              )}
+            </button>
+          ) : (
+            <span>{children}</span>
+          )}
+          {extra}
+        </span>
+      </th>
+    );
+  };
+
+  // =========================================================================
+  // [MOD FEATURE]: O MAT KHAU - MAC DINH CHE, BAM VAO DE HIEN RIENG TUNG DONG
+  // =========================================================================
+  const OMatKhau = ({ r }: { r: any }) => {
+    const hien = showAllPassword || !!hienMatKhauDong[r.id];
+    if (!r.password) return <span className="text-slate-600 text-xs">-</span>;
+    return (
+      <button
+        onClick={() =>
+          setHienMatKhauDong((m) => ({ ...m, [r.id]: !m[r.id] }))
+        }
+        className={`font-mono text-xs px-2 py-0.5 rounded-md border transition ${
+          hien
+            ? 'text-rose-300 border-rose-500/30 bg-rose-500/10'
+            : 'text-slate-500 border-slate-700/60 bg-slate-800/40 hover:text-slate-300 tracking-[0.15em]'
+        }`}
+        title={hien ? 'Bấm để ẩn' : 'Bấm để hiện mật khẩu'}
+      >
+        {hien ? r.password : '••••••••'}
+      </button>
+    );
+  };
+
+  const O = ({
+    icon,
+    nhan,
+    gt,
+    mau,
+  }: { icon: React.ReactNode; nhan: string; gt: any; mau: string }) => (
+    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-800">
+      <span className={mau}>{icon}</span>
+      <span className="text-[11px] text-slate-500">{nhan}</span>
+      <span className={`text-xs font-bold font-mono ${mau}`}>{fmtNum(gt)}</span>
+    </div>
+  );
+
   if (!user) return null;
 
-  const laAcc200 = tab === 'inviters';
-
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex h-screen overflow-hidden bg-slate-950">
       <Sidebar userRole={user.role} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
         <Navbar user={user} />
 
-        <main className="flex-1 p-6 space-y-5 overflow-x-hidden">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-                <Gift className="w-6 h-6 text-amber-400" />
+        <main className="flex-1 min-h-0 flex flex-col gap-3 p-4 overflow-hidden">
+          {/* HANG 1: tieu de + nut gat ACC 200 / ACC 50 (gon trong 1 dong) */}
+          <div className="flex items-center justify-between flex-wrap gap-3 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shrink-0">
+                <Gift className="w-5 h-5 text-amber-400" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-white">Farm KC — Mã mời Rồng Vàng</h1>
-                <p className="text-sm text-slate-400">
+              <div className="min-w-0">
+                <h1 className="text-base font-bold text-white leading-tight truncate">
+                  Farm KC — Mã mời Rồng Vàng
+                </h1>
+                <p className="text-xs text-slate-400 truncate">
                   {laAcc200 ? 'Tài khoản Lv200 tạo mã mời' : 'Tài khoản Lv50 nhập mã mời'} · {fmtNum(total)} dòng
                 </p>
               </div>
             </div>
 
-            <button
-              onClick={() => load(page)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Tải lại
-            </button>
+            <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+              <button
+                onClick={() => doiTab('inviters')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                  laAcc200
+                    ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow shadow-amber-500/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5" />
+                ACC 200
+                <span className={`font-bold ${laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
+                  ({fmtNum(counts.inviters)})
+                </span>
+              </button>
+              <button
+                onClick={() => doiTab('invitees')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                  !laAcc200
+                    ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow shadow-sky-500/20'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                ACC 50
+                <span className={`font-bold ${!laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
+                  ({fmtNum(counts.invitees)})
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="inline-flex p-1 rounded-xl bg-slate-900 border border-slate-800">
-            <button
-              onClick={() => doiTab('inviters')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition ${
-                laAcc200
-                  ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
+          {/* HANG 2: o tim kiem nho + quick filter + hien mat khau tren cung 1 dong */}
+          <div className="flex items-center flex-wrap gap-2 shrink-0">
+            {/* =====================================================================
+                [MOD FEATURE]: O TIM KIEM CO GIAN DUOC
+                Mô tả: Mặc định nhỏ 240px; tự nới rộng khi đang gõ (focus), và
+                       kéo được mép phải để tự chỉnh bề rộng theo ý.
+               ===================================================================== */}
+            <div
+              className="group relative shrink-0 resize-x overflow-hidden rounded-lg
+                         w-[240px] min-w-[180px] max-w-[720px]
+                         transition-[width] duration-200 focus-within:w-[420px]"
+              title="Đang gõ sẽ tự rộng ra · kéo mép phải để tự chỉnh bề rộng"
             >
-              <Crown className="w-4 h-4" />
-              ACC 200 · Người mời
-              <span className={`text-xs font-bold ${laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
-                ({fmtNum(counts.inviters)})
-              </span>
-            </button>
-            <button
-              onClick={() => doiTab('invitees')}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition ${
-                !laAcc200
-                  ? 'bg-gradient-to-r from-sky-600 to-indigo-600 text-white shadow-lg shadow-sky-500/20'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <UserPlus className="w-4 h-4" />
-              ACC 50 · Được mời
-              <span className={`text-xs font-bold ${!laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
-                ({fmtNum(counts.invitees)})
-              </span>
-            </button>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative flex-1 min-w-[220px]">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') load(1); }}
-                placeholder="Tìm email / tên nhân vật / mã mời rồi Enter..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-600"
+                placeholder="Tìm email / nhân vật / mã rồi Enter..."
+                className="w-full pl-8 pr-6 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-sky-600"
               />
+              {/* Gach bao hieu keo duoc o goc phai */}
+              <span className="pointer-events-none absolute right-[3px] top-1/2 -translate-y-1/2 text-slate-600 group-hover:text-slate-400 text-[10px] leading-none select-none">
+                ⋮⋮
+              </span>
             </div>
 
-            {isAdmin && (
-              <button
-                onClick={() => setShowPassword((v) => !v)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition border ${
-                  showPassword
-                    ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                {showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
-              </button>
-            )}
-          </div>
+            <div className="w-px h-5 bg-slate-800 shrink-0" />
 
-          <div className="flex flex-wrap items-center gap-2">
             {FILTER_OPTIONS[tab].map((o) => (
               <button
                 key={o.value}
                 onClick={() => setStatus(o.value)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
                   status === o.value
                     ? 'bg-slate-700 border-slate-600 text-white'
                     : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
@@ -284,35 +404,70 @@ export default function FarmKcPage() {
                 {o.label}
               </button>
             ))}
+
+            {gomNhom && (
+              <span className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-[11px] text-sky-300">
+                <Users className="w-3.5 h-3.5" />
+                Đang gom nhóm theo người mời
+              </span>
+            )}
+
+            {/* [MOD FEATURE]: TONG HOP TOAN BO (theo bo loc hien tai, khong chi trang dang xem) */}
+            {laAcc200 && totals && (
+              <div className="ml-auto flex items-center gap-2 flex-wrap">
+                <O icon={<Users className="w-3.5 h-3.5" />} nhan="Đã mời" gt={totals.usedCount} mau="text-emerald-300" />
+                <O icon={<Coins className="w-3.5 h-3.5" />} nhan="Vàng" gt={totals.unboundGold} mau="text-slate-300" />
+                <O icon={<Gem className="w-3.5 h-3.5" />} nhan="KC" gt={totals.unboundDiamond} mau="text-cyan-300" />
+                <O icon={<Ticket className="w-3.5 h-3.5" />} nhan="Kim Phiếu" gt={totals.goldVoucher} mau="text-amber-300" />
+              </div>
+            )}
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
-            <div className="overflow-x-auto">
+          {/* BANG: chi cuon ben trong, header dinh tren, pagination dinh duoi */}
+          <div className="flex-1 min-h-0 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-auto">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-slate-900/80 text-slate-400 text-xs uppercase tracking-wide">
-                    <th className="px-4 py-3 text-left font-semibold">Email</th>
-                    {showPassword && <th className="px-4 py-3 text-left font-semibold">Mật khẩu</th>}
-                    <th className="px-4 py-3 text-left font-semibold">Server</th>
-                    <th className="px-4 py-3 text-left font-semibold">Nhân vật</th>
-                    <th className="px-4 py-3 text-center font-semibold">Lv</th>
-                    <th className="px-4 py-3 text-left font-semibold">{laAcc200 ? 'Mã mời' : 'Mã đã nhập'}</th>
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-900 text-slate-400 text-xs uppercase tracking-wide">
+                    <Th k="email">Email</Th>
+                    {isAdmin && (
+                      <Th
+                        k="password"
+                        extra={
+                          <button
+                            onClick={() => setShowAllPassword((v) => !v)}
+                            title={showAllPassword ? 'Ẩn toàn bộ mật khẩu' : 'Hiện toàn bộ mật khẩu'}
+                            className={`ml-1 p-0.5 rounded transition ${
+                              showAllPassword ? 'text-rose-300' : 'text-slate-500 hover:text-slate-200'
+                            }`}
+                          >
+                            {showAllPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        }
+                      >
+                        Mật khẩu
+                      </Th>
+                    )}
+                    <Th k="serverName">Server</Th>
+                    <Th k="roleName">Nhân vật</Th>
+                    <Th k="level" align="center">Lv</Th>
+                    <Th k="inviteCode">{laAcc200 ? 'Mã mời' : 'Mã đã nhập'}</Th>
                     {laAcc200 ? (
                       <>
-                        <th className="px-4 py-3 text-center font-semibold">Đã mời</th>
-                        <th className="px-4 py-3 text-right font-semibold">Vàng</th>
-                        <th className="px-4 py-3 text-right font-semibold">KC</th>
-                        <th className="px-4 py-3 text-right font-semibold">Kim Phiếu</th>
+                        <Th k="usedCount" align="center">Đã mời</Th>
+                        <Th k="unboundGold" align="right">Vàng</Th>
+                        <Th k="unboundDiamond" align="right">KC</Th>
+                        <Th k="goldVoucher" align="right">Kim Phiếu</Th>
                       </>
                     ) : (
                       <>
-                        <th className="px-4 py-3 text-left font-semibold">Người mời</th>
-                        <th className="px-4 py-3 text-left font-semibold">Lỗi</th>
+                        <Th k="inviterEmail">Người mời</Th>
+                        <Th k="errorMsg">Lỗi</Th>
                       </>
                     )}
-                    <th className="px-4 py-3 text-center font-semibold">Trạng thái</th>
-                    <th className="px-4 py-3 text-left font-semibold">Thời điểm</th>
-                    <th className="px-4 py-3 text-left font-semibold">Người tạo</th>
+                    <Th k="status" align="center">Trạng thái</Th>
+                    <Th k="time">Thời điểm</Th>
+                    <Th k="createdBy">Người tạo</Th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
@@ -322,13 +477,20 @@ export default function FarmKcPage() {
                     <tr><td colSpan={14} className="px-4 py-10 text-center text-slate-500">Chưa có dữ liệu</td></tr>
                   ) : (
                     items.map((r) => (
-                      <tr key={r.id} className={`transition ${layMauDong(r)}`}>
-                        <td className="px-4 py-3 text-slate-200 whitespace-nowrap">{r.email}</td>
-                        {showPassword && <td className="px-4 py-3 text-rose-300 font-mono text-xs">{r.password || '-'}</td>}
-                        <td className="px-4 py-3 text-slate-400 whitespace-nowrap">{r.serverName || r.serverId}</td>
-                        <td className="px-4 py-3 text-slate-300 whitespace-nowrap">{r.roleName || '-'}</td>
-                        <td className="px-4 py-3 text-center text-slate-400">{r.level || '-'}</td>
-                        <td className="px-4 py-3">
+                      <tr
+                        key={r.id}
+                        className={`transition ${layMauDong(r)} ${
+                          gomNhom && thongTinNhom.get(r.id)?.dauNhom
+                            ? 'border-t-2 border-t-slate-600/80'
+                            : ''
+                        }`}
+                      >
+                        <td className="px-4 py-2.5 text-slate-200 whitespace-nowrap">{r.email}</td>
+                        {isAdmin && <td className="px-4 py-2.5"><OMatKhau r={r} /></td>}
+                        <td className="px-4 py-2.5 text-slate-400 whitespace-nowrap">{r.serverName || r.serverId}</td>
+                        <td className="px-4 py-2.5 text-slate-300 whitespace-nowrap">{r.roleName || '-'}</td>
+                        <td className="px-4 py-2.5 text-center text-slate-400">{r.level || '-'}</td>
+                        <td className="px-4 py-2.5">
                           {r.inviteCode ? (
                             <span className="font-mono text-xs text-amber-300 bg-amber-500/10 px-2 py-1 rounded-lg border border-amber-500/20">
                               {r.inviteCode}
@@ -340,7 +502,7 @@ export default function FarmKcPage() {
 
                         {laAcc200 ? (
                           <>
-                            <td className="px-4 py-3 text-center whitespace-nowrap">
+                            <td className="px-4 py-2.5 text-center whitespace-nowrap">
                               <div>
                                 <span className={`font-semibold ${r.usedCount >= r.maxInvites ? 'text-emerald-400' : 'text-slate-200'}`}>
                                   {r.usedCount}/{r.maxInvites}
@@ -349,8 +511,7 @@ export default function FarmKcPage() {
                                   <span className="ml-1 text-[11px] text-amber-400">(+{r.reservedCount})</span>
                                 )}
                               </div>
-                              {/* Đã nhận = số game đã xác nhận (acc Lv200 báo về lần đăng nhập cuối)
-                                  Chờ nhận = số web đã cấp nhưng game chưa xác nhận lại */}
+                              {/* Da nhan = so game da xac nhan · Cho nhan = web da cap, game chua xac nhan */}
                               <div
                                 className="text-[10px] mt-0.5"
                                 title="Đã nhận = game đã xác nhận · Chờ nhận = web đã cấp, chờ acc Lv200 đăng nhập lại để chốt"
@@ -362,9 +523,9 @@ export default function FarmKcPage() {
                                 </span>
                               </div>
                             </td>
-                            <td className="px-4 py-3 text-right text-slate-300 font-mono text-xs">{fmtNum(r.unboundGold)}</td>
-                            <td className="px-4 py-3 text-right text-cyan-300 font-mono text-xs">{fmtNum(r.unboundDiamond)}</td>
-                            <td className="px-4 py-3 text-right font-mono text-xs">
+                            <td className="px-4 py-2.5 text-right text-slate-300 font-mono text-xs">{fmtNum(r.unboundGold)}</td>
+                            <td className="px-4 py-2.5 text-right text-cyan-300 font-mono text-xs">{fmtNum(r.unboundDiamond)}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-xs">
                               <span className={r.goldVoucher > 0 ? 'text-amber-300 font-semibold' : 'text-slate-600'}>
                                 {fmtNum(r.goldVoucher)}
                               </span>
@@ -372,34 +533,48 @@ export default function FarmKcPage() {
                           </>
                         ) : (
                           <>
-                            <td className="px-4 py-3 text-slate-400 text-xs whitespace-nowrap">
-                              {r.inviterEmail ? (
-                                <span className="flex items-center gap-1.5">
+                            <td
+                              className={`px-4 py-2.5 text-xs whitespace-nowrap ${
+                                gomNhom ? 'border-l-2 border-l-slate-700/70' : ''
+                              }`}
+                            >
+                              {!r.inviterEmail ? (
+                                <span className="text-slate-500">-</span>
+                              ) : gomNhom && thongTinNhom.get(r.id)?.dauNhom ? (
+                                <span className="flex items-center gap-2">
+                                  <span className="text-slate-100 font-semibold">{r.inviterEmail}</span>
                                   <span
-                                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                                      (mauTheoNguoiMoi.get(r.inviterEmail) ?? 0) === 0 ? 'bg-fuchsia-400' : 'bg-slate-400'
-                                    }`}
-                                  />
+                                    className="px-1.5 py-0.5 rounded-md bg-sky-500/15 border border-sky-500/30 text-[10px] font-bold text-sky-300"
+                                    title="Số acc Lv50 của người mời này trong trang hiện tại"
+                                  >
+                                    {thongTinNhom.get(r.id)?.soDong}
+                                  </span>
+                                </span>
+                              ) : gomNhom ? (
+                                <span className="flex items-center gap-1.5 text-slate-600">
+                                  <span className="text-slate-700">↳</span>
                                   {r.inviterEmail}
                                 </span>
-                              ) : '-'}
+                              ) : (
+                                <span className="text-slate-400">{r.inviterEmail}</span>
+                              )}
                             </td>
-                            <td className="px-4 py-3 text-rose-400 text-xs max-w-[200px] truncate" title={r.errorMsg || ''}>
+                            <td className="px-4 py-2.5 text-rose-400 text-xs max-w-[200px] truncate" title={r.errorMsg || ''}>
                               {r.errorMsg || '-'}
                             </td>
                           </>
                         )}
 
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-4 py-2.5 text-center">
                           <Badge st={r.status} />
                           {laAcc200 && r.failCount > 0 && (
                             <div className="text-[11px] text-rose-400 mt-1">lỗi x{r.failCount}</div>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">
+                        <td className="px-4 py-2.5 text-slate-500 text-xs whitespace-nowrap">
                           {fmtTime(laAcc200 ? (r.lastSyncAt || r.updatedAt) : (r.confirmedAt || r.updatedAt))}
                         </td>
-                        <td className="px-4 py-3 text-slate-500 text-xs whitespace-nowrap">{r.createdBy || '-'}</td>
+                        <td className="px-4 py-2.5 text-slate-500 text-xs whitespace-nowrap">{r.createdBy || '-'}</td>
                       </tr>
                     ))
                   )}
@@ -407,20 +582,28 @@ export default function FarmKcPage() {
               </table>
             </div>
 
-            <div className="flex items-center justify-between px-4 py-3 border-t border-slate-800 bg-slate-900/60">
+            {/* Thanh pagination co dinh duoi cung, co luon nut Tai lai */}
+            <div className="shrink-0 flex items-center justify-between gap-3 px-4 py-2 border-t border-slate-800 bg-slate-900/80">
               <p className="text-xs text-slate-500">Trang {page}/{totalPages} · {fmtNum(total)} dòng</p>
               <div className="flex items-center gap-2">
                 <button
+                  onClick={() => load(page)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium transition"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                  Tải lại
+                </button>
+                <button
                   disabled={page <= 1 || loading}
                   onClick={() => load(page - 1)}
-                  className="p-2 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
+                  className="p-1.5 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button
                   disabled={page >= totalPages || loading}
                   onClick={() => load(page + 1)}
-                  className="p-2 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
+                  className="p-1.5 rounded-lg bg-slate-800 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-700 transition"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>

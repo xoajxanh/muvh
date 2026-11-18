@@ -135,6 +135,35 @@ nhận đủ 3 mốc → túi có đúng 30.000 Kim Phiếu → `GetItemByConfig
 
 ---
 
+## MUA GÓI BẰNG KIM PHIẾU — ĐÃ GIẢI MÃ (2026-11-18)
+
+**Phát hiện bằng cách bắt gói tin thật**, không phải đọc code (code UI của tab này
+không nằm trong bộ đã giải nén):
+
+```
+msgId 203003  BagPackage.UseItem
+  count        = 25000                      -- số Kim Phiếu tiêu
+  itemId       = 5945036051188201481        -- id Ô KIM PHIẾU TRONG TÚI (KHÔNG phải mã 1000250)
+  clientParams = { 100001 }                 -- mã gói, trùng rechargeId trong thư
+```
+
+→ Gọi: `networkRequest.ReqUseItem(giá, <id ô Kim Phiếu>, { mã gói })`
+
+**Mua gói KHÔNG phải lệnh nạp** (nhóm 20xxx) mà là **dùng vật phẩm** — đây là lý do
+dò mãi trong `NetworkRequest_Recharge` không ra.
+
+| Gói | Giá | Mã gói |
+|---|---|---|
+| 60 kim cương / 25K VND | 25.000 Kim Phiếu | `100001` |
+
+**Vật phẩm mua được gửi QUA THƯ**, phải nhận thư mới vào túi:
+`NetManager.Send(MailMessage.ReqGetMailItems, { mailIds = {...}, delete = false })`
+Thư nạp phân biệt bằng `rechargeId ~= 0`; còn vật phẩm chưa nhận khi `stateType` là 1 hoặc 3.
+
+**Mở popup Cộng đồng:** `UIManager.Show(UIID.RechargeWelfareUI, { openFirstTab = 4 })`
+
+---
+
 ## BẪY KỸ THUẬT ĐÃ GẶP (đừng lặp lại)
 
 | Bẫy | Cách xử lý |

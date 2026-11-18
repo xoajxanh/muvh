@@ -10,6 +10,27 @@ export const dynamic = 'force-dynamic';
 //        Kèm email của acc Lv200 đã mời (inviter).
 // =========================================================================
 
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - SAP XEP THEO TUNG COT (tang / giam)
+// =========================================================================
+function buildOrderBy(sortBy: string, dir: 'asc' | 'desc'): any {
+  switch (sortBy) {
+    case 'email': return [{ email: dir }];
+    case 'password': return [{ password: dir }];
+    case 'serverName': return [{ serverName: dir }, { serverId: dir }];
+    case 'roleName': return [{ roleName: dir }];
+    case 'level': return [{ level: dir }];
+    case 'inviteCode': return [{ inviteCode: dir }];
+    case 'inviterEmail': return [{ inviter: { email: dir } }, { updatedAt: 'desc' }];
+    case 'errorMsg': return [{ errorMsg: dir }];
+    case 'status': return [{ status: dir }];
+    case 'time': return [{ updatedAt: dir }];
+    case 'createdBy': return [{ createdBy: { username: dir } }];
+    default: return [{ email: 'desc' }];
+  }
+}
+
 export async function GET(req: NextRequest) {
   await ensureInitialSeed();
   const session = await getSessionUser(req);
@@ -25,7 +46,10 @@ export async function GET(req: NextRequest) {
     const keyword = (searchParams.get('q') || '').trim();
     const status = (searchParams.get('status') || '').trim();
     const serverIdRaw = (searchParams.get('serverId') || '').trim();
-    const showPassword = searchParams.get('showPassword') === '1' && session.role === 'ADMIN';
+    // ADMIN luon nhan mat khau; web tu che bang dau sao, bam mat moi hien
+    const showPassword = session.role === 'ADMIN';
+    const sortBy = (searchParams.get('sortBy') || 'email').trim();
+    const sortDir: 'asc' | 'desc' = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
 
     const where: any = {};
     if (session.role !== 'ADMIN') where.createdById = session.userId;
@@ -46,8 +70,7 @@ export async function GET(req: NextRequest) {
       prisma.farmInvitee.count({ where }),
       prisma.farmInvitee.findMany({
         where,
-        // Nhóm các acc cùng một người mời nằm cạnh nhau để tô màu xen kẽ dễ nhìn
-        orderBy: [{ inviterId: 'asc' }, { updatedAt: 'desc' }],
+        orderBy: buildOrderBy(sortBy, sortDir),
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: {
@@ -84,6 +107,8 @@ export async function GET(req: NextRequest) {
       pageSize,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      sortBy,
+      sortDir,
       isAdmin: session.role === 'ADMIN',
     });
   } catch (err: any) {

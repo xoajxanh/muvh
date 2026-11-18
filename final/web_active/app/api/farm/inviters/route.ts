@@ -12,6 +12,32 @@ export const dynamic = 'force-dynamic';
 //        Mật khẩu acc game CHỈ trả về khi ADMIN yêu cầu (showPassword=1).
 // =========================================================================
 
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - SAP XEP THEO TUNG COT (tang / giam)
+// Mô tả: Chỉ cho sắp xếp theo các cột có trong danh sách trắng bên dưới.
+//        Mặc định sắp xếp Email giảm dần.
+// =========================================================================
+function buildOrderBy(sortBy: string, dir: 'asc' | 'desc'): any {
+  switch (sortBy) {
+    case 'email': return [{ email: dir }];
+    case 'password': return [{ password: dir }];
+    case 'serverName': return [{ serverName: dir }, { serverId: dir }];
+    case 'roleName': return [{ roleName: dir }];
+    case 'level': return [{ level: dir }];
+    case 'inviteCode': return [{ inviteCode: dir }];
+    // usedCount = gameInviteNum + confirmedCount (khong sort truc tiep duoc)
+    case 'usedCount': return [{ gameInviteNum: dir }, { confirmedCount: dir }];
+    case 'unboundGold': return [{ unboundGold: dir }];
+    case 'unboundDiamond': return [{ unboundDiamond: dir }];
+    case 'goldVoucher': return [{ goldVoucher: dir }];
+    case 'status': return [{ status: dir }];
+    case 'time': return [{ updatedAt: dir }];
+    case 'createdBy': return [{ createdBy: { username: dir } }];
+    default: return [{ email: 'desc' }];
+  }
+}
+
 export async function GET(req: NextRequest) {
   await ensureInitialSeed();
   const session = await getSessionUser(req);
@@ -27,7 +53,10 @@ export async function GET(req: NextRequest) {
     const keyword = (searchParams.get('q') || '').trim();
     const status = (searchParams.get('status') || '').trim();
     const serverIdRaw = (searchParams.get('serverId') || '').trim();
-    const showPassword = searchParams.get('showPassword') === '1' && session.role === 'ADMIN';
+    // ADMIN luon nhan mat khau; web tu che bang dau sao, bam mat moi hien
+    const showPassword = session.role === 'ADMIN';
+    const sortBy = (searchParams.get('sortBy') || 'email').trim();
+    const sortDir: 'asc' | 'desc' = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
 
     const where: any = {};
     if (session.role !== 'ADMIN') where.createdById = session.userId;
@@ -44,16 +73,37 @@ export async function GET(req: NextRequest) {
       ];
     }
 
-    const [total, rows] = await Promise.all([
+    const [total, rows, agg] = await Promise.all([
       prisma.farmInviter.count({ where }),
       prisma.farmInviter.findMany({
         where,
-        orderBy: { updatedAt: 'desc' },
+        orderBy: buildOrderBy(sortBy, sortDir),
         skip: (page - 1) * pageSize,
         take: pageSize,
         include: { createdBy: { select: { username: true, displayName: true } } },
       }),
+      // [MOD FEATURE]: TONG HOP TOAN BO (theo dung bo loc dang xem, khong chi trang hien tai)
+      prisma.farmInviter.aggregate({
+        where,
+        _sum: {
+          unboundGold: true,
+          unboundDiamond: true,
+          goldVoucher: true,
+          gameInviteNum: true,
+          confirmedCount: true,
+          reservedCount: true,
+        } as any,
+      }),
     ]);
+
+    const sum: any = (agg as any)?._sum || {};
+    const totals = {
+      unboundGold: safeNum(sum.unboundGold),
+      unboundDiamond: safeNum(sum.unboundDiamond),
+      goldVoucher: safeNum(sum.goldVoucher),
+      usedCount: safeNum(sum.gameInviteNum) + safeNum(sum.confirmedCount),
+      reservedCount: safeNum(sum.reservedCount),
+    };
 
     const items = rows.map((r) => ({
       id: r.id,
@@ -88,6 +138,9 @@ export async function GET(req: NextRequest) {
       pageSize,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      totals,
+      sortBy,
+      sortDir,
       isAdmin: session.role === 'ADMIN',
     });
   } catch (err: any) {

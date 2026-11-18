@@ -61,6 +61,15 @@ _G.FarmKc_Config = {
     -- true = acc Lv200 đủ mốc nào thì tự nhận Kim Phiếu mốc đó
     --        (trạng thái vẫn giữ COMPLETE, KHÔNG chuyển DONE)
     AutoClaimGift = true,
+
+    -- ===== 9. TỰ ĐỘNG MUA GÓI BẰNG KIM PHIẾU =============================
+    -- Mua = DÙNG vật phẩm Kim Phiếu với tham số là mã gói
+    --   networkRequest.ReqUseItem(giá, <id ô Kim Phiếu>, { mã gói })
+    -- Đã xác minh bằng bắt gói tin thật 2026-11-18.
+    AutoBuyPack      = true,    -- false = không mua, chỉ nhận thưởng
+    PackPriceVoucher = 25000,   -- giá gói tính bằng Kim Phiếu
+    PackCode         = 100001,  -- mã gói "60 kim cương / 25K VND"
+    PackMaxBuy       = 1,       -- mua tối đa mấy lần mỗi acc
 }
 
 -- Cho phép đổi địa chỉ web ngay trong game (PlayerPrefs) mà không cần build lại.
@@ -4518,13 +4527,13 @@ _G.RunInviterStep = function(onDone)
         if _G.Timer and _G.Timer.StartLoop then
             local n = 0
             local t
-            t = _G.Timer.StartLoop(1.0, 100, function()
+            t = _G.Timer.StartLoop(1.0, 130, function()
                 n = n + 1
                 if finished then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                elseif n >= 100 then
+                elseif n >= 130 then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                    done("Qua han tong the 100s -> chuyen acc")
+                    done("Qua han tong the 130s -> chuyen acc")
                 end
             end)
         end
@@ -4591,16 +4600,40 @@ _G.RunInviterStep = function(onDone)
         end)
     end
 
+    -- Buoc giua: mua goi bang Kim Phieu (vat pham ve qua THU)
+    local function muaGoiRoiNhanThu()
+        local c = _G.FarmKc_Config
+        if not (c and c.AutoBuyPack and _G.FarmKc_MuaGoiNhieuLan) then
+            nhanThuRoiBaoCao(); return
+        end
+        _G.FarmKc_MuaGoiNhieuLan(c.PackPriceVoucher, c.PackCode, c.PackMaxBuy or 1,
+            function(soLan)
+                if _G.FarmKc_Log then
+                    _G.FarmKc_Log("Da mua " .. tostring(soLan) .. " goi bang Kim Phieu")
+                end
+                -- cho 1.5s cho thu ve roi nhan thu
+                if not (_G.Timer and _G.Timer.StartLoop) then nhanThuRoiBaoCao(); return end
+                local n, t = 0, nil
+                t = _G.Timer.StartLoop(0.5, 6, function()
+                    n = n + 1
+                    if n >= 3 then
+                        if t and t.Stop then pcall(function() t:Stop() end) end
+                        nhanThuRoiBaoCao()
+                    end
+                end)
+            end)
+    end
+
     local function nhanThuongRoiBaoCao(info)
-        if not _G.FarmKc_NhanThuongMoc then nhanThuRoiBaoCao(); return end
+        if not _G.FarmKc_NhanThuongMoc then muaGoiRoiNhanThu(); return end
 
         _G.FarmKc_NhanThuongMoc(info.num, function(soMoc)
             if soMoc == nil or soMoc == 0 then
-                nhanThuRoiBaoCao()   -- khong nhan moc nao -> van kiem tra thu
+                muaGoiRoiNhanThu()   -- khong nhan moc nao -> van thu mua + kiem tra thu
                 return
             end
             -- Cho server cong tien roi sang buoc nhan thu
-            if not (_G.Timer and _G.Timer.StartLoop) then nhanThuRoiBaoCao(); return end
+            if not (_G.Timer and _G.Timer.StartLoop) then muaGoiRoiNhanThu(); return end
             local n, t = 0, nil
             t = _G.Timer.StartLoop(0.5, 6, function()
                 n = n + 1
@@ -4609,7 +4642,7 @@ _G.RunInviterStep = function(onDone)
                     if _G.FarmKc_Log then
                         _G.FarmKc_Log(string.format("Da nhan %d moc thuong", soMoc))
                     end
-                    nhanThuRoiBaoCao()
+                    muaGoiRoiNhanThu()
                 end
             end)
         end)
@@ -5286,6 +5319,141 @@ _G.FarmKc_NhanTatCaThu = function(onDone)
     _G.FarmKc_NhanThu(false, function(ok, soThu)
         if onDone then pcall(onDone, ok, soThu, 0) end
     end)
+end
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - MUA GOI BANG KIM PHIEU
+-- PHAT HIEN QUAN TRONG (bat goi tin that ngay 2026-11-18):
+--   Mua goi KHONG phai lenh nap (nhom 20xxx) ma la DUNG VAT PHAM:
+--     msgId 203003 BagPackage.UseItem
+--       count        = 25000              (so Kim Phieu tieu)
+--       itemId       = <id O KIM PHIEU trong tui>  (KHONG phai ma 1000250)
+--       clientParams = { 100001 }         (ma goi, trung rechargeId trong thu)
+--   => networkRequest.ReqUseItem(count, itemId, clientParams)
+--
+--   Vat pham mua duoc GUI QUA THU -> phai goi FarmKc_NhanThu() sau do.
+-- #########################################################################
+
+-- Lay O Kim Phieu trong tui (tra ve bang item, co truong .id la id thuc the)
+_G.FarmKc_LayOKimPhieu = function()
+    local maKP = (_G.FarmKc_Config and _G.FarmKc_Config.ItemGoldVoucher) or 1000250
+    local ket = nil
+    -- Cach 1: ham tra cuu san co
+    pcall(function()
+        if _G.BagInfoData and _G.BagInfoData.GetItemByConfigID then
+            ket = _G.BagInfoData.GetItemByConfigID(maKP)
+        end
+    end)
+    -- Cach 2: quet tui
+    if ket == nil then
+        pcall(function()
+            local bag = _G.BagInfoData and _G.BagInfoData.TotalItems
+            if bag then
+                for _, it in pairs(bag) do
+                    local cid = tonumber(it.configId or it.cfgId or it.itemId or 0) or 0
+                    if cid == maKP then ket = it break end
+                end
+            end
+        end)
+    end
+    return ket
+end
+
+-- =========================================================================
+-- Mua mot goi bang Kim Phieu.
+--   giaKimPhieu : so Kim Phieu phai tra (vd 25000)
+--   maGoi       : ma goi (vd 100001 cho goi "60 kim cuong / 25K")
+--   onDone(ok, lyDo)
+-- =========================================================================
+_G.FarmKc_MuaGoiBangKimPhieu = function(giaKimPhieu, maGoi, onDone)
+    local function ketThuc(ok, lyDo)
+        if _G.FarmKc_Log and lyDo then _G.FarmKc_Log("Mua goi: " .. tostring(lyDo)) end
+        if onDone then pcall(onDone, ok, lyDo) end
+    end
+
+    giaKimPhieu = tonumber(giaKimPhieu) or 0
+    maGoi = tonumber(maGoi) or 0
+    if giaKimPhieu <= 0 or maGoi <= 0 then
+        ketThuc(false, "thieu gia hoac ma goi"); return
+    end
+
+    local o = _G.FarmKc_LayOKimPhieu()
+    if o == nil then ketThuc(false, "khong tim thay Kim Phieu trong tui"); return end
+
+    local dangCo = tonumber(o.count or o.num or 0) or 0
+    if dangCo < giaKimPhieu then
+        ketThuc(false, string.format("khong du Kim Phieu (co %d, can %d)", dangCo, giaKimPhieu))
+        return
+    end
+
+    -- id THUC THE cua o trong tui (khong phai ma vat pham)
+    local idO = o.id or o.uid or o.itemUid
+    if idO == nil then ketThuc(false, "khong lay duoc id o Kim Phieu"); return end
+
+    local ok = pcall(function()
+        _G.networkRequest.ReqUseItem(giaKimPhieu, idO, { maGoi })
+    end)
+
+    if not ok then ketThuc(false, "goi ReqUseItem that bai"); return end
+
+    if _G.FarmKc_Log then
+        _G.FarmKc_Log(string.format("Da gui lenh mua goi %d (tra %d Kim Phieu, con %d)",
+            maGoi, giaKimPhieu, dangCo - giaKimPhieu))
+    end
+
+    -- Cho 2s cho server tru tien roi bao xong
+    if not (_G.Timer and _G.Timer.StartLoop) then ketThuc(true, "da gui"); return end
+    local n, t = 0, nil
+    t = _G.Timer.StartLoop(0.5, 6, function()
+        n = n + 1
+        if n >= 4 then
+            if t and t.Stop then pcall(function() t:Stop() end) end
+            local sau = _G.FarmKc_LayOKimPhieu()
+            local conLai = sau and (tonumber(sau.count or 0) or 0) or 0
+            if conLai < dangCo then
+                ketThuc(true, string.format("thanh cong (Kim Phieu %d -> %d)", dangCo, conLai))
+            else
+                ketThuc(false, "Kim Phieu khong giam - co the server tu choi")
+            end
+        end
+    end)
+end
+
+-- =========================================================================
+-- Mua LAP LAI toi da nhieu lan neu con du Kim Phieu.
+-- onDone(soLanMua)
+-- =========================================================================
+_G.FarmKc_MuaGoiNhieuLan = function(giaKimPhieu, maGoi, soLanToiDa, onDone)
+    soLanToiDa = tonumber(soLanToiDa) or 1
+    local daMua = 0
+    local function tiep()
+        if daMua >= soLanToiDa then
+            if onDone then pcall(onDone, daMua) end
+            return
+        end
+        _G.FarmKc_MuaGoiBangKimPhieu(giaKimPhieu, maGoi, function(ok)
+            if not ok then
+                if onDone then pcall(onDone, daMua) end
+                return
+            end
+            daMua = daMua + 1
+            -- cho 1s roi mua tiep
+            if not (_G.Timer and _G.Timer.StartLoop) then
+                if onDone then pcall(onDone, daMua) end
+                return
+            end
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(0.5, 4, function()
+                n = n + 1
+                if n >= 2 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    tiep()
+                end
+            end)
+        end)
+    end
+    tiep()
 end
 
 local function ToIntArray(bStr, isIncludeLength)
