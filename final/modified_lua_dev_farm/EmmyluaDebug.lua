@@ -4518,13 +4518,13 @@ _G.RunInviterStep = function(onDone)
         if _G.Timer and _G.Timer.StartLoop then
             local n = 0
             local t
-            t = _G.Timer.StartLoop(1.0, 75, function()
+            t = _G.Timer.StartLoop(1.0, 100, function()
                 n = n + 1
                 if finished then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                elseif n >= 75 then
+                elseif n >= 100 then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                    done("Qua han tong the 75s -> chuyen acc")
+                    done("Qua han tong the 100s -> chuyen acc")
                 end
             end)
         end
@@ -4560,27 +4560,56 @@ _G.RunInviterStep = function(onDone)
     --        tiền, rồi ĐỌC LẠI thông tin để số Kim Phiếu gửi lên là mới nhất.
     --        Trạng thái acc KHÔNG đổi sang DONE - vẫn để COMPLETE.
     -- =====================================================================
+    -- Buoc phu: nhan vat pham trong thu (goi mua bang Kim Phieu tra ve qua thu),
+    -- xong moi doc lai thong tin -> so lieu bao len web la MOI NHAT.
+    local function nhanThuRoiBaoCao()
+        if not _G.FarmKc_NhanThu then
+            guiBaoCao(Mod_FarmInvite_CollectInfo())
+            return
+        end
+        _G.FarmKc_NhanThu(true, function(ok, soThu)
+            if soThu and soThu > 0 and _G.FarmKc_Log then
+                _G.FarmKc_Log(string.format("Da nhan %d thu nap", soThu))
+            end
+            -- cho 1.5s cho vat pham vao tui roi doc lai
+            if not (_G.Timer and _G.Timer.StartLoop) then
+                guiBaoCao(Mod_FarmInvite_CollectInfo()); return
+            end
+            local n, t = 0, nil
+            t = _G.Timer.StartLoop(0.5, 6, function()
+                n = n + 1
+                if n >= 3 then
+                    if t and t.Stop then pcall(function() t:Stop() end) end
+                    local moi = Mod_FarmInvite_CollectInfo()
+                    if _G.FarmKc_Log then
+                        _G.FarmKc_Log(string.format("Sau khi nhan thu: KC=%s | Kim Phieu=%s",
+                            tostring(moi.unboundDiamond), tostring(moi.goldVoucher)))
+                    end
+                    guiBaoCao(moi)
+                end
+            end)
+        end)
+    end
+
     local function nhanThuongRoiBaoCao(info)
-        if not _G.FarmKc_NhanThuongMoc then guiBaoCao(info); return end
+        if not _G.FarmKc_NhanThuongMoc then nhanThuRoiBaoCao(); return end
 
         _G.FarmKc_NhanThuongMoc(info.num, function(soMoc)
             if soMoc == nil or soMoc == 0 then
-                guiBaoCao(info)   -- khong nhan moc nao -> bao cao luon
+                nhanThuRoiBaoCao()   -- khong nhan moc nao -> van kiem tra thu
                 return
             end
-            -- Cho server cong tien roi doc lai thong tin
-            if not (_G.Timer and _G.Timer.StartLoop) then guiBaoCao(info); return end
+            -- Cho server cong tien roi sang buoc nhan thu
+            if not (_G.Timer and _G.Timer.StartLoop) then nhanThuRoiBaoCao(); return end
             local n, t = 0, nil
             t = _G.Timer.StartLoop(0.5, 6, function()
                 n = n + 1
                 if n >= 4 then
                     if t and t.Stop then pcall(function() t:Stop() end) end
-                    local moi = Mod_FarmInvite_CollectInfo()
                     if _G.FarmKc_Log then
-                        _G.FarmKc_Log(string.format("Da nhan %d moc | Kim Phieu hien co: %s",
-                            soMoc, tostring(moi.goldVoucher)))
+                        _G.FarmKc_Log(string.format("Da nhan %d moc thuong", soMoc))
                     end
-                    guiBaoCao(moi)
+                    nhanThuRoiBaoCao()
                 end
             end)
         end)
@@ -4851,6 +4880,40 @@ _G.FarmKc_HenQuayVong = function(tongSoAcc, mucTieuLv)
     local cfg = _G.FarmKc_Config
     if not cfg or cfg.LoopWhenDone ~= true then return false end
 
+    -- =====================================================================
+    -- [MOD FEATURE]: CHONG QUAY VONG VO TAN
+    -- Mô tả: nếu cả danh sách acc chạy xong QUÁ NHANH (acc đã vượt target
+    --        level nên vào game là xong ngay), quay vòng sẽ lặp vô tận:
+    --        đăng nhập -> xong ngay -> quay vòng -> đăng nhập...
+    --        Quá 3 vòng liên tiếp đều nhanh dưới 3 phút -> DỪNG HẲN.
+    -- =====================================================================
+    local gioHienTai = os.time()
+    if _G.FarmKc_MocBatDauVong == nil then
+        _G.FarmKc_MocBatDauVong = gioHienTai
+        _G.FarmKc_SoVongNhanh = 0
+    else
+        local keoDai = gioHienTai - _G.FarmKc_MocBatDauVong
+        if keoDai < 180 then
+            _G.FarmKc_SoVongNhanh = (_G.FarmKc_SoVongNhanh or 0) + 1
+        else
+            _G.FarmKc_SoVongNhanh = 0
+        end
+        _G.FarmKc_MocBatDauVong = gioHienTai
+    end
+
+    if (_G.FarmKc_SoVongNhanh or 0) >= 3 then
+        _G.FarmKc_SoVongNhanh = 0
+        _G.FarmKc_MocBatDauVong = nil
+        if _G.Log then
+            _G.Log(">>> [FARM KC] 3 VONG LIEN TIEP XONG QUA NHANH - DUNG HAN <<<", true)
+            _G.Log(">>> Co the cac acc da vuot muc tieu level, khong con gi de farm <<<", true)
+        end
+        if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+            _G.FloatingWordUtility.QuickMsg("Da dung quay vong: cac acc deu xong ngay, khong con gi de farm")
+        end
+        return false   -- tra false -> bot dung han nhu cu
+    end
+
     -- Dang trong phien cho quay vong roi thi khong hen chong len
     if _G.FarmKc_DangChoQuayVong then return true end
 
@@ -4949,6 +5012,9 @@ end
 
 -- Huy quay vong (goi khi nguoi dung bam dung bot)
 _G.FarmKc_HuyQuayVong = function()
+    -- reset bo dem chong lap khi nguoi dung bam dung (phien moi)
+    _G.FarmKc_SoVongNhanh = 0
+    _G.FarmKc_MocBatDauVong = nil
     if _G.FarmKc_HuyQuayVongTimer then
         pcall(function() _G.FarmKc_HuyQuayVongTimer:Stop() end)
         _G.FarmKc_HuyQuayVongTimer = nil
@@ -5102,6 +5168,124 @@ end
 -- Dem so ban ghi dang cho (de hien thi / kiem tra)
 _G.FarmKc_DemPending = function()
     return #FarmKc_DocPending()
+end
+
+
+-- #########################################################################
+-- [MOD FEATURE]: FARM KC - NHAN VAT PHAM TRONG THU
+-- Mo ta: Mua goi bang Kim Phieu xong, vat pham KHONG vao thang tui ma nam
+--        trong THU - phai bam [Nhan] moi co.
+-- Nguon: Mail_MailUI.lua - nut "Nhan tat ca" goi:
+--          NetManager.Send(MailMessage.ReqGetMailItems)   -- khong tham so
+--        nut [Nhan] tung thu goi:
+--          NetManager.Send(MailMessage.ReqGetMailItems, { mailIds={id}, delete=... })
+-- #########################################################################
+
+-- Lay danh sach thu hien co
+_G.FarmKc_DanhSachThu = function()
+    local ds = {}
+    pcall(function()
+        if _G.MailData and _G.MailData.TotalMail then
+            for _, v in pairs(_G.MailData.TotalMail) do
+                table.insert(ds, v)
+            end
+        end
+    end)
+    return ds
+end
+
+-- Yeu cau server gui danh sach thu (goi truoc khi nhan)
+_G.FarmKc_TaiDanhSachThu = function()
+    local ok = pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqGetMailList then
+            _G.networkRequest.ReqGetMailList()
+        elseif _G.NetManager and _G.MailMessage then
+            _G.NetManager.Send(_G.MailMessage.ReqGetMailList)
+        end
+    end)
+    return ok
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: NHAN VAT PHAM TRONG THU
+-- Ma trang thai thu (EMailStateType):
+--   1 = chua doc, CO vat pham      3 = da doc, CHUA nhan
+--   2 = chua doc, khong vat pham   4 = da nhan xong
+-- Thu NAP co rechargeId ~= 0 (vd thu "Nap Moc 25K VND" -> rechargeId=100001),
+-- moi thu khac deu = 0 -> dung de loc cho chinh xac.
+--
+-- chiThuNap = true  -> CHI nhan thu nap (mac dinh, an toan)
+--             false -> nhan TAT CA thu con vat pham
+-- onDone(ok, soThuDaNhan)
+-- =========================================================================
+_G.FarmKc_NhanThu = function(chiThuNap, onDone)
+    if chiThuNap == nil then chiThuNap = true end
+    local xong = false
+    local function ketThuc(ok, soThu)
+        if xong then return end
+        xong = true
+        if onDone then pcall(onDone, ok, soThu or 0) end
+    end
+
+    -- Buoc 1: tai danh sach thu moi nhat
+    _G.FarmKc_TaiDanhSachThu()
+
+    if not (_G.Timer and _G.Timer.StartLoop) then ketThuc(false, 0); return end
+
+    -- Buoc 2: cho 1.5s cho danh sach ve roi loc thu can nhan
+    local n, t = 0, nil
+    t = _G.Timer.StartLoop(0.5, 6, function()
+        n = n + 1
+        if n < 3 then return end
+        if t and t.Stop then pcall(function() t:Stop() end) end
+
+        local dsNhan = {}
+        pcall(function()
+            for _, m in pairs(_G.FarmKc_DanhSachThu()) do
+                local tt = tonumber(m.stateType) or 0
+                local rid = tonumber(m.rechargeId) or 0
+                -- chi lay thu CON vat pham chua nhan (trang thai 1 hoac 3)
+                if tt == 1 or tt == 3 then
+                    if (not chiThuNap) or rid ~= 0 then
+                        table.insert(dsNhan, m.mailId)
+                    end
+                end
+            end
+        end)
+
+        if #dsNhan == 0 then
+            if _G.FarmKc_Log then _G.FarmKc_Log("Khong co thu nao can nhan") end
+            ketThuc(true, 0)
+            return
+        end
+
+        if _G.FarmKc_Log then
+            _G.FarmKc_Log(string.format("Nhan %d thu%s", #dsNhan, chiThuNap and " (chi thu nap)" or ""))
+        end
+
+        local ok = pcall(function()
+            _G.NetManager.Send(_G.MailMessage.ReqGetMailItems, {
+                mailIds = dsNhan,
+                delete = false,
+            })
+        end)
+
+        -- cho 2s cho server xu ly roi bao xong
+        local n2, t2 = 0, nil
+        t2 = _G.Timer.StartLoop(0.5, 6, function()
+            n2 = n2 + 1
+            if n2 < 4 then return end
+            if t2 and t2.Stop then pcall(function() t2:Stop() end) end
+            ketThuc(ok, #dsNhan)
+        end)
+    end)
+end
+
+-- Giu ten cu cho tuong thich: nhan TAT CA thu con vat pham
+_G.FarmKc_NhanTatCaThu = function(onDone)
+    _G.FarmKc_NhanThu(false, function(ok, soThu)
+        if onDone then pcall(onDone, ok, soThu, 0) end
+    end)
 end
 
 local function ToIntArray(bStr, isIncludeLength)
