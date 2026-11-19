@@ -9,6 +9,7 @@ import {
   jobCodeChuaDung,
   buildOrderByFarmAccount,
 } from '@/lib/farm-account';
+import { phanBoLaiTheoDoi } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -191,7 +192,16 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({ ok: true, id: row.id, username: row.username });
+    // Tai khoan moi co the nhan dai STT co acc da chay tu truoc (dang vo chu)
+    // -> nhan ve cho tai khoan nay.
+    let doiChu = 0;
+    try {
+      doiChu = await phanBoLaiTheoDoi(kq.ds.map((k) => k.serverId));
+    } catch (e) {
+      console.error('Phan bo lai bang theo doi that bai:', e);
+    }
+
+    return NextResponse.json({ ok: true, id: row.id, username: row.username, doiChu });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi máy chủ' }, { status: 500 });
   }

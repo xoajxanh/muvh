@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma, ensureInitialSeed } from '@/lib/db';
+import { layDanhSachPhanBo } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -171,7 +172,7 @@ export async function GET(req: NextRequest) {
       ] }];
     }
 
-    const [total, rows] = await Promise.all([
+    const [totalGoc, rowsGoc] = await Promise.all([
       theoDoi.count({ where }),
       theoDoi.findMany({
         where,
@@ -185,6 +186,33 @@ export async function GET(req: NextRequest) {
         },
       }),
     ]);
+
+    // =====================================================================
+    // [MOD FEATURE]: XEM THEO TAI KHOAN FARM_KC = DU SO ACC DUOC PHAN BO
+    // Mo ta: Bang theo doi chi co dong khi acc da chay. Xem theo tai khoan thi
+    //        lay tu kho theo dai STT x server cua cac cong viec, acc chua chay
+    //        hien thanh dong trang thai NEW - de thay dung 100/100 duoc giao.
+    // =====================================================================
+    let total = totalGoc;
+    let rows: any[] = rowsGoc as any[];
+    let soDuocGiao = 0;
+    if (farmUser) {
+      const sidLoc = serverIdRaw ? parseInt(serverIdRaw, 10) : NaN;
+      const phanBo = await layDanhSachPhanBo({
+        farmLevel: 50,
+        farmUser,
+        serverId: Number.isFinite(sidLoc) ? sidLoc : null,
+        keyword,
+        status,
+        sortBy,
+        sortDir,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      total = phanBo.total;
+      rows = phanBo.rows;
+      soDuocGiao = phanBo.total;
+    }
 
     const items = (rows as any[]).map((r: any) => ({
       id: r.id,
@@ -205,6 +233,8 @@ export async function GET(req: NextRequest) {
       errorMsg: r.errorMsg,
       stt: (r as any).stt ?? 0,
       farmUsername: (r as any).farmAccount?.username || '',
+      // Acc da duoc giao nhung chua chay lan nao tren server nay
+      chuaChay: !!r.chuaChay,
       createdBy: r.createdBy?.displayName || r.createdBy?.username || '',
       updatedAt: r.updatedAt,
     }));
@@ -215,6 +245,7 @@ export async function GET(req: NextRequest) {
       pageSize,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      soDuocGiao,
       sortBy,
       sortDir,
       isAdmin: session.role === 'ADMIN',

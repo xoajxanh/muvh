@@ -406,11 +406,19 @@ export default function FarmAccountsPage() {
   };
 
   const xoa = async (r: any) => {
-    if (!confirm(`Xoá tài khoản FARM_KC "${r.username}"?`)) return;
+    if (!confirm(
+      `Xoá tài khoản FARM KC "${r.username}"?\n\n` +
+      `Sẽ xoá luôn các công việc và TOÀN BỘ bản ghi theo dõi (acc đã chạy trên các server) của tài khoản này.\n` +
+      `Kho mặc định không bị ảnh hưởng. Không hoàn tác được.`,
+    )) return;
     try {
       const res = await fetch(`/api/farm-accounts/${r.id}`, { method: 'DELETE' });
       const j = await res.json();
       if (!res.ok) { alert(j.error || 'Xoá không thành công'); return; }
+      const x = j.daXoa || {};
+      if ((x.lv200 || 0) + (x.lv50 || 0) > 0) {
+        alert(`Đã xoá "${r.username}" cùng ${x.lv200 || 0} bản ghi Lv200 và ${x.lv50 || 0} bản ghi Lv50.`);
+      }
       load(page);
     } catch (e: any) { alert(e.message || 'Lỗi mạng'); }
   };

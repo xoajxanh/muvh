@@ -199,7 +199,11 @@ function FarmKcNoiDung() {
 
   const loadCounts = async () => {
     try {
-      const res = await fetch('/api/farm/counts');
+      // Dem theo DUNG bo loc dang xem de so tren tab khop voi danh sach
+      const qc = new URLSearchParams();
+      if (farmUser) qc.set('username', farmUser);
+      if (serverLoc) qc.set('serverId', serverLoc);
+      const res = await fetch(`/api/farm/counts?${qc}`);
       if (res.ok) setCounts(await res.json());
     } catch (e) {
       console.error(e);
@@ -317,6 +321,8 @@ function FarmKcNoiDung() {
   //        nền chung, chỉ dòng NO_CODE (lúc xin không còn mã) được tô cảnh báo.
   // =========================================================================
   const layMauDong = (r: any) => {
+    // Acc duoc giao nhung chua chay lan nao -> lam mo
+    if (r.chuaChay) return 'opacity-55 hover:opacity-100 hover:bg-slate-800/30';
     if (r.status === 'NO_CODE') {
       return 'bg-orange-950/60 hover:bg-orange-900/50 border-l-2 border-l-orange-500';
     }
@@ -884,7 +890,9 @@ function FarmKcNoiDung() {
                         )}
 
                         <td className="px-4 py-2.5 text-center">
-                          <Badge st={r.status} />
+                          {r.chuaChay
+                            ? <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border bg-slate-800/60 text-slate-400 border-slate-700 border-dashed" title="Đã giao cho tài khoản nhưng chưa chạy lần nào trên server này">CHƯA CHẠY</span>
+                            : <Badge st={r.status} />}
                           {laAcc200 && r.failCount > 0 && (
                             <div className="text-[11px] text-rose-400 mt-1">lỗi x{r.failCount}</div>
                           )}

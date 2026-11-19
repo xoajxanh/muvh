@@ -3192,10 +3192,11 @@ local function CreateModUI()
             -- An thanh phan cu THEO TEN, khong theo danh sach chup mot lan.
             -- Lam vay thi goi lai luc nao cung dung, ke ca khi co doan code
             -- khac bat lai hoac tao them widget cu sau nay.
-            -- Giu lai: cac widget moi (ten bat dau bang "Fkc") va nut ZOOM.
+            -- Giu lai: cac widget moi (ten bat dau bang "Fkc").
+            -- Nut ZOOM doc cung an - chuc nang da chuyen vao nut KICH THUOC.
             -- ---------------------------------------------------------------
             local function LaPhanMoi(ten)
-                return ten == "ZoomVerticalBtn" or string.sub(ten, 1, 3) == "Fkc"
+                return string.sub(ten, 1, 3) == "Fkc"
             end
 
             local function AnPhanCu(hienLai)
@@ -3328,13 +3329,22 @@ local function CreateModUI()
 
             -- ---------- 4) Hang tien do ----------
             local lblMucTieu = Chu("FkcLblMucTieu", 20, 410, 480, 24,
-                "Mục tiêu: -- | Tiến độ Acc: 0/0 (0%) | Đang chạy: --", 13, Color(0.55, 0.95, 0.6, 1))
+                "Mục tiêu: -- | Acc: 0/0/0", 13, Color(0.85, 0.88, 0.92, 1))
+            pcall(function() lblMucTieu.supportRichText = true end)
             local lblTrangThai = Chu("FkcLblState", 500, 410, 268, 24,
                 "Trạng thái: Chờ đăng nhập...", 13, Color(0.45, 0.85, 0.95, 1), TextAnchor.MiddleRight)
             Khung("FkcThanhNen", 20, 394, 740, 10, Color(0.18, 0.20, 0.25, 1))
             local _, imgThanh, rtThanh = Khung("FkcThanhChay", 20, 394, 1, 10, Color(0.25, 0.70, 0.95, 1))
             local lblTacVu = Chu("FkcLblTask", 500, 372, 268, 20,
                 "Tác vụ: Đang chờ lệnh...", 11, MAU_MO, TextAnchor.MiddleRight)
+
+            -- [MOD FEATURE]: DONG NICK DANG CHAY - hien ro acc nao dang cay de theo doi
+            local lblNick = Chu("FkcLblNick", 20, 368, 476, 24,
+                "Đang chạy: --", 14, Color(0.45, 0.90, 1, 1))
+            pcall(function()
+                lblNick.supportRichText = true
+                lblNick.fontStyle = CS.UnityEngine.FontStyle.Bold
+            end)
 
             -- ---------- 5) Luoi server = danh sach cong viec ----------
             Chu("FkcLblServer", 20, 340, 400, 24,
@@ -3378,34 +3388,58 @@ local function CreateModUI()
                     -- CHI tinh tien do khi danh sach acc den tu WEB (DB) va dang
                     -- co cong viec. Khong thi hien 0/0 - tranh lay nham danh
                     -- sach acc cu sinh theo tien to (so lieu rac).
-                    local coDsWeb = v and _G.Mod_FarmKc_WebAccounts
-                        and #_G.Mod_FarmKc_WebAccounts > 0
-                    local conPhaiChay, dangO, tenAcc = 0, 0, "--"
+                    -- =========================================================
+                    -- [MOD FEATURE]: MUC TIEU xx/yy/zz
+                    --   xx (xanh) = so acc DA THUC HIEN trong phien hien tai
+                    --   yy (vang) = so acc CON PHAI thuc hien
+                    --   zz (trang)= TONG so acc trong dai cong viec
+                    --   Chi tinh khi danh sach acc den tu WEB (DB), khong thi 0.
+                    -- =========================================================
+                    local ds = _G.Mod_FarmKc_WebAccounts
+                    local coDsWeb = v and ds and #ds > 0
+                    local xx, yy, zz = 0, 0, 0
+                    local tenAcc, sttAcc = "--", "?"
                     if coDsWeb then
-                        conPhaiChay = #_G.Mod_FarmKc_WebAccounts
-                        dangO = _G.CurrentAccountIndex or 0
-                        if dangO > conPhaiChay then dangO = conPhaiChay end
-                        pcall(function()
-                            local a = _G.Mod_FarmKc_WebAccounts[_G.CurrentAccountIndex or 1]
-                            if a and a.account then
-                                tenAcc = string.format("#%s %s", tostring(a.stt or "?"), tostring(a.account))
-                            end
-                        end)
+                        local idx = tonumber(_G.CurrentAccountIndex) or 1
+                        if idx < 1 then idx = 1 end
+                        xx = tonumber(_G.Mod_FarmKc_PhienDaChay) or 0
+                        yy = math.max(0, #ds - (idx - 1))
+                        zz = tonumber(_G.Mod_FarmKc_JobTong) or #ds
+                        local a = ds[math.min(idx, #ds)]
+                        if a and a.account then
+                            tenAcc = tostring(a.account)
+                            sttAcc = tostring(a.stt or "?")
+                        end
                     end
 
-                    -- Tien do tinh tren CA DAI: da xong tu truoc + da chay phien nay
-                    local tongDai = tonumber(_G.Mod_FarmKc_JobTong) or conPhaiChay
-                    local daXongTruoc = tonumber(_G.Mod_FarmKc_JobDaXong) or 0
-                    local daQua = daXongTruoc + math.max(0, dangO - 1)
-                    local phanTram = 0
-                    if tongDai > 0 then phanTram = math.floor((daQua / tongDai) * 100) end
-
                     lblMucTieu.text = string.format(
-                        "Mục tiêu: %s | Dải %s acc · đã xong %s · còn %s | Đang chạy: %s",
+                        "Mục tiêu: <color=#ffd166>%s · S%s</color> | Acc: <color=#4ade80>%d</color>/<color=#fbbf24>%d</color>/<color=#e2e8f0>%d</color>  <color=#64748b>(đã chạy/còn lại/tổng)</color>",
                         v and ("Lv" .. tostring(v.farmLevel)) or "--",
-                        tostring(tongDai), tostring(daQua), tostring(conPhaiChay - math.max(0, dangO - 1)),
-                        tenAcc)
+                        v and tostring(v.serverId) or "--",
+                        xx, yy, zz)
 
+                    -- Dong nick dang chay + level hien tai / level can cay
+                    local lvHienTai, lvCan = 0, 0
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        lvHienTai = tonumber((me and me.level) or (me and me.data and me.data.level) or 0) or 0
+                    end)
+                    pcall(function()
+                        lvCan = tonumber(CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 0)) or 0
+                    end)
+                    if coDsWeb then
+                        lblNick.text = string.format(
+                            "Đang chạy: <color=#94a3b8>#%s</color> %s  <color=#64748b>|</color> Cày Lv: <color=#4ade80>%d</color>/<color=#ffd166>%d</color>",
+                            sttAcc, tenAcc, lvHienTai, lvCan)
+                    else
+                        lblNick.text = "Đang chạy: --"
+                    end
+
+                    local phanTram = 0
+                    if zz > 0 then
+                        local daXongDai = math.max(0, zz - yy)
+                        phanTram = math.floor((daXongDai / zz) * 100)
+                    end
                     rtThanh.sizeDelta = Vector2(math.max(1, 740 * (phanTram / 100)), 10)
 
                     if _G.Bot_Running then
@@ -3421,6 +3455,35 @@ local function CreateModUI()
                 end)
             end
             _G.Mod_FarmKc_CapNhatPanel = CapNhat
+
+            -- =========================================================
+            -- [MOD FEATURE]: TU LAM MOI PANEL MOI GIAY
+            -- Mo ta: Bot chay sang acc khac / len level thi panel tu hien dung,
+            --        khong can bam gi. Dong thoi an lai widget cu (Delay Nu
+            --        Hoang...) neu co doan code nao bat lai. Panel dang an thi
+            --        bo qua cho nhe.
+            -- =========================================================
+            if not _G.Mod_FarmKc_PanelLoop and _G.Timer and _G.Timer.StartLoop then
+                pcall(function()
+                    _G.Mod_FarmKc_PanelLoop = _G.Timer.StartLoop(1.0, -1, function()
+                        pcall(function()
+                            if panelGo and not panelGo:Equals(nil) and panelGo.activeInHierarchy then
+                                CapNhat()
+                            end
+                        end)
+                    end)
+                end)
+            end
+
+            -- Moi lan MOD cu bao doi acc / doi trang thai cung cap nhat panel moi
+            if _G.Mod_UpdateServerStatusUI and not _G.Mod_FarmKc_DaBocStatusUI then
+                _G.Mod_FarmKc_DaBocStatusUI = true
+                local goc = _G.Mod_UpdateServerStatusUI
+                _G.Mod_UpdateServerStatusUI = function(...)
+                    pcall(goc, ...)
+                    pcall(CapNhat)
+                end
+            end
 
             -- ---------- 7) Chon mot cong viec ----------
             local function VeNutViec()  -- khai bao truoc de ChonViec goi duoc
@@ -3627,10 +3690,39 @@ local function CreateModUI()
                 "▶ BẮT ĐẦU", Color(0.14, 0.62, 0.30, 1), Color.white, 16, nil)
             local goTamDung, imgTamDung = Nut("FkcBtnPause", 270, 18, 240, 44,
                 "❚❚ TẠM DỪNG", Color(0.38, 0.14, 0.16, 1), Color(0.95, 0.75, 0.75, 1), 16, nil)
-            Nut("FkcBtnHide", 520, 18, 240, 44, "THU GỌN",
-                Color(0.25, 0.27, 0.32, 1), Color.white, 16, function()
-                    pcall(function() panelGo:SetActive(false) end)
+            -- =========================================================
+            -- [MOD FEATURE]: NUT KICH THUOC (thay nut THU GON + nut ZOOM doc)
+            -- Mo ta: Moi lan bam chuyen co menu 1.0x -> 1.2x -> 1.5x -> 1.0x.
+            --        Dung lai dung logic zoom cu (Mod_MenuScale + PlayerPrefs
+            --        + UpdateZoomVisuals) nen co da chon duoc nho cho lan sau.
+            -- =========================================================
+            local function NhanKichThuoc()
+                local cur = tonumber(_G.Mod_MenuScale) or 1.0
+                return string.format("KÍCH THƯỚC %.1fx", cur)
+            end
+            local _, _, txtKichThuoc = Nut("FkcBtnSize", 520, 18, 240, 44, NhanKichThuoc(),
+                Color(0.25, 0.27, 0.32, 1), Color.white, 16, nil)
+            pcall(function()
+                local goSize = panelGo.transform:Find("FkcBtnSize").gameObject
+                goSize:GetComponent(typeof(Button)).onClick:AddListener(function()
+                    local cur = tonumber(_G.Mod_MenuScale) or 1.0
+                    local tiep = 1.0
+                    if math.abs(cur - 1.0) < 0.05 then
+                        tiep = 1.2
+                    elseif math.abs(cur - 1.2) < 0.05 then
+                        tiep = 1.5
+                    else
+                        tiep = 1.0
+                    end
+                    _G.Mod_MenuScale = tiep
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_MenuScale", tiep)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    pcall(UpdateZoomVisuals)
+                    pcall(function() txtKichThuoc.text = NhanKichThuoc() end)
                 end)
+            end)
 
             local function CapNhatNutChay()
                 pcall(function()
@@ -5038,6 +5130,8 @@ _G.Mod_FarmKc_NapAccTuWeb = function(onDone)
             end
 
             _G.Mod_FarmKc_WebAccounts = gom
+            -- Nap lai danh sach = bat dau phien moi -> dem lai tu 0
+            _G.Mod_FarmKc_PhienDaChay = 0
             -- So lieu CA DAI, de panel hien dung "con lai / tong" chu khong
             -- phai chi so acc vua tai ve (acc da xong khong duoc tra ve nua)
             _G.Mod_FarmKc_JobTong   = tonumber(obj.tongTrongDai) or #gom
@@ -5072,6 +5166,11 @@ end
 _G.Mod_FarmKc_BaoNhipTim = function(stt, trangThai)
     local ma = tostring(_G.Mod_Farm_JobCode or "")
     if ma == "" then return end
+    -- Main.lua goi ham nay moi khi chay XONG mot acc (thanh cong hay that bai)
+    -- -> dem so acc da thuc hien trong phien hien tai. Tam dung thi khong dem.
+    if trangThai ~= "PAUSED" then
+        _G.Mod_FarmKc_PhienDaChay = (tonumber(_G.Mod_FarmKc_PhienDaChay) or 0) + 1
+    end
     pcall(function()
         _G.FarmKc_Api_JobHeartbeat(ma, tonumber(stt) or 0, trangThai or "RUNNING", nil)
     end)

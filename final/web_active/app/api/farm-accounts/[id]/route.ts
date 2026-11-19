@@ -8,6 +8,7 @@ import {
   kiemTraChongLanNhieu,
   jobCodeChuaDung,
 } from '@/lib/farm-account';
+import { phanBoLaiTheoDoi, xoaTheoDoiCuaTaiKhoan } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,10 +82,21 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
       })),
     );
 
-    // Ghi lai toan bo khoang: xoa cai cu roi tao lai theo danh sach moi
-    await (prisma as any).$transaction([
-      (prisma as any).farmAccountRange.deleteMany({ where: { farmAccountId: id } }),
-      (prisma as any).farmAccount.update({
+    // Server bi anh huong = server cua cong viec CU + cong viec MOI
+    const serverAnhHuong: number[] = [
+      ...(cu.ranges || []).map((k: any) => Number(k.serverId)),
+      ...dsGhi.map((k) => Number(k.serverId)),
+    ];
+
+    // =====================================================================
+    // [MOD FEATURE]: SUA CONG VIEC -> PHAN BO LAI BANG THEO DOI
+    // Ghi lai toan bo khoang roi tinh lai chu so huu cua cac dong theo doi tren
+    // nhung server lien quan - tat ca trong MOT transaction, loi la hoan tac.
+    // =====================================================================
+    let doiChu = 0;
+    await (prisma as any).$transaction(async (tx: any) => {
+      await tx.farmAccountRange.deleteMany({ where: { farmAccountId: id } });
+      await tx.farmAccount.update({
         where: { id },
         data: {
           username,
@@ -92,10 +104,11 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
           note,
           ranges: { create: dsGhi },
         },
-      }),
-    ]);
+      });
+      doiChu = await phanBoLaiTheoDoi(serverAnhHuong, tx);
+    });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, doiChu });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi máy chủ' }, { status: 500 });
   }
@@ -120,11 +133,19 @@ export async function DELETE(req: NextRequest, ctx: { params: { id: string } }) 
       );
     }
 
-    await (prisma as any).$transaction([
-      (prisma as any).farmAccountRange.deleteMany({ where: { farmAccountId: id } }),
-      (prisma as any).farmAccount.delete({ where: { id } }),
-    ]);
-    return NextResponse.json({ ok: true });
+    // =====================================================================
+    // [MOD FEATURE]: XOA TAI KHOAN -> XOA LUON BAN GHI THEO DOI CUA NO
+    // Thu tu: go lien ket "moi boi" -> xoa theo doi Lv50, Lv200 -> xoa cong
+    // viec -> xoa tai khoan. Mot transaction, loi la hoan tac toan bo.
+    // Kho mac dinh khong bi dung toi.
+    // =====================================================================
+    let daXoa = { lv200: 0, lv50: 0, goLienKet: 0 };
+    await (prisma as any).$transaction(async (tx: any) => {
+      daXoa = await xoaTheoDoiCuaTaiKhoan(id, tx);
+      await tx.farmAccountRange.deleteMany({ where: { farmAccountId: id } });
+      await tx.farmAccount.delete({ where: { id } });
+    });
+    return NextResponse.json({ ok: true, daXoa });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi máy chủ' }, { status: 500 });
   }
