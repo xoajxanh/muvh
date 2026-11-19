@@ -96,6 +96,111 @@ BEGIN
     CREATE INDEX [FarmInvitee_inviterId_idx] ON [dbo].[FarmInvitee]([inviterId]);
     CREATE INDEX [FarmInvitee_createdById_idx] ON [dbo].[FarmInvitee]([createdById]);
 END;
+
+-- =====================================================================
+-- [MOD FEATURE]: FARM KC - TAI KHOAN CHAY BOT
+-- Mo ta: FarmAccount chi giu thong tin tai khoan (username / mat khau).
+--        MOI DONG CONG VIEC nam o bang FarmAccountRange: level + server +
+--        khoang STT. Mot tai khoan co the co nhieu dong -> cay nhieu level
+--        tren nhieu server cung luc (chay nhieu gia lap).
+-- =====================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmAccount')
+BEGIN
+    CREATE TABLE [dbo].[FarmAccount] (
+        [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [username] NVARCHAR(100) NOT NULL,
+        [password] NVARCHAR(255) NOT NULL DEFAULT '',
+        [note] NVARCHAR(1000) NULL,
+        [status] NVARCHAR(20) NOT NULL DEFAULT 'NEW',
+        [lastSyncAt] DATETIME2 NULL,
+        [createdById] NVARCHAR(100) NOT NULL,
+        [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
+    );
+    CREATE UNIQUE INDEX [FarmAccount_username_key] ON [dbo].[FarmAccount]([username]);
+    CREATE INDEX [FarmAccount_createdById_idx] ON [dbo].[FarmAccount]([createdById]);
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmAccountRange')
+BEGIN
+    CREATE TABLE [dbo].[FarmAccountRange] (
+        [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [farmAccountId] NVARCHAR(100) NOT NULL,
+        [jobCode] NVARCHAR(60) NOT NULL,
+        [farmLevel] INT NOT NULL,
+        [serverId] INT NOT NULL DEFAULT 0,
+        [serverName] NVARCHAR(255) NOT NULL DEFAULT '',
+        [rangeFrom] INT NOT NULL DEFAULT 0,
+        [rangeTo] INT NOT NULL DEFAULT 0,
+        [status] NVARCHAR(20) NOT NULL DEFAULT 'NEW',
+        -- Khoa thiet bi: gia lap nao dang giu viec nay
+        [deviceId] NVARCHAR(255) NULL,
+        [deviceName] NVARCHAR(255) NULL,
+        [lastHeartbeat] DATETIME2 NULL,
+        [cursorStt] INT NOT NULL DEFAULT 0,
+        [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
+    );
+    CREATE UNIQUE INDEX [FarmAccountRange_jobCode_key] ON [dbo].[FarmAccountRange]([jobCode]);
+    -- Moi tai khoan chi 1 viec cho moi cap (server, level)
+    CREATE UNIQUE INDEX [FarmAccountRange_acc_level_server_key] ON [dbo].[FarmAccountRange]([farmAccountId], [farmLevel], [serverId]);
+    CREATE INDEX [FarmAccountRange_level_server_idx] ON [dbo].[FarmAccountRange]([farmLevel], [serverId]);
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'stt')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [stt] INT NOT NULL DEFAULT 0;
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'uid')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [uid] NVARCHAR(50) NOT NULL DEFAULT '';
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'regIp')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [regIp] NVARCHAR(50) NOT NULL DEFAULT '';
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'regAt')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [regAt] DATETIME2 NULL;
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'farmAccountId')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [farmAccountId] NVARCHAR(100) NULL;
+    CREATE INDEX [FarmInviter_farmAccountId_idx] ON [dbo].[FarmInviter]([farmAccountId]);
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'stt')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [stt] INT NOT NULL DEFAULT 0;
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'uid')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [uid] NVARCHAR(50) NOT NULL DEFAULT '';
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'regIp')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [regIp] NVARCHAR(50) NOT NULL DEFAULT '';
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'regAt')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [regAt] DATETIME2 NULL;
+END;
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'farmAccountId')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [farmAccountId] NVARCHAR(100) NULL;
+    CREATE INDEX [FarmInvitee_farmAccountId_idx] ON [dbo].[FarmInvitee]([farmAccountId]);
+END;
+
+-- Acc import chua chay thi de trang thai goc
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'importBatch')
+BEGIN
+    ALTER TABLE [dbo].[FarmInvitee] ADD [importBatch] NVARCHAR(100) NOT NULL DEFAULT '';
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'importBatch')
+BEGIN
+    ALTER TABLE [dbo].[FarmInviter] ADD [importBatch] NVARCHAR(100) NOT NULL DEFAULT '';
+END;
 `;
 
 // -------------------------------------------------------------------------

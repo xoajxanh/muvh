@@ -45,6 +45,10 @@ _G.FarmKc_Config = {
         ReportInviter = "/api/v1/farm/inviter/report",
         ClaimCode     = "/api/v1/farm/invite/claim",
         ReportResult  = "/api/v1/farm/invite/result",
+        -- [MOD FEATURE]: FARM KC - CONG VIEC DUOC GIAO (job)
+        Jobs          = "/api/v1/farm/jobs",
+        JobAccounts   = "/api/v1/farm/job-accounts",
+        JobHeartbeat  = "/api/v1/farm/job-heartbeat",
     },
 
     -- ===== 7. ID TIỀN TỆ (đã xác nhận trong game, KHÔNG SỬA) ============
@@ -1946,24 +1950,51 @@ local function CreateModUI()
             _G.IsSwitchingAccount = false
 
             -- ĐĂNG XUẤT RA MÀN HÌNH LOGIN VÀ TỰ ĐỘNG ĐĂNG NHẬP VÀO ACC ĐANG CHỌN
-            pcall(function()
+            -- [MOD FEATURE]: FARM KC - log tung buoc de biet bot chet o dau.
+            -- Day la ban nut LOGIN GOI THAT (ban trong Main.lua khong duoc dung).
+            if _G.FarmKc_Nhat then
+                _G.FarmKc_Nhat(string.format(">>> [LOGIN 1/5] Nut LOGIN: acc [%d/%d] %s | server %s",
+                    curAccIdx, totalAccs, tostring(email), tostring(targetSrv)))
+            end
+            local okLogin, errLogin = pcall(function()
                 local logoutFunc = _G.ForceLogoutToLogin or ForceLogoutToLogin
                 local loginFunc = _G.StartFullLoginProcess or StartFullLoginProcess
                 local dismissFunc = _G.DismissBlockers or DismissBlockers
                 local tObj = _G.Timer or Timer
 
-                if logoutFunc then
-                    logoutFunc()
-                    if tObj and tObj.Start then
-                        tObj.Start(2.5, function()
-                            if dismissFunc then dismissFunc() end
-                            if loginFunc then
-                                loginFunc()
-                            end
-                        end)
-                    end
+                if _G.FarmKc_Nhat then
+                    _G.FarmKc_Nhat(string.format("    [LOGIN 2/5] co logout=%s login=%s timer=%s",
+                        tostring(logoutFunc ~= nil), tostring(loginFunc ~= nil),
+                        tostring(tObj ~= nil and tObj.Start ~= nil)))
                 end
+
+                if not logoutFunc then
+                    if _G.FarmKc_Nhat then _G.FarmKc_Nhat("!!! [LOGIN] KHONG CO ForceLogoutToLogin - DUNG") end
+                    return
+                end
+                logoutFunc()
+                if _G.FarmKc_Nhat then _G.FarmKc_Nhat("    [LOGIN 3/5] Da thoat ve man login, cho 2.5s...") end
+                if not (tObj and tObj.Start) then
+                    if _G.FarmKc_Nhat then _G.FarmKc_Nhat("!!! [LOGIN] KHONG CO Timer.Start - DUNG") end
+                    return
+                end
+                tObj.Start(2.5, function()
+                    if dismissFunc then dismissFunc() end
+                    if _G.FarmKc_Nhat then _G.FarmKc_Nhat("    [LOGIN 4/5] Het cho -> goi StartFullLoginProcess") end
+                    if not loginFunc then
+                        if _G.FarmKc_Nhat then _G.FarmKc_Nhat("!!! [LOGIN] KHONG CO StartFullLoginProcess - DUNG") end
+                        return
+                    end
+                    local okRun, errRun = pcall(loginFunc)
+                    if _G.FarmKc_Nhat then
+                        _G.FarmKc_Nhat(string.format("    [LOGIN 5/5] StartFullLoginProcess tra ve: ok=%s err=%s",
+                            tostring(okRun), tostring(errRun)))
+                    end
+                end)
             end)
+            if not okLogin and _G.FarmKc_Nhat then
+                _G.FarmKc_Nhat("!!! [LOGIN] LOI: " .. tostring(errLogin))
+            end
         end
         _G.LoginCurrentSelectedAccount = LoginCurrentSelectedAccount
 
@@ -2568,6 +2599,336 @@ local function CreateModUI()
 
             -- Áp dụng lại chế độ đã lưu khi mở menu (im lặng, không hiện thông báo)
             _G.Mod_FarmKc_ApplyInviteMode(_G.Mod_Farm_InviteMode, true)
+        end)
+
+        -- =========================================================================
+        -- [MOD FEATURE]: FARM KC - PANEL CONG VIEC DUOC GIAO (JOB)
+        -- Mo ta: Thay cho o USER WEB + 2 nut gat chon che do thu cong.
+        --        Nguoi dung chi nhap TAI KHOAN + MAT KHAU roi bam KIEM TRA;
+        --        web tra ve cac cong viec (block) duoc giao cho tai khoan do,
+        --        moi cong viec = jobCode + level + server + dai STT.
+        --          - Mot viec   -> mod tu chon luon
+        --          - Nhieu viec -> hien nut de bam chon
+        --        Chon xong mod tu khoa target level (200/50) va nho dai STT.
+        -- LUU Y: cac thanh phan cu CHI BI AN (SetActive(false)), KHONG xoa,
+        --        de co the bat lai neu can.
+        -- =========================================================================
+        pcall(function()
+            local JOB_X = 466
+
+            -- ---------- 1) An cac thanh phan cu cua FARM KC ----------
+            local CAC_PHAN_CU = {
+                "LblFarmKcHeader", "BtnFarmKcLv200", "BtnFarmKcLv50",
+                "LblFarmKcUser", "InFarmKcUser", "BtnFarmKcSaveUser",
+            }
+            for _, ten in ipairs(CAC_PHAN_CU) do
+                pcall(function()
+                    local tr = panelGo.transform:Find(ten)
+                    if tr and not tr:Equals(nil) then tr.gameObject:SetActive(false) end
+                end)
+            end
+
+            -- ---------- 2) Trang thai cong viec ----------
+            if _G.Mod_FarmKc_Job == nil then _G.Mod_FarmKc_Job = nil end
+            local dsViec = {}
+            local nutViec = {}
+
+            -- Tieu de
+            pcall(function()
+                local hGo = GameObject("LblFarmKcJobHeader")
+                hGo.transform:SetParent(panelGo.transform, false)
+                local hRt = hGo:AddComponent(typeof(RectTransform))
+                hRt.anchorMin, hRt.anchorMax, hRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                hRt.anchoredPosition = Vector2(JOB_X, 292)
+                hRt.sizeDelta = Vector2(310, 24)
+                local hTxt = hGo:AddComponent(typeof(Text))
+                hTxt.text = "FARM KC - CÔNG VIỆC ĐƯỢC GIAO:"
+                hTxt.fontSize = 13
+                hTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+                hTxt.alignment = TextAnchor.MiddleLeft
+                hTxt.color = Color(1, 0.85, 0.35, 1)
+                hTxt.raycastTarget = false
+                if defaultFont then hTxt.font = defaultFont end
+            end)
+
+            -- ---------- 3) Hang dang nhap: TK + MK + nut KIEM TRA ----------
+            local savedUser, savedPass = "", ""
+            pcall(function()
+                savedUser = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_WebUsername", "")
+                savedPass = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_WebPassword", "")
+            end)
+
+            CreateSafeLabel(panelGo, "LblJobTk", JOB_X, 0, 26, 22, "TK:")
+            local inTk = CreateSafeInputField(panelGo, "InJobTk", JOB_X + 28, 0, 96, 28, savedUser, false)
+            CreateSafeLabel(panelGo, "LblJobMk", JOB_X + 128, 0, 26, 22, "MK:")
+            local inMk = CreateSafeInputField(panelGo, "InJobMk", JOB_X + 156, 0, 86, 28, savedPass, false)
+
+            -- Dat lai toa do (CreateSafe* dung anchor giua -> ep ve goc duoi trai)
+            local function DatViTri(ten, x, y, w, h)
+                pcall(function()
+                    local tr = panelGo.transform:Find(ten)
+                    if not tr or tr:Equals(nil) then return end
+                    local rt = tr:GetComponent(typeof(RectTransform))
+                    rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                    rt.anchoredPosition = Vector2(x, y)
+                    if w and h then rt.sizeDelta = Vector2(w, h) end
+                end)
+            end
+            DatViTri("LblJobTk", JOB_X, 265, 26, 22)
+            DatViTri("InJobTk",  JOB_X + 28, 262, 96, 28)
+            DatViTri("LblJobMk", JOB_X + 128, 265, 26, 22)
+            DatViTri("InJobMk",  JOB_X + 156, 262, 86, 28)
+
+            -- Ô mật khẩu hiện dấu sao
+            pcall(function()
+                inMk.contentType = CS.UnityEngine.UI.InputField.ContentType.Password
+            end)
+
+            -- Giu tuong thich: cac luong cu van doc username qua ham nay
+            _G.Mod_FarmKc_WebUserInput = inTk
+
+            -- ---------- 4) Nhan trang thai + nhan cong viec ----------
+            local function TaoNhan(ten, x, y, w, h, chu, co, mau)
+                local gGo = GameObject(ten)
+                gGo.transform:SetParent(panelGo.transform, false)
+                local gRt = gGo:AddComponent(typeof(RectTransform))
+                gRt.anchorMin, gRt.anchorMax, gRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                gRt.anchoredPosition = Vector2(x, y)
+                gRt.sizeDelta = Vector2(w, h)
+                local gTxt = gGo:AddComponent(typeof(Text))
+                gTxt.text = chu
+                gTxt.fontSize = co or 12
+                gTxt.alignment = TextAnchor.MiddleLeft
+                gTxt.color = mau or Color(0.8, 0.8, 0.85, 1)
+                gTxt.raycastTarget = false
+                if defaultFont then gTxt.font = defaultFont end
+                return gTxt
+            end
+
+            local lblTrangThai = TaoNhan("LblJobStatus", JOB_X, 232, 310, 20, "Chưa đăng nhập", 12, Color(1, 0.75, 0.3, 1))
+            local lblViec      = TaoNhan("LblJobInfo",   JOB_X, 212, 310, 20, "Công việc: --", 12, Color(0.75, 0.85, 1, 1))
+
+            -- ---------- 5) Chon mot cong viec ----------
+            local function ChonViec(v, imLang)
+                if not v then return end
+                _G.Mod_FarmKc_Job = v
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_JobCode", tostring(v.jobCode or ""))
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+
+                -- Khoa che do theo level cua cong viec (dung lai luong cu)
+                local mode = (tonumber(v.farmLevel) == 200) and "LV200" or "LV50"
+                pcall(function()
+                    if _G.Mod_FarmKc_ApplyInviteMode then _G.Mod_FarmKc_ApplyInviteMode(mode, true) end
+                end)
+
+                -- Nho dai STT + server de luong farm dung
+                _G.Mod_Farm_JobRangeFrom = tonumber(v.rangeFrom) or 0
+                _G.Mod_Farm_JobRangeTo   = tonumber(v.rangeTo) or 0
+                _G.Mod_Farm_JobServerId  = tonumber(v.serverId) or 0
+                _G.Mod_Farm_JobCode      = tostring(v.jobCode or "")
+
+                pcall(function()
+                    lblViec.text = string.format(
+                        "%s | Lv%s | S%s | STT %s-%s | xong %s/%s",
+                        tostring(v.jobCode or "--"), tostring(v.farmLevel or "--"),
+                        tostring(v.serverId or "--"),
+                        tostring(v.rangeFrom or 0), tostring(v.rangeTo or 0),
+                        tostring(v.daXong or 0), tostring(v.tongAcc or 0))
+                    lblViec.color = Color(0.6, 1, 0.7, 1)
+                end)
+
+                if (not imLang) and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                    _G.FloatingWordUtility.QuickMsg("ĐÃ CHỌN VIỆC: " .. tostring(v.jobCode))
+                end
+
+                -- Nap luon danh sach acc game cua viec nay tu web (DB)
+                pcall(function()
+                    lblTrangThai.text = "Đang tải danh sách acc từ web..."
+                    lblTrangThai.color = Color(1, 0.85, 0.4, 1)
+                end)
+                if _G.Mod_FarmKc_NapAccTuWeb then
+                    _G.Mod_FarmKc_NapAccTuWeb(function(ok, soAcc, loi)
+                        pcall(function()
+                            if ok then
+                                lblTrangThai.text = string.format("Đã nạp %d acc từ web - sẵn sàng chạy", soAcc or 0)
+                                lblTrangThai.color = Color(0.5, 1, 0.6, 1)
+                            else
+                                lblTrangThai.text = "Lỗi nạp acc: " .. tostring(loi or "")
+                                lblTrangThai.color = Color(1, 0.45, 0.4, 1)
+                            end
+                        end)
+                        if ok and (not imLang) and _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                            _G.FloatingWordUtility.QuickMsg("ĐÃ NẠP " .. tostring(soAcc or 0) .. " ACC TỪ WEB")
+                        end
+                    end)
+                end
+            end
+            _G.Mod_FarmKc_ChonViec = ChonViec
+
+            -- ---------- 6) Hang nut chon viec (toi da 3 nut) ----------
+            local function DonNutViec()
+                for _, b in ipairs(nutViec) do
+                    pcall(function()
+                        if b and not b:Equals(nil) then CS.UnityEngine.Object.Destroy(b) end
+                    end)
+                end
+                nutViec = {}
+            end
+
+            local function VeNutViec()
+                DonNutViec()
+                local soNut = math.min(#dsViec, 3)
+                if soNut <= 1 then return end
+                local rong = math.floor((310 - (soNut - 1) * 4) / soNut)
+                for i = 1, soNut do
+                    local v = dsViec[i]
+                    local bGo = GameObject("BtnJobPick" .. i)
+                    bGo.transform:SetParent(panelGo.transform, false)
+                    local bRt = bGo:AddComponent(typeof(RectTransform))
+                    bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+                    bRt.anchoredPosition = Vector2(JOB_X + (i - 1) * (rong + 4), 186)
+                    bRt.sizeDelta = Vector2(rong, 24)
+                    local bImg = bGo:AddComponent(typeof(Image))
+                    bImg.color = (tonumber(v.farmLevel) == 200)
+                        and Color(0.55, 0.38, 0.10, 1) or Color(0.15, 0.35, 0.60, 1)
+                    bImg.raycastTarget = true
+                    local tGo = GameObject("Text")
+                    tGo.transform:SetParent(bGo.transform, false)
+                    local tRt = tGo:AddComponent(typeof(RectTransform))
+                    tRt.anchorMin, tRt.anchorMax, tRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+                    local tTxt = tGo:AddComponent(typeof(Text))
+                    tTxt.text = string.format("Lv%s S%s", tostring(v.farmLevel), tostring(v.serverId))
+                    tTxt.fontSize = 11
+                    tTxt.color = v.dangChayOMayKhac and Color(1, 0.5, 0.5, 1) or Color.white
+                    tTxt.alignment = TextAnchor.MiddleCenter
+                    tTxt.raycastTarget = false
+                    if defaultFont then tTxt.font = defaultFont end
+                    local btn = bGo:AddComponent(typeof(Button))
+                    btn.targetGraphic = bImg
+                    btn.onClick:AddListener(function()
+                        if v.dangChayOMayKhac then
+                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                _G.FloatingWordUtility.QuickMsg("VIỆC NÀY ĐANG CHẠY Ở MÁY KHÁC: " .. tostring(v.deviceName or ""))
+                            end
+                            return
+                        end
+                        ChonViec(v)
+                    end)
+                    table.insert(nutViec, bGo)
+                end
+            end
+
+            -- ---------- 7) Nut KIEM TRA DANG NHAP ----------
+            local ktGo = GameObject("BtnJobLogin")
+            ktGo.transform:SetParent(panelGo.transform, false)
+            local ktRt = ktGo:AddComponent(typeof(RectTransform))
+            ktRt.anchorMin, ktRt.anchorMax, ktRt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
+            ktRt.anchoredPosition = Vector2(JOB_X + 246, 262)
+            ktRt.sizeDelta = Vector2(64, 28)
+            local ktImg = ktGo:AddComponent(typeof(Image))
+            ktImg.color = Color(0.15, 0.45, 0.75, 1)
+            ktImg.raycastTarget = true
+            local ktTxtGo = GameObject("Text")
+            ktTxtGo.transform:SetParent(ktGo.transform, false)
+            local ktTxtRt = ktTxtGo:AddComponent(typeof(RectTransform))
+            ktTxtRt.anchorMin, ktTxtRt.anchorMax, ktTxtRt.sizeDelta = Vector2(0, 0), Vector2(1, 1), Vector2(0, 0)
+            local ktTxt = ktTxtGo:AddComponent(typeof(Text))
+            ktTxt.text = "KIỂM TRA"
+            ktTxt.fontSize = 12
+            ktTxt.fontStyle = CS.UnityEngine.FontStyle.Bold
+            ktTxt.color = Color.white
+            ktTxt.alignment = TextAnchor.MiddleCenter
+            ktTxt.raycastTarget = false
+            if defaultFont then ktTxt.font = defaultFont end
+
+            local function NapCongViec(imLang)
+                local u, m = "", ""
+                pcall(function() u = tostring(inTk.text or "") end)
+                pcall(function() m = tostring(inMk.text or "") end)
+                u = (string.gsub(u, "^%s*(.-)%s*$", "%1"))
+                m = (string.gsub(m, "^%s*(.-)%s*$", "%1"))
+
+                if u == "" or m == "" then
+                    pcall(function()
+                        lblTrangThai.text = "Chưa nhập tài khoản hoặc mật khẩu"
+                        lblTrangThai.color = Color(1, 0.5, 0.4, 1)
+                    end)
+                    return
+                end
+
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_WebUsername", u)
+                    CS.UnityEngine.PlayerPrefs.SetString("Mod_Farm_WebPassword", m)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+
+                pcall(function()
+                    lblTrangThai.text = "Đang hỏi web..."
+                    lblTrangThai.color = Color(1, 0.85, 0.4, 1)
+                end)
+
+                _G.FarmKc_Api_GetJobs(u, m, function(ok, obj, err)
+                    if not ok or not obj then
+                        pcall(function()
+                            lblTrangThai.text = "Lỗi: " .. tostring(err or "không gọi được web")
+                            lblTrangThai.color = Color(1, 0.45, 0.4, 1)
+                        end)
+                        return
+                    end
+
+                    dsViec = obj.jobs or {}
+                    pcall(function()
+                        lblTrangThai.text = string.format("Đăng nhập OK - %s · %d việc",
+                            tostring(obj.username or u), #dsViec)
+                        lblTrangThai.color = Color(0.5, 1, 0.6, 1)
+                    end)
+
+                    if #dsViec == 0 then
+                        pcall(function()
+                            lblViec.text = "Chưa được giao việc nào - vào web tạo công việc"
+                            lblViec.color = Color(1, 0.7, 0.4, 1)
+                        end)
+                        DonNutViec()
+                        return
+                    end
+
+                    VeNutViec()
+
+                    if #dsViec == 1 then
+                        ChonViec(dsViec[1], imLang)
+                    else
+                        -- Uu tien viec da chon lan truoc
+                        local maCu = ""
+                        pcall(function()
+                            maCu = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_JobCode", "")
+                        end)
+                        local chon = nil
+                        for _, v in ipairs(dsViec) do
+                            if maCu ~= "" and tostring(v.jobCode) == maCu then chon = v end
+                        end
+                        if chon then
+                            ChonViec(chon, true)
+                        else
+                            pcall(function()
+                                lblViec.text = "Có " .. tostring(#dsViec) .. " việc - bấm nút bên dưới để chọn"
+                                lblViec.color = Color(1, 0.85, 0.4, 1)
+                            end)
+                        end
+                    end
+                end)
+            end
+            _G.Mod_FarmKc_NapCongViec = NapCongViec
+
+            local ktBtn = ktGo:AddComponent(typeof(Button))
+            ktBtn.targetGraphic = ktImg
+            ktBtn.onClick:AddListener(function() NapCongViec(false) end)
+
+            -- Da luu tai khoan tu lan truoc -> tu nap lai cong viec (im lang)
+            if savedUser ~= "" and savedPass ~= "" then
+                pcall(function() NapCongViec(true) end)
+            end
         end)
 
 
@@ -3725,6 +4086,17 @@ local function BuildBotAccounts()
 
     if eIdx < sIdx then eIdx = sIdx end
 
+    -- =====================================================================
+    -- [MOD FEATURE]: FARM KC - UU TIEN DANH SACH ACC LAY TU WEB (DB)
+    -- Mo ta: Khi da chon mot cong viec (jobCode) va da nap acc tu web thi
+    --        dung thang danh sach do, KHONG sinh email theo tien to nua.
+    --        Chua chon viec -> giu nguyen cach cu (sinh theo tien to + dai STT).
+    -- =====================================================================
+    if _G.Mod_FarmKc_WebAccounts and #_G.Mod_FarmKc_WebAccounts > 0 then
+        _G.BotAccounts = _G.Mod_FarmKc_WebAccounts
+        return _G.BotAccounts
+    end
+
     _G.BotAccounts = {}
     for i = sIdx, eIdx do
         local email = string.format("%s%04d@%s", prefix, i, domain)
@@ -4182,6 +4554,194 @@ _G.FarmKc_Api_ReportInviter = function(info, createdBy, onDone)
     FarmKc_PostJson(_G.FarmKc_Config.Api.ReportInviter, body, function(ok, obj, raw, err)
         if onDone then pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error)) end
     end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - API CONG VIEC DUOC GIAO
+-- Mo ta: Sau khi nguoi dung bam KIEM TRA DANG NHAP, mod hoi web xem tai khoan
+--        nay duoc giao nhung block nao (level + server + dai STT), roi tu dien
+--        vao panel. Moi block co mot ma dinh danh jobCode.
+-- =========================================================================
+
+-- Lay ID may (de web biet gia lap nao dang giu cong viec)
+_G.FarmKc_DeviceId = function()
+    local id = ""
+    pcall(function()
+        id = tostring(CS.UnityEngine.SystemInfo.deviceUniqueIdentifier or "")
+    end)
+    if id == "" then id = "unknown-device" end
+    return id
+end
+
+_G.FarmKc_DeviceName = function()
+    local ten = ""
+    pcall(function() ten = tostring(CS.UnityEngine.SystemInfo.deviceName or "") end)
+    if ten == "" or ten == "<unknown>" then
+        pcall(function() ten = tostring(CS.UnityEngine.SystemInfo.deviceModel or "") end)
+    end
+    if ten == "" then ten = "May khong ten" end
+    return ten
+end
+
+-- 5) Dang nhap tai khoan FARM KC + lay danh sach cong viec
+--    (ky: username + password)
+_G.FarmKc_Api_GetJobs = function(username, password, onDone)
+    local ts = FarmKc_Now()
+    FarmKc_Get(_G.FarmKc_Config.Api.Jobs, {
+        username = username, password = password,
+        deviceId = _G.FarmKc_DeviceId(),
+        ts = ts, sign = FarmKc_Sign({ username, password }, ts),
+    }, function(ok, obj, raw, err)
+        if onDone then
+            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+        end
+    end)
+end
+
+-- 6) Lay danh sach acc game cua mot cong viec (ky: jobCode)
+_G.FarmKc_Api_GetJobAccounts = function(jobCode, afterStt, take, onDone)
+    local ts = FarmKc_Now()
+    FarmKc_Get(_G.FarmKc_Config.Api.JobAccounts, {
+        jobCode = jobCode,
+        deviceId = _G.FarmKc_DeviceId(),
+        deviceName = _G.FarmKc_DeviceName(),
+        afterStt = afterStt or 0,
+        take = take or 50,
+        ts = ts, sign = FarmKc_Sign({ jobCode }, ts),
+    }, function(ok, obj, raw, err)
+        if onDone then
+            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+        end
+    end)
+end
+
+-- 7) Nhip tim + con tro chay (ky: jobCode + cursorStt)
+_G.FarmKc_Api_JobHeartbeat = function(jobCode, cursorStt, trangThai, onDone)
+    local ts = FarmKc_Now()
+    cursorStt = tonumber(cursorStt) or 0
+    FarmKc_PostJson(_G.FarmKc_Config.Api.JobHeartbeat, {
+        jobCode = jobCode,
+        deviceId = _G.FarmKc_DeviceId(),
+        deviceName = _G.FarmKc_DeviceName(),
+        cursorStt = cursorStt,
+        status = trangThai or "RUNNING",
+        ts = ts, sign = FarmKc_Sign({ jobCode, cursorStt }, ts),
+    }, function(ok, obj, raw, err)
+        if onDone then
+            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+        end
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - NAP DANH SACH ACC GAME TU WEB (DB)
+-- Mo ta: Lay acc trong dai STT cua cong viec dang chon, web da bo san cac
+--        acc lam xong roi. Lay theo tung lo 200 dong cho toi het.
+--        Ket qua do vao _G.Mod_FarmKc_WebAccounts roi goi BuildBotAccounts().
+-- =========================================================================
+local FARMKC_VAI_MACDINH = {
+    autoRecycleExcellence = true,
+    autoSmeltExcellenceAccessory = true,
+    autoSmeltSuit = true,
+    keepGoodLines = false,
+    maxChestBatches = 3,
+}
+
+local function FarmKc_TaoVai()
+    local t = {}
+    for i = 1, 4 do
+        t[i] = {
+            autoRecycleExcellence = FARMKC_VAI_MACDINH.autoRecycleExcellence,
+            autoSmeltExcellenceAccessory = FARMKC_VAI_MACDINH.autoSmeltExcellenceAccessory,
+            autoSmeltSuit = FARMKC_VAI_MACDINH.autoSmeltSuit,
+            keepGoodLines = FARMKC_VAI_MACDINH.keepGoodLines,
+            maxChestBatches = FARMKC_VAI_MACDINH.maxChestBatches,
+        }
+    end
+    return t
+end
+
+-- Nap toan bo acc cua cong viec dang chon. onDone(ok, soAcc, loi)
+_G.Mod_FarmKc_NapAccTuWeb = function(onDone)
+    local ma = tostring(_G.Mod_Farm_JobCode or "")
+    if ma == "" then
+        if onDone then pcall(onDone, false, 0, "Chua chon cong viec") end
+        return
+    end
+
+    local gom = {}
+    local LO = 200
+    local TRAN = 5000  -- chan vong lap vo han
+
+    local function LayTiep(afterStt)
+        _G.FarmKc_Api_GetJobAccounts(ma, afterStt, LO, function(ok, obj, err)
+            if not ok or not obj then
+                if onDone then pcall(onDone, false, #gom, err or "Khong goi duoc web") end
+                return
+            end
+
+            local ds = obj.accounts or {}
+            local sttCuoi = afterStt
+            for _, a in ipairs(ds) do
+                local stt = tonumber(a.stt) or 0
+                table.insert(gom, {
+                    id = stt,
+                    stt = stt,
+                    account = tostring(a.email or ""),
+                    password = tostring(a.password or ""),
+                    targetServer = tonumber(a.serverId) or tonumber(obj.serverId) or 0,
+                    jobCode = ma,
+                    roles = FarmKc_TaoVai(),
+                })
+                if stt > sttCuoi then sttCuoi = stt end
+            end
+
+            -- Con nua thi lay tiep lo sau
+            if #ds >= LO and #gom < TRAN and sttCuoi > afterStt then
+                LayTiep(sttCuoi)
+                return
+            end
+
+            _G.Mod_FarmKc_WebAccounts = gom
+            _G.Mod_Farm_JobServerId = tonumber(obj.serverId) or _G.Mod_Farm_JobServerId
+            pcall(function()
+                if (tonumber(obj.serverId) or 0) > 0 then
+                    _G.TARGET_SERVER_ID = tonumber(obj.serverId)
+                    _G.TARGET_SERVER_NAME = "S" .. tostring(_G.TARGET_SERVER_ID)
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", _G.TARGET_SERVER_ID)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end
+            end)
+
+            pcall(function() if _G.BuildBotAccounts then _G.BuildBotAccounts() end end)
+
+            -- Chay lai tu dau danh sach vua nap
+            _G.CurrentAccountIndex = 1
+            pcall(function()
+                CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", 1)
+                CS.UnityEngine.PlayerPrefs.Save()
+            end)
+
+            if onDone then pcall(onDone, true, #gom, nil) end
+        end)
+    end
+
+    LayTiep(0)
+end
+
+-- Bao nhip tim + STT dang chay toi (Main.lua goi moi khi doi acc)
+_G.Mod_FarmKc_BaoNhipTim = function(stt, trangThai)
+    local ma = tostring(_G.Mod_Farm_JobCode or "")
+    if ma == "" then return end
+    pcall(function()
+        _G.FarmKc_Api_JobHeartbeat(ma, tonumber(stt) or 0, trangThai or "RUNNING", nil)
+    end)
+end
+
+-- Quay lai dung cach cu: bo danh sach web, sinh email theo tien to
+_G.Mod_FarmKc_DungAccTuFile = function()
+    _G.Mod_FarmKc_WebAccounts = nil
+    pcall(function() if _G.BuildBotAccounts then _G.BuildBotAccounts() end end)
 end
 
 -- 3) Acc Lv50 xin mã mời (ký: email + serverId + deviceId)
@@ -5494,6 +6054,14 @@ end
 --        Cho 2 nhip de khong cuop popup ma luong khac dang chu dong xu ly.
 --        Chay doc lap moi luong: man dang nhap, chon nhan vat, trong game.
 -- =========================================================================
+-- [MOD FEATURE]: FARM KC - ghi log VA day xuong file ngay lap tuc.
+-- Log() chi ghi vao bo nho, phai SaveOutput() moi xuong output.txt; bot chet
+-- truoc moc do thi keo log ve khong thay gi.
+_G.FarmKc_Nhat = function(msg)
+    pcall(function() if _G.Log then _G.Log(tostring(msg), true) end end)
+    pcall(function() SaveOutput() end)
+end
+
 _G.FarmKc_PopupDangHien = function()
     local hien = false
     pcall(function()

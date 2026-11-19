@@ -2459,6 +2459,13 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 	--        chế độ mã mời chạy xong mới gọi chuyển acc.
 	-- =========================================================================
 	local function FarmKc_ChuyenAccKeTiep()
+	-- [MOD FEATURE]: FARM KC - bao web biet dang chay toi STT nao
+	pcall(function()
+		if _G.Mod_FarmKc_BaoNhipTim then
+			_G.Mod_FarmKc_BaoNhipTim((curAcc and curAcc.stt) or curAccIdx, "RUNNING")
+		end
+	end)
+
 	local nextAccIdx = curAccIdx + 1
 	if nextAccIdx <= totalAccs then
 		_G.CurrentAccountIndex = nextAccIdx
@@ -2571,6 +2578,13 @@ _G.OnAccountFailedAndSkip = function(reason)
 		File.AppendAllText(outDir .. "/farm_failed_accounts.txt", logLine, CS.System.Text.Encoding.UTF8)
 	end)
 	end
+	-- [MOD FEATURE]: FARM KC - bao web biet dang chay toi STT nao
+	pcall(function()
+		if _G.Mod_FarmKc_BaoNhipTim then
+			_G.Mod_FarmKc_BaoNhipTim((curAcc and curAcc.stt) or curAccIdx, "RUNNING")
+		end
+	end)
+
 	local nextAccIdx = curAccIdx + 1
 	if nextAccIdx <= totalAccs then
 		_G.CurrentAccountIndex = nextAccIdx
@@ -5841,10 +5855,15 @@ _G.LoginCurrentSelectedAccount = function()
 	_G.Bot_IsInGameWorld = false
 	_G.IsSwitchingAccount = false
 
+	Log(string.format(">>> [LOGIN B1] Thoat ve man login cho acc [%s] %s <<<",
+		tostring(_G.CurrentAccountIndex or 1), tostring(email)), true)
+	SaveOutput()
 	ForceLogoutToLogin()
 	Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 		_G.IsSwitchingAccount = false
 		DismissBlockers()
+		Log(">>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<", true)
+		SaveOutput()
 		StartFullLoginProcess()
 	end)
 	end   -- het FarmKc_DangNhapThat
@@ -8150,8 +8169,21 @@ _G.FarmKc_VanTayThietBi = FarmKc_VanTayThietBi
 -- =========================================================================
 pcall(function() math.randomseed(os.time() % 100000) end)
 local function FarmKc_DelayChuyenAcc()
+	-- Chi gian thoi gian khi THAT SU doi sang acc khac.
+	-- Lan dang nhap dau (bam nut) hoac dang nhap lai CUNG acc -> vao luon 2.5s,
+	-- neu khong bot se dung im o man ngoai ca phut, trong het nhu bi treo.
+	local accHienTai = tostring(_G.CurrentAccountIndex or 1)
+	local accTruoc = _G.FarmKc_AccLanTruoc
+	_G.FarmKc_AccLanTruoc = accHienTai
+	if accTruoc == nil or accTruoc == accHienTai then
+		Log("    [FARM KC] Dang nhap ngay (lan dau / cung acc) - khong gian delay", true)
+		SaveOutput()
+		return 2.5
+	end
 	local giay = 20 + math.random(0, 40)
-	Log(string.format("    [FARM KC] Cho %d giay roi moi dang nhap acc tiep theo...", giay), true)
+	Log(string.format("    [FARM KC] Doi acc %s -> %s: cho %d giay roi moi dang nhap...",
+		tostring(accTruoc), accHienTai, giay), true)
+	SaveOutput()
 	return giay
 end
 _G.FarmKc_DelayChuyenAcc = FarmKc_DelayChuyenAcc
@@ -8225,7 +8257,11 @@ _G.FarmKc_XuLyLoiSdkLogin = FarmKc_XuLyLoiSdkLogin
 StartFullLoginProcess = function()
 	-- [MOD FEATURE]: FARM KC - dang trong thoi gian cho vi bi SDK chan thi KHONG thu lai.
 	-- Man Splash hay kich hoat lai ham nay; khong chan thi se dap lien tuc vao server.
-	if _G.FarmKc_DangChoSdk then return end
+	if _G.FarmKc_DangChoSdk then
+		Log("    [LOGIN] Bo qua: dang trong thoi gian cho vi SDK chan", true)
+		SaveOutput()
+		return
+	end
 	local curAcc = GetCurrentAccount()
 	local username = curAcc.account or "accmuvh0001@gmail.com"
 	local password = curAcc.password or "12345ZXC"
@@ -8239,6 +8275,7 @@ StartFullLoginProcess = function()
 	-- [MOD FEATURE]: FARM KC - van tay rieng theo email, thay cho chuoi cu dung chung
 	local equip, devName, devRes = FarmKc_VanTayThietBi(username)
 	Log(string.format("    [FARM KC] Thiet bi: %s | %s | did=%s", tostring(devName), tostring(devRes), string.sub(tostring(equip), 1, 12) .. "..."), true)
+	SaveOutput()
 	local params = {
 		username = username,
 		pass = MD5(password),
@@ -8291,7 +8328,10 @@ StartFullLoginProcess = function()
 		["encrypt-type"] = "xxtea",
 		["Accept"] = "application/json"
 	}
+	-- [MOD FEATURE]: FARM KC - log de phan biet "chua gui duoc" vs "gui roi khong ai tra loi"
+	if _G.FarmKc_Nhat then _G.FarmKc_Nhat("    [SDK] Dang gui request toi user.muvh.vn...") end
 	Http.RequestHaveHandleArg("https://user.muvh.vn/vie/user_login", form, headers, function(text)
+		if _G.FarmKc_Nhat then _G.FarmKc_Nhat("    [SDK] Da nhan phan hoi (" .. tostring(text and #text or 0) .. " ky tu)") end
 		if string.isNullOrEmpty(text) then
 			Log("LỖI: Máy chủ SDK không phản hồi!")
 			SaveOutput()

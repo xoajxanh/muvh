@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote, Crown, History, Gift } from 'lucide-react';
+import { LayoutDashboard, Key, Package, Users, User, ShieldAlert, Send, MessageSquareQuote, Crown, History, Gift, UserCog } from 'lucide-react';
 
 interface SidebarProps {
   userRole?: 'ADMIN' | 'SALE';
@@ -21,6 +21,8 @@ export default function Sidebar({ userRole }: SidebarProps) {
     { label: 'Telegram CSKH', href: '/telegrams', icon: Send },
     // [MOD FEATURE]: FARM KC - MA MOI RONG VANG (1 menu, doi bang ngay trong trang)
     { label: 'Farm KC', href: '/farm-kc', icon: Gift },
+    // [MOD FEATURE]: FARM KC - TAI KHOAN CHAY BOT
+    { label: 'Tài khoản Farm KC', href: '/farm-accounts', icon: UserCog },
     ...(userRole === 'ADMIN'
       ? [{ label: 'Quản Lý Tài Khoản', href: '/users', icon: Users }]
       : []),

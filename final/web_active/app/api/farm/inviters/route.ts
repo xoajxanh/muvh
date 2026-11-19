@@ -58,8 +58,12 @@ export async function GET(req: NextRequest) {
     const sortBy = (searchParams.get('sortBy') || 'email').trim();
     const sortDir: 'asc' | 'desc' = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
 
+    // [MOD FEATURE]: loc theo tai khoan FARM_KC (nut "Xem cong viec")
+    const farmUser = (searchParams.get('username') || '').trim();
+
     const where: any = {};
     if (session.role !== 'ADMIN') where.createdById = session.userId;
+    if (farmUser) where.farmAccount = { username: farmUser };
     if (status) where.status = status;
     if (serverIdRaw) {
       const sid = parseInt(serverIdRaw, 10);
@@ -80,7 +84,10 @@ export async function GET(req: NextRequest) {
         orderBy: buildOrderBy(sortBy, sortDir),
         skip: (page - 1) * pageSize,
         take: pageSize,
-        include: { createdBy: { select: { username: true, displayName: true } } },
+        include: {
+          createdBy: { select: { username: true, displayName: true } },
+          farmAccount: { select: { username: true } },
+        },
       }),
       // [MOD FEATURE]: TIEN DO CHI TIEU - lay cac cot so de tinh du / chua du
       prisma.farmInviter.findMany({
@@ -155,6 +162,8 @@ export async function GET(req: NextRequest) {
       failCount: r.failCount,
       lastError: r.lastError,
       lastSyncAt: r.lastSyncAt,
+      stt: (r as any).stt ?? 0,
+      farmUsername: (r as any).farmAccount?.username || '',
       createdBy: r.createdBy?.displayName || r.createdBy?.username || '',
       updatedAt: r.updatedAt,
     }));

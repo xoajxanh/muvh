@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
-import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus, ArrowUp, ArrowDown, ChevronsUpDown, Coins, Gem, Ticket, Users, CheckCircle2, CircleDashed, Target } from 'lucide-react';
+import { Gift, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight, Crown, UserPlus, ArrowUp, ArrowDown, ChevronsUpDown, Coins, Gem, Ticket, Users, CheckCircle2, CircleDashed, Target, UserCog, X, Server } from 'lucide-react';
 
 // =========================================================================
 // [MOD FEATURE]: FARM KC - TRANG MA MOI RONG VANG (GOP 2 BANG VAO 1 MENU)
@@ -59,6 +59,7 @@ const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
   ],
   invitees: [
     { value: '', label: 'Tất cả' },
+    { value: 'NEW', label: 'Chưa chạy' },
     { value: 'SUCCESS', label: 'Thành công' },
     { value: 'RESERVED', label: 'Giữ chỗ' },
     { value: 'FAILED', label: 'Thất bại' },
@@ -70,6 +71,14 @@ const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
 
 export default function FarmKcPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // [MOD FEATURE]: loc cong viec cua mot tai khoan FARM_KC (?username=...)
+  const [farmUser, setFarmUser] = useState('');
+  // [MOD FEATURE]: 2 o loc - tai khoan FARM_KC va server
+  const [dsTaiKhoan, setDsTaiKhoan] = useState<any[]>([]);
+  const [dsServer, setDsServer] = useState<any[]>([]);
+  const [serverLoc, setServerLoc] = useState('');
+  const [daChonMacDinh, setDaChonMacDinh] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [tab, setTab] = useState<Tab>('inviters');
   const [items, setItems] = useState<any[]>([]);
@@ -93,6 +102,21 @@ export default function FarmKcPage() {
   const pageSize = 20;
 
   useEffect(() => {
+    const u = searchParams.get('username') || '';
+    const t = searchParams.get('tab');
+    const sv = searchParams.get('serverId');
+    if (u) setFarmUser(u);
+    if (sv !== null && sv !== '') setServerLoc(sv);
+    loadOptions(u, sv);
+    if (t === 'inviters' || t === 'invitees') {
+      setTab(t);
+      setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
+      setSortDir(t === 'invitees' ? 'asc' : 'desc');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     fetch('/api/auth/me')
       .then((res) => (res.ok ? res.json() : null))
       .then((d) => {
@@ -101,6 +125,70 @@ export default function FarmKcPage() {
       })
       .catch(() => router.push('/login'));
   }, [router]);
+
+  // =========================================================================
+  // [MOD FEATURE]: NAP DANH SACH TAI KHOAN FARM_KC + SERVER CHO O LOC
+  // Mo ta: Neu URL khong chi dinh ?username= thi mac dinh chon tai khoan dau
+  //        tien trong danh sach, va lay luon server cua tai khoan do.
+  // =========================================================================
+  const loadOptions = async (uTuUrl: string, svTuUrl?: string | null) => {
+    try {
+      const res = await fetch('/api/farm-accounts/options');
+      if (!res.ok) { setDaChonMacDinh(true); return; }
+      const j = await res.json();
+      const ds = j.taiKhoan || [];
+      setDsTaiKhoan(ds);
+      setDsServer(j.server || []);
+
+      if (uTuUrl) {
+        // URL da chi dinh server thi giu nguyen, khong tu doi
+        if (svTuUrl === null || svTuUrl === undefined || svTuUrl === '') {
+          const tk = ds.find((t: any) => t.username === uTuUrl);
+          const sv = tk?.ranges?.[0]?.serverId;
+          if (sv) setServerLoc(String(sv));
+        }
+      } else if (ds.length > 0) {
+        // Mac dinh: tai khoan dau tien + dong cong viec dau tien cua no
+        const dong0 = ds[0].ranges?.[0];
+        setFarmUser(ds[0].username);
+        if (dong0?.serverId) setServerLoc(String(dong0.serverId));
+        const lv = dong0?.farmLevel;
+        if (lv === 200 || lv === 50) {
+          const t: Tab = lv === 200 ? 'inviters' : 'invitees';
+          setTab(t);
+          setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
+          setSortDir(t === 'invitees' ? 'asc' : 'desc');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setDaChonMacDinh(true);
+    }
+  };
+
+  /** Doi tai khoan loc -> keo theo server va tab cua tai khoan do */
+  const doiTaiKhoanLoc = (u: string) => {
+    setFarmUser(u);
+    const tk = dsTaiKhoan.find((t: any) => t.username === u);
+    if (tk) {
+      const ds = tk.ranges || [];
+      // Chi tu chon server khi tai khoan chay tren DUNG MOT server
+      const cacSv = Array.from(new Set(ds.map((k: any) => k.serverId)));
+      setServerLoc(cacSv.length === 1 && cacSv[0] ? String(cacSv[0]) : '');
+      // Chi tu doi tab khi tai khoan chi cay MOT level
+      const cacLv = Array.from(new Set(ds.map((k: any) => k.farmLevel)));
+      if (cacLv.length === 1) {
+        const t: Tab = cacLv[0] === 200 ? 'inviters' : 'invitees';
+        if (t !== tab) {
+          setTab(t);
+          setStatus('');
+          setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
+          setSortDir(t === 'invitees' ? 'asc' : 'desc');
+        }
+      }
+    }
+  };
 
   const loadCounts = async () => {
     try {
@@ -128,6 +216,8 @@ export default function FarmKcPage() {
       });
       if (keyword.trim()) q.set('q', keyword.trim());
       if (st) q.set('status', st);
+      if (farmUser) q.set('username', farmUser);
+      if (serverLoc) q.set('serverId', serverLoc);
 
       const res = await fetch(`/api/farm/${t}?${q}`);
       loadCounts();
@@ -149,9 +239,10 @@ export default function FarmKcPage() {
   };
 
   useEffect(() => {
-    if (user) load(1, tab, status, sortBy, sortDir);
+    // Cho chon xong gia tri mac dinh roi moi goi API, tranh goi 2 lan
+    if (user && daChonMacDinh) load(1, tab, status, sortBy, sortDir);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, tab, status, sortBy, sortDir]);
+  }, [user, daChonMacDinh, tab, status, sortBy, sortDir, farmUser, serverLoc]);
 
   // =========================================================================
   // [MOD FEATURE]: SAP XEP THEO COT
@@ -342,6 +433,16 @@ export default function FarmKcPage() {
               </div>
             </div>
 
+            <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => router.push('/farm-accounts')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-medium transition"
+              title="Quản lý tài khoản chạy bot FARM KC"
+            >
+              <UserCog className="w-3.5 h-3.5" />
+              Tài khoản Farm KC
+            </button>
+
             <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
               <button
                 onClick={() => doiTab('inviters')}
@@ -372,7 +473,24 @@ export default function FarmKcPage() {
                 </span>
               </button>
             </div>
+            </div>
           </div>
+
+          {/* [MOD FEATURE]: dang xem cong viec cua mot tai khoan FARM_KC */}
+          {farmUser && (
+            <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs text-violet-200 w-fit">
+              <UserCog className="w-3.5 h-3.5" />
+              Đang xem công việc của tài khoản
+              <span className="font-bold text-white">{farmUser}</span>
+              <button
+                onClick={() => { setFarmUser(''); setServerLoc(''); router.replace('/farm-kc'); }}
+                className="ml-1 p-0.5 rounded hover:bg-violet-500/20 transition"
+                title="Bỏ lọc"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
 
           {/* HANG 2: o tim kiem nho + quick filter + hien mat khau tren cung 1 dong */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
@@ -399,6 +517,51 @@ export default function FarmKcPage() {
               <span className="pointer-events-none absolute right-[3px] top-1/2 -translate-y-1/2 text-slate-600 group-hover:text-slate-400 text-[10px] leading-none select-none">
                 ⋮⋮
               </span>
+            </div>
+
+            <div className="w-px h-5 bg-slate-800 shrink-0" />
+
+            {/* [MOD FEATURE]: LOC THEO TAI KHOAN FARM_KC */}
+            <div className="relative shrink-0">
+              <UserCog className="w-3.5 h-3.5 text-violet-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={farmUser}
+                onChange={(e) => doiTaiKhoanLoc(e.target.value)}
+                title="Lọc theo tài khoản FARM KC"
+                className="appearance-none pl-8 pr-7 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-violet-600 cursor-pointer max-w-[220px]"
+              >
+                <option value="">Tất cả tài khoản</option>
+                {dsTaiKhoan.map((t: any) => (
+                  <option key={t.id} value={t.username}>
+                    {t.username}
+                    {(t.ranges || []).length > 0
+                      ? ' · ' + t.ranges
+                          .map((k: any) => `Lv${k.farmLevel} ${k.rangeFrom}–${k.rangeTo}@${k.serverId || 'mđ'}`)
+                          .join(' | ')
+                      : ' · chưa giao'}
+                  </option>
+                ))}
+              </select>
+              <ChevronsUpDown className="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* [MOD FEATURE]: LOC THEO SERVER */}
+            <div className="relative shrink-0">
+              <Server className="w-3.5 h-3.5 text-sky-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={serverLoc}
+                onChange={(e) => setServerLoc(e.target.value)}
+                title="Lọc theo server"
+                className="appearance-none pl-8 pr-7 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-sky-600 cursor-pointer max-w-[200px]"
+              >
+                <option value="">Tất cả server</option>
+                {dsServer.map((sv: any) => (
+                  <option key={sv.serverId} value={String(sv.serverId)}>
+                    {sv.serverId === 0 ? 'Mặc định (chưa gán)' : sv.serverName || `Server ${sv.serverId}`}
+                  </option>
+                ))}
+              </select>
+              <ChevronsUpDown className="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
             <div className="w-px h-5 bg-slate-800 shrink-0" />

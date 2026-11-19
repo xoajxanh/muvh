@@ -51,8 +51,12 @@ export async function GET(req: NextRequest) {
     const sortBy = (searchParams.get('sortBy') || 'email').trim();
     const sortDir: 'asc' | 'desc' = searchParams.get('sortDir') === 'asc' ? 'asc' : 'desc';
 
+    // [MOD FEATURE]: loc theo tai khoan FARM_KC (nut "Xem cong viec")
+    const farmUser = (searchParams.get('username') || '').trim();
+
     const where: any = {};
     if (session.role !== 'ADMIN') where.createdById = session.userId;
+    if (farmUser) where.farmAccount = { username: farmUser };
     if (status) where.status = status;
     if (serverIdRaw) {
       const sid = parseInt(serverIdRaw, 10);
@@ -76,6 +80,7 @@ export async function GET(req: NextRequest) {
         include: {
           createdBy: { select: { username: true, displayName: true } },
           inviter: { select: { email: true, inviteCode: true } },
+          farmAccount: { select: { username: true } },
         },
       }),
     ]);
@@ -97,6 +102,8 @@ export async function GET(req: NextRequest) {
       expireAt: r.expireAt,
       confirmedAt: r.confirmedAt,
       errorMsg: r.errorMsg,
+      stt: (r as any).stt ?? 0,
+      farmUsername: (r as any).farmAccount?.username || '',
       createdBy: r.createdBy?.displayName || r.createdBy?.username || '',
       updatedAt: r.updatedAt,
     }));
