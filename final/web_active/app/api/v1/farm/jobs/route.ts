@@ -88,7 +88,21 @@ export async function GET(req: NextRequest) {
           !!k.lastHeartbeat &&
           bayGio - new Date(k.lastHeartbeat).getTime() < HET_HAN_MS;
 
+        // =================================================================
+        // [MOD FEATURE]: FARM KC - CO HOAN THANH
+        // Da chay het so acc trong dai -> viec coi nhu xong. Mod se to xam
+        // nut nay va khong cho bam. Tien the chot luon status = DONE de
+        // lan sau khong phai tinh lai.
+        // =================================================================
+        const hoanThanh = tong > 0 && daXong >= tong;
+        if (hoanThanh && k.status !== 'DONE') {
+          await (prisma as any).farmAccountRange
+            .update({ where: { id: k.id }, data: { status: 'DONE' } })
+            .catch(() => {});
+        }
+
         return {
+          hoanThanh,
           jobCode: k.jobCode,
           farmLevel: k.farmLevel,
           serverId: k.serverId,
@@ -96,11 +110,11 @@ export async function GET(req: NextRequest) {
           rangeFrom: k.rangeFrom,
           rangeTo: k.rangeTo,
           cursorStt: k.cursorStt,
-          status: k.status,
+          status: hoanThanh ? 'DONE' : k.status,
           tongAcc: tong,
           daXong,
           // May khac dang giu viec nay -> mod canh bao thay vi chay de len
-          dangChayOMayKhac: conSong && !!deviceId && k.deviceId !== deviceId,
+          dangChayOMayKhac: !hoanThanh && conSong && !!deviceId && k.deviceId !== deviceId,
           deviceName: conSong ? k.deviceName || '' : '',
         };
       }),

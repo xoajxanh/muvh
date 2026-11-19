@@ -18,6 +18,8 @@ export type CongViec = {
   serverName: string;
   rangeFrom: number;
   rangeTo: number;
+  /** Co = cong viec da luu (dung de doi chieu khi sua); khong co = viec moi */
+  jobCode?: string;
 };
 
 /** Username chi gom chu thuong, so, dau cham/gach duoi/gach ngang */
@@ -76,14 +78,22 @@ export async function jobCodeChuaDung(
   serverId: number,
   farmLevel: number,
   boQuaId?: string,
+  /** Ma da cap trong CUNG lan luu (chua ghi DB) - tranh 2 viec moi trung ma */
+  daCapTrongLanNay?: Set<string>,
 ): Promise<string> {
-  for (let i = 1; i <= 50; i++) {
+  // Mot tai khoan co the co NHIEU viec cung server + level (khac dai STT)
+  // -> ma tang dan: LONGDT-S517-L50-01, -02, -03 ...
+  for (let i = 1; i <= 99; i++) {
     const ma = taoJobCode(username, serverId, farmLevel, i);
+    if (daCapTrongLanNay && daCapTrongLanNay.has(ma)) continue;
     const co = await (prisma as any).farmAccountRange.findFirst({
       where: boQuaId ? { jobCode: ma, NOT: { farmAccountId: boQuaId } } : { jobCode: ma },
       select: { id: true },
     });
-    if (!co) return ma;
+    if (!co) {
+      if (daCapTrongLanNay) daCapTrongLanNay.add(ma);
+      return ma;
+    }
   }
   return `${taoJobCode(username, serverId, farmLevel, 99)}-${Date.now().toString(36).toUpperCase()}`;
 }
@@ -115,14 +125,22 @@ export function chuanHoaCongViec(
       };
     }
 
-    const moi = { farmLevel, serverId, serverName, rangeFrom, rangeTo };
+    const jobCode = String(k?.jobCode || '').trim() || undefined;
+    const moi: CongViec = { farmLevel, serverId, serverName, rangeFrom, rangeTo, jobCode };
 
-    // Moi tai khoan chi 1 cong viec cho moi cap (server, level)
-    const daCo = ds.find((x) => x.farmLevel === farmLevel && x.serverId === serverId);
-    if (daCo) {
+    // =================================================================
+    // [MOD FEATURE]: CHONG TRUNG VOI CHINH CAC DONG CUA TAI KHOAN NAY
+    // Mot tai khoan duoc co NHIEU viec cung server + level, nhung cac dai
+    // STT khong duoc dam nhau (vd 1-100 va 1-20 cung @517 Lv50 la sai).
+    // =================================================================
+    const dung = ds.find(
+      (x) => x.farmLevel === farmLevel && x.serverId === serverId &&
+        x.rangeFrom <= rangeTo && rangeFrom <= x.rangeTo,
+    );
+    if (dung) {
       return {
         ok: false,
-        loi: `Đã có một dòng Lv${farmLevel} trên server ${serverId} (${daCo.rangeFrom}–${daCo.rangeTo}). Mỗi tài khoản chỉ nhận một khoảng cho mỗi cặp server + level — hãy gộp vào một dòng.`,
+        loi: `Lv${farmLevel} · server ${serverId}: dải ${rangeFrom}–${rangeTo} chồng lên dải ${dung.rangeFrom}–${dung.rangeTo} của chính tài khoản này.`,
       };
     }
 
@@ -145,7 +163,10 @@ export async function kiemTraChongLan(p: {
   serverId: number;
   rangeFrom: number;
   rangeTo: number;
+  /** Bo qua CA tai khoan (dung khi luu - phan tu doi chieu chinh no da lam rieng) */
   boQuaId?: string;
+  /** Bo qua DUNG MOT viec (dong dang sua) - van tinh cac viec khac cua chinh tai khoan */
+  boQuaJob?: string;
 }) {
   const row = await (prisma as any).farmAccountRange.findFirst({
     where: {
@@ -154,6 +175,7 @@ export async function kiemTraChongLan(p: {
       rangeFrom: { lte: p.rangeTo },
       rangeTo: { gte: p.rangeFrom },
       ...(p.boQuaId ? { farmAccount: { NOT: { id: p.boQuaId } } } : {}),
+      ...(p.boQuaJob ? { NOT: { jobCode: p.boQuaJob } } : {}),
     },
     select: {
       rangeFrom: true,

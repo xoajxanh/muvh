@@ -49,6 +49,7 @@ _G.FarmKc_Config = {
         Jobs          = "/api/v1/farm/jobs",
         JobAccounts   = "/api/v1/farm/job-accounts",
         JobHeartbeat  = "/api/v1/farm/job-heartbeat",
+        JobClaim      = "/api/v1/farm/job-claim",
     },
 
     -- ===== 7. ID TIỀN TỆ (đã xác nhận trong game, KHÔNG SỬA) ============
@@ -3354,6 +3355,17 @@ local function CreateModUI()
 
             local dsViec, nutViec = {}, {}
             local vieEcDangChon = nil
+            -- [MOD FEATURE]: FARM KC - HANG DOI NHIEU VIEC
+            -- hangDoi giu cac jobCode da chon theo DUNG THU TU bam.
+            -- Viec dau hang doi la viec dang chay; xong thi bo ra, sang viec ke.
+            local hangDoi = {}
+            local function ViTriTrongHangDoi(ma)
+                for k, v in ipairs(hangDoi) do
+                    if v == ma then return k end
+                end
+                return nil
+            end
+            _G.Mod_FarmKc_HangDoi = hangDoi
 
             local function DonNutViec()
                 for _, go in ipairs(nutViec) do
@@ -3537,6 +3549,147 @@ local function CreateModUI()
             end
             _G.Mod_FarmKc_ChonViec = ChonViec
 
+            -- =================================================================
+            -- [MOD FEATURE]: FARM KC - BAM CHON / BO CHON MOT VIEC (TOGGLE)
+            -- Bam lan dau  -> them vao cuoi hang doi, khoa viec tren web ngay
+            -- Bam lan nua  -> bo khoi hang doi
+            -- Viec dau hang doi la viec dang chay.
+            -- =================================================================
+            local function TimViecTheoMa(ma)
+                for _, v in ipairs(dsViec) do
+                    if tostring(v.jobCode) == tostring(ma) then return v end
+                end
+                return nil
+            end
+            _G.Mod_FarmKc_TimViecTheoMa = TimViecTheoMa
+
+            local function KhoaHangDoi()
+                if #hangDoi == 0 then return end
+                if not _G.FarmKc_Api_JobClaim then return end
+                local banSao = {}
+                for k, v in ipairs(hangDoi) do banSao[k] = v end
+                _G.FarmKc_Api_JobClaim(banSao, function(ok, obj, err)
+                    if not ok then
+                        pcall(function()
+                            lblTacVu.text = "Tác vụ: Lỗi khoá việc - " .. tostring(err or "")
+                        end)
+                        return
+                    end
+                    -- Viec nao bi tu choi thi nha khoi hang doi, bao ro ly do
+                    local tuChoi = obj and obj.tuChoi
+                    if tuChoi and #tuChoi > 0 then
+                        for _, tc in ipairs(tuChoi) do
+                            local vt = ViTriTrongHangDoi(tc.jobCode)
+                            if vt then table.remove(hangDoi, vt) end
+                            if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                _G.FloatingWordUtility.QuickMsg(string.format(
+                                    "KHÔNG NHẬN ĐƯỢC %s: %s %s",
+                                    tostring(tc.jobCode), tostring(tc.lyDo or ""),
+                                    tostring(tc.deviceName or "")))
+                            end
+                        end
+                    end
+                    pcall(function()
+                        lblTacVu.text = string.format("Tác vụ: Đã khoá %d việc cho máy này",
+                            tonumber(obj and obj.soKhoaDuoc) or 0)
+                    end)
+                    VeNutViec()
+                end)
+            end
+            _G.Mod_FarmKc_KhoaHangDoi = KhoaHangDoi
+
+            local function DoiChonViec(v)
+                if not v then return end
+                local ma = tostring(v.jobCode)
+                local vt = ViTriTrongHangDoi(ma)
+
+                if vt then
+                    -- Dang trong hang doi -> bo ra
+                    table.remove(hangDoi, vt)
+                    if vieEcDangChon and vieEcDangChon.jobCode == ma then
+                        vieEcDangChon = nil
+                        _G.Mod_FarmKc_Job = nil
+                        _G.Mod_Farm_JobCode = ""
+                        _G.Mod_FarmKc_WebAccounts = nil
+                        -- con viec khac trong hang doi -> chay viec dau tien
+                        if #hangDoi > 0 then
+                            local ke = TimViecTheoMa(hangDoi[1])
+                            if ke then ChonViec(ke, true) end
+                        end
+                    end
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg("BỎ CHỌN VIỆC: " .. ma)
+                    end
+                    VeNutViec()
+                    CapNhat()
+                    return
+                end
+
+                -- Chua co -> them vao cuoi hang doi
+                table.insert(hangDoi, ma)
+                if #hangDoi == 1 then
+                    ChonViec(v)            -- viec dau tien -> chay luon
+                else
+                    if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                        _G.FloatingWordUtility.QuickMsg(string.format(
+                            "XẾP HÀNG [%d]: %s", #hangDoi, ma))
+                    end
+                    VeNutViec()
+                end
+                KhoaHangDoi()
+            end
+            _G.Mod_FarmKc_DoiChonViec = DoiChonViec
+
+            -- =================================================================
+            -- [MOD FEATURE]: FARM KC - XONG MOT VIEC -> SANG VIEC KE TIEP
+            -- Goi tu luong farm khi het acc cua viec hien tai.
+            -- Tra ve true neu da chuyen sang viec moi, false neu het hang doi.
+            -- =================================================================
+            _G.Mod_FarmKc_ViecKeTiep = function()
+                if #hangDoi == 0 then return false end
+                local maXong = hangDoi[1]
+                -- danh dau xong tren web roi bo khoi hang doi
+                pcall(function()
+                    if _G.FarmKc_Api_JobHeartbeat then
+                        _G.FarmKc_Api_JobHeartbeat(maXong,
+                            tonumber(_G.Mod_Farm_JobRangeTo) or 0, "DONE", nil)
+                    end
+                end)
+                local vXong = TimViecTheoMa(maXong)
+                if vXong then vXong.hoanThanh = true; vXong.status = "DONE" end
+                table.remove(hangDoi, 1)
+
+                if #hangDoi == 0 then
+                    vieEcDangChon = nil
+                    _G.Mod_FarmKc_Job = nil
+                    _G.Mod_Farm_JobCode = ""
+                    _G.Mod_FarmKc_WebAccounts = nil
+                    if _G.FarmKc_Nhat then
+                        _G.FarmKc_Nhat(">>> [FARM KC] DA CHAY HET TOAN BO HANG DOI VIEC <<<")
+                    end
+                    VeNutViec()
+                    CapNhat()
+                    return false
+                end
+
+                local ke = TimViecTheoMa(hangDoi[1])
+                if not ke then
+                    table.remove(hangDoi, 1)
+                    return _G.Mod_FarmKc_ViecKeTiep()
+                end
+                if _G.FarmKc_Nhat then
+                    _G.FarmKc_Nhat(string.format(">>> [FARM KC] XONG %s -> SANG VIEC KE TIEP: %s <<<",
+                        tostring(maXong), tostring(ke.jobCode)))
+                end
+                _G.Mod_FarmKc_PhienDaChay = 0
+                _G.CurrentAccountIndex = 1
+                ChonViec(ke, true)
+                VeNutViec()
+                CapNhat()
+                return true
+            end
+
+
             -- ---------- 8) Ve luoi nut server (moi nut = mot cong viec) ----------
             VeNutViec = function()
                 DonNutViec()
@@ -3548,16 +3701,54 @@ local function CreateModUI()
                     local x = 20 + cot * (RONG + CACH)
                     local y = 296 - hang * (CAO + CACH)
 
-                    local dangChon = vieEcDangChon and (vieEcDangChon.jobCode == v.jobCode)
-                    local nhan = string.format("%sS%s · Lv%s",
-                        dangChon and "★ " or "", tostring(v.serverId), tostring(v.farmLevel))
+                    -- =====================================================
+                    -- [MOD FEATURE]: FARM KC - CHON NHIEU VIEC + XAM KHI XONG
+                    --   xong         -> xam, bam khong an
+                    --   may khac giu -> do, bam khong an
+                    --   trong hang doi-> xanh duong, co so thu tu [1] [2]...
+                    --   dang chay    -> xanh la (viec dau hang doi)
+                    -- =====================================================
+                    local xong = (v.hoanThanh == true) or (tostring(v.status or "") == "DONE")
+                    local viTri = ViTriTrongHangDoi(v.jobCode)
+                    local dangChay = vieEcDangChon and (vieEcDangChon.jobCode == v.jobCode)
+
+                    local nhan
+                    if xong then
+                        nhan = string.format("✓ S%s·Lv%s %s-%s (xong %s/%s)",
+                            tostring(v.serverId), tostring(v.farmLevel),
+                            tostring(v.rangeFrom or "?"), tostring(v.rangeTo or "?"),
+                            tostring(v.daXong or 0), tostring(v.tongAcc or 0))
+                    else
+                        local dauHieu = ""
+                        if dangChay then dauHieu = "▶ "
+                        elseif viTri then dauHieu = "[" .. tostring(viTri) .. "] " end
+                        nhan = string.format("%sS%s·Lv%s %s-%s (%s/%s)",
+                            dauHieu, tostring(v.serverId), tostring(v.farmLevel),
+                            tostring(v.rangeFrom or "?"), tostring(v.rangeTo or "?"),
+                            tostring(v.daXong or 0), tostring(v.tongAcc or 0))
+                    end
 
                     local mauNen = Color(0.16, 0.18, 0.23, 1)
-                    if dangChon then mauNen = Color(0.20, 0.45, 0.70, 1) end
-                    if v.dangChayOMayKhac then mauNen = Color(0.45, 0.18, 0.18, 1) end
+                    local mauChu = Color.white
+                    if xong then
+                        mauNen = Color(0.13, 0.14, 0.16, 1)      -- xam chim
+                        mauChu = Color(0.40, 0.44, 0.50, 1)
+                    elseif v.dangChayOMayKhac then
+                        mauNen = Color(0.45, 0.18, 0.18, 1)      -- do: may khac giu
+                    elseif dangChay then
+                        mauNen = Color(0.16, 0.52, 0.28, 1)      -- xanh la: dang chay
+                    elseif viTri then
+                        mauNen = Color(0.20, 0.45, 0.70, 1)      -- xanh duong: xep hang
+                    end
 
                     local go = Nut("FkcBtnJob" .. i, x, y, RONG, CAO, nhan,
-                        mauNen, Color.white, 12, function()
+                        mauNen, mauChu, 11, function()
+                            if xong then
+                                if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+                                    _G.FloatingWordUtility.QuickMsg("VIỆC NÀY ĐÃ HOÀN THÀNH")
+                                end
+                                return
+                            end
                             if v.dangChayOMayKhac then
                                 if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
                                     _G.FloatingWordUtility.QuickMsg(
@@ -3565,7 +3756,7 @@ local function CreateModUI()
                                 end
                                 return
                             end
-                            ChonViec(v)
+                            if _G.Mod_FarmKc_DoiChonViec then _G.Mod_FarmKc_DoiChonViec(v) end
                         end)
                     table.insert(nutViec, go)
                 end
@@ -5060,6 +5251,46 @@ _G.FarmKc_Api_JobHeartbeat = function(jobCode, cursorStt, trangThai, onDone)
     end)
 end
 
+-- 8) Khoa NHIEU cong viec cung luc (ky: jobCodes noi bang dau phay + deviceId)
+--    Dung khi nguoi dung chon nhieu viec de chay tuan tu: khoa het ngay tu
+--    luc chon, khong de may khac cuop mat trong luc dang xep hang.
+_G.FarmKc_Api_JobClaim = function(dsMaViec, onDone)
+    local ts = FarmKc_Now()
+    local ma = table.concat(dsMaViec or {}, ",")
+    FarmKc_PostJson(_G.FarmKc_Config.Api.JobClaim, {
+        jobCodes = dsMaViec or {},
+        deviceId = _G.FarmKc_DeviceId(),
+        deviceName = _G.FarmKc_DeviceName(),
+        ts = ts, sign = FarmKc_Sign({ ma, _G.FarmKc_DeviceId() }, ts),
+    }, function(ok, obj, raw, err)
+        local du = nil
+        if ok and raw and raw ~= "" then du = FarmKc_JsonDoc(raw) end
+        if du == nil then du = obj end
+        if onDone then
+            pcall(onDone, ok and du ~= nil and du.ok == true, du, err or (du and du.error))
+        end
+    end)
+end
+
+-- 9) Nhip tim co kem CA HANG DOI -> giu khoa cho ca cac viec dang xep hang
+_G.FarmKc_Api_JobHeartbeatHangDoi = function(jobCode, cursorStt, trangThai, dsMaViec, onDone)
+    local ts = FarmKc_Now()
+    cursorStt = tonumber(cursorStt) or 0
+    FarmKc_PostJson(_G.FarmKc_Config.Api.JobHeartbeat, {
+        jobCode = jobCode,
+        jobCodes = dsMaViec or {},
+        deviceId = _G.FarmKc_DeviceId(),
+        deviceName = _G.FarmKc_DeviceName(),
+        cursorStt = cursorStt,
+        status = trangThai or "RUNNING",
+        ts = ts, sign = FarmKc_Sign({ jobCode, cursorStt }, ts),
+    }, function(ok, obj, raw, err)
+        if onDone then
+            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+        end
+    end)
+end
+
 -- =========================================================================
 -- [MOD FEATURE]: FARM KC - NAP DANH SACH ACC GAME TU WEB (DB)
 -- Mo ta: Lay acc trong dai STT cua cong viec dang chon, web da bo san cac
@@ -5172,7 +5403,17 @@ _G.Mod_FarmKc_BaoNhipTim = function(stt, trangThai)
         _G.Mod_FarmKc_PhienDaChay = (tonumber(_G.Mod_FarmKc_PhienDaChay) or 0) + 1
     end
     pcall(function()
-        _G.FarmKc_Api_JobHeartbeat(ma, tonumber(stt) or 0, trangThai or "RUNNING", nil)
+        -- [MOD FEATURE]: FARM KC - gui kem CA HANG DOI de giu khoa cho cac
+        -- viec dang xep hang, khong de may khac cuop trong luc cho toi luot.
+        local hd = _G.Mod_FarmKc_HangDoi
+        if hd and #hd > 0 and _G.FarmKc_Api_JobHeartbeatHangDoi then
+            local banSao = {}
+            for k, v in ipairs(hd) do banSao[k] = v end
+            _G.FarmKc_Api_JobHeartbeatHangDoi(ma, tonumber(stt) or 0,
+                trangThai or "RUNNING", banSao, nil)
+        else
+            _G.FarmKc_Api_JobHeartbeat(ma, tonumber(stt) or 0, trangThai or "RUNNING", nil)
+        end
     end)
 end
 
@@ -6054,6 +6295,9 @@ _G.FarmKc_HenQuayVong = function(tongSoAcc, mucTieuLv)
     if soPhut < 0 then soPhut = 0 end
 
     _G.FarmKc_DangChoQuayVong = true
+    if _G.FarmKc_Nhat then
+        _G.FarmKc_Nhat(string.format(">>> [FARM KC] XONG CA DAN ACC - NGHI %d PHUT ROI QUAY VONG <<<", soPhut))
+    end
 
     local function batDauLai()
         _G.FarmKc_DangChoQuayVong = false
@@ -6080,8 +6324,8 @@ _G.FarmKc_HenQuayVong = function(tongSoAcc, mucTieuLv)
             if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
         end)
 
-        if _G.Log then
-            _G.Log(">>> [FARM KC] HET NGHI - QUAY VONG LAI TU ACC 1 <<<", true)
+        if _G.FarmKc_Nhat then
+            _G.FarmKc_Nhat(">>> [FARM KC] HET NGHI - QUAY VONG LAI TU ACC 1 <<<")
         end
         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
             _G.FloatingWordUtility.QuickMsg("QUAY VONG: bat dau lai tu acc 1")
@@ -6514,11 +6758,39 @@ _G.FarmKc_PopupDangHien = function()
     return hien
 end
 
+-- [MOD FEATURE]: FARM KC - NHIP TIM 60s
+-- Moi 60 giay ghi mot dong trang thai xuong output.txt. Khi bot "treo",
+-- keo log ve se thay no dang ket o trang thai nao, thay vi doan mo.
+_G.FarmKc_NhipTimDaChay = _G.FarmKc_NhipTimDaChay or false
+_G.FarmKc_BatNhipTim = function()
+    if _G.FarmKc_NhipTimDaChay then return end
+    if not (_G.Timer and _G.Timer.StartLoop) then return end
+    _G.FarmKc_NhipTimDaChay = true
+    _G.Timer.StartLoop(60, -1, function()
+        pcall(function()
+            local lv = 0
+            pcall(function()
+                local me = _G.RoleManager and _G.RoleManager.me
+                lv = tonumber((me and me.level) or (me and me.data and me.data.level) or 0) or 0
+            end)
+            local dong = string.format(
+                "[NHIP TIM] chay=%s tamdung=%s trongGame=%s acc=%s lv=%s che_do=%s choQuayVong=%s choSdk=%s popup=%s",
+                tostring(_G.Bot_Running), tostring(_G.Bot_PauseTask),
+                tostring(_G.Bot_IsInGameWorld), tostring(_G.CurrentAccountIndex),
+                tostring(lv), tostring(_G.Mod_Farm_InviteMode),
+                tostring(_G.FarmKc_DangChoQuayVong), tostring(_G.FarmKc_DangChoSdk),
+                tostring(_G.FarmKc_PopupDangHien and _G.FarmKc_PopupDangHien()))
+            if _G.FarmKc_Nhat then _G.FarmKc_Nhat(dong) end
+        end)
+    end)
+end
+
 _G.FarmKc_WatchdogDaChay = _G.FarmKc_WatchdogDaChay or false
 _G.FarmKc_BatWatchdogPopup = function()
     if _G.FarmKc_WatchdogDaChay then return end
     if not (_G.Timer and _G.Timer.StartLoop) then return end
     _G.FarmKc_WatchdogDaChay = true
+    pcall(function() if _G.FarmKc_BatNhipTim then _G.FarmKc_BatNhipTim() end end)
     local demLienTiep = 0
     _G.Timer.StartLoop(5, -1, function()
         local ok = pcall(function()

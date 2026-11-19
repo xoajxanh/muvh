@@ -98,9 +98,20 @@ BEGIN
         [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
     );
     CREATE UNIQUE INDEX [FarmAccountRange_jobCode_key] ON [dbo].[FarmAccountRange]([jobCode]);
-    -- Moi tai khoan chi 1 viec cho moi cap (server, level)
-    CREATE UNIQUE INDEX [FarmAccountRange_acc_level_server_key] ON [dbo].[FarmAccountRange]([farmAccountId], [farmLevel], [serverId]);
+    CREATE INDEX [FarmAccountRange_acc_idx] ON [dbo].[FarmAccountRange]([farmAccountId]);
     CREATE INDEX [FarmAccountRange_level_server_idx] ON [dbo].[FarmAccountRange]([farmLevel], [serverId]);
+END;
+
+-- [MOD FEATURE]: Mot tai khoan duoc NHIEU viec cung server + level (khac dai STT)
+-- -> bo khoa duy nhat (tai khoan, level, server) cua ban cu, thay bang chi muc thuong.
+IF EXISTS (SELECT * FROM sys.indexes WHERE name = 'FarmAccountRange_acc_level_server_key' AND object_id = OBJECT_ID(N'[dbo].[FarmAccountRange]'))
+BEGIN
+    DROP INDEX [FarmAccountRange_acc_level_server_key] ON [dbo].[FarmAccountRange];
+END;
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'FarmAccountRange_acc_idx' AND object_id = OBJECT_ID(N'[dbo].[FarmAccountRange]'))
+   AND EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmAccountRange')
+BEGIN
+    CREATE INDEX [FarmAccountRange_acc_idx] ON [dbo].[FarmAccountRange]([farmAccountId]);
 END;
 
 -- Cot dinh danh cho kho tao tu ban cu (idempotent; ban moi da co san)

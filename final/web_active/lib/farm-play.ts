@@ -292,3 +292,40 @@ export async function demPhanBo(
   );
   return dem.reduce((a: number, b: number) => a + b, 0);
 }
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - CONG VIEC NAO DA CHAY (KHOA KHONG CHO SUA/XOA)
+// Mo ta: Khoa theo TUNG CONG VIEC chu khong khoa ca tai khoan. Mot cong viec
+//        coi la DA CHAY khi co bat ky dau vet nao:
+//          - trang thai cong viec khac NEW, hoac
+//          - da co may nhan viec (nhip tim / con tro STT), hoac
+//          - da co dong theo doi mang jobCode nay.
+//        Viec chua chay van sua / xoa tu do, va luon them duoc viec moi.
+//        Tra ve tap jobCode da chay.
+// =========================================================================
+export async function layViecDaChay(ranges: any[]): Promise<Set<string>> {
+  const daChay = new Set<string>();
+  const ma: string[] = [];
+  for (const r of ranges || []) {
+    if (!r?.jobCode) continue;
+    if ((r.status && r.status !== 'NEW') || r.lastHeartbeat || Number(r.cursorStt || 0) > 0) {
+      daChay.add(r.jobCode);
+    } else {
+      ma.push(r.jobCode);
+    }
+  }
+  if (ma.length > 0) {
+    const [g200, g50] = await Promise.all([
+      (prisma as any).farmInviterPlay.groupBy({
+        by: ['jobCode'], where: { jobCode: { in: ma } }, _count: { _all: true },
+      }),
+      (prisma as any).farmInviteePlay.groupBy({
+        by: ['jobCode'], where: { jobCode: { in: ma } }, _count: { _all: true },
+      }),
+    ]);
+    for (const g of (g200 as any[]).concat(g50 as any[])) {
+      if (g?.jobCode && Number(g?._count?._all || 0) > 0) daChay.add(g.jobCode);
+    }
+  }
+  return daChay;
+}

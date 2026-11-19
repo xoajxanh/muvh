@@ -215,3 +215,36 @@ Thư nạp phân biệt bằng `rechargeId ~= 0`; còn vật phẩm chưa nhận
 - Ghi them dong log `[FARM KC] Thiet bi: <ten> | <res> | did=<12 ky tu dau>` de kiem chung.
 - LUU Y: cac cho goi FarmKc_DelayChuyenAcc nam TRUOC dong khai bao nen phai goi qua _G voi fallback 2.5.
 - CON LAI: proxy cho may ao (anh tu setup sau).
+
+## 2026-11-20: cong cu chan doan treo
+- Nut LOGIN goi ban `LoginCurrentSelectedAccount` LOCAL trong EmmyluaDebug.lua (dong 1918),
+  KHONG phai ban trong Main.lua -> log them o Main.lua khong bao gio chay khi bam nut.
+- Them `_G.FarmKc_Nhat(msg)`: Log + SaveOutput ngay (Log don thuan chi nam trong RAM).
+- Them log 5 buoc [LOGIN 1/5..5/5] vao dung ban ma nut goi.
+- Them `_G.FarmKc_BatNhipTim()`: moi 60s ghi mot dong [NHIP TIM] trang thai bot.
+- `FarmKc_HenQuayVong` nay ghi log ro luc BAT DAU nghi (LoopRestMinutes, mac dinh 10 phut).
+- exec_cmd.ps1: kiem cu phap + keo log + loc NHIP TIM / moc quan trong.
+
+## 2026-11-20 (2): chon nhieu viec + khoa viec
+WEB
+- `/api/v1/farm/jobs`: them co `hoanThanh` (daXong >= tongAcc), tu chot status = DONE,
+  viec da xong thi khong con tinh la `dangChayOMayKhac`.
+- MOI `/api/v1/farm/job-claim`: khoa NHIEU viec mot luc.
+  Body { jobCodes[], deviceId, deviceName, ts, sign }, ky = MD5(jobCodes.join(",") + deviceId + ts + SALT).
+  Tra ve { soKhoaDuoc, khoaDuoc[], tuChoi[{jobCode, lyDo, deviceName}] }.
+- `/api/v1/farm/job-heartbeat`: nhan them `jobCodes[]` -> gia han khoa cho ca hang doi.
+  Chi gia han viec may NAY dang giu hoac chua ai giu; khong dung toi viec may khac / viec DONE.
+
+MOD
+- `FarmKc_Api_JobClaim`, `FarmKc_Api_JobHeartbeatHangDoi` (endpoint JobClaim).
+- Luoi nut: bam = toggle vao/ra hang doi. Mau: xam=xong (bam khong an), do=may khac giu,
+  xanh la=dang chay, xanh duong=xep hang (co so thu tu [1][2]). Nhan hien (daXong/tongAcc).
+- `Mod_FarmKc_HangDoi` giu thu tu bam. `Mod_FarmKc_DoiChonViec`, `Mod_FarmKc_ViecKeTiep`.
+- Main.lua: 2 diem "hoan thanh tat ca acc" -> goi `Mod_FarmKc_ViecKeTiep()` TRUOC quay vong/dung.
+- `Mod_FarmKc_BaoNhipTim` gui kem hang doi de giu khoa.
+
+CAN TEST
+- Bam chon 2-3 viec, kiem tra so thu tu [1][2] va mau nut.
+- May thu 2 dang nhap cung tai khoan -> cac viec da khoa phai hien DO.
+- Chay het viec 1 -> tu sang viec 2, doi dung server/level.
+- Viec du acc -> nut xam, bam khong an.

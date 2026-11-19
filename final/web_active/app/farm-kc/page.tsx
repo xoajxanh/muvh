@@ -102,6 +102,9 @@ function FarmKcNoiDung() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [totals, setTotals] = useState<any>(null);
   const [chiTieu, setChiTieu] = useState<any>(null);
+  // [MOD FEATURE]: tong hop rieng cho ACC 50
+  const [thongKe50, setThongKe50] = useState<any>(null);
+  const [thongKe200, setThongKe200] = useState<any>(null);
   // Số lượng của CẢ HAI bảng, hiện ngay trên nút gạt
   const [counts, setCounts] = useState<any>({ inviters: 0, invitees: 0, khoInviters: 0, khoInvitees: 0 });
   // [MOD FEATURE]: che do xem - 'theoDoi' (acc x server x nguoi choi) | 'kho' (kho mac dinh)
@@ -241,6 +244,8 @@ function FarmKcNoiDung() {
         setIsAdmin(!!j.isAdmin);
         setTotals(j.totals || null);
         setChiTieu(j.chiTieu || null);
+        setThongKe50(j.thongKe50 || null);
+        setThongKe200(j.thongKe200 || null);
         setPage(j.page || p);
       }
     } catch (e) {
@@ -277,6 +282,8 @@ function FarmKcNoiDung() {
     setItems([]);
     setTotals(null);
     setChiTieu(null);
+    setThongKe50(null);
+    setThongKe200(null);
     setHienMatKhauDong({});
     // ACC 50 mac dinh gom nhom theo nguoi moi; ACC 200 mac dinh Email giam dan
     setSortBy(t === 'invitees' ? 'inviterEmail' : 'email');
@@ -448,34 +455,6 @@ function FarmKcNoiDung() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => router.push('/farm-accounts')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-medium transition"
-              title="Quản lý tài khoản chạy bot FARM KC"
-            >
-              <UserCog className="w-3.5 h-3.5" />
-              Tài khoản Farm KC
-            </button>
-
-            {/* [MOD FEATURE]: gat giua bang THEO DOI va KHO MAC DINH */}
-            <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
-              {[
-                { v: 'theoDoi', l: 'Theo dõi', title: 'Acc game đang chơi trên từng server, bởi ai' },
-                { v: 'kho', l: 'Kho mặc định', title: 'Danh sách acc gốc - chỉ để đối chiếu' },
-              ].map((o) => (
-                <button
-                  key={o.v}
-                  title={o.title}
-                  onClick={() => { setCheDo(o.v as any); setStatus(''); setPage(1); }}
-                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                    cheDo === o.v ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
-                  }`}
-                >
-                  {o.l}
-                </button>
-              ))}
-            </div>
-
             <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
               <button
                 onClick={() => doiTab('inviters')}
@@ -506,24 +485,36 @@ function FarmKcNoiDung() {
                 </span>
               </button>
             </div>
+
+            {/* [MOD FEATURE]: gat giua bang THEO DOI va KHO MAC DINH */}
+            <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+              {[
+                { v: 'theoDoi', l: 'Theo dõi', title: 'Acc game đang chơi trên từng server, bởi ai' },
+                { v: 'kho', l: 'Kho mặc định', title: 'Danh sách acc gốc - chỉ để đối chiếu' },
+              ].map((o) => (
+                <button
+                  key={o.v}
+                  title={o.title}
+                  onClick={() => { setCheDo(o.v as any); setStatus(''); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                    cheDo === o.v ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => router.push('/farm-accounts')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-medium transition"
+              title="Quản lý tài khoản chạy bot FARM KC"
+            >
+              <UserCog className="w-3.5 h-3.5" />
+              Tài khoản
+            </button>
             </div>
           </div>
-
-          {/* [MOD FEATURE]: dang xem cong viec cua mot tai khoan FARM_KC */}
-          {farmUser && (
-            <div className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs text-violet-200 w-fit">
-              <UserCog className="w-3.5 h-3.5" />
-              Đang xem công việc của tài khoản
-              <span className="font-bold text-white">{farmUser}</span>
-              <button
-                onClick={() => { setFarmUser(''); setServerLoc(''); router.replace('/farm-kc'); }}
-                className="ml-1 p-0.5 rounded hover:bg-violet-500/20 transition"
-                title="Bỏ lọc"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          )}
 
           {/* HANG 2: o tim kiem nho + quick filter + hien mat khau tren cung 1 dong */}
           <div className="flex items-center flex-wrap gap-2 shrink-0">
@@ -561,7 +552,9 @@ function FarmKcNoiDung() {
                 value={farmUser}
                 onChange={(e) => doiTaiKhoanLoc(e.target.value)}
                 title="Lọc theo tài khoản FARM KC"
-                className="appearance-none pl-8 pr-7 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-violet-600 cursor-pointer max-w-[220px]"
+                className={`appearance-none pl-8 pr-7 py-1.5 rounded-lg border text-xs focus:outline-none focus:border-violet-600 cursor-pointer max-w-[240px] ${
+                  farmUser ? 'bg-violet-500/10 border-violet-500/40 text-violet-100' : 'bg-slate-900 border-slate-800 text-slate-200'
+                }`}
               >
                 <option value="">Tất cả tài khoản</option>
                 {dsTaiKhoan.map((t: any) => (
@@ -597,21 +590,8 @@ function FarmKcNoiDung() {
               <ChevronsUpDown className="w-3 h-3 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            <div className="w-px h-5 bg-slate-800 shrink-0" />
-
-            {FILTER_OPTIONS[tab].map((o) => (
-              <button
-                key={o.value}
-                onClick={() => setStatus(o.value)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                  status === o.value
-                    ? 'bg-slate-700 border-slate-600 text-white'
-                    : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                }`}
-              >
-                {o.label}
-              </button>
-            ))}
+            {/* [MOD FEATURE]: chip loc trang thai da GOP vao thanh tong hop ben duoi
+                (moi chip kem so luong) - khong ve lai o day de tranh trung lap. */}
 
             {gomNhom && (
               <span className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/25 text-[11px] text-sky-300">
@@ -620,59 +600,109 @@ function FarmKcNoiDung() {
               </span>
             )}
 
-            {/* [MOD FEATURE]: TONG HOP TOAN BO (theo bo loc hien tai, khong chi trang dang xem) */}
-            {laAcc200 && totals && (
-              <div className="ml-auto flex items-center gap-2 flex-wrap">
-                <O icon={<Users className="w-3.5 h-3.5" />} nhan="Đã mời" gt={totals.usedCount} mau="text-emerald-300" />
-                <O icon={<Coins className="w-3.5 h-3.5" />} nhan="Vàng" gt={totals.unboundGold} mau="text-slate-300" />
-                <O icon={<Gem className="w-3.5 h-3.5" />} nhan="KC" gt={totals.unboundDiamond} mau="text-cyan-300" />
-                <O icon={<Ticket className="w-3.5 h-3.5" />} nhan="Kim Phiếu" gt={totals.goldVoucher} mau="text-amber-300" />
-              </div>
-            )}
           </div>
 
           {/* =====================================================================
-              [MOD FEATURE]: THANH THONG KE CHI TIEU (chi bang ACC 200)
-              Mô tả: Tính trên TOÀN BỘ dữ liệu theo bộ lọc đang xem, không phải
-                     chỉ trang hiện tại.
+              [MOD FEATURE]: KHOI TONG QUAN - DUNG CHUNG CHO ACC 200 VA ACC 50
+              Hang 1: loc trang thai (moi o kem so luong) | tien do hoan thanh
+              Hang 2: chi so phu (chi ACC 200: moi du, can moi, vang, KC, kim phieu)
+              Moi so lieu tinh theo DUNG bo loc dang chon (tai khoan, server, tim kiem).
              ===================================================================== */}
-          {laAcc200 && chiTieu && (
-            <div className="shrink-0 flex items-center flex-wrap gap-2">
-              <O
-                icon={<CheckCircle2 className="w-3.5 h-3.5" />}
-                nhan="Nick đã mời đủ"
-                gt={`${fmtNum(chiTieu.soDu)}/${fmtNum(chiTieu.soNick)}`}
-                mau="text-emerald-300"
-              />
-              <O
-                icon={<CircleDashed className="w-3.5 h-3.5" />}
-                nhan="Nick chưa đủ"
-                gt={fmtNum(chiTieu.soChuaDu)}
-                mau="text-amber-300"
-              />
-              <O
-                icon={<Target className="w-3.5 h-3.5" />}
-                nhan="Còn cần mời"
-                gt={`${fmtNum(chiTieu.conThieu)} lượt`}
-                mau="text-sky-300"
-              />
+          {cheDo === 'theoDoi' && (laAcc200 ? thongKe200 : thongKe50) && (() => {
+            const t = laAcc200 ? thongKe200 : thongKe50;
+            const tt = t.theoTrangThai || {};
+            const pt = t.tong > 0 ? Math.round((t.daXong / t.tong) * 100) : 0;
 
-              {/* Thanh tien do tong the */}
-              <div className="flex items-center gap-2 min-w-[180px] flex-1 max-w-[320px]">
-                <div className="h-1.5 flex-1 rounded-full bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all"
-                    style={{
-                      width: `${chiTieu.soNick > 0 ? Math.round((chiTieu.soDu / chiTieu.soNick) * 100) : 0}%`,
-                    }}
-                  />
+            // Danh sach o loc - "Tat ca" dau tien, "Chua chay" khi xem theo tai khoan
+            const oLoc: { st: string; nhan: string; gt: number; mau: string }[] = [
+              { st: '', nhan: 'Tất cả', gt: t.tong, mau: 'text-white' },
+              ...(farmUser
+                ? [{ st: 'NEW', nhan: 'Chưa chạy', gt: (t.chuaChay || 0) + (tt['NEW'] || 0), mau: 'text-slate-300' }]
+                : laAcc200 ? [{ st: 'NEW', nhan: 'Chưa có mã', gt: tt['NEW'] || 0, mau: 'text-slate-300' }] : []),
+              ...(laAcc200
+                ? [
+                    { st: 'ACTIVE', nhan: 'Đang gom người', gt: tt['ACTIVE'] || 0, mau: 'text-sky-300' },
+                    { st: 'INVITED', nhan: 'Đủ 5, chưa mua', gt: tt['INVITED'] || 0, mau: 'text-amber-300' },
+                    { st: 'DONE', nhan: 'Hoàn thiện', gt: tt['DONE'] || 0, mau: 'text-emerald-300' },
+                    { st: 'ERROR', nhan: 'Lỗi', gt: tt['ERROR'] || 0, mau: 'text-rose-300' },
+                  ]
+                : [
+                    { st: 'SUCCESS', nhan: 'Thành công', gt: tt['SUCCESS'] || 0, mau: 'text-emerald-300' },
+                    { st: 'ALREADY_USED', nhan: 'Đã nhập trước', gt: tt['ALREADY_USED'] || 0, mau: 'text-violet-300' },
+                    { st: 'NO_CODE', nhan: 'Hết mã', gt: tt['NO_CODE'] || 0, mau: 'text-orange-300' },
+                    { st: 'FAILED', nhan: 'Thất bại', gt: tt['FAILED'] || 0, mau: 'text-rose-300' },
+                    { st: 'RESERVED', nhan: 'Giữ chỗ', gt: tt['RESERVED'] || 0, mau: 'text-amber-300' },
+                    { st: 'EXPIRED', nhan: 'Hết hạn', gt: tt['EXPIRED'] || 0, mau: 'text-slate-400' },
+                  ]),
+            ];
+
+            const ChiSo = ({ nhan, gt, mau }: { nhan: string; gt: any; mau: string }) => (
+              <span className="flex items-center gap-1.5">
+                <span className="text-slate-500">{nhan}</span>
+                <span className={`font-mono font-semibold ${mau}`}>{gt}</span>
+              </span>
+            );
+
+            return (
+              <div className="shrink-0 rounded-xl border border-slate-800 bg-slate-900/50">
+                {/* Hang 1: loc trang thai + tien do */}
+                <div className="flex items-center gap-3 px-2 py-1.5">
+                  <div className="flex items-center flex-wrap gap-0.5 p-0.5 rounded-lg bg-slate-950/60 border border-slate-800">
+                    {oLoc.map((o) => {
+                      const dangChon = status === o.st;
+                      return (
+                        <button
+                          key={o.st || 'tatca'}
+                          onClick={() => setStatus(o.st === '' ? '' : (dangChon ? '' : o.st))}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition ${
+                            dangChon ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                          }`}
+                        >
+                          {o.nhan}
+                          <span className={`font-mono font-bold ${dangChon ? 'text-white' : o.mau}`}>{fmtNum(o.gt)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="ml-auto flex items-center gap-2.5 min-w-[260px]">
+                    <span className="text-[11px] text-slate-500 whitespace-nowrap">
+                      {laAcc200 ? 'Hoàn thiện' : 'Đã xong'}{' '}
+                      <b className="font-mono text-emerald-300">{fmtNum(t.daXong)}</b>
+                      <span className="text-slate-600">/{fmtNum(t.tong)}</span>
+                      <span className="text-slate-600"> · còn </span>
+                      <b className="font-mono text-amber-300">{fmtNum(t.chuaXong)}</b>
+                    </span>
+                    <div className="h-1.5 w-28 rounded-full bg-slate-800 overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all" style={{ width: `${pt}%` }} />
+                    </div>
+                    <span className="text-[11px] font-bold text-emerald-300 font-mono w-9 text-right">{pt}%</span>
+                  </div>
                 </div>
-                <span className="text-[11px] font-bold text-emerald-300 font-mono shrink-0">
-                  {chiTieu.soNick > 0 ? Math.round((chiTieu.soDu / chiTieu.soNick) * 100) : 0}%
-                </span>
+
+                {/* Hang 2: chi so phu cua ACC 200 */}
+                {laAcc200 && (chiTieu || totals) && (
+                  <div className="flex items-center flex-wrap gap-x-5 gap-y-1 px-3 py-1.5 border-t border-slate-800/80 text-[11px]">
+                    {chiTieu && (
+                      <>
+                        <ChiSo nhan="Đủ 5 người" gt={`${fmtNum(chiTieu.soDu)}/${fmtNum(chiTieu.soNick)}`} mau="text-emerald-300" />
+                        <ChiSo nhan="Còn cần mời" gt={`${fmtNum(chiTieu.conThieu)} lượt`} mau="text-sky-300" />
+                      </>
+                    )}
+                    {totals && (
+                      <>
+                        <span className="w-px h-3 bg-slate-800" />
+                        <ChiSo nhan="Đã mời" gt={fmtNum(totals.usedCount)} mau="text-emerald-300" />
+                        <ChiSo nhan="Vàng" gt={fmtNum(totals.unboundGold)} mau="text-slate-200" />
+                        <ChiSo nhan="KC" gt={fmtNum(totals.unboundDiamond)} mau="text-cyan-300" />
+                        <ChiSo nhan="Kim Phiếu" gt={fmtNum(totals.goldVoucher)} mau="text-amber-300" />
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* BANG: chi cuon ben trong, header dinh tren, pagination dinh duoi */}
           <div className="flex-1 min-h-0 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">

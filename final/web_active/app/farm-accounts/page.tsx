@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar';
 import {
   Users, RefreshCw, Search, Eye, EyeOff, ChevronLeft, ChevronRight,
   ArrowUp, ArrowDown, ChevronsUpDown, Plus, Pencil, Trash2, X,
-  Crown, UserPlus, ListChecks, Wand2, AlertTriangle, CheckCircle2, Boxes, Server, Copy, Check, MonitorSmartphone,
+  Crown, UserPlus, ListChecks, Wand2, AlertTriangle, CheckCircle2, Boxes, Server, Copy, Check, MonitorSmartphone, Lock,
 } from 'lucide-react';
 
 // =========================================================================
@@ -180,6 +180,8 @@ export default function FarmAccountsPage() {
         serverName: d.serverName || '',
         rangeFrom: Number(d.rangeFrom),
         rangeTo: Number(d.rangeTo),
+        // Viec da luu gui kem jobCode de API sua dung viec (khong xoa roi tao lai)
+        ...(d.jobCode ? { jobCode: d.jobCode } : {}),
       }))
       .filter(
         (k: any) =>
@@ -208,6 +210,40 @@ export default function FarmAccountsPage() {
   };
 
   // =========================================================================
+  // [MOD FEATURE]: CHONG LAN VOI CHINH CAC DONG KHAC CUA TAI KHOAN NAY
+  // Mo ta: Tinh ca dong da luu lan dong moi chua luu tren form. Chi cung
+  //        level + cung server moi tinh la dung nhau.
+  // =========================================================================
+  const chongLanNoiBo = (d: any, ds: any[] = form.dong || []) => {
+    const tu = Number(d.rangeFrom), den = Number(d.rangeTo);
+    if (!Number.isFinite(tu) || !Number.isFinite(den) || tu < 1 || den < tu) return null;
+    for (let i = 0; i < ds.length; i++) {
+      const x = ds[i];
+      if (x.khoa === d.khoa) continue;
+      if (Number(x.farmLevel) !== Number(d.farmLevel)) continue;
+      if ((Number(x.serverId) || 0) !== (Number(d.serverId) || 0)) continue;
+      const a = Number(x.rangeFrom), b = Number(x.rangeTo);
+      if (!Number.isFinite(a) || !Number.isFinite(b) || a < 1 || b < a) continue;
+      if (tu <= b && a <= den) return { stt: i + 1, rangeFrom: a, rangeTo: b, daChay: !!x.daChay };
+    }
+    return null;
+  };
+
+  /** STT cuoi cung da giao cho cac dong KHAC cua chinh form (cung level+server) */
+  const toiDaNoiBo = (d: any, ds: any[], lv: any, sv: any) =>
+    ds.reduce((m: number, x: any) => {
+      if (x.khoa === d.khoa) return m;
+      if (Number(x.farmLevel) !== Number(lv) || (Number(x.serverId) || 0) !== (Number(sv) || 0)) return m;
+      const b = Number(x.rangeTo);
+      return Number.isFinite(b) && b > m ? b : m;
+    }, 0);
+
+  /** Dong chong lan tu web la cua chinh tai khoan dang sua -> bo qua (form da tu kiem) */
+  const laCuaMinh = (cl: any) =>
+    !!cl && !!form.id &&
+    String(cl.username || '').toLowerCase() === String(form.usernameGoc || form.username || '').toLowerCase();
+
+  // =========================================================================
   // [MOD FEATURE]: KIEM TRA CHONG LAN CHO MOT DONG
   // =========================================================================
   const kiemTraDong = async (
@@ -226,7 +262,8 @@ export default function FarmAccountsPage() {
       rangeFrom: String(d.rangeFrom),
       rangeTo: String(d.rangeTo),
     });
-    if (f.id) q.set('id', f.id);
+    // Chi bo qua DUNG dong nay (viec da luu); cac viec khac cua minh van tinh
+    if (d.jobCode) q.set('job', d.jobCode);
     try {
       const res = await fetch(`/api/farm-accounts/check?${q}`);
       if (!res.ok) return;
@@ -254,7 +291,7 @@ export default function FarmAccountsPage() {
         farmLevel: String(lv),
         serverId: String(Number(sv) || 0),
       });
-      if (f.id) q.set('id', f.id);
+      if (d.jobCode) q.set('job', d.jobCode);
       const res = await fetch(`/api/farm-accounts/next-range?${q}`);
       if (!res.ok) return;
       const j = await res.json();
@@ -263,7 +300,8 @@ export default function FarmAccountsPage() {
         ...cu,
         dong: cu.dong.map((x: any) => {
           if (x.khoa !== khoa || String(x.rangeFrom || '').trim() !== '') return x;
-          const tu = j.batDauTu || 1;
+          // Tinh ca cac dong chua luu cua chinh form (cung level+server)
+          const tu = Math.max(j.batDauTu || 1, toiDaNoiBo(x, cu.dong, lv, sv) + 1);
           const sl = Number(x.soLuong) || 0;
           return { ...x, rangeFrom: String(tu), rangeTo: sl > 0 ? String(tu + sl - 1) : x.rangeTo };
         }),
@@ -350,6 +388,7 @@ export default function FarmAccountsPage() {
     const f = MAU_FORM();
     f.id = r.id;
     f.username = r.username;
+    (f as any).usernameGoc = r.username;
     f.password = r.password || '';
     f.note = r.note || '';
     f.dong = (r.ranges || []).map((k: any) => ({
@@ -360,6 +399,9 @@ export default function FarmAccountsPage() {
       rangeFrom: String(k.rangeFrom),
       soLuong: String(Math.max(0, k.rangeTo - k.rangeFrom + 1)),
       rangeTo: String(k.rangeTo),
+      // Viec da chay -> khoa level / server / dai STT, khong xoa dong duoc
+      daChay: !!k.daChay,
+      jobCode: k.jobCode || '',
     }));
     if (f.dong.length === 0) f.dong = [dongMoi(50)];
     setForm(f);
@@ -368,7 +410,7 @@ export default function FarmAccountsPage() {
     setKhoTrong({});
     setLoiForm('');
     setMoForm(true);
-    f.dong.forEach((d: any) => layKhoTrong(d.khoa, f));
+    f.dong.filter((d: any) => !d.daChay).forEach((d: any) => layKhoTrong(d.khoa, f));
   };
 
   const luu = async () => {
@@ -672,6 +714,11 @@ export default function FarmAccountsPage() {
                                       title="Xem công việc của dòng này"
                                     >
                                       <TheLevel lv={k.farmLevel} />
+                                      {k.daChay && (
+                                        <span title="Đã chạy - khoá dải STT">
+                                          <Lock className="w-3 h-3 text-slate-500" />
+                                        </span>
+                                      )}
                                       <span className="text-slate-400 min-w-[110px] text-left">
                                         {tenServer(k.serverId, k.serverName)}
                                       </span>
@@ -731,16 +778,15 @@ export default function FarmAccountsPage() {
                               <>
                                 <button
                                   onClick={() => moSua(r)}
-                                  disabled={!r.choPhepSua}
-                                  title={r.choPhepSua ? 'Sửa' : 'Đã bắt đầu chạy, không sửa được'}
+                                  title="Sửa / thêm công việc (việc đã chạy sẽ được giữ nguyên)"
                                   className="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 disabled:opacity-25 disabled:cursor-not-allowed transition"
                                 >
                                   <Pencil className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={() => xoa(r)}
-                                  disabled={!r.choPhepSua}
-                                  title={r.choPhepSua ? 'Xoá' : 'Đã bắt đầu chạy, không xoá được'}
+                                  disabled={!r.choPhepXoa}
+                                  title={r.choPhepXoa ? 'Xoá' : 'Có công việc đã chạy, không xoá được tài khoản'}
                                   className="p-1.5 rounded-lg bg-slate-800 text-rose-300 hover:bg-rose-900/40 disabled:opacity-25 disabled:cursor-not-allowed transition"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -810,9 +856,11 @@ export default function FarmAccountsPage() {
                   <input
                     value={form.username}
                     onChange={(e) => { setForm({ ...form, username: e.target.value }); setKtUsername(null); }}
+                    disabled={form.dong.some((d: any) => d.daChay)}
+                    title={form.dong.some((d: any) => d.daChay) ? 'Có công việc đã chạy - mod đang đăng nhập bằng tên này, không đổi được' : ''}
                     onBlur={() => kiemTraUsername()}
                     placeholder="vd: longdt"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                   {ktUsername && (
                     <div className="mt-1.5 text-xs">
@@ -900,7 +948,13 @@ export default function FarmAccountsPage() {
                   <div className="flex-1 min-h-0 overflow-auto p-2 space-y-2">
                     {form.dong.map((d: any, idx: number) => {
                       const kho = khoTrong[d.khoa];
-                      const cl = chongLan[d.khoa];
+                      const clWeb = chongLan[d.khoa];
+                      const clMinh = chongLanNoiBo(d);
+                      // Chong lan voi tai khoan KHAC lay tu web; voi chinh minh lay tu form
+                      const cl = laCuaMinh(clWeb) ? null : clWeb;
+                      const batDauGoiY = kho
+                        ? Math.max(kho.batDauTu || 1, toiDaNoiBo(d, form.dong, d.farmLevel, d.serverId) + 1)
+                        : 1;
                       return (
                         <div
                           key={d.khoa}
@@ -911,12 +965,15 @@ export default function FarmAccountsPage() {
                           }`}
                         >
                           <div className="grid grid-cols-[26px_128px_96px_minmax(140px,1fr)_96px_16px_96px_16px_96px_32px] gap-2 items-center">
-                            <span className="text-[10px] font-bold text-slate-600">#{idx + 1}</span>
+                            <span className="text-[10px] font-bold text-slate-600 flex items-center gap-0.5" title={d.daChay ? `${d.jobCode} đã chạy - khoá` : ''}>
+                              {d.daChay ? <Lock className="w-3 h-3 text-amber-400" /> : <>#{idx + 1}</>}
+                            </span>
 
                             <div className="inline-flex p-0.5 rounded-lg bg-slate-950 border border-slate-800">
                               {[50, 200].map((lv) => (
                                 <button
                                   key={lv}
+                                  disabled={d.daChay}
                                   onClick={() => {
                                     doiO(d.khoa, 'farmLevel', lv);
                                     layKhoTrong(d.khoa, form, { farmLevel: lv });
@@ -939,59 +996,63 @@ export default function FarmAccountsPage() {
                               type="number"
                               value={d.serverId}
                               onChange={(e) => doiO(d.khoa, 'serverId', e.target.value)}
+                              disabled={d.daChay}
                               onBlur={(e) => {
                                 const sv = e.target.value;
                                 layKhoTrong(d.khoa, form, { serverId: sv });
                                 kiemTraDong(d.khoa, form, { serverId: sv });
                               }}
                               placeholder="0"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <input
                               value={d.serverName}
                               onChange={(e) => doiO(d.khoa, 'serverName', e.target.value)}
                               placeholder="Tự điền theo Server ID"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
 
                             <input
                               type="number"
                               value={d.rangeFrom}
                               onChange={(e) => doiO(d.khoa, 'rangeFrom', e.target.value)}
+                              disabled={d.daChay}
                               onBlur={() => kiemTraDong(d.khoa)}
                               placeholder="1"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <span className="text-slate-600 text-xs text-center">+</span>
                             <input
                               type="number"
                               value={d.soLuong}
                               onChange={(e) => doiO(d.khoa, 'soLuong', e.target.value)}
+                              disabled={d.daChay}
                               onBlur={() => kiemTraDong(d.khoa)}
                               placeholder="60"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-violet-800/60 text-xs text-violet-200 font-semibold text-center placeholder:text-slate-600 placeholder:font-normal focus:outline-none focus:border-violet-600"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-violet-800/60 text-xs text-violet-200 font-semibold text-center placeholder:text-slate-600 placeholder:font-normal focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <span className="text-slate-600 text-xs text-center">=</span>
                             <input
                               type="number"
                               value={d.rangeTo}
                               onChange={(e) => doiO(d.khoa, 'rangeTo', e.target.value)}
+                              disabled={d.daChay}
                               onBlur={() => kiemTraDong(d.khoa)}
                               placeholder="60"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
 
                             <button
                               onClick={() => xoaDong(d.khoa)}
-                              disabled={form.dong.length <= 1}
-                              title="Xoá dòng này"
+                              disabled={form.dong.length <= 1 || d.daChay}
+                              title={d.daChay ? 'Công việc đã chạy, không xoá được' : 'Xoá dòng này'}
                               className="p-1.5 rounded-lg bg-slate-800 text-rose-300 hover:bg-rose-900/40 disabled:opacity-25 disabled:cursor-not-allowed transition"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
 
-                          {(kho || cl !== undefined) && (
+                          {(kho || cl !== undefined || clMinh) && (
                             <div className="mt-1.5 pl-[34px] space-y-1">
                               {kho && (
                                 <div className="flex items-start gap-1.5 text-[11px] text-slate-500">
@@ -1012,10 +1073,10 @@ export default function FarmAccountsPage() {
                                       )}
                                     </span>
                                     <button
-                                      onClick={() => doiO(d.khoa, 'rangeFrom', String(kho.batDauTu))}
+                                      onClick={() => doiO(d.khoa, 'rangeFrom', String(batDauGoiY))}
                                       className="px-1.5 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/40 text-violet-300 font-bold hover:bg-violet-500/25 transition"
                                     >
-                                      bắt đầu từ {fmtNum(kho.batDauTu)}
+                                      bắt đầu từ {fmtNum(batDauGoiY)}
                                     </button>
                                     {(kho.khoangTrong || []).map((k: any, i: number) => (
                                       <button
@@ -1030,7 +1091,15 @@ export default function FarmAccountsPage() {
                                 </div>
                               )}
 
-                              {cl !== undefined && (
+                              {clMinh && (
+                                <div className="text-[11px]">
+                                  <span className="flex items-center gap-1.5 text-rose-400">
+                                    <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                    Chồng lấn với dòng #{clMinh.stt}{clMinh.daChay ? ' (đã chạy)' : ''} của chính tài khoản này — Lv{d.farmLevel} · server {Number(d.serverId) || 0} · {clMinh.rangeFrom}–{clMinh.rangeTo}
+                                  </span>
+                                </div>
+                              )}
+                              {!clMinh && cl !== undefined && (
                                 <div className="text-[11px]">
                                   {cl ? (
                                     <span className="flex items-center gap-1.5 text-rose-400">
@@ -1054,6 +1123,7 @@ export default function FarmAccountsPage() {
                 </div>
 
                 <p className="shrink-0 mt-1.5 text-[11px] text-slate-600">
+                  Dòng có <Lock className="inline w-3 h-3 text-amber-400 -mt-0.5" /> là công việc đã chạy: giữ nguyên dải STT, không xoá được (vẫn đổi được tên server). Việc chưa chạy sửa/xoá tự do, luôn thêm được việc mới.{' '}
                   Hai dòng chỉ đụng nhau khi <b className="text-slate-500">cùng level và cùng server</b>. Cùng khoảng STT nhưng khác server thì hợp lệ — đó là chạy nhiều giả lập song song.
                 </p>
               </div>
@@ -1087,7 +1157,7 @@ export default function FarmAccountsPage() {
                     dangLuu ||
                     ktUsername?.trung ||
                     dsCongViec().length === 0 ||
-                    form.dong.some((d: any) => !!chongLan[d.khoa])
+                    form.dong.some((d: any) => (!!chongLan[d.khoa] && !laCuaMinh(chongLan[d.khoa])) || !!chongLanNoiBo(d))
                   }
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition"
                 >

@@ -2498,6 +2498,18 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		Log("=========================================================================", true)
 		SaveOutput()
 		_G.IsSwitchingAccount = false
+		-- =================================================================
+		-- [MOD FEATURE]: FARM KC - XONG VIEC NAY -> SANG VIEC KE TIEP
+		-- Nguoi dung co the chon nhieu viec chay tuan tu. Het acc cua viec
+		-- hien tai thi chuyen sang viec sau trong hang doi (doi server/level
+		-- theo viec moi), chi khi HET hang doi moi tinh den quay vong/dung.
+		-- =================================================================
+		if _G.Mod_FarmKc_ViecKeTiep and _G.Mod_FarmKc_ViecKeTiep() then
+			if _G.LoginCurrentSelectedAccount then
+				pcall(_G.LoginCurrentSelectedAccount)
+			end
+			return
+		end
 		-- [MOD FEATURE]: FARM KC - QUAY VONG thay vi dung han (neu bat LoopWhenDone)
 		if _G.FarmKc_HenQuayVong and _G.FarmKc_HenQuayVong(totalAccs, targetLvl) then
 			return
@@ -2617,6 +2629,13 @@ _G.OnAccountFailedAndSkip = function(reason)
 		Log("=========================================================================", true)
 		SaveOutput()
 		_G.IsSwitchingAccount = false
+		-- [MOD FEATURE]: FARM KC - xong viec nay -> sang viec ke tiep trong hang doi
+		if _G.Mod_FarmKc_ViecKeTiep and _G.Mod_FarmKc_ViecKeTiep() then
+			if _G.LoginCurrentSelectedAccount then
+				pcall(_G.LoginCurrentSelectedAccount)
+			end
+			return
+		end
 		-- [MOD FEATURE]: FARM KC - QUAY VONG thay vi dung han
 		if _G.FarmKc_HenQuayVong and _G.FarmKc_HenQuayVong(totalAccs, nil) then
 			return

@@ -12,7 +12,8 @@ export const dynamic = 'force-dynamic';
 //          - bao da chay het khoang (status = DONE)
 //
 // POST /api/v1/farm/job-heartbeat
-// Body: { jobCode, deviceId, deviceName, cursorStt, status, ts, sign }
+// Body: { jobCode, deviceId, deviceName, cursorStt, status, ts, sign,
+//         jobCodes?: string[]  <- ca hang doi, de giu khoa cho viec dang xep hang }
 // Ky: sign = MD5(jobCode + cursorStt + ts + SALT)
 // =========================================================================
 
@@ -73,7 +74,42 @@ export async function POST(req: NextRequest) {
       data: { lastSyncAt: bayGio },
     });
 
-    return NextResponse.json({ ok: true });
+    // =====================================================================
+    // [MOD FEATURE]: FARM KC - GIU KHOA CA HANG DOI
+    // Mot may chon nhieu viec roi chay tuan tu. Cac viec dang XEP HANG cung
+    // phai duoc giu, neu khong may khac se cuop mat trong luc cho toi luot.
+    // Chi gia han viec ma may NAY dang giu (hoac chua ai giu), khong dong
+    // vao viec cua may khac, va khong dung toi viec da DONE.
+    // =====================================================================
+    const jobCodesCho: string[] = Array.isArray(body.jobCodes)
+      ? body.jobCodes.map((x: any) => String(x || '').trim()).filter(Boolean)
+      : [];
+    let soGiuThem = 0;
+    if (deviceId && jobCodesCho.length > 0) {
+      for (const ma of jobCodesCho) {
+        if (ma === jobCode) continue;
+        const v = await (prisma as any).farmAccountRange.findUnique({ where: { jobCode: ma } });
+        if (!v || v.status === 'DONE') continue;
+        const vSong =
+          !!v.deviceId &&
+          !!v.lastHeartbeat &&
+          bayGio.getTime() - new Date(v.lastHeartbeat).getTime() < HET_HAN_MS;
+        if (vSong && v.deviceId !== deviceId) continue; // cua may khac - bo qua
+        await (prisma as any).farmAccountRange
+          .update({
+            where: { id: v.id },
+            data: {
+              deviceId,
+              deviceName: deviceName || v.deviceName || '',
+              lastHeartbeat: bayGio,
+            },
+          })
+          .catch(() => {});
+        soGiuThem += 1;
+      }
+    }
+
+    return NextResponse.json({ ok: true, soGiuThem });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message || 'Lỗi máy chủ' }, { status: 500 });
   }

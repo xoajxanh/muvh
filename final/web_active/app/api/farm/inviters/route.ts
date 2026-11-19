@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma, ensureInitialSeed } from '@/lib/db';
-import { layDanhSachPhanBo } from '@/lib/farm-play';
+import { layDanhSachPhanBo, XONG_LV200 } from '@/lib/farm-play';
 import { safeNum } from '@/lib/farm-auth';
 
 export const dynamic = 'force-dynamic';
@@ -271,6 +271,48 @@ export async function GET(req: NextRequest) {
       reservedCount: safeNum(sum.reservedCount),
     };
 
+    // =====================================================================
+    // [MOD FEATURE]: TONG HOP ACC 200 (da xong / chua xong / theo trang thai)
+    // Mo ta: Tinh tren TOAN BO danh sach dang xem, THEO DUNG bo loc: tai
+    //        khoan, server, o tim kiem. Rieng chip trang thai thi bo qua de
+    //        bang phan ra theo trang thai luon day du.
+    //        Da xong = DONE (du 5 nguoi + da mua goi 60 kim cuong).
+    //        Xem theo tai khoan: "Chua chay" = duoc giao - da co dong theo doi.
+    // =====================================================================
+    const whereTongHop: any = { ...where };
+    delete whereTongHop.status;
+    const nhomTrangThai: any[] = await theoDoi.groupBy({
+      by: ['status'],
+      where: whereTongHop,
+      _count: { _all: true },
+    });
+    const theoTrangThai: Record<string, number> = {};
+    let daChoi = 0;
+    for (const g of nhomTrangThai) {
+      const n = Number(g?._count?._all || 0);
+      theoTrangThai[String(g.status)] = n;
+      daChoi += n;
+    }
+    let tongTk = daChoi;
+    let chuaChay = 0;
+    if (farmUser) {
+      const sidTk = serverIdRaw ? parseInt(serverIdRaw, 10) : NaN;
+      tongTk = (await layDanhSachPhanBo({
+        farmLevel: 200, farmUser,
+        serverId: Number.isFinite(sidTk) ? sidTk : null,
+        keyword, status: '', skip: 0, take: 0,
+      })).total;
+      chuaChay = Math.max(0, tongTk - daChoi);
+    }
+    const daXongTk = XONG_LV200.reduce((t, st) => t + (theoTrangThai[st] || 0), 0);
+    const thongKe200 = {
+      tong: tongTk,
+      daXong: daXongTk,
+      chuaXong: Math.max(0, tongTk - daXongTk),
+      chuaChay,
+      theoTrangThai,
+    };
+
     const items = (rows as any[]).map((r: any) => ({
       id: r.id,
       email: r.email,
@@ -310,6 +352,7 @@ export async function GET(req: NextRequest) {
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
       soDuocGiao,
+      thongKe200,
       totals,
       chiTieu,
       sortBy,

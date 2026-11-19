@@ -54,7 +54,10 @@ export async function GET(req: NextRequest) {
       rangeFrom >= 1 &&
       rangeTo >= rangeFrom
     ) {
-      const chongLan = await kiemTraChongLan({ farmLevel, serverId, rangeFrom, rangeTo, boQuaId });
+      // Tinh CA cac viec khac cua chinh tai khoan nay, chi bo qua dung dong
+      // dang sua (job=<jobCode>) - de bat duoc truong hop tu dam len minh.
+      const boQuaJob = (searchParams.get('job') || '').trim() || undefined;
+      const chongLan = await kiemTraChongLan({ farmLevel, serverId, rangeFrom, rangeTo, boQuaJob });
       kq.chongLan = chongLan
         ? {
             username: chongLan.username,

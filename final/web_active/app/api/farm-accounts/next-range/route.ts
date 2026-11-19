@@ -26,7 +26,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const farmLevel = parseInt(searchParams.get('farmLevel') || '', 10);
     const serverId = parseInt(searchParams.get('serverId') || '0', 10) || 0;
-    const boQuaId = (searchParams.get('id') || '').trim() || undefined;
+    // Chi bo qua DUNG dong dang sua (job=<jobCode>); cac viec khac cua chinh
+    // tai khoan van tinh la "da giao" de goi y khong dam len chinh minh.
+    const boQuaJob = (searchParams.get('job') || '').trim() || undefined;
 
     if (!FARM_LEVELS.includes(farmLevel)) {
       return NextResponse.json({ error: 'Level cày phải là 50 hoặc 200' }, { status: 400 });
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
     const where: any = {
       farmLevel,
       serverId,
-      ...(boQuaId ? { farmAccount: { NOT: { id: boQuaId } } } : {}),
+      ...(boQuaJob ? { NOT: { jobCode: boQuaJob } } : {}),
     };
 
     const rows = await (prisma as any).farmAccountRange.findMany({

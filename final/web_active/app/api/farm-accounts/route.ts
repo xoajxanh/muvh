@@ -9,7 +9,7 @@ import {
   jobCodeChuaDung,
   buildOrderByFarmAccount,
 } from '@/lib/farm-account';
-import { phanBoLaiTheoDoi } from '@/lib/farm-play';
+import { phanBoLaiTheoDoi, layViecDaChay } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +90,11 @@ export async function GET(req: NextRequest) {
       (gv as any[]).forEach((g) => demInvitee.set(g.farmAccountId, g._count._all));
     }
 
+    // [MOD FEATURE]: cong viec nao da chay (khoa rieng tung viec)
+    const daChay = await layViecDaChay(
+      (rows as any[]).reduce((t: any[], r: any) => t.concat(r.ranges || []), []),
+    );
+
     const items = rows.map((r: any) => ({
       id: r.id,
       username: r.username,
@@ -109,6 +114,8 @@ export async function GET(req: NextRequest) {
         deviceName: k.deviceName,
         lastHeartbeat: k.lastHeartbeat,
         cursorStt: k.cursorStt,
+        // Viec da chay -> khoa dai STT, khong xoa duoc
+        daChay: daChay.has(k.jobCode),
       })),
       soAcc: (r.ranges || []).reduce(
         (t: number, k: any) => t + Math.max(0, (k.rangeTo || 0) - (k.rangeFrom || 0) + 1),
@@ -121,8 +128,10 @@ export async function GET(req: NextRequest) {
       createdBy: r.createdBy?.displayName || r.createdBy?.username || '',
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-      // Chi ban ghi CHUA chay moi cho sua
-      choPhepSua: r.status === 'NEW',
+      // Luon sua duoc (them viec moi, sua viec chua chay, doi mat khau / ghi chu)
+      choPhepSua: true,
+      // Chi xoa duoc tai khoan khi CHUA co cong viec nao chay
+      choPhepXoa: !(r.ranges || []).some((k: any) => daChay.has(k.jobCode)),
     }));
 
     return NextResponse.json({
@@ -175,6 +184,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Cap jobCode TUAN TU (dung chung 1 Set) - 1 tai khoan co the co nhieu
+    // viec cung level+server, chay song song se cap trung ma.
+    const daCap = new Set<string>();
+    const viecTao: any[] = [];
+    for (const k of kq.ds) {
+      const ma = await jobCodeChuaDung(username, k.serverId, k.farmLevel, undefined, daCap);
+      daCap.add(ma);
+      viecTao.push({
+        farmLevel: k.farmLevel,
+        serverId: k.serverId,
+        serverName: k.serverName || '',
+        rangeFrom: k.rangeFrom,
+        rangeTo: k.rangeTo,
+        jobCode: ma,
+        status: 'NEW',
+      });
+    }
+
     const row = await (prisma as any).farmAccount.create({
       data: {
         username,
@@ -182,13 +209,7 @@ export async function POST(req: NextRequest) {
         note,
         status: 'NEW',
         createdById: session.userId,
-        ranges: { create: await Promise.all(
-          kq.ds.map(async (k) => ({
-            ...k,
-            jobCode: await jobCodeChuaDung(username, k.serverId, k.farmLevel),
-            status: 'NEW',
-          })),
-        ) },
+        ranges: { create: viecTao },
       },
     });
 
