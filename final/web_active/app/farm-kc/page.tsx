@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Navbar from '@/components/Navbar';
@@ -69,7 +69,12 @@ const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
   ],
 };
 
-export default function FarmKcPage() {
+// =========================================================================
+// [MOD FEATURE]: TACH NOI DUNG RA KHOI DEFAULT EXPORT
+// Mo ta: useSearchParams() bat buoc phai nam trong <Suspense> thi `next build`
+//        moi prerender duoc trang nay (loi missing-suspense-with-csr-bailout).
+// =========================================================================
+function FarmKcNoiDung() {
   const router = useRouter();
   const searchParams = useSearchParams();
   // [MOD FEATURE]: loc cong viec cua mot tai khoan FARM_KC (?username=...)
@@ -831,5 +836,15 @@ export default function FarmKcPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function FarmKcPage() {
+  return (
+    <Suspense
+      fallback={<div className="min-h-screen bg-slate-950" />}
+    >
+      <FarmKcNoiDung />
+    </Suspense>
   );
 }
