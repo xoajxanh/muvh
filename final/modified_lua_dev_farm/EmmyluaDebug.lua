@@ -3329,7 +3329,8 @@ local function CreateModUI()
                 "(Gói cấp: -- đến --)", 12, MAU_MO)
 
             -- ---------- 4) Hang tien do ----------
-            local lblMucTieu = Chu("FkcLblMucTieu", 20, 410, 480, 24,
+            -- [MOD FEATURE]: FARM KC - 2 DONG MUC TIEU (Lv50 / Lv200), cao 44
+            local lblMucTieu = Chu("FkcLblMucTieu", 20, 396, 480, 44,
                 "Mục tiêu: -- | Acc: 0/0/0", 13, Color(0.85, 0.88, 0.92, 1))
             pcall(function() lblMucTieu.supportRichText = true end)
             local lblTrangThai = Chu("FkcLblState", 500, 410, 268, 24,
@@ -3424,11 +3425,68 @@ local function CreateModUI()
                         end
                     end
 
-                    lblMucTieu.text = string.format(
-                        "Mục tiêu: <color=#ffd166>%s · S%s</color> | Acc: <color=#4ade80>%d</color>/<color=#fbbf24>%d</color>/<color=#e2e8f0>%d</color>  <color=#64748b>(đã chạy/còn lại/tổng)</color>",
-                        v and ("Lv" .. tostring(v.farmLevel)) or "--",
-                        v and tostring(v.serverId) or "--",
-                        xx, yy, zz)
+                    -- =========================================================
+                    -- [MOD FEATURE]: FARM KC - 2 THANH MUC TIEU GOP THEO LEVEL
+                    -- Nhieu viec Lv50 thi cong don vao MOT dong Lv50, nhieu
+                    -- viec Lv200 thi cong don vao MOT dong Lv200. Chi tinh cac
+                    -- viec DA CHON (trong hang doi).
+                    --   da chay  = tong daXong cua cac viec cung level
+                    --   con lai  = tong - da chay
+                    --   tong     = tong so acc cua cac viec cung level
+                    -- Viec DANG CHAY lay so lieu song tu danh sach acc web,
+                    -- chinh xac hon so daXong web tra ve luc dang nhap.
+                    -- =========================================================
+                    local function GopTheoLevel(mucLv)
+                        local tong, daXong, dsServer, coViec = 0, 0, {}, false
+                        for _, ma in ipairs(hangDoi) do
+                            local j = nil
+                            for _, x in ipairs(dsViec) do
+                                if tostring(x.jobCode) == tostring(ma) then j = x; break end
+                            end
+                            if j and tonumber(j.farmLevel) == mucLv then
+                                coViec = true
+                                local t = tonumber(j.tongAcc) or 0
+                                local d = tonumber(j.daXong) or 0
+                                -- viec dang chay -> dung so lieu song
+                                if v and tostring(v.jobCode) == tostring(j.jobCode) and coDsWeb then
+                                    local idx = tonumber(_G.CurrentAccountIndex) or 1
+                                    if idx < 1 then idx = 1 end
+                                    t = tonumber(_G.Mod_FarmKc_JobTong) or t
+                                    d = math.max(d, t - math.max(0, #ds - (idx - 1)))
+                                end
+                                tong = tong + t
+                                daXong = daXong + d
+                                local sv = tostring(j.serverId)
+                                local daCo = false
+                                for _, x in ipairs(dsServer) do if x == sv then daCo = true end end
+                                if not daCo then table.insert(dsServer, sv) end
+                            end
+                        end
+                        if not coViec then return nil end
+                        return {
+                            tong = tong, daXong = daXong,
+                            conLai = math.max(0, tong - daXong),
+                            server = table.concat(dsServer, ","),
+                        }
+                    end
+
+                    local function DongMucTieu(nhan, g)
+                        if not g then
+                            return string.format(
+                                "<color=#475569>Mục tiêu %s: chưa chọn việc</color>", nhan)
+                        end
+                        return string.format(
+                            "Mục tiêu: <color=#ffd166>%s · S%s</color> | Acc: <color=#4ade80>%d</color>/<color=#fbbf24>%d</color>/<color=#e2e8f0>%d</color>  <color=#64748b>(đã chạy/còn lại/tổng)</color>",
+                            nhan, g.server, g.daXong, g.conLai, g.tong)
+                    end
+
+                    local g50  = GopTheoLevel(50)
+                    local g200 = GopTheoLevel(200)
+                    if (not g50) and (not g200) then
+                        lblMucTieu.text = "<color=#475569>Mục tiêu: chưa chọn việc nào</color>"
+                    else
+                        lblMucTieu.text = DongMucTieu("Lv50", g50) .. "\n" .. DongMucTieu("Lv200", g200)
+                    end
 
                     -- Dong nick dang chay + level hien tai / level can cay
                     local lvHienTai, lvCan = 0, 0
@@ -3636,7 +3694,10 @@ local function CreateModUI()
                     end
                     VeNutViec()
                 end
-                KhoaHangDoi()
+                -- [MOD FEATURE]: FARM KC - KHONG khoa luc chon.
+                -- Chi khoa khi bam BAT DAU, de con xem/thu xep hang doi thoai mai
+                -- ma khong giu cho cua may khac.
+                CapNhat()
             end
             _G.Mod_FarmKc_DoiChonViec = DoiChonViec
 
@@ -3940,6 +4001,10 @@ local function CreateModUI()
                         return
                     end
                     if _G.Bot_Running then return end
+                    -- [MOD FEATURE]: FARM KC - KHOA HANG DOI NGAY TRUOC KHI CHAY
+                    -- Khoa o day chu khong phai luc chon, de nguoi dung con
+                    -- thu xep hang doi ma khong giu cho cua may khac.
+                    pcall(function() if KhoaHangDoi then KhoaHangDoi() end end)
                     if _G.ToggleAutoFarmBot then _G.ToggleAutoFarmBot()
                     elseif _G.StartAutoFarmBot then _G.StartAutoFarmBot() end
                     if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
@@ -4766,23 +4831,47 @@ local function FarmKc_EscapeJson(v)
     return v
 end
 
-local function FarmKc_ToJson(tbl)
+-- [MOD FEATURE]: FARM KC - HO TRO MANG TRONG JSON
+-- Ban cu gap table con se roi vao nhanh tostring() -> gui len web chuoi
+-- "table: 0x..." (loi "Thieu jobCodes"). Nay encode dung thanh [..].
+local FarmKc_ToJson
+
+local function FarmKc_LaMang(t)
+    if type(t) ~= "table" then return false end
+    local n = 0
+    for k, _ in pairs(t) do
+        if type(k) ~= "number" then return false end
+        n = n + 1
+    end
+    return n == #t
+end
+
+local function FarmKc_GiaTriJson(v)
+    if type(v) == "number" then
+        if v == math.floor(v) then return string.format("%d", v) end
+        return tostring(v)
+    elseif type(v) == "boolean" then
+        return v and "true" or "false"
+    elseif type(v) == "table" then
+        if FarmKc_LaMang(v) then
+            local phan = {}
+            for _, x in ipairs(v) do table.insert(phan, FarmKc_GiaTriJson(x)) end
+            return "[" .. table.concat(phan, ",") .. "]"
+        end
+        return FarmKc_ToJson(v)
+    end
+    return '"' .. FarmKc_EscapeJson(v) .. '"'
+end
+
+FarmKc_ToJson = function(tbl)
     if type(tbl) ~= "table" then return "{}" end
+    if FarmKc_LaMang(tbl) then return FarmKc_GiaTriJson(tbl) end
     local keys = {}
     for k, _ in pairs(tbl) do table.insert(keys, tostring(k)) end
     table.sort(keys)
     local parts = {}
     for _, k in ipairs(keys) do
-        local v = tbl[k]
-        local piece
-        if type(v) == "number" then
-            if v == math.floor(v) then piece = string.format("%d", v) else piece = tostring(v) end
-        elseif type(v) == "boolean" then
-            piece = v and "true" or "false"
-        else
-            piece = '"' .. FarmKc_EscapeJson(v) .. '"'
-        end
-        table.insert(parts, '"' .. FarmKc_EscapeJson(k) .. '":' .. piece)
+        table.insert(parts, '"' .. FarmKc_EscapeJson(k) .. '":' .. FarmKc_GiaTriJson(tbl[k]))
     end
     return "{" .. table.concat(parts, ",") .. "}"
 end

@@ -248,3 +248,13 @@ CAN TEST
 - May thu 2 dang nhap cung tai khoan -> cac viec da khoa phai hien DO.
 - Chay het viec 1 -> tu sang viec 2, doi dung server/level.
 - Viec du acc -> nut xam, bam khong an.
+
+## 2026-11-20 (3): sua theo phan hoi
+- LOI "Thieu jobCodes": `FarmKc_ToJson` KHONG ho tro mang -> table con bi tostring()
+  thanh "table: 0x...". Da viet lai: nhan dien mang, encode thanh [..], de quy cho table long nhau.
+- Khoa viec: BO khoi luc chon, CHUYEN sang nut BAT DAU (`KhoaHangDoi()` ngay truoc StartAutoFarmBot).
+  Chon/bo chon thoai mai khong giu cho may khac.
+- Muc tieu: GOP theo level -> dung 2 dong, Lv50 va Lv200, cong don tong/daXong cua moi viec
+  cung level trong hang doi; server liet ke dang "517,520". Viec dang chay dung so lieu song.
+  Label `FkcLblMucTieu` doi tu (20,410,480,24) -> (20,396,480,44) de chua 2 dong.
+- Kiem cu phap: cai luaparser tren VM may anh -> tu kiem duoc, khong can nho chay luac.
