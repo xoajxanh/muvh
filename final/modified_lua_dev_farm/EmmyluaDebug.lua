@@ -3188,35 +3188,33 @@ local function CreateModUI()
         --               -> bam chon -> tu dien Dai Acc STT + nap acc tu DB.
         -- =========================================================================
         pcall(function()
-            -- ---------- Giu lai danh sach thanh phan cu de co the bat lai ----------
-            local phanCu = {}
-            for i = 0, panelGo.transform.childCount - 1 do
-                local tr = panelGo.transform:GetChild(i)
-                if tr and not tr:Equals(nil) then
-                    local ten = tostring(tr.name)
-                    -- Nut ZOOM giu nguyen (nam ngoai vung ve lai)
-                    if ten ~= "ZoomVerticalBtn" then
-                        table.insert(phanCu, tr.gameObject)
-                    end
-                end
+            -- ---------------------------------------------------------------
+            -- An thanh phan cu THEO TEN, khong theo danh sach chup mot lan.
+            -- Lam vay thi goi lai luc nao cung dung, ke ca khi co doan code
+            -- khac bat lai hoac tao them widget cu sau nay.
+            -- Giu lai: cac widget moi (ten bat dau bang "Fkc") va nut ZOOM.
+            -- ---------------------------------------------------------------
+            local function LaPhanMoi(ten)
+                return ten == "ZoomVerticalBtn" or string.sub(ten, 1, 3) == "Fkc"
             end
-            _G.Mod_FarmKc_PhanCu = phanCu
 
-            local function AnPhanCu()
-                for _, go in ipairs(phanCu) do
-                    pcall(function()
-                        if go and not go:Equals(nil) then go:SetActive(false) end
-                    end)
-                end
+            local function AnPhanCu(hienLai)
+                pcall(function()
+                    local n = panelGo.transform.childCount
+                    for i = 0, n - 1 do
+                        local tr = panelGo.transform:GetChild(i)
+                        if tr and not tr:Equals(nil) then
+                            local ten = tostring(tr.name)
+                            if not LaPhanMoi(ten) then
+                                pcall(function() tr.gameObject:SetActive(hienLai == true) end)
+                            end
+                        end
+                    end
+                end)
             end
-            _G.Mod_FarmKc_HienPanelCu = function(hien)
-                for _, go in ipairs(phanCu) do
-                    pcall(function()
-                        if go and not go:Equals(nil) then go:SetActive(hien ~= false) end
-                    end)
-                end
-            end
-            AnPhanCu()
+            _G.Mod_FarmKc_AnPhanCu = function() AnPhanCu(false) end
+            _G.Mod_FarmKc_HienPanelCu = function(hien) AnPhanCu(hien ~= false) end
+            AnPhanCu(false)
 
             -- ---------- Tien ich ve ----------
             local MAU_NEN_O   = Color(0.10, 0.12, 0.16, 1)
@@ -3358,6 +3356,8 @@ local function CreateModUI()
 
             -- ---------- 6) Cap nhat thong tin hien thi ----------
             local function CapNhat()
+                -- Co widget cu nao lo hien ra thi an lai ngay
+                AnPhanCu(false)
                 pcall(function()
                     local v = vieEcDangChon
                     if v then
@@ -3375,22 +3375,36 @@ local function CreateModUI()
                         lblCauHinh.text = "Cấu hình Server: --"
                     end
 
-                    local tong = (_G.BotAccounts and #_G.BotAccounts) or 0
-                    local hienTai = _G.CurrentAccountIndex or 0
-                    if hienTai > tong then hienTai = tong end
-                    local phanTram = 0
-                    if tong > 0 then phanTram = math.floor((hienTai / tong) * 100) end
+                    -- CHI tinh tien do khi danh sach acc den tu WEB (DB) va dang
+                    -- co cong viec. Khong thi hien 0/0 - tranh lay nham danh
+                    -- sach acc cu sinh theo tien to (so lieu rac).
+                    local coDsWeb = v and _G.Mod_FarmKc_WebAccounts
+                        and #_G.Mod_FarmKc_WebAccounts > 0
+                    local conPhaiChay, dangO, tenAcc = 0, 0, "--"
+                    if coDsWeb then
+                        conPhaiChay = #_G.Mod_FarmKc_WebAccounts
+                        dangO = _G.CurrentAccountIndex or 0
+                        if dangO > conPhaiChay then dangO = conPhaiChay end
+                        pcall(function()
+                            local a = _G.Mod_FarmKc_WebAccounts[_G.CurrentAccountIndex or 1]
+                            if a and a.account then
+                                tenAcc = string.format("#%s %s", tostring(a.stt or "?"), tostring(a.account))
+                            end
+                        end)
+                    end
 
-                    local tenAcc = "--"
-                    pcall(function()
-                        local a = _G.BotAccounts and _G.BotAccounts[_G.CurrentAccountIndex or 1]
-                        if a and a.account then tenAcc = tostring(a.account) end
-                    end)
+                    -- Tien do tinh tren CA DAI: da xong tu truoc + da chay phien nay
+                    local tongDai = tonumber(_G.Mod_FarmKc_JobTong) or conPhaiChay
+                    local daXongTruoc = tonumber(_G.Mod_FarmKc_JobDaXong) or 0
+                    local daQua = daXongTruoc + math.max(0, dangO - 1)
+                    local phanTram = 0
+                    if tongDai > 0 then phanTram = math.floor((daQua / tongDai) * 100) end
 
                     lblMucTieu.text = string.format(
-                        "Mục tiêu: %s | Tiến độ Acc: %d/%d (%d%%) | Đang chạy: %s",
+                        "Mục tiêu: %s | Dải %s acc · đã xong %s · còn %s | Đang chạy: %s",
                         v and ("Lv" .. tostring(v.farmLevel)) or "--",
-                        hienTai, tong, phanTram, tenAcc)
+                        tostring(tongDai), tostring(daQua), tostring(conPhaiChay - math.max(0, dangO - 1)),
+                        tenAcc)
 
                     rtThanh.sizeDelta = Vector2(math.max(1, 740 * (phanTram / 100)), 10)
 
@@ -3441,7 +3455,11 @@ local function CreateModUI()
                     _G.Mod_FarmKc_NapAccTuWeb(function(ok, soAcc, loi)
                         pcall(function()
                             if ok then
-                                lblTacVu.text = string.format("Tác vụ: Đã nạp %d acc - sẵn sàng", soAcc or 0)
+                                local tongDai = tonumber(_G.Mod_FarmKc_JobTong) or 0
+                                local daXong = tonumber(_G.Mod_FarmKc_JobDaXong) or 0
+                                lblTacVu.text = string.format(
+                                    "Tác vụ: Nạp %d acc cần chạy (dải %d, đã xong %d)",
+                                    soAcc or 0, tongDai, daXong)
                             else
                                 lblTacVu.text = "Tác vụ: Lỗi nạp acc - " .. tostring(loi or "")
                             end
@@ -3537,8 +3555,20 @@ local function CreateModUI()
                     pcall(function()
                         lblTrangThaiDN.text = "• Đã đăng nhập"
                         lblTrangThaiDN.color = Color(0.45, 0.95, 0.5, 1)
-                        lblTacVu.text = string.format("Tác vụ: Nhận %d công việc", #dsViec)
+                        if #dsViec == 0 then
+                            lblTacVu.text = "Tác vụ: Tài khoản chưa được giao việc nào - vào web giao việc"
+                        else
+                            lblTacVu.text = string.format("Tác vụ: Nhận %d công việc", #dsViec)
+                        end
                     end)
+
+                    -- Khong co viec -> bo danh sach acc dang giu, tranh chay nham
+                    if #dsViec == 0 then
+                        vieEcDangChon = nil
+                        _G.Mod_FarmKc_Job = nil
+                        _G.Mod_Farm_JobCode = ""
+                        _G.Mod_FarmKc_WebAccounts = nil
+                    end
 
                     -- Uu tien viec da chon lan truoc
                     local maCu = ""
@@ -4709,6 +4739,151 @@ _G.FarmKc_Api_ReportInviter = function(info, createdBy, onDone)
 end
 
 -- =========================================================================
+-- [MOD FEATURE]: FARM KC - BO DOC JSON DAY DU (MANG + OBJECT LONG NHAU)
+-- Mo ta: FarmKc_ParseJson cu chi doc duoc cap "key": "giatri" phang, nen
+--        cac API moi tra ve MANG ("jobs": [...], "accounts": [...]) thi mat
+--        sach du lieu. Ham nay doc dung chuan JSON, tra ve bang Lua.
+--        Giu nguyen ham cu de cac API cu khong bi anh huong.
+-- =========================================================================
+local function FarmKc_JsonDoc(str)
+    if type(str) ~= "string" or str == "" then return nil, "chuoi rong" end
+
+    local i = 1
+    local n = #str
+
+    local function loiTai(msg)
+        return nil, (tostring(msg) .. " tai vi tri " .. tostring(i))
+    end
+
+    local function boTrang()
+        while i <= n do
+            local c = string.sub(str, i, i)
+            if c == " " or c == "\t" or c == "\n" or c == "\r" then
+                i = i + 1
+            else
+                break
+            end
+        end
+    end
+
+    local docGiaTri  -- khai bao truoc de cac ham duoi goi duoc
+
+    -- Chuoi: xu ly \" \\ \/ \n \t \r \b \f va \uXXXX
+    local function docChuoi()
+        if string.sub(str, i, i) ~= '"' then return loiTai("mong doi dau nhay") end
+        i = i + 1
+        local phan = {}
+        while i <= n do
+            local c = string.sub(str, i, i)
+            if c == '"' then
+                i = i + 1
+                return table.concat(phan)
+            elseif c == "\\" then
+                local k = string.sub(str, i + 1, i + 1)
+                if k == "n" then phan[#phan + 1] = "\n"
+                elseif k == "t" then phan[#phan + 1] = "\t"
+                elseif k == "r" then phan[#phan + 1] = "\r"
+                elseif k == "b" then phan[#phan + 1] = "\b"
+                elseif k == "f" then phan[#phan + 1] = "\f"
+                elseif k == "u" then
+                    local hex = string.sub(str, i + 2, i + 5)
+                    local ma = tonumber(hex, 16)
+                    i = i + 4
+                    if ma then
+                        -- utf8.char khong chac co tren xLua -> tu ma hoa UTF-8
+                        if ma < 0x80 then
+                            phan[#phan + 1] = string.char(ma)
+                        elseif ma < 0x800 then
+                            phan[#phan + 1] = string.char(
+                                0xC0 + math.floor(ma / 0x40), 0x80 + (ma % 0x40))
+                        else
+                            phan[#phan + 1] = string.char(
+                                0xE0 + math.floor(ma / 0x1000),
+                                0x80 + (math.floor(ma / 0x40) % 0x40),
+                                0x80 + (ma % 0x40))
+                        end
+                    end
+                else
+                    phan[#phan + 1] = k
+                end
+                i = i + 2
+            else
+                phan[#phan + 1] = c
+                i = i + 1
+            end
+        end
+        return loiTai("chuoi khong dong")
+    end
+
+    local function docSo()
+        local dau = i
+        while i <= n do
+            local c = string.sub(str, i, i)
+            if string.find(c, "[%d%+%-%.eE]") then i = i + 1 else break end
+        end
+        return tonumber(string.sub(str, dau, i - 1))
+    end
+
+    local function docMang()
+        i = i + 1  -- bo qua [
+        local t = {}
+        boTrang()
+        if string.sub(str, i, i) == "]" then i = i + 1; return t end
+        while i <= n do
+            boTrang()
+            local v = docGiaTri()
+            t[#t + 1] = v
+            boTrang()
+            local c = string.sub(str, i, i)
+            i = i + 1
+            if c == "]" then return t end
+            if c ~= "," then return loiTai("mong doi , hoac ] trong mang") end
+        end
+        return loiTai("mang khong dong")
+    end
+
+    local function docObject()
+        i = i + 1  -- bo qua {
+        local t = {}
+        boTrang()
+        if string.sub(str, i, i) == "}" then i = i + 1; return t end
+        while i <= n do
+            boTrang()
+            local k = docChuoi()
+            if k == nil then return loiTai("khoa khong hop le") end
+            boTrang()
+            if string.sub(str, i, i) ~= ":" then return loiTai("mong doi dau :") end
+            i = i + 1
+            boTrang()
+            t[k] = docGiaTri()
+            boTrang()
+            local c = string.sub(str, i, i)
+            i = i + 1
+            if c == "}" then return t end
+            if c ~= "," then return loiTai("mong doi , hoac } trong object") end
+        end
+        return loiTai("object khong dong")
+    end
+
+    docGiaTri = function()
+        boTrang()
+        local c = string.sub(str, i, i)
+        if c == "{" then return docObject() end
+        if c == "[" then return docMang() end
+        if c == '"' then return docChuoi() end
+        if string.sub(str, i, i + 3) == "true" then i = i + 4; return true end
+        if string.sub(str, i, i + 4) == "false" then i = i + 5; return false end
+        if string.sub(str, i, i + 3) == "null" then i = i + 4; return nil end
+        return docSo()
+    end
+
+    local ok, kq = pcall(docGiaTri)
+    if not ok then return nil, tostring(kq) end
+    return kq
+end
+_G.FarmKc_JsonDoc = FarmKc_JsonDoc
+
+-- =========================================================================
 -- [MOD FEATURE]: FARM KC - API CONG VIEC DUOC GIAO
 -- Mo ta: Sau khi nguoi dung bam KIEM TRA DANG NHAP, mod hoi web xem tai khoan
 --        nay duoc giao nhung block nao (level + server + dai STT), roi tu dien
@@ -4744,8 +4919,12 @@ _G.FarmKc_Api_GetJobs = function(username, password, onDone)
         deviceId = _G.FarmKc_DeviceId(),
         ts = ts, sign = FarmKc_Sign({ username, password }, ts),
     }, function(ok, obj, raw, err)
+        -- Phai doc lai bang bo doc day du: "jobs" la MANG
+        local du = nil
+        if ok and raw and raw ~= "" then du = FarmKc_JsonDoc(raw) end
+        if du == nil then du = obj end
         if onDone then
-            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+            pcall(onDone, ok and du ~= nil and du.ok == true, du, err or (du and du.error))
         end
     end)
 end
@@ -4761,8 +4940,12 @@ _G.FarmKc_Api_GetJobAccounts = function(jobCode, afterStt, take, onDone)
         take = take or 50,
         ts = ts, sign = FarmKc_Sign({ jobCode }, ts),
     }, function(ok, obj, raw, err)
+        -- "accounts" la MANG -> doc lai bang bo doc day du
+        local du = nil
+        if ok and raw and raw ~= "" then du = FarmKc_JsonDoc(raw) end
+        if du == nil then du = obj end
         if onDone then
-            pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error))
+            pcall(onDone, ok and du ~= nil and du.ok == true, du, err or (du and du.error))
         end
     end)
 end
@@ -4855,6 +5038,10 @@ _G.Mod_FarmKc_NapAccTuWeb = function(onDone)
             end
 
             _G.Mod_FarmKc_WebAccounts = gom
+            -- So lieu CA DAI, de panel hien dung "con lai / tong" chu khong
+            -- phai chi so acc vua tai ve (acc da xong khong duoc tra ve nua)
+            _G.Mod_FarmKc_JobTong   = tonumber(obj.tongTrongDai) or #gom
+            _G.Mod_FarmKc_JobDaXong = tonumber(obj.daXong) or 0
             _G.Mod_Farm_JobServerId = tonumber(obj.serverId) or _G.Mod_Farm_JobServerId
             pcall(function()
                 if (tonumber(obj.serverId) or 0) > 0 then

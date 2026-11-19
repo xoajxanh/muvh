@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { verifyFarmRequest, safeNum, tinhTrangThaiInviter } from '@/lib/farm-auth';
+import { timChuSoHuu } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,9 +37,13 @@ export async function POST(req: NextRequest) {
     }
 
     const now = new Date();
-    const existing = await prisma.farmInviter.findUnique({
+    // [MOD FEATURE]: tien do ghi vao BANG THEO DOI (acc x server x nguoi choi)
+    const bangTheoDoi: any = (prisma as any).farmInviterPlay;
+    const existing = await bangTheoDoi.findUnique({
       where: { email_serverId: { email, serverId } },
     });
+    // Dong goc trong kho + nguoi choi dang giu acc nay tren server nay
+    const chu = await timChuSoHuu(200, email, serverId);
 
     const maxInvites = existing?.maxInvites ?? 5;
 
@@ -82,14 +87,24 @@ export async function POST(req: NextRequest) {
       lastSyncAt: now,
     };
 
-    const row = await prisma.farmInviter.upsert({
+    const row = await bangTheoDoi.upsert({
       where: { email_serverId: { email, serverId } },
-      update: common,
+      update: {
+        ...common,
+        masterId: existing?.masterId || chu.masterId,
+        stt: existing?.stt || chu.stt,
+        farmAccountId: chu.farmAccountId || existing?.farmAccountId || null,
+        jobCode: chu.jobCode || existing?.jobCode || null,
+      },
       create: {
         email,
         serverId,
         maxInvites: 5,
         createdById: auth.createdById,
+        masterId: chu.masterId,
+        stt: chu.stt,
+        farmAccountId: chu.farmAccountId,
+        jobCode: chu.jobCode,
         ...common,
       },
     });

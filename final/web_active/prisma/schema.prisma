@@ -18,6 +18,8 @@ model User {
   tokens       Token[]     @relation("UserTokens")
   tokenNotes   TokenNote[] @relation("UserTokenNotes")
   farmAccounts FarmAccount[] @relation("UserFarmAccounts")
+  farmInviterPlays FarmInviterPlay[] @relation("UserFarmInviterPlays")
+  farmInviteePlays FarmInviteePlay[] @relation("UserFarmInviteePlays")
   messageTemplates MessageTemplate[] @relation("UserMessageTemplates")
   farmInviters     FarmInviter[]     @relation("UserFarmInviters")
   farmInvitees     FarmInvitee[]     @relation("UserFarmInvitees")
@@ -150,84 +152,52 @@ model DeviceLoginHistory {
 //        day len, kem co che giu cho (lease) chong vuot 5 luot moi.
 // =========================================================================
 
+// =========================================================================
+// [MOD FEATURE]: FARM KC - KHO MAC DINH ACC Lv200 (chi de doi chieu)
+// Mo ta: Chi giu thong tin dinh danh tu file dang ky. Tien do choi tren tung
+//        server nam o FarmInviterPlay (quan he plays).
+// =========================================================================
 model FarmInviter {
-  id              String        @id @default(uuid())
-  email           String
-  password        String        @default("")
-  serverId        Int
-  serverName      String        @default("")
-  roleId          String        @default("")
-  roleName        String        @default("")
-  level           Int           @default(0)
-  inviteCode      String?
-  gameInviteNum   Int           @default(0)
-  confirmedCount  Int           @default(0)
-  reservedCount   Int           @default(0)
-  maxInvites      Int           @default(5)
-  unboundGold     BigInt        @default(0)
-  unboundDiamond  BigInt        @default(0)
-  goldVoucher     BigInt        @default(0)   // Kim Phiếu (thưởng mốc mời bạn bè)
-  packBought      Int           @default(0)   // Số gói kim cương đã mua bằng Kim Phiếu
-  status          String        @default("ACTIVE") // ACTIVE | COMPLETE | DONE | ERROR
-  failCount       Int           @default(0)
-  lastError       String?
-  lastSyncAt      DateTime?
-  // [MOD FEATURE]: thong tin tu file dang ky + tai khoan FARM_KC duoc giao cay
-  stt             Int           @default(0)
-  uid             String        @default("")
-  regIp           String        @default("")
-  regAt           DateTime?
-  importBatch     String        @default("")
-  farmAccountId   String?
-  farmAccount     FarmAccount?  @relation("FarmAccountInviters", fields: [farmAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdById     String
-  createdBy       User          @relation("UserFarmInviters", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  invitees        FarmInvitee[] @relation("InviterInvitees")
+  id          String            @id @default(uuid())
+  email       String            @unique
+  password    String            @default("")
+  stt         Int               @default(0)
+  uid         String            @default("")
+  regIp       String            @default("")
+  regAt       DateTime?
+  importBatch String            @default("")
+  createdById String
+  createdBy   User              @relation("UserFarmInviters", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  /// Cac lan acc nay duoc choi tren tung server (bang theo doi)
+  plays       FarmInviterPlay[] @relation("InviterMasterPlays")
 
-  @@unique([email, serverId])
-  @@index([serverId, status])
+  @@index([stt])
   @@index([createdById])
-  @@index([farmAccountId])
 }
 
+// =========================================================================
+// [MOD FEATURE]: FARM KC - KHO MAC DINH ACC Lv50 (chi de doi chieu)
+// =========================================================================
 model FarmInvitee {
-  id          String       @id @default(uuid())
-  email       String
-  password    String       @default("")
-  serverId    Int
-  serverName  String       @default("")
-  roleId      String       @default("")
-  roleName    String       @default("")
-  level       Int          @default(0)
-  inviterId   String?
-  inviter     FarmInviter? @relation("InviterInvitees", fields: [inviterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  inviteCode  String?
-  status      String       @default("RESERVED") // RESERVED | SUCCESS | FAILED | EXPIRED | ALREADY_USED | NO_CODE
-  deviceId    String?
-  reservedAt  DateTime?
-  expireAt    DateTime?
-  confirmedAt DateTime?
-  errorMsg    String?
-  // [MOD FEATURE]: thong tin tu file dang ky + tai khoan FARM_KC duoc giao cay
-  stt           Int          @default(0)
-  uid           String       @default("")
-  regIp         String       @default("")
-  regAt         DateTime?
-  importBatch   String       @default("")
-  farmAccountId String?
-  farmAccount   FarmAccount? @relation("FarmAccountInvitees", fields: [farmAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id          String            @id @default(uuid())
+  email       String            @unique
+  password    String            @default("")
+  stt         Int               @default(0)
+  uid         String            @default("")
+  regIp       String            @default("")
+  regAt       DateTime?
+  importBatch String            @default("")
   createdById String
-  createdBy   User         @relation("UserFarmInvitees", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdBy   User              @relation("UserFarmInvitees", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  /// Cac lan acc nay duoc choi tren tung server (bang theo doi)
+  plays       FarmInviteePlay[] @relation("InviteeMasterPlays")
 
-  @@unique([email, serverId])
-  @@index([serverId, status])
-  @@index([inviterId])
+  @@index([stt])
   @@index([createdById])
-  @@index([farmAccountId])
 }
 
 // =========================================================================
@@ -248,9 +218,9 @@ model FarmAccount {
   createdBy   User          @relation("UserFarmAccounts", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
-  inviters    FarmInviter[] @relation("FarmAccountInviters")
-  invitees    FarmInvitee[] @relation("FarmAccountInvitees")
   ranges      FarmAccountRange[] @relation("FarmAccountRanges")
+  inviterPlays FarmInviterPlay[] @relation("FarmAccountInviterPlays")
+  inviteePlays FarmInviteePlay[] @relation("FarmAccountInviteePlays")
 
   @@index([createdById])
 }
@@ -285,4 +255,88 @@ model FarmAccountRange {
 
   @@unique([farmAccountId, farmLevel, serverId])
   @@index([farmLevel, serverId])
+}
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - BANG THEO DOI ACC GAME x SERVER x NGUOI CHOI
+// Mo ta: FarmInviter / FarmInvitee la KHO MAC DINH - chi de doi chieu.
+//        Tien do choi cua tung acc tren tung server nam o day.
+//        Cung mot acc choi o 2 server = 2 dong, doc lap hoan toan.
+// =========================================================================
+model FarmInviterPlay {
+  id             String        @id @default(uuid())
+  masterId       String?
+  master         FarmInviter?  @relation("InviterMasterPlays", fields: [masterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stt            Int           @default(0)
+  email          String
+  password       String        @default("")
+  serverId       Int
+  serverName     String        @default("")
+  roleId         String        @default("")
+  roleName       String        @default("")
+  level          Int           @default(0)
+  inviteCode     String?
+  gameInviteNum  Int           @default(0)
+  confirmedCount Int           @default(0)
+  reservedCount  Int           @default(0)
+  maxInvites     Int           @default(5)
+  unboundGold    BigInt        @default(0)
+  unboundDiamond BigInt        @default(0)
+  goldVoucher    BigInt        @default(0)
+  packBought     Int           @default(0)
+  status         String        @default("NEW")
+  failCount      Int           @default(0)
+  lastError      String?
+  lastSyncAt     DateTime?
+  farmAccountId  String?
+  farmAccount    FarmAccount?  @relation("FarmAccountInviterPlays", fields: [farmAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jobCode        String?
+  createdById    String
+  createdBy      User          @relation("UserFarmInviterPlays", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  invitees       FarmInviteePlay[] @relation("InviterPlayInvitees")
+
+  @@unique([email, serverId])
+  @@index([serverId, status])
+  @@index([masterId])
+  @@index([farmAccountId])
+  @@index([createdById])
+}
+
+model FarmInviteePlay {
+  id            String           @id @default(uuid())
+  masterId      String?
+  master        FarmInvitee?     @relation("InviteeMasterPlays", fields: [masterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  stt           Int              @default(0)
+  email         String
+  password      String           @default("")
+  serverId      Int
+  serverName    String           @default("")
+  roleId        String           @default("")
+  roleName      String           @default("")
+  level         Int              @default(0)
+  inviterId     String?
+  inviter       FarmInviterPlay? @relation("InviterPlayInvitees", fields: [inviterId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  inviteCode    String?
+  status        String           @default("NEW")
+  deviceId      String?
+  reservedAt    DateTime?
+  expireAt      DateTime?
+  confirmedAt   DateTime?
+  errorMsg      String?
+  farmAccountId String?
+  farmAccount   FarmAccount?     @relation("FarmAccountInviteePlays", fields: [farmAccountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jobCode       String?
+  createdById   String
+  createdBy     User             @relation("UserFarmInviteePlays", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@unique([email, serverId])
+  @@index([serverId, status])
+  @@index([masterId])
+  @@index([inviterId])
+  @@index([farmAccountId])
+  @@index([createdById])
 }

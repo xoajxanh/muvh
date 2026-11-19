@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { buildSign, MAX_TS_SKEW_SECONDS } from '@/lib/farm-auth';
+import { XONG_LV200, XONG_LV50 } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,7 +47,7 @@ export async function GET(req: NextRequest) {
 
     const job = await (prisma as any).farmAccountRange.findUnique({
       where: { jobCode },
-      include: { farmAccount: { select: { id: true, username: true, status: true } } },
+      include: { farmAccount: { select: { id: true, username: true, status: true, createdById: true } } },
     });
     if (!job) {
       return NextResponse.json({ ok: false, error: `Không tìm thấy công việc "${jobCode}"` }, { status: 404 });
@@ -90,44 +91,49 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ---- Lay acc game trong khoang STT, bo qua acc da xong ----
+    // =====================================================================
+    // [MOD FEATURE]: LAY ACC TU KHO MAC DINH, TIEN DO TU BANG THEO DOI
+    // Mo ta: Danh sach acc lay tu kho (FarmInviter / FarmInvitee) theo dai STT
+    //        - kho CHI DOC, khong ghi gi vao do.
+    //        Acc "da xong" xet tren BANG THEO DOI dung server cua cong viec:
+    //        longdt@S517 xong roi khong lam acc do bien mat khoi datnd@S518.
+    // =====================================================================
     const laLv200 = job.farmLevel === 200;
-    const bang: any = laLv200 ? prisma.farmInviter : prisma.farmInvitee;
-    const trangThaiXong = laLv200 ? ['DONE', 'INVITED'] : ['SUCCESS', 'ALREADY_USED'];
+    const kho: any = laLv200 ? (prisma as any).farmInviter : (prisma as any).farmInvitee;
+    const theoDoi: any = laLv200 ? (prisma as any).farmInviterPlay : (prisma as any).farmInviteePlay;
+    const trangThaiXong = laLv200 ? XONG_LV200 : XONG_LV50;
 
+    const trongDai = { stt: { gte: job.rangeFrom, lte: job.rangeTo } };
+
+    // Acc trong dai, CHUA xong tren server nay (tinh qua quan he plays)
     const where: any = {
       stt: { gte: Math.max(job.rangeFrom, afterStt + 1), lte: job.rangeTo },
-      status: { notIn: trangThaiXong },
+      plays: { none: { serverId: job.serverId, status: { in: trangThaiXong } } },
     };
 
-    const [tongConLai, rows] = await Promise.all([
-      bang.count({ where }),
-      bang.findMany({
+    const [tongTrongDai, daXong, tongConLai, rows] = await Promise.all([
+      kho.count({ where: trongDai }),
+      theoDoi.count({
+        where: { serverId: job.serverId, ...trongDai, status: { in: trangThaiXong } },
+      }),
+      kho.count({ where }),
+      kho.findMany({
         where,
         orderBy: { stt: 'asc' },
         take,
         select: {
-          id: true,
           stt: true,
           email: true,
           password: true,
-          serverId: true,
-          serverName: true,
-          roleName: true,
-          level: true,
-          inviteCode: true,
-          status: true,
+          // Tien do (neu da tung choi) cua acc nay tren DUNG server cong viec
+          plays: {
+            where: { serverId: job.serverId },
+            select: { status: true, inviteCode: true, roleName: true, level: true },
+            take: 1,
+          },
         },
       }),
     ]);
-
-    // Gan cong viec cho cac acc vua phat (de web biet acc nay thuoc block nao)
-    if (chiemViec && rows.length > 0) {
-      await bang.updateMany({
-        where: { id: { in: rows.map((r: any) => r.id) }, farmAccountId: null },
-        data: { farmAccountId: job.farmAccountId },
-      });
-    }
 
     return NextResponse.json({
       ok: true,
@@ -139,19 +145,25 @@ export async function GET(req: NextRequest) {
       rangeFrom: job.rangeFrom,
       rangeTo: job.rangeTo,
       cursorStt: job.cursorStt,
+      tongTrongDai,
+      daXong,
       conLai: tongConLai,
       heetHang: rows.length === 0,
-      accounts: rows.map((r: any) => ({
-        stt: r.stt,
-        email: r.email,
-        password: r.password,
-        serverId: job.serverId || r.serverId,
-        serverName: job.serverName || r.serverName,
-        roleName: r.roleName,
-        level: r.level,
-        inviteCode: r.inviteCode || '',
-        status: r.status,
-      })),
+      accounts: rows.map((r: any) => {
+        const tienDo = (r.plays || [])[0] || null;
+        return {
+          stt: r.stt,
+          email: r.email,
+          password: r.password,
+          serverId: job.serverId,
+          serverName: job.serverName,
+          roleName: tienDo?.roleName || '',
+          level: tienDo?.level || 0,
+          inviteCode: tienDo?.inviteCode || '',
+          // Chua tung choi tren server nay -> NEW
+          status: tienDo?.status || 'NEW',
+        };
+      }),
     });
   } catch (err: any) {
     return NextResponse.json({ ok: false, error: err.message || 'Lỗi máy chủ' }, { status: 500 });

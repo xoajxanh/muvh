@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { verifyFarmRequest } from '@/lib/farm-auth';
+import { timChuSoHuu } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,12 +35,15 @@ export async function POST(req: NextRequest) {
     }
 
     const newInviteeId = randomUUID();
+    // [MOD FEATURE]: dong goc trong kho + nguoi choi dang giu acc Lv50 nay
+    const chu = await timChuSoHuu(50, email, serverId);
 
     const rows: any[] = await prisma.$queryRawUnsafe(
       `EXEC [dbo].[sp_FarmClaimInviteCode]
          @email = @P1, @password = @P2, @serverId = @P3, @serverName = @P4,
          @roleId = @P5, @roleName = @P6, @level = @P7, @deviceId = @P8,
-         @createdById = @P9, @newInviteeId = @P10, @leaseMinutes = @P11`,
+         @createdById = @P9, @newInviteeId = @P10, @leaseMinutes = @P11,
+         @masterId = @P12, @stt = @P13, @farmAccountId = @P14, @jobCode = @P15`,
       email,
       String(body.password || ''),
       serverId,
@@ -50,7 +54,11 @@ export async function POST(req: NextRequest) {
       deviceId === '' ? null : deviceId,
       auth.createdById,
       newInviteeId,
-      LEASE_MINUTES
+      LEASE_MINUTES,
+      chu.masterId,
+      chu.stt,
+      chu.farmAccountId,
+      chu.jobCode
     );
 
     const r = rows && rows[0];

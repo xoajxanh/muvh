@@ -21,12 +21,15 @@ export async function GET(req: NextRequest) {
     const where: any = {};
     if (session.role !== 'ADMIN') where.createdById = session.userId;
 
-    const [inviters, invitees] = await Promise.all([
-      prisma.farmInviter.count({ where }),
-      prisma.farmInvitee.count({ where }),
+    // [MOD FEATURE]: so dong THEO DOI (dang choi tren cac server) + so acc trong KHO
+    const [inviters, invitees, khoInviters, khoInvitees] = await Promise.all([
+      (prisma as any).farmInviterPlay.count({ where }),
+      (prisma as any).farmInviteePlay.count({ where }),
+      prisma.farmInviter.count(),
+      prisma.farmInvitee.count(),
     ]);
 
-    return NextResponse.json({ inviters, invitees });
+    return NextResponse.json({ inviters, invitees, khoInviters, khoInvitees });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Lỗi máy chủ' }, { status: 500 });
   }

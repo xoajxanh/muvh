@@ -3,8 +3,8 @@
 // Mo ta: Doc cac file reg_success_*.txt roi tao ban ghi trong 2 bang:
 //          reg_success_fang0_proxy*.txt -> FarmInvitee (acc Lv50 di nhap ma)
 //          reg_success_vut_proxy*.txt   -> FarmInviter (acc Lv200 tao ma)
-//        serverId = 0 nghia la "acc mac dinh, chua gan server" - sau nay gan
-//        cho tai khoan FARM_KC chay o server nao thi cap nhat sau.
+//        Kho chi giu email / mat khau / STT / UID / IP / thoi diem dang ky.
+//        Tien do choi tren tung server nam o FarmInviterPlay / FarmInviteePlay.
 //        Trung email thi BO QUA (khong ghi de ban ghi da co).
 //
 // Cach dung (dat ngay trong thu muc excute_test, chay tu bat ky dau):
@@ -92,7 +92,7 @@ async function layAdminId() {
   return admin;
 }
 
-async function nap({ ten, tienTo, bang, level, trangThai, createdById, batch }) {
+async function nap({ ten, tienTo, bang, createdById, batch }) {
   const files = timFile(tienTo);
   console.log(`\n=== ${ten} (${tienTo}*) ===`);
   if (files.length === 0) {
@@ -118,9 +118,8 @@ async function nap({ ten, tienTo, bang, level, trangThai, createdById, batch }) 
   const dsMoi = [...theoEmail.values()];
   console.log(`  -> ${tongDong} dong, ${dsMoi.length} email khac nhau${tongLoi ? `, ${tongLoi} dong loi` : ''}`);
 
-  // Email da co trong DB thi bo qua.
-  // Khong dung `email: { in: [...] }` vi SQL Server chi cho toi da 2100 tham
-  // so moi truy van -> doc thang danh sach email dang co, chia trang cho nhe.
+  // Email da co trong DB (bat ke serverId nao) thi bo qua - bang mac dinh
+  // chi giu MOT ban ghi cho moi tai khoan game.
   process.stdout.write('  Dang doc email da co trong DB...');
   const daCo = new Set();
   const TRANG = 5000;
@@ -158,12 +157,7 @@ async function nap({ ten, tienTo, bang, level, trangThai, createdById, batch }) 
       id: crypto.randomUUID(),
       email: r.email,
       password: r.password,
-      serverId: 0,
-      serverName: '',
-      roleId: '',
-      roleName: '',
-      level,
-      status: trangThai,
+      // Kho mac dinh chi giu thong tin dinh danh - tien do nam o bang *Play
       stt: r.stt,
       uid: r.uid,
       regIp: r.regIp,
@@ -194,8 +188,6 @@ async function main() {
     ten: 'ACC LV200 (nguoi moi)',
     tienTo: 'reg_success_vut_proxy',
     bang: prisma.farmInviter,
-    level: 0,
-    trangThai: 'NEW',
     createdById: admin.id,
     batch,
   });
@@ -205,8 +197,6 @@ async function main() {
     ten: 'ACC LV50 (duoc moi)',
     tienTo: 'reg_success_fang0_proxy',
     bang: prisma.farmInvitee,
-    level: 0,
-    trangThai: 'NEW',
     createdById: admin.id,
     batch,
   });

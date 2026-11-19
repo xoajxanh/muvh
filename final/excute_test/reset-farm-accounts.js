@@ -1,13 +1,13 @@
 // =========================================================================
 // [MOD FEATURE]: FARM KC - XOA SACH BANG TAI KHOAN FARM_KC DE TAO LAI CHUAN
 // Mo ta: Chi dung MOT LAN trong giai doan test. Script nay:
-//          1. Go lien ket farmAccountId tren 2 bang acc game (ve NULL)
+//          1. Go lien ket farmAccountId tren 2 bang theo doi (ve NULL)
 //          2. DROP bang FarmAccountRange va FarmAccount
 //        Sau do khoi dong lai web, ensureInitialSeed se tao lai 2 bang theo
 //        dung cau truc moi (FarmAccount khong con farmLevel/rangeFrom/rangeTo).
 //
 // KHONG dung script nay khi da chay that - du lieu tai khoan FARM_KC se mat.
-// Du lieu acc game (FarmInviter / FarmInvitee) KHONG bi dong toi.
+// Kho mac dinh (FarmInviter / FarmInvitee) KHONG bi dong toi.
 //
 // Cach dung:
 //   node reset-farm-accounts.js --yes
@@ -61,8 +61,8 @@ async function main() {
 
   console.log('\nDang xoa...');
 
-  // 1) Go lien ket tren 2 bang acc game (giu nguyen acc, chi bo gan tai khoan)
-  for (const bang of ['FarmInviter', 'FarmInvitee']) {
+  // 1) Go lien ket tren 2 bang THEO DOI (kho mac dinh khong con cot nay)
+  for (const bang of ['FarmInviterPlay', 'FarmInviteePlay']) {
     try {
       const n = await prisma.$executeRawUnsafe(
         `UPDATE [dbo].[${bang}] SET [farmAccountId] = NULL WHERE [farmAccountId] IS NOT NULL`,

@@ -47,12 +47,12 @@ export async function GET(req: NextRequest) {
     if (session.role !== 'ADMIN') whereGame.createdById = session.userId;
 
     const [svInviter, svInvitee] = await Promise.all([
-      prisma.farmInviter.groupBy({
+      (prisma as any).farmInviterPlay.groupBy({
         by: ['serverId', 'serverName'] as any,
         where: whereGame,
         _count: { _all: true },
       } as any),
-      prisma.farmInvitee.groupBy({
+      (prisma as any).farmInviteePlay.groupBy({
         by: ['serverId', 'serverName'] as any,
         where: whereGame,
         _count: { _all: true },

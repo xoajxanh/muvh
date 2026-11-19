@@ -103,7 +103,9 @@ function FarmKcNoiDung() {
   const [totals, setTotals] = useState<any>(null);
   const [chiTieu, setChiTieu] = useState<any>(null);
   // Số lượng của CẢ HAI bảng, hiện ngay trên nút gạt
-  const [counts, setCounts] = useState<{ inviters: number; invitees: number }>({ inviters: 0, invitees: 0 });
+  const [counts, setCounts] = useState<any>({ inviters: 0, invitees: 0, khoInviters: 0, khoInvitees: 0 });
+  // [MOD FEATURE]: che do xem - 'theoDoi' (acc x server x nguoi choi) | 'kho' (kho mac dinh)
+  const [cheDo, setCheDo] = useState<'theoDoi' | 'kho'>('theoDoi');
   const pageSize = 20;
 
   useEffect(() => {
@@ -221,6 +223,7 @@ function FarmKcNoiDung() {
       });
       if (keyword.trim()) q.set('q', keyword.trim());
       if (st) q.set('status', st);
+      if (cheDo === 'kho') q.set('mode', 'kho');
       if (farmUser) q.set('username', farmUser);
       if (serverLoc) q.set('serverId', serverLoc);
 
@@ -247,7 +250,7 @@ function FarmKcNoiDung() {
     // Cho chon xong gia tri mac dinh roi moi goi API, tranh goi 2 lan
     if (user && daChonMacDinh) load(1, tab, status, sortBy, sortDir);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, daChonMacDinh, tab, status, sortBy, sortDir, farmUser, serverLoc]);
+  }, [user, daChonMacDinh, tab, status, sortBy, sortDir, farmUser, serverLoc, cheDo]);
 
   // =========================================================================
   // [MOD FEATURE]: SAP XEP THEO COT
@@ -448,6 +451,25 @@ function FarmKcNoiDung() {
               Tài khoản Farm KC
             </button>
 
+            {/* [MOD FEATURE]: gat giua bang THEO DOI va KHO MAC DINH */}
+            <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
+              {[
+                { v: 'theoDoi', l: 'Theo dõi', title: 'Acc game đang chơi trên từng server, bởi ai' },
+                { v: 'kho', l: 'Kho mặc định', title: 'Danh sách acc gốc - chỉ để đối chiếu' },
+              ].map((o) => (
+                <button
+                  key={o.v}
+                  title={o.title}
+                  onClick={() => { setCheDo(o.v as any); setStatus(''); setPage(1); }}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
+                    cheDo === o.v ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+
             <div className="inline-flex p-0.5 rounded-lg bg-slate-900 border border-slate-800 shrink-0">
               <button
                 onClick={() => doiTab('inviters')}
@@ -460,7 +482,7 @@ function FarmKcNoiDung() {
                 <Crown className="w-3.5 h-3.5" />
                 ACC 200
                 <span className={`font-bold ${laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
-                  ({fmtNum(counts.inviters)})
+                  ({fmtNum(cheDo === 'kho' ? counts.khoInviters : counts.inviters)})
                 </span>
               </button>
               <button
@@ -474,7 +496,7 @@ function FarmKcNoiDung() {
                 <UserPlus className="w-3.5 h-3.5" />
                 ACC 50
                 <span className={`font-bold ${!laAcc200 ? 'text-white/80' : 'text-slate-500'}`}>
-                  ({fmtNum(counts.invitees)})
+                  ({fmtNum(cheDo === 'kho' ? counts.khoInvitees : counts.invitees)})
                 </span>
               </button>
             </div>
@@ -649,9 +671,69 @@ function FarmKcNoiDung() {
           {/* BANG: chi cuon ben trong, header dinh tren, pagination dinh duoi */}
           <div className="flex-1 min-h-0 flex flex-col rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-auto">
+              {cheDo === 'kho' ? (
+              // =================================================================
+              // [MOD FEATURE]: BANG KHO MAC DINH - chi de doi chieu, khong sua
+              // =================================================================
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-slate-900 text-slate-400 text-xs uppercase tracking-wide">
+                    <Th k="stt" align="right">ID</Th>
+                    <Th k="email">Email</Th>
+                    {isAdmin && <Th>Mật khẩu</Th>}
+                    <Th>UID</Th>
+                    <Th align="center">Số server</Th>
+                    <Th>Đang chơi ở</Th>
+                    <Th>Nhập kho lúc</Th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {loading ? (
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
+                  ) : items.length === 0 ? (
+                    <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500">Kho trống</td></tr>
+                  ) : (
+                    items.map((r: any) => (
+                      <tr key={r.id} className="transition hover:bg-slate-800/30">
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-500">{r.stt > 0 ? fmtNum(r.stt) : '-'}</td>
+                        <td className="px-4 py-2.5 text-slate-200 whitespace-nowrap">{r.email}</td>
+                        {isAdmin && <td className="px-4 py-2.5"><OMatKhau r={r} /></td>}
+                        <td className="px-4 py-2.5 font-mono text-[11px] text-slate-500">{r.uid || '-'}</td>
+                        <td className="px-4 py-2.5 text-center">
+                          <span className={`font-bold font-mono text-xs ${r.soServer > 0 ? 'text-emerald-300' : 'text-slate-600'}`}>
+                            {r.soServer}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2.5">
+                          {(r.dangChoi || []).length === 0 ? (
+                            <span className="text-slate-600 text-xs">chưa chơi ở đâu</span>
+                          ) : (
+                            <div className="flex flex-wrap gap-1">
+                              {r.dangChoi.map((d: any) => (
+                                <span
+                                  key={d.serverId}
+                                  title={`${d.roleName || ''} Lv${d.level || 0}`}
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-[11px]"
+                                >
+                                  <span className="text-sky-300 font-semibold">S{d.serverId}</span>
+                                  {d.nguoiChoi && <span className="text-violet-300">· {d.nguoiChoi}</span>}
+                                  <span className="text-slate-500">· {d.status}</span>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-slate-500 text-xs whitespace-nowrap">{fmtTime(r.regAt)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              ) : (
+              <table className="w-full text-sm">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-slate-900 text-slate-400 text-xs uppercase tracking-wide">
+                    <Th k="stt" align="right">ID</Th>
                     <Th k="email">Email</Th>
                     {isAdmin && (
                       <Th
@@ -672,6 +754,7 @@ function FarmKcNoiDung() {
                       </Th>
                     )}
                     <Th k="serverName">Server</Th>
+                    <Th>Người chơi</Th>
                     <Th k="roleName">Nhân vật</Th>
                     <Th k="level" align="center">Lv</Th>
                     <Th k="inviteCode">{laAcc200 ? 'Mã mời' : 'Mã đã nhập'}</Th>
@@ -708,9 +791,21 @@ function FarmKcNoiDung() {
                             : ''
                         }`}
                       >
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-500">
+                          {r.stt > 0 ? fmtNum(r.stt) : '-'}
+                        </td>
                         <td className="px-4 py-2.5 text-slate-200 whitespace-nowrap">{r.email}</td>
                         {isAdmin && <td className="px-4 py-2.5"><OMatKhau r={r} /></td>}
-                        <td className="px-4 py-2.5 text-slate-400 whitespace-nowrap">{r.serverName || r.serverId}</td>
+                        <td className="px-4 py-2.5 text-slate-400 whitespace-nowrap">
+                          {Number(r.serverId) === 0
+                            ? <span className="text-slate-600 italic">chưa gán</span>
+                            : (r.serverName || r.serverId)}
+                        </td>
+                        <td className="px-4 py-2.5 whitespace-nowrap">
+                          {r.farmUsername
+                            ? <span className="px-1.5 py-0.5 rounded-md bg-violet-500/10 border border-violet-500/30 text-[11px] text-violet-300">{r.farmUsername}</span>
+                            : <span className="text-slate-600 text-xs">-</span>}
+                        </td>
                         <td className="px-4 py-2.5 text-slate-300 whitespace-nowrap">{r.roleName || '-'}</td>
                         <td className="px-4 py-2.5 text-center text-slate-400">{r.level || '-'}</td>
                         <td className="px-4 py-2.5">
@@ -803,6 +898,7 @@ function FarmKcNoiDung() {
                   )}
                 </tbody>
               </table>
+              )}
             </div>
 
             {/* Thanh pagination co dinh duoi cung, co luon nut Tai lai */}

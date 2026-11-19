@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { verifyFarmRequest, tinhTrangThaiInviter } from '@/lib/farm-auth';
+import { timChuSoHuu } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,8 +41,12 @@ export async function POST(req: NextRequest) {
 
     const now = new Date();
 
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.farmInvitee.findUnique({
+    // [MOD FEATURE]: ghi vao BANG THEO DOI, kho mac dinh khong bi dung toi
+    const chu = await timChuSoHuu(50, email, serverId);
+
+    const result = await prisma.$transaction(async (txGoc) => {
+      const tx: any = txGoc;
+      const existing = await tx.farmInviteePlay.findUnique({
         where: { email_serverId: { email, serverId } },
       });
 
@@ -49,9 +54,13 @@ export async function POST(req: NextRequest) {
       const shouldAdjustInviter = !!(existing && existing.status === 'RESERVED' && existing.inviterId);
 
       if (existing) {
-        await tx.farmInvitee.update({
+        await tx.farmInviteePlay.update({
           where: { id: existing.id },
           data: {
+            masterId: existing.masterId || chu.masterId,
+            stt: existing.stt || chu.stt,
+            farmAccountId: chu.farmAccountId || existing.farmAccountId || null,
+            jobCode: chu.jobCode || existing.jobCode || null,
             status,
             errorMsg,
             confirmedAt: status === 'SUCCESS' ? now : existing.confirmedAt,
@@ -63,9 +72,13 @@ export async function POST(req: NextRequest) {
           },
         });
       } else {
-        await tx.farmInvitee.create({
+        await tx.farmInviteePlay.create({
           data: {
             id: randomUUID(),
+            masterId: chu.masterId,
+            stt: chu.stt,
+            farmAccountId: chu.farmAccountId,
+            jobCode: chu.jobCode,
             email,
             password: String(body.password || ''),
             serverId,
@@ -86,7 +99,7 @@ export async function POST(req: NextRequest) {
         return { adjusted: false, inviterStatus: null as string | null };
       }
 
-      const inviter = await tx.farmInviter.findUnique({ where: { id: existing!.inviterId! } });
+      const inviter = await tx.farmInviterPlay.findUnique({ where: { id: existing!.inviterId! } });
       if (!inviter) return { adjusted: false, inviterStatus: null as string | null };
 
       const newReserved = Math.max(0, inviter.reservedCount - 1);
@@ -103,7 +116,7 @@ export async function POST(req: NextRequest) {
         statusHienTai: inviter.status,
       });
 
-      await tx.farmInviter.update({
+      await tx.farmInviterPlay.update({
         where: { id: inviter.id },
         data: {
           reservedCount: newReserved,

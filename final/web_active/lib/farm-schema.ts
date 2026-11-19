@@ -6,67 +6,32 @@
 // =========================================================================
 
 export const FARM_KC_TABLES_SQL = `
+-- =====================================================================
+-- [MOD FEATURE]: FARM KC - KHO MAC DINH (CHI DE DOI CHIEU)
+-- Mo ta: Moi acc game mot dong, chi giu thong tin dinh danh lay tu file
+--        dang ky (email / mat khau / STT / UID / IP / thoi diem dang ky).
+--        TIEN DO CHOI tren tung server nam o FarmInviterPlay / FarmInviteePlay.
+--        Da bo 19 cot tien do o FarmInviter va 14 cot o FarmInvitee.
+-- =====================================================================
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInviter')
 BEGIN
     CREATE TABLE [dbo].[FarmInviter] (
         [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
         [email] NVARCHAR(255) NOT NULL,
         [password] NVARCHAR(255) NOT NULL DEFAULT '',
-        [serverId] INT NOT NULL,
-        [serverName] NVARCHAR(255) NOT NULL DEFAULT '',
-        [roleId] NVARCHAR(50) NOT NULL DEFAULT '',
-        [roleName] NVARCHAR(255) NOT NULL DEFAULT '',
-        [level] INT NOT NULL DEFAULT 0,
-        [inviteCode] NVARCHAR(50) NULL,
-        [gameInviteNum] INT NOT NULL DEFAULT 0,
-        [confirmedCount] INT NOT NULL DEFAULT 0,
-        [reservedCount] INT NOT NULL DEFAULT 0,
-        [maxInvites] INT NOT NULL DEFAULT 5,
-        [unboundGold] BIGINT NOT NULL DEFAULT 0,
-        [unboundDiamond] BIGINT NOT NULL DEFAULT 0,
-        [goldVoucher] BIGINT NOT NULL DEFAULT 0,
-        [packBought] INT NOT NULL DEFAULT 0,
-        [status] NVARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-        [failCount] INT NOT NULL DEFAULT 0,
-        [lastError] NVARCHAR(1000) NULL,
-        [lastSyncAt] DATETIME2 NULL,
+        [stt] INT NOT NULL DEFAULT 0,
+        [uid] NVARCHAR(50) NOT NULL DEFAULT '',
+        [regIp] NVARCHAR(50) NOT NULL DEFAULT '',
+        [regAt] DATETIME2 NULL,
+        [importBatch] NVARCHAR(100) NOT NULL DEFAULT '',
         [createdById] NVARCHAR(100) NOT NULL,
         [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
         [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
     );
-    CREATE UNIQUE INDEX [FarmInviter_email_serverId_key] ON [dbo].[FarmInviter]([email], [serverId]);
-    CREATE INDEX [FarmInviter_serverId_status_idx] ON [dbo].[FarmInviter]([serverId], [status]);
+    CREATE UNIQUE INDEX [FarmInviter_email_key] ON [dbo].[FarmInviter]([email]);
+    CREATE INDEX [FarmInviter_stt_idx] ON [dbo].[FarmInviter]([stt]);
     CREATE INDEX [FarmInviter_createdById_idx] ON [dbo].[FarmInviter]([createdById]);
 END;
-
--- Them cot moi cho DB da tao tu truoc (idempotent)
-IF NOT EXISTS (
-    SELECT * FROM sys.columns
-    WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'goldVoucher'
-)
-BEGIN
-    ALTER TABLE [dbo].[FarmInviter] ADD [goldVoucher] BIGINT NOT NULL DEFAULT 0;
-END;
-
-IF NOT EXISTS (
-    SELECT * FROM sys.columns
-    WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'packBought'
-)
-BEGIN
-    ALTER TABLE [dbo].[FarmInviter] ADD [packBought] INT NOT NULL DEFAULT 0;
-END;
-
--- Chuyen du lieu cu sang bo trang thai moi (chay mot lan, idempotent):
---   COMPLETE cu = du 5 nguoi moi nhung CHUA chac da mua kim cuong
---   -> packBought = 0 thi la INVITED, > 0 thi la DONE
-UPDATE [dbo].[FarmInviter]
-SET [status] = CASE WHEN [packBought] > 0 THEN 'DONE' ELSE 'INVITED' END
-WHERE [status] = 'COMPLETE';
-
--- Acc chua co ma moi -> NEW (khong dung NO_CODE vi ten do danh cho bang ACC 50)
-UPDATE [dbo].[FarmInviter]
-SET [status] = 'NEW'
-WHERE [status] = 'ACTIVE' AND ([inviteCode] IS NULL OR [inviteCode] = '');
 
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInvitee')
 BEGIN
@@ -74,26 +39,17 @@ BEGIN
         [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
         [email] NVARCHAR(255) NOT NULL,
         [password] NVARCHAR(255) NOT NULL DEFAULT '',
-        [serverId] INT NOT NULL,
-        [serverName] NVARCHAR(255) NOT NULL DEFAULT '',
-        [roleId] NVARCHAR(50) NOT NULL DEFAULT '',
-        [roleName] NVARCHAR(255) NOT NULL DEFAULT '',
-        [level] INT NOT NULL DEFAULT 0,
-        [inviterId] NVARCHAR(100) NULL,
-        [inviteCode] NVARCHAR(50) NULL,
-        [status] NVARCHAR(20) NOT NULL DEFAULT 'RESERVED',
-        [deviceId] NVARCHAR(255) NULL,
-        [reservedAt] DATETIME2 NULL,
-        [expireAt] DATETIME2 NULL,
-        [confirmedAt] DATETIME2 NULL,
-        [errorMsg] NVARCHAR(1000) NULL,
+        [stt] INT NOT NULL DEFAULT 0,
+        [uid] NVARCHAR(50) NOT NULL DEFAULT '',
+        [regIp] NVARCHAR(50) NOT NULL DEFAULT '',
+        [regAt] DATETIME2 NULL,
+        [importBatch] NVARCHAR(100) NOT NULL DEFAULT '',
         [createdById] NVARCHAR(100) NOT NULL,
         [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
         [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
     );
-    CREATE UNIQUE INDEX [FarmInvitee_email_serverId_key] ON [dbo].[FarmInvitee]([email], [serverId]);
-    CREATE INDEX [FarmInvitee_serverId_status_idx] ON [dbo].[FarmInvitee]([serverId], [status]);
-    CREATE INDEX [FarmInvitee_inviterId_idx] ON [dbo].[FarmInvitee]([inviterId]);
+    CREATE UNIQUE INDEX [FarmInvitee_email_key] ON [dbo].[FarmInvitee]([email]);
+    CREATE INDEX [FarmInvitee_stt_idx] ON [dbo].[FarmInvitee]([stt]);
     CREATE INDEX [FarmInvitee_createdById_idx] ON [dbo].[FarmInvitee]([createdById]);
 END;
 
@@ -147,6 +103,7 @@ BEGIN
     CREATE INDEX [FarmAccountRange_level_server_idx] ON [dbo].[FarmAccountRange]([farmLevel], [serverId]);
 END;
 
+-- Cot dinh danh cho kho tao tu ban cu (idempotent; ban moi da co san)
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'stt')
 BEGIN
     ALTER TABLE [dbo].[FarmInviter] ADD [stt] INT NOT NULL DEFAULT 0;
@@ -162,11 +119,6 @@ END;
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'regAt')
 BEGIN
     ALTER TABLE [dbo].[FarmInviter] ADD [regAt] DATETIME2 NULL;
-END;
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInviter]') AND name = 'farmAccountId')
-BEGIN
-    ALTER TABLE [dbo].[FarmInviter] ADD [farmAccountId] NVARCHAR(100) NULL;
-    CREATE INDEX [FarmInviter_farmAccountId_idx] ON [dbo].[FarmInviter]([farmAccountId]);
 END;
 
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'stt')
@@ -185,13 +137,7 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Fa
 BEGIN
     ALTER TABLE [dbo].[FarmInvitee] ADD [regAt] DATETIME2 NULL;
 END;
-IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'farmAccountId')
-BEGIN
-    ALTER TABLE [dbo].[FarmInvitee] ADD [farmAccountId] NVARCHAR(100) NULL;
-    CREATE INDEX [FarmInvitee_farmAccountId_idx] ON [dbo].[FarmInvitee]([farmAccountId]);
-END;
 
--- Acc import chua chay thi de trang thai goc
 IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[FarmInvitee]') AND name = 'importBatch')
 BEGIN
     ALTER TABLE [dbo].[FarmInvitee] ADD [importBatch] NVARCHAR(100) NOT NULL DEFAULT '';
@@ -201,6 +147,92 @@ IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[Fa
 BEGIN
     ALTER TABLE [dbo].[FarmInviter] ADD [importBatch] NVARCHAR(100) NOT NULL DEFAULT '';
 END;
+
+-- =====================================================================
+-- [MOD FEATURE]: FARM KC - BANG THEO DOI ACC GAME x SERVER x NGUOI CHOI
+-- Mo ta: FarmInviter / FarmInvitee la KHO MAC DINH (chi de doi chieu,
+--        KHONG ghi tien do vao do nua). Moi lan mot acc game duoc choi tren
+--        mot server thi tien do nam o 2 bang duoi day:
+--          FarmInviterPlay : acc Lv200 @ server (ma moi, so nguoi da moi...)
+--          FarmInviteePlay : acc Lv50  @ server (ma da nhap, moi boi ai...)
+--        Cung mot acc game choi o S517 (longdt) va S518 (datnd) = 2 dong.
+--        masterId   -> dong goc trong kho mac dinh
+--        farmAccountId / jobCode -> nguoi choi + cong viec duoc giao
+-- =====================================================================
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInviterPlay')
+BEGIN
+    CREATE TABLE [dbo].[FarmInviterPlay] (
+        [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [masterId] NVARCHAR(100) NULL,
+        [stt] INT NOT NULL DEFAULT 0,
+        [email] NVARCHAR(255) NOT NULL,
+        [password] NVARCHAR(255) NOT NULL DEFAULT '',
+        [serverId] INT NOT NULL,
+        [serverName] NVARCHAR(255) NOT NULL DEFAULT '',
+        [roleId] NVARCHAR(50) NOT NULL DEFAULT '',
+        [roleName] NVARCHAR(255) NOT NULL DEFAULT '',
+        [level] INT NOT NULL DEFAULT 0,
+        [inviteCode] NVARCHAR(50) NULL,
+        [gameInviteNum] INT NOT NULL DEFAULT 0,
+        [confirmedCount] INT NOT NULL DEFAULT 0,
+        [reservedCount] INT NOT NULL DEFAULT 0,
+        [maxInvites] INT NOT NULL DEFAULT 5,
+        [unboundGold] BIGINT NOT NULL DEFAULT 0,
+        [unboundDiamond] BIGINT NOT NULL DEFAULT 0,
+        [goldVoucher] BIGINT NOT NULL DEFAULT 0,
+        [packBought] INT NOT NULL DEFAULT 0,
+        [status] NVARCHAR(20) NOT NULL DEFAULT 'NEW',
+        [failCount] INT NOT NULL DEFAULT 0,
+        [lastError] NVARCHAR(1000) NULL,
+        [lastSyncAt] DATETIME2 NULL,
+        [farmAccountId] NVARCHAR(100) NULL,
+        [jobCode] NVARCHAR(60) NULL,
+        [createdById] NVARCHAR(100) NOT NULL,
+        [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
+    );
+    CREATE UNIQUE INDEX [FarmInviterPlay_email_serverId_key] ON [dbo].[FarmInviterPlay]([email], [serverId]);
+    CREATE INDEX [FarmInviterPlay_serverId_status_idx] ON [dbo].[FarmInviterPlay]([serverId], [status]);
+    CREATE INDEX [FarmInviterPlay_masterId_idx] ON [dbo].[FarmInviterPlay]([masterId]);
+    CREATE INDEX [FarmInviterPlay_farmAccountId_idx] ON [dbo].[FarmInviterPlay]([farmAccountId]);
+    CREATE INDEX [FarmInviterPlay_createdById_idx] ON [dbo].[FarmInviterPlay]([createdById]);
+END;
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmInviteePlay')
+BEGIN
+    CREATE TABLE [dbo].[FarmInviteePlay] (
+        [id] NVARCHAR(100) NOT NULL PRIMARY KEY,
+        [masterId] NVARCHAR(100) NULL,
+        [stt] INT NOT NULL DEFAULT 0,
+        [email] NVARCHAR(255) NOT NULL,
+        [password] NVARCHAR(255) NOT NULL DEFAULT '',
+        [serverId] INT NOT NULL,
+        [serverName] NVARCHAR(255) NOT NULL DEFAULT '',
+        [roleId] NVARCHAR(50) NOT NULL DEFAULT '',
+        [roleName] NVARCHAR(255) NOT NULL DEFAULT '',
+        [level] INT NOT NULL DEFAULT 0,
+        -- Moi boi acc Lv200 nao (dong trong FarmInviterPlay, CUNG server)
+        [inviterId] NVARCHAR(100) NULL,
+        [inviteCode] NVARCHAR(50) NULL,
+        [status] NVARCHAR(20) NOT NULL DEFAULT 'NEW',
+        [deviceId] NVARCHAR(255) NULL,
+        [reservedAt] DATETIME2 NULL,
+        [expireAt] DATETIME2 NULL,
+        [confirmedAt] DATETIME2 NULL,
+        [errorMsg] NVARCHAR(1000) NULL,
+        [farmAccountId] NVARCHAR(100) NULL,
+        [jobCode] NVARCHAR(60) NULL,
+        [createdById] NVARCHAR(100) NOT NULL,
+        [createdAt] DATETIME2 NOT NULL DEFAULT GETDATE(),
+        [updatedAt] DATETIME2 NOT NULL DEFAULT GETDATE()
+    );
+    CREATE UNIQUE INDEX [FarmInviteePlay_email_serverId_key] ON [dbo].[FarmInviteePlay]([email], [serverId]);
+    CREATE INDEX [FarmInviteePlay_serverId_status_idx] ON [dbo].[FarmInviteePlay]([serverId], [status]);
+    CREATE INDEX [FarmInviteePlay_masterId_idx] ON [dbo].[FarmInviteePlay]([masterId]);
+    CREATE INDEX [FarmInviteePlay_inviterId_idx] ON [dbo].[FarmInviteePlay]([inviterId]);
+    CREATE INDEX [FarmInviteePlay_farmAccountId_idx] ON [dbo].[FarmInviteePlay]([farmAccountId]);
+    CREATE INDEX [FarmInviteePlay_createdById_idx] ON [dbo].[FarmInviteePlay]([createdById]);
+END;
 `;
 
 // -------------------------------------------------------------------------
@@ -209,6 +241,8 @@ END;
 // Thứ tự ưu tiên: DỒN ĐỦ 5 cho từng acc trước (used+reserved DESC).
 // resultCode: OK | ALREADY_DONE | NO_CODE
 // -------------------------------------------------------------------------
+// [MOD FEATURE]: SP gio doc/ghi BANG THEO DOI (FarmInviterPlay / FarmInviteePlay),
+// KHONG dung vao kho mac dinh FarmInviter / FarmInvitee nua.
 const FARM_KC_CLAIM_SP_BODY = `
 ALTER PROCEDURE [dbo].[sp_FarmClaimInviteCode]
     @email         NVARCHAR(255),
@@ -221,7 +255,12 @@ ALTER PROCEDURE [dbo].[sp_FarmClaimInviteCode]
     @deviceId      NVARCHAR(255) = NULL,
     @createdById   NVARCHAR(100),
     @newInviteeId  NVARCHAR(100),
-    @leaseMinutes  INT = 10
+    @leaseMinutes  INT = 10,
+    -- [MOD FEATURE]: dong goc trong kho + nguoi choi/cong viec giu acc nay
+    @masterId      NVARCHAR(100) = NULL,
+    @stt           INT = 0,
+    @farmAccountId NVARCHAR(100) = NULL,
+    @jobCode       NVARCHAR(60)  = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -240,13 +279,13 @@ BEGIN
     DECLARE @expired TABLE (inviterId NVARCHAR(100));
     UPDATE V SET V.[status] = 'EXPIRED', V.[updatedAt] = @now
     OUTPUT DELETED.[inviterId] INTO @expired
-    FROM [dbo].[FarmInvitee] V WITH (ROWLOCK, READPAST)
+    FROM [dbo].[FarmInviteePlay] V WITH (ROWLOCK, READPAST)
     WHERE V.[status] = 'RESERVED' AND V.[expireAt] IS NOT NULL AND V.[expireAt] < @now;
 
     UPDATE I
        SET I.[reservedCount] = CASE WHEN I.[reservedCount] - E.Cnt < 0 THEN 0 ELSE I.[reservedCount] - E.Cnt END,
            I.[updatedAt] = @now
-    FROM [dbo].[FarmInviter] I
+    FROM [dbo].[FarmInviterPlay] I
     JOIN (SELECT inviterId, COUNT(*) AS Cnt FROM @expired WHERE inviterId IS NOT NULL GROUP BY inviterId) E
       ON E.inviterId = I.[id];
 
@@ -255,7 +294,7 @@ BEGIN
             @exInviterId NVARCHAR(100), @exExpire DATETIME2;
     SELECT TOP 1 @exId = [id], @exStatus = [status], @exCode = [inviteCode],
                  @exInviterId = [inviterId], @exExpire = [expireAt]
-    FROM [dbo].[FarmInvitee] WITH (UPDLOCK, ROWLOCK)
+    FROM [dbo].[FarmInviteePlay] WITH (UPDLOCK, ROWLOCK)
     WHERE [email] = @email AND [serverId] = @serverId;
 
     IF @exId IS NOT NULL AND @exStatus IN ('SUCCESS', 'ALREADY_USED')
@@ -279,7 +318,7 @@ BEGIN
     DECLARE @picked TABLE (id NVARCHAR(100), inviteCode NVARCHAR(50));
     ;WITH pick AS (
         SELECT TOP (1) I.*
-        FROM [dbo].[FarmInviter] I WITH (UPDLOCK, ROWLOCK)
+        FROM [dbo].[FarmInviterPlay] I WITH (UPDLOCK, ROWLOCK)
         WHERE I.[serverId] = @serverId
           AND I.[status] = 'ACTIVE'   -- chi acc dang gom nguoi moi moi duoc cap ma
           AND I.[inviteCode] IS NOT NULL AND I.[inviteCode] <> ''
@@ -297,17 +336,21 @@ BEGIN
     BEGIN
         -- Không còn mã cùng server -> ghi nhận NO_CODE
         IF @exId IS NOT NULL
-            UPDATE [dbo].[FarmInvitee]
+            UPDATE [dbo].[FarmInviteePlay]
                SET [status] = 'NO_CODE', [inviterId] = NULL, [inviteCode] = NULL,
                    [expireAt] = NULL, [deviceId] = @deviceId, [level] = @level,
                    [roleId] = @roleId, [roleName] = @roleName, [serverName] = @serverName,
+                   [masterId] = ISNULL([masterId], @masterId),
+                   [stt] = CASE WHEN [stt] > 0 THEN [stt] ELSE @stt END,
+                   [farmAccountId] = ISNULL(@farmAccountId, [farmAccountId]),
+                   [jobCode] = ISNULL(@jobCode, [jobCode]),
                    [updatedAt] = @now
              WHERE [id] = @exId;
         ELSE
-            INSERT [dbo].[FarmInvitee] ([id],[email],[password],[serverId],[serverName],[roleId],[roleName],
-                   [level],[status],[deviceId],[createdById],[createdAt],[updatedAt])
-            VALUES (@newInviteeId, @email, @password, @serverId, @serverName, @roleId, @roleName,
-                   @level, 'NO_CODE', @deviceId, @createdById, @now, @now);
+            INSERT [dbo].[FarmInviteePlay] ([id],[masterId],[stt],[email],[password],[serverId],[serverName],[roleId],[roleName],
+                   [level],[status],[deviceId],[farmAccountId],[jobCode],[createdById],[createdAt],[updatedAt])
+            VALUES (@newInviteeId, @masterId, @stt, @email, @password, @serverId, @serverName, @roleId, @roleName,
+                   @level, 'NO_CODE', @deviceId, @farmAccountId, @jobCode, @createdById, @now, @now);
 
         COMMIT;
         SELECT 'NO_CODE' AS resultCode, NULL AS inviteeId, NULL AS inviteCode,
@@ -322,22 +365,27 @@ BEGIN
     -- 3. Ghi lease cho acc Lv50 (upsert theo email + serverId)
     IF @exId IS NOT NULL
     BEGIN
-        UPDATE [dbo].[FarmInvitee]
+        UPDATE [dbo].[FarmInviteePlay]
            SET [inviterId] = @pickId, [inviteCode] = @pickCode, [status] = 'RESERVED',
                [deviceId] = @deviceId, [reservedAt] = @now, [expireAt] = @expireAt,
                [errorMsg] = NULL, [level] = @level, [roleId] = @roleId, [roleName] = @roleName,
-               [serverName] = @serverName, [password] = @password, [updatedAt] = @now
+               [serverName] = @serverName, [password] = @password,
+               [masterId] = ISNULL([masterId], @masterId),
+               [stt] = CASE WHEN [stt] > 0 THEN [stt] ELSE @stt END,
+               [farmAccountId] = ISNULL(@farmAccountId, [farmAccountId]),
+               [jobCode] = ISNULL(@jobCode, [jobCode]),
+               [updatedAt] = @now
          WHERE [id] = @exId;
     END
     ELSE
     BEGIN
         SET @exId = @newInviteeId;
-        INSERT [dbo].[FarmInvitee] ([id],[email],[password],[serverId],[serverName],[roleId],[roleName],
+        INSERT [dbo].[FarmInviteePlay] ([id],[masterId],[stt],[email],[password],[serverId],[serverName],[roleId],[roleName],
                [level],[inviterId],[inviteCode],[status],[deviceId],[reservedAt],[expireAt],
-               [createdById],[createdAt],[updatedAt])
-        VALUES (@exId, @email, @password, @serverId, @serverName, @roleId, @roleName,
+               [farmAccountId],[jobCode],[createdById],[createdAt],[updatedAt])
+        VALUES (@exId, @masterId, @stt, @email, @password, @serverId, @serverName, @roleId, @roleName,
                @level, @pickId, @pickCode, 'RESERVED', @deviceId, @now, @expireAt,
-               @createdById, @now, @now);
+               @farmAccountId, @jobCode, @createdById, @now, @now);
     END
 
     COMMIT;

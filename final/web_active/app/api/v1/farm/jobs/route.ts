@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { buildSign, MAX_TS_SKEW_SECONDS } from '@/lib/farm-auth';
+import { XONG_LV200, XONG_LV50 } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -64,15 +65,20 @@ export async function GET(req: NextRequest) {
 
     const jobs = await Promise.all(
       (acc.ranges || []).map(async (k: any) => {
-        const bang: any = k.farmLevel === 200 ? prisma.farmInviter : prisma.farmInvitee;
+        // Tong = so acc trong kho mac dinh thuoc dai; da xong = tren BANG THEO DOI
+        // dung server cua cong viec nay (doc lap voi cac server khac).
+        const laLv200 = k.farmLevel === 200;
+        const kho: any = laLv200 ? (prisma as any).farmInviter : (prisma as any).farmInvitee;
+        const theoDoi: any = laLv200 ? (prisma as any).farmInviterPlay : (prisma as any).farmInviteePlay;
         const loc = { stt: { gte: k.rangeFrom, lte: k.rangeTo } };
 
         const [tong, daXong] = await Promise.all([
-          bang.count({ where: loc }),
-          bang.count({
+          kho.count({ where: loc }),
+          theoDoi.count({
             where: {
               ...loc,
-              status: k.farmLevel === 200 ? { in: ['DONE', 'INVITED'] } : { in: ['SUCCESS', 'ALREADY_USED'] },
+              serverId: k.serverId,
+              status: { in: laLv200 ? XONG_LV200 : XONG_LV50 },
             },
           }),
         ]);

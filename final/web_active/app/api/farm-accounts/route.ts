@@ -74,12 +74,12 @@ export async function GET(req: NextRequest) {
     const demInvitee = new Map<string, number>();
     if (ids.length) {
       const [gi, gv] = await Promise.all([
-        prisma.farmInviter.groupBy({
+        (prisma as any).farmInviterPlay.groupBy({
           by: ['farmAccountId'] as any,
           where: { farmAccountId: { in: ids } } as any,
           _count: { _all: true },
         } as any),
-        prisma.farmInvitee.groupBy({
+        (prisma as any).farmInviteePlay.groupBy({
           by: ['farmAccountId'] as any,
           where: { farmAccountId: { in: ids } } as any,
           _count: { _all: true },

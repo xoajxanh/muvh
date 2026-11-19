@@ -46,7 +46,7 @@ async function docHet(bang) {
   let bo = 0;
   for (;;) {
     const rows = await bang.findMany({
-      select: { email: true, stt: true, status: true, importBatch: true, serverId: true },
+      select: { email: true, stt: true, importBatch: true },
       orderBy: { email: 'asc' },
       skip: bo,
       take: TRANG,
@@ -72,7 +72,7 @@ async function soi(ten, tienTo, bang) {
 
   console.log(`  Du (DB co, file khong co) : ${du.length}`);
   du.slice(0, 20).forEach((r) =>
-    console.log(`      ${r.email}  | stt=${r.stt} | server=${r.serverId} | ${r.status} | batch='${r.importBatch || ''}'`),
+    console.log(`      ${r.email}  | stt=${r.stt} | batch='${r.importBatch || ''}'`),
   );
   if (du.length > 20) console.log(`      ... con ${du.length - 20} dong nua`);
 

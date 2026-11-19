@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: false, error: auth.error }, { status: auth.status });
     }
 
-    const row = await prisma.farmInviter.findUnique({
+    // [MOD FEATURE]: doc tien do tu BANG THEO DOI, khong doc kho mac dinh
+    const row = await (prisma as any).farmInviterPlay.findUnique({
       where: { email_serverId: { email, serverId } },
     });
 
