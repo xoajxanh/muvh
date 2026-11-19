@@ -4861,6 +4861,11 @@ _G.RunInviteeStep = function(onDone)
         if _G.FarmKc_GuiBuPending then _G.FarmKc_GuiBuPending(nil) end
     end)
 
+    -- Don popup dang chan (neu co) truoc khi bat dau
+    pcall(function()
+        if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+    end)
+
     local cfg = _G.FarmKc_Config
 
     -- Luoi an toan tong the 60s
@@ -4976,6 +4981,12 @@ _G.RunInviteeStep = function(onDone)
                 if xong or finished then return end
                 ticks = ticks + 1
                 local cur = _G.Mod_FarmInvite_CollectInfo()
+                -- popup bao loi co the chan luong -> don sau khi da doc trang thai
+                if ticks >= 3 then
+                    pcall(function()
+                        if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+                    end)
+                end
 
                 if cur.isCode == true then
                     ketThucTheoDoi("SUCCESS", nil, "NHAP MA THANH CONG: " .. tostring(maMoi))
@@ -5473,6 +5484,59 @@ _G.FarmKc_DonPopupRoiChay = function(tiepTheo)
             if t and t.Stop then pcall(function() t:Stop() end) end
             if tiepTheo then pcall(tiepTheo) end
         end
+    end)
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - WATCHDOG CHONG TREO VI POPUP CHAN
+-- Mo ta: vong lap nen 5s chay suot phien. Neu popup "Nhac nho" (PromptTipUI)
+--        hien lien tiep 2 nhip (>=10s) ma khong ai xu ly -> tu bam "Xac nhan".
+--        Cho 2 nhip de khong cuop popup ma luong khac dang chu dong xu ly.
+--        Chay doc lap moi luong: man dang nhap, chon nhan vat, trong game.
+-- =========================================================================
+_G.FarmKc_PopupDangHien = function()
+    local hien = false
+    pcall(function()
+        if _G.UIManager and _G.UIManager.IsVisible then
+            if _G.UIID and _G.UIID.PromptTipUI and _G.UIManager.IsVisible(_G.UIID.PromptTipUI) then
+                hien = true
+            elseif _G.UIManager.IsVisible("Tip_PromptTipUI") then
+                hien = true
+            end
+        end
+    end)
+    return hien
+end
+
+_G.FarmKc_WatchdogDaChay = _G.FarmKc_WatchdogDaChay or false
+_G.FarmKc_BatWatchdogPopup = function()
+    if _G.FarmKc_WatchdogDaChay then return end
+    if not (_G.Timer and _G.Timer.StartLoop) then return end
+    _G.FarmKc_WatchdogDaChay = true
+    local demLienTiep = 0
+    _G.Timer.StartLoop(5, -1, function()
+        local ok = pcall(function()
+            if not _G.FarmKc_PopupDangHien() then
+                demLienTiep = 0
+                return
+            end
+            demLienTiep = demLienTiep + 1
+            if demLienTiep < 2 then return end
+            demLienTiep = 0
+            if _G.FarmKc_Log then
+                _G.FarmKc_Log("[WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan")
+            end
+            pcall(function() SaveOutput() end)  -- ghi ngay ra output.txt de keo log ve
+            if _G.FarmKc_DonPopup then _G.FarmKc_DonPopup() end
+            -- ep an them mot lan phong khi nut khong bam duoc
+            pcall(function()
+                if _G.UIManager and _G.UIManager.Hide then
+                    if _G.UIID and _G.UIID.PromptTipUI then _G.UIManager.Hide(_G.UIID.PromptTipUI) end
+                    _G.UIManager.Hide("Tip_PromptTipUI")
+                end
+            end)
+        end)
+        if not ok then demLienTiep = 0 end
     end)
 end
 

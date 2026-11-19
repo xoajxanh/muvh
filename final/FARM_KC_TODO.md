@@ -183,3 +183,35 @@ Thư nạp phân biệt bằng `rechargeId ~= 0`; còn vật phẩm chưa nhận
 | `UnityWebRequest.Post(...)` **lỗi** mọi biến thể | Không dùng |
 | `roleId` bị làm tròn mất số cuối | `tostring()` thẳng, không qua `tonumber()` |
 | `LoginData.account` = nil | Tài khoản SDK nằm ở `LoginData.userName` |
+
+## FIX 2026-11-18: treo o man dang nhap
+- Nguyen nhan: `LoginCurrentSelectedAccount` goi lai chinh no trong callback kiem tra bo qua -> de quy vo tan (treo ca khi tat 2 nut gat).
+- Da sua: tach phan dang nhap that ra `FarmKc_DangNhapThat()`; truong hop khong bo qua goi ham do, KHONG goi lai `_G.LoginCurrentSelectedAccount()`.
+- Them `FarmKc_DonPopup()` vao `RunInviteeStep` (2 cho) de don popup Nhac nho.
+- Da kiem cu phap: Main.lua OK, EmmyluaDebug.lua OK.
+
+## FIX 2026-11-19: watchdog chong treo popup
+- Trieu chung: popup "Nhac nho" (PromptTipUI) hien giua man dang nhap, co nut Xac nhan, bot dung han.
+- Nguyen nhan: thong bao ket qua acc duoc game render thanh popup CHAN; khong luong nao dang chay de don no.
+- Da them `_G.FarmKc_BatWatchdogPopup()` trong EmmyluaDebug.lua: vong lap nen 5s, popup hien lien tiep 2 nhip (>=10s) thi tu bam Xac nhan + ep an.
+- Goi tai 2 diem trong Main.lua: dau `StartAutoFarmBot` va dau `LoginCurrentSelectedAccount` (co co chay 1 lan).
+- CAN TEST: chay lai bot, de popup hien, sau ~10s phai tu tat va bot chay tiep.
+
+## FIX 2026-11-19 (2): vong lap "Dang nhap bat thuong"
+- Log that: `SDK Login that bai: Phat hien hanh vi dang nhap bat thuong`.
+- Popup "Nhac nho" chinh la thong bao loi nay tu server, KHONG phai bo dem 5s.
+- Code cu: loi SDK -> chi Log roi return -> man Splash kich hoat lai -> thu lai ngay -> bi chan tiep -> vo tan.
+- Da them `FarmKc_XuLyLoiSdkLogin()` (Main.lua ~8104): cho 60s -> 180s -> 300s; qua 3 lan thi bo acc, sang acc ke tiep.
+- Guard dau `StartFullLoginProcess`: dang cho thi return, khong cho Splash dap lai server.
+- Login thanh cong -> reset `FarmKc_SdkLoiDem = 0`.
+- Giu `Bot_IsInGameWorld` guard o FlashAccTimeCenterAlert va watchdog popup lam luoi an toan.
+
+## FIX 2026-11-19 (3): chong phat hien bot khi dang nhap
+- (1) device_id cu hard-code MD5("muvh_bot_device_equip_uuid_001") dung chung CA DAN ACC.
+  Nay `FarmKc_VanTayThietBi(email)` = MD5(email|salt) -> moi acc mot thiet bi, on dinh qua cac lan.
+- (2) `device_name` + do phan giai chon tu 12 may Android pho bien, cung bam theo email cho khop nhau.
+  (Truoc day tat ca deu bao SM-G975F / 1920*1080 - do phan giai nay con KHONG PHAI cua S10+.)
+- (3) Gian thoi gian chuyen acc 2.5s -> ngau nhien 20-60s, tai 5 diem goi StartFullLoginProcess.
+- Ghi them dong log `[FARM KC] Thiet bi: <ten> | <res> | did=<12 ky tu dau>` de kiem chung.
+- LUU Y: cac cho goi FarmKc_DelayChuyenAcc nam TRUOC dong khai bao nen phai goi qua _G voi fallback 2.5.
+- CON LAI: proxy cho may ao (anh tu setup sau).

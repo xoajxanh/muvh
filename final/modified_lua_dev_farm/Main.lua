@@ -1171,6 +1171,11 @@ local function SaveAccountTimeRecords()
 end
 
 local function FlashAccTimeCenterAlert(msg, colorHex)
+	-- [MOD FEATURE]: FARM KC - CHI BAN THONG BAO KHI DA VAO TRONG GAME
+	-- Ly do: o man dang nhap / chon nhan vat, FloatingTip chua san sang nen game
+	--        render thong bao thanh popup "Nhac nho" CO NUT XAC NHAN -> chan bot,
+	--        cu 5s lai moc them mot cai. Ngoai game thi im lang.
+	if _G.Bot_IsInGameWorld ~= true then return end
 	pcall(function()
 		local cHex = tostring(colorHex or "#FFFF00")
 		local alertText = "<size=22><b><color=" .. cHex .. ">⚠️ " .. tostring(msg) .. " ⚠️</color></b></size>"
@@ -2474,7 +2479,7 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 				_G.LoginCurrentSelectedAccount()
 			else
 				ForceLogoutToLogin()
-				Timer.Start(2.5, function()
+				Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 					DismissBlockers()
 					StartFullLoginProcess()
 				end)
@@ -2586,7 +2591,7 @@ _G.OnAccountFailedAndSkip = function(reason)
 				_G.LoginCurrentSelectedAccount()
 			else
 				ForceLogoutToLogin()
-				Timer.Start(2.5, function()
+				Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 					DismissBlockers()
 					StartFullLoginProcess()
 				end)
@@ -5804,6 +5809,8 @@ _E.SelectRoleByIndex = SelectRoleByIndex
 _G.SelectRoleByIndex = SelectRoleByIndex
 
 _G.LoginCurrentSelectedAccount = function()
+	-- [MOD FEATURE]: FARM KC - bat watchdog chong treo popup (chi chay 1 lan)
+	pcall(function() if _G.FarmKc_BatWatchdogPopup then _G.FarmKc_BatWatchdogPopup() end end)
 	local totalAccs = (_G.BotAccounts and #_G.BotAccounts) or 1
 	local curAccIdx = _G.CurrentAccountIndex or 1
 	local targetAcc = (_G.BotAccounts and _G.BotAccounts[curAccIdx]) or (GetCurrentAccount and GetCurrentAccount()) or {}
@@ -5811,52 +5818,15 @@ _G.LoginCurrentSelectedAccount = function()
 	local targetSrv = tonumber(_G.TARGET_SERVER_ID or targetAcc.targetServer or CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetServer", 492)) or 492
 
 	-- =========================================================================
-	-- [MOD FEATURE]: FARM KC - BO QUA ACC DA DU 5 NGUOI MOI
-	-- Mô tả: hỏi web trước khi đăng nhập. Acc đã COMPLETE/DONE thì nhảy sang
-	--        acc kế tiếp luôn, không tốn thời gian đăng nhập + vào game.
+	-- [MOD FEATURE]: FARM KC - BO QUA ACC DA HOAN THIEN (DONE)
+	-- Mô tả: hỏi web trước khi đăng nhập. Acc đã DONE (đủ 5 người VÀ đã mua
+	--        kim cương) thì nhảy sang acc kế tiếp, không tốn thời gian login.
 	--        Web lỗi / tắt chế độ -> đăng nhập bình thường như cũ.
-	--        Chống lặp: bỏ qua liên tiếp quá số acc trong danh sách thì thôi.
+	-- QUAN TRỌNG: phần đăng nhập thật nằm trong FarmKc_DangNhapThat() ở dưới.
+	--        TUYỆT ĐỐI không gọi lại _G.LoginCurrentSelectedAccount() cho
+	--        trường hợp 'không bỏ qua' -> sẽ ĐỆ QUY VÔ TẬN và treo bot.
 	-- =========================================================================
-	if _G.FarmKc_KiemTraBoQuaAcc and not _G.FarmKc_DangKiemTraBoQua then
-		_G.FarmKc_DangKiemTraBoQua = true
-		_G.FarmKc_KiemTraBoQuaAcc(email, targetSrv, function(boQua)
-			_G.FarmKc_DangKiemTraBoQua = false
-			if not boQua then
-				_G.FarmKc_SoAccBoQua = 0
-				_G.LoginCurrentSelectedAccount()
-				return
-			end
-
-			_G.FarmKc_SoAccBoQua = (_G.FarmKc_SoAccBoQua or 0) + 1
-			if _G.FarmKc_SoAccBoQua >= totalAccs then
-				-- Da bo qua het ca danh sach -> dung lai, tranh lap vo tan
-				_G.FarmKc_SoAccBoQua = 0
-				Log(">>> [FARM KC] TAT CA ACC DEU DA DU 5 NGUOI MOI - DUNG BOT <<<", true)
-				SaveOutput()
-				if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-					_G.FloatingWordUtility.QuickMsg("Tat ca acc da du 5 nguoi moi - dung bot")
-				end
-				_G.StopAutoFarmBot()
-				return
-			end
-
-			-- Nhay sang acc ke tiep (quay vong ve 1 neu het)
-			local ke = curAccIdx + 1
-			if ke > totalAccs then ke = 1 end
-			_G.CurrentAccountIndex = ke
-			pcall(function()
-				CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", ke)
-				CS.UnityEngine.PlayerPrefs.Save()
-			end)
-			Log(string.format(">>> [FARM KC] Bo qua acc %s (da du 5 nguoi moi) -> sang acc [%d/%d] <<<",
-				tostring(email), ke, totalAccs), true)
-			SaveOutput()
-			_G.LoginCurrentSelectedAccount()
-		end)
-		return
-	end
-	_G.FarmKc_DangKiemTraBoQua = false
-
+	local function FarmKc_DangNhapThat()
 	_G.Bot_ActiveSessionEmail = tostring(email)
 	_G.Bot_ActiveSessionServer = targetSrv
 	_G.Bot_NeedReloginNewConfig = false
@@ -5872,10 +5842,50 @@ _G.LoginCurrentSelectedAccount = function()
 	_G.IsSwitchingAccount = false
 
 	ForceLogoutToLogin()
-	Timer.Start(2.5, function()
+	Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 		_G.IsSwitchingAccount = false
 		DismissBlockers()
 		StartFullLoginProcess()
+	end)
+	end   -- het FarmKc_DangNhapThat
+
+	-- Khong bat che do / khong co ham kiem tra -> dang nhap ngay nhu cu
+	if not (_G.FarmKc_KiemTraBoQuaAcc and _G.Mod_Farm_InviteMode == "LV200") then
+		FarmKc_DangNhapThat()
+		return
+	end
+
+	_G.FarmKc_KiemTraBoQuaAcc(email, targetSrv, function(boQua)
+		if not boQua then
+			_G.FarmKc_SoAccBoQua = 0
+			FarmKc_DangNhapThat()   -- dang nhap that, KHONG goi lai chinh minh
+			return
+		end
+
+		_G.FarmKc_SoAccBoQua = (_G.FarmKc_SoAccBoQua or 0) + 1
+		if _G.FarmKc_SoAccBoQua >= totalAccs then
+			_G.FarmKc_SoAccBoQua = 0
+			Log(">>> [FARM KC] TAT CA ACC DEU DA HOAN THIEN - DUNG BOT <<<", true)
+			SaveOutput()
+			if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+				_G.FloatingWordUtility.QuickMsg("Tat ca acc da hoan thien - dung bot")
+			end
+			_G.StopAutoFarmBot()
+			return
+		end
+
+		local ke = curAccIdx + 1
+		if ke > totalAccs then ke = 1 end
+		_G.CurrentAccountIndex = ke
+		pcall(function()
+			CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", ke)
+			CS.UnityEngine.PlayerPrefs.Save()
+		end)
+		Log(string.format(">>> [FARM KC] Bo qua acc %s (da hoan thien) -> sang acc [%d/%d] <<<",
+			tostring(email), ke, totalAccs), true)
+		SaveOutput()
+		-- acc da doi -> goi lai an toan, khong lap vo tan
+		_G.LoginCurrentSelectedAccount()
 	end)
 end
 
@@ -7062,7 +7072,7 @@ StartNewbieQuestPipeline = function()
 								_G.LoginCurrentSelectedAccount()
 							else
 								ForceLogoutToLogin()
-								Timer.Start(2.5, function()
+								Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 									DismissBlockers()
 									StartFullLoginProcess()
 								end)
@@ -8085,7 +8095,137 @@ end
 -- ====================================
 -- 12. SDK AUTHENTICATION + GAME CHECK LOGIN
 -- ====================================
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - VAN TAY THIET BI RIENG CHO TUNG ACC
+-- Van de cu: device_id hard-code MD5("muvh_bot_device_equip_uuid_001") dung
+--            chung cho CA DAN ACC -> server thay 1 may dang nhap 48 tai khoan
+--            -> "Phat hien hanh vi dang nhap bat thuong".
+-- Nay: device_id = MD5(email .. salt) -> moi acc MOT thiet bi, va LUON LA
+--      thiet bi do o cac lan sau (on dinh, khong random moi lan dang nhap).
+--      device_name + do phan giai cung chon theo email cho khop nhau.
+-- =========================================================================
+local FARMKC_DEVICE_SALT = "muvh_bot_device_equip_uuid_001"
+
+-- Danh sach may Android pho bien, moi may di kem do phan giai that cua no
+local FARMKC_DEVICES = {
+	{ name = "SM-G975F",   res = "1440*3040" },  -- Galaxy S10+
+	{ name = "SM-G991B",   res = "1080*2400" },  -- Galaxy S21
+	{ name = "SM-A515F",   res = "1080*2400" },  -- Galaxy A51
+	{ name = "SM-A325F",   res = "1080*2400" },  -- Galaxy A32
+	{ name = "SM-N975F",   res = "1440*3040" },  -- Galaxy Note10+
+	{ name = "Redmi Note 8 Pro", res = "1080*2340" },
+	{ name = "Redmi Note 10", res = "1080*2400" },
+	{ name = "M2101K6G",   res = "1440*3200" },  -- Xiaomi Mi 11
+	{ name = "CPH2185",    res = "720*1600"  },  -- Oppo A16
+	{ name = "CPH2269",    res = "1080*2400" },  -- Oppo A96
+	{ name = "V2027",      res = "1080*2400" },  -- Vivo V20
+	{ name = "RMX3085",    res = "1080*2400" },  -- Realme 8
+}
+
+-- Bam email thanh so nguyen on dinh (khong dung os.time/math.random
+-- de lan sau van ra dung ket qua cu)
+local function FarmKc_BamEmail(email)
+	local tong = 0
+	local chuoi = tostring(email or "")
+	for k = 1, #chuoi do
+		tong = (tong * 31 + string.byte(chuoi, k)) % 2147483647
+	end
+	return tong
+end
+
+-- Tra ve: deviceId, deviceName, resolution cua rieng acc nay
+local function FarmKc_VanTayThietBi(email)
+	local mail = tostring(email or "unknown")
+	local deviceId = MD5(mail .. "|" .. FARMKC_DEVICE_SALT)
+	local idx = (FarmKc_BamEmail(mail) % #FARMKC_DEVICES) + 1
+	local may = FARMKC_DEVICES[idx] or FARMKC_DEVICES[1]
+	return deviceId, may.name, may.res
+end
+_G.FarmKc_VanTayThietBi = FarmKc_VanTayThietBi
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - GIAN THOI GIAN CHUYEN ACC
+-- Cu: 2.5s giua hai acc -> nhanh hon nguoi that rat nhieu.
+-- Nay: ngau nhien 20-60s.
+-- =========================================================================
+pcall(function() math.randomseed(os.time() % 100000) end)
+local function FarmKc_DelayChuyenAcc()
+	local giay = 20 + math.random(0, 40)
+	Log(string.format("    [FARM KC] Cho %d giay roi moi dang nhap acc tiep theo...", giay), true)
+	return giay
+end
+_G.FarmKc_DelayChuyenAcc = FarmKc_DelayChuyenAcc
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - CHONG VONG LAP "DANG NHAP BAT THUONG"
+-- Mo ta: server user.muvh.vn chan khi dang nhap qua day. Truoc day code chi
+--        Log roi return -> man Splash kich hoat lai -> thu lai ngay -> bi chan
+--        tiep -> popup moc lien tuc, bot chet dung.
+--        Nay: cho tang dan 60s -> 180s -> 300s roi thu lai. Qua 3 lan thi bo
+--        acc nay, nhay sang acc ke tiep va reset bo dem.
+-- =========================================================================
+_G.FarmKc_SdkLoiDem = _G.FarmKc_SdkLoiDem or 0
+_G.FarmKc_DangChoSdk = false
+local FARMKC_SDK_CHO = { 60, 180, 300 }
+
+local function FarmKc_XuLyLoiSdkLogin(lyDo)
+	if _G.FarmKc_DangChoSdk then return end
+	_G.FarmKc_DangChoSdk = true
+	_G.FarmKc_SdkLoiDem = (_G.FarmKc_SdkLoiDem or 0) + 1
+	local lan = _G.FarmKc_SdkLoiDem
+
+	-- Qua 3 lan -> bo acc nay, sang acc ke tiep
+	if lan > #FARMKC_SDK_CHO then
+		_G.FarmKc_SdkLoiDem = 0
+		_G.FarmKc_DangChoSdk = false
+		local tong = (_G.BotAccounts and #_G.BotAccounts) or 1
+		local ke = (_G.CurrentAccountIndex or 1) + 1
+		if ke > tong then ke = 1 end
+		_G.CurrentAccountIndex = ke
+		pcall(function()
+			CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_CurAccIndex", ke)
+			CS.UnityEngine.PlayerPrefs.Save()
+		end)
+		Log(string.format(">>> [SDK CHAN] Thu 3 lan deu that bai (%s) -> BO ACC, sang acc [%d/%d] <<<",
+			tostring(lyDo), ke, tong), true)
+		SaveOutput()
+		if _G.LoginCurrentSelectedAccount then
+			pcall(_G.LoginCurrentSelectedAccount)
+		end
+		return
+	end
+
+	local cho = FARMKC_SDK_CHO[lan] or 300
+	Log(string.format(">>> [SDK CHAN] Lan %d (%s) -> CHO %d giay roi thu lai <<<",
+		lan, tostring(lyDo), cho), true)
+	SaveOutput()
+	if not (Timer and Timer.StartLoop) then
+		_G.FarmKc_DangChoSdk = false
+		return
+	end
+	local con, t = cho, nil
+	t = Timer.StartLoop(1, -1, function()
+		con = con - 1
+		if con > 0 then
+			-- nhac moi 30s cho biet bot con song
+			if con % 30 == 0 then
+				Log(string.format("    [SDK CHAN] con %d giay...", con), true)
+			end
+			return
+		end
+		if t and t.Stop then pcall(function() t:Stop() end) end
+		_G.FarmKc_DangChoSdk = false
+		if _G.Bot_Running == false then return end
+		Log(">>> [SDK CHAN] Het thoi gian cho -> thu dang nhap lai <<<", true)
+		if _G.StartFullLoginProcess then pcall(_G.StartFullLoginProcess) end
+	end)
+end
+_G.FarmKc_XuLyLoiSdkLogin = FarmKc_XuLyLoiSdkLogin
+
 StartFullLoginProcess = function()
+	-- [MOD FEATURE]: FARM KC - dang trong thoi gian cho vi bi SDK chan thi KHONG thu lai.
+	-- Man Splash hay kich hoat lai ham nay; khong chan thi se dap lien tuc vao server.
+	if _G.FarmKc_DangChoSdk then return end
 	local curAcc = GetCurrentAccount()
 	local username = curAcc.account or "accmuvh0001@gmail.com"
 	local password = curAcc.password or "12345ZXC"
@@ -8096,14 +8236,16 @@ StartFullLoginProcess = function()
 	if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
 	Log(string.format("--- [BƯỚC 2] GỬI SDK AUTH (ACC %d/%d: %s | SERVER %s | ROLE %d/4) ---",
 		_G.CurrentAccountIndex or 1, #_G.BotAccounts, tostring(username), tostring(curAcc.targetServer or (_G.GetCurrentServerId and _G.GetCurrentServerId()) or 'Auto'), _G.CurrentRoleIndex or 1))
-	local equip = MD5("muvh_bot_device_equip_uuid_001")
+	-- [MOD FEATURE]: FARM KC - van tay rieng theo email, thay cho chuoi cu dung chung
+	local equip, devName, devRes = FarmKc_VanTayThietBi(username)
+	Log(string.format("    [FARM KC] Thiet bi: %s | %s | did=%s", tostring(devName), tostring(devRes), string.sub(tostring(equip), 1, 12) .. "..."), true)
 	local params = {
 		username = username,
 		pass = MD5(password),
 		appid = "300270",
 		equip = equip,
 		device_id = equip,
-		device_name = "SM-G975F",
+		device_name = devName,
 		reg_from = "1",
 		reg_type = "0",
 		ad_id = "0",
@@ -8113,7 +8255,7 @@ StartFullLoginProcess = function()
 		package_name = "com.vnyh.gp",
 		_af = UrlEncode("appid=300270&gps_adid=&appsflyer_id="),
 		_dana_v2 = UrlEncode("terminal=android&bundle_name=MU Vĩnh Hằng&bundle_id=com.vnyh.gp&appid=300270&did=" .. equip),
-		__hw = UrlEncode("_res=1920*1080&bundle_name=MU Vĩnh Hằng&did=" .. equip)
+		__hw = UrlEncode("_res=" .. devRes .. "&bundle_name=MU Vĩnh Hằng&did=" .. equip)
 	}
 	local signKeys = {}
 	for k, _ in pairs(params) do
@@ -8153,15 +8295,18 @@ StartFullLoginProcess = function()
 		if string.isNullOrEmpty(text) then
 			Log("LỖI: Máy chủ SDK không phản hồi!")
 			SaveOutput()
+			FarmKc_XuLyLoiSdkLogin("khong phan hoi")  -- [MOD FEATURE] FARM KC: backoff
 			return
 		end
 		local resp = json.decode(text)
 		if not (resp and resp.ret == 0 and resp.data) then
 			Log("LỖI: SDK Login thất bại: " .. tostring(resp and (resp.msg or resp.ret)))
 			SaveOutput()
+			FarmKc_XuLyLoiSdkLogin(tostring(resp and (resp.msg or resp.ret)))  -- [MOD FEATURE] FARM KC: backoff
 			return
 		end
 		Log("-> [SDK] Login Thành Công! UID: " .. tostring(resp.data.user_id))
+		_G.FarmKc_SdkLoiDem = 0  -- [MOD FEATURE] FARM KC: vao duoc thi reset backoff
 		local sdkData = {
 			userId = tostring(resp.data.user_id),
 			name = tostring(resp.data.username or username),
@@ -8433,6 +8578,8 @@ _G.EnsureRecycleBlackSmithHooked = EnsureRecycleBlackSmithHooked
 EnsureRecycleBlackSmithHooked()
 
 _G.StartAutoFarmBot = function()
+	-- [MOD FEATURE]: FARM KC - bat watchdog chong treo popup (chi chay 1 lan)
+	pcall(function() if _G.FarmKc_BatWatchdogPopup then _G.FarmKc_BatWatchdogPopup() end end)
 	_G.Bot_Running = true
 	_G.Bot_PauseTask = false
 	_G.Mod_IsRunningInstance = false
@@ -8527,7 +8674,7 @@ _G.StartAutoFarmBot = function()
 			_G.IsSwitchingAccount = false
 			if ClearAllTaskDataAndState then ClearAllTaskDataAndState() end
 			ForceLogoutToLogin()
-			Timer.Start(2.5, function()
+			Timer.Start(((_G.FarmKc_DelayChuyenAcc and _G.FarmKc_DelayChuyenAcc()) or 2.5), function()
 				DismissBlockers()
 				StartFullLoginProcess()
 			end)

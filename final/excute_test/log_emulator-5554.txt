@@ -1,0 +1,63 @@
+=========================================================================
+=== KHỞI ĐỘNG CHU TRÌNH BOT FARM (ACC 1/49: accmuvhfang00052@gmail.com | S517 | ROLE 1/4) ===
+Thời gian: 2026-11-18 23:01:26 | Step Delay: 1.0s
+=========================================================================
+>>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/49: accmuvhfang00052@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+>>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/49: accmuvhfang00052@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/49: accmuvhfang00052@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/48: accmuvhfang00053@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+>>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/48: accmuvhfang00053@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+>>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<
+>>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/48: accmuvhfang00053@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+>>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+>>> [MÀN HÌNH LOGIN / SPLASH]: Bắt đầu tiến trình Đăng nhập tự động & Kết nối Server! <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 1/48: accmuvhfang00053@gmail.com | SERVER 517 | ROLE 1/4) ---
+LỖI: SDK Login thất bại: Phát hiện hành vi đăng nhập bất thường. Tạm thời không thể đăng nhập, vui lòng thử lại sau.
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[FARM KC] [WATCHDOG] Popup Nhac nho treo >10s -> tu bam Xac nhan
+[FARM KC] Da xu ly popup Nhac nho
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+>>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<
