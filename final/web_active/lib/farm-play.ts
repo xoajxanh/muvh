@@ -15,10 +15,11 @@ import { prisma } from './db';
  * se duoc phat cho bot chay.
  *   Lv200: chi DONE (du 5 nguoi moi VA da mua goi 60 kim cuong). INVITED la du
  *          5 nguoi nhung CHUA mua kim cuong -> van phai chay full chu trinh.
- *   Lv50 : chi SUCCESS (nhap ma thanh cong). Moi trang thai khac deu chay lai.
+ *   Lv50 : SUCCESS (nhap ma thanh cong) va ALREADY_USED (da nhap ma tu truoc)
+ *          - ca hai deu da co ma gioi thieu roi. Moi trang thai khac chay lai.
  */
 export const XONG_LV200 = ['DONE'];
-export const XONG_LV50 = ['SUCCESS'];
+export const XONG_LV50 = ['SUCCESS', 'ALREADY_USED'];
 
 export type ChuSoHuu = {
   masterId: string | null;
