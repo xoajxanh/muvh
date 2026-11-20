@@ -36,3 +36,8 @@ Module này chuyên trách việc sử dụng Bùa Về Thành Lorencia, Phù Ba
    * Dùng `ModTeleport.TeleportToSpotWithLine(mapId, lineId, x, y)`:
      * Gọi `_G.networkRequest.reqCallFlag(mapId, lineId, x, y, 1)` (hoặc `MapMessage.ReqCallFlag`).
      * Nếu nhân vật đang đứng cùng `mapId` nhưng khác `lineId` (`SceneData.line ~= lineId`), gọi kèm `_G.Scene.ReqChangeLine(lineId)` để ép chuyển sang đúng kênh `1..3` (ví dụ Atlantis `1008` và Tarkan `1009` đều có 3 kênh `lineNum = 3` trong `cfg_Map_map.lua`, nhân 5–6 điểm tâm bãi trong `cfg_Map_minimap.lua` thành 15–18 bãi farm độc lập).
+
+5. **Mua Tự Động Bùa Về Thành (`20000021`) & Phù Ngẫu Nhiên (`20000022`) Từ Shop (`cfg_Item_buy.lua`)**:
+   * **Bùa Về Thành (`20000021`)**: `goodId = 20321` — **1 gói (`buyCount = 1`) = `50` cái**, giá `600` Vàng Khóa (`1000021#600`). Muốn mua **200 cái** truyền `buyCount = 4` (`ModTeleport.BuyTownPortalScrolls(200)`).
+   * **Ấn Dịch Chuyển / Phù Ngẫu Nhiên (`20000022`)**: `goodId = 20322` — **1 gói (`buyCount = 1`) = `50` cái**, giá `6000` Vàng Khóa (`1000021#6000`).
+   * ⚠️ **Bẫy cần tránh**: Không truyền `buyCount = 200` vào `ReqBuy(20321, ...)` vì mỗi đơn vị mua đã là gói 50 cái (`200 x 50 = 10.000` cái làm đầy túi đồ!).

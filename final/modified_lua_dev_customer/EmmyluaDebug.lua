@@ -338,6 +338,195 @@ local function SetCameraFOV(fov)
 end
 _G.SetCameraFOV = SetCameraFOV
 
+-- =========================================================================
+-- [MOD FEATURE]: BỘ QUẢN LÝ SNAPSHOT TỐC CHẠY & PHẠM VI ĐÁNH (CUSTOMER)
+-- Mô tả: Ghi nhớ cài đặt gốc của người chơi trước khi các tính năng Auto
+--        (Auto Boss, Tự Động Nhặt, Auto PK...) thay đổi Tốc chạy / Tầm đánh / Phát hiện địch.
+--        Tự động kiểm tra và khôi phục Snapshot ngay khi tính năng tắt (cả do người dùng hay Mod tắt).
+-- =========================================================================
+_G.Mod_CombatOverrideMap = _G.Mod_CombatOverrideMap or {}
+_G.Mod_CombatOverrideOrder = _G.Mod_CombatOverrideOrder or {}
+
+local function Mod_SaveBaseSnapshotToPrefs(snap)
+    pcall(function()
+        if snap then
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Snap_Active", 1)
+            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_Snap_Speed", tonumber(snap.speed) or 1.0)
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Snap_RangeCells", tonumber(snap.rangeCells) or 8)
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Snap_Detect", tonumber(snap.detectRange) or 0)
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Snap_KillScope", tonumber(snap.killScope) or -1)
+        else
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_Snap_Active", 0)
+        end
+        CS.UnityEngine.PlayerPrefs.Save()
+    end)
+end
+
+local function Mod_LoadOrCreateBaseSnapshot()
+    if _G.Mod_UserBaseCombatSnapshot then
+        return _G.Mod_UserBaseCombatSnapshot
+    end
+    local loaded = nil
+    pcall(function()
+        if CS.UnityEngine.PlayerPrefs.GetInt("Mod_Snap_Active", 0) == 1 then
+            local ks = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Snap_KillScope", -1)
+            loaded = {
+                speed = CS.UnityEngine.PlayerPrefs.GetFloat("Mod_Snap_Speed", 1.0),
+                rangeCells = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Snap_RangeCells", 8),
+                detectRange = CS.UnityEngine.PlayerPrefs.GetInt("Mod_Snap_Detect", 0),
+                killScope = (ks >= 0) and ks or nil
+            }
+        end
+    end)
+    if loaded then
+        _G.Mod_UserBaseCombatSnapshot = loaded
+        return loaded
+    end
+    local curKillScope = nil
+    pcall(function()
+        if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+            curKillScope = tonumber(_G.QiJiHelperData.SettingData.KillMonsterScope)
+        end
+    end)
+    _G.Mod_UserBaseCombatSnapshot = {
+        speed = tonumber(_G.RunSpeedMultiplier) or 1.0,
+        rangeCells = tonumber(_G.Mod_CustomAttackRangeCells) or 8,
+        detectRange = tonumber(_G.Mod_CustomAttackRange) or 0,
+        killScope = curKillScope
+    }
+    Mod_SaveBaseSnapshotToPrefs(_G.Mod_UserBaseCombatSnapshot)
+    return _G.Mod_UserBaseCombatSnapshot
+end
+
+local function Mod_ApplyCombatStatsValues(speedVal, rangeCellsVal, detectVal, fallbackKillScope)
+    pcall(function()
+        if speedVal ~= nil then
+            local speedCap = _G.Mod_Config_MaxMoveSpeed or 2.5
+            _G.RunSpeedMultiplier = math.max(0.1, math.min(speedCap, tonumber(speedVal) or 1.0))
+            CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", _G.RunSpeedMultiplier)
+            local me = _G.RoleManager and _G.RoleManager.me
+            if me and me.SetMoveSpeed then
+                me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true)
+            end
+        end
+        if rangeCellsVal ~= nil then
+            _G.Mod_CustomAttackRangeCells = math.max(1, math.min(15, math.floor(tonumber(rangeCellsVal) or 8)))
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRangeCells", _G.Mod_CustomAttackRangeCells)
+            if _G.Mod_ApplyAttackRangeCells then
+                _G.Mod_ApplyAttackRangeCells(_G.Mod_CustomAttackRangeCells)
+            end
+        end
+        if detectVal ~= nil then
+            local maxRangeCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
+            _G.Mod_CustomAttackRange = math.max(0, math.min(maxRangeCap, math.floor(tonumber(detectVal) or 0)))
+            CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", _G.Mod_CustomAttackRange)
+            if _G.QiJiHelperData and _G.QiJiHelperData.SettingData then
+                if _G.Mod_CustomAttackRange > 0 then
+                    _G.QiJiHelperData.SettingData.KillMonsterScope = _G.Mod_CustomAttackRange
+                elseif fallbackKillScope ~= nil then
+                    _G.QiJiHelperData.SettingData.KillMonsterScope = fallbackKillScope
+                end
+            end
+        end
+        CS.UnityEngine.PlayerPrefs.Save()
+    end)
+    if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
+    if _G.ModUpdateAttackRangeLabel then pcall(_G.ModUpdateAttackRangeLabel) end
+    if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
+end
+
+local function Mod_RecomputeCombatOverrides()
+    local base = _G.Mod_UserBaseCombatSnapshot
+    if not base then return end
+    if #_G.Mod_CombatOverrideOrder == 0 then
+        _G.Mod_UserBaseCombatSnapshot = nil
+        Mod_SaveBaseSnapshotToPrefs(nil)
+        Mod_ApplyCombatStatsValues(base.speed, base.rangeCells, base.detectRange, base.killScope)
+        return
+    end
+    local effSpeed = base.speed
+    local effCells = base.rangeCells
+    local effDetect = base.detectRange
+    for _, src in ipairs(_G.Mod_CombatOverrideOrder) do
+        local ov = _G.Mod_CombatOverrideMap[src]
+        if ov then
+            if ov.speed ~= nil then effSpeed = ov.speed end
+            if ov.rangeCells ~= nil then effCells = ov.rangeCells end
+            if ov.detectRange ~= nil then effDetect = ov.detectRange end
+        end
+    end
+    Mod_ApplyCombatStatsValues(effSpeed, effCells, effDetect, base.killScope)
+end
+
+_G.Mod_AcquireCombatOverride = function(sourceName, overrides)
+    if not sourceName or type(overrides) ~= "table" then return end
+    Mod_LoadOrCreateBaseSnapshot()
+    for i = #_G.Mod_CombatOverrideOrder, 1, -1 do
+        if _G.Mod_CombatOverrideOrder[i] == sourceName then
+            table.remove(_G.Mod_CombatOverrideOrder, i)
+        end
+    end
+    _G.Mod_CombatOverrideMap[sourceName] = {
+        speed = overrides.speed,
+        rangeCells = overrides.rangeCells,
+        detectRange = overrides.detectRange
+    }
+    table.insert(_G.Mod_CombatOverrideOrder, sourceName)
+    Mod_RecomputeCombatOverrides()
+end
+
+_G.Mod_ReleaseCombatOverride = function(sourceName)
+    if not sourceName or not _G.Mod_CombatOverrideMap[sourceName] then return false end
+    _G.Mod_CombatOverrideMap[sourceName] = nil
+    for i = #_G.Mod_CombatOverrideOrder, 1, -1 do
+        if _G.Mod_CombatOverrideOrder[i] == sourceName then
+            table.remove(_G.Mod_CombatOverrideOrder, i)
+        end
+    end
+    Mod_RecomputeCombatOverrides()
+    return true
+end
+
+_G.Mod_UpdateUserBaseCombatField = function(fieldName, newVal)
+    if _G.Mod_UserBaseCombatSnapshot then
+        _G.Mod_UserBaseCombatSnapshot[fieldName] = newVal
+        Mod_SaveBaseSnapshotToPrefs(_G.Mod_UserBaseCombatSnapshot)
+        local topSrc = _G.Mod_CombatOverrideOrder[#_G.Mod_CombatOverrideOrder]
+        if topSrc and _G.Mod_CombatOverrideMap[topSrc] and _G.Mod_CombatOverrideMap[topSrc][fieldName] ~= nil then
+            _G.Mod_CombatOverrideMap[topSrc][fieldName] = newVal
+        end
+    end
+end
+
+_G.Mod_CheckCombatSnapshotWatchdog = function()
+    pcall(function()
+        if not _G.Mod_IsActive then
+            if #_G.Mod_CombatOverrideOrder > 0 then
+                _G.Mod_CombatOverrideMap = {}
+                _G.Mod_CombatOverrideOrder = {}
+                Mod_RecomputeCombatOverrides()
+            end
+            return
+        end
+        if _G.Mod_CombatOverrideMap["AUTO_BOSS"] and not _G.Mod_AutoFarmBoss_Enabled then
+            _G.Mod_ReleaseCombatOverride("AUTO_BOSS")
+        end
+        if _G.Mod_CombatOverrideMap["AUTO_PICK"] and not _G.AutoPick_Enabled then
+            _G.Mod_ReleaseCombatOverride("AUTO_PICK")
+        end
+        if _G.Mod_CombatOverrideMap["AUTO_PK"] and not _G.Mod_AutoPK_Enabled then
+            _G.Mod_ReleaseCombatOverride("AUTO_PK")
+        end
+        -- Phục hồi Snapshot tồn đọng từ phiên trước (ví dụ thoát game khi đang bật Auto Boss / Tự Động Nhặt)
+        if #_G.Mod_CombatOverrideOrder == 0 and not _G.Mod_AutoFarmBoss_Enabled and not _G.AutoPick_Enabled then
+            if CS.UnityEngine.PlayerPrefs.GetInt("Mod_Snap_Active", 0) == 1 then
+                Mod_LoadOrCreateBaseSnapshot()
+                Mod_RecomputeCombatOverrides()
+            end
+        end
+    end)
+end
+
 _G.Mod_ResetSavedModConfigs = function()
     _G.Mod_AutoFarmBoss_Config = {}
     _G.Mod_SmeltConfig = {}
@@ -346,11 +535,16 @@ _G.Mod_ResetSavedModConfigs = function()
         _G.Mod_SmeltConfig["KeepGoodTV_C" .. t] = true
     end
     _G.Mod_AutoFarmBoss_Target = nil
+    _G.Mod_AutoBoss_WildTpDist = 30
+    _G.Mod_CombatOverrideMap = {}
+    _G.Mod_CombatOverrideOrder = {}
+    _G.Mod_UserBaseCombatSnapshot = nil
     pcall(function()
         local modKeys = {
             "Mod_AutoPick_Limit", "Mod_FOV", "Mod_AutoRefresh", "Mod_RefreshInterval",
             "Mod_ShowKundunHP", "Mod_AutoGuildPK_Enabled", "Mod_LockTarget_Enabled", "Mod_LockTarget_Name",
-            "ModAutoBossConfigTab", "Mod_AutoFarmBoss_EnterHiddenMap_Diamond"
+            "ModAutoBossConfigTab", "Mod_AutoFarmBoss_EnterHiddenMap_Diamond", "Mod_AutoBoss_WildTpDist",
+            "Mod_Snap_Active", "Mod_Snap_Speed", "Mod_Snap_RangeCells", "Mod_Snap_Detect", "Mod_Snap_KillScope"
         }
         for _, k in ipairs(modKeys) do
             CS.UnityEngine.PlayerPrefs.DeleteKey(k)
@@ -4746,8 +4940,9 @@ local function CreateModUI()
                                             local dx = meX - tx
                                             local dy = meY - ty
                                             local dist = math.sqrt(dx * dx + dy * dy)
+                                            local wildTpDist = tonumber(_G.Mod_AutoBoss_WildTpDist) or 30
 
-                                            if dist > 50 and not _G.Mod_Train_DidUseStone then
+                                            if dist > wildTpDist and not _G.Mod_Train_DidUseStone then
                                                 _G.Mod_Train_DidUseStone = true
                                                 _G.Mod_IsMovingToTrainPos = false
                                                 _G.Mod_TrainArrivedAtPos = false
@@ -4768,14 +4963,14 @@ local function CreateModUI()
                                                 end
 
                                                 if stoneBagId then
-                                                    LogMsg(string.format("Cách bãi train %.1fm (>50m). Dùng Ấn Dịch Chuyển...", dist))
+                                                    LogMsg(string.format("Cách bãi train %.1fm (>%dm). Dùng Ấn Dịch Chuyển...", dist, wildTpDist))
                                                     if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                                         _G.networkRequest.ReqUseItem(1, stoneBagId)
                                                     elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
                                                         _G.BagInfoController.UseItemReq(1, stoneBagId, nil, 20000022)
                                                     end
                                                 else
-                                                    LogMsg(string.format("Cách bãi train %.1fm (>50m) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ...", dist))
+                                                    LogMsg(string.format("Cách bãi train %.1fm (>%dm) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ...", dist, wildTpDist))
                                                     if _G.PathFinderManager and _G.PathFinderManager.JumpMapToMoveToPos and _G.SceneData then
                                                         local targetPosData = (_G.PathFinderManager.GetCalcPosData and _G.PathFinderManager.GetCalcPosData(coordStr)) or
                                                             (_G.Vector2 and _G.Vector2(tx, ty)) or { x = tx, y = ty }
@@ -5133,9 +5328,9 @@ local function CreateModUI()
                         end
 
                         -- =========================================================================
-                        -- [MOD FEATURE]: TỰ ĐỘNG DÙNG ĐÁ DỊCH CHUYỂN MAP HOANG DÃ KHI CÁCH > 50M
-                        -- Mô tả: Nếu ở Map Hoang Dã và cách Boss > 50m thì dùng Ấn Dịch Chuyển (20000022).
-                        --        Chỉ thực hiện chạy bộ khi khoảng cách <= 50m (hoặc ở map phó bản).
+                        -- [MOD FEATURE]: TỰ ĐỘNG DÙNG ĐÁ DỊCH CHUYỂN MAP HOANG DÃ THEO NGƯỠNG TÙY CHỈNH (DEFAULT 30M)
+                        -- Mô tả: Nếu ở Map Hoang Dã và cách Boss > KC Dịch chuyển (mặc định 30m) thì dùng Ấn Dịch Chuyển (20000022).
+                        --        Chỉ thực hiện chạy bộ khi khoảng cách <= ngưỡng (hoặc ở map phó bản).
                         -- =========================================================================
                         local px, py = nil, nil
                         if _G.RoleManager and _G.RoleManager.me then
@@ -5156,6 +5351,7 @@ local function CreateModUI()
                             local dx = px - target.currentPos.x
                             local dy = py - target.currentPos.y
                             local dist = math.sqrt(dx * dx + dy * dy)
+                            local wildTpDist = tonumber(_G.Mod_AutoBoss_WildTpDist) or 30
 
                             -- Nhận diện Map Hoang Dã (không phải phó bản/transcript)
                             local mapTitle = target.mapCfg and target.mapCfg.title or ""
@@ -5163,8 +5359,8 @@ local function CreateModUI()
                             local inTranscript = (_G.TranScriptData and (_G.TranScriptData.InTranscript or (_G.TranScriptData.IsInTranscript and _G.TranScriptData.IsInTranscript()))) or false
                             if inTranscript then isWildMap = false end
 
-                            -- Chỉ áp dụng dùng đá cho Map Hoang Dã khi cách mục tiêu > 50m
-                            if isWildMap and dist > 50 then
+                            -- Chỉ áp dụng dùng đá cho Map Hoang Dã khi cách mục tiêu > ngưỡng KC Dịch chuyển
+                            if isWildMap and dist > wildTpDist then
                                 local stoneBagId = nil
                                 if _G.BagInfoData and _G.BagInfoData.TotalItems then
                                     for _, itemData in pairs(_G.BagInfoData.TotalItems) do
@@ -5180,8 +5376,8 @@ local function CreateModUI()
                                 end
 
                                 if stoneBagId then
-                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m). Dùng Ấn Dịch Chuyển (20000022)...",
-                                        target.cfg.name or "", dist))
+                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>%dm). Dùng Ấn Dịch Chuyển (20000022)...",
+                                        target.cfg.name or "", dist, wildTpDist))
                                     if _G.networkRequest and _G.networkRequest.ReqUseItem then
                                         _G.networkRequest.ReqUseItem(1, stoneBagId)
                                     elseif _G.BagInfoController and _G.BagInfoController.UseItemReq then
@@ -5190,12 +5386,12 @@ local function CreateModUI()
                                     _G.Mod_AutoFarmBoss_WaitTime = nowRealtime + 1.2
                                     return
                                 else
-                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>50m) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ!",
-                                        target.cfg.name or "", dist))
+                                    LogMsg(string.format("[Hoang Dã] Cách Boss %s %.1fm (>%dm) nhưng hết Ấn Dịch Chuyển. Bắt đầu chạy bộ!",
+                                        target.cfg.name or "", dist, wildTpDist))
                                 end
-                            elseif isWildMap and dist <= 50 then
-                                LogMsg(string.format("[Hoang Dã] Đã tiếp cận Boss %s ở cự ly %.1fm (<=50m). Bắt đầu chạy bộ tới mục tiêu!",
-                                    target.cfg.name or "", dist))
+                            elseif isWildMap and dist <= wildTpDist then
+                                LogMsg(string.format("[Hoang Dã] Đã tiếp cận Boss %s ở cự ly %.1fm (<=%dm). Bắt đầu chạy bộ tới mục tiêu!",
+                                    target.cfg.name or "", dist, wildTpDist))
                             end
                         end
 
@@ -5630,6 +5826,11 @@ local function CreateModUI()
                                 _G.Mod_LastVerifiedUID = curUID
                                 if _G.Mod_CheckActiveConfigNow then _G.Mod_CheckActiveConfigNow() end
                             end
+                        end
+
+                        -- Kiểm tra Watchdog Snapshot Tốc chạy & Phạm vi đánh (tự động khôi phục kể cả khi Mod tắt ngầm)
+                        if _G.Mod_CheckCombatSnapshotWatchdog then
+                            _G.Mod_CheckCombatSnapshotWatchdog()
                         end
 
                         -- Kiểm tra định kỳ 60s với Server API
@@ -6891,9 +7092,16 @@ local function CreateModUI()
             end
 
             mBtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - step)
+                _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "RunSpeedMultiplier" then
+                    if _G.Mod_UpdateUserBaseCombatField then _G.Mod_UpdateUserBaseCombatField("speed", _G[valueVarName]) end
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true) end
+                    end)
+                end
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
@@ -6903,15 +7111,29 @@ local function CreateModUI()
                 elseif valueVarName == "AtkSpeedMultiplier" then
                     maxCap = _G.Mod_Config_MaxAttackSpeed or 2.5
                 end
-                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + step)
+                _G[valueVarName] = math.min(maxCap, math.floor(((_G[valueVarName] or 1.0) + step) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "RunSpeedMultiplier" then
+                    if _G.Mod_UpdateUserBaseCombatField then _G.Mod_UpdateUserBaseCombatField("speed", _G[valueVarName]) end
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true) end
+                    end)
+                end
                 UpdateLabel()
             end)
             m5BtnComp.onClick:AddListener(function()
-                _G[valueVarName] = math.max(0.1, _G[valueVarName] - (step * 5))
+                _G[valueVarName] = math.max(0.1, math.floor(((_G[valueVarName] or 1.0) - (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "RunSpeedMultiplier" then
+                    if _G.Mod_UpdateUserBaseCombatField then _G.Mod_UpdateUserBaseCombatField("speed", _G[valueVarName]) end
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true) end
+                    end)
+                end
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
@@ -6921,9 +7143,16 @@ local function CreateModUI()
                 elseif valueVarName == "AtkSpeedMultiplier" then
                     maxCap = _G.Mod_Config_MaxAttackSpeed or 2.5
                 end
-                _G[valueVarName] = math.min(maxCap, _G[valueVarName] + (step * 5))
+                _G[valueVarName] = math.min(maxCap, math.floor(((_G[valueVarName] or 1.0) + (step * 5)) * 10 + 0.5) / 10)
                 CS.UnityEngine.PlayerPrefs.SetFloat("Mod_" .. valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "RunSpeedMultiplier" then
+                    if _G.Mod_UpdateUserBaseCombatField then _G.Mod_UpdateUserBaseCombatField("speed", _G[valueVarName]) end
+                    pcall(function()
+                        local me = _G.RoleManager and _G.RoleManager.me
+                        if me and me.SetMoveSpeed then me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true) end
+                    end)
+                end
                 UpdateLabel()
             end)
         end
@@ -6977,17 +7206,28 @@ local function CreateModUI()
                     _G.Mod_ApplyAttackRangeCells(_G[valueVarName])
                 end
             end
+            if valueVarName == "Mod_CustomAttackRangeCells" then
+                _G.ModUpdateAttackRangeLabel = function()
+                    pcall(UpdateLabel)
+                end
+            end
 
             mBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.max(1, (_G[valueVarName] or 8) - (step or 1))
                 CS.UnityEngine.PlayerPrefs.SetInt(valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRangeCells" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("rangeCells", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
                 _G[valueVarName] = math.min(15, (_G[valueVarName] or 8) + (step or 1))
                 CS.UnityEngine.PlayerPrefs.SetInt(valueVarName, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRangeCells" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("rangeCells", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
         end
@@ -7058,6 +7298,9 @@ local function CreateModUI()
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRange" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("detectRange", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
             pBtnComp.onClick:AddListener(function()
@@ -7066,6 +7309,9 @@ local function CreateModUI()
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRange" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("detectRange", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
             m5BtnComp.onClick:AddListener(function()
@@ -7073,6 +7319,9 @@ local function CreateModUI()
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRange" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("detectRange", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
             p5BtnComp.onClick:AddListener(function()
@@ -7081,6 +7330,9 @@ local function CreateModUI()
                 local prefKey = string.sub(valueVarName, 1, 4) == "Mod_" and valueVarName or ("Mod_" .. valueVarName)
                 CS.UnityEngine.PlayerPrefs.SetInt(prefKey, _G[valueVarName])
                 CS.UnityEngine.PlayerPrefs.Save()
+                if valueVarName == "Mod_CustomAttackRange" and _G.Mod_UpdateUserBaseCombatField then
+                    _G.Mod_UpdateUserBaseCombatField("detectRange", _G[valueVarName])
+                end
                 UpdateLabel()
             end)
         end
@@ -7197,36 +7449,32 @@ local function CreateModUI()
 
             btn.onClick:AddListener(function()
                 _G[varName] = not _G[varName]
-                if varName == "AutoPick_Enabled" and _G[varName] then
-                    _G.AutoPick_Count = 0
-                    _G.LastPickupTime = 0
-                    _G.Mod_IgnoredDropItems = {}
-                    _G.Mod_AllDropItems = {}
-                    _G.Mod_PickedItems = {}
+                if varName == "AutoPick_Enabled" then
+                    if _G[varName] then
+                        _G.AutoPick_Count = 0
+                        _G.LastPickupTime = 0
+                        _G.Mod_IgnoredDropItems = {}
+                        _G.Mod_AllDropItems = {}
+                        _G.Mod_PickedItems = {}
 
-                    -- =========================================================================
-                    -- [MOD FEATURE]: TỰ SET TỐC CHẠY 3.0 & PHÁT HIỆN ĐỊCH 15 KHI BẬT TỰ ĐỘNG NHẶT (CUSTOMER)
-                    -- Mô tả: Bật nhặt nhanh -> Tốc Chạy = min(3.0, cap token), Phát Hiện Địch = min(15, cap token).
-                    --        Chỉ refresh UI 2 nhãn Tốc Chạy & Phát Hiện Địch. Tắt nhặt không revert.
-                    -- =========================================================================
-                    pcall(function()
+                        -- =========================================================================
+                        -- [MOD FEATURE]: TỰ SET TỐC CHẠY & PHÁT HIỆN ĐỊCH KHI BẬT TỰ ĐỘNG NHẶT KÈM SNAPSHOT (CUSTOMER)
+                        -- Mô tả: Bật nhặt nhanh -> Lưu Snapshot gốc rồi set Tốc Chạy = min(3.0, cap), Phát Hiện Địch = min(15, cap).
+                        --        Khi tắt nhặt (người dùng tắt hoặc Mod tắt) -> Tự động khôi phục Snapshot gốc!
+                        -- =========================================================================
                         local speedCap = _G.Mod_Config_MaxMoveSpeed or 2.5
-                        _G.RunSpeedMultiplier = math.min(3.0, speedCap)
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", _G.RunSpeedMultiplier)
-
                         local rangeCap = math.min(15, _G.Mod_Config_MaxMonsterRange or 15)
-                        _G.Mod_CustomAttackRange = math.min(15, rangeCap)
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", _G.Mod_CustomAttackRange)
-                        CS.UnityEngine.PlayerPrefs.Save()
-
-                        -- Áp dụng tốc chạy ngay lập tức qua hook SetMoveSpeed
-                        local me = _G.RoleManager and _G.RoleManager.me
-                        if me and me.SetMoveSpeed then
-                            me:SetMoveSpeed(me._modBaseMoveSpeed or 5.0, true)
+                        if _G.Mod_AcquireCombatOverride then
+                            _G.Mod_AcquireCombatOverride("AUTO_PICK", {
+                                speed = math.min(3.0, speedCap),
+                                detectRange = math.min(15, rangeCap)
+                            })
                         end
-                    end)
-                    if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
-                    if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
+                    else
+                        if _G.Mod_ReleaseCombatOverride then
+                            _G.Mod_ReleaseCombatOverride("AUTO_PICK")
+                        end
+                    end
                 end
 
                 if varName == "Mod_AutoOpenGoldenChest_Enabled" then
@@ -8029,13 +8277,55 @@ local function CreateModUI()
             -- Mô tả: Cột Trái 4 nút compact (Auto Boss, Tự Vào Map Ẩn, Vào Ẩn KC, Nhớ Skill Map Ẩn) - Cột Phải (Tọa Độ Train, % HP Bỏ Boss KS)
             -- =========================================================================
 
-            -- CỘT TRÁI - HÀNG 1: Master Toggle AUTO BOSS (y = -66, h = 26)
+            -- =========================================================================
+            -- [MOD FEATURE]: HEADER CẤU HÌNH AUTO BOSS DẠNG SCROLLVIEW & OPTION KC DỊCH CHUYỂN > 30M (CUSTOMER)
+            -- Mô tả: Bọc toàn bộ vùng cấu hình đầu tab Auto Boss vào ScrollView giống bản Client,
+            --        bổ sung tùy chọn "- KC Dịch chuyển > 30m +" (mặc định 30m, bước chỉnh 1m),
+            --        và tích hợp Snapshot khôi phục Tốc chạy / Phát hiện địch khi bật/tắt Auto Boss.
+            -- =========================================================================
+            local headerScrollGo = GameObject("AutoBossHeaderScroll")
+            headerScrollGo.transform:SetParent(panelGo.transform, false)
+            table.insert(_G.AutoBossUIList, headerScrollGo)
+            local hsRt = headerScrollGo:AddComponent(typeof(RectTransform))
+            hsRt.anchorMin, hsRt.anchorMax, hsRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            hsRt.anchoredPosition = Vector2(startX, -64)
+            hsRt.sizeDelta = Vector2(436, 122)
+
+            local hsImg = headerScrollGo:AddComponent(typeof(Image))
+            hsImg.color = Color(0, 0, 0, 0.01)
+
+            local hsRect = headerScrollGo:AddComponent(typeof(CS.UnityEngine.UI.ScrollRect))
+            hsRect.horizontal = false
+            hsRect.vertical = true
+            hsRect.movementType = CS.UnityEngine.UI.ScrollRect.MovementType.Clamped
+            hsRect.scrollSensitivity = 25
+
+            local hsVpGo = GameObject("Viewport")
+            hsVpGo.transform:SetParent(headerScrollGo.transform, false)
+            local hsVpRt = hsVpGo:AddComponent(typeof(RectTransform))
+            hsVpRt.anchorMin, hsVpRt.anchorMax, hsVpRt.pivot = Vector2(0, 0), Vector2(1, 1), Vector2(0, 1)
+            hsVpRt.sizeDelta = Vector2(0, 0)
+            hsVpGo:AddComponent(typeof(CS.UnityEngine.UI.RectMask2D))
+
+            local headerContentGo = GameObject("Content")
+            headerContentGo.transform:SetParent(hsVpGo.transform, false)
+            local hcRt = headerContentGo:AddComponent(typeof(RectTransform))
+            hcRt.anchorMin, hcRt.anchorMax, hcRt.pivot = Vector2(0, 1), Vector2(1, 1), Vector2(0, 1)
+            hcRt.anchoredPosition = Vector2(0, 0)
+            hcRt.sizeDelta = Vector2(0, 126)
+
+            local hcImg = headerContentGo:AddComponent(typeof(Image))
+            hcImg.color = Color(0, 0, 0, 0.01)
+
+            hsRect.viewport = hsVpRt
+            hsRect.content = hcRt
+
+            -- CỘT TRÁI - HÀNG 1: Master Toggle AUTO BOSS (y = -2, h = 26)
             local masterToggleGo = GameObject("AutoFarmBossToggle")
-            masterToggleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, masterToggleGo)
+            masterToggleGo.transform:SetParent(headerContentGo.transform, false)
             local mtRt = masterToggleGo:AddComponent(typeof(RectTransform))
             mtRt.anchorMin, mtRt.anchorMax, mtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            mtRt.anchoredPosition = Vector2(startX, -66)
+            mtRt.anchoredPosition = Vector2(0, -2)
             mtRt.sizeDelta = Vector2(200, 26)
 
             local mtBg = GameObject("Bg")
@@ -8079,41 +8369,35 @@ local function CreateModUI()
                 _G.Mod_AutoFarmBoss_Enabled = not _G.Mod_AutoFarmBoss_Enabled
                 if _G.Mod_AutoFarmBoss_Enabled then
                     -- =========================================================================
-                    -- [MOD FEATURE]: TẮT TỰ ĐỘNG NHẶT & PHÁT HIỆN ĐỊCH = 0 KHI BẬT AUTO BOSS (CUSTOMER)
-                    -- Mô tả: Bật Auto Boss -> tắt nhặt nhanh, xóa hàng đợi nhặt, Phát Hiện Địch = 0.
-                    --        Chỉ refresh UI nút Tự Động Nhặt & nhãn Phát Hiện Địch.
+                    -- [MOD FEATURE]: BẬT AUTO BOSS -> SNAPSHOT & SET TỐC CHẠY 1.0, PHÁT HIỆN = 0, TẮT NHẶT (CUSTOMER)
                     -- =========================================================================
                     pcall(function()
+                        -- Acquire AUTO_BOSS trước khi tắt AUTO_PICK để giữ nguyên Snapshot gốc ban đầu của người chơi
+                        if _G.Mod_AcquireCombatOverride then
+                            _G.Mod_AcquireCombatOverride("AUTO_BOSS", {
+                                speed = 1.0,
+                                detectRange = 0
+                            })
+                        end
                         _G.AutoPick_Enabled = false
                         CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoPick_Enabled", 0)
                         _G.Mod_ActiveSpamItems = nil
-
-                        _G.Mod_CustomAttackRange = 0
-                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_CustomAttackRange", 0)
+                        if _G.Mod_ReleaseCombatOverride then
+                            _G.Mod_ReleaseCombatOverride("AUTO_PICK")
+                        end
                         CS.UnityEngine.PlayerPrefs.Save()
 
                         if _G.EventManager and _G.Event and _G.Event.QiJiHelper_SetAutoPickup then
                             _G.EventManager.Dispatch(_G.Event.QiJiHelper_SetAutoPickup)
                         end
                     end)
-                    -- =========================================================================
-                    -- [MOD FEATURE]: BẬT AUTO BOSS -> ĐƯA TỐC CHẠY VỀ 1.0 (CUSTOMER)
-                    -- =========================================================================
-                    pcall(function()
-                        _G.RunSpeedMultiplier = 1.0
-                        CS.UnityEngine.PlayerPrefs.SetFloat("Mod_RunSpeedMultiplier", 1.0)
-                        CS.UnityEngine.PlayerPrefs.Save()
-                        local meSpd = _G.RoleManager and _G.RoleManager.me
-                        if meSpd and meSpd.SetMoveSpeed then
-                            meSpd:SetMoveSpeed(meSpd._modBaseMoveSpeed or 5.0, true)
-                        end
-                    end)
-                    if _G.ModUpdateSpeedLabel then pcall(_G.ModUpdateSpeedLabel) end
                     if _G.ModUpdateCountText then pcall(_G.ModUpdateCountText) end
-                    if _G.ModUpdateDetectRangeLabel then pcall(_G.ModUpdateDetectRangeLabel) end
                 else
                     _G.Mod_AutoFarmBoss_State = 0
                     _G.Mod_AutoFarmBoss_Target = nil
+                    if _G.Mod_ReleaseCombatOverride then
+                        _G.Mod_ReleaseCombatOverride("AUTO_BOSS")
+                    end
                     pcall(function()
                         if _G.PathFinderManager and _G.PathFinderManager.ResetData then
                             _G.PathFinderManager.ResetData()
@@ -8126,13 +8410,12 @@ local function CreateModUI()
                 UpdateMasterToggle()
             end)
 
-            -- CỘT TRÁI - HÀNG 2: TỰ VÀO MAP ẨN Toggle (y = -96, h = 26)
+            -- CỘT TRÁI - HÀNG 2: TỰ VÀO MAP ẨN Toggle (y = -32, h = 26)
             local hiddenToggleGo = GameObject("AutoHiddenMapToggle")
-            hiddenToggleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, hiddenToggleGo)
+            hiddenToggleGo.transform:SetParent(headerContentGo.transform, false)
             local htRt = hiddenToggleGo:AddComponent(typeof(RectTransform))
             htRt.anchorMin, htRt.anchorMax, htRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            htRt.anchoredPosition = Vector2(startX, -96)
+            htRt.anchoredPosition = Vector2(0, -32)
             htRt.sizeDelta = Vector2(200, 26)
 
             local htBg = GameObject("Bg")
@@ -8185,13 +8468,12 @@ local function CreateModUI()
                 UpdateHiddenToggle()
             end)
 
-            -- CỘT TRÁI - HÀNG 3: VÀO ẨN KC Toggle (y = -126, h = 26)
+            -- CỘT TRÁI - HÀNG 3: VÀO ẨN KC Toggle (y = -62, h = 26)
             local diamondToggleGo = GameObject("AutoHiddenDiamondToggle")
-            diamondToggleGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, diamondToggleGo)
+            diamondToggleGo.transform:SetParent(headerContentGo.transform, false)
             local dtRt = diamondToggleGo:AddComponent(typeof(RectTransform))
             dtRt.anchorMin, dtRt.anchorMax, dtRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            dtRt.anchoredPosition = Vector2(startX, -126)
+            dtRt.anchoredPosition = Vector2(0, -62)
             dtRt.sizeDelta = Vector2(200, 26)
 
             local dtBg = GameObject("Bg")
@@ -8244,13 +8526,12 @@ local function CreateModUI()
                 UpdateDiamondToggle()
             end)
 
-            -- CỘT TRÁI - HÀNG 4: NÚT NHỚ SKILL MAP ẨN (y = -156, h = 26)
+            -- CỘT TRÁI - HÀNG 4: NÚT NHỚ SKILL MAP ẨN (y = -92, h = 26)
             local saveSkillBtnGo = GameObject("SaveMapAnSkillBtn")
-            saveSkillBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, saveSkillBtnGo)
+            saveSkillBtnGo.transform:SetParent(headerContentGo.transform, false)
             local ssRt = saveSkillBtnGo:AddComponent(typeof(RectTransform))
             ssRt.anchorMin, ssRt.anchorMax, ssRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            ssRt.anchoredPosition = Vector2(startX, -156)
+            ssRt.anchoredPosition = Vector2(0, -92)
             ssRt.sizeDelta = Vector2(200, 26)
 
             local ssBg = GameObject("Bg")
@@ -8281,14 +8562,13 @@ local function CreateModUI()
                 end
             end)
 
-            -- CỘT PHẢI - HÀNG 1: TỌA ĐỘ TRAIN InputField (x=230, w=105) + Nút XY HIỆN TẠI (x=340, w=110)
+            -- CỘT PHẢI - HÀNG 1: TỌA ĐỘ TRAIN InputField (x=210, w=105) + Nút XY HIỆN TẠI (x=320, w=112)
             local labelTrainGo = GameObject("TrainCoordLabel")
-            labelTrainGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, labelTrainGo)
+            labelTrainGo.transform:SetParent(headerContentGo.transform, false)
             local lblRt = labelTrainGo:AddComponent(typeof(RectTransform))
             lblRt.anchorMin, lblRt.anchorMax, lblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            lblRt.anchoredPosition = Vector2(230, -66)
-            lblRt.sizeDelta = Vector2(220, 16)
+            lblRt.anchoredPosition = Vector2(210, -2)
+            lblRt.sizeDelta = Vector2(220, 15)
             local lblTxt = labelTrainGo:AddComponent(typeof(Text))
             lblTxt.raycastTarget = false
             lblTxt.text = "TỌA ĐỘ TRAIN (x#y):"
@@ -8298,12 +8578,11 @@ local function CreateModUI()
             if defaultFont then lblTxt.font = defaultFont end
 
             local trainTgtGo = GameObject("TrainCoordInput")
-            trainTgtGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, trainTgtGo)
+            trainTgtGo.transform:SetParent(headerContentGo.transform, false)
             local trainRt = trainTgtGo:AddComponent(typeof(RectTransform))
             trainRt.anchorMin, trainRt.anchorMax, trainRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            trainRt.anchoredPosition = Vector2(230, -84)
-            trainRt.sizeDelta = Vector2(105, 26)
+            trainRt.anchoredPosition = Vector2(210, -18)
+            trainRt.sizeDelta = Vector2(105, 25)
 
             local trainBg = GameObject("Bg")
             trainBg.transform:SetParent(trainTgtGo.transform, false)
@@ -8360,12 +8639,11 @@ local function CreateModUI()
             end)
 
             local getPosBtnGo = GameObject("GetCurPosBtn")
-            getPosBtnGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, getPosBtnGo)
+            getPosBtnGo.transform:SetParent(headerContentGo.transform, false)
             local getPosRt = getPosBtnGo:AddComponent(typeof(RectTransform))
             getPosRt.anchorMin, getPosRt.anchorMax, getPosRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            getPosRt.anchoredPosition = Vector2(340, -84)
-            getPosRt.sizeDelta = Vector2(110, 26)
+            getPosRt.anchoredPosition = Vector2(320, -18)
+            getPosRt.sizeDelta = Vector2(112, 25)
 
             local getPosBg = GameObject("Bg")
             getPosBg.transform:SetParent(getPosBtnGo.transform, false)
@@ -8416,12 +8694,11 @@ local function CreateModUI()
 
             -- CỘT PHẢI - HÀNG 2: % HP BỎ QUA BOSS (KHI BỊ KS)
             local skipHpLabelGo = GameObject("SkipHpLabel")
-            skipHpLabelGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, skipHpLabelGo)
+            skipHpLabelGo.transform:SetParent(headerContentGo.transform, false)
             local skipLblRt = skipHpLabelGo:AddComponent(typeof(RectTransform))
             skipLblRt.anchorMin, skipLblRt.anchorMax, skipLblRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            skipLblRt.anchoredPosition = Vector2(230, -116)
-            skipLblRt.sizeDelta = Vector2(220, 16)
+            skipLblRt.anchoredPosition = Vector2(210, -47)
+            skipLblRt.sizeDelta = Vector2(220, 15)
             local skipLblTxt = skipHpLabelGo:AddComponent(typeof(Text))
             skipLblTxt.raycastTarget = false
             skipLblTxt.text = "BỎ QUA BOSS KS (% MÁU):"
@@ -8430,14 +8707,12 @@ local function CreateModUI()
             skipLblTxt.alignment = TextAnchor.MiddleLeft
             if defaultFont then skipLblTxt.font = defaultFont end
 
-            -- Display value box (x=230, w=110, h=26)
             local skipHpValGo = GameObject("SkipHpVal")
-            skipHpValGo.transform:SetParent(panelGo.transform, false)
-            table.insert(_G.AutoBossUIList, skipHpValGo)
+            skipHpValGo.transform:SetParent(headerContentGo.transform, false)
             local skipValRt = skipHpValGo:AddComponent(typeof(RectTransform))
             skipValRt.anchorMin, skipValRt.anchorMax, skipValRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-            skipValRt.anchoredPosition = Vector2(230, -134)
-            skipValRt.sizeDelta = Vector2(110, 26)
+            skipValRt.anchoredPosition = Vector2(210, -63)
+            skipValRt.sizeDelta = Vector2(115, 25)
 
             local skipValBg = GameObject("Bg")
             skipValBg.transform:SetParent(skipHpValGo.transform, false)
@@ -8473,14 +8748,13 @@ local function CreateModUI()
             end
             UpdateSkipHpLabel()
 
-            local function createSkipHpBtn(name, posX, w, btnText, btnColor)
+            local function createHeaderSubBtn(name, posX, posY, w, h, btnText, btnColor)
                 local btnGo = GameObject(name)
-                btnGo.transform:SetParent(panelGo.transform, false)
-                table.insert(_G.AutoBossUIList, btnGo)
+                btnGo.transform:SetParent(headerContentGo.transform, false)
                 local bRt = btnGo:AddComponent(typeof(RectTransform))
                 bRt.anchorMin, bRt.anchorMax, bRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
-                bRt.anchoredPosition = Vector2(posX, -134)
-                bRt.sizeDelta = Vector2(w, 26)
+                bRt.anchoredPosition = Vector2(posX, posY)
+                bRt.sizeDelta = Vector2(w, h)
                 local bImg = btnGo:AddComponent(typeof(Image))
                 bImg.color = btnColor
 
@@ -8500,8 +8774,8 @@ local function CreateModUI()
                 return btnGo:AddComponent(typeof(Button))
             end
 
-            local skipMinusBtn = createSkipHpBtn("SkipHpMinusBtn", 345, 48, "-5%", Color(0.5, 0.2, 0.2, 1))
-            local skipPlusBtn = createSkipHpBtn("SkipHpPlusBtn", 398, 48, "+5%", Color(0.2, 0.5, 0.2, 1))
+            local skipMinusBtn = createHeaderSubBtn("SkipHpMinusBtn", 330, -63, 48, 25, "-5%", Color(0.5, 0.2, 0.2, 1))
+            local skipPlusBtn = createHeaderSubBtn("SkipHpPlusBtn", 383, -63, 49, 25, "+5%", Color(0.2, 0.5, 0.2, 1))
 
             skipMinusBtn.onClick:AddListener(function()
                 _G.Mod_AutoBoss_SkipHpPct = math.max(10, (_G.Mod_AutoBoss_SkipHpPct or 90) - 5)
@@ -8519,6 +8793,69 @@ local function CreateModUI()
                     CS.UnityEngine.PlayerPrefs.Save()
                 end)
                 UpdateSkipHpLabel()
+            end)
+
+            -- CỘT PHẢI - HÀNG 3: [-  KC Dịch chuyển > 30m  +] (Default 30m, bước chỉnh 1m)
+            if _G.Mod_AutoBoss_WildTpDist == nil then
+                pcall(function()
+                    _G.Mod_AutoBoss_WildTpDist = CS.UnityEngine.PlayerPrefs.GetInt("Mod_AutoBoss_WildTpDist", 30)
+                end)
+                if not _G.Mod_AutoBoss_WildTpDist or _G.Mod_AutoBoss_WildTpDist <= 0 then
+                    _G.Mod_AutoBoss_WildTpDist = 30
+                end
+            end
+
+            local tpDistMinusBtn = createHeaderSubBtn("WildTpDistMinusBtn", 210, -93, 30, 25, "-", Color(0.5, 0.2, 0.2, 1))
+            local tpDistPlusBtn = createHeaderSubBtn("WildTpDistPlusBtn", 402, -93, 30, 25, "+", Color(0.2, 0.5, 0.2, 1))
+
+            local tpDistValGo = GameObject("WildTpDistVal")
+            tpDistValGo.transform:SetParent(headerContentGo.transform, false)
+            local tpValRt = tpDistValGo:AddComponent(typeof(RectTransform))
+            tpValRt.anchorMin, tpValRt.anchorMax, tpValRt.pivot = Vector2(0, 1), Vector2(0, 1), Vector2(0, 1)
+            tpValRt.anchoredPosition = Vector2(243, -93)
+            tpValRt.sizeDelta = Vector2(156, 25)
+
+            local tpValBg = GameObject("Bg")
+            tpValBg.transform:SetParent(tpDistValGo.transform, false)
+            local tpValBgRt = tpValBg:AddComponent(typeof(RectTransform))
+            tpValBgRt.anchorMin, tpValBgRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            tpValBgRt.sizeDelta = Vector2(0, 0)
+            local tpValBgImg = tpValBg:AddComponent(typeof(Image))
+            tpValBgImg.color = Color(0.1, 0.1, 0.1, 1)
+
+            local tpValTxtGo = GameObject("Text")
+            tpValTxtGo.transform:SetParent(tpDistValGo.transform, false)
+            local tpValTxtRt = tpValTxtGo:AddComponent(typeof(RectTransform))
+            tpValTxtRt.anchorMin, tpValTxtRt.anchorMax = Vector2(0, 0), Vector2(1, 1)
+            tpValTxtRt.sizeDelta = Vector2(0, 0)
+            local tpValTxt = tpValTxtGo:AddComponent(typeof(Text))
+            tpValTxt.raycastTarget = false
+            tpValTxt.color = Color(0.8, 1, 0.8, 1)
+            tpValTxt.fontSize = 12
+            tpValTxt.alignment = TextAnchor.MiddleCenter
+            if defaultFont then tpValTxt.font = defaultFont end
+
+            local function UpdateWildTpDistLabel()
+                tpValTxt.text = string.format("KC Dịch chuyển > %dm", tonumber(_G.Mod_AutoBoss_WildTpDist) or 30)
+            end
+            UpdateWildTpDistLabel()
+
+            tpDistMinusBtn.onClick:AddListener(function()
+                _G.Mod_AutoBoss_WildTpDist = math.max(5, (tonumber(_G.Mod_AutoBoss_WildTpDist) or 30) - 1)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_WildTpDist", _G.Mod_AutoBoss_WildTpDist)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateWildTpDistLabel()
+            end)
+
+            tpDistPlusBtn.onClick:AddListener(function()
+                _G.Mod_AutoBoss_WildTpDist = math.min(150, (tonumber(_G.Mod_AutoBoss_WildTpDist) or 30) + 1)
+                pcall(function()
+                    CS.UnityEngine.PlayerPrefs.SetInt("Mod_AutoBoss_WildTpDist", _G.Mod_AutoBoss_WildTpDist)
+                    CS.UnityEngine.PlayerPrefs.Save()
+                end)
+                UpdateWildTpDistLabel()
             end)
 
             -- =========================================================================

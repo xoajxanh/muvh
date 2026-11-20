@@ -195,4 +195,41 @@ function ModTeleport.TeleportToSpotWithLine(mapId, lineId, x, y)
     return true
 end
 
+--- Mua Bùa Về Thành (20000021) trực tiếp từ Shop Vàng Khóa (cfg_Item_buy: goodId = 20321, 50 cái/gói, 600 Vàng khóa/gói)
+-- @param targetScrollCount number: Tổng số lượng bùa muốn mua (mặc định 200 cái = 4 gói)
+-- @return boolean, number: (đã gửi lệnh mua thành công hay chưa, số lượng bùa thực tế đặt mua)
+function ModTeleport.BuyTownPortalScrolls(targetScrollCount)
+    targetScrollCount = tonumber(targetScrollCount) or 200
+    local buyPacks = math.max(1, math.ceil(targetScrollCount / 50))
+
+    pcall(function()
+        if _G.BagInfoData and _G.BagInfoData.CoinInfos then
+            local bindGold = tonumber(_G.BagInfoData.CoinInfos[1000021] or 0) or 0
+            local freeGold = tonumber(_G.BagInfoData.CoinInfos[1000020] or 0) or 0
+            local totalGold = bindGold + freeGold
+            local neededGold = buyPacks * 600
+            if totalGold > 0 and totalGold < neededGold then
+                buyPacks = math.floor(totalGold / 600)
+            end
+        end
+    end)
+
+    if buyPacks < 1 then
+        return false, 0
+    end
+
+    local ok = false
+    pcall(function()
+        if _G.networkRequest and _G.networkRequest.ReqBuy then
+            _G.networkRequest.ReqBuy(20321, buyPacks)
+            ok = true
+        elseif _G.NetManager and _G.ItemBuyMessage and _G.ItemBuyMessage.ReqBuy then
+            _G.NetManager.Send(_G.ItemBuyMessage.ReqBuy, { goodId = 20321, buyCount = buyPacks })
+            ok = true
+        end
+    end)
+
+    return ok, (ok and (buyPacks * 50) or 0)
+end
+
 return ModTeleport
