@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
         const theoDoi: any = laLv200 ? (prisma as any).farmInviterPlay : (prisma as any).farmInviteePlay;
         const loc = { stt: { gte: k.rangeFrom, lte: k.rangeTo } };
 
-        const [tong, daXong] = await Promise.all([
+        const [tong, daXong, dangGiu] = await Promise.all([
           kho.count({ where: loc }),
           theoDoi.count({
             where: {
@@ -80,6 +80,20 @@ export async function GET(req: NextRequest) {
               serverId: k.serverId,
               // xong hoac loi bo qua (SERVER_FULL) deu tinh la da xu ly
               status: { in: laLv200 ? BO_QUA_LV200 : BO_QUA_LV50 },
+            },
+          }),
+          // =================================================================
+          // [MOD FEATURE]: SO ACC DANG BI MAY KHAC GIU (lease chua het han)
+          // Khoa nam o muc TAI KHOAN chu khong phai ca may chu, nen nhieu may
+          // cung cay mot may chu: may A giu 5 acc thi may B van con 20 acc.
+          // =================================================================
+          theoDoi.count({
+            where: {
+              ...loc,
+              serverId: k.serverId,
+              status: { notIn: laLv200 ? BO_QUA_LV200 : BO_QUA_LV50 },
+              leaseUntil: { gt: new Date() },
+              ...(deviceId ? { NOT: { leaseDeviceId: deviceId } } : {}),
             },
           }),
         ]);
@@ -104,6 +118,8 @@ export async function GET(req: NextRequest) {
 
         return {
           hoanThanh,
+          dangGiu,
+          conLai: Math.max(0, tong - daXong - dangGiu),
           jobCode: k.jobCode,
           farmLevel: k.farmLevel,
           serverId: k.serverId,

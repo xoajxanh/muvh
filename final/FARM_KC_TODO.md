@@ -341,3 +341,154 @@ CAN TEST
     - ky = MD5(deviceId + serverId + ts + SALT)
 
 CON LAI: 2.5 panel MOD (chon Mode + dropdown Server + so luong + nut Tai lai)
+
+## 2026-11-22: doi khai niem panel - MOD cho KHACH TU CAY
+- "DANH SACH CONG VIEC DUOC CAP" -> "THIET LAP PHIEN CAY"
+  + dong phu "chon che do, may chu va so tai khoan muon cay".
+- Bo DAI ACC STT -> o NHAP SO LUONG: [-] [so] [+] kem nut -10 / +10,
+  nho vao PlayerPrefs `Mod_FarmKc_SoLuong`. Nhan ben canh hien
+  "(con N tai khoan chua cay)".
+- Nut BAT DAU xuong DUOI CUNG, rong het be ngang (12..768).
+  Thu tu tu day len: BAT DAU (y14) -> AUTO HL/QTQ (y72) -> 3 cum chinh so (y124).
+  Panel 780x770, DY = 180.
+- Nut "CO 1.0x" -> TAI NHO nho ra khoi mep TREN PHAI panel (680, 770, 88x26),
+  khong con la nut ben trong panel.
+- Bo dong goi y "Bam the cong viec de xep hang [1] [2]...".
+- Doi chu: "DANG NHAP & TAI JOBS" -> "DANG NHAP"; "RESET DAI JOB" -> "⟳ TAI LAI";
+  "cong viec" -> "may chu" trong cac thong bao; bo nhan "/api/v1/farm/jobs" o header.
+
+## 2026-11-22 (2): sua nut Co + panel tran man hinh
+- Nut CO: tu goc TREN phai (bi che, qua to) -> TAI NHO dan vao VIEN PHAI phia DUOI
+  (x = 780 = be ngang panel, y = 188, 46x40). Nhan rut gon con "1.0x".
+- Panel 770 bi TRAN man hinh (hang Username bi cat o tren).
+  The trang thai thu tu (12,86,756,226) -> (12,128,756,184): bo 42px trong o day.
+  Panel 780x770 -> 780x728.
+
+## 2026-11-22 (3): panel rong hon, thap hon, so lieu theo phien
+1. Panel 780x728 -> 880x630. Mo rong ngang +100 cho moi khoi (the 856, dong chu 832,
+   luoi may chu RONG 183 -> 208, nut day 426/856, 3 cum chinh so rong 282).
+2. Nen doc: nhom tren (y>=324) tru 140, noi dung the trang thai tru 128
+   -> bo khoang trong 140px giua the trang thai va hang nut.
+   Header 552 -> 412. Panel cao 630 => zoom 1.5x = 945, 1.2x = 756.
+3. So lieu tinh THEO PHIEN khach dat, khong theo ca kho:
+   soPhien = so luong khach nhap (0 = lay het kho, va khong vuot qua kho con lai)
+   daXongPhien / conLaiPhien / khoConLai. Thanh progress theo phien.
+   `DatSoLuong` goi `Mod_FarmKc_CapNhatPanel` -> bam +/- la so doi ngay.
+4. Thong tin duoi viet lai cho MOD tu chu:
+   - "Job: XXX | Tien do" -> "Phien cay: Lv50 · S520 | Tien do: 0/5 (0%)"
+   - 2 dong muc tieu Lv50/Lv200 -> "Phien nay: X xong · Y con lai · N tai khoan da dat"
+     + "Kho cua ban con Z tai khoan chua cay tren may chu nay"
+   - Nut CO chuyen sang vien phai, y=120.
+
+## 2026-11-22 (4): sua 6 diem panel
+1. Nut TAI LAI de len o Server -> chuyen len HANG TIEU DE (764,310,92x26);
+   lblTongJob thu ve (600,312,160); o Server tra lai do rong (666,192,190).
+2. TAI LAI nay thuoc khu "THIET LAP PHIEN CAY" dung nghia.
+3. So luong KEP theo kho con lai: `Mod_FarmKc_KhoConLai` cap nhat moi lan CapNhat;
+   `DatSoLuong` khong cho vuot, va CapNhat tu keo o nhap ve dung tran neu da vuot.
+   Nhan ben canh: "(toi da N - kho con N)".
+4. Dong "Phien cay" da co may chu: "Phien cay: Lv50 · S520 | Tien do: x/y (z%)".
+   Chua chon -> "chua chon - bam mot may chu phia tren".
+5. MOI GIA LAP CHI MOT PHIEN: bo han hang doi nhieu viec.
+   Bam the khac -> thay the the cu. Bam lai the dang chon -> bo chon.
+   Dang chay thi KHONG cho doi phien (phai bam KET THUC truoc).
+   Nhan the: "▶ S520 · Lv50 (con 25 acc)" / "✓ S520 · Lv200 (da xong)".
+   Bo mau xanh duong xep hang va so thu tu [1][2].
+6. Tac vu noi dung so lieu that:
+   "May chu nay con N tai khoan chua cay · phien nay cay M".
+
+## 2026-11-22 (5): LOI GOC - panel dung 2 bo closure
+Trieu chung: the may chu SANG XANH LA (da chon) nhung dong duoi van bao
+"Phien cay: chua chon", "Trang thai: Cho dang nhap", va o so luong khong bi kep
+theo kho (nhap 32 trong khi toi da 25).
+Nguyen nhan: `InitEmmyluaDebug` chay lai -> tao BO CLOSURE MOI (nut bam thuoc bo
+moi), nhung vong lap panel bi khoa boi `if not _G.Mod_FarmKc_PanelLoop` nen van
+giu `CapNhat` cua lan DAU -> doc `vieEcDangChon` cua instance cu, luon nil.
+Keo theo `Mod_FarmKc_KhoConLai` khong bao gio duoc set -> DatSoLuong het kep.
+Sua: vong lap goi `_G.Mod_FarmKc_CapNhatPanel()` (luon tro ban moi nhat)
+thay vi goi thang `CapNhat` cua closure cu.
+Them: phan biet "Chua chon may chu" (da dang nhap) vs "Cho dang nhap".
+
+## 2026-11-22 (6): sua triet de + noi so luong vao luong chay
+1. `vieEcDangChon` -> `_G.Mod_FarmKc_Job`, `dsViec` -> `_G.Mod_FarmKc_DsViec`.
+   Panel dung lai nhieu lan sinh nhieu bo closure; bien LOCAL bi ket o bo cu nen
+   nut bam (bo moi) va dong trang thai (bo cu) noi hai dang khac nhau.
+   Dua ra _G thi moi bo doc cung mot cho - het lech.
+2. Bo chu thua: chua chon may chu thi de TRONG, khong in "chua chon ...".
+   Nhan trang thai chi hien khi co nghia (Dang chay / San sang).
+3. `TranSoLuong()` doc thang tu `_G.Mod_FarmKc_Job` -> o nhap luon biet tran
+   ke ca khi CapNhat thuoc bo closure khac.
+4. GOC CUA "CHAY LUNG TUNG": so luong khach nhap TRUOC DAY KHONG anh huong gi
+   toi danh sach acc. `NapAccTuWeb` nay CAT danh sach con dung N acc dau va luu
+   `_G.Mod_FarmKc_SoAccPhien`.
+5. Nut BAT DAU NAP LAI danh sach theo so luong hien tai roi moi chay
+   (khach co the doi so luong sau khi chon may chu).
+
+## 2026-11-22 (7): hien ro acc dang chay + tien do
+- Dong "Dang chay" nay co du: #STT, EMAIL (mau xanh), Cay Lv x/y, Server, Che do,
+  va "Hoan thanh: X/Y" voi Y = so acc cua phien (Mod_FarmKc_SoAccPhien).
+- Du phong email: neu danh sach acc chua nap kip thi lay `Bot_ActiveSessionEmail`
+  -> dong nay khong con hien "--" trong khi bot dang chay.
+- `coDsWeb` khong con phu thuoc viec da chon the may chu hay chua.
+- Dong "Phien cay" hien ca khi Bot_Running du the chua ve lai; zz lay
+  Mod_FarmKc_SoAccPhien thay vi JobTong (tong ca dai).
+
+## 2026-11-22 (8): xong phien phai DUNG + dong "Dang chay" bi trong
+1. GOC CUA "CHAY LUNG TUNG": `LoopWhenDone = true` -> cay xong N acc la NGHI 10 PHUT
+   ROI QUAY VONG, chay lai chinh nhung acc vua cay (dat 1 acc ma cay di cay lai).
+   - Doi mac dinh `LoopWhenDone = false`.
+   - Chan them trong `FarmKc_HenQuayVong`: dang chay mot PHIEN
+     (`Mod_FarmKc_SoAccPhien > 0`) thi KHONG BAO GIO quay vong.
+2. `Mod_FarmKc_ViecKeTiep` khi xong KHONG con xoa `Mod_FarmKc_Job` /
+   `Mod_FarmKc_WebAccounts` -> giu nguyen may chu da chon, moi dong thong tin
+   van hien, khach bam BAT DAU la chay me moi.
+3. Dong "Dang chay" du phong nhieu tang: WebAccounts -> Bot_ActiveSessionEmail
+   -> BotAccounts[idx] -> GetCurrentAccount. Dang chay ma chua co email thi bao
+   "Dang vao game..." chu khong phai "Chua chay".
+
+## 2026-11-22 (9): viet lai khoi hien thi - moi phan mot pcall rieng
+LY DO: ca khoi CapNhat nam trong MOT pcall -> chi can mot loi nho o giua
+(widget da bi huy, bien nil...) la TAT CA dong phia sau ngung cap nhat,
+panel dung yen khong bao gi. Day la ly do dong "Dang chay" mai khong hien.
+NAY: tach nho tung phan, hong phan nao chi mat phan do.
+
+Bo cuc thong tin moi (3 dong):
+  Phien cay: Lv50 · S520   |   Tien do: 2/5 (40%)
+  Dang chay: #3 accmuvhfang00003@gmail.com   |   Cay Lv: 37/50   |   Che do: Level 50
+  Hoan thanh 2 · Con lai 3 · Tong da dat 5 | May chu 520 | Kho con 25
+  Thoi gian tai khoan nay: 3p12s
+Chua chon may chu -> "Chon mot may chu phia tren de bat dau".
+Dang chay ma chua co email -> "Dang vao game..." (mau vang).
+
+## 2026-11-22 (10): doi so luong -> moi con so phai doi theo
+- LOI: `tongPhien` uu tien `Mod_FarmKc_SoAccPhien` (so cua phien chay TRUOC)
+  nen o nhap 5 ma duoi van hien 0/1.
+  NAY: dang chay -> lay SoAccPhien; CHUA chay -> lay SoLuong khach vua chon.
+  `daXong` cung chi tinh khi dang chay (chua chay thi phai la 0).
+- Dong thong ke them "chay xong phien nay con X" de thay anh huong cua so vua chon.
+- Dong Tac vu tu cap nhat theo cau hinh khi bot KHONG chay
+  (dat trong CapNhat, vi lblTacVu khai bao SAU DatSoLuong nen de o do la nil).
+
+## 2026-11-22 (11): so lieu kho bi trung va sai
+1. "Kho con 25" hien O HAI CHO (canh o nhap va dong thong ke).
+   O canh o nhap rut con "(toi da 25)" - chi noi tran khi nhap.
+2. "chay xong phien nay con" tinh sai: lay kho - conLaiPhien (25-1=24).
+   Dung phai la kho - TOAN BO so da dat (25-2=23).
+   Ngoai ra web chi doi `conLai` khi bam TAI LAI, nen kho hien tai phai tru
+   them so acc vua cay xong trong phien: kho = khoGoc - daXong.
+   Dong Tac vu cung dung con so da tru nay.
+
+## 2026-11-22 (12): KHOA O MUC TAI KHOAN, khong khoa ca may chu
+VAN DE: may A chon 5 acc -> may B nhin thay the DO, khong cay duoc gi du kho
+con 20 acc. Vi mod van dung `job-claim` (khoa ca dai/may chu).
+SUA:
+- MOD dung `/api/v1/farm/lease-claim`: xin DUNG N acc, server khoa dung N acc
+  do 15 phut. `Mod_FarmKc_NapAccTuWeb` viet lai theo huong nay
+  (ban cu giu lai ten `Mod_FarmKc_NapAccTuWeb_Cu`).
+- Nhip tim goi `/api/v1/farm/lease-keep` gia han lo dang giu.
+- Nut KET THUC goi lease-keep voi `nha = true` -> nha ngay, khong bat may khac
+  cho het 15 phut.
+- Nut BAT DAU KHONG con goi job-claim (khoa ca may chu).
+- The may chu khong con to DO theo `dangChayOMayKhac` va cho bam binh thuong.
+- WEB `/jobs` tra them `dangGiu` (acc dang bi may khac lease) va
+  `conLai = tong - daXong - dangGiu` -> nhan the hien dung so acc con xin duoc.
