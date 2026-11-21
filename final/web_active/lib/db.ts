@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { hashPassword } from './auth';
-import { FARM_KC_TABLES_SQL, FARM_KC_SP_STUB_SQL, FARM_KC_CLAIM_SP_SQL } from './farm-schema';
+import { FARM_KC_TABLES_SQL, FARM_KC_SP_STUB_SQL, FARM_KC_CLAIM_SP_SQL, FARM_KC_LEASE_SQL } from './farm-schema';
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
@@ -73,6 +73,8 @@ async function runInitialSeed(): Promise<void> {
     // =========================================================================
     try {
       await prisma.$executeRawUnsafe(FARM_KC_TABLES_SQL);
+      // [MOD FEATURE]: FARM KC - them cot khoa co han (lease) cho 2 bang theo doi
+      await prisma.$executeRawUnsafe(FARM_KC_LEASE_SQL);
       await prisma.$executeRawUnsafe(FARM_KC_SP_STUB_SQL);
       await prisma.$executeRawUnsafe(FARM_KC_CLAIM_SP_SQL);
       console.log('[FARM KC] Schema & stored procedure ready.');

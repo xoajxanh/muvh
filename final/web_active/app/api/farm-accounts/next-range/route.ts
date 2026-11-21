@@ -28,7 +28,17 @@ export async function GET(req: NextRequest) {
     const serverId = parseInt(searchParams.get('serverId') || '0', 10) || 0;
     // Chi bo qua DUNG dong dang sua (job=<jobCode>); cac viec khac cua chinh
     // tai khoan van tinh la "da giao" de goi y khong dam len chinh minh.
-    const boQuaJob = (searchParams.get('job') || '').trim() || undefined;
+    // job co the la DANH SACH (phay) - vd khi bam "Tu phan bo" thi cac viec
+    // chua chay cua chinh tai khoan se bi thay the -> khong tinh la da giao.
+    const dsBoQua = (searchParams.get('job') || '')
+      .split(',').map((x) => x.trim()).filter(Boolean);
+    // [MOD FEATURE]: CAP THEO SO LUONG ACC
+    //   tu      : diem bat dau mong muon (vd sau cac dong chua luu tren form)
+    //   soLuong : can cap bao nhieu acc -> tra ve den (STT cua acc thu N)
+    //   den     : (khong co soLuong) dem so acc that trong [tu, den]
+    const tuYeuCau = parseInt(searchParams.get('tu') || '', 10);
+    const soLuongYeuCau = parseInt(searchParams.get('soLuong') || '', 10);
+    const denYeuCau = parseInt(searchParams.get('den') || '', 10);
 
     if (!FARM_LEVELS.includes(farmLevel)) {
       return NextResponse.json({ error: 'Level cày phải là 50 hoặc 200' }, { status: 400 });
@@ -38,7 +48,7 @@ export async function GET(req: NextRequest) {
     const where: any = {
       farmLevel,
       serverId,
-      ...(boQuaJob ? { NOT: { jobCode: boQuaJob } } : {}),
+      ...(dsBoQua.length ? { NOT: { jobCode: { in: dsBoQua } } } : {}),
     };
 
     const rows = await (prisma as any).farmAccountRange.findMany({
@@ -92,7 +102,36 @@ export async function GET(req: NextRequest) {
       moc = Math.max(moc, (k.rangeTo || 0) + 1);
     }
 
+    // =====================================================================
+    // [MOD FEATURE]: CAP N ACC -> DAI STT
+    // STT trong kho khong lien tuc nen "N acc" != "N so STT". Lay STT cua acc
+    // thu N ke tu diem bat dau lam diem cuoi -> dai chua DUNG N acc that.
+    // Kho khong du thi cap toi da phan con lai, bao so thieu.
+    // =====================================================================
+    let capPhat: any = null;
+    const tu = Number.isFinite(tuYeuCau) && tuYeuCau > 0 ? Math.max(tuYeuCau, batDauTu) : batDauTu;
+    if (Number.isFinite(soLuongYeuCau) && soLuongYeuCau > 0) {
+      const coSan = await bang.count({ where: { stt: { gte: tu } } });
+      const soCap = Math.min(soLuongYeuCau, coSan);
+      let den = tu - 1;
+      if (soCap > 0) {
+        const cuoi = await bang.findMany({
+          where: { stt: { gte: tu } },
+          orderBy: { stt: 'asc' },
+          skip: soCap - 1,
+          take: 1,
+          select: { stt: true },
+        });
+        den = Number(cuoi?.[0]?.stt || tu);
+      }
+      capPhat = { tu, den, soLuong: soCap, yeuCau: soLuongYeuCau, thieu: Math.max(0, soLuongYeuCau - soCap) };
+    } else if (Number.isFinite(tuYeuCau) && Number.isFinite(denYeuCau) && denYeuCau >= tuYeuCau) {
+      const soLuong = await bang.count({ where: { stt: { gte: tuYeuCau, lte: denYeuCau } } });
+      capPhat = { tu: tuYeuCau, den: denYeuCau, soLuong, yeuCau: soLuong, thieu: 0 };
+    }
+
     return NextResponse.json({
+      capPhat,
       farmLevel,
       serverId,
       daPhanBoToi,

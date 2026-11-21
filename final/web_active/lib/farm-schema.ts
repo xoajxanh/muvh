@@ -77,6 +77,26 @@ BEGIN
     CREATE INDEX [FarmAccount_createdById_idx] ON [dbo].[FarmAccount]([createdById]);
 END;
 
+-- [MOD FEATURE]: MUC TIEU SAN LUONG KIM CUONG (tinh ra so acc Lv200 / Lv50)
+IF COL_LENGTH('dbo.FarmAccount', 'targetKc') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FarmAccount] ADD [targetKc] INT NOT NULL CONSTRAINT [DF_FarmAccount_targetKc] DEFAULT 0;
+END;
+
+-- [MOD FEATURE]: AN CHIA VOI KHACH + ACC GAME NHAN PHAN CUA MINH
+IF COL_LENGTH('dbo.FarmAccount', 'tyLeKhach') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FarmAccount] ADD [tyLeKhach] INT NOT NULL CONSTRAINT [DF_FarmAccount_tyLeKhach] DEFAULT 100;
+END;
+IF COL_LENGTH('dbo.FarmAccount', 'tkNhan') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FarmAccount] ADD [tkNhan] NVARCHAR(255) NULL;
+END;
+IF COL_LENGTH('dbo.FarmAccount', 'mkNhan') IS NULL
+BEGIN
+    ALTER TABLE [dbo].[FarmAccount] ADD [mkNhan] NVARCHAR(255) NULL;
+END;
+
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'FarmAccountRange')
 BEGIN
     CREATE TABLE [dbo].[FarmAccountRange] (
@@ -244,6 +264,38 @@ BEGIN
     CREATE INDEX [FarmInviteePlay_farmAccountId_idx] ON [dbo].[FarmInviteePlay]([farmAccountId]);
     CREATE INDEX [FarmInviteePlay_createdById_idx] ON [dbo].[FarmInviteePlay]([createdById]);
 END;
+`;
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - KHOA CO HAN (LEASE) O MUC TAI KHOAN
+// Mo ta: mot may xin N acc de chay, server giu (lease) ca lo 15 phut va gia
+//        han moi nhip tim. May crash -> het han -> acc tu ve kho, may khac
+//        nhat duoc. May khac dang chay -> pool rong -> khong giam duoc acc nao.
+//   leaseDeviceId   : may nao dang giu
+//   leaseDeviceName : ten may (de bao cho nguoi dung biet dang o may nao)
+//   leaseUntil      : giu den khi nao; NULL hoac da qua = tu do
+// =========================================================================
+export const FARM_KC_LEASE_SQL = `
+IF COL_LENGTH('dbo.FarmInviterPlay', 'leaseDeviceId') IS NULL
+    ALTER TABLE [dbo].[FarmInviterPlay] ADD [leaseDeviceId] NVARCHAR(255) NULL;
+IF COL_LENGTH('dbo.FarmInviterPlay', 'leaseDeviceName') IS NULL
+    ALTER TABLE [dbo].[FarmInviterPlay] ADD [leaseDeviceName] NVARCHAR(255) NULL;
+IF COL_LENGTH('dbo.FarmInviterPlay', 'leaseUntil') IS NULL
+    ALTER TABLE [dbo].[FarmInviterPlay] ADD [leaseUntil] DATETIME2 NULL;
+
+IF COL_LENGTH('dbo.FarmInviteePlay', 'leaseDeviceId') IS NULL
+    ALTER TABLE [dbo].[FarmInviteePlay] ADD [leaseDeviceId] NVARCHAR(255) NULL;
+IF COL_LENGTH('dbo.FarmInviteePlay', 'leaseDeviceName') IS NULL
+    ALTER TABLE [dbo].[FarmInviteePlay] ADD [leaseDeviceName] NVARCHAR(255) NULL;
+IF COL_LENGTH('dbo.FarmInviteePlay', 'leaseUntil') IS NULL
+    ALTER TABLE [dbo].[FarmInviteePlay] ADD [leaseUntil] DATETIME2 NULL;
+
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'FarmInviterPlay_lease_idx')
+    CREATE INDEX [FarmInviterPlay_lease_idx]
+        ON [dbo].[FarmInviterPlay]([serverId], [status], [leaseUntil]);
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'FarmInviteePlay_lease_idx')
+    CREATE INDEX [FarmInviteePlay_lease_idx]
+        ON [dbo].[FarmInviteePlay]([serverId], [status], [leaseUntil]);
 `;
 
 // -------------------------------------------------------------------------

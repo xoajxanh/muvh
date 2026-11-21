@@ -299,3 +299,45 @@ CAN TEST
 - Cach phan biet web da deploy ban moi chua, nhin NOI DUNG LOI:
     cu : Username web "longdt" khong ton tai
     moi: Username "longdt" khong ton tai (ca tai khoan web lan tai khoan farm)
+
+## 2026-11-21 (5): VIEC 1 - bo cuc nut panel
+- Panel cao 590 -> 710, danh 120px duoi day cho 2 hang nut.
+  Them `DY = 120` + `YY(y, boQuaDY)` trong 3 helper Khung/Chu/Nut va DatO
+  -> moi widget cu TU dich len 120, khong phai sua tay hang tram toa do.
+  Hai hang nut moi truyen `boQuaDY = true` de dung toa do that.
+- Hang y=72: 3 cum chinh so [-] <nhan> [+]: Lv Bo NH | % Vuot Thu | Delay Nu Hoang.
+  Dung dung bien toan cuc + PlayerPrefs cua ban cu -> logic farm khong doi.
+- Hang y=18: 2 nut gat AUTO HL / AUTO QTQ, dan deu (376px moi nut).
+- GOP Bat dau + Tam dung thanh MOT nut (x=12, w=600):
+  dang dung -> "▶ BAT DAU" (xanh); dang chay -> "■ KET THUC" (do).
+- Nut kich thuoc day ra sat vien phai (x=624, w=144), nhan gon lai "CO 1.0x",
+  mau xam chim vi khong phai hanh dong chinh.
+
+## VIEC 2 (da chot, CHUA lam): bo Jobs -> chon Mode + Server + So luong
+- Chon Mode: Cay Lv200 / Cay Lv50.
+- Server: DROPDOWN (cuon duoc neu nhieu) + nut TAI LAI de fetch lai danh sach
+  khi duoc giao moi, khong phai tat app hay dang nhap lai.
+- Lease 15 phut, nhip tim 60s gia han CA LO.
+- Giu ca lo: may 3 mo len -> pool rong -> bao "con 0 tai khoan".
+- Can them cot leaseDeviceId / leaseDeviceName / leaseUntil vao kho acc.
+- Claim bang MOT cau UPDATE ... OUTPUT (UPDLOCK, READPAST) -> 2 may bam cung luc
+  khong the nhan trung.
+
+## 2026-11-21 (6): VIEC 2 - phan WEB da xong
+2.1 DB (raw SQL trong ensureInitialSeed, lib/farm-schema.ts -> FARM_KC_LEASE_SQL)
+    - FarmInviterPlay / FarmInviteePlay: them leaseDeviceId, leaseDeviceName, leaseUntil
+    - index (serverId, status, leaseUntil) phuc vu claim
+    - schema.prisma: them 3 field tuong ung
+2.2 GET /api/v1/farm/pool?mode=200|50
+    - tra danh sach SERVER duoc giao + tong / daXong / dangGiu (may khac) / conLai
+    - phuc vu dropdown server + nut Tai lai
+2.3 POST /api/v1/farm/lease-claim
+    - UPDATE TOP (n) ... OUTPUT voi (UPDLOCK, READPAST) -> 2 may khong nhan trung
+    - thieu thi INSERT ... SELECT tu kho cho acc chua tung chay tren server do
+    - lease 15 phut, ky = MD5(username + serverId + soLuong + ts + SALT)
+2.4 POST /api/v1/farm/lease-keep
+    - gia han ca lo (nhip tim) hoac nha ngay khi bam KET THUC (nha: true)
+    - chi dong vao dong CHINH MAY NAY dang giu
+    - ky = MD5(deviceId + serverId + ts + SALT)
+
+CON LAI: 2.5 panel MOD (chon Mode + dropdown Server + so luong + nut Tai lai)

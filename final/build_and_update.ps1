@@ -323,7 +323,16 @@ with io.open(dst, "w", encoding="utf-8", newline="") as f:
         else:
             f.write(line)
 '@
-    & $PyExe -c $pyCode $bundlesSrc $bundlesDst $hash $size $version
+    # [MOD FEATURE]: GHI MA PYTHON RA FILE .py TAM ROI CHAY FILE
+    # PowerShell 5.1 lam roi dau nhay kep (") khi truyen chuoi cho chuong trinh
+    # ngoai qua "-c" -> Python nhan  io.open(dst, w, encoding=utf-8, ...)  -> SyntaxError.
+    # Chay tu file thi khong con van de nhay.
+    $pyFile = Join-Path $env:TEMP ("mu_bundles_" + [guid]::NewGuid().ToString("N") + ".py")
+    [System.IO.File]::WriteAllText($pyFile, $pyCode, (New-Object System.Text.UTF8Encoding($false)))
+    & $PyExe $pyFile $bundlesSrc $bundlesDst $hash $size $version
+    $pyExit = $LASTEXITCODE
+    Remove-Item -Path $pyFile -Force -ErrorAction SilentlyContinue
+    $global:LASTEXITCODE = $pyExit
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[LOI] Khong tao duoc bundles.txt moi (Python tra ve $LASTEXITCODE)." -ForegroundColor Red
         Pause

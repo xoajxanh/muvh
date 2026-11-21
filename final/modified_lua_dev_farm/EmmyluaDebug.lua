@@ -1240,7 +1240,7 @@ local function CreateModUI()
         panelRt.anchorMax = Vector2(0, 0)
         panelRt.pivot = Vector2(0, 0)
         panelRt.anchoredPosition = Vector2(75, 45)
-        panelRt.sizeDelta = Vector2(780, 590)
+        panelRt.sizeDelta = Vector2(780, 710)  -- [MOD FEATURE] +120: 2 hang nut cai dat o day
 
         -- Khởi tạo Scale từ PlayerPrefs (mặc định x1.0)
         if _G.Mod_MenuScale == nil then
@@ -3226,12 +3226,24 @@ local function CreateModUI()
             local MAU_CHU     = Color(0.85, 0.88, 0.92, 1)
             local MAU_MO      = Color(0.55, 0.60, 0.68, 1)
 
-            local function Khung(ten, x, y, w, h, mau)
+            -- =========================================================
+            -- [MOD FEATURE]: DANH CHO 120px DUOI DAY PANEL CHO 2 HANG NUT
+            -- Panel cao 590 -> 710. Moi widget cu tu dich len 120 nho DY,
+            -- khong phai sua tay hang tram toa do. Hai hang nut moi o day
+            -- truyen boQuaDY = true de dung toa do that (18 va 72).
+            -- =========================================================
+            local DY = 120
+            local function YY(y, boQuaDY)
+                if boQuaDY then return y end
+                return y + DY
+            end
+
+            local function Khung(ten, x, y, w, h, mau, boQuaDY)
                 local go = GameObject(ten)
                 go.transform:SetParent(panelGo.transform, false)
                 local rt = go:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-                rt.anchoredPosition = Vector2(x, y)
+                rt.anchoredPosition = Vector2(x, YY(y, boQuaDY))
                 rt.sizeDelta = Vector2(w, h)
                 local img = go:AddComponent(typeof(Image))
                 img.color = mau or MAU_NEN_O
@@ -3239,12 +3251,12 @@ local function CreateModUI()
                 return go, img, rt
             end
 
-            local function Chu(ten, x, y, w, h, noiDung, co, mau, canh)
+            local function Chu(ten, x, y, w, h, noiDung, co, mau, canh, boQuaDY)
                 local go = GameObject(ten)
                 go.transform:SetParent(panelGo.transform, false)
                 local rt = go:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-                rt.anchoredPosition = Vector2(x, y)
+                rt.anchoredPosition = Vector2(x, YY(y, boQuaDY))
                 rt.sizeDelta = Vector2(w, h)
                 local t = go:AddComponent(typeof(Text))
                 t.text = noiDung or ""
@@ -3256,12 +3268,12 @@ local function CreateModUI()
                 return t
             end
 
-            local function Nut(ten, x, y, w, h, nhan, mauNen, mauChu, co, onClick)
+            local function Nut(ten, x, y, w, h, nhan, mauNen, mauChu, co, onClick, boQuaDY)
                 local go = GameObject(ten)
                 go.transform:SetParent(panelGo.transform, false)
                 local rt = go:AddComponent(typeof(RectTransform))
                 rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-                rt.anchoredPosition = Vector2(x, y)
+                rt.anchoredPosition = Vector2(x, YY(y, boQuaDY))
                 rt.sizeDelta = Vector2(w, h)
                 local img = go:AddComponent(typeof(Image))
                 img.color = mauNen
@@ -3327,7 +3339,7 @@ local function CreateModUI()
                     if not tr or tr:Equals(nil) then return end
                     local rt = tr:GetComponent(typeof(RectTransform))
                     rt.anchorMin, rt.anchorMax, rt.pivot = Vector2(0, 0), Vector2(0, 0), Vector2(0, 0)
-                    rt.anchoredPosition = Vector2(x, y)
+                    rt.anchoredPosition = Vector2(x, YY(y))
                     rt.sizeDelta = Vector2(w, h)
                 end)
             end
@@ -4048,11 +4060,138 @@ local function CreateModUI()
                     end
                 end)
 
-            -- ---------- 11) Hang nut duoi cung ----------
-            local goBatDau, imgBatDau, txtBatDau = Nut("FkcBtnStart", 12, 18, 244, 52,
-                "▶ BẮT ĐẦU JOB", Color(0.14, 0.62, 0.30, 1), Color.white, 16, nil)
-            local goTamDung, imgTamDung = Nut("FkcBtnPause", 268, 18, 244, 52,
-                "❚❚ TẠM DỪNG", Color(0.38, 0.14, 0.16, 1), Color(0.95, 0.75, 0.75, 1), 16, nil)
+            -- =================================================================
+            -- [MOD FEATURE]: HAI HANG NUT CAI DAT O DAY PANEL (y = 18 va 72)
+            -- Hang tren : 3 nut chinh so  [-] Lv Bo NH [+] | % Vuot Thu | Delay NH
+            -- Hang duoi : 2 nut gat       AUTO HL | AUTO QTQ  (dan deu)
+            -- Dung boQuaDY = true -> toa do that o day panel, khong cong DY.
+            -- Cac nut nay dieu khien DUNG bien toan cuc cua ban cu, nen logic
+            -- farm khong phai sua gi.
+            -- =================================================================
+            local Y_HANG_SO  = 72
+            local Y_HANG_GAT = 18
+
+            -- ----- Mot cum chinh so: [-] <nhan> [+] -----
+            local function CumChinhSo(ten, x, w, nhan, layGiaTri, datGiaTri, buoc)
+                local CAO, WB = 44, 40
+                local txtNhan
+                Khung(ten .. "Nen", x, Y_HANG_SO, w, CAO, Color(0.13, 0.15, 0.19, 1), true)
+                Nut(ten .. "Tru", x, Y_HANG_SO, WB, CAO, "−",
+                    Color(0.22, 0.24, 0.30, 1), Color.white, 20, function()
+                        datGiaTri((layGiaTri() or 0) - (buoc or 1))
+                        pcall(function() txtNhan.text = nhan() end)
+                    end, true)
+                txtNhan = Chu(ten .. "Chu", x + WB, Y_HANG_SO, w - WB * 2, CAO,
+                    nhan(), 14, Color(0.55, 0.92, 1.0, 1), TextAnchor.MiddleCenter, true)
+                Nut(ten .. "Cong", x + w - WB, Y_HANG_SO, WB, CAO, "+",
+                    Color(0.22, 0.24, 0.30, 1), Color.white, 20, function()
+                        datGiaTri((layGiaTri() or 0) + (buoc or 1))
+                        pcall(function() txtNhan.text = nhan() end)
+                    end, true)
+                return txtNhan
+            end
+
+            -- 1. Lv Bo NH
+            CumChinhSo("FkcLvNH", 12, 248,
+                function() return "Lv Bỏ NH: " .. tostring(_G.Mod_StopQueenLevel or 145) end,
+                function() return tonumber(_G.Mod_StopQueenLevel) or 145 end,
+                function(v)
+                    _G.Mod_StopQueenLevel = math.max(1, math.min(400, tonumber(v) or 145))
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_StopQueenLevel", _G.Mod_StopQueenLevel)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+            -- 2. % Vuot Thu
+            CumChinhSo("FkcVuotThu", 266, 248,
+                function() return "% Vượt Thủ: " .. tostring(_G.Mod_OverDefPct or 10) .. "%" end,
+                function() return tonumber(_G.Mod_OverDefPct) or 10 end,
+                function(v)
+                    _G.Mod_OverDefPct = math.max(0, math.min(100, tonumber(v) or 10))
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_OverDefPct", _G.Mod_OverDefPct)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+            -- 3. Delay Nu Hoang
+            CumChinhSo("FkcDelayNH", 520, 248,
+                function() return "Delay Nữ Hoàng: " .. tostring(_G.Mod_QueenDelaySec or 20) .. "s" end,
+                function() return tonumber(_G.Mod_QueenDelaySec) or 20 end,
+                function(v)
+                    _G.Mod_QueenDelaySec = math.max(1, math.min(300, tonumber(v) or 20))
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_QueenDelaySec_v2", _G.Mod_QueenDelaySec)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                end)
+
+            -- ----- Hang 2 nut gat, dan deu -----
+            local function NhanGat(bat, ten)
+                return ten .. ": " .. (bat and "BẬT" or "TẮT")
+            end
+            local goHL, imgHL, txtHL
+            local goQTQ, imgQTQ, txtQTQ
+
+            local function VeLaiNutGat()
+                pcall(function()
+                    if txtHL and not txtHL:Equals(nil) then
+                        txtHL.text = NhanGat(_G.Mod_AutoBCActive, "AUTO HL")
+                        imgHL.color = _G.Mod_AutoBCActive
+                            and Color(0.15, 0.65, 0.30, 1) or Color(0.22, 0.24, 0.30, 1)
+                    end
+                    if txtQTQ and not txtQTQ:Equals(nil) then
+                        txtQTQ.text = NhanGat(_G.Mod_AutoDSActive, "AUTO QTQ")
+                        imgQTQ.color = _G.Mod_AutoDSActive
+                            and Color(0.15, 0.65, 0.30, 1) or Color(0.22, 0.24, 0.30, 1)
+                    end
+                end)
+            end
+
+            goHL, imgHL, txtHL = Nut("FkcBtnAutoHL", 12, Y_HANG_GAT, 376, 44,
+                NhanGat(_G.Mod_AutoBCActive, "AUTO HL"),
+                Color(0.22, 0.24, 0.30, 1), Color.white, 15, function()
+                    _G.Mod_AutoBCActive = not _G.Mod_AutoBCActive
+                    _G.Mod_AutoBCDSActive = (_G.Mod_AutoBCActive or _G.Mod_AutoDSActive)
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AutoBC", _G.Mod_AutoBCActive and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    if _G.UpdateAutoBCBtnUI then pcall(_G.UpdateAutoBCBtnUI) end
+                    VeLaiNutGat()
+                    if _G.Mod_AutoBCActive and _G.Bot_Running and not _G.Mod_IsRunningInstance
+                       and _G.CheckAndRunBloodCastleOrDemonPlaza then
+                        pcall(_G.CheckAndRunBloodCastleOrDemonPlaza)
+                    end
+                end, true)
+
+            goQTQ, imgQTQ, txtQTQ = Nut("FkcBtnAutoQTQ", 392, Y_HANG_GAT, 376, 44,
+                NhanGat(_G.Mod_AutoDSActive, "AUTO QTQ"),
+                Color(0.22, 0.24, 0.30, 1), Color.white, 15, function()
+                    _G.Mod_AutoDSActive = not _G.Mod_AutoDSActive
+                    _G.Mod_AutoBCDSActive = (_G.Mod_AutoBCActive or _G.Mod_AutoDSActive)
+                    pcall(function()
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_AutoDS", _G.Mod_AutoDSActive and 1 or 0)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                    end)
+                    if _G.UpdateAutoDSBtnUI then pcall(_G.UpdateAutoDSBtnUI) end
+                    VeLaiNutGat()
+                    if _G.Mod_AutoDSActive and _G.Bot_Running and not _G.Mod_IsRunningInstance
+                       and _G.CheckAndRunBloodCastleOrDemonPlaza then
+                        pcall(_G.CheckAndRunBloodCastleOrDemonPlaza)
+                    end
+                end, true)
+
+            VeLaiNutGat()
+            _G.Mod_FarmKc_VeLaiNutGat = VeLaiNutGat
+
+            -- ---------- 11) Hang nut chinh ----------
+            -- [MOD FEATURE]: GOP BAT DAU + TAM DUNG THANH MOT NUT
+            -- Dang chay -> hien "KET THUC" (do). Dang dung -> hien "BAT DAU" (xanh).
+            -- Nut KICH THUOC day ra sat vien phai vi khong phai hanh dong chinh.
+            local goBatDau, imgBatDau, txtBatDau = Nut("FkcBtnStart", 12, 18, 600, 52,
+                "▶ BẮT ĐẦU", Color(0.14, 0.62, 0.30, 1), Color.white, 17, nil)
             -- =========================================================
             -- [MOD FEATURE]: NUT KICH THUOC (thay nut THU GON + nut ZOOM doc)
             -- Mo ta: Moi lan bam chuyen co menu 1.0x -> 1.2x -> 1.5x -> 1.0x.
@@ -4061,10 +4200,11 @@ local function CreateModUI()
             -- =========================================================
             local function NhanKichThuoc()
                 local cur = tonumber(_G.Mod_MenuScale) or 1.0
-                return string.format("KÍCH THƯỚC %.1fx", cur)
+                return string.format("CỠ %.1fx", cur)
             end
-            local _, _, txtKichThuoc = Nut("FkcBtnSize", 524, 18, 244, 52, NhanKichThuoc(),
-                Color(0.25, 0.27, 0.32, 1), Color.white, 16, nil)
+            -- [MOD FEATURE]: day ra sat vien phai, thu nho - khong phai hanh dong chinh
+            local _, _, txtKichThuoc = Nut("FkcBtnSize", 624, 18, 144, 52, NhanKichThuoc(),
+                Color(0.20, 0.22, 0.26, 1), Color(0.70, 0.75, 0.82, 1), 13, nil)
             pcall(function()
                 local goSize = panelGo.transform:Find("FkcBtnSize").gameObject
                 goSize:GetComponent(typeof(Button)).onClick:AddListener(function()
@@ -4087,16 +4227,17 @@ local function CreateModUI()
                 end)
             end)
 
+            -- [MOD FEATURE]: MOT NUT DOI VAI - dang chay thi thanh KET THUC
             local function CapNhatNutChay()
                 pcall(function()
                     if _G.Bot_Running then
-                        imgBatDau.color = Color(0.20, 0.35, 0.22, 1)
-                        txtBatDau.color = Color(0.65, 0.75, 0.65, 1)
-                        imgTamDung.color = Color(0.75, 0.20, 0.22, 1)
+                        imgBatDau.color = Color(0.72, 0.18, 0.20, 1)
+                        txtBatDau.color = Color.white
+                        txtBatDau.text = "■ KẾT THÚC"
                     else
                         imgBatDau.color = Color(0.14, 0.62, 0.30, 1)
                         txtBatDau.color = Color.white
-                        imgTamDung.color = Color(0.38, 0.14, 0.16, 1)
+                        txtBatDau.text = "▶ BẮT ĐẦU"
                     end
                 end)
                 CapNhat()
@@ -4104,35 +4245,38 @@ local function CreateModUI()
             _G.Mod_FarmKc_CapNhatNutChay = CapNhatNutChay
 
             pcall(function()
+                -- [MOD FEATURE]: MOT NUT LAM CA HAI VIEC
+                -- Dang dung -> bam de BAT DAU. Dang chay -> bam de KET THUC.
                 goBatDau:GetComponent(typeof(Button)).onClick:AddListener(function()
+                    if _G.Bot_Running then
+                        -- ----- KET THUC -----
+                        if _G.ToggleAutoFarmBot then _G.ToggleAutoFarmBot()
+                        elseif _G.StopAutoFarmBot then _G.StopAutoFarmBot() end
+                        if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
+                        pcall(function()
+                            lblTacVu.text = "Tác vụ: Đã kết thúc"
+                            if _G.Mod_Farm_JobCode and _G.Mod_FarmKc_BaoNhipTim then
+                                _G.Mod_FarmKc_BaoNhipTim(_G.CurrentAccountIndex or 0, "PAUSED")
+                            end
+                        end)
+                        CapNhatNutChay()
+                        return
+                    end
+
+                    -- ----- BAT DAU -----
                     if not vieEcDangChon then
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
-                            _G.FloatingWordUtility.QuickMsg("CHƯA CHỌN CÔNG VIỆC - BẤM KIỂM TRA ĐĂNG NHẬP TRƯỚC!")
+                            _G.FloatingWordUtility.QuickMsg("CHƯA CHỌN CÔNG VIỆC - BẤM ĐĂNG NHẬP & TẢI JOBS TRƯỚC!")
                         end
                         return
                     end
-                    if _G.Bot_Running then return end
-                    -- [MOD FEATURE]: FARM KC - KHOA HANG DOI NGAY TRUOC KHI CHAY
-                    -- Khoa o day chu khong phai luc chon, de nguoi dung con
-                    -- thu xep hang doi ma khong giu cho cua may khac.
+                    -- Khoa hang doi ngay truoc khi chay (khong khoa luc chon,
+                    -- de con thu xep ma khong giu cho cua may khac).
                     pcall(function() if KhoaHangDoi then KhoaHangDoi() end end)
                     if _G.ToggleAutoFarmBot then _G.ToggleAutoFarmBot()
                     elseif _G.StartAutoFarmBot then _G.StartAutoFarmBot() end
                     if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
                     pcall(function() lblTacVu.text = "Tác vụ: Đang chạy bot..." end)
-                    CapNhatNutChay()
-                end)
-
-                goTamDung:GetComponent(typeof(Button)).onClick:AddListener(function()
-                    if not _G.Bot_Running then return end
-                    if _G.ToggleAutoFarmBot then _G.ToggleAutoFarmBot() end
-                    if _G.ModUpdatePanelBotBtn then pcall(_G.ModUpdatePanelBotBtn) end
-                    pcall(function()
-                        lblTacVu.text = "Tác vụ: Đã tạm dừng"
-                        if _G.Mod_Farm_JobCode and _G.Mod_FarmKc_BaoNhipTim then
-                            _G.Mod_FarmKc_BaoNhipTim(_G.CurrentAccountIndex or 0, "PAUSED")
-                        end
-                    end)
                     CapNhatNutChay()
                 end)
             end)

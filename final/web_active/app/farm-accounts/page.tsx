@@ -61,8 +61,45 @@ const MAU_FORM = () => ({
   username: '',
   password: '',
   note: '',
-  dong: [dongMoi(50)] as any[],
+  // [MOD FEATURE]: MUC TIEU SAN LUONG - nhap so KC + server -> tu chia acc
+  targetKc: '' as any,
+  mtServer: '' as any,
+  // [MOD FEATURE]: AN CHIA - % khach nhan, phan con lai ve acc game nhan cua minh
+  tyLeKhach: '100' as any,
+  tkNhan: '',
+  mkNhan: '',
+  dong: [] as any[],
 });
+
+// =========================================================================
+// [MOD FEATURE]: CONG THUC SAN LUONG (khop voi lib/farm-account.ts)
+//   1 acc Lv200 = 60 KC, can 5 acc Lv50 nhap ma moi du dieu kien.
+//   Lv200 = lam tron LEN (muc tieu / 60) · Lv50 = Lv200 x 5
+// =========================================================================
+const KC_MOI_LV200 = 60;
+const LV50_MOI_LV200 = 5;
+const tinhCanCap = (targetKc: any) => {
+  const t = Math.max(0, Math.floor(Number(targetKc) || 0));
+  const lv200 = Math.ceil(t / KC_MOI_LV200);
+  return { targetKc: t, lv200, lv50: lv200 * LV50_MOI_LV200, kc: lv200 * KC_MOI_LV200 };
+};
+/** Chia KC theo ti le: khach lam tron xuong, phan le ve minh (khop server) */
+const chiaKc = (kc: number, tyLeKhach: any) => {
+  const tong = Math.max(0, Math.floor(kc || 0));
+  const t = Math.max(0, Math.min(100, Number(tyLeKhach)));
+  const tl = Number.isFinite(t) ? t : 100;
+  const khach = Math.floor((tong * tl) / 100);
+  return { khach, minh: tong - khach, tyLe: tl };
+};
+const tyLeHopLe = (v: any) => {
+  if (String(v ?? '').trim() === '') return 100;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 100 && Math.floor(n) === n ? n : NaN;
+};
+const tinhSanLuong = (so200: number, so50: number) => {
+  const ghep = Math.min(Math.max(0, so200), Math.floor(Math.max(0, so50) / LV50_MOI_LV200));
+  return { ghep, kc: ghep * KC_MOI_LV200 };
+};
 
 export default function FarmAccountsPage() {
   const router = useRouter();
@@ -94,6 +131,7 @@ export default function FarmAccountsPage() {
   const [moForm, setMoForm] = useState(false);
   const [form, setForm] = useState<any>(MAU_FORM());
   const [dangLuu, setDangLuu] = useState(false);
+  const [hienMkNhan, setHienMkNhan] = useState(false);
   const [loiForm, setLoiForm] = useState('');
   const [ktUsername, setKtUsername] = useState<any>(null);
   // Chong lan + goi y kho trong, theo KHOA cua tung dong
@@ -296,17 +334,156 @@ export default function FarmAccountsPage() {
       if (!res.ok) return;
       const j = await res.json();
       setKhoTrong((k) => ({ ...k, [khoa]: j }));
+      // Dong da co so acc ma chua co dai -> cap luon theo so luong
+      setForm((cu: any) => {
+        const x = cu.dong.find((y: any) => y.khoa === khoa);
+        if (x && String(x.rangeFrom || '').trim() === '' && (parseInt(String(x.soLuong), 10) || 0) > 0) {
+          const xMoi = { ...x, farmLevel: lv, serverId: sv };
+          const tu = Math.max(j.batDauTu || 1, toiDaNoiBo(xMoi, cu.dong, lv, sv) + 1);
+          setTimeout(() => capTheoSoLuong(khoa, { ...cu, dong: cu.dong.map((y: any) => (y.khoa === khoa ? xMoi : y)) }, tu), 0);
+        }
+        return cu;
+      });
+    } catch (e) { console.error(e); }
+  };
+
+  // =========================================================================
+  // [MOD FEATURE]: CAP THEO SO LUONG ACC
+  // Nhap "so acc" -> hoi web STT cua acc thu N trong kho (STT khong lien tuc)
+  // -> dien Tu/Den. Kho khong du -> cap toi da, ghi so thieu de canh bao.
+  // =========================================================================
+  const capTheoSoLuong = async (khoa: string, f: any = form, tuMuon?: number) => {
+    const d = (f.dong || []).find((x: any) => x.khoa === khoa);
+    if (!d) return;
+    const sl = parseInt(String(d.soLuong), 10);
+    if (!Number.isFinite(sl) || sl < 1) return;
+    const tu = tuMuon ?? (parseInt(String(d.rangeFrom), 10) ||
+      (toiDaNoiBo(d, f.dong, d.farmLevel, d.serverId) + 1));
+    try {
+      const q = new URLSearchParams({
+        farmLevel: String(d.farmLevel),
+        serverId: String(Number(d.serverId) || 0),
+        tu: String(tu),
+        soLuong: String(sl),
+      });
+      if (d.jobCode) q.set('job', d.jobCode);
+      const res = await fetch(`/api/farm-accounts/next-range?${q}`);
+      if (!res.ok) return;
+      const j = await res.json();
+      setKhoTrong((k) => ({ ...k, [khoa]: j }));
+      const c = j.capPhat;
+      if (!c) return;
       setForm((cu: any) => ({
         ...cu,
-        dong: cu.dong.map((x: any) => {
-          if (x.khoa !== khoa || String(x.rangeFrom || '').trim() !== '') return x;
-          // Tinh ca cac dong chua luu cua chinh form (cung level+server)
-          const tu = Math.max(j.batDauTu || 1, toiDaNoiBo(x, cu.dong, lv, sv) + 1);
-          const sl = Number(x.soLuong) || 0;
-          return { ...x, rangeFrom: String(tu), rangeTo: sl > 0 ? String(tu + sl - 1) : x.rangeTo };
-        }),
+        dong: cu.dong.map((x: any) =>
+          x.khoa === khoa
+            ? { ...x, rangeFrom: String(c.tu), rangeTo: c.soLuong > 0 ? String(c.den) : '', soLuong: String(c.soLuong || ''), thieu: c.thieu || 0 }
+            : x,
+        ),
       }));
+      setTimeout(() => setForm((cu: any) => { kiemTraDong(khoa, cu); return cu; }), 0);
     } catch (e) { console.error(e); }
+  };
+
+  /** Sua tay Tu/Den -> dem lai so acc THAT trong dai */
+  const demTheoDai = async (khoa: string, f: any = form) => {
+    const d = (f.dong || []).find((x: any) => x.khoa === khoa);
+    if (!d) return;
+    const tu = parseInt(String(d.rangeFrom), 10);
+    const den = parseInt(String(d.rangeTo), 10);
+    if (!Number.isFinite(tu) || !Number.isFinite(den) || den < tu) return;
+    try {
+      const q = new URLSearchParams({
+        farmLevel: String(d.farmLevel),
+        serverId: String(Number(d.serverId) || 0),
+        tu: String(tu),
+        den: String(den),
+      });
+      if (d.jobCode) q.set('job', d.jobCode);
+      const res = await fetch(`/api/farm-accounts/next-range?${q}`);
+      if (!res.ok) return;
+      const j = await res.json();
+      setKhoTrong((k) => ({ ...k, [khoa]: j }));
+      if (j.capPhat) {
+        setForm((cu: any) => ({
+          ...cu,
+          dong: cu.dong.map((x: any) =>
+            x.khoa === khoa ? { ...x, soLuong: String(j.capPhat.soLuong), thieu: 0 } : x,
+          ),
+        }));
+      }
+      kiemTraDong(khoa, f);
+    } catch (e) { console.error(e); }
+  };
+
+  // =========================================================================
+  // [MOD FEATURE]: TU PHAN BO THEO MUC TIEU KC
+  // Muc tieu -> so Lv200 / Lv50 can co. Tru phan da co o cac dong DA CHAY
+  // (khoa, giu nguyen), phan con lai cap thanh 2 dong moi tren server muc
+  // tieu tu acc TRONG trong kho. Cac dong chua chay cu bi thay the (giu lai
+  // jobCode neu cung level + server de ma cong viec khong doi).
+  // =========================================================================
+  const [dangPhanBo, setDangPhanBo] = useState(false);
+  const tuPhanBo = async (f: any = form) => {
+    const can = tinhCanCap(f.targetKc);
+    const sv = parseInt(String(f.mtServer), 10);
+    if (can.targetKc <= 0) { setLoiForm('Nhập mục tiêu kim cương trước'); return; }
+    if (!Number.isFinite(sv) || sv < 0) { setLoiForm('Nhập Server ID để phân bổ'); return; }
+    setLoiForm('');
+    setDangPhanBo(true);
+    try {
+      const khoaCung = (f.dong || []).filter((d: any) => d.daChay);
+      const thayThe = (f.dong || []).filter((d: any) => !d.daChay);
+      const dsBoQua = thayThe.map((d: any) => d.jobCode).filter(Boolean);
+      const daCo = (lv: number) => khoaCung
+        .filter((d: any) => Number(d.farmLevel) === lv)
+        .reduce((t: number, d: any) => t + (parseInt(String(d.soLuong), 10) || 0), 0);
+
+      const dongMoiDs: any[] = [];
+      const ketQuaKho: Record<string, any> = {};
+      for (const lv of [200, 50]) {
+        const con = (lv === 200 ? can.lv200 : can.lv50) - daCo(lv);
+        if (con <= 0) continue;
+        // diem bat dau: sau cac dong DA CHAY cung level + server (neu co)
+        const tu = khoaCung
+          .filter((d: any) => Number(d.farmLevel) === lv && (Number(d.serverId) || 0) === sv)
+          .reduce((m: number, d: any) => Math.max(m, parseInt(String(d.rangeTo), 10) || 0), 0) + 1;
+        const q = new URLSearchParams({
+          farmLevel: String(lv), serverId: String(sv), tu: String(tu), soLuong: String(con),
+        });
+        if (dsBoQua.length) q.set('job', dsBoQua.join(','));
+        const res = await fetch(`/api/farm-accounts/next-range?${q}`);
+        if (!res.ok) continue;
+        const j = await res.json();
+        const c = j.capPhat || { tu, den: tu - 1, soLuong: 0, thieu: con };
+        const giuMa = thayThe.find((d: any) =>
+          Number(d.farmLevel) === lv && (Number(d.serverId) || 0) === sv && d.jobCode);
+        const d = {
+          ...dongMoi(lv),
+          serverId: String(sv),
+          serverName: tenServerTuDong(sv),
+          rangeFrom: String(c.tu),
+          rangeTo: c.soLuong > 0 ? String(c.den) : '',
+          soLuong: String(c.soLuong || 0),
+          thieu: c.thieu || 0,
+          tuDong: true,
+          jobCode: giuMa?.jobCode || '',
+        };
+        ketQuaKho[d.khoa] = j;
+        dongMoiDs.push(d);
+      }
+      setKhoTrong((k) => ({ ...k, ...ketQuaKho }));
+      setChongLan({});
+      setForm((cu: any) => ({
+        ...cu,
+        dong: [...(cu.dong || []).filter((d: any) => d.daChay), ...dongMoiDs],
+        daPhanBoCho: `${can.targetKc}|${sv}`,
+      }));
+    } catch (e: any) {
+      setLoiForm(e.message || 'Lỗi phân bổ');
+    } finally {
+      setDangPhanBo(false);
+    }
   };
 
   const tenServerTuDong = (sid: any) => {
@@ -334,14 +511,9 @@ export default function FarmAccountsPage() {
           if (!giuTenNguoiDung) o.serverName = tenServerTuDong(giaTri);
         }
 
-        const tu = parseInt(String(o.rangeFrom), 10);
-        const sl = parseInt(String(o.soLuong), 10);
-        const den = parseInt(String(o.rangeTo), 10);
-        if ((ten === 'soLuong' || ten === 'rangeFrom') && Number.isFinite(tu) && Number.isFinite(sl) && sl >= 1) {
-          o.rangeTo = String(tu + sl - 1);
-        } else if (ten === 'rangeTo' && Number.isFinite(tu) && Number.isFinite(den) && den >= tu) {
-          o.soLuong = String(den - tu + 1);
-        }
+        // So acc / dai STT: STT trong kho khong lien tuc -> KHONG tinh tay o
+        // day, roi o thi hoi web (capTheoSoLuong / demTheoDai).
+        if (ten === 'soLuong' || ten === 'rangeFrom' || ten === 'rangeTo') o.thieu = 0;
         return o;
       }),
     }));
@@ -350,19 +522,25 @@ export default function FarmAccountsPage() {
   };
 
   const datKhoang = (khoa: string, tu: number, den: number) => {
-    setForm((f: any) => ({
-      ...f,
-      dong: f.dong.map((d: any) =>
-        d.khoa === khoa
-          ? { ...d, rangeFrom: String(tu), soLuong: String(den - tu + 1), rangeTo: String(den) }
-          : d,
-      ),
-    }));
+    let fMoi: any = null;
+    setForm((f: any) => {
+      fMoi = {
+        ...f,
+        dong: f.dong.map((d: any) =>
+          d.khoa === khoa ? { ...d, rangeFrom: String(tu), rangeTo: String(den), thieu: 0 } : d,
+        ),
+      };
+      return fMoi;
+    });
     setChongLan((c) => ({ ...c, [khoa]: undefined }));
+    setTimeout(() => { if (fMoi) demTheoDai(khoa, fMoi); }, 0);
   };
 
   const themDong = () => {
-    const d = dongMoi(50);
+    const d: any = dongMoi(50);
+    // Mac dinh lay server cua muc tieu cho nhanh, van sua duoc
+    const sv = parseInt(String(form.mtServer), 10);
+    if (Number.isFinite(sv) && sv >= 0) { d.serverId = String(sv); d.serverName = tenServerTuDong(sv); }
     setForm((f: any) => ({ ...f, dong: [...f.dong, d] }));
     setTimeout(() => setForm((f: any) => { layKhoTrong(d.khoa, f); return f; }), 0);
   };
@@ -391,20 +569,27 @@ export default function FarmAccountsPage() {
     (f as any).usernameGoc = r.username;
     f.password = r.password || '';
     f.note = r.note || '';
+    f.targetKc = r.targetKc ? String(r.targetKc) : '';
+    f.tyLeKhach = String(r.tyLeKhach ?? 100);
+    f.tkNhan = r.tkNhan || '';
+    f.mkNhan = r.mkNhan || '';
+    f.mtServer = (r.ranges || []).length ? String(r.ranges[0].serverId) : '';
+    (f as any).daPhanBoCho = `${r.targetKc || 0}|${f.mtServer}`;
     f.dong = (r.ranges || []).map((k: any) => ({
       khoa: `d${++demKhoa}`,
       farmLevel: k.farmLevel,
       serverId: k.serverId,
       serverName: k.serverName || '',
       rangeFrom: String(k.rangeFrom),
-      soLuong: String(Math.max(0, k.rangeTo - k.rangeFrom + 1)),
+      // so acc THAT trong dai (web dem san)
+      soLuong: String(k.soAcc ?? Math.max(0, k.rangeTo - k.rangeFrom + 1)),
       rangeTo: String(k.rangeTo),
       // Viec da chay -> khoa level / server / dai STT, khong xoa dong duoc
       daChay: !!k.daChay,
       jobCode: k.jobCode || '',
     }));
-    if (f.dong.length === 0) f.dong = [dongMoi(50)];
     setForm(f);
+    setHienMkNhan(false);
     setKtUsername(null);
     setChongLan({});
     setKhoTrong({});
@@ -416,7 +601,14 @@ export default function FarmAccountsPage() {
   const luu = async () => {
     const ranges = dsCongViec();
     if (ranges.length === 0) {
-      setLoiForm('Phải thêm ít nhất một dòng công việc có khoảng STT hợp lệ');
+      setLoiForm('Chưa có dòng cấp tài khoản nào hợp lệ — nhập mục tiêu KC + server rồi bấm “Tự phân bổ”, hoặc thêm dòng');
+      return;
+    }
+    // [MOD FEATURE]: an chia - khach < 100% thi phai co acc game nhan
+    const tl = tyLeHopLe(form.tyLeKhach);
+    if (!Number.isFinite(tl)) { setLoiForm('Tỉ lệ khách nhận phải là số nguyên 0–100 (%)'); return; }
+    if (tl < 100 && (!String(form.tkNhan).trim() || !String(form.mkNhan).trim())) {
+      setLoiForm(`Khách nhận ${tl}% → mình nhận ${100 - tl}%: nhập tài khoản game nhận và mật khẩu`);
       return;
     }
     setDangLuu(true);
@@ -431,6 +623,10 @@ export default function FarmAccountsPage() {
             username: form.username,
             password: form.password,
             note: form.note,
+            targetKc: parseInt(String(form.targetKc), 10) || 0,
+            tyLeKhach: tl,
+            tkNhan: String(form.tkNhan || '').trim(),
+            mkNhan: String(form.mkNhan || '').trim(),
             ranges,
           }),
         },
@@ -678,7 +874,8 @@ export default function FarmAccountsPage() {
                         Mật khẩu
                       </Th>
                     )}
-                    <Th>Công việc được giao</Th>
+                    <Th>Tài khoản được cấp</Th>
+                    <Th align="right">Mục tiêu KC</Th>
                     <Th align="right">Tổng acc</Th>
                     <Th align="right">Đã gán</Th>
                     <Th k="status" align="center">Trạng thái</Th>
@@ -689,9 +886,9 @@ export default function FarmAccountsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {loading ? (
-                    <tr><td colSpan={9} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
+                    <tr><td colSpan={10} className="px-4 py-10 text-center text-slate-500">Đang tải...</td></tr>
                   ) : items.length === 0 ? (
-                    <tr><td colSpan={9} className="px-4 py-10 text-center text-slate-500">Chưa có tài khoản nào</td></tr>
+                    <tr><td colSpan={10} className="px-4 py-10 text-center text-slate-500">Chưa có tài khoản nào</td></tr>
                   ) : (
                     items.map((r) => (
                       <tr key={r.id} className="transition hover:bg-slate-800/30 align-top">
@@ -756,7 +953,39 @@ export default function FarmAccountsPage() {
                             </div>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-300">{fmtNum(r.soAcc)}</td>
+                        {/* [MOD FEATURE]: muc tieu KC + san luong du kien tu so acc da cap */}
+                        <td className="px-4 py-2.5 text-right text-xs whitespace-nowrap">
+                          {r.targetKc > 0 ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="font-mono font-semibold text-violet-200">{fmtNum(r.targetKc)}</span>
+                              <span
+                                className={`font-mono text-[10px] ${r.kcDuKien >= r.targetKc ? 'text-emerald-400' : 'text-rose-400'}`}
+                                title={`Dự kiến từ ${fmtNum(r.soAcc200)} Lv200 + ${fmtNum(r.soAcc50)} Lv50 đã cấp`}
+                              >
+                                dự kiến {fmtNum(r.kcDuKien)}
+                              </span>
+                              {/* [MOD FEATURE]: an chia voi khach */}
+                              {(r.tyLeKhach ?? 100) < 100 && (
+                                <span
+                                  className="text-[10px] text-emerald-300/90"
+                                  title={`Khách ${r.tyLeKhach}% · mình ${100 - r.tyLeKhach}% → nhận vào ${r.tkNhan || '(chưa có acc nhận)'}`}
+                                >
+                                  khách {r.tyLeKhach}% · mình {fmtNum(r.chiaMucTieu?.minh || 0)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-slate-600">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2.5 text-right font-mono text-xs text-slate-300">
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span>{fmtNum(r.soAcc)}</span>
+                            <span className="text-[10px] text-slate-500">
+                              <span className="text-amber-300/80">{fmtNum(r.soAcc200 || 0)}</span> / <span className="text-sky-300/80">{fmtNum(r.soAcc50 || 0)}</span>
+                            </span>
+                          </div>
+                        </td>
                         <td className="px-4 py-2.5 text-right font-mono text-xs">
                           <span className={r.daGan > 0 ? 'text-emerald-300 font-semibold' : 'text-slate-600'}>
                             {fmtNum(r.daGan)}
@@ -914,12 +1143,192 @@ export default function FarmAccountsPage() {
               </div>
 
               {/* =============================================================
+                  [MOD FEATURE]: MUC TIEU SAN LUONG -> TU PHAN BO
+                  Nhap so KC muon cay + server -> tinh so acc Lv200 / Lv50
+                  (1 Lv200 = 60 KC, can 5 Lv50) roi cap tu acc trong trong kho.
+                 ============================================================= */}
+              {(() => {
+                const can = tinhCanCap(form.targetKc);
+                const doiMucTieu = form.daPhanBoCho !== `${can.targetKc}|${parseInt(String(form.mtServer), 10)}`;
+                const chayKhiRoi = () => {
+                  const sv = parseInt(String(form.mtServer), 10);
+                  if (can.targetKc > 0 && Number.isFinite(sv) && sv >= 0 && doiMucTieu && !dangPhanBo) tuPhanBo();
+                };
+                return (
+                  <div className="shrink-0 rounded-xl border border-violet-500/30 bg-violet-500/[0.04] p-3">
+                    <div className="flex items-end gap-3 flex-wrap">
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-400 mb-1">Mục tiêu kim cương (KC)</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={form.targetKc}
+                          onChange={(e) => setForm({ ...form, targetKc: e.target.value })}
+                          onBlur={chayKhiRoi}
+                          onKeyDown={(e) => { if (e.key === 'Enter') chayKhiRoi(); }}
+                          placeholder="vd: 5000"
+                          className="w-40 px-3 py-2 rounded-lg bg-slate-950 border border-violet-700/60 text-sm text-violet-100 font-semibold placeholder:text-slate-600 placeholder:font-normal focus:outline-none focus:border-violet-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-400 mb-1">Server ID</label>
+                        <input
+                          type="number"
+                          min={0}
+                          value={form.mtServer}
+                          onChange={(e) => setForm({ ...form, mtServer: e.target.value })}
+                          onBlur={chayKhiRoi}
+                          onKeyDown={(e) => { if (e.key === 'Enter') chayKhiRoi(); }}
+                          placeholder="vd: 517"
+                          className="w-28 px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600"
+                        />
+                      </div>
+                      <div className="text-xs text-slate-500 pb-2 min-w-[120px]">
+                        {tenServerTuDong(form.mtServer) || '—'}
+                      </div>
+                      <button
+                        onClick={() => tuPhanBo()}
+                        disabled={dangPhanBo || can.targetKc <= 0 || String(form.mtServer).trim() === ''}
+                        className="ml-auto flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white text-xs font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition"
+                        title="Tính lại và cấp acc trống trong kho (giữ nguyên các dòng đã chạy)"
+                      >
+                        <Wand2 className="w-3.5 h-3.5" />
+                        {dangPhanBo ? 'Đang phân bổ...' : form.dong.some((d: any) => !d.daChay) ? 'Phân bổ lại' : 'Tự phân bổ'}
+                      </button>
+                    </div>
+
+                    {can.targetKc > 0 && (
+                      <div className="mt-2 flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-slate-400">
+                        <span>Cần</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-200">
+                          <Crown className="w-3 h-3" /> <b>{fmtNum(can.lv200)}</b> acc Lv200
+                        </span>
+                        <span>+</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/30 text-sky-200">
+                          <UserPlus className="w-3 h-3" /> <b>{fmtNum(can.lv50)}</b> acc Lv50
+                        </span>
+                        <span className="text-slate-500">
+                          → {fmtNum(can.lv200)} × {KC_MOI_LV200} KC = <b className="text-violet-200">{fmtNum(can.kc)} KC</b>
+                          {' '}· mỗi Lv200 cần {LV50_MOI_LV200} Lv50 · làm tròn lên
+                        </span>
+                        {doiMucTieu && form.dong.some((d: any) => !d.daChay) && (
+                          <span className="text-amber-400">· mục tiêu đã đổi — bấm “Phân bổ lại”</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* =============================================================
+                  [MOD FEATURE]: AN CHIA VOI KHACH
+                  100% = khach nhan het. Duoi 100% thi phan con lai cua minh
+                  se duoc che do GOM KIM CUONG chuyen vao acc game nhan.
+                 ============================================================= */}
+              {(() => {
+                const tl = tyLeHopLe(form.tyLeKhach);
+                const hopLe = Number.isFinite(tl);
+                const coChia = hopLe && tl < 100;
+                const can = tinhCanCap(form.targetKc);
+                const chiaMT = chiaKc(can.targetKc, tl);
+                return (
+                  <div className={`shrink-0 rounded-xl border p-3 ${coChia ? 'border-emerald-500/30 bg-emerald-500/[0.04]' : 'border-slate-800 bg-slate-950/30'}`}>
+                    <div className="flex items-end gap-3 flex-wrap">
+                      <div>
+                        <label className="block text-[11px] font-medium text-slate-400 mb-1">Tỉ lệ khách nhận (%)</label>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={form.tyLeKhach}
+                            onChange={(e) => setForm({ ...form, tyLeKhach: e.target.value })}
+                            placeholder="100"
+                            className={`w-24 px-3 py-2 rounded-lg bg-slate-950 border text-sm font-semibold text-center focus:outline-none ${hopLe ? 'border-slate-700 text-slate-100 focus:border-emerald-600' : 'border-rose-600 text-rose-300'}`}
+                          />
+                          {[100, 70, 60, 50].map((v) => (
+                            <button
+                              key={v}
+                              onClick={() => setForm({ ...form, tyLeKhach: String(v) })}
+                              className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition ${
+                                String(tl) === String(v)
+                                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-200'
+                                  : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+                              }`}
+                            >
+                              {v}%
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="pb-2 text-xs text-slate-400">
+                        {!hopLe ? (
+                          <span className="text-rose-400">Nhập số nguyên 0–100</span>
+                        ) : coChia ? (
+                          <>
+                            Khách <b className="text-slate-200">{tl}%</b> · mình <b className="text-emerald-300">{100 - tl}%</b>
+                            {can.targetKc > 0 && (
+                              <span className="text-slate-500">
+                                {' '}— mục tiêu {fmtNum(can.targetKc)} KC: khách {fmtNum(chiaMT.khach)} · mình <b className="text-emerald-300">{fmtNum(chiaMT.minh)}</b>
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-slate-500">Khách nhận toàn bộ — không cần tài khoản nhận</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {coChia && (
+                      <div className="mt-2.5 grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                            Tài khoản game nhận phần của mình ({100 - tl}%)
+                          </label>
+                          <input
+                            value={form.tkNhan}
+                            onChange={(e) => setForm({ ...form, tkNhan: e.target.value })}
+                            placeholder="email / tài khoản đăng nhập game"
+                            className={`w-full px-3 py-2 rounded-lg bg-slate-950 border text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-emerald-600 ${String(form.tkNhan).trim() ? 'border-slate-800' : 'border-rose-700/70'}`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-400 mb-1">Mật khẩu tài khoản nhận</label>
+                          <div className="relative">
+                            <input
+                              type={hienMkNhan ? 'text' : 'password'}
+                              value={form.mkNhan}
+                              onChange={(e) => setForm({ ...form, mkNhan: e.target.value })}
+                              placeholder="mật khẩu đăng nhập game"
+                              autoComplete="new-password"
+                              className={`w-full pl-3 pr-9 py-2 rounded-lg bg-slate-950 border text-sm text-slate-200 font-mono placeholder:text-slate-600 placeholder:font-sans focus:outline-none focus:border-emerald-600 ${String(form.mkNhan).trim() ? 'border-slate-800' : 'border-rose-700/70'}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setHienMkNhan((v) => !v)}
+                              title={hienMkNhan ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-500 hover:text-slate-200"
+                            >
+                              {hienMkNhan ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        <p className="col-span-2 text-[11px] text-slate-600">
+                          Cày xong, chế độ gom kim cương sẽ đăng nhập tài khoản này để chuyển phần {100 - tl}% vào.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* =============================================================
                   Danh sach dong cong viec - chi cuon RIENG trong khoi nay
                  ============================================================= */}
               <div className="flex-1 min-h-0 flex flex-col">
                 <div className="shrink-0 flex items-center justify-between mb-1.5">
                   <label className="text-xs font-medium text-slate-400">
-                    Công việc được giao — mỗi dòng là một giả lập: level + server + khoảng STT
+                    Tài khoản được cấp — tự phân bổ theo mục tiêu, sửa được số acc / dải STT, thêm dòng để cấp thêm
                   </label>
                   <button
                     onClick={themDong}
@@ -932,20 +1341,24 @@ export default function FarmAccountsPage() {
 
                 <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-800 bg-slate-950/40 overflow-hidden">
                   {/* Tieu de cot */}
-                  <div className="shrink-0 grid grid-cols-[26px_128px_96px_minmax(140px,1fr)_96px_16px_96px_16px_96px_32px] gap-2 items-center px-3 py-1.5 bg-slate-900/70 border-b border-slate-800 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="shrink-0 grid grid-cols-[26px_120px_88px_minmax(120px,1fr)_100px_96px_16px_96px_32px] gap-2 items-center px-3 py-1.5 bg-slate-900/70 border-b border-slate-800 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
                     <span />
                     <span>Level cày</span>
                     <span>Server ID</span>
                     <span>Tên server</span>
-                    <span className="text-center">Từ</span>
-                    <span />
                     <span className="text-center text-violet-400/80">Số acc</span>
+                    <span className="text-center">Từ STT</span>
                     <span />
-                    <span className="text-center">Đến</span>
+                    <span className="text-center">Đến STT</span>
                     <span />
                   </div>
 
                   <div className="flex-1 min-h-0 overflow-auto p-2 space-y-2">
+                    {form.dong.length === 0 && (
+                      <div className="px-3 py-6 text-center text-xs text-slate-500">
+                        Chưa cấp tài khoản nào. Nhập <b className="text-violet-300">mục tiêu KC</b> + <b className="text-slate-300">Server ID</b> ở trên để tự phân bổ, hoặc bấm “Thêm dòng”.
+                      </div>
+                    )}
                     {form.dong.map((d: any, idx: number) => {
                       const kho = khoTrong[d.khoa];
                       const clWeb = chongLan[d.khoa];
@@ -964,7 +1377,7 @@ export default function FarmAccountsPage() {
                               : 'border-sky-500/30 bg-sky-500/[0.04]'
                           }`}
                         >
-                          <div className="grid grid-cols-[26px_128px_96px_minmax(140px,1fr)_96px_16px_96px_16px_96px_32px] gap-2 items-center">
+                          <div className="grid grid-cols-[26px_120px_88px_minmax(120px,1fr)_100px_96px_16px_96px_32px] gap-2 items-center">
                             <span className="text-[10px] font-bold text-slate-600 flex items-center gap-0.5" title={d.daChay ? `${d.jobCode} đã chạy - khoá` : ''}>
                               {d.daChay ? <Lock className="w-3 h-3 text-amber-400" /> : <>#{idx + 1}</>}
                             </span>
@@ -1012,39 +1425,45 @@ export default function FarmAccountsPage() {
                               className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
 
+                            {/* So acc: nhap so luong -> web cap dai STT co DUNG so acc that */}
+                            <input
+                              type="number"
+                              min={0}
+                              value={d.soLuong}
+                              onChange={(e) => doiO(d.khoa, 'soLuong', e.target.value)}
+                              disabled={d.daChay}
+                              onBlur={() => capTheoSoLuong(d.khoa)}
+                              onKeyDown={(e) => { if (e.key === 'Enter') capTheoSoLuong(d.khoa); }}
+                              placeholder="số acc"
+                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-violet-800/60 text-xs text-violet-200 font-semibold text-center placeholder:text-slate-600 placeholder:font-normal focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
                             <input
                               type="number"
                               value={d.rangeFrom}
                               onChange={(e) => doiO(d.khoa, 'rangeFrom', e.target.value)}
                               disabled={d.daChay}
-                              onBlur={() => kiemTraDong(d.khoa)}
-                              placeholder="1"
+                              onBlur={() => {
+                                const tu = parseInt(String(d.rangeFrom), 10);
+                                if ((parseInt(String(d.soLuong), 10) || 0) > 0 && Number.isFinite(tu)) capTheoSoLuong(d.khoa, form, tu);
+                                else demTheoDai(d.khoa);
+                              }}
+                              placeholder="tự cấp"
                               className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
-                            <span className="text-slate-600 text-xs text-center">+</span>
-                            <input
-                              type="number"
-                              value={d.soLuong}
-                              onChange={(e) => doiO(d.khoa, 'soLuong', e.target.value)}
-                              disabled={d.daChay}
-                              onBlur={() => kiemTraDong(d.khoa)}
-                              placeholder="60"
-                              className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-violet-800/60 text-xs text-violet-200 font-semibold text-center placeholder:text-slate-600 placeholder:font-normal focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                            />
-                            <span className="text-slate-600 text-xs text-center">=</span>
+                            <span className="text-slate-600 text-xs text-center">→</span>
                             <input
                               type="number"
                               value={d.rangeTo}
                               onChange={(e) => doiO(d.khoa, 'rangeTo', e.target.value)}
                               disabled={d.daChay}
-                              onBlur={() => kiemTraDong(d.khoa)}
-                              placeholder="60"
+                              onBlur={() => demTheoDai(d.khoa)}
+                              placeholder="tự cấp"
                               className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-xs text-slate-200 text-center placeholder:text-slate-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 disabled:cursor-not-allowed"
                             />
 
                             <button
                               onClick={() => xoaDong(d.khoa)}
-                              disabled={form.dong.length <= 1 || d.daChay}
+                              disabled={d.daChay}
                               title={d.daChay ? 'Công việc đã chạy, không xoá được' : 'Xoá dòng này'}
                               className="p-1.5 rounded-lg bg-slate-800 text-rose-300 hover:bg-rose-900/40 disabled:opacity-25 disabled:cursor-not-allowed transition"
                             >
@@ -1052,8 +1471,14 @@ export default function FarmAccountsPage() {
                             </button>
                           </div>
 
-                          {(kho || cl !== undefined || clMinh) && (
+                          {(kho || cl !== undefined || clMinh || d.thieu > 0) && (
                             <div className="mt-1.5 pl-[34px] space-y-1">
+                              {d.thieu > 0 && (
+                                <div className="flex items-center gap-1.5 text-[11px] text-rose-400">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                  Kho Lv{d.farmLevel} @ server {Number(d.serverId) || 0} chỉ còn đủ cấp {fmtNum(Number(d.soLuong) || 0)} acc — thiếu <b>{fmtNum(d.thieu)}</b> acc
+                                </div>
+                              )}
                               {kho && (
                                 <div className="flex items-start gap-1.5 text-[11px] text-slate-500">
                                   <Boxes className="w-3.5 h-3.5 text-violet-400 shrink-0 mt-px" />
@@ -1073,7 +1498,10 @@ export default function FarmAccountsPage() {
                                       )}
                                     </span>
                                     <button
-                                      onClick={() => doiO(d.khoa, 'rangeFrom', String(batDauGoiY))}
+                                      onClick={() => {
+                                        doiO(d.khoa, 'rangeFrom', String(batDauGoiY));
+                                        if ((parseInt(String(d.soLuong), 10) || 0) > 0) capTheoSoLuong(d.khoa, form, batDauGoiY);
+                                      }}
                                       className="px-1.5 py-0.5 rounded-md bg-violet-500/15 border border-violet-500/40 text-violet-300 font-bold hover:bg-violet-500/25 transition"
                                     >
                                       bắt đầu từ {fmtNum(batDauGoiY)}
@@ -1123,8 +1551,9 @@ export default function FarmAccountsPage() {
                 </div>
 
                 <p className="shrink-0 mt-1.5 text-[11px] text-slate-600">
-                  Dòng có <Lock className="inline w-3 h-3 text-amber-400 -mt-0.5" /> là công việc đã chạy: giữ nguyên dải STT, không xoá được (vẫn đổi được tên server). Việc chưa chạy sửa/xoá tự do, luôn thêm được việc mới.{' '}
-                  Hai dòng chỉ đụng nhau khi <b className="text-slate-500">cùng level và cùng server</b>. Cùng khoảng STT nhưng khác server thì hợp lệ — đó là chạy nhiều giả lập song song.
+                  Nhập <b className="text-slate-500">số acc</b> là web tự cấp dải STT trống có đúng số acc thật trong kho; sửa tay Từ/Đến thì web đếm lại số acc.{' '}
+                  Dòng có <Lock className="inline w-3 h-3 text-amber-400 -mt-0.5" /> đã chạy: giữ nguyên, được tính vào mục tiêu khi phân bổ lại.{' '}
+                  Hai dòng chỉ đụng nhau khi <b className="text-slate-500">cùng level và cùng server</b>.
                 </p>
               </div>
 
@@ -1137,13 +1566,48 @@ export default function FarmAccountsPage() {
             </div>
 
             <div className="shrink-0 flex items-center justify-between gap-2 px-5 py-3 border-t border-slate-800 bg-slate-900/80">
-              <p className="text-[11px] text-slate-500">
-                {dsCongViec().length === 0
-                  ? 'Chưa có dòng nào hợp lệ'
-                  : `${dsCongViec().length} dòng · tổng ${fmtNum(
-                      dsCongViec().reduce((t: number, k: any) => t + (k.rangeTo - k.rangeFrom + 1), 0),
-                    )} acc`}
-              </p>
+              {(() => {
+                // [MOD FEATURE]: TONG KET SAN LUONG tu so acc da cap
+                const dsHopLe = dsCongViec();
+                const tongTheoLv = (lv: number) => (form.dong || [])
+                  .filter((d: any) => Number(d.farmLevel) === lv)
+                  .reduce((t: number, d: any) => {
+                    const tu = parseInt(String(d.rangeFrom), 10), den = parseInt(String(d.rangeTo), 10);
+                    return Number.isFinite(tu) && Number.isFinite(den) && den >= tu ? t + (parseInt(String(d.soLuong), 10) || 0) : t;
+                  }, 0);
+                const so200 = tongTheoLv(200), so50 = tongTheoLv(50);
+                const sl = tinhSanLuong(so200, so50);
+                const can = tinhCanCap(form.targetKc);
+                const lech50 = so50 - so200 * LV50_MOI_LV200;
+                if (dsHopLe.length === 0) return <p className="text-[11px] text-slate-500">Chưa có dòng nào hợp lệ</p>;
+                return (
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 text-[11px] text-slate-400">
+                    <span className="inline-flex items-center gap-1 text-amber-200"><Crown className="w-3 h-3" /> {fmtNum(so200)} Lv200</span>
+                    <span className="inline-flex items-center gap-1 text-sky-200"><UserPlus className="w-3 h-3" /> {fmtNum(so50)} Lv50</span>
+                    <span>→ dự kiến <b className="text-violet-200">{fmtNum(sl.kc)} KC</b></span>
+                    {(() => {
+                      const tl = tyLeHopLe(form.tyLeKhach);
+                      if (!Number.isFinite(tl) || tl >= 100 || sl.kc <= 0) return null;
+                      const c = chiaKc(sl.kc, tl);
+                      return (
+                        <span className="text-slate-500">
+                          (khách {fmtNum(c.khach)} · mình <b className="text-emerald-300">{fmtNum(c.minh)}</b>)
+                        </span>
+                      );
+                    })()}
+                    {can.targetKc > 0 && (
+                      sl.kc >= can.targetKc
+                        ? <span className="inline-flex items-center gap-1 text-emerald-400"><CheckCircle2 className="w-3 h-3" /> đủ mục tiêu {fmtNum(can.targetKc)}</span>
+                        : <span className="inline-flex items-center gap-1 text-rose-400"><AlertTriangle className="w-3 h-3" /> thiếu {fmtNum(can.targetKc - sl.kc)} KC so với mục tiêu {fmtNum(can.targetKc)}</span>
+                    )}
+                    {so200 > 0 && lech50 !== 0 && (
+                      <span className="text-amber-400">
+                        · {lech50 > 0 ? `dư ${fmtNum(lech50)}` : `thiếu ${fmtNum(-lech50)}`} Lv50 so với {fmtNum(so200)} Lv200
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setMoForm(false)}

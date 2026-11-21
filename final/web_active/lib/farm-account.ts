@@ -218,3 +218,63 @@ export function buildOrderByFarmAccount(sortBy: string, dir: 'asc' | 'desc'): an
     default: return [{ username: 'desc' }];
   }
 }
+
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - TINH SAN LUONG THEO MUC TIEU KIM CUONG
+// Cong thuc: 1 acc Lv200 cho 60 KC, can 5 acc Lv50 nhap ma de du dieu kien.
+//   so Lv200 = lam tron LEN (muc tieu / 60)
+//   so Lv50  = so Lv200 x 5
+//   san luong du kien tu so acc da cap = min(Lv200, floor(Lv50 / 5)) x 60
+// =========================================================================
+export const KC_MOI_LV200 = 60;
+export const LV50_MOI_LV200 = 5;
+
+export function tinhCanCap(targetKc: number) {
+  const t = Math.max(0, Math.floor(Number(targetKc) || 0));
+  const lv200 = Math.ceil(t / KC_MOI_LV200);
+  return { targetKc: t, lv200, lv50: lv200 * LV50_MOI_LV200, kcDuKien: lv200 * KC_MOI_LV200 };
+}
+
+export function tinhSanLuong(soLv200: number, soLv50: number) {
+  const ghep = Math.min(Math.max(0, soLv200 || 0), Math.floor(Math.max(0, soLv50 || 0) / LV50_MOI_LV200));
+  return { ghep, kc: ghep * KC_MOI_LV200 };
+}
+
+/** So acc CO THAT trong kho (Lv200 / Lv50) nam trong dai STT [tu, den] */
+export async function demAccTrongDai(farmLevel: number, tu: number, den: number) {
+  if (!(den >= tu)) return 0;
+  const bang: any = farmLevel === 200 ? (prisma as any).farmInviter : (prisma as any).farmInvitee;
+  return bang.count({ where: { stt: { gte: tu, lte: den } } });
+}
+
+
+// =========================================================================
+// [MOD FEATURE]: FARM KC - AN CHIA VOI KHACH
+//   tyLeKhach : % kim cuong khach nhan (0-100, mac dinh 100 = khach nhan het)
+//   phan minh : 100 - tyLeKhach -> sau nay che do GOM KIM CUONG se dang nhap
+//               acc game nhan (tkNhan / mkNhan) de chuyen phan nay vao.
+//   tyLeKhach < 100 thi BAT BUOC co tkNhan + mkNhan.
+// =========================================================================
+export function chuanHoaChiaSe(body: any, cu?: any):
+  { ok: true; tyLeKhach: number; tkNhan: string | null; mkNhan: string | null } | { ok: false; error: string } {
+  const lay = (k: string) => (body?.[k] === undefined ? cu?.[k] : body[k]);
+  const raw = lay('tyLeKhach');
+  const tyLe = raw === undefined || raw === null || String(raw).trim() === '' ? 100 : Number(raw);
+  if (!Number.isFinite(tyLe) || tyLe < 0 || tyLe > 100 || Math.floor(tyLe) !== tyLe) {
+    return { ok: false, error: 'Tỉ lệ khách nhận phải là số nguyên từ 0 đến 100 (%)' };
+  }
+  const tkNhan = String(lay('tkNhan') ?? '').trim() || null;
+  const mkNhan = String(lay('mkNhan') ?? '').trim() || null;
+  if (tyLe < 100 && (!tkNhan || !mkNhan)) {
+    return { ok: false, error: `Khách nhận ${tyLe}% → mình nhận ${100 - tyLe}%: phải nhập tài khoản game nhận và mật khẩu` };
+  }
+  return { ok: true, tyLeKhach: tyLe, tkNhan, mkNhan };
+}
+
+/** Chia so KC theo ti le: khach lam tron xuong, phan le ve minh */
+export function chiaKc(kc: number, tyLeKhach: number) {
+  const tong = Math.max(0, Math.floor(kc || 0));
+  const khach = Math.floor((tong * Math.max(0, Math.min(100, tyLeKhach))) / 100);
+  return { khach, minh: tong - khach };
+}

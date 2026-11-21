@@ -212,6 +212,13 @@ model FarmAccount {
   username    String        @unique
   password    String        @default("")
   note        String?
+  // [MOD FEATURE]: muc tieu san luong kim cuong khach muon cay
+  targetKc    Int           @default(0)
+  // [MOD FEATURE]: AN CHIA voi khach - % khach nhan (100 = khach nhan het).
+  //   Phan con lai (100 - tyLeKhach) gom ve acc game nhan cua minh.
+  tyLeKhach   Int           @default(100)
+  tkNhan      String?
+  mkNhan      String?
   status      String        @default("NEW")
   lastSyncAt  DateTime?
   createdById String
@@ -296,6 +303,10 @@ model FarmInviterPlay {
   createdBy      User          @relation("UserFarmInviterPlays", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  /// [MOD FEATURE]: FARM KC - khoa co han (lease) o muc tai khoan
+  leaseDeviceId   String?
+  leaseDeviceName String?
+  leaseUntil      DateTime?
   invitees       FarmInviteePlay[] @relation("InviterPlayInvitees")
 
   @@unique([email, serverId])
@@ -333,6 +344,11 @@ model FarmInviteePlay {
   createdBy     User             @relation("UserFarmInviteePlays", fields: [createdById], references: [id], onDelete: NoAction, onUpdate: NoAction)
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
+
+  /// [MOD FEATURE]: FARM KC - khoa co han (lease) o muc tai khoan
+  leaseDeviceId   String?
+  leaseDeviceName String?
+  leaseUntil      DateTime?
 
   @@unique([email, serverId])
   @@index([serverId, status])

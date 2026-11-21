@@ -7,6 +7,10 @@ import {
   kiemTraTrung,
   kiemTraChongLanNhieu,
   jobCodeChuaDung,
+  demAccTrongDai,
+  tinhSanLuong,
+  chuanHoaChiaSe,
+  chiaKc,
   buildOrderByFarmAccount,
 } from '@/lib/farm-account';
 import { phanBoLaiTheoDoi, layViecDaChay } from '@/lib/farm-play';
@@ -95,7 +99,22 @@ export async function GET(req: NextRequest) {
       (rows as any[]).reduce((t: any[], r: any) => t.concat(r.ranges || []), []),
     );
 
-    const items = rows.map((r: any) => ({
+    // [MOD FEATURE]: SO ACC THAT trong tung dai (STT khong lien tuc)
+    const soAccDai = new Map<string, number>();
+    await Promise.all(
+      (rows as any[]).flatMap((r: any) => (r.ranges || []).map(async (k: any) => {
+        soAccDai.set(k.id, await demAccTrongDai(k.farmLevel, k.rangeFrom, k.rangeTo));
+      })),
+    );
+
+    const items = rows.map((r: any) => {
+      const dsDai = r.ranges || [];
+      const so200 = dsDai.filter((k: any) => k.farmLevel === 200)
+        .reduce((t: number, k: any) => t + (soAccDai.get(k.id) || 0), 0);
+      const so50 = dsDai.filter((k: any) => k.farmLevel !== 200)
+        .reduce((t: number, k: any) => t + (soAccDai.get(k.id) || 0), 0);
+      const sl = tinhSanLuong(so200, so50);
+      return ({
       id: r.id,
       username: r.username,
       password: session.role === 'ADMIN' ? r.password : null,
@@ -108,7 +127,7 @@ export async function GET(req: NextRequest) {
         serverName: k.serverName,
         rangeFrom: k.rangeFrom,
         rangeTo: k.rangeTo,
-        soAcc: Math.max(0, (k.rangeTo || 0) - (k.rangeFrom || 0) + 1),
+        soAcc: soAccDai.get(k.id) || 0,
         status: k.status,
         deviceId: k.deviceId,
         deviceName: k.deviceName,
@@ -117,10 +136,18 @@ export async function GET(req: NextRequest) {
         // Viec da chay -> khoa dai STT, khong xoa duoc
         daChay: daChay.has(k.jobCode),
       })),
-      soAcc: (r.ranges || []).reduce(
-        (t: number, k: any) => t + Math.max(0, (k.rangeTo || 0) - (k.rangeFrom || 0) + 1),
-        0,
-      ),
+      soAcc: so200 + so50,
+      soAcc200: so200,
+      soAcc50: so50,
+      // [MOD FEATURE]: muc tieu & san luong du kien tu so acc da cap
+      targetKc: r.targetKc || 0,
+      kcDuKien: sl.kc,
+      // [MOD FEATURE]: an chia - mat khau acc nhan chi ADMIN thay
+      tyLeKhach: r.tyLeKhach ?? 100,
+      tkNhan: r.tkNhan || '',
+      mkNhan: session.role === 'ADMIN' ? (r.mkNhan || '') : null,
+      chiaDuKien: chiaKc(sl.kc, r.tyLeKhach ?? 100),
+      chiaMucTieu: chiaKc(r.targetKc || 0, r.tyLeKhach ?? 100),
       daGan: (demInviter.get(r.id) || 0) + (demInvitee.get(r.id) || 0),
       note: r.note,
       status: r.status,
@@ -132,7 +159,8 @@ export async function GET(req: NextRequest) {
       choPhepSua: true,
       // Chi xoa duoc tai khoan khi CHUA co cong viec nao chay
       choPhepXoa: !(r.ranges || []).some((k: any) => daChay.has(k.jobCode)),
-    }));
+    });
+    });
 
     return NextResponse.json({
       items,
@@ -162,6 +190,11 @@ export async function POST(req: NextRequest) {
     const username = chuanHoaUsername(body.username);
     const password = String(body.password || '').trim();
     const note = String(body.note || '').trim() || null;
+    // [MOD FEATURE]: muc tieu san luong kim cuong
+    const targetKc = Math.max(0, parseInt(String(body.targetKc ?? 0), 10) || 0);
+    // [MOD FEATURE]: an chia voi khach
+    const chiaSe = chuanHoaChiaSe(body);
+    if (!chiaSe.ok) return NextResponse.json({ error: chiaSe.error }, { status: 400 });
 
     if (!username) return NextResponse.json({ error: 'Chưa nhập username' }, { status: 400 });
     if (!password) return NextResponse.json({ error: 'Chưa nhập mật khẩu' }, { status: 400 });
@@ -207,6 +240,10 @@ export async function POST(req: NextRequest) {
         username,
         password,
         note,
+        targetKc,
+        tyLeKhach: chiaSe.tyLeKhach,
+        tkNhan: chiaSe.tkNhan,
+        mkNhan: chiaSe.mkNhan,
         status: 'NEW',
         createdById: session.userId,
         ranges: { create: viecTao },

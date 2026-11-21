@@ -7,6 +7,7 @@ import {
   kiemTraTrung,
   kiemTraChongLanNhieu,
   jobCodeChuaDung,
+  chuanHoaChiaSe,
 } from '@/lib/farm-account';
 import { phanBoLaiTheoDoi, xoaTheoDoiCuaTaiKhoan, layViecDaChay } from '@/lib/farm-play';
 
@@ -42,6 +43,13 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
     const username = chuanHoaUsername(body.username ?? cu.username);
     const password = String(body.password ?? cu.password).trim();
     const note = body.note === undefined ? cu.note : String(body.note || '').trim() || null;
+    // [MOD FEATURE]: muc tieu san luong kim cuong
+    const targetKc = body.targetKc === undefined
+      ? (cu.targetKc || 0)
+      : Math.max(0, parseInt(String(body.targetKc), 10) || 0);
+    // [MOD FEATURE]: an chia voi khach (thieu truong nao thi giu gia tri cu)
+    const chiaSe = chuanHoaChiaSe(body, cu);
+    if (!chiaSe.ok) return NextResponse.json({ error: chiaSe.error }, { status: 400 });
 
     if (!username) return NextResponse.json({ error: 'Chưa nhập username' }, { status: 400 });
     if (!password) return NextResponse.json({ error: 'Chưa nhập mật khẩu' }, { status: 400 });
@@ -150,7 +158,10 @@ export async function PUT(req: NextRequest, ctx: { params: { id: string } }) {
     await (prisma as any).$transaction(async (tx: any) => {
       await tx.farmAccount.update({
         where: { id },
-        data: { username, password, note },
+        data: {
+          username, password, note, targetKc,
+          tyLeKhach: chiaSe.tyLeKhach, tkNhan: chiaSe.tkNhan, mkNhan: chiaSe.mkNhan,
+        },
       });
 
       // Xoa viec cu khong con trong danh sach (chi viec CHUA chay - da kiem tra o tren)
