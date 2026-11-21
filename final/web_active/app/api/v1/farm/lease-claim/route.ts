@@ -76,7 +76,8 @@ export async function POST(req: NextRequest) {
     const trangThaiXong = laLv200 ? BO_QUA_LV200 : BO_QUA_LV50;
 
     // Cac dai STT duoc giao cho tai khoan nay tren server nay
-    const dai = (acc.ranges || [])
+    type DaiStt = { from: number; to: number };
+    const dai: DaiStt[] = (acc.ranges || [])
       .filter((k: any) => k.farmLevel === farmLevel && k.serverId === serverId)
       .map((k: any) => ({ from: k.rangeFrom, to: k.rangeTo }));
 
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
     const serverName =
       (acc.ranges || []).find((k: any) => k.serverId === serverId && k.serverName)?.serverName || '';
 
-    const dkDai = dai.map((d: any) => `([stt] >= ${d.from} AND [stt] <= ${d.to})`).join(' OR ');
+    const dkDai = dai.map((d: DaiStt) => `([stt] >= ${d.from} AND [stt] <= ${d.to})`).join(' OR ');
     const dsXong = trangThaiXong.map((x) => `'${x}'`).join(',');
     const devEsc = deviceId.replace(/'/g, "''");
     const devNameEsc = deviceName.replace(/'/g, "''");
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
              OR p.[leaseUntil] < SYSUTCDATETIME()
              OR p.[leaseDeviceId] = N'${devEsc}')
     `;
-    const daCo: any[] = await prisma.$queryRawUnsafe(sqlUpdate);
+    const daCo = await prisma.$queryRawUnsafe<any[]>(sqlUpdate);
     for (const r of daCo || []) {
       nhan.push({ stt: r.stt, email: r.email, password: r.password || '', status: r.status });
     }
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest) {
         ORDER BY k.[stt]
       `;
       try {
-        const moi: any[] = await prisma.$queryRawUnsafe(sqlInsert);
+        const moi = await prisma.$queryRawUnsafe<any[]>(sqlInsert);
         for (const r of moi || []) {
           nhan.push({ stt: r.stt, email: r.email, password: r.password || '', status: r.status });
         }

@@ -60,10 +60,13 @@ export async function GET(req: NextRequest) {
     }
 
     // Gop cac dai STT theo server (mot server co the duoc giao nhieu dai)
-    const theoServer = new Map<number, { serverName: string; dai: { from: number; to: number }[] }>();
+    type DaiStt = { from: number; to: number };
+    type ThongTinServer = { serverName: string; dai: DaiStt[] };
+    const theoServer = new Map<number, ThongTinServer>();
     for (const k of acc.ranges || []) {
       if (k.farmLevel !== farmLevel) continue;
-      const cu = theoServer.get(k.serverId) || { serverName: k.serverName || '', dai: [] };
+      const cu: ThongTinServer =
+        theoServer.get(k.serverId) || { serverName: k.serverName || '', dai: [] };
       cu.dai.push({ from: k.rangeFrom, to: k.rangeTo });
       if (!cu.serverName && k.serverName) cu.serverName = k.serverName;
       theoServer.set(k.serverId, cu);
@@ -76,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     const servers = await Promise.all(
       Array.from(theoServer.entries()).map(async ([serverId, info]) => {
-        const locDai = { OR: info.dai.map((d) => ({ stt: { gte: d.from, lte: d.to } })) };
+        const locDai = { OR: info.dai.map((d: DaiStt) => ({ stt: { gte: d.from, lte: d.to } })) };
 
         const [tong, daXong, dangGiu] = await Promise.all([
           kho.count({ where: locDai }),
