@@ -6111,6 +6111,14 @@ _G.RunInviterStep = function(onDone)
                     packBought = info.packBought or 0,
                     createdBy = webUser,
                 }))
+                -- [MOD FEATURE]: FARM KC - in RO username gui len va loi DAY DU.
+                -- Bo doc JSON don gian cat chuoi o dau nhay escape nen loi web
+                -- hien ra cut ngun ("Username web \\"), khong du de chan doan.
+                if _G.FarmKc_Nhat then
+                    _G.FarmKc_Nhat(string.format(
+                        "!!! [BAO CAO THAT BAI] createdBy gui len = [%s] | loi = %s",
+                        tostring(webUser), tostring(err)))
+                end
                 done("Loi gui bao cao (" .. tostring(err) .. ") -> da luu cho gui bu")
             end
         end)
@@ -6706,8 +6714,9 @@ _G.FarmKc_GuiBuPending = function(onDone)
         i = i + 1
         if i > #ds then
             FarmKc_GhiPending(conLai)
-            if _G.FarmKc_Log then
-                _G.FarmKc_Log(string.format("Gui bu xong: %d thanh cong, %d con lai", soGuiDuoc, #conLai))
+            if _G.FarmKc_Nhat then
+                _G.FarmKc_Nhat(string.format(">>> [GUI BU] Xong: %d thanh cong, %d con lai <<<",
+                    soGuiDuoc, #conLai))
             end
             if onDone then pcall(onDone, soGuiDuoc, #conLai) end
             return
@@ -6721,6 +6730,14 @@ _G.FarmKc_GuiBuPending = function(onDone)
 
         -- Ban ghi hong -> bo luon, khong giu lai
         if email == nil or email == "" or serverId == 0 or createdBy == "" then
+            -- [MOD FEATURE]: FARM KC - noi ro ban ghi nao bi vut, keo theo ly do.
+            -- Truoc day vut im lang -> hang doi tu trong ma web khong co du lieu,
+            -- khong biet la da gui duoc hay da bi bo.
+            if _G.FarmKc_Nhat then
+                _G.FarmKc_Nhat(string.format(
+                    "!!! [GUI BU] VUT ban ghi hong: email=%s server=%s createdBy=%s",
+                    tostring(email), tostring(serverId), tostring(createdBy)))
+            end
             tiepTuc()
             return
         end
@@ -6760,7 +6777,14 @@ _G.FarmKc_GuiBuPending = function(onDone)
             _G.FarmKc_Api_ReportResult(info, tt, loi, createdBy, function(ok) xong(ok) end)
 
         else
-            -- Khong biet loai -> bo
+            -- [MOD FEATURE]: FARM KC - truoc day VUT IM LANG o day.
+            -- Hang doi tu nhien trong ma web khong co du lieu -> khong ai biet
+            -- ban ghi da di dau. Nay ghi ro loai doc duoc va dau dong du lieu.
+            if _G.FarmKc_Nhat then
+                _G.FarmKc_Nhat(string.format(
+                    "!!! [GUI BU] VUT: khong nhan ra loai=[%s] | dong=%s",
+                    tostring(loai), string.sub(tostring(dong), 1, 160)))
+            end
             tiepTuc()
         end
     end
@@ -7050,13 +7074,33 @@ _G.FarmKc_BatNhipTim = function()
                 local me = _G.RoleManager and _G.RoleManager.me
                 lv = tonumber((me and me.level) or (me and me.data and me.data.level) or 0) or 0
             end)
+            -- [MOD FEATURE]: FARM KC - CHI GHI KHI TRANG THAI DOI
+            -- Ban cu ghi moi 60s ke ca khi khong co gi moi (chi level tang),
+            -- lam ngap output.txt va day het cac dong dang doc ra ngoai.
+            -- Nay: level KHONG tinh la thay doi; chi ghi khi mot trong cac co
+            -- trang thai doi, hoac da qua 10 phut ke tu lan ghi truoc.
+            local coTrangThai = string.format("%s|%s|%s|%s|%s|%s|%s|%s",
+                tostring(_G.Bot_Running), tostring(_G.Bot_PauseTask),
+                tostring(_G.Bot_IsInGameWorld), tostring(_G.CurrentAccountIndex),
+                tostring(_G.Mod_Farm_InviteMode), tostring(_G.Mod_Farm_JobCode),
+                tostring(_G.FarmKc_DangChoQuayVong), tostring(_G.FarmKc_DangChoSdk))
+
+            local bayGio = os.time()
+            local doiTrangThai = (coTrangThai ~= _G.FarmKc_NhipTimCoCu)
+            local quaLau = (bayGio - (_G.FarmKc_NhipTimLanCuoi or 0)) >= 600
+            if not (doiTrangThai or quaLau) then return end
+            _G.FarmKc_NhipTimCoCu = coTrangThai
+            _G.FarmKc_NhipTimLanCuoi = bayGio
+
             local dong = string.format(
-                "[NHIP TIM] chay=%s tamdung=%s trongGame=%s acc=%s lv=%s che_do=%s choQuayVong=%s choSdk=%s popup=%s",
+                "[NHIP TIM] chay=%s tamdung=%s trongGame=%s acc=%s lv=%s che_do=%s job=%s choQuayVong=%s choSdk=%s popup=%s%s",
                 tostring(_G.Bot_Running), tostring(_G.Bot_PauseTask),
                 tostring(_G.Bot_IsInGameWorld), tostring(_G.CurrentAccountIndex),
                 tostring(lv), tostring(_G.Mod_Farm_InviteMode),
+                tostring(_G.Mod_Farm_JobCode),
                 tostring(_G.FarmKc_DangChoQuayVong), tostring(_G.FarmKc_DangChoSdk),
-                tostring(_G.FarmKc_PopupDangHien and _G.FarmKc_PopupDangHien()))
+                tostring(_G.FarmKc_PopupDangHien and _G.FarmKc_PopupDangHien()),
+                doiTrangThai and "" or " (dinh ky 10p)")
             if _G.FarmKc_Nhat then _G.FarmKc_Nhat(dong) end
         end)
     end)

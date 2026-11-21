@@ -1,0 +1,100 @@
+﻿==================== LAY LOG FARM KC ====================
+Thoi gian: 2026-11-21 12:41:28
+
+=========================================================
+                      MAY: emulator-5554
+=========================================================
+[output.txt] 283093 bytes | sua lan cuoi: 11/21/2026 12:41:28
+
+--- BAO CAO LEN WEB (quan trong nhat - 20 dong cuoi) ---
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] CHON VIEC LONGDT-S524-L200-01 | Server S524 | Che do LV200 (farm ma moi) (target Lv200) <<<
+   >>> [FARM KC] CHON VIEC LONGDT-S524-L200-01 | Server S524 | Che do LV200 (farm ma moi) (target Lv200) <<<
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+
+--- MOC KHAC (30 dong cuoi, da BO nhip tim) ---
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+       [FARM KC] Doi acc 6 -> 7: cho 43 giay roi moi dang nhap...
+
+--- NHIP TIM (3 dong cuoi) ---
+   [NHIP TIM] chay=true tamdung=false trongGame=true acc=6 lv=198 che_do=LV200 choQuayVong=false choSdk=false popup=false
+   [NHIP TIM] chay=true tamdung=false trongGame=true acc=6 lv=199 che_do=LV200 choQuayVong=false choSdk=false popup=false
+   [NHIP TIM] chay=true tamdung=false trongGame=true acc=6 lv=199 che_do=LV200 choQuayVong=false choSdk=false popup=false
+
+--- 20 DONG CUOI FILE ---
+   [FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+   >>> [CHUYá»‚N TIáº¾P TÃ€I KHOáº¢N]: Chuyá»ƒn sang Acc [7/20]: accvutmuvh0447@gmail.com (Server: VÄ¨NH Háº°NG 524) <<<
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Khong co thu nao can nhan
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   [FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+   >>> [LOGIN B1] Thoat ve man login cho acc [7] accvutmuvh0447@gmail.com <<<
+   --- [CLEAN LOGOUT] ÄÄ‚NG XUáº¤T Sáº CH Sáº¼ RA MÃ€N HÃŒNH LOGIN ---
+   -> [CLEAN TASK]: Äang xÃ³a sáº¡ch toÃ n bá»™ thÃ´ng tin nhiá»‡m vá»¥ & má»¥c tiÃªu cÅ© trÆ°á»›c khi Ä‘á»•i tÃ i khoáº£n...
+   [Farm NH] ÄÃ£ dá»«ng chu trÃ¬nh Auto Farm Ná»¯ HoÃ ng.
+       [FARM KC] Doi acc 6 -> 7: cho 43 giay roi moi dang nhap...
+
+--- ACC FAILED (15 dong cuoi) ---
+   (khong co file - chua acc nao FAILED)
+
+--- HANG DOI GUI BU len web (so ban ghi + 5 dong cuoi) ---
+   (khong co file - khong con ban ghi nao cho gui bu)
+
+--- ACC THANH CONG / DAT MUC TIEU (15 dong cuoi) ---
+   (khong co file - chua acc nao dat muc tieu)
+
+========================= XONG ==========================
+Da luu day du vao: D:\avengers\muvh_auto\muvh\final\excute_test\KET_QUA_LOG.txt

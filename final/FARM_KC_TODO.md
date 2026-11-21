@@ -266,3 +266,36 @@ CAN TEST
 - Dong "Dang chay" hien them: `Server: <id>` va `Che do cay: Level 200 | Level 50` (co mau).
 - Them log tai diem dat muc tieu: ghi ro che do dang bat va co hay khong RunInviterStep/
   RunInviteeStep -> biet ngay vi sao KHONG bao DB (thuong do che do ma moi dang TAT).
+
+## 2026-11-21 (2): LOI THAT - bao cao bi chan vi sai BANG tai khoan
+- Trieu chung: bot chay xong acc Lv200 nhung web van CHUA CHAY, ma moi "chua tao", Vang/KC = 0.
+- Log: `[FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu`
+  (chuoi bi cat o dau nhay; nguyen van: `Username web "longdt" khong ton tai`).
+- Goc re: mod dang nhap bang bang **FarmAccount** (/api/v1/farm/jobs), nhung
+  `xacThucCreatedBy` trong lib/farm-auth.ts lai tim trong bang **User**.
+- Da sua: tim User truoc; khong thay thi tim FarmAccount va lay `createdById` cua no.
+- Du lieu KHONG MAT: cac ban ghi that bai nam trong farm_invite_pending.txt tren may ao,
+  tu dong gui bu o dau moi RunInviterStep/RunInviteeStep sau khi web deploy xong.
+- LAY_LOG.ps1: keo them farm_invite_pending.txt de dem so ban ghi con ton.
+
+## 2026-11-21 (3): nhip tim lam ngap log
+- Trieu chung: 40 dong "moc quan trong" deu la [NHIP TIM], moi dong dang doc bi day ra ngoai.
+- Nhip tim nay CHI ghi khi co trang thai doi (chay/tamdung/trongGame/acc/che_do/job/
+  choQuayVong/choSdk). LEVEL khong tinh la thay doi. Ngoai ra 10 phut ghi mot dong dinh ky.
+- LAY_LOG.ps1 tach 3 muc: BAO CAO LEN WEB (quan trong nhat) / MOC KHAC (da bo nhip tim) /
+  NHIP TIM (3 dong cuoi).
+- Gui bu: ghi ro ban ghi bi vut vi hong, va ket qua "Xong: X thanh cong, Y con lai"
+  bang FarmKc_Nhat (ghi file ngay).
+
+## 2026-11-21 (4): them bay chan doan cho gui bu
+- Xac nhan: khong co ban ghi nao trong FarmInviterPlay cho 0447 -> dung nhu du doan,
+  bao cao bi web TU CHOI nen chua bao gio vao DB.
+- `GuiBuPending` co nhanh `else -- Khong biet loai -> bo` VUT IM LANG. Nay ghi ro
+  loai doc duoc + 160 ky tu dau cua dong -> khong con mat ban ghi ma khong biet ly do.
+- Khi bao cao that bai: in ro `createdBy` gui len va loi day du (bo doc JSON don gian
+  cat chuoi o dau nhay escape nen loi hien ra cut: `Username web \`).
+- Web: bo `mode: insensitive` (Prisma KHONG ho tro tren provider sqlserver);
+  SQL Server da dung collation khong phan biet hoa thuong san.
+- Cach phan biet web da deploy ban moi chua, nhin NOI DUNG LOI:
+    cu : Username web "longdt" khong ton tai
+    moi: Username "longdt" khong ton tai (ca tai khoan web lan tai khoan farm)

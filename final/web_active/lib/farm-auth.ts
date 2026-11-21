@@ -60,16 +60,42 @@ export async function verifyFarmRequest(
     return { ok: false, status: 400, error: 'Thiếu createdBy (username web)' };
   }
 
+  const ten = String(createdBy).trim();
+
   const user = await prisma.user.findUnique({
-    where: { username: String(createdBy).trim() },
+    where: { username: ten },
     select: { id: true, username: true },
   });
 
-  if (!user) {
-    return { ok: false, status: 400, error: `Username web "${createdBy}" không tồn tại` };
+  if (user) {
+    return { ok: true, createdById: user.id, username: user.username };
   }
 
-  return { ok: true, createdById: user.id, username: user.username };
+  // =======================================================================
+  // [MOD FEATURE]: FARM KC - CHAP NHAN CA TAI KHOAN FARM
+  // Mod dang nhap bang tai khoan FarmAccount (bang /api/v1/farm/jobs), nhung
+  // truoc day buoc bao cao lai di tim trong bang User -> bi chan voi loi
+  // 'Username web "longdt" khong ton tai', du bot da chay xong acc.
+  // Nay: khong thay trong User thi tim trong FarmAccount, lay chu so huu cua
+  // no lam nguoi tao cua ban ghi.
+  // =======================================================================
+  // SQL Server dung collation khong phan biet hoa thuong san, nen findUnique
+  // da khop ca "LongDT" / "LONGDT". (Prisma 'mode: insensitive' KHONG ho tro
+  // provider sqlserver - dung vao se loi.)
+  const farmAcc = await (prisma as any).farmAccount.findUnique({
+    where: { username: ten },
+    select: { username: true, createdById: true },
+  });
+
+  if (farmAcc?.createdById) {
+    return { ok: true, createdById: farmAcc.createdById, username: farmAcc.username };
+  }
+
+  return {
+    ok: false,
+    status: 400,
+    error: `Username "${ten}" không tồn tại (cả tài khoản web lẫn tài khoản farm)`,
+  };
 }
 
 /** BigInt không JSON.stringify được -> chuyển sang string/number an toàn */
