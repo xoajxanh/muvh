@@ -3403,3 +3403,1599 @@ Thời gian: 2026-11-21 10:40:31 | Step Delay: 1.0s
 -> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
 [Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
     [FARM KC] Doi acc 6 -> 7: cho 43 giay roi moi dang nhap...
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 7/20: accvutmuvh0447@gmail.com | SERVER 524 | ROLE 1/4) ---
+    [FARM KC] Thiet bi: CPH2185 | 720*1600 | did=6cfdf5d8128a...
+    [SDK] Dang gui request toi user.muvh.vn...
+[NHIP TIM] chay=true tamdung=false trongGame=false acc=7 lv=0 che_do=LV200 choQuayVong=false choSdk=false popup=false
+    [SDK] Da nhan phan hoi (806 ky tu)
+-> [SDK] Login Thành Công! UID: 179084709479751000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:179084709479751000
+   - sign: 368410e4b12e1f408ee4fe416e0ab4c7
+-> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 524 (ID: 524) [Nguồn: serverList (524 -> VĨNH HẰNG 524)]
+--- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 524 (ID: 524) (ACC 7/20: accvutmuvh0447@gmail.com | ROLE 1/4) ---
+2. Kích hoạt kết nối Server VĨNH HẰNG 524 (ID: 524)...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 1
+   [1] ID: 5945039899650091137 | Tên: Ted3st | Level: 214
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Ted3st (ID: 5945039899650091137 | Level: 214) <<<
+=========================================================================
+-> GỬI LỆNH ReqChooseRole: roleId = 5945039899650091137 (Tên: Ted3st)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 214
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 214]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+>>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+=========================================================================
+>>> NHÂN VẬT LEVEL 214 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
+=========================================================================
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 214]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 214]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 214] Đã tự động phân bổ 75 điểm tiềm năng (Trí Lực: +38 | Nhanh Nhẹn: +37) cho Class 12!
+=========================================================================
+>>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 214] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
+=========================================================================
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10116 (Gift ID: 400016) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10117 (Gift ID: 400017) <<<
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+=========================================================================
+>>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [7/20] accvutmuvh0447@gmail.com ĐẠT LEVEL 214/200 [NH:0] TRÊN VĨNH HẰNG 524! <<<
+=========================================================================
+>>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+[FARM KC] Mua goi: khong tim thay Kim Phieu trong tui
+[FARM KC] Da mua 0 goi bang Kim Phieu
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Nón Ảo Nguyệt +23 -> Trác Việt-Nón Hỏa Kỳ Lân) & Mặc lên người (Slot 2)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Nón Ảo Nguyệt +23 -> Trác Việt-Nón Hỏa Kỳ Lân) & Mặc lên người (Slot 2)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Nón Ảo Nguyệt +23 -> Trác Việt-Nón Hỏa Kỳ Lân) & Mặc lên người (Slot 2)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+>>> [SHOP VÀNG]: Tự động mua 100 viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: 50000 Vàng)... <<<
+>>> [SHOP VÀNG]: Tự động mua 100 viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: 50000 Vàng)... <<<
+>>> [SHOP VÀNG]: Tự động mua 100 viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: 50000 Vàng)... <<<
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +21 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Khải Ảo Nguyệt (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 108 | Soul: 5)
+[FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+>>> [CHUYỂN TIẾP TÀI KHOẢN]: Chuyển sang Acc [8/20]: accvutmuvh0448@gmail.com (Server: VĨNH HẰNG 524) <<<
+-> [ĐẬP ĐỒ]: Khải Ảo Nguyệt (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 105 | Soul: 4)
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [SHOP VÀNG]: Đã mua thành công 100 viên Đá Chúc Phúc vào túi đồ! <<<
+>>> [SHOP VÀNG]: Đã mua thành công 100 viên Đá Chúc Phúc vào túi đồ! <<<
+>>> [SHOP VÀNG]: Đã mua thành công 100 viên Đá Chúc Phúc vào túi đồ! <<<
+-> [ĐẬP ĐỒ]: Khải Ảo Nguyệt (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 102 | Soul: 3)
+-> [ĐẬP ĐỒ]: Khải Ảo Nguyệt (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 99 | Soul: 2)
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Khải Ảo Nguyệt (Slot 6 | +20 -> +21 | Mốc +21 | Bless: 96 | Soul: 1)
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 5 lần (Mục tiêu: +30)! <<<
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B1] Thoat ve man login cho acc [8] accvutmuvh0448@gmail.com <<<
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+    [FARM KC] Doi acc 7 -> 8: cho 54 giay roi moi dang nhap...
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[NHIP TIM] chay=true tamdung=false trongGame=false acc=8 lv=0 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 8/20: accvutmuvh0448@gmail.com | SERVER 524 | ROLE 1/4) ---
+    [FARM KC] Thiet bi: Redmi Note 10 | 1080*2400 | did=920e2a134d0b...
+    [SDK] Dang gui request toi user.muvh.vn...
+    [SDK] Da nhan phan hoi (806 ky tu)
+-> [SDK] Login Thành Công! UID: 179084709779755000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:179084709779755000
+   - sign: a34ea80aca88af6224c7ac6a19b1208a
+-> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 524 (ID: 524) [Nguồn: serverList (524 -> VĨNH HẰNG 524)]
+--- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 524 (ID: 524) (ACC 8/20: accvutmuvh0448@gmail.com | ROLE 1/4) ---
+2. Kích hoạt kết nối Server VĨNH HẰNG 524 (ID: 524)...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 1
+   [1] ID: 5945039899656142047 | Tên: Lee7ux | Level: 226
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Lee7ux (ID: 5945039899656142047 | Level: 226) <<<
+=========================================================================
+-> GỬI LỆNH ReqChooseRole: roleId = 5945039899656142047 (Tên: Lee7ux)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 226
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 226]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+>>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+=========================================================================
+>>> NHÂN VẬT LEVEL 226 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
+=========================================================================
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 226]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 226]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 226] Đã tự động phân bổ 135 điểm tiềm năng (Trí Lực: +68 | Nhanh Nhẹn: +67) cho Class 12!
+=========================================================================
+>>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 226] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
+=========================================================================
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10116 (Gift ID: 400016) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10117 (Gift ID: 400017) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10118 (Gift ID: 400018) <<<
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+=========================================================================
+>>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [8/20] accvutmuvh0448@gmail.com ĐẠT LEVEL 226/200 [NH:0] TRÊN VĨNH HẰNG 524! <<<
+=========================================================================
+>>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+[FARM KC] Mua goi: khong tim thay Kim Phieu trong tui
+[FARM KC] Da mua 0 goi bang Kim Phieu
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [THU HỒI]: Đã thu hồi 13 món trang bị rác <<<
+>>> [THU HỒI]: Đã thu hồi 13 món trang bị rác <<<
+>>> [THU HỒI]: Đã thu hồi 13 món trang bị rác <<<
+[FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+>>> [CHUYỂN TIẾP TÀI KHOẢN]: Chuyển sang Acc [9/20]: accvutmuvh0449@gmail.com (Server: VĨNH HẰNG 524) <<<
+-> [ĐẬP ĐỒ]: Trác Việt-Khiên Hồi Sinh (Slot 5 | +10 -> +11 | Mốc +11 | Bless: 90 | Soul: 1)
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 1 lần (Mục tiêu: +30)! <<<
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B1] Thoat ve man login cho acc [9] accvutmuvh0449@gmail.com <<<
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+    [FARM KC] Doi acc 8 -> 9: cho 27 giay roi moi dang nhap...
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 9/20: accvutmuvh0449@gmail.com | SERVER 524 | ROLE 1/4) ---
+    [FARM KC] Thiet bi: SM-N975F | 1440*3040 | did=3f34c046cbdb...
+    [SDK] Dang gui request toi user.muvh.vn...
+    [SDK] Da nhan phan hoi (806 ky tu)
+-> [SDK] Login Thành Công! UID: 179084710079760000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:179084710079760000
+   - sign: 9bf38662a54db0a6a1e6a9e7c86af825
+-> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 524 (ID: 524) [Nguồn: serverList (524 -> VĨNH HẰNG 524)]
+--- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 524 (ID: 524) (ACC 9/20: accvutmuvh0449@gmail.com | ROLE 1/4) ---
+2. Kích hoạt kết nối Server VĨNH HẰNG 524 (ID: 524)...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 1
+   [1] ID: 5945039899661326652 | Tên: Leec7d | Level: 228
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Leec7d (ID: 5945039899661326652 | Level: 228) <<<
+=========================================================================
+-> GỬI LỆNH ReqChooseRole: roleId = 5945039899661326652 (Tên: Leec7d)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 228
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 228]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+>>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+=========================================================================
+>>> NHÂN VẬT LEVEL 228 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
+=========================================================================
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 228]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 228]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 228] Đã tự động phân bổ 145 điểm tiềm năng (Trí Lực: +73 | Nhanh Nhẹn: +72) cho Class 12!
+=========================================================================
+>>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 228] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
+=========================================================================
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10116 (Gift ID: 400016) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10117 (Gift ID: 400017) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10118 (Gift ID: 400018) <<<
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+=========================================================================
+>>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [9/20] accvutmuvh0449@gmail.com ĐẠT LEVEL 228/200 [NH:0] TRÊN VĨNH HẰNG 524! <<<
+=========================================================================
+>>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+[FARM KC] Mua goi: khong tim thay Kim Phieu trong tui
+[FARM KC] Da mua 0 goi bang Kim Phieu
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Khải Truyền Thuyết +19 -> Trác Việt-Khải Hỏa Kỳ Lân) & Mặc lên người (Slot 6)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Khải Truyền Thuyết +19 -> Trác Việt-Khải Hỏa Kỳ Lân) & Mặc lên người (Slot 6)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Khải Truyền Thuyết +19 -> Trác Việt-Khải Hỏa Kỳ Lân) & Mặc lên người (Slot 6)!
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Ảo Nguyệt +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 11 món trang bị rác <<<
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 11 món trang bị rác <<<
+[Trang Bị] : Kế thừa cường hóa (Trác Việt-Bao Chân Hỏa Kỳ Lân +19 -> Trác Việt-Bao Chân Hỏa Kỳ Lân) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 11 món trang bị rác <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=9 lv=228 che_do=LV200 choQuayVong=false choSdk=false popup=false
+[FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+>>> [CHUYỂN TIẾP TÀI KHOẢN]: Chuyển sang Acc [10/20]: accvutmuvh0450@gmail.com (Server: VĨNH HẰNG 524) <<<
+-> [ĐẬP ĐỒ]: Khiên Phép Kỳ Lân (Slot 5 | +9 -> +10 | Mốc +11 | Bless: 47 | Soul: 1)
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Khiên Phép Kỳ Lân (Slot 5 | +7 -> +8 | Mốc +11 | Bless: 45 | Soul: 0)
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Khiên Phép Kỳ Lân (Slot 5 | +8 -> +9 | Mốc +11 | Bless: 43 | Soul: 0)
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Khiên Phép Kỳ Lân (Slot 5 | +7 -> +8 | Mốc +11 | Bless: 41 | Soul: 0)
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Khiên Phép Kỳ Lân (Slot 5 | +8 -> +9 | Mốc +11 | Bless: 39 | Soul: 0)
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 5 lần (Mục tiêu: +30)! <<<
+>>> [LOGIN B1] Thoat ve man login cho acc [10] accvutmuvh0450@gmail.com <<<
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+    [FARM KC] Doi acc 9 -> 10: cho 47 giay roi moi dang nhap...
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 10/20: accvutmuvh0450@gmail.com | SERVER 524 | ROLE 1/4) ---
+    [FARM KC] Thiet bi: SM-N975F | 1440*3040 | did=49389c06ea24...
+    [SDK] Dang gui request toi user.muvh.vn...
+    [SDK] Da nhan phan hoi (806 ky tu)
+-> [SDK] Login Thành Công! UID: 179084710379764000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:179084710379764000
+   - sign: c4b817ecb9c4339963676b9240ebbfab
+-> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 524 (ID: 524) [Nguồn: serverList (524 -> VĨNH HẰNG 524)]
+--- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 524 (ID: 524) (ACC 10/20: accvutmuvh0450@gmail.com | ROLE 1/4) ---
+2. Kích hoạt kết nối Server VĨNH HẰNG 524 (ID: 524)...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 1
+   [1] ID: 5945039899666766914 | Tên: Acefvb | Level: 217
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/1] TRÊN PEDESTAL: Acefvb (ID: 5945039899666766914 | Level: 217) <<<
+=========================================================================
+-> GỬI LỆNH ReqChooseRole: roleId = 5945039899666766914 (Tên: Acefvb)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 217
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 217]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+>>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+=========================================================================
+>>> NHÂN VẬT LEVEL 217 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
+=========================================================================
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 217]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 217]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [AUTO MUA THUỐC]: Dữ liệu túi đồ (BagInfoData) chưa tải xong -> Bỏ qua kiểm tra mua!
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+-> [TĂNG ĐIỂM 50/50 | LV 217] Đã tự động phân bổ 90 điểm tiềm năng (Trí Lực: +45 | Nhanh Nhẹn: +45) cho Class 12!
+=========================================================================
+>>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 217] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
+=========================================================================
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10116 (Gift ID: 400016) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10117 (Gift ID: 400017) <<<
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+=========================================================================
+>>> [HOÀN THÀNH MỤC TIÊU]: TÀI KHOẢN [10/20] accvutmuvh0450@gmail.com ĐẠT LEVEL 217/200 [NH:0] TRÊN VĨNH HẰNG 524! <<<
+=========================================================================
+>>> [FARM KC] DAT MUC TIEU - che do=LV200 | co RunInviterStep=true | co RunInviteeStep=true
+[FARM KC] Mua goi: khong tim thay Kim Phieu trong tui
+[FARM KC] Da mua 0 goi bang Kim Phieu
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+>>> [THU HỒI]: Đã thu hồi 12 món trang bị rác <<<
+[FARM KC] Loi gui bao cao (Username web \) -> da luu cho gui bu
+>>> [CHUYỂN TIẾP TÀI KHOẢN]: Chuyển sang Acc [11/20]: accvutmuvh0451@gmail.com (Server: VĨNH HẰNG 524) <<<
+-> [ĐẬP ĐỒ]: Gậy Kỳ Lân (Slot 4 | +10 -> +11 | Mốc +11 | Bless: 48 | Soul: 2)
+[NHIP TIM] chay=true tamdung=false trongGame=false acc=11 lv=217 che_do=LV200 choQuayVong=false choSdk=false popup=false
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+-> [ĐẬP ĐỒ]: Trác Việt-Khiên Hồi Sinh (Slot 5 | +10 -> +11 | Mốc +11 | Bless: 46 | Soul: 1)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 2 lần (Mục tiêu: +30)! <<<
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B1] Thoat ve man login cho acc [11] accvutmuvh0451@gmail.com <<<
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+    [FARM KC] Doi acc 10 -> 11: cho 44 giay roi moi dang nhap...
+[FARM KC] Khong co thu nao can nhan
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+[FARM KC] Sau khi nhan thu: KC=0 | Kim Phieu=0
+>>> [LOGIN B2] Het cho -> goi StartFullLoginProcess <<<
+--- [BƯỚC 2] GỬI SDK AUTH (ACC 11/20: accvutmuvh0451@gmail.com | SERVER 524 | ROLE 1/4) ---
+    [FARM KC] Thiet bi: SM-A515F | 1080*2400 | did=a81bf227cf2e...
+    [SDK] Dang gui request toi user.muvh.vn...
+    [SDK] Da nhan phan hoi (806 ky tu)
+-> [SDK] Login Thành Công! UID: 179084710779767000
+--- XÁC THỰC GAME CHECK LOGIN: https://login-qj2yn.muvh.vn/ad_ky_vietnam/login  ---
+-> [GAME AUTH] Thành Công!
+   - loginName: 1320:1320:179084710779767000
+   - sign: 4b84225659cd0829aeed6f620949790e
+-> [CHỈ ĐỊNH MÁY CHỦ FARM]: VĨNH HẰNG 524 (ID: 524) [Nguồn: serverList (524 -> VĨNH HẰNG 524)]
+--- [BƯỚC 4] KẾT NỐI MÁY CHỦ VĨNH HẰNG 524 (ID: 524) (ACC 11/20: accvutmuvh0451@gmail.com | ROLE 1/4) ---
+2. Kích hoạt kết nối Server VĨNH HẰNG 524 (ID: 524)...
+[EVENT] Net_ConnectSuccess -> TCP Đã kết nối!
+[EVENT] Login_ConnectSuccess -> Đăng nhập máy chủ thành công!
+-> Đang yêu cầu danh sách nhân vật (ReqGetRoleList)...
+[EVENT] Login_ResGetRoleList -> ĐÃ NHẬN DANH SÁCH NHÂN VẬT!
+>>> TỔNG SỐ NHÂN VẬT HIỆN CÓ TRONG TÀI KHOẢN: 4
+   [1] ID: 5945039899672972469 | Tên: Dankdl | Level: 1
+   [2] ID: 5945039899673086132 | Tên: Leol16 | Level: 1
+   [3] ID: 5945039899673132388 | Tên: Zinklg | Level: 1
+   [4] ID: 5945039899673141297 | Tên: Jaykto | Level: 1
+=========================================================================
+>>> ĐANG CHỌN NHÂN VẬT [1/4] TRÊN PEDESTAL: Dankdl (ID: 5945039899672972469 | Level: 1) <<<
+=========================================================================
+-> GỬI LỆNH ReqChooseRole: roleId = 5945039899672972469 (Tên: Dankdl)...
+[EVENT] GamePlay_Enter -> ĐÃ VÀO THẾ GIỚI TRONG GAME THÀNH CÔNG!
+-> Level nhân vật hiện tại: 1
+=========================================================================
+>>> NHÂN VẬT LEVEL 1 -> TIẾN HÀNH CHU TRÌNH LÀM VÀ QUÉT QUEST LIÊN TỤC (1s/LẦN)! <<<
+=========================================================================
+=========================================================================
+>>> [VÒNG LẶP CHÍNH 1S/LẦN: LEVEL 1] ƯU TIÊN QUÉT VÀ HOÀN THÀNH TẤT CẢ QUEST! <<<
+=========================================================================
+-> [CLAIM TỨC THÌ TASK 1010]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 1010]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [BAY BÃI QUÁI 0ms]: Lv 1 | Thủ 3 (Hiệu dụng 3, +0%) -> Dịch chuyển tới Lorencia (Khô Lâu Binh: 134#206) [Kênh 1 - 134#206 (1/1)]!
+[Luyện Cấp] : Nhiệm vụ [3000] "Đạt cấp 20" -> Tiến vào bãi quái tối ưu Map 1001 (Lorencia (Khô Lâu Binh: 134#206) [Kênh 1 - 134#206 (1/1)]) để cày cấp!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 2] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 3] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=3 che_do=LV200 choQuayVong=false choSdk=false popup=false
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 4] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 6] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 8] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+=========================================================================
+>>> ĐẠT LEVEL 10: BẮT ĐẦU TỰ ĐỘNG NHẬP 14 MÃ GIFTCODE VÀ GHI BÁO CÁO <<<
+=========================================================================
+[GIFTCODE] Bắt đầu nhập 14 mã Giftcode...
+[GIFTCODE] Đang nhập [1/14]: MUVHNEWSV1
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 10] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[GIFTCODE] Đang nhập [2/14]: MUVHNEWSV2
+[GIFTCODE] Đang nhập [3/14]: MUVHNEWSV3
+[GIFTCODE] Đang nhập [4/14]: MUVHNEWSV4
+[GIFTCODE] Đang nhập [5/14]: MUVHNEWSV5
+[GIFTCODE] Đang nhập [6/14]: MUVHNEWSV6
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 12] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[GIFTCODE] Đang nhập [7/14]: MU6868
+[GIFTCODE] Đang nhập [8/14]: MU2026
+[GIFTCODE] Đang nhập [9/14]: FANMUVH11
+[GIFTCODE] Đang nhập [10/14]: FCMUVH
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 13] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[GIFTCODE] Đang nhập [11/14]: MUVHVIPPRO
+[GIFTCODE] Đang nhập [12/14]: THGT88
+[GIFTCODE] Đang nhập [13/14]: BB8888
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 15] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[GIFTCODE] Đang nhập [14/14]: LBY888
+[GIFTCODE] Đã gửi xong tất cả mã code! Chờ 3s máy chủ gửi thư...
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 17] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[GIFTCODE] Đang đồng bộ danh sách hòm thư...
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 19] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[GIFTCODE] Đang nhận tất cả quà đính kèm vào túi...
+-> [GLOBAL 30s UPGRADE]: Đã kích hoạt chu trình nâng cấp định kỳ 30s xuyên suốt toàn diện!
+[Chu Kỳ Nâng Cấp 30s - Lv 20]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SHOP VÀNG]: Tự động mua 40 viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: 20000 Vàng)... <<<
+>>> [PHÚC LỢI NGÀY]: Đã nhận quà đăng nhập & tích nạp ngày! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 20] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 20] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 20] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [CLAIM TỨC THÌ TASK 3000]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3000]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [THU HỒI TASK 3010]: Thu hồi 1 vật phẩm (Khải Da) qua BlackSmith (Type 2 - Không cần VIP) để hoàn thành nhiệm vụ!
+=========================================================================
+>>> HOÀN TẤT NHẬP CODE & NHẬN QUÀ TÂN THỦ THÀNH CÔNG! <<<
+=========================================================================
+=========================================================================
+>>> BÁO CÁO PHÂN LOẠI GIFTCODE (TỔNG: 14) <<<
+[MÃ DÙNG TỐT / CÒN HẠN (0)]: 
+[MÃ HỎNG / HẾT HẠN / ĐÃ DÙNG (3)]: 
+  - MUVHNEWSV1: >>> [GIFTCODE]: Đang nhập [1/14]: MUVHNEWSV1 <<<
+  - MUVHNEWSV1: nhận Vàng10
+  - MUVHNEWSV2: >>> [GIFTCODE]: Đang nhập [2/14]: MUVHNEWSV2 <<<
+=========================================================================
+-> [CLAIM TỨC THÌ TASK 3010]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3010]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [ĐIỀU HƯỚNG TASK 3020]: Mở Shop để mua "Sóng Rồng Đen"...
+>>> [SHOP VÀNG]: Đã mua thành công 40 viên Đá Chúc Phúc vào túi đồ! <<<
+-> [MUA KỸ NĂNG TASK 3020]: Đang gửi lệnh mua vật phẩm (GoodId: 20428)...
+-> [CHUYỂN MAP TASK 3050]: Truyền tống sang Devias (MapId: 1003 | Tọa độ: 215#45)...
+-> [CLAIM TỨC THÌ TASK 3050]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3050]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [NHIEM VU BO TUYET 3060]: ReqCallFlag bay thang ra toa do 158#29 (Map Devias ID: 1003) de diet 20 Bo Tuyet!
+>>> [THẺ ĐẶC QUYỀN]: Phát hiện Thẻ Đặc Quyền 120 Phút (InstId: 5945039899704497317) -> Kích hoạt ngay! <<<
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +0 -> +1 | Mốc +5 | Bless: 40 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Cốt Tinh (Slot 4 | +0 -> +1 | Mốc +5 | Bless: 39 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +0 -> +1 | Mốc +5 | Bless: 38 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +0 -> +1 | Mốc +5 | Bless: 37 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +1 -> +2 | Mốc +5 | Bless: 36 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Cốt Tinh (Slot 4 | +1 -> +2 | Mốc +5 | Bless: 35 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +1 -> +2 | Mốc +5 | Bless: 34 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +1 -> +2 | Mốc +5 | Bless: 33 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +2 -> +3 | Mốc +5 | Bless: 32 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Cốt Tinh (Slot 4 | +2 -> +3 | Mốc +5 | Bless: 31 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +2 -> +3 | Mốc +5 | Bless: 30 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +2 -> +3 | Mốc +5 | Bless: 29 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +3 -> +4 | Mốc +5 | Bless: 28 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Cốt Tinh (Slot 4 | +3 -> +4 | Mốc +5 | Bless: 27 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +3 -> +4 | Mốc +5 | Bless: 26 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +3 -> +4 | Mốc +5 | Bless: 25 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +4 -> +5 | Mốc +5 | Bless: 24 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Cốt Tinh (Slot 4 | +4 -> +5 | Mốc +5 | Bless: 23 | Soul: 10)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 21] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +4 -> +5 | Mốc +5 | Bless: 22 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +4 -> +5 | Mốc +5 | Bless: 21 | Soul: 10)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 23] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 20 lần (Mục tiêu: +30)! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 25] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 26] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 27] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 29] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 30] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [CỘNG ĐỒNG]: Cấp 30 đạt mốc -> Tự động nhận Phúc Lợi: Hướng Dẫn Game (250 KC + 250K Vàng) (GiftId: 2200008)! <<<
+>>> [CỘNG ĐỒNG]: Cấp 30 đạt mốc -> Tự động nhận Phúc Lợi: Liên Kết SĐT (GiftId: 2200005)! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 31] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [3052] "Mặc đủ Bộ Da Thuộc" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 3052]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+>>> [HÒM THƯ]: Tự động nhận tất cả quà từ thư vào túi đồ (ReqGetMailItems)! <<<
+[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 32] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 32] Đã tự động phân bổ 3 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +0) cho Class 12!
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 35] Đã tự động phân bổ 15 điểm tiềm năng (Trí Lực: +11 | Nhanh Nhẹn: +4) cho Class 12!
+>>> [SHOP VÀNG]: Tự động mua 60 viên Đá Chúc Phúc (GoodId: 20101 | Chi phí: 30000 Vàng)... <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 36] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 37] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [SHOP VÀNG]: Đã mua thành công 60 viên Đá Chúc Phúc vào túi đồ! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 39] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 40] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [CLAIM TỨC THÌ TASK 3060]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3060]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [THU HỒI TASK 3061]: Thu hồi 1 vật phẩm (Bao Chân Da) qua BlackSmith (Type 2 - Không cần VIP) để hoàn thành nhiệm vụ!
+-> [CLAIM TỨC THÌ TASK 3061]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3061]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [CHUYỂN MAP TASK 3101]: Truyền tống sang Dungeon 1 (MapId: 100201 | Tọa độ: 109#247)...
+-> [CLAIM TỨC THÌ TASK 3101]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3101]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5001] "Phòng Thủ đạt 55" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5001]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [BAY BÃI QUÁI 0ms]: Lv 40 | Thủ 59 (Hiệu dụng 59, +0%) -> Dịch chuyển tới Dungeon 1 (Quái Lv45: 96#189) [Kênh 1 - 96#189 (1/1)]!
+[Luyện Cấp] : Nhiệm vụ [3102] "Cấp đạt 60" -> Tiến vào bãi quái tối ưu Map 100201 (Dungeon 1 (Quái Lv45: 96#189) [Kênh 1 - 96#189 (1/1)]) để cày cấp!
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [4001] "Cường hóa 5 lần" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 4001]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+[Chu Kỳ Nâng Cấp 30s - Lv 40]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=40 che_do=LV200 choQuayVong=false choSdk=false popup=false
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +0 -> +1 | Mốc +5 | Bless: 81 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +0 -> +1 | Mốc +5 | Bless: 80 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +1 -> +2 | Mốc +5 | Bless: 79 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +1 -> +2 | Mốc +5 | Bless: 78 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +2 -> +3 | Mốc +5 | Bless: 77 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +2 -> +3 | Mốc +5 | Bless: 76 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +3 -> +4 | Mốc +5 | Bless: 75 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +3 -> +4 | Mốc +5 | Bless: 74 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +4 -> +5 | Mốc +5 | Bless: 73 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +4 -> +5 | Mốc +5 | Bless: 72 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +5 -> +6 | Mốc +7 | Bless: 71 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +5 -> +6 | Mốc +7 | Bless: 69 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +5 -> +6 | Mốc +7 | Bless: 67 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +5 -> +6 | Mốc +7 | Bless: 65 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +5 -> +6 | Mốc +7 | Bless: 63 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +5 -> +6 | Mốc +7 | Bless: 61 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +6 -> +7 | Mốc +7 | Bless: 59 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +6 -> +7 | Mốc +7 | Bless: 57 | Soul: 10)
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5005] "Phòng Thủ đạt 75" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5005]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [BAY BÃI QUÁI 0ms]: Lv 40 | Thủ 75 (Hiệu dụng 75, +0%) -> Dịch chuyển tới Dungeon 1 (Bãi Đôi Lv50: 66#236) [Kênh 1 - 66#236 (1/12)]!
+[Luyện Cấp] : Nhiệm vụ [3102] "Cấp đạt 60" -> Tiến vào bãi quái tối ưu Map 100201 (Dungeon 1 (Bãi Đôi Lv50: 66#236) [Kênh 1 - 66#236 (1/12)]) để cày cấp!
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +6 -> +7 | Mốc +7 | Bless: 55 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +6 -> +7 | Mốc +7 | Bless: 53 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +6 -> +7 | Mốc +7 | Bless: 53 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +6 -> +7 | Mốc +7 | Bless: 49 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +6 -> +7 | Mốc +7 | Bless: 47 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +7 -> +8 | Mốc +9 | Bless: 45 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +7 -> +8 | Mốc +9 | Bless: 43 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +7 -> +8 | Mốc +9 | Bless: 41 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +7 -> +8 | Mốc +9 | Bless: 39 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +7 -> +8 | Mốc +9 | Bless: 37 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +7 -> +8 | Mốc +9 | Bless: 35 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +7 -> +8 | Mốc +9 | Bless: 33 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +7 -> +8 | Mốc +9 | Bless: 31 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Da Thuộc (Slot 2 | +8 -> +9 | Mốc +9 | Bless: 29 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +8 -> +9 | Mốc +9 | Bless: 27 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +7 -> +8 | Mốc +9 | Bless: 25 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +7 -> +8 | Mốc +9 | Bless: 23 | Soul: 10)
+-> [ĐẬP ĐỒ]: Gậy Thiên Sứ (Slot 4 | +8 -> +9 | Mốc +9 | Bless: 21 | Soul: 10)
+-> [ĐẬP ĐỒ]: Khải Da Thuộc (Slot 6 | +8 -> +9 | Mốc +9 | Bless: 19 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Da Thuộc (Slot 8 | +8 -> +9 | Mốc +9 | Bless: 17 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +8 -> +9 | Mốc +9 | Bless: 15 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +7 -> +8 | Mốc +9 | Bless: 13 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +8 -> +9 | Mốc +9 | Bless: 11 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +7 -> +8 | Mốc +9 | Bless: 9 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +7 -> +8 | Mốc +9 | Bless: 7 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Chân Da Thuộc (Slot 9 | +8 -> +9 | Mốc +9 | Bless: 5 | Soul: 10)
+-> [ĐẬP ĐỒ]: Ủng Da Thuộc (Slot 10 | +8 -> +9 | Mốc +9 | Bless: 3 | Soul: 10)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 45 lần (Mục tiêu: +30)! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 41] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 42] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 43] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 44] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 44]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [4009] "Mặc đủ món của Bộ Trang Bị Khô Lâu" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 4009]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 45] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 46] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 47] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 49] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 50] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 51] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 52] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 53] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 54] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 55] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 55]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 55] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 55] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 56] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 57] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=57 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 18 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Nón Cốt Tinh (Slot 2 | +9 -> +10 | Mốc +11 | Bless: 3 | Soul: 10)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 1 lần (Mục tiêu: +30)! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 58] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 59] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 60] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [MỐC LEVEL 60]: Quét nhận lại toàn bộ Phúc Lợi Cộng Đồng & Hòm Thư! <<<
+>>> [MỐC LEVEL 60]: Kích hoạt kiểm tra Quà Mở SV (Quà Thuốc 120 KC - Thuốc Tăng EXP 12h)! <<<
+>>> [QUÀ MỞ SV]: Cấp 60 (Đủ 450 KC) -> Tự động mua Quà Thuốc Mở SV (120 KC - Thuốc EXP 12h) (GoodId: 110001 | Giá: 120 KC)! <<<
+-> [CLAIM TỨC THÌ TASK 3102]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3102]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [CHUYỂN MAP TASK 3106]: Truyền tống sang Lost Tower (MapId: 100501 | Tọa độ: 193#30)...
+>>> [DÙNG VẬT PHẨM]: Tự động kích hoạt Thuốc Tăng EXP (12 giờ) (ConfigId: 3000407 | InstId: 5945039899704601666 | Count: 1)! <<<
+-> [CLAIM TỨC THÌ TASK 3106]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3106]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5009] "Phòng Thủ đạt 90" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5009]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [BAY BÃI QUÁI 0ms]: Lv 60 | Thủ 119 (Hiệu dụng 119, +0%) -> Dịch chuyển tới Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) [Kênh 1 - 194#106 (1/3)]!
+[Luyện Cấp] : Nhiệm vụ [3104] "Cấp đạt 80" -> Tiến vào bãi quái tối ưu Map 100501 (Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) [Kênh 1 - 194#106 (1/3)]) để cày cấp!
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5012] "Phòng Thủ đạt 105" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5012]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+>>> [HÒM THƯ]: Tự động nhận Quà Thuốc Mở SV (120 KC - Thuốc EXP 12h) từ thư vào túi đồ! <<<
+-> [TRÁNH TRÙNG BÃI LV60]: Phát hiện người chơi "8bk2n13" cách bãi (194#106 Kênh 1) 4 ô (<= 7 ô) -> Dịch chuyển sang vị trí [2/3]: Kênh 2 (194#106)!
+-> [TRÁNH TRÙNG BÃI LV60]: Phát hiện người chơi "8bk2n0" cách bãi (194#106 Kênh 2) 5 ô (<= 7 ô) -> Dịch chuyển sang vị trí [3/3]: Kênh 3 (194#106)!
+-> [TRÁNH TRÙNG BÃI LV60]: Đã kiểm tra hết 3/3 vị trí (3 Kênh) của Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) đều có người -> Tạm đứng tại Kênh 3 (194#106) và quét lại sau 45s!
+[Chu Kỳ Nâng Cấp 30s - Lv 60]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10101 (Gift ID: 400001) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10102 (Gift ID: 400002) <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 61] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [THU HỒI]: Đã thu hồi 16 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +9 -> +10 | Mốc +11 | Bless: 7 | Soul: 9)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +7 -> +8 | Mốc +11 | Bless: 5 | Soul: 8)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +8 -> +9 | Mốc +11 | Bless: 3 | Soul: 8)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 3 lần (Mục tiêu: +30)! <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 226340
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 402 (Index: 402 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 403 (Index: 403 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 602 (Index: 602 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 603 (Index: 603 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 202 (Index: 202 | Lv.0 -> Lv.1)
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5023] "Tăng cấp Huỳnh Thạch 5 lần" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5023]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 203 (Index: 203 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 802 (Index: 802 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 803 (Index: 803 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 902 (Index: 902 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 903 (Index: 903 | Lv.0 -> Lv.1)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 62] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 1002 (Index: 1002 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 1003 (Index: 1003 | Lv.0 -> Lv.1)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 402 (Index: 402 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 403 (Index: 403 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 602 (Index: 602 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 603 (Index: 603 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 202 (Index: 202 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 203 (Index: 203 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 802 (Index: 802 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 803 (Index: 803 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 902 (Index: 902 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 903 (Index: 903 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 1002 (Index: 1002 | Lv.1 -> Lv.2)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 1003 (Index: 1003 | Lv.1 -> Lv.2)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 24 viên ngọc! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 63] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 64] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 65] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [MỐC LEVEL 65]: Kích hoạt kiểm tra Quà Phúc Lợi Kim Cương I (180 KC)! <<<
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+>>> [QUÀ MỞ SV]: Cấp 65 (Đủ 330 KC) -> Tự động mua Quà Cường Hóa Mở SV 1 (180 KC - 120 Chúc Phúc + 40 Linh Hồn) (GoodId: 110024 | Giá: 180 KC)! <<<
+[Chu Kỳ Nâng Cấp 30s - Lv 65]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [HÒM THƯ]: Tự động nhận Quà Cường Hóa Mở SV 1 (180 KC - 120 Chúc Phúc + 40 Linh Hồn) từ thư vào túi đồ! <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 66] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=66 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 11 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +7 -> +8 | Mốc +9 | Bless: 123 | Soul: 48)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +8 -> +9 | Mốc +9 | Bless: 121 | Soul: 48)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +9 -> +10 | Mốc +11 | Bless: 119 | Soul: 48)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +9 -> +10 | Mốc +11 | Bless: 117 | Soul: 47)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +9 -> +10 | Mốc +11 | Bless: 115 | Soul: 46)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +9 -> +10 | Mốc +11 | Bless: 113 | Soul: 45)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 67] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +7 -> +8 | Mốc +11 | Bless: 111 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +7 -> +8 | Mốc +11 | Bless: 109 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +8 -> +9 | Mốc +11 | Bless: 107 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +7 -> +8 | Mốc +11 | Bless: 105 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +8 -> +9 | Mốc +11 | Bless: 103 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +7 -> +8 | Mốc +11 | Bless: 101 | Soul: 44)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +8 -> +9 | Mốc +11 | Bless: 99 | Soul: 44)
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 221266
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 402 (Index: 402 | Lv.2 -> Lv.3)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +9 -> +10 | Mốc +11 | Bless: 97 | Soul: 44)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +9 -> +10 | Mốc +11 | Bless: 95 | Soul: 43)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 403 (Index: 403 | Lv.2 -> Lv.3)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +7 -> +8 | Mốc +11 | Bless: 93 | Soul: 42)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +8 -> +9 | Mốc +11 | Bless: 91 | Soul: 42)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 2 viên ngọc! <<<
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +7 -> +8 | Mốc +11 | Bless: 89 | Soul: 42)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +8 -> +9 | Mốc +11 | Bless: 87 | Soul: 42)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +9 -> +10 | Mốc +11 | Bless: 85 | Soul: 42)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +10 -> +11 | Mốc +11 | Bless: 83 | Soul: 41)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +10 -> +11 | Mốc +11 | Bless: 81 | Soul: 40)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +10 -> +11 | Mốc +11 | Bless: 79 | Soul: 39)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +10 -> +11 | Mốc +11 | Bless: 77 | Soul: 38)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +10 -> +11 | Mốc +11 | Bless: 75 | Soul: 37)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +10 -> +11 | Mốc +11 | Bless: 73 | Soul: 36)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +10 -> +11 | Mốc +11 | Bless: 71 | Soul: 35)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +11 -> +12 | Mốc +13 | Bless: 69 | Soul: 34)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +11 -> +12 | Mốc +13 | Bless: 67 | Soul: 33)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +11 -> +12 | Mốc +13 | Bless: 65 | Soul: 32)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 68] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +11 -> +12 | Mốc +13 | Bless: 63 | Soul: 31)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +11 -> +12 | Mốc +13 | Bless: 61 | Soul: 30)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +11 -> +12 | Mốc +13 | Bless: 59 | Soul: 29)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +12 -> +13 | Mốc +13 | Bless: 57 | Soul: 28)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +12 -> +13 | Mốc +13 | Bless: 55 | Soul: 27)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +10 -> +11 | Mốc +13 | Bless: 53 | Soul: 26)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +10 -> +11 | Mốc +13 | Bless: 51 | Soul: 25)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +11 -> +12 | Mốc +13 | Bless: 49 | Soul: 24)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +10 -> +11 | Mốc +13 | Bless: 47 | Soul: 23)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +11 -> +12 | Mốc +13 | Bless: 45 | Soul: 22)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +12 -> +13 | Mốc +13 | Bless: 43 | Soul: 21)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +12 -> +13 | Mốc +13 | Bless: 41 | Soul: 20)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +12 -> +13 | Mốc +13 | Bless: 39 | Soul: 19)
+-> [BAY BÃI QUÁI 0ms]: Lv 68 | Thủ 182 (Hiệu dụng 182, +0%) -> Dịch chuyển tới Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) [Kênh 1 - 194#106 (1/3)]!
+[Luyện Cấp] : Nhiệm vụ [3104] "Cấp đạt 80" -> Tiến vào bãi quái tối ưu Map 100501 (Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) [Kênh 1 - 194#106 (1/3)]) để cày cấp!
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +10 -> +11 | Mốc +13 | Bless: 37 | Soul: 18)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +11 -> +12 | Mốc +13 | Bless: 35 | Soul: 17)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +12 -> +13 | Mốc +13 | Bless: 33 | Soul: 16)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +12 -> +13 | Mốc +13 | Bless: 31 | Soul: 15)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +12 -> +13 | Mốc +13 | Bless: 29 | Soul: 14)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +13 -> +14 | Mốc +15 | Bless: 27 | Soul: 13)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +13 -> +14 | Mốc +15 | Bless: 25 | Soul: 12)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +13 -> +14 | Mốc +15 | Bless: 23 | Soul: 11)
+-> [ĐẬP ĐỒ]: Giáp Cốt Tinh (Slot 6 | +13 -> +14 | Mốc +15 | Bless: 21 | Soul: 10)
+-> [ĐẬP ĐỒ]: Bao Tay Quỷ Vương (Slot 8 | +13 -> +14 | Mốc +15 | Bless: 19 | Soul: 9)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +13 -> +14 | Mốc +15 | Bless: 17 | Soul: 8)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +13 -> +14 | Mốc +15 | Bless: 15 | Soul: 7)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +14 -> +15 | Mốc +15 | Bless: 13 | Soul: 6)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +14 -> +15 | Mốc +15 | Bless: 11 | Soul: 5)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +13 -> +14 | Mốc +15 | Bless: 9 | Soul: 4)
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 69] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5021] "Mặc đủ món của Bộ Trang Bị Ma Vương" -> Nộp và nhận thưởng!
+-> [CLAIM TỨC THÌ TASK 5021]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +14 -> +15 | Mốc +15 | Bless: 7 | Soul: 3)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +13 -> +14 | Mốc +15 | Bless: 5 | Soul: 2)
+-> [ĐẬP ĐỒ]: Gậy Rắn Độc (Slot 4 | +14 -> +15 | Mốc +15 | Bless: 3 | Soul: 1)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 61 lần (Mục tiêu: +30)! <<<
+-> [TRÁNH TRÙNG BÃI LV69]: Phát hiện người chơi "8bk2n13" cách bãi (194#106 Kênh 1) 4 ô (<= 7 ô) -> Dịch chuyển sang vị trí [2/3]: Kênh 2 (194#106)!
+-> [TRÁNH TRÙNG BÃI LV69]: Phát hiện người chơi "8bk2n0" cách bãi (194#106 Kênh 2) 5 ô (<= 7 ô) -> Dịch chuyển sang vị trí [3/3]: Kênh 3 (194#106)!
+-> [TRÁNH TRÙNG BÃI LV69]: Đã kiểm tra hết 3/3 vị trí (3 Kênh) của Lost Tower 1 (Giữa 2 Bãi Lv90: 194#106) đều có người -> Tạm đứng tại Kênh 3 (194#106) và quét lại sau 45s!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 70] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 71] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 71]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10103 (Gift ID: 400003) <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 72] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [THU HỒI]: Đã thu hồi 4 món trang bị rác <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 73] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 184363
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 1))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 74] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 75] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 76] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 77] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 78] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 79] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 80] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [MUA ĐÁ KỸ NĂNG]: Gửi gói mua [Thuật Hồn Thủ Hộ Lv.1 (Lv80)] từ Tiệm (goodId=20432)... <<<
+-> [CLAIM TỨC THÌ TASK 3104]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3104]: Đã hoàn thành! Nộp và nhận thưởng...
+-> [CHUYỂN MAP TASK 3107]: Truyền tống sang Lost Tower Tầng 2 (MapId: 100502 | Tọa độ: 193#30)...
+-> [CLAIM TỨC THÌ TASK 3107]: Đã hoàn thành! Nộp và nhận thưởng ngay...
+-> [TRẢ THƯỞNG TASK 3107]: Đã hoàn thành! Nộp và nhận thưởng...
+>>> [HỌC KỸ NĂNG]: Sử dụng đá kỹ năng [Thuật Hồn Thủ Hộ Lv.1 (Lv80)] (bagId=5945039899704715303, itemId=4000690) để học ngay! <<<
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5025] "Phòng Thủ đạt 140" -> Nộp và nhận thưởng!
+=========================================================================
+>>> [BẮT ĐẦU BUG QUEST TẠI LV 80]: Chuyển sang trạng thái PHASE1_ENTER_NEWBIE_BOSS! <<<
+=========================================================================
+-> [NHIỆM VỤ NHÁNH]: Đã xong nhiệm vụ [5017] "Phòng Thủ đạt 170" -> Nộp và nhận thưởng!
+[Bug Quest Lv80] Kích hoạt vào Nữ Hoàng Tân Thủ (2101000) qua luồng làm nhiệm vụ (3103 / 50007)...
+[Chu Kỳ Nâng Cấp 30s - Lv 80]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10104 (Gift ID: 400004) <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=80 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 9 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 163994
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 1))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Chu Kỳ Nâng Cấp 30s - Lv 80]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 163994
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 1))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 85] Đã tự động phân bổ 25 điểm tiềm năng (Trí Lực: +18 | Nhanh Nhẹn: +7) cho Class 12!
+>>> [BƯỚC 1 HOÀN TẤT]: Đã tiêu diệt Nữ Hoàng Tân Thủ! Giữ nguyên trong Map 2101000 -> Nhận thưởng NV Treo Thưởng Băng Hậu (50007)! <<<
+>>> [BƯỚC 2 - NHẬN THƯỞNG TREO THƯỞNG]: Mở khóa & nhận thưởng NV Treo Thưởng Băng Hậu (ID 50007) lấy Nón đồ Bộ (2110007)... <<<
+>>> [BƯỚC 2 HOÀN TẤT]: Đã nhận thưởng NV Treo Thưởng 1 Sao Băng Hậu (50007) -> Mặc Nón đồ Bộ & Bug NV 5024! <<<
+=========================================================================
+>>> [BƯỚC 3 - BUG NV MẶC 1 MÓN BỘ TRANG BỊ]: Đã mặc Nón đồ Bộ -> Ấn nhận thưởng NV 5024 (state=2) tại Map 2101000 để gây lag! <<<
+=========================================================================
+=========================================================================
+>>> [BƯỚC 3 HOÀN TẤT - BUG NV MẶC 1 MÓN BỘ TRANG BỊ (5024) THÀNH CÔNG]: Trạng thái Đang Tiến Hành (1/1, state=1)! Chuyển sang ấn hoàn thành NV Boss Phúc Lợi (3103)... <<<
+=========================================================================
+=========================================================================
+>>> [BƯỚC 4 - BUG BOSS PHÚC LỢI TÂN THỦ (LẦN 1/2)]: Ấn hoàn thành NV Boss Phúc Lợi Tân Thủ (ID 3103) theo kiểu gây lag và kiểm tra tính bug... <<<
+=========================================================================
+=========================================================================
+>>> [BƯỚC 4 HOÀN TẤT - BUG NV BOSS PHÚC LỢI TÂN THỦ (3103) THÀNH CÔNG]: Trạng thái hiển thị Đang Tiến Hành (1/1, state=1)! Bật quy trình AUTO FARM KC đến Lv 200! <<<
+=========================================================================
+=========================================================================
+[Farm NH] BẮT ĐẦU CHU TRÌNH AUTO FARM NỮ HOÀNG TÂN THỦ (DELAY KIỂM TRA: 20s)!
+=========================================================================
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 85 | Thủ 233): Map 100502 (Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231) [Kênh 1 - 171#231 (1/9)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 86] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 87] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 87]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 87]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+>>> [THU HỒI]: Đã thu hồi 8 món trang bị rác <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=87 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 87 | Thủ 233): Map 100502 (Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231) [Kênh 1 - 171#231 (1/9)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 1 | Vàng = 165803
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 401 (Index: 401 | Lv.0 -> Lv.1)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 1 viên ngọc! <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 165703
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 5))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 88] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 89] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 89 | Thủ 234): Map 100502 (Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231) [Kênh 1 - 171#231 (1/9)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 89]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 89]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 3 món trang bị rác <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 90] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 1 | Vàng = 166201
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 601 (Index: 601 | Lv.0 -> Lv.1)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 1 viên ngọc! <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 166101
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 5))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 91] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8779) -> Bắt đầu tiêu diệt (Lượt #2)!
+[Chu Kỳ Nâng Cấp 30s - Lv 91]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10105 (Gift ID: 400005) <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=91 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 5 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 1 | Vàng = 166384
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 201 (Index: 201 | Lv.0 -> Lv.1)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 1 viên ngọc! <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 96] Đã tự động phân bổ 25 điểm tiềm năng (Trí Lực: +18 | Nhanh Nhẹn: +7) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 96 | Thủ 235): Map 100502 (Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231) [Kênh 1 - 171#231 (1/9)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 97] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 97]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Trang Bị] : Kế thừa cường hóa (Bao Tay Quỷ Vương +14 -> Trác Việt-Bao Tay Truyền Thuyết) & Mặc lên người (Slot 8)!
+[Chu Kỳ Nâng Cấp 30s - Lv 97]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 98] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [THU HỒI]: Đã thu hồi 9 món trang bị rác <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 166928
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 5))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 167049
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 602 (Index: 602 | Lv.2 -> Lv.3)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 1 viên ngọc! <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 98 | Thủ 245): Map 100502 (Lost Tower 2 (Bãi Đôi Lv90 EXP x3.0: 171#231) [Kênh 1 - 171#231 (1/9)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 99] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 100] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 100]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [CỘNG ĐỒNG]: Cấp 100 đạt mốc -> Tự động nhận Phúc Lợi: Theo Dõi FB (250 KC + 250K Vàng) (GiftId: 2200006)! <<<
+>>> [CỘNG ĐỒNG]: Cấp 100 đạt mốc -> Tự động nhận Phúc Lợi: Tham Gia Nhóm (Rương Quà) (GiftId: 2200007)! <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10106 (Gift ID: 400006) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10301 (Gift ID: 600001) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10302 (Gift ID: 600002) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10303 (Gift ID: 600003) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10304 (Gift ID: 600004) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10305 (Gift ID: 600005) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10306 (Gift ID: 600006) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10307 (Gift ID: 600007) <<<
+[Chu Kỳ Nâng Cấp 30s - Lv 100]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [HÒM THƯ]: Tự động nhận tất cả quà từ thư vào túi đồ (ReqGetMailItems)! <<<
+>>> [QUÀ MỞ SV]: Cấp 100 (Đủ 420 KC) -> Tự động mua Quà Cường Hóa Mở SV 2 (180 KC - 120 Chúc Phúc + 40 Linh Hồn) (GoodId: 110035 | Giá: 180 KC)! <<<
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +13 -> +14 | Mốc +15 | Bless: 281 | Soul: 97)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +14 -> +15 | Mốc +15 | Bless: 279 | Soul: 96)
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=100 che_do=LV200 choQuayVong=false choSdk=false popup=false
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +13 -> +14 | Mốc +15 | Bless: 277 | Soul: 95)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +14 -> +15 | Mốc +15 | Bless: 275 | Soul: 94)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +14 -> +15 | Mốc +15 | Bless: 273 | Soul: 93)
+>>> [QUÀ PHÚC LỢI NGÀY - SV MỚI]: Cấp 100 (Còn 240 KC) -> Mua tiếp QUÀ KC I lần 1/2 (GoodId: 220228 | 180 KC)! <<<
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +14 -> +15 | Mốc +15 | Bless: 351 | Soul: 119)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +14 -> +15 | Mốc +15 | Bless: 349 | Soul: 118)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +15 -> +16 | Mốc +17 | Bless: 347 | Soul: 117)
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +15 -> +16 | Mốc +17 | Bless: 344 | Soul: 116)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +15 -> +16 | Mốc +17 | Bless: 341 | Soul: 115)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 338 | Soul: 114)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +14 -> +15 | Mốc +17 | Bless: 336 | Soul: 113)
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +15 -> +16 | Mốc +17 | Bless: 334 | Soul: 112)
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 25 | Vàng = 489378
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 801 (Index: 801 | Lv.0 -> Lv.1)
+>>> [HÒM THƯ]: Tự động nhận Quà Cường Hóa Mở SV 2 (180 KC - 120 Chúc Phúc + 40 Linh Hồn) từ thư vào túi đồ! <<<
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 331 | Soul: 111)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 331 | Soul: 111)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 329 | Soul: 110)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 901 (Index: 901 | Lv.0 -> Lv.1)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 324 | Soul: 108)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 1001 (Index: 1001 | Lv.0 -> Lv.1)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +14 -> +15 | Mốc +17 | Bless: 322 | Soul: 107)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +15 -> +16 | Mốc +17 | Bless: 320 | Soul: 106)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 401 (Index: 401 | Lv.1 -> Lv.2)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 317 | Soul: 105)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 315 | Soul: 104)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 601 (Index: 601 | Lv.1 -> Lv.2)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 313 | Soul: 103)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +14 -> +15 | Mốc +17 | Bless: 311 | Soul: 102)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 201 (Index: 201 | Lv.1 -> Lv.2)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +15 -> +16 | Mốc +17 | Bless: 309 | Soul: 101)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 801 (Index: 801 | Lv.1 -> Lv.2)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +13 -> +14 | Mốc +17 | Bless: 306 | Soul: 100)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +14 -> +15 | Mốc +17 | Bless: 304 | Soul: 99)
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 202 (Index: 202 | Lv.2 -> Lv.3)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +15 -> +16 | Mốc +17 | Bless: 302 | Soul: 98)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +15 -> +16 | Mốc +17 | Bless: 299 | Soul: 97)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 8 viên ngọc! <<<
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +13 -> +14 | Mốc +17 | Bless: 296 | Soul: 96)
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 100 | Thủ 253): Map 1008 (Atlantis (Bãi Đôi Lv130 EXP x2.5: 34#162) [Kênh 1 - 34#162 (1/12)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +13 -> +14 | Mốc +17 | Bless: 294 | Soul: 95)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +14 -> +15 | Mốc +17 | Bless: 292 | Soul: 94)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +15 -> +16 | Mốc +17 | Bless: 290 | Soul: 93)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +15 -> +16 | Mốc +17 | Bless: 287 | Soul: 92)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +15 -> +16 | Mốc +17 | Bless: 284 | Soul: 91)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +13 -> +14 | Mốc +17 | Bless: 281 | Soul: 90)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +14 -> +15 | Mốc +17 | Bless: 279 | Soul: 89)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +15 -> +16 | Mốc +17 | Bless: 277 | Soul: 88)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +16 -> +17 | Mốc +17 | Bless: 274 | Soul: 87)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +16 -> +17 | Mốc +17 | Bless: 271 | Soul: 86)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +16 -> +17 | Mốc +17 | Bless: 268 | Soul: 85)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +16 -> +17 | Mốc +17 | Bless: 265 | Soul: 84)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +17 | Bless: 262 | Soul: 83)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +17 | Bless: 259 | Soul: 82)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +16 -> +17 | Mốc +17 | Bless: 256 | Soul: 81)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +17 -> +18 | Mốc +19 | Bless: 253 | Soul: 80)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +17 -> +18 | Mốc +19 | Bless: 250 | Soul: 79)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +17 -> +18 | Mốc +19 | Bless: 247 | Soul: 78)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +17 -> +18 | Mốc +19 | Bless: 244 | Soul: 77)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +16 -> +17 | Mốc +19 | Bless: 241 | Soul: 76)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +17 -> +18 | Mốc +19 | Bless: 238 | Soul: 75)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 235 | Soul: 74)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +17 -> +18 | Mốc +19 | Bless: 232 | Soul: 73)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +18 -> +19 | Mốc +19 | Bless: 229 | Soul: 72)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +18 -> +19 | Mốc +19 | Bless: 226 | Soul: 71)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +18 -> +19 | Mốc +19 | Bless: 223 | Soul: 70)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +18 -> +19 | Mốc +19 | Bless: 220 | Soul: 69)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +16 -> +17 | Mốc +19 | Bless: 217 | Soul: 68)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +17 -> +18 | Mốc +19 | Bless: 214 | Soul: 67)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +18 -> +19 | Mốc +19 | Bless: 211 | Soul: 66)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +18 -> +19 | Mốc +19 | Bless: 208 | Soul: 65)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 205 | Soul: 64)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 202 | Soul: 63)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 199 | Soul: 62)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 196 | Soul: 61)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +18 -> +19 | Mốc +19 | Bless: 193 | Soul: 60)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 190 | Soul: 59)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 187 | Soul: 58)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 184 | Soul: 57)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 181 | Soul: 56)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 178 | Soul: 55)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 175 | Soul: 54)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 172 | Soul: 53)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +18 -> +19 | Mốc +19 | Bless: 169 | Soul: 52)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +16 -> +17 | Mốc +19 | Bless: 166 | Soul: 51)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +17 -> +18 | Mốc +19 | Bless: 163 | Soul: 50)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +18 -> +19 | Mốc +19 | Bless: 160 | Soul: 49)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +18 -> +19 | Mốc +19 | Bless: 157 | Soul: 48)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +19 -> +20 | Mốc +21 | Bless: 154 | Soul: 47)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +19 -> +20 | Mốc +21 | Bless: 151 | Soul: 46)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +19 -> +20 | Mốc +21 | Bless: 148 | Soul: 45)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 145 | Soul: 44)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 142 | Soul: 43)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +19 -> +20 | Mốc +21 | Bless: 139 | Soul: 42)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +19 -> +20 | Mốc +21 | Bless: 136 | Soul: 41)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +19 -> +20 | Mốc +21 | Bless: 133 | Soul: 40)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +19 -> +20 | Mốc +21 | Bless: 130 | Soul: 39)
+-> [ĐẬP ĐỒ]: Ủng Quỷ Vương (Slot 10 | +19 -> +20 | Mốc +21 | Bless: 127 | Soul: 38)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +20 -> +21 | Mốc +21 | Bless: 124 | Soul: 37)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +20 -> +21 | Mốc +21 | Bless: 121 | Soul: 36)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +20 -> +21 | Mốc +21 | Bless: 118 | Soul: 35)
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +19 -> +20 | Mốc +21 | Bless: 115 | Soul: 34)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +20 -> +21 | Mốc +21 | Bless: 112 | Soul: 33)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +20 -> +21 | Mốc +21 | Bless: 109 | Soul: 32)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +20 -> +21 | Mốc +21 | Bless: 106 | Soul: 31)
+-> [ĐẬP ĐỒ]: Ủng Truyền Thuyết (Slot 10 | +20 -> +21 | Mốc +21 | Bless: 103 | Soul: 30)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +21 -> +22 | Mốc +23 | Bless: 100 | Soul: 29)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +21 -> +22 | Mốc +23 | Bless: 97 | Soul: 28)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +19 -> +20 | Mốc +23 | Bless: 94 | Soul: 27)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +20 -> +21 | Mốc +23 | Bless: 91 | Soul: 26)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +19 -> +20 | Mốc +23 | Bless: 88 | Soul: 25)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +20 -> +21 | Mốc +23 | Bless: 85 | Soul: 24)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +21 -> +22 | Mốc +23 | Bless: 82 | Soul: 23)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +21 -> +22 | Mốc +23 | Bless: 79 | Soul: 22)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +21 -> +22 | Mốc +23 | Bless: 76 | Soul: 21)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +21 -> +22 | Mốc +23 | Bless: 73 | Soul: 20)
+-> [ĐẬP ĐỒ]: Ủng Truyền Thuyết (Slot 10 | +21 -> +22 | Mốc +23 | Bless: 70 | Soul: 19)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +22 -> +23 | Mốc +23 | Bless: 67 | Soul: 18)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +22 -> +23 | Mốc +23 | Bless: 64 | Soul: 17)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +23 | Bless: 61 | Soul: 16)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +23 | Bless: 58 | Soul: 15)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +23 | Bless: 55 | Soul: 14)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +23 | Bless: 52 | Soul: 13)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +22 -> +23 | Mốc +23 | Bless: 49 | Soul: 12)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +22 -> +23 | Mốc +23 | Bless: 46 | Soul: 11)
+-> [ĐẬP ĐỒ]: Ủng Truyền Thuyết (Slot 10 | +22 -> +23 | Mốc +23 | Bless: 43 | Soul: 10)
+-> [ĐẬP ĐỒ]: Nón Quỷ Vương (Slot 2 | +23 -> +24 | Mốc +25 | Bless: 40 | Soul: 9)
+-> [ĐẬP ĐỒ]: Gậy Sét (Slot 4 | +23 -> +24 | Mốc +25 | Bless: 37 | Soul: 8)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +23 -> +24 | Mốc +25 | Bless: 34 | Soul: 7)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +25 | Bless: 31 | Soul: 6)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +23 -> +24 | Mốc +25 | Bless: 28 | Soul: 5)
+[Chu Kỳ Nâng Cấp 30s - Lv 100]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +22 -> +23 | Mốc +25 | Bless: 25 | Soul: 4)
+-> [ĐẬP ĐỒ]: Giáp Quỷ Vương (Slot 6 | +23 -> +24 | Mốc +25 | Bless: 22 | Soul: 3)
+-> [ĐẬP ĐỒ]: Trác Việt-Bao Tay Truyền Thuyết (Slot 8 | +23 -> +24 | Mốc +25 | Bless: 19 | Soul: 2)
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10308 (Gift ID: 600008) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10309 (Gift ID: 600009) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10310 (Gift ID: 600010) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10311 (Gift ID: 600011) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10312 (Gift ID: 600012) <<<
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10313 (Gift ID: 600013) <<<
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +23 -> +24 | Mốc +25 | Bless: 16 | Soul: 1)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +22 -> +23 | Mốc +25 | Bless: 13 | Soul: 6)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +22 -> +23 | Mốc +25 | Bless: 10 | Soul: 5)
+-> [ĐẬP ĐỒ]: Bao Chân Quỷ Vương (Slot 9 | +23 -> +24 | Mốc +25 | Bless: 7 | Soul: 4)
+-> [ĐẬP ĐỒ]: Ủng Truyền Thuyết (Slot 10 | +23 -> +24 | Mốc +25 | Bless: 4 | Soul: 3)
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 128 lần (Mục tiêu: +30)! <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8785) -> Bắt đầu tiêu diệt (Lượt #3)!
+[Chu Kỳ Nâng Cấp 30s - Lv 100]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 4 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 486894
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 486894
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 103] Đã tự động phân bổ 15 điểm tiềm năng (Trí Lực: +11 | Nhanh Nhẹn: +4) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 103 | Thủ 351): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 103]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 103]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=103 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 487486
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 487486
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 103 | Thủ 351): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 103]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 103]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 104] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 487495
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 3 | Vàng = 487501
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 104 | Thủ 351): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 105] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 105]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 105]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=105 che_do=LV200 choQuayVong=false choSdk=false popup=false
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8763) -> Bắt đầu tiêu diệt (Lượt #4)!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 487508
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 487508
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 108] Đã tự động phân bổ 15 điểm tiềm năng (Trí Lực: +11 | Nhanh Nhẹn: +4) cho Class 12!
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+[Chu Kỳ Nâng Cấp 30s - Lv 108]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 108 | Thủ 352): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 489809
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 108 | Thủ 352): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 108]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 108]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 109] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 489823
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=109 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 489823
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 109 | Thủ 352): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 110]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 110] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 110] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 110] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10107 (Gift ID: 400007) <<<
+[Chu Kỳ Nâng Cấp 30s - Lv 110]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490079
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8772) -> Bắt đầu tiêu diệt (Lượt #5)!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490079
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Chu Kỳ Nâng Cấp 30s - Lv 110]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 112] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 112 | Thủ 353): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=112 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490671
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 113] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 113 | Thủ 353): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 113]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 113]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490831
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490846
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 113 | Thủ 353): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 113]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 114] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 114] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 114] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 114]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=114 che_do=LV200 choQuayVong=false choSdk=false popup=false
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490858
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490858
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8784) -> Bắt đầu tiêu diệt (Lượt #6)!
+[Chu Kỳ Nâng Cấp 30s - Lv 114]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 116] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +7 | Nhanh Nhẹn: +3) cho Class 12!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 116] Đã tự động phân bổ 2 điểm tiềm năng (Trí Lực: +2 | Nhanh Nhẹn: +0) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 116 | Thủ 354): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Trang Bị] : Kế thừa cường hóa (Bao Chân Quỷ Vương +24 -> Bao Chân Truyền Thuyết) & Mặc lên người (Slot 9)!
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491150
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 117] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 117 | Thủ 360): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 117]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 117]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 2 món trang bị rác <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=117 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491176
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491176
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 117 | Thủ 360): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 117]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 117]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+-> [TĂNG ĐIỂM 7/3 (70% Trí Lực - 30% Nhanh Nhẹn) | LV 118] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +4 | Nhanh Nhẹn: +1) cho Class 12!
+>>> [THU HỒI]: Đã thu hồi 2 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491205
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491215
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8745) -> Bắt đầu tiêu diệt (Lượt #7)!
+[Chu Kỳ Nâng Cấp 30s - Lv 118]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=118 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 50/50 | LV 120] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 120 | Thủ 361): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491415
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 120]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 120]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10108 (Gift ID: 400008) <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 120 | Thủ 361): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [ĐẬP ĐỒ]: Ủng Truyền Thuyết (Slot 10 | +22 -> +23 | Mốc +23 | Bless: 3 | Soul: 2)
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+>>> [CƯỜNG HÓA ĐỀU]: Đã đập đồ 1 lần (Mục tiêu: +30)! <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490787
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490787
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 121] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 121 | Thủ 363): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 121]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 121]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490797
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=121 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 490859
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8792) -> Bắt đầu tiêu diệt (Lượt #8)!
+[Chu Kỳ Nâng Cấp 30s - Lv 121]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 50/50 | LV 123] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491059
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 123 | Thủ 364): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [TĂNG ĐIỂM 50/50 | LV 124] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 124]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 124 | Thủ 364): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=124 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 9 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491327
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 124 | Thủ 364): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 124]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 124]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [TĂNG ĐIỂM 50/50 | LV 125] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491377
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491385
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8715) -> Bắt đầu tiêu diệt (Lượt #9)!
+[Chu Kỳ Nâng Cấp 30s - Lv 125]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=125 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 50/50 | LV 127] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 4 | Vàng = 491585
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 127 | Thủ 365): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 127]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 127]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 127 | Thủ 365): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 8 món trang bị rác <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 5 | Vàng = 491819
+-> [NÂNG HUỲNH THẠCH]: Huỳnh Thạch 901 (Index: 901 | Lv.1 -> Lv.2)
+>>> [HUỲNH THẠCH]: Đã xử lý nâng cấp 1 viên ngọc! <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491279
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 128] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 128 | Thủ 365): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 128]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 128]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491279
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=128 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491289
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8943) -> Bắt đầu tiêu diệt (Lượt #10)!
+[Chu Kỳ Nâng Cấp 30s - Lv 128]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491509
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 130] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 130 | Thủ 366): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 130]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [SỰ KIỆN MỞ SV]: Nhận thưởng mốc Task 10109 (Gift ID: 400009) <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 130]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 130 | Thủ 366): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=130 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491813
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491813
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 131] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Chuyển Cường Hóa] : Đã tự động gửi gói Chuyển Nhanh thuộc tính & Mặc trang bị mới
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 131 | Thủ 371): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 131]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 131]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491836
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 491836
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8753) -> Bắt đầu tiêu diệt (Lượt #11)!
+[Chu Kỳ Nâng Cấp 30s - Lv 131]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=131 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+[Chuyển Cường Hóa] : Hủy kế thừa vì đồ mới chưa đủ điểm tiềm năng để mặc (Bảo vệ đồ cũ)!
+-> [TĂNG ĐIỂM 50/50 | LV 133] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492046
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 133 | Thủ 372): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Trang Bị] : Kế thừa cường hóa (Giáp Quỷ Vương +24 -> Trác Việt-Khải Truyền Thuyết) & Mặc lên người (Slot 6)!
+[Chu Kỳ Nâng Cấp 30s - Lv 133]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 133]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 133 | Thủ 388): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 11 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492283
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492283
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 134] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 134 | Thủ 388): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 134]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 134]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492292
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=134 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Đã thu hồi 2 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492449
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8680) -> Bắt đầu tiêu diệt (Lượt #12)!
+[Chu Kỳ Nâng Cấp 30s - Lv 134]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 492449
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+-> [TĂNG ĐIỂM 50/50 | LV 136] Đã tự động phân bổ 10 điểm tiềm năng (Trí Lực: +5 | Nhanh Nhẹn: +5) cho Class 12!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 136 | Thủ 390): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 136]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 136]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 8 món trang bị rác <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 136 | Thủ 390): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=136 che_do=LV200 choQuayVong=false choSdk=false popup=false
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493124
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493124
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 136 | Thủ 390): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 136]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 136]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [TĂNG ĐIỂM 50/50 | LV 137] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493174
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493174
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Đã tìm thấy Nữ Hoàng Băng Giá (HP: 8777) -> Bắt đầu tiêu diệt (Lượt #13)!
+[Chu Kỳ Nâng Cấp 30s - Lv 137]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=137 che_do=LV200 choQuayVong=false choSdk=false popup=false
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+[Farm NH] Đã tiêu diệt Nữ Hoàng Tân Thủ! Chờ 2.0s hút sạch KC & vật phẩm...
+-> [TĂNG ĐIỂM 50/50 | LV 138] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493374
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 138 | Thủ 391): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+-> [TĂNG ĐIỂM 50/50 | LV 139] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+[Chu Kỳ Nâng Cấp 30s - Lv 139]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Chu Kỳ Nâng Cấp 30s - Lv 139]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 139 | Thủ 391): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+>>> [THU HỒI]: Đã thu hồi 7 món trang bị rác <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493478
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+>>> [THU HỒI]: Túi đồ sạch, không có trang bị rác cần thu hồi <<<
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493478
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[Farm NH] Đã train bãi quái đủ 20s (Delay Nữ Hoàng) -> Bay lên Mật Thất Nữ Hoàng Tân Thủ kiểm tra!
+[Farm KC] Kích hoạt vào Room Boss Phúc Lợi Tầng 1...
+[Farm NH] Thoát phòng Nữ Hoàng -> Bay ra bãi farm tối ưu (Lv 139 | Thủ 391): Map 1008 (Atlantis (Quái Lv145 EXP x4.0) [Kênh 1 - 39#211 (1/15)]) train 20s (00:20) rồi bay lên kiểm tra lại!
+[Chu Kỳ Nâng Cấp 30s - Lv 139]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+[Chu Kỳ Nâng Cấp 30s - Lv 139]: Cộng điểm, Mặc đồ xịn, Thu hồi rác & Cường hóa (+30)!
+>>> [THU HỒI]: Đã thu hồi 1 món trang bị rác <<<
+-> [TĂNG ĐIỂM 50/50 | LV 140] Đã tự động phân bổ 5 điểm tiềm năng (Trí Lực: +3 | Nhanh Nhẹn: +2) cho Class 12!
+-> [HUỲNH THẠCH CHECK]: Nguyên liệu hiện có: Mảnh Thủy Huỳnh Thạch = 0 | Vàng = 493510
+-> [HUỲNH THẠCH]: Không có viên nào đủ điều kiện nâng cấp (Thiếu nguyên liệu ID 6000641 (cần 12))
+>>> [HUỲNH THẠCH]: Đã xử lý <<<
+[NHIP TIM] chay=true tamdung=false trongGame=true acc=11 lv=140 che_do=LV200 choQuayVong=false choSdk=false popup=false
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+>>> ĐÃ DỪNG / TẠM DỪNG TOÀN BỘ CHU TRÌNH BOT FARM! <<<
+>>> [FARM KC] CHON VIEC LONGDT-S524-L200-01 | Server S524 | Che do LV200 (farm ma moi) (target Lv200) <<<
+=========================================================================
+>>> [CẤU HÌNH MỚI]: Đổi từ (accvutmuvh0451@gmail.com | S524) sang (accvutmuvh0441@gmail.com | S524) -> Đăng xuất & Bắt đầu chu trình mới! <<<
+=========================================================================
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+--- [CLEAN LOGOUT] ĐĂNG XUẤT SẠCH SẼ RA MÀN HÌNH LOGIN ---
+-> [CLEAN TASK]: Đang xóa sạch toàn bộ thông tin nhiệm vụ & mục tiêu cũ trước khi đổi tài khoản...
+[Farm NH] Đã dừng chu trình Auto Farm Nữ Hoàng.
+    [FARM KC] Doi acc 11 -> 1: cho 35 giay roi moi dang nhap...

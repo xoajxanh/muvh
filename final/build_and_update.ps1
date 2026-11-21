@@ -303,17 +303,32 @@ function Build-ApkTask {
     $size = (Get-Item $packedFile).Length
     $bundlesSrc = (Join-Path $rootDir "test_apk\bundles.txt") -replace '\\', '/'
     $bundlesDst = (Join-Path $newBundlesDir "bundles.txt") -replace '\\', '/'
-    & $PyExe -c "
-import sys
-with open('$bundlesSrc', 'r', encoding='utf-8') as f:
+    # =====================================================================
+    # [MOD FEATURE]: TRUYEN DUONG DAN QUA THAM SO, KHONG NHUNG VAO MA PYTHON
+    # Truoc day duong dan duoc nhung thang vao chuoi nhay don cua Python:
+    #   open('C:/Users/Pea'sDad/.../bundles.txt')
+    # Ten thu muc co dau nhay don -> chuoi Python dut -> SyntaxError, file
+    # bundles.txt khong duoc tao -> WinRAR bao ExitCode 10 (khong co file).
+    # Dung here-string nhay don nen PowerShell cung khong noi suy bien.
+    # =====================================================================
+    $pyCode = @'
+import sys, io
+src, dst, h, sz, ver = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+with io.open(src, "r", encoding="utf-8") as f:
     lines = f.readlines()
-with open('$bundlesDst', 'w', encoding='utf-8') as f:
+with io.open(dst, "w", encoding="utf-8", newline="") as f:
     for line in lines:
-        if line.startswith('lua.mu2|'):
-            f.write(f'lua.mu2|0|$hash|$size|$version\n')
+        if line.startswith("lua.mu2|"):
+            f.write("lua.mu2|0|%s|%s|%s\n" % (h, sz, ver))
         else:
             f.write(line)
-"
+'@
+    & $PyExe -c $pyCode $bundlesSrc $bundlesDst $hash $size $version
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[LOI] Khong tao duoc bundles.txt moi (Python tra ve $LASTEXITCODE)." -ForegroundColor Red
+        Pause
+        exit 1
+    }
 
     # D. Inject with WinRAR
     Write-Host "4. Injecting lua.mu2 & bundles.txt into $OutputApkName..."
@@ -325,6 +340,11 @@ with open('$bundlesDst', 'w', encoding='utf-8') as f:
     }
 
     $newBundlesFile = Join-Path $newBundlesDir "bundles.txt"
+    if (-not (Test-Path $newBundlesFile)) {
+        Write-Host "[LOI] Khong thay $newBundlesFile - buoc tao bundles.txt phia tren da that bai." -ForegroundColor Red
+        Pause
+        exit 1
+    }
     $pBundles = Invoke-WinRarAdd -ApkPath $tempApkPath -FilePath $newBundlesFile -ApPath "assets"
     if ($pBundles -ne 0) {
         Write-Host "[LOI] WinRAR inject bundles.txt that bai! (ExitCode: $pBundles)" -ForegroundColor Red
