@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { buildSign, MAX_TS_SKEW_SECONDS } from '@/lib/farm-auth';
-import { XONG_LV200, XONG_LV50 } from '@/lib/farm-play';
+import { BO_QUA_LV200, BO_QUA_LV50 } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,7 +78,8 @@ export async function GET(req: NextRequest) {
             where: {
               ...loc,
               serverId: k.serverId,
-              status: { in: laLv200 ? XONG_LV200 : XONG_LV50 },
+              // xong hoac loi bo qua (SERVER_FULL) deu tinh la da xu ly
+              status: { in: laLv200 ? BO_QUA_LV200 : BO_QUA_LV50 },
             },
           }),
         ]);

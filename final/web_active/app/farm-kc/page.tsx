@@ -30,6 +30,8 @@ const STATUS_STYLE: Record<string, string> = {
   ALREADY_USED: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
   // [MOD FEATURE]: NO_CODE = luc xin khong con ma -> to mau canh bao rieng
   NO_CODE: 'bg-orange-500/20 text-orange-300 border-orange-500/50',
+  // [MOD FEATURE]: server day, khong tao duoc nhan vat -> bot bo qua acc
+  SERVER_FULL: 'bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/40',
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -46,6 +48,7 @@ const STATUS_LABEL: Record<string, string> = {
   EXPIRED: 'Hết hạn giữ chỗ',
   ALREADY_USED: 'Đã nhập mã từ trước',
   NO_CODE: 'Lúc xin không còn mã',
+  SERVER_FULL: 'SERVER ĐẦY — không tạo được nhân vật\n• Game báo: "Server hiện tại đã đầy, hãy đến server mới nhất để tạo nhân vật"\n• Bot tự chuyển acc và bỏ qua acc này trên server này',
 };
 
 const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
@@ -56,6 +59,7 @@ const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
     { value: 'INVITED', label: 'Đủ 5, chưa mua' },
     { value: 'DONE', label: 'Hoàn thiện' },
     { value: 'ERROR', label: 'Lỗi' },
+    { value: 'SERVER_FULL', label: 'Server đầy' },
   ],
   invitees: [
     { value: '', label: 'Tất cả' },
@@ -66,6 +70,7 @@ const FILTER_OPTIONS: Record<Tab, { value: string; label: string }[]> = {
     { value: 'ALREADY_USED', label: 'Đã nhập trước' },
     { value: 'NO_CODE', label: 'Hết mã' },
     { value: 'EXPIRED', label: 'Hết hạn' },
+    { value: 'SERVER_FULL', label: 'Server đầy' },
   ],
 };
 
@@ -625,6 +630,7 @@ function FarmKcNoiDung() {
                     { st: 'INVITED', nhan: 'Đủ 5, chưa mua', gt: tt['INVITED'] || 0, mau: 'text-amber-300' },
                     { st: 'DONE', nhan: 'Hoàn thiện', gt: tt['DONE'] || 0, mau: 'text-emerald-300' },
                     { st: 'ERROR', nhan: 'Lỗi', gt: tt['ERROR'] || 0, mau: 'text-rose-300' },
+                    { st: 'SERVER_FULL', nhan: 'Server đầy', gt: tt['SERVER_FULL'] || 0, mau: 'text-fuchsia-300' },
                   ]
                 : [
                     { st: 'SUCCESS', nhan: 'Thành công', gt: tt['SUCCESS'] || 0, mau: 'text-emerald-300' },
@@ -633,6 +639,7 @@ function FarmKcNoiDung() {
                     { st: 'FAILED', nhan: 'Thất bại', gt: tt['FAILED'] || 0, mau: 'text-rose-300' },
                     { st: 'RESERVED', nhan: 'Giữ chỗ', gt: tt['RESERVED'] || 0, mau: 'text-amber-300' },
                     { st: 'EXPIRED', nhan: 'Hết hạn', gt: tt['EXPIRED'] || 0, mau: 'text-slate-400' },
+                    { st: 'SERVER_FULL', nhan: 'Server đầy', gt: tt['SERVER_FULL'] || 0, mau: 'text-fuchsia-300' },
                   ]),
             ];
 

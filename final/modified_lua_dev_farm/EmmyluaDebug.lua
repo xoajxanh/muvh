@@ -50,6 +50,8 @@ _G.FarmKc_Config = {
         JobAccounts   = "/api/v1/farm/job-accounts",
         JobHeartbeat  = "/api/v1/farm/job-heartbeat",
         JobClaim      = "/api/v1/farm/job-claim",
+        -- [MOD FEATURE]: FARM KC - bao acc loi khong chay duoc (server day...)
+        AccountError  = "/api/v1/farm/account-error",
     },
 
     -- ===== 7. ID TIỀN TỆ (đã xác nhận trong game, KHÔNG SỬA) ============
@@ -3281,13 +3283,36 @@ local function CreateModUI()
                 return go, img, t
             end
 
-            -- ---------- 1) Tieu de ----------
-            Chu("FkcTitle", 0, 548, 780, 28,
+            -- =========================================================
+            -- [MOD FEATURE]: FARM KC - GIAO DIEN v2 (THE / CARD)
+            -- Bo cuc (toa do tinh tu DUOI len, panel 780 x 590):
+            --   552-590 thanh tieu de  | 486-540 the dang nhap
+            --   452     tieu de luoi   | 380-446 luoi viec (4 cot x 2 hang)
+            --   324-368 the dai acc    |  86-312 the trang thai
+            --    18- 70 hang nut chinh
+            -- Nen the ve TRUOC cac widget khac de nam phia sau.
+            -- =========================================================
+            local function The(ten, x, y, w, h)
+                Khung(ten .. "Vien", x, y, w, h, MAU_VIEN)
+                Khung(ten, x + 1, y + 1, w - 2, h - 2, MAU_NEN_O)
+            end
+
+            -- ---------- 1) Thanh tieu de ----------
+            Khung("FkcHdrNen", 0, 552, 780, 38, Color(0.06, 0.07, 0.09, 1))
+            Khung("FkcHdrVach", 0, 552, 780, 1, MAU_VIEN)
+            Chu("FkcHdrVer", 14, 556, 110, 30, "v2.0-MVP", 11, MAU_MO)
+            Chu("FkcTitle", 0, 556, 780, 30,
                 "=== HỆ THỐNG FARM BOT TỰ ĐỘNG - MU VĨNH HẰNG ===",
                 16, Color(1, 0.88, 0.45, 1), TextAnchor.MiddleCenter)
+            Chu("FkcHdrApi", 600, 556, 166, 30, "/api/v1/farm/jobs", 11,
+                Color(0.35, 0.75, 0.95, 1), TextAnchor.MiddleRight)
+
+            The("FkcTheDN", 12, 486, 756, 54)
+            The("FkcTheDai", 12, 324, 756, 44)
+            The("FkcTheTT", 12, 86, 756, 226)
 
             -- ---------- 2) Hang dang nhap ----------
-            Chu("FkcLblTk", 20, 500, 76, 28, "Tài khoản:", 13, MAU_CHU)
+            Chu("FkcLblTk", 24, 498, 80, 30, "Username:", 13, MAU_CHU)
             local savedUser, savedPass = "", ""
             pcall(function()
                 savedUser = CS.UnityEngine.PlayerPrefs.GetString("Mod_Farm_WebUsername", "")
@@ -3306,42 +3331,54 @@ local function CreateModUI()
                     rt.sizeDelta = Vector2(w, h)
                 end)
             end
-            DatO("FkcInTk", 100, 499, 150, 30)
-            Chu("FkcLblMk", 262, 500, 72, 28, "Mật khẩu:", 13, MAU_CHU)
-            DatO("FkcInMk", 338, 499, 130, 30)
+            DatO("FkcInTk", 104, 498, 160, 30)
+            Chu("FkcLblMk", 276, 498, 74, 30, "Password:", 13, MAU_CHU)
+            DatO("FkcInMk", 350, 498, 140, 30)
             pcall(function()
                 inMk.contentType = CS.UnityEngine.UI.InputField.ContentType.Password
             end)
             -- Giu tuong thich voi luong cu (doc username web)
             _G.Mod_FarmKc_WebUserInput = inTk
 
-            local lblTrangThaiDN = Chu("FkcLblLoginState", 660, 500, 110, 28,
-                "• Chưa đăng nhập", 12, Color(1, 0.75, 0.3, 1))
+            local lblTrangThaiDN = Chu("FkcLblLoginState", 668, 498, 94, 30,
+                "• Chưa xác thực", 11, Color(1, 0.75, 0.3, 1))
 
             -- ---------- 3) Hang dai acc STT ----------
-            Chu("FkcLblDai", 20, 452, 84, 28, "Dải Acc STT:", 13, MAU_CHU)
-            local _, _, _ = Khung("FkcOTu", 108, 452, 80, 28, Color(0.22, 0.24, 0.28, 1))
-            local txtTu = Chu("FkcTxtTu", 108, 452, 80, 28, "--", 13, MAU_CHU, TextAnchor.MiddleCenter)
-            Chu("FkcMuiTen", 192, 452, 20, 28, "→", 14, MAU_MO, TextAnchor.MiddleCenter)
-            Khung("FkcODen", 214, 452, 80, 28, Color(0.22, 0.24, 0.28, 1))
-            local txtDen = Chu("FkcTxtDen", 214, 452, 80, 28, "--", 13, MAU_CHU, TextAnchor.MiddleCenter)
-            local lblGoiCap = Chu("FkcLblGoiCap", 304, 452, 300, 28,
-                "(Gói cấp: -- đến --)", 12, MAU_MO)
+            Chu("FkcLblDai", 24, 332, 86, 28, "Dải Acc Job:", 13, MAU_CHU)
+            Khung("FkcOTu", 112, 332, 80, 28, Color(0.22, 0.24, 0.28, 1))
+            local txtTu = Chu("FkcTxtTu", 112, 332, 80, 28, "--", 13, MAU_CHU, TextAnchor.MiddleCenter)
+            Chu("FkcMuiTen", 194, 332, 22, 28, "→", 14, MAU_MO, TextAnchor.MiddleCenter)
+            Khung("FkcODen", 218, 332, 80, 28, Color(0.22, 0.24, 0.28, 1))
+            local txtDen = Chu("FkcTxtDen", 218, 332, 80, 28, "--", 13, MAU_CHU, TextAnchor.MiddleCenter)
+            local lblGoiCap = Chu("FkcLblGoiCap", 306, 332, 196, 28,
+                "(Giới hạn Job: -- → --)", 11, MAU_MO)
 
             -- ---------- 4) Hang tien do ----------
             -- [MOD FEATURE]: FARM KC - 2 DONG MUC TIEU (Lv50 / Lv200), cao 44
-            local lblMucTieu = Chu("FkcLblMucTieu", 20, 396, 480, 44,
-                "Mục tiêu: -- | Acc: 0/0/0", 13, Color(0.85, 0.88, 0.92, 1))
-            pcall(function() lblMucTieu.supportRichText = true end)
-            local lblTrangThai = Chu("FkcLblState", 500, 410, 268, 24,
+            -- Dong 1: Job | Tien do (trai) - Trang thai (phai)
+            local lblJob = Chu("FkcLblJob", 24, 278, 470, 26,
+                "Job: -- | Tiến độ: 0/0 (0%)", 13, MAU_CHU)
+            pcall(function() lblJob.supportRichText = true end)
+            local lblTrangThai = Chu("FkcLblState", 500, 278, 256, 26,
                 "Trạng thái: Chờ đăng nhập...", 13, Color(0.45, 0.85, 0.95, 1), TextAnchor.MiddleRight)
-            Khung("FkcThanhNen", 20, 394, 740, 10, Color(0.18, 0.20, 0.25, 1))
-            local _, imgThanh, rtThanh = Khung("FkcThanhChay", 20, 394, 1, 10, Color(0.25, 0.70, 0.95, 1))
-            local lblTacVu = Chu("FkcLblTask", 500, 372, 268, 20,
-                "Tác vụ: Đang chờ lệnh...", 11, MAU_MO, TextAnchor.MiddleRight)
+            Khung("FkcVach1", 24, 272, 732, 1, MAU_VIEN)
+            local lblMucTieu = Chu("FkcLblMucTieu", 24, 192, 732, 46,
+                "Mục tiêu: -- | Acc: 0/0/0", 12, Color(0.85, 0.88, 0.92, 1))
+            pcall(function() lblMucTieu.supportRichText = true end)
+            Khung("FkcThanhNen", 24, 176, 732, 8, Color(0.18, 0.20, 0.25, 1))
+            local _, imgThanh, rtThanh = Khung("FkcThanhChay", 24, 176, 1, 8, Color(0.25, 0.70, 0.95, 1))
+            local lblTacVu = Chu("FkcLblTask", 24, 140, 470, 26,
+                "Tác vụ: Đang chờ lệnh...", 11, MAU_MO)
+            -- [MOD FEATURE]: DEM NGUOC KHI SERVER CHAN DANG NHAP (doc tu Main.lua)
+            local lblCho = Chu("FkcLblCho", 500, 140, 256, 26, "", 11,
+                Color(1, 0.65, 0.30, 1), TextAnchor.MiddleRight)
+            Khung("FkcVach2", 24, 128, 732, 1, MAU_VIEN)
+            Chu("FkcLblGoiY", 24, 96, 732, 26,
+                "Bấm thẻ công việc để xếp hàng [1] [2]...   ▶ đang chạy   ·   xám = xong   ·   đỏ = máy khác đang giữ",
+                10, Color(0.40, 0.44, 0.50, 1), TextAnchor.MiddleCenter)
 
             -- [MOD FEATURE]: DONG NICK DANG CHAY - hien ro acc nao dang cay de theo doi
-            local lblNick = Chu("FkcLblNick", 20, 368, 476, 24,
+            local lblNick = Chu("FkcLblNick", 24, 242, 732, 26,
                 "Đang chạy: --", 14, Color(0.45, 0.90, 1, 1))
             pcall(function()
                 lblNick.supportRichText = true
@@ -3349,10 +3386,14 @@ local function CreateModUI()
             end)
 
             -- ---------- 5) Luoi server = danh sach cong viec ----------
-            Chu("FkcLblServer", 20, 340, 400, 24,
-                "CHỌN SERVER HOẠT ĐỘNG (Click để chọn):", 12, MAU_MO)
-            local lblCauHinh = Chu("FkcLblCfg", 500, 340, 268, 24,
-                "Cấu hình Server: --", 12, MAU_MO, TextAnchor.MiddleRight)
+            Chu("FkcLblServer", 14, 452, 560, 24,
+                "DANH SÁCH CÔNG VIỆC ĐƯỢC CẤP (<b>jobCode</b> từ Web):", 12, MAU_MO)
+            local lblTongJob = Chu("FkcLblTongJob", 580, 452, 186, 24,
+                "Tổng: 0 Jobs", 12, MAU_MO, TextAnchor.MiddleRight)
+            -- O "Server" trong the dai acc
+            Khung("FkcOServer", 506, 332, 120, 28, Color(0.16, 0.18, 0.22, 1))
+            local lblCauHinh = Chu("FkcLblCfg", 506, 332, 120, 28,
+                "Server: --", 12, MAU_MO, TextAnchor.MiddleCenter)
 
             local dsViec, nutViec = {}, {}
             local vieEcDangChon = nil
@@ -3386,16 +3427,15 @@ local function CreateModUI()
                     if v then
                         txtTu.text = tostring(v.rangeFrom or "--")
                         txtDen.text = tostring(v.rangeTo or "--")
-                        lblGoiCap.text = string.format("(Gói cấp: %s đến %s · %s)",
-                            tostring(v.rangeFrom or "--"), tostring(v.rangeTo or "--"),
-                            tostring(v.jobCode or ""))
-                        lblCauHinh.text = string.format("Cấu hình Server: S%s · Lv%s",
+                        lblGoiCap.text = string.format("(Giới hạn Job: %s → %s)",
+                            tostring(v.rangeFrom or "--"), tostring(v.rangeTo or "--"))
+                        lblCauHinh.text = string.format("S%s · Lv%s",
                             tostring(v.serverId or "--"), tostring(v.farmLevel or "--"))
                     else
                         txtTu.text = "--"
                         txtDen.text = "--"
-                        lblGoiCap.text = "(Gói cấp: -- đến --)"
-                        lblCauHinh.text = "Cấu hình Server: --"
+                        lblGoiCap.text = "(Giới hạn Job: -- → --)"
+                        lblCauHinh.text = "Server: --"
                     end
 
                     -- CHI tinh tien do khi danh sach acc den tu WEB (DB) va dang
@@ -3470,14 +3510,18 @@ local function CreateModUI()
                         }
                     end
 
-                    local function DongMucTieu(nhan, g)
+                    -- [MOD FEATURE]: FARM KC - 3 so la TICH LUY (da xong tu truoc
+                    -- + lan nay), con "phien nay" la so acc bot chay ke tu luc
+                    -- bam BAT DAU. Truoc day o dau la so phien nen nhin vao
+                    -- tuong bot vua chay 83 acc.
+                    local function DongMucTieu(nhan, g, phienNay)
                         if not g then
                             return string.format(
                                 "<color=#475569>Mục tiêu %s: chưa chọn việc</color>", nhan)
                         end
                         return string.format(
-                            "Mục tiêu: <color=#ffd166>%s · S%s</color> | Acc: <color=#4ade80>%d</color>/<color=#fbbf24>%d</color>/<color=#e2e8f0>%d</color>  <color=#64748b>(đã chạy/còn lại/tổng)</color>",
-                            nhan, g.server, g.daXong, g.conLai, g.tong)
+                            "Mục tiêu: <color=#ffd166>%s · S%s</color> | Acc: <color=#4ade80>%d</color>/<color=#fbbf24>%d</color>/<color=#e2e8f0>%d</color> <color=#64748b>(đã xong/còn lại/tổng)</color> · <color=#64748b>phiên này:</color> <color=#38bdf8>%d</color>",
+                            nhan, g.server, g.daXong, g.conLai, g.tong, phienNay or 0)
                     end
 
                     local g50  = GopTheoLevel(50)
@@ -3485,7 +3529,13 @@ local function CreateModUI()
                     if (not g50) and (not g200) then
                         lblMucTieu.text = "<color=#475569>Mục tiêu: chưa chọn việc nào</color>"
                     else
-                        lblMucTieu.text = DongMucTieu("Lv50", g50) .. "\n" .. DongMucTieu("Lv200", g200)
+                        -- phien nay chi dem cho level cua viec DANG CHAY
+                        local phien = tonumber(_G.Mod_FarmKc_PhienDaChay) or 0
+                        local lvDangChay = v and tonumber(v.farmLevel) or 0
+                        lblMucTieu.text =
+                            DongMucTieu("Lv50", g50, (lvDangChay == 50) and phien or 0)
+                            .. "\n" ..
+                            DongMucTieu("Lv200", g200, (lvDangChay == 200) and phien or 0)
                     end
 
                     -- Dong nick dang chay + level hien tai / level can cay
@@ -3497,12 +3547,23 @@ local function CreateModUI()
                     pcall(function()
                         lvCan = tonumber(CS.UnityEngine.PlayerPrefs.GetInt("Mod_Farm_TargetLevel", 0)) or 0
                     end)
+                    -- [MOD FEATURE]: FARM KC - hien ro SERVER va CHE DO CAY
+                    local svHien = (v and tostring(v.serverId))
+                        or tostring(_G.TARGET_SERVER_ID or "--")
+                    local cheDo, mauCheDo = "--", "#64748b"
+                    if _G.Mod_Farm_InviteMode == "LV200" then
+                        cheDo, mauCheDo = "Level 200", "#f472b6"
+                    elseif _G.Mod_Farm_InviteMode == "LV50" then
+                        cheDo, mauCheDo = "Level 50", "#38bdf8"
+                    end
                     if coDsWeb then
                         lblNick.text = string.format(
-                            "Đang chạy: <color=#94a3b8>#%s</color> %s  <color=#64748b>|</color> Cày Lv: <color=#4ade80>%d</color>/<color=#ffd166>%d</color>",
-                            sttAcc, tenAcc, lvHienTai, lvCan)
+                            "Đang chạy: <color=#94a3b8>#%s</color> %s  <color=#64748b>|</color> Cày Lv: <color=#4ade80>%d</color>/<color=#ffd166>%d</color>  <color=#64748b>|</color> Server: <color=#ffd166>%s</color>  <color=#64748b>|</color> Chế độ cày: <color=%s>%s</color>",
+                            sttAcc, tenAcc, lvHienTai, lvCan, svHien, mauCheDo, cheDo)
                     else
-                        lblNick.text = "Đang chạy: --"
+                        lblNick.text = string.format(
+                            "Đang chạy: --  <color=#64748b>|</color> Server: <color=#ffd166>%s</color>  <color=#64748b>|</color> Chế độ cày: <color=%s>%s</color>",
+                            svHien, mauCheDo, cheDo)
                     end
 
                     local phanTram = 0
@@ -3510,7 +3571,25 @@ local function CreateModUI()
                         local daXongDai = math.max(0, zz - yy)
                         phanTram = math.floor((daXongDai / zz) * 100)
                     end
-                    rtThanh.sizeDelta = Vector2(math.max(1, 740 * (phanTram / 100)), 10)
+                    rtThanh.sizeDelta = Vector2(math.max(1, 732 * (phanTram / 100)), 8)
+
+                    -- Dong Job | Tien do
+                    if v then
+                        lblJob.text = string.format(
+                            "Job: <color=#ffd166>%s</color>  <color=#475569>|</color>  Tiến độ: <color=#4ade80>%d</color>/<color=#e2e8f0>%d</color> <color=#94a3b8>(%d%%)</color>",
+                            tostring(v.jobCode or "--"), math.max(0, zz - yy), zz, phanTram)
+                    else
+                        lblJob.text = "Job: <color=#64748b>--</color>  <color=#475569>|</color>  Tiến độ: 0/0 (0%)"
+                    end
+
+                    -- Dem nguoc khi server chan dang nhap
+                    local conCho = tonumber(_G.FarmKc_SdkConGiay) or 0
+                    if _G.FarmKc_DangChoSdk and conCho > 0 then
+                        lblCho.text = string.format("[!] Server chặn đăng nhập · thử lại sau %d:%02d (lần %d)",
+                            math.floor(conCho / 60), conCho % 60, tonumber(_G.FarmKc_SdkLoiDem) or 0)
+                    else
+                        lblCho.text = ""
+                    end
 
                     if _G.Bot_Running then
                         lblTrangThai.text = "Trạng thái: Đang chạy..."
@@ -3579,6 +3658,28 @@ local function CreateModUI()
                             (tonumber(v.farmLevel) == 200) and "LV200" or "LV50", true)
                     end
                 end)
+
+                -- =============================================================
+                -- [MOD FEATURE]: FARM KC - DAT LUON SERVER THEO CONG VIEC
+                -- Truoc day chon viec KHONG doi server muc tieu -> chon viec
+                -- S520 nhung bot van vao server cu dang nho trong PlayerPrefs.
+                -- =============================================================
+                pcall(function()
+                    local sv = tonumber(v.serverId) or 0
+                    if sv > 0 then
+                        _G.TARGET_SERVER_ID = sv
+                        CS.UnityEngine.PlayerPrefs.SetInt("Mod_Farm_TargetServer", sv)
+                        CS.UnityEngine.PlayerPrefs.Save()
+                        if _G.Mod_UpdateServerStatusUI then pcall(_G.Mod_UpdateServerStatusUI) end
+                    end
+                end)
+                if _G.FarmKc_Nhat then
+                    _G.FarmKc_Nhat(string.format(
+                        ">>> [FARM KC] CHON VIEC %s | Server S%s | Che do %s (target Lv%s) <<<",
+                        tostring(v.jobCode), tostring(v.serverId),
+                        (tonumber(v.farmLevel) == 200) and "LV200 (farm ma moi)" or "LV50 (nhap ma moi)",
+                        tostring(v.farmLevel)))
+                end
 
                 CapNhat()
                 VeNutViec()
@@ -3754,13 +3855,22 @@ local function CreateModUI()
             -- ---------- 8) Ve luoi nut server (moi nut = mot cong viec) ----------
             VeNutViec = function()
                 DonNutViec()
-                local RONG, CAO, CACH = 140, 34, 8
+                local SO_COT, SO_HANG = 4, 2
+                local RONG, CAO, CACH = 183, 30, 8
+                local TOI_DA = SO_COT * SO_HANG
+                pcall(function()
+                    if #dsViec > TOI_DA then
+                        lblTongJob.text = string.format("Tổng: %d Jobs (hiện %d)", #dsViec, TOI_DA)
+                    else
+                        lblTongJob.text = string.format("Tổng: %d Jobs", #dsViec)
+                    end
+                end)
                 for i, v in ipairs(dsViec) do
-                    if i > 10 then break end
-                    local cot = (i - 1) % 5
-                    local hang = math.floor((i - 1) / 5)
-                    local x = 20 + cot * (RONG + CACH)
-                    local y = 296 - hang * (CAO + CACH)
+                    if i > TOI_DA then break end
+                    local cot = (i - 1) % SO_COT
+                    local hang = math.floor((i - 1) / SO_COT)
+                    local x = 12 + cot * (RONG + CACH)
+                    local y = 416 - hang * (CAO + 6)
 
                     -- =====================================================
                     -- [MOD FEATURE]: FARM KC - CHON NHIEU VIEC + XAM KHI XONG
@@ -3775,10 +3885,9 @@ local function CreateModUI()
 
                     local nhan
                     if xong then
-                        nhan = string.format("✓ S%s·Lv%s %s-%s (xong %s/%s)",
+                        nhan = string.format("✓ S%s·Lv%s %s-%s XONG",
                             tostring(v.serverId), tostring(v.farmLevel),
-                            tostring(v.rangeFrom or "?"), tostring(v.rangeTo or "?"),
-                            tostring(v.daXong or 0), tostring(v.tongAcc or 0))
+                            tostring(v.rangeFrom or "?"), tostring(v.rangeTo or "?"))
                     else
                         local dauHieu = ""
                         if dangChay then dauHieu = "▶ "
@@ -3823,10 +3932,12 @@ local function CreateModUI()
                 end
 
                 if #dsViec == 0 then
-                    local go = Nut("FkcBtnJobEmpty", 20, 296, 740, 34,
-                        "Chưa có công việc nào - đăng nhập hoặc vào web giao việc",
-                        Color(0.16, 0.18, 0.23, 1), MAU_MO, 12, nil)
-                    table.insert(nutViec, go)
+                    for i = 1, SO_COT do
+                        local go = Nut("FkcBtnJobEmpty" .. i, 12 + (i - 1) * (RONG + CACH), 416, RONG, CAO,
+                            string.format("[ Chưa tải Job #%d ]", i),
+                            Color(0.13, 0.14, 0.17, 1), Color(0.40, 0.44, 0.50, 1), 11, nil)
+                        table.insert(nutViec, go)
+                    end
                 end
             end
             VeNutViec()
@@ -3906,12 +4017,12 @@ local function CreateModUI()
             end
             _G.Mod_FarmKc_NapCongViec = NapCongViec
 
-            Nut("FkcBtnLogin", 478, 499, 174, 30, "KIỂM TRA ĐĂNG NHẬP",
+            Nut("FkcBtnLogin", 502, 498, 160, 30, "ĐĂNG NHẬP & TẢI JOBS",
                 Color(0.13, 0.45, 0.80, 1), Color.white, 12,
                 function() NapCongViec(false) end)
 
             -- ---------- 10) Nut RESET DAI GOC ----------
-            Nut("FkcBtnReset", 624, 452, 136, 28, "RESET DẢI GỐC",
+            Nut("FkcBtnReset", 632, 332, 124, 28, "RESET DẢI JOB",
                 Color(0.35, 0.22, 0.60, 1), Color.white, 12, function()
                     if not vieEcDangChon then
                         if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
@@ -3938,9 +4049,9 @@ local function CreateModUI()
                 end)
 
             -- ---------- 11) Hang nut duoi cung ----------
-            local goBatDau, imgBatDau, txtBatDau = Nut("FkcBtnStart", 20, 18, 240, 44,
-                "▶ BẮT ĐẦU", Color(0.14, 0.62, 0.30, 1), Color.white, 16, nil)
-            local goTamDung, imgTamDung = Nut("FkcBtnPause", 270, 18, 240, 44,
+            local goBatDau, imgBatDau, txtBatDau = Nut("FkcBtnStart", 12, 18, 244, 52,
+                "▶ BẮT ĐẦU JOB", Color(0.14, 0.62, 0.30, 1), Color.white, 16, nil)
+            local goTamDung, imgTamDung = Nut("FkcBtnPause", 268, 18, 244, 52,
                 "❚❚ TẠM DỪNG", Color(0.38, 0.14, 0.16, 1), Color(0.95, 0.75, 0.75, 1), 16, nil)
             -- =========================================================
             -- [MOD FEATURE]: NUT KICH THUOC (thay nut THU GON + nut ZOOM doc)
@@ -3952,7 +4063,7 @@ local function CreateModUI()
                 local cur = tonumber(_G.Mod_MenuScale) or 1.0
                 return string.format("KÍCH THƯỚC %.1fx", cur)
             end
-            local _, _, txtKichThuoc = Nut("FkcBtnSize", 520, 18, 240, 44, NhanKichThuoc(),
+            local _, _, txtKichThuoc = Nut("FkcBtnSize", 524, 18, 244, 52, NhanKichThuoc(),
                 Color(0.25, 0.27, 0.32, 1), Color.white, 16, nil)
             pcall(function()
                 local goSize = panelGo.transform:Find("FkcBtnSize").gameObject
@@ -5533,6 +5644,31 @@ end
 
 -- 4) Báo kết quả nhập mã (ký: email + serverId + status)
 -- status: SUCCESS | FAILED | ALREADY_USED | NO_CODE
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - BAO LOI ACC (KHONG CHAY DUOC TREN SERVER NAY)
+-- info   : { email, password, serverId, serverName, farmLevel (50|200) }
+-- status : SERVER_FULL
+-- Ky     : email + serverId + status
+-- =========================================================================
+_G.FarmKc_Api_BaoLoiAcc = function(info, status, errorMsg, onDone)
+    local ts = FarmKc_Now()
+    local createdBy = ""
+    pcall(function()
+        if _G.Mod_FarmKc_GetWebUsername then createdBy = _G.Mod_FarmKc_GetWebUsername() or "" end
+    end)
+    local body = {
+        email = info.email, password = info.password or "",
+        serverId = info.serverId, serverName = info.serverName or "",
+        farmLevel = info.farmLevel or 50,
+        status = status, errorMsg = errorMsg or "",
+        createdBy = createdBy, ts = ts,
+        sign = FarmKc_Sign({ info.email, info.serverId, status }, ts),
+    }
+    FarmKc_PostJson(_G.FarmKc_Config.Api.AccountError, body, function(ok, obj, raw, err)
+        if onDone then pcall(onDone, ok and obj ~= nil and obj.ok == true, obj, err or (obj and obj.error)) end
+    end)
+end
+
 _G.FarmKc_Api_ReportResult = function(info, status, errorMsg, createdBy, onDone)
     local ts = FarmKc_Now()
     local body = {
@@ -6764,7 +6900,59 @@ end
 --        de dong cac popup chan khac.
 --        Goi TRUOC va SAU moi buoc cua luong FARM KC.
 -- #########################################################################
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - DOC NOI DUNG POPUP "NHAC NHO" + NHAN DIEN SERVER DAY
+-- Popup: "Server hien tai da day, hay den server moi nhat de tao nhan vat"
+--   -> acc chua co nhan vat, server khong cho tao nua -> bot treo mai o man
+--      chon nhan vat (CreateRole thu lai moi 6s). Gap la phai BO ACC.
+-- =========================================================================
+_G.FarmKc_NoiDungPopup = function()
+    local noiDung = ""
+    pcall(function()
+        local ui = nil
+        if _G.UIManager and _G.UIManager.GetUiByName then
+            ui = (_G.UIID and _G.UIID.PromptTipUI and _G.UIManager.GetUiByName(_G.UIID.PromptTipUI))
+                or _G.UIManager.GetUiByName("Tip_PromptTipUI")
+        end
+        if not ui then return end
+        if ui.args and ui.args.textContent then
+            noiDung = tostring(ui.args.textContent)
+        end
+        if noiDung == "" and ui.Text_TipContent then
+            pcall(function() noiDung = tostring(ui.Text_TipContent:GetText() or "") end)
+            if noiDung == "" then
+                pcall(function() noiDung = tostring(ui.Text_TipContent.text or "") end)
+            end
+        end
+    end)
+    return noiDung
+end
+
+_G.FarmKc_LaPopupServerDay = function(noiDung)
+    noiDung = tostring(noiDung or "")
+    if noiDung == "" then return false end
+    local co = function(s) return string.find(noiDung, s, 1, true) ~= nil end
+    -- "Server hiện tại đã đầy, hãy đến server mới nhất để tạo nhân vật"
+    return (co("đã đầy") or co("da day")) and (co("server mới nhất") or co("tạo nhân vật") or co("tao nhan vat"))
+end
+
+-- Popup dang hien la "server day" -> giao cho Main.lua bo acc. Tra ve true neu da xu ly.
+_G.FarmKc_KiemTraServerDay = function()
+    local daXuLy = false
+    pcall(function()
+        if not (_G.FarmKc_PopupDangHien and _G.FarmKc_PopupDangHien()) then return end
+        local nd = _G.FarmKc_NoiDungPopup()
+        if _G.FarmKc_LaPopupServerDay(nd) and _G.FarmKc_XuLyServerDay then
+            _G.FarmKc_XuLyServerDay(nd)
+            daXuLy = true
+        end
+    end)
+    return daXuLy
+end
+
 _G.FarmKc_DonPopup = function()
+    -- 0. Popup "server day" -> KHONG bam xac nhan roi chay tiep, ma bo acc
+    if _G.FarmKc_KiemTraServerDay and _G.FarmKc_KiemTraServerDay() then return end
     -- 1. Bam nut xac nhan tren popup "Nhac nho" neu dang hien
     pcall(function()
         if _G.UIID and _G.UIID.PromptTipUI and _G.UIManager
@@ -6884,6 +7072,11 @@ _G.FarmKc_BatWatchdogPopup = function()
     _G.Timer.StartLoop(5, -1, function()
         local ok = pcall(function()
             if not _G.FarmKc_PopupDangHien() then
+                demLienTiep = 0
+                return
+            end
+            -- [MOD FEATURE]: server day -> bo acc NGAY, khong cho 10s
+            if _G.FarmKc_KiemTraServerDay and _G.FarmKc_KiemTraServerDay() then
                 demLienTiep = 0
                 return
             end

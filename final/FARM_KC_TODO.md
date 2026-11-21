@@ -258,3 +258,11 @@ CAN TEST
   cung level trong hang doi; server liet ke dang "517,520". Viec dang chay dung so lieu song.
   Label `FkcLblMucTieu` doi tu (20,410,480,24) -> (20,396,480,44) de chua 2 dong.
 - Kiem cu phap: cai luaparser tren VM may anh -> tu kiem duoc, khong can nho chay luac.
+
+## 2026-11-21: che do + server theo cong viec web
+- ChonViec: NAY dat luon `TARGET_SERVER_ID` + PlayerPrefs `Mod_Farm_TargetServer` theo
+  `v.serverId`. Truoc day chon viec S520 ma bot van vao server cu dang nho -> sai server.
+- Che do LV200/LV50 da tu bat theo `v.farmLevel` tu truoc (ApplyInviteMode), nay ghi log ro.
+- Dong "Dang chay" hien them: `Server: <id>` va `Che do cay: Level 200 | Level 50` (co mau).
+- Them log tai diem dat muc tieu: ghi ro che do dang bat va co hay khong RunInviterStep/
+  RunInviteeStep -> biet ngay vi sao KHONG bao DB (thuong do che do ma moi dang TAT).

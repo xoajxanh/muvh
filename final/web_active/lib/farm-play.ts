@@ -21,6 +21,18 @@ import { prisma } from './db';
 export const XONG_LV200 = ['DONE'];
 export const XONG_LV50 = ['SUCCESS', 'ALREADY_USED'];
 
+/**
+ * [MOD FEATURE]: FARM KC - ACC LOI KHONG CHAY DUOC TREN SERVER NAY
+ *   SERVER_FULL: vao game bao "Server hien tai da day, hay den server moi
+ *                nhat de tao nhan vat" -> acc chua co nhan vat va server khong
+ *                cho tao nua. Chay lai cung vo ich.
+ * KHONG tinh la "da xong" trong thong ke, nhung bot BO QUA khi phat acc va
+ * cong viec coi nhu da xu ly het khi moi acc deu xong hoac loi.
+ */
+export const LOI_BO_QUA = ['SERVER_FULL'];
+export const BO_QUA_LV200 = [...XONG_LV200, ...LOI_BO_QUA];
+export const BO_QUA_LV50 = [...XONG_LV50, ...LOI_BO_QUA];
+
 export type ChuSoHuu = {
   masterId: string | null;
   stt: number;

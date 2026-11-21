@@ -2535,13 +2535,103 @@ _G.OnAccountReachLevelGoal = function(lvl, targetLvl)
 		FarmKc_ChuyenAccKeTiep()
 	end
 
+	-- [MOD FEATURE]: FARM KC - log ro vi sao chay / khong chay buoc bao DB
+	if _G.FarmKc_Nhat then
+		_G.FarmKc_Nhat(string.format(
+			">>> [FARM KC] DAT MUC TIEU - che do=%s | co RunInviterStep=%s | co RunInviteeStep=%s",
+			tostring(_G.Mod_Farm_InviteMode),
+			tostring(_G.RunInviterStep ~= nil), tostring(_G.RunInviteeStep ~= nil)))
+	end
+
 	if _G.Mod_Farm_InviteMode == "LV200" and _G.RunInviterStep then
 		_G.RunInviterStep(FarmKc_XongThiChuyen)
 	elseif _G.Mod_Farm_InviteMode == "LV50" and _G.RunInviteeStep then
 		_G.RunInviteeStep(FarmKc_XongThiChuyen)
 	else
+		if _G.FarmKc_Nhat then
+			_G.FarmKc_Nhat("!!! [FARM KC] KHONG BAO DB: che do ma moi dang TAT -> chuyen acc luon")
+		end
 		FarmKc_XongThiChuyen()
 	end
+end
+
+-- =========================================================================
+-- [MOD FEATURE]: FARM KC - SERVER DAY -> BAO LOI ACC + CHUYEN ACC KE TIEP
+-- Mo ta: Vao game gap popup "Server hien tai da day, hay den server moi nhat
+--        de tao nhan vat" -> acc nay chua co nhan vat va KHONG tao duoc tren
+--        server nay. Truoc day bot cu thu tao lai moi 6s -> treo mai.
+--        Nay: dong popup, bao web status SERVER_FULL (lan sau web khong phat
+--        acc nay cho bot nua), roi chuyen acc ke tiep qua OnAccountFailedAndSkip.
+-- =========================================================================
+_G.FarmKc_DangBoAccLoi = false
+_G.FarmKc_XuLyServerDay = function(noiDung)
+	if _G.FarmKc_DangBoAccLoi then return end
+	if _G.Bot_Running ~= true then return end
+	_G.FarmKc_DangBoAccLoi = true
+	-- Tu mo khoa sau 60s phong khi luong chuyen acc khong goi duoc
+	pcall(function()
+		Timer.Start(60, function() _G.FarmKc_DangBoAccLoi = false end)
+	end)
+
+	-- Dung vong thu tao nhan vat
+	_G.IsRoleCreating = true
+	_G.HasCreatedRoleForTarget = true
+
+	-- Dong popup
+	pcall(function()
+		if _G.UIManager and _G.UIManager.Hide then
+			if _G.UIID and _G.UIID.PromptTipUI then _G.UIManager.Hide(_G.UIID.PromptTipUI) end
+			_G.UIManager.Hide("Tip_PromptTipUI")
+		end
+	end)
+
+	local idx = _G.CurrentAccountIndex or 1
+	local acc = (_G.BotAccounts and _G.BotAccounts[idx]) or GetCurrentAccount() or {}
+	local email = tostring(acc.account or "")
+	local sId, sName = 0, ""
+	pcall(function() sId, sName = _G.GetActualCurrentServerInfo() end)
+	local lv = 50
+	pcall(function()
+		if _G.Mod_FarmKc_Job and tonumber(_G.Mod_FarmKc_Job.farmLevel) then
+			lv = tonumber(_G.Mod_FarmKc_Job.farmLevel)
+		elseif _G.Mod_Farm_InviteMode == "LV200" then
+			lv = 200
+		end
+	end)
+
+	Log("=========================================================================", true)
+	Log(string.format(">>> [SERVER ĐẦY] Acc #%s %s trên %s không tạo được nhân vật -> báo web SERVER_FULL & chuyển acc <<<",
+		tostring(acc.stt or idx), email, tostring(sName)), true)
+	Log("=========================================================================", true)
+	SaveOutput()
+	if _G.FloatingWordUtility and _G.FloatingWordUtility.QuickMsg then
+		pcall(function() _G.FloatingWordUtility.QuickMsg("SERVER ĐẦY - BỎ ACC " .. email .. ", CHUYỂN ACC KẾ TIẾP") end)
+	end
+
+	if email ~= "" and _G.FarmKc_Api_BaoLoiAcc then
+		pcall(function()
+			_G.FarmKc_Api_BaoLoiAcc({
+				email = email, password = acc.password or "",
+				serverId = tonumber(sId) or 0, serverName = tostring(sName or ""),
+				farmLevel = lv,
+			}, "SERVER_FULL", tostring(noiDung or "Server hiện tại đã đầy"), function(ok, obj, err)
+				Log(string.format("    [SERVER ĐẦY] Báo web %s: %s", ok and "OK" or "LỖI",
+					ok and "SERVER_FULL" or tostring(err or "")), true)
+				SaveOutput()
+			end)
+		end)
+	end
+
+	-- Chuyen acc ke tiep (dung luong bo acc san co)
+	pcall(function()
+		Timer.Start(1.5, function()
+			_G.IsSwitchingAccount = false
+			_G.OnAccountFailedAndSkip("Server đầy - không tạo được nhân vật (SERVER_FULL)")
+			-- Mo khoa sau 8s: du de vong thu tao NV cu (6s) het hieu luc, va
+			-- acc moi con dang cho 20-60s doi acc nen chua toi buoc tao NV.
+			Timer.Start(8, function() _G.FarmKc_DangBoAccLoi = false end)
+		end)
+	end)
 end
 
 _G.OnAccountFailedAndSkip = function(reason)
@@ -2674,7 +2764,11 @@ local function SyncFarmNHBtnUI()
 				sGo = GameObject.Find(sName)
 			end
 			if sGo and not IsNil(sGo) then
-				if not sGo.activeSelf then
+				-- [MOD FEATURE]: FARM KC - panel moi dang dung thi AN cum Delay Nu Hoang
+				-- (chi an, khong xoa; gia tri delay van duoc cap nhat & dung binh thuong)
+				if _G.Mod_FarmKc_AnPhanCu then
+					if sGo.activeSelf then sGo:SetActive(false) end
+				elseif not sGo.activeSelf then
 					sGo:SetActive(true)
 				end
 				if sName == "QueenDelayLabel" then
@@ -5659,6 +5753,11 @@ end
 
 CreateRoleAndEnterGame = function(targetIdx)
 	targetIdx = tonumber(targetIdx) or 1
+	-- [MOD FEATURE]: FARM KC - dang bo acc vi server day -> khong tao nhan vat nua
+	if _G.FarmKc_DangBoAccLoi then
+		Log("-> [BỎ QUA TẠO NV]: Acc đang bị bỏ vì server đầy", true)
+		return
+	end
 	if _G.IsRoleCreating or _G.HasCreatedRoleForTarget then
 		Log(string.format("-> [BỎ QUA] Đang hoặc đã hoàn thành tạo nhân vật cho slot [%d]...", targetIdx))
 		return
@@ -8255,8 +8354,10 @@ local function FarmKc_XuLyLoiSdkLogin(lyDo)
 		return
 	end
 	local con, t = cho, nil
+	_G.FarmKc_SdkConGiay = con  -- [MOD FEATURE] panel hien dem nguoc
 	t = Timer.StartLoop(1, -1, function()
 		con = con - 1
+		_G.FarmKc_SdkConGiay = con
 		if con > 0 then
 			-- nhac moi 30s cho biet bot con song
 			if con % 30 == 0 then

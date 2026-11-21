@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma, ensureInitialSeed } from '@/lib/db';
 import { buildSign, MAX_TS_SKEW_SECONDS } from '@/lib/farm-auth';
-import { XONG_LV200, XONG_LV50 } from '@/lib/farm-play';
+import { BO_QUA_LV200, BO_QUA_LV50 } from '@/lib/farm-play';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,7 +101,8 @@ export async function GET(req: NextRequest) {
     const laLv200 = job.farmLevel === 200;
     const kho: any = laLv200 ? (prisma as any).farmInviter : (prisma as any).farmInvitee;
     const theoDoi: any = laLv200 ? (prisma as any).farmInviterPlay : (prisma as any).farmInviteePlay;
-    const trangThaiXong = laLv200 ? XONG_LV200 : XONG_LV50;
+    // Da xong HOAC loi khong chay duoc (SERVER_FULL) -> khong phat lai cho bot
+    const trangThaiXong = laLv200 ? BO_QUA_LV200 : BO_QUA_LV50;
 
     const trongDai = { stt: { gte: job.rangeFrom, lte: job.rangeTo } };
 
