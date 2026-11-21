@@ -148,14 +148,32 @@ export async function POST(req: NextRequest) {
               )
         ORDER BY k.[stt]
       `;
-      try {
-        const moi = await prisma.$queryRawUnsafe<any[]>(sqlInsert);
-        for (const r of moi || []) {
-          nhan.push({ stt: r.stt, email: r.email, password: r.password || '', status: r.status });
+      // =====================================================================
+      // [MOD FEATURE]: HAI MAY CHEN CUNG LUC -> THU LAI
+      // Ca hai cung INSERT acc chua co dong Play -> dung unique (email,serverId),
+      // mot ben bi tu choi va MAT TRANG ca me INSERT (khong phai chi dong trung).
+      // Thu lai toi 3 lan: lan sau nhung acc kia da co dong Play roi nen nhanh 1
+      // (UPDATE ... READPAST) hoac NOT EXISTS se loc chung ra, moi may nhan phan
+      // con lai cua minh thay vi ve tay khong.
+      // =====================================================================
+      for (let lan = 1; lan <= 3; lan += 1) {
+        const thieu = soLuong - nhan.length;
+        if (thieu <= 0) break;
+        try {
+          const moi = await prisma.$queryRawUnsafe<any[]>(
+            sqlInsert.replace(/SELECT TOP \(\d+\)/, `SELECT TOP (${thieu})`),
+          );
+          for (const r of moi || []) {
+            nhan.push({ stt: r.stt, email: r.email, password: r.password || '', status: r.status });
+          }
+          break;
+        } catch (e: any) {
+          const laTrung = /duplicate|unique|UNIQUE KEY/i.test(String(e?.message || ''));
+          if (!laTrung) throw e;
+          if (lan === 3) break;
+          // nhuong nhau mot nhip roi thu lai
+          await new Promise((r) => setTimeout(r, 120 * lan));
         }
-      } catch (e: any) {
-        // Hai may chen cung luc -> dung unique (email, serverId). Bo qua, lan sau nhan tiep.
-        if (!String(e?.message || '').match(/duplicate|unique/i)) throw e;
       }
     }
 

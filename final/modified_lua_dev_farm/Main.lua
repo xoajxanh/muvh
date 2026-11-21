@@ -5973,6 +5973,8 @@ _G.LoginCurrentSelectedAccount = function()
 	_G.Bot_IsInGameWorld = false
 	_G.IsSwitchingAccount = false
 
+	-- [MOD FEATURE]: doi acc -> bo dem so lan thu chon nhan vat
+	pcall(function() if _G.FarmKc_ResetDemChonVai then _G.FarmKc_ResetDemChonVai() end end)
 	Log(string.format(">>> [LOGIN B1] Thoat ve man login cho acc [%s] %s <<<",
 		tostring(_G.CurrentAccountIndex or 1), tostring(email)), true)
 	SaveOutput()

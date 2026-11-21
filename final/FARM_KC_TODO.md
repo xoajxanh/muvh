@@ -492,3 +492,55 @@ SUA:
 - The may chu khong con to DO theo `dangChayOMayKhac` va cho bam binh thuong.
 - WEB `/jobs` tra them `dangGiu` (acc dang bi may khac lease) va
   `conLai = tong - daXong - dangGiu` -> nhan the hien dung so acc con xin duoc.
+
+## 2026-11-22 (13): popup "So luong nhan vat vuot qua"
+- Acc da du nhan vat tren server (thuong 4) nhung bot van goi lenh TAO
+  -> server tu choi -> bot thu lai moi 6s, treo mai o man tao nhan vat.
+- Them `FarmKc_LaPopupDuNhanVat` + `FarmKc_XuLyDuNhanVat`:
+  dong popup, KHONG tao nua, vao bang nhan vat co san (SelectRoleByIndex(1)).
+  Thu 2 lan khong duoc moi bo acc (dung lai duong `FarmKc_XuLyServerDay`).
+- `FarmKc_ResetDemChonVai()` goi khi doi acc, de acc sau khong bi tinh don so lan.
+- Moc goi: trong `FarmKc_KiemTraServerDay` (duoc `FarmKc_DonPopup` goi dau tien).
+
+## 2026-11-22 (14): HAI GIA LAP CAY TRUNG ACC - trung Device ID
+TRIEU CHUNG: may A giu 5 acc (bao kho con 20) nhung may B van thay kho con 25
+va nhan luon nhung acc may A dang cay (ca hai cung cay 00006).
+NGUYEN NHAN: LDPlayer nhan ban tu cung mot anh dia -> `deviceUniqueIdentifier`
+GIONG HET nhau -> server tuong hai may la MOT (dieu kien `leaseDeviceId = @dev`
+cho phep nhan lai acc cua chinh minh) -> cho nhan chong.
+SUA:
+- `FarmKc_DeviceId` nay TU SINH id rieng lan dau (8 ky tu id may + os.time +
+  2 so ngau nhien) va nho vao PlayerPrefs `Mod_FarmKc_DeviceId`.
+- Them `FarmKc_DoiDeviceId()` + nut "ĐỔI ID MÁY" tren thanh tieu de panel,
+  kem nhan "May: <id>" de nhin thay ngay 2 may co trung id khong.
+- Nut chi bam duoc khi bot KHONG chay.
+LUU Y: neu nhan ban may ao SAU khi da luu id thi PlayerPrefs cung duoc copy
+-> van trung; phai bam "ĐỔI ID MÁY" o mot trong hai may de tach.
+
+## 2026-11-22 (15): BUOC XAC NHAN truoc khi nhan/khoa tai khoan
+VAN DE: `ChonViec` goi luon `NapAccTuWeb` (= lease-claim) -> BAM THU MAY CHU LA
+DA KHOA tai khoan o may chu do. Bam vai cai la giu cho lung tung, mat ca lo.
+SUA:
+1. Chon may chu = CHI XEM. Khong goi lease-claim nua, xoa luon danh sach cu.
+2. Nut BAT DAU phai bam HAI LAN:
+   - Lan 1: nut doi mau CAM + nhan "XAC NHAN: nhan N tai khoan S524? (bam lai)",
+     dong Tac vu noi ro "se giu N tai khoan cho may nay trong 15 phut".
+   - Lan 2 (trong 6 giay): moi thuc su goi lease-claim va chay.
+   - Khong bam trong 6 giay -> tu huy, khong giu gi het.
+3. Doi may chu hoac doi so luong -> huy xac nhan dang cho (tranh xac nhan nham
+   so cu). `CapNhatNutChay` khong de len nhan cam khi dang cho xac nhan.
+
+## 2026-11-22 (16): hai may cung chon mot may chu, bam BAT DAU lech nhau
+DA CO SAN (khong phai sua): `UPDATE TOP (n) ... OUTPUT` voi (UPDLOCK, READPAST)
++ dieu kien loai acc dang bi lease -> hai may KHONG BAO GIO nhan trung acc,
+ke ca bam cung mili-giay.
+BA LO HONG VUA VA:
+1. Nhan duoc 0 acc van chay: may kia bam truoc va giu het -> `soAcc = 0` nhung
+   van goi ChayThat() -> bot chay danh sach acc CU con trong bo nho.
+   NAY: soAcc <= 0 thi KHONG chay, bao "may khac vua lay het, bam TAI LAI".
+2. Nhan it hon so xin (xin 25, may kia giu 5, chi duoc 20): nay bao ro
+   "CHI NHAN DUOC 20/25 TAI KHOAN" thay vi im lang.
+3. WEB lease-claim: hai may cung INSERT acc chua co dong Play -> dung unique
+   (email, serverId), mot ben MAT TRANG ca me INSERT chu khong phai chi dong
+   trung. NAY thu lai toi 3 lan, moi lan chi xin phan con THIEU, co giai doan
+   cho 120/240ms -> may thua van nhan duoc phan con lai cua minh.
