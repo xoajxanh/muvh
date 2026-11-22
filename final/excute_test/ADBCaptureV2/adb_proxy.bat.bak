@@ -1,0 +1,83 @@
+@echo off
+chcp 65001 >nul
+title Quan ly Proxy ADB cho Gia lap Android
+
+:: Mac dinh thiet bi la emulator-5554 (co the doi trong menu)
+set DEVICE=emulator-5554
+
+:MENU
+cls
+echo ====================================================
+echo          QUAN LY PROXY ADB - GIA LAP ANDROID
+echo ====================================================
+echo  Thiet bi dang chon : %DEVICE%
+echo ====================================================
+echo  1. Xem danh sach thiet bi (adb devices)
+echo  2. Chon / Doi thiet bi thao tac
+echo  3. Xem Proxy hien tai cua thiet bi
+echo  4. Cai dat Proxy moi (IP:Port)
+echo  5. Tat / Xoa Proxy (ve mang goc)
+echo  6. Thoat
+echo ====================================================
+set /p CHOICE="Nhap lua chon cua ban (1-6): "
+
+if "%CHOICE%"=="1" goto LIST_DEVICES
+if "%CHOICE%"=="2" goto SELECT_DEVICE
+if "%CHOICE%"=="3" goto GET_PROXY
+if "%CHOICE%"=="4" goto SET_PROXY
+if "%CHOICE%"=="5" goto CLEAR_PROXY
+if "%CHOICE%"=="6" exit
+goto MENU
+
+:LIST_DEVICES
+echo.
+echo [Danh sach thiet bi dang ket noi]
+adb.exe devices
+echo.
+pause
+goto MENU
+
+:SELECT_DEVICE
+echo.
+adb.exe devices
+echo.
+set /p NEW_DEV="Nhap ten thiet bi (VD: emulator-5554, de trong de giu nguyen): "
+if not "%NEW_DEV%"=="" set DEVICE=%NEW_DEV%
+echo Da chon thiet bi: %DEVICE%
+pause
+goto MENU
+
+:GET_PROXY
+echo.
+echo [Proxy hien tai tren %DEVICE%]
+adb.exe -s %DEVICE% shell settings get global http_proxy
+echo.
+pause
+goto MENU
+
+:SET_PROXY
+echo.
+set /p PROXY="Nhap Proxy dinh dang IP:Port (VD: 160.250.166.11:10072): "
+if "%PROXY%"=="" (
+    echo [Loi] Ban chua nhap Proxy!
+    pause
+    goto MENU
+)
+adb.exe -s %DEVICE% shell settings put global http_proxy %PROXY%
+echo.
+echo Da ap dung Proxy [%PROXY%] cho [%DEVICE%].
+echo Kiem tra lai gia tri vua luu:
+adb.exe -s %DEVICE% shell settings get global http_proxy
+echo.
+pause
+goto MENU
+
+:CLEAR_PROXY
+echo.
+adb.exe -s %DEVICE% shell settings put global http_proxy :0
+echo Da xoa Proxy tren [%DEVICE%].
+echo Kiem tra lai gia tri hien tai:
+adb.exe -s %DEVICE% shell settings get global http_proxy
+echo.
+pause
+goto MENU

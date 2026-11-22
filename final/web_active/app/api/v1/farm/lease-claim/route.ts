@@ -103,20 +103,38 @@ export async function POST(req: NextRequest) {
     // ---------------------------------------------------------------------
     // 1) Nhan lai cac dong da co: chua xong VA lease tu do (hoac cua chinh may nay)
     // ---------------------------------------------------------------------
+    // =====================================================================
+    // [MOD FEATURE]: CHI LAY ACC THAT SU TU DO
+    // Ban cu con cho lay lai acc cua CHINH deviceId nay
+    // (OR leaseDeviceId = @dev). Khi hai gia lap trung ID - va dieu nay DA xay
+    // ra - thi may thu hai "nhan lai" dung nhung acc may thu nhat dang cay.
+    // Nay chi lay acc chua ai giu hoac lease da het han. Bam KET THUC se nha
+    // lease ngay nen chay lai binh thuong; may crash thi doi lease het han.
+    // =====================================================================
+    // =====================================================================
+    // [MOD FEATURE]: PHAI CO ORDER BY - UPDATE TOP (n) KHONG BAO DAM THU TU
+    // Ban cu dung `UPDATE TOP (n) ... FROM` khong ORDER BY -> SQL Server duoc
+    // quyen chon n dong BAT KY, nen moi may nhay vao mot cho khac nhau khong
+    // theo quy luat (may thi #443, may thi #446), rat kho doi chieu.
+    // Dung CTE co ORDER BY [stt] -> luon lay acc STT NHO NHAT con trong.
+    // =====================================================================
     const sqlUpdate = `
-      UPDATE TOP (${soLuong}) p
-      SET p.[leaseDeviceId] = N'${devEsc}',
-          p.[leaseDeviceName] = N'${devNameEsc}',
-          p.[leaseUntil] = DATEADD(minute, ${LEASE_PHUT}, SYSUTCDATETIME()),
-          p.[updatedAt] = SYSUTCDATETIME()
+      WITH cte AS (
+        SELECT TOP (${soLuong}) p.*
+        FROM [dbo].[${bangPlay}] AS p WITH (UPDLOCK, READPAST)
+        WHERE p.[serverId] = ${serverId}
+          AND p.[status] NOT IN (${dsXong})
+          AND (${dkDai})
+          AND (p.[leaseUntil] IS NULL
+               OR p.[leaseUntil] < SYSUTCDATETIME())
+        ORDER BY p.[stt]
+      )
+      UPDATE cte
+      SET [leaseDeviceId] = N'${devEsc}',
+          [leaseDeviceName] = N'${devNameEsc}',
+          [leaseUntil] = DATEADD(minute, ${LEASE_PHUT}, SYSUTCDATETIME()),
+          [updatedAt] = SYSUTCDATETIME()
       OUTPUT inserted.[stt], inserted.[email], inserted.[password], inserted.[status]
-      FROM [dbo].[${bangPlay}] AS p WITH (UPDLOCK, READPAST)
-      WHERE p.[serverId] = ${serverId}
-        AND p.[status] NOT IN (${dsXong})
-        AND (${dkDai})
-        AND (p.[leaseUntil] IS NULL
-             OR p.[leaseUntil] < SYSUTCDATETIME()
-             OR p.[leaseDeviceId] = N'${devEsc}')
     `;
     const daCo = await prisma.$queryRawUnsafe<any[]>(sqlUpdate);
     for (const r of daCo || []) {

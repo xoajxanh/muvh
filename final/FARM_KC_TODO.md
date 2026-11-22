@@ -544,3 +544,28 @@ BA LO HONG VUA VA:
    (email, serverId), mot ben MAT TRANG ca me INSERT chu khong phai chi dong
    trung. NAY thu lai toi 3 lan, moi lan chi xin phan con THIEU, co giai doan
    cho 120/240ms -> may thua van nhan duoc phan con lai cua minh.
+
+## 2026-11-22 (17): kho con khong tu doi + thu tu chon acc khong xac dinh
+1. WEB lease-claim: `UPDATE TOP (n) ... FROM` KHONG CO ORDER BY -> SQL Server
+   duoc quyen chon n dong BAT KY (may thi #443, may thi #446, khong theo quy luat).
+   Doi sang CTE co `ORDER BY p.[stt]` -> luon lay acc STT NHO NHAT con trong.
+2. "Kho con" chi doi khi bam DANG NHAP / TAI LAI -> hai may hien cung mot so
+   du mot ben da giu 5 acc. Them vong lam moi 60s goi `Mod_FarmKc_NapCongViec(true)`.
+   Bo qua khi dang CHO XAC NHAN.
+3. BAY: lam moi goi vao `ChonViec`, ma ham nay xoa `Mod_FarmKc_WebAccounts`
+   -> xoa mat danh sach acc DANG CAY giua chung phien.
+   Nay chi xoa khi bot KHONG chay VA that su doi sang may chu khac.
+
+## 2026-11-22 (18): LOI NGHIEM TRONG - ca 20 acc ve cung mot leaseDeviceId
+BANG CHUNG (DB): 441-460 deu co leaseDeviceId = 7dff4dc6-327546-321057-837514,
+leaseDeviceName = 2311DRK48C, cung leaseUntil -> hai gia lap la MOT trong mat server.
+HAI NGUYEN NHAN CHONG NHAU:
+1. SINH ID BANG math.random VOI SEED THEO DONG HO:
+   `math.randomseed(os.time() % 100000 + os.clock()*1000)`
+   Hai may ao khoi dong gan nhu cung luc -> CUNG SEED -> CUNG DAY SO -> CUNG ID.
+   SUA: dung `CS.System.Guid.NewGuid()` cua .NET (khong phu thuoc dong ho).
+   Du phong moi ghep nhieu nguon hon.
+2. SQL con cho lay lai acc cua CHINH minh: `OR leaseDeviceId = @dev`.
+   Khi trung ID, may thu hai "nhan lai" dung nhung acc may thu nhat dang cay.
+   SUA: BO dieu kien do - chi lay acc chua ai giu hoac lease da het han.
+   Bam KET THUC van nha lease ngay nen chay lai binh thuong.

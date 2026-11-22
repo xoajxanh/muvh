@@ -3750,6 +3750,25 @@ local function CreateModUI()
             -- sang XANH LA (da chon) ma dong trang thai van bao "chua chon".
             -- Nay goi qua bien toan cuc -> luon la ban CapNhat moi nhat.
             -- =========================================================
+            -- =========================================================
+            -- [MOD FEATURE]: TU LAM MOI SO LIEU MAY CHU MOI 60 GIAY
+            -- "Kho con" truoc day chi doi khi bam DANG NHAP / TAI LAI, nen may
+            -- A giu 5 acc ma may B van hien so cu -> tuong nhu hai may thay
+            -- cung mot con so. Nay tu hoi lai web dinh ky.
+            -- Dang CHO XAC NHAN thi bo qua (tranh doi so ngay truoc mat).
+            -- =========================================================
+            if not _G.Mod_FarmKc_LamMoiLoop and _G.Timer and _G.Timer.StartLoop then
+                pcall(function()
+                    _G.Mod_FarmKc_LamMoiLoop = _G.Timer.StartLoop(60, -1, function()
+                        pcall(function()
+                            if _G.Mod_FarmKc_ChoXacNhan then return end
+                            if not _G.Mod_FarmKc_NapCongViec then return end
+                            _G.Mod_FarmKc_NapCongViec(true)   -- im lang
+                        end)
+                    end)
+                end)
+            end
+
             if not _G.Mod_FarmKc_PanelLoop and _G.Timer and _G.Timer.StartLoop then
                 pcall(function()
                     _G.Mod_FarmKc_PanelLoop = _G.Timer.StartLoop(1.0, -1, function()
@@ -3778,6 +3797,7 @@ local function CreateModUI()
 
             local function ChonViec(v, imLang)
                 if not v then return end
+                local maCu = tostring(_G.Mod_Farm_JobCode or "")
                 _G.Mod_FarmKc_Job = v
                 _G.Mod_Farm_JobCode      = tostring(v.jobCode or "")
                 _G.Mod_Farm_JobRangeFrom = tonumber(v.rangeFrom) or 0
@@ -3828,7 +3848,12 @@ local function CreateModUI()
                 -- Nay viec xin + khoa tai khoan CHI xay ra khi bam BAT DAU va
                 -- da qua buoc XAC NHAN.
                 -- =============================================================
+                -- CHI xoa danh sach khi THAT SU doi sang may chu khac va bot
+                -- KHONG chay. Lam moi dinh ky cung goi vao day - xoa nham la
+                -- mat danh sach acc dang cay giua chung phien.
                 pcall(function()
+                    if _G.Bot_Running then return end
+                    if maCu ~= "" and maCu == tostring(v.jobCode or "") then return end
                     _G.Mod_FarmKc_WebAccounts = nil
                     _G.Mod_FarmKc_SoAccPhien = 0
                     _G.Mod_FarmKc_PhienDaChay = 0
@@ -5792,23 +5817,39 @@ _G.FarmKc_JsonDoc = FarmKc_JsonDoc
 _G.FarmKc_DeviceId = function()
     local id = ""
     pcall(function()
-        id = tostring(CS.UnityEngine.PlayerPrefs.GetString("Mod_FarmKc_DeviceId", ""))
+        id = tostring(CS.UnityEngine.PlayerPrefs.GetString("Mod_FarmKc_DeviceId_v2", ""))
     end)
     if id ~= "" then return id end
 
+    -- =====================================================================
+    -- [MOD FEATURE]: DUNG GUID CUA .NET, KHONG DUNG math.random
+    -- Ban cu seed bang os.time() + os.clock(): hai gia lap khoi dong gan nhu
+    -- cung luc -> CUNG SEED -> CUNG DAY SO -> CUNG ID. Server tuong hai may la
+    -- mot va cho nhan chong tai khoan (ca 20 acc ve mot deviceId).
+    -- Guid.NewGuid() cua .NET khong phu thuoc dong ho nen khong the trung.
+    -- =====================================================================
     local goc = ""
     pcall(function()
         goc = tostring(CS.UnityEngine.SystemInfo.deviceUniqueIdentifier or "")
     end)
     if goc == "" then goc = "unknown" end
 
-    pcall(function() math.randomseed(os.time() % 100000 + math.floor(os.clock() * 1000)) end)
-    id = string.format("%s-%d-%d-%d",
-        string.sub(goc, 1, 8), os.time() % 1000000,
-        math.random(100000, 999999), math.random(100000, 999999))
+    local guid = ""
+    pcall(function() guid = tostring(CS.System.Guid.NewGuid():ToString()) end)
+    if guid == "" then
+        -- Du phong: ghep nhieu nguon it trung hon
+        pcall(function()
+            math.randomseed(os.time() + math.floor(os.clock() * 100000)
+                + tonumber(tostring({}):sub(8), 16) % 100000)
+        end)
+        guid = string.format("%d-%d-%d", os.time(), math.random(1, 2147483647),
+            math.random(1, 2147483647))
+    end
+
+    id = string.sub(goc, 1, 6) .. "-" .. guid
 
     pcall(function()
-        CS.UnityEngine.PlayerPrefs.SetString("Mod_FarmKc_DeviceId", id)
+        CS.UnityEngine.PlayerPrefs.SetString("Mod_FarmKc_DeviceId_v2", id)
         CS.UnityEngine.PlayerPrefs.Save()
     end)
     return id
@@ -5817,7 +5858,7 @@ end
 -- Tach ID khi may ao duoc nhan ban (hai may dang dung chung mot ID)
 _G.FarmKc_DoiDeviceId = function()
     pcall(function()
-        CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_FarmKc_DeviceId")
+        CS.UnityEngine.PlayerPrefs.DeleteKey("Mod_FarmKc_DeviceId_v2")
         CS.UnityEngine.PlayerPrefs.Save()
     end)
     local moi = _G.FarmKc_DeviceId()
