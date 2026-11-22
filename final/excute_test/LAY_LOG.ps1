@@ -57,6 +57,11 @@ foreach ($d in $devs) {
         else { Ghi "   (chua co dong nao - chua acc nao cham muc tieu?)" }
 
         Ghi ""
+        Ghi "--- NOI DUNG POPUP (15 dong cuoi) ---"
+        $pp = Select-String -Path $log -Pattern "\[POPUP\]|bat thuong|Nhac nho" | Select-Object -Last 15
+        if ($pp) { $pp | ForEach-Object { Ghi ("   " + $_.Line) } } else { Ghi "   (chua co)" }
+
+        Ghi ""
         Ghi "--- MOC KHAC (30 dong cuoi, da BO nhip tim) ---"
         $hits = Select-String -Path $log -Pattern "FARM KC|LOGIN \d/5|SDK|SKIP ACC|HOAN THANH|FAILED|WATCHDOG|Thiet bi" |
                 Where-Object { $_.Line -notmatch "NHIP TIM" } |
