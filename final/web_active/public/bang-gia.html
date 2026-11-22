@@ -628,9 +628,9 @@
       align-items: center;
       justify-content: center;
       font-family: var(--font-sub);
-      font-size: 22px;
+      font-size: 16px;
       font-weight: 900;
-      letter-spacing: 2.5px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       cursor: pointer;
       position: relative;
@@ -667,8 +667,6 @@
                   0 0 20px rgba(168, 85, 247, 0.55),
                   inset 0 1px 2px rgba(255, 255, 255, 0.85);
       text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-      font-size: 22px;
-      letter-spacing: 2.5px;
       white-space: nowrap;
     }
 
@@ -1230,8 +1228,8 @@
 
         <!-- Footer / Price Button -->
         <div class="card-footer">
-          <a href="javascript:void(0)" class="price-pill price-gold" onclick="openOrderModal('Bản Thường', '400.000đ')">
-            GIÁ : 400K
+          <a href="javascript:void(0)" class="price-pill price-gold" onclick="openOrderModal('Bản Thường', '400.000đ / 30 ngày')">
+            GIÁ : 400K / 30 NGÀY
           </a>
           <div class="footer-guarantee">
             <svg viewBox="0 0 20 20"><path d="M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0zm4.5 7.5l-6 6c-.3.3-.7.3-1 0l-3-3c-.3-.3-.3-.7 0-1s.7-.3 1 0l2.5 2.5 5.5-5.5c.3-.3.7-.3 1 0s.3.7 0 1z"/></svg>
@@ -1443,8 +1441,8 @@
 
         <!-- Footer / Price Button -->
         <div class="card-footer">
-          <a href="javascript:void(0)" class="price-pill price-gold" onclick="openOrderModal('Bản VIP', '600.000đ')">
-            GIÁ : 600K
+          <a href="javascript:void(0)" class="price-pill price-gold" onclick="openOrderModal('Bản VIP', '600.000đ / 30 ngày')">
+            GIÁ : 600K / 30 NGÀY
           </a>
           <div class="footer-guarantee">
             <svg viewBox="0 0 20 20"><path d="M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0zm4.5 7.5l-6 6c-.3.3-.7.3-1 0l-3-3c-.3-.3-.3-.7 0-1s.7-.3 1 0l2.5 2.5 5.5-5.5c.3-.3.7-.3 1 0s.3.7 0 1z"/></svg>
@@ -1490,57 +1488,123 @@
         <!-- Features List -->
         <div class="feature-list">
           
-          <!-- Item 1: TOP Sv LH -->
+          <!-- Item 1: Đỉnh phong tuyệt đối -->
           <div class="feature-item">
             <div class="icon-container">
-              <!-- High-Fidelity Celestial Crown SVG -->
               <svg class="icon-svg-art" viewBox="0 0 64 64">
                 <defs>
-                  <linearGradient id="crownGrad" x1="0" y1="0" x2="1" y2="1">
+                  <linearGradient id="svCrownGrad" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stop-color="#fdf2f8"/>
                     <stop offset="40%" stop-color="#f472b6"/>
                     <stop offset="70%" stop-color="#db2777"/>
                     <stop offset="100%" stop-color="#831843"/>
                   </linearGradient>
                 </defs>
-                <path d="M8 44 L4 18 L18 28 L32 10 L46 28 L60 18 L56 44 Z" fill="url(#crownGrad)" stroke="#fde047" stroke-width="2"/>
-                <rect x="8" y="46" width="48" height="8" rx="3" fill="#d97706" stroke="#fde047" stroke-width="1.5"/>
-                <circle cx="32" cy="30" r="4" fill="#ffffff" stroke="#ec4899" stroke-width="1"/>
-                <circle cx="18" cy="38" r="3" fill="#fde047"/>
-                <circle cx="46" cy="38" r="3" fill="#fde047"/>
+                <path d="M8 46 L4 20 L18 30 L32 10 L46 30 L60 20 L56 46 Z" fill="url(#svCrownGrad)" stroke="#fde047" stroke-width="2"/>
+                <rect x="8" y="47" width="48" height="9" rx="3" fill="#c084fc" stroke="#f9a8d4" stroke-width="1.5"/>
+                <circle cx="32" cy="30" r="4.5" fill="#ffffff" stroke="#f472b6" stroke-width="1.5"/>
+                <circle cx="18" cy="40" r="3" fill="#fde047"/>
+                <circle cx="46" cy="40" r="3" fill="#fde047"/>
+                <polygon points="32,2 33.5,7 38,7 34.5,10 36,15 32,12 28,15 29.5,10 26,7 30.5,7" fill="#fde047" opacity="0.9"/>
               </svg>
             </div>
             <div class="feature-content">
-              • <span class="feature-highlight-super">TOP Server Liên Hỏa (TOP Sv LH)</span>.
-              <span class="feature-subtext">Đẳng cấp tối thượng dành riêng cho cao thủ Đua Top Liên Server.</span>
+              • <span class="feature-highlight-super">Thao tác dễ dàng – Đỉnh phong tuyệt đối</span>.
+              <span class="feature-subtext">Được "đo ni đóng giày" dành riêng cho game thủ muốn trải nghiệm đỉnh cao của công nghệ mod.</span>
             </div>
           </div>
 
-          <!-- Item 2: Độc quyền tính năng -->
+          <!-- Item 2: Auto toàn diện -->
           <div class="feature-item">
             <div class="icon-container">
-              <!-- Cosmic Power Sphere SVG -->
               <svg class="icon-svg-art" viewBox="0 0 64 64">
-                <circle cx="32" cy="32" r="20" fill="url(#purpleSphereGrad)" stroke="#f472b6" stroke-width="2"/>
-                <ellipse cx="32" cy="32" rx="26" ry="9" fill="none" stroke="#fbcfe8" stroke-width="1.8" transform="rotate(30 32 32)"/>
-                <circle cx="32" cy="32" r="7" fill="#ffffff" opacity="0.85"/>
+                <defs>
+                  <linearGradient id="svAutoGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#fdf2f8"/>
+                    <stop offset="40%" stop-color="#c084fc"/>
+                    <stop offset="80%" stop-color="#7c3aed"/>
+                    <stop offset="100%" stop-color="#3b0764"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="22" cy="24" r="9" fill="none" stroke="url(#svAutoGrad)" stroke-width="3"/>
+                <circle cx="22" cy="24" r="3.5" fill="#c084fc"/>
+                <path d="M22 11 L22 15 M22 33 L22 37 M9 24 L13 24 M31 24 L35 24 M13 15 L16 18 M28 30 L31 33 M31 15 L28 18 M16 30 L13 33" stroke="#c084fc" stroke-width="2.5" stroke-linecap="round"/>
+                <polygon points="42,10 32,32 42,32 36,54 56,28 44,28" fill="#f9a8d4" stroke="#db2777" stroke-width="1.5"/>
               </svg>
             </div>
             <div class="feature-content">
-              • <span class="feature-highlight-super">Tất cả đặc quyền VIP + Đỉnh Phong Tuyệt Đối</span>.
-              <span class="feature-subtext">Tối ưu hóa PK Liên Đấu, chiếm bãi VIP, áp đảo toàn diện mọi đối thủ.</span>
+              • <span class="feature-highlight-super">Auto toàn diện – Farm level, săn Boss, PK cực mượt</span>.
+              <span class="feature-subtext">Nếu Super VIP nhận số 2, không bản tool nào dám nhận số 1!</span>
             </div>
           </div>
 
-          <!-- Item 3: Coming Soon Banner Box -->
-          <div class="feature-item" style="border-bottom: none; flex: 1; display: flex; align-items: stretch; margin-top: 6px;">
-            <div style="width: 100%; text-align: center; padding: 28px 16px; background: rgba(80, 20, 100, 0.38); border: 1.5px dashed rgba(244, 114, 182, 0.7); border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <div style="font-family: var(--font-heading); font-size: 21px; font-weight: 900; letter-spacing: 4px; color: #f472b6; text-shadow: 0 0 16px rgba(244, 114, 182, 0.9);">
-                .C.O.M.I.N.G . S.O.O.N.
-              </div>
-              <div style="font-size: 13px; color: #cbd5e1; margin-top: 10px; line-height: 1.5;">
-                Đang hoàn thiện & thử nghiệm độc quyền<br>dành riêng cho TOP Server
-              </div>
+          <!-- Item 3: Auto nhặt đồ thông minh -->
+          <div class="feature-item">
+            <div class="icon-container">
+              <svg class="icon-svg-art" viewBox="0 0 64 64">
+                <circle cx="26" cy="26" r="16" fill="none" stroke="#c084fc" stroke-width="3"/>
+                <circle cx="26" cy="26" r="10" fill="rgba(192,132,252,0.15)" stroke="#a855f7" stroke-width="1.5"/>
+                <polygon points="22,22 26,16 30,22 26,28" fill="#f43f5e"/>
+                <polygon points="20,25 24,21 26,27 22,29" fill="#fde047" opacity="0.9"/>
+                <polygon points="26,22 30,20 32,26 28,27" fill="#38bdf8" opacity="0.9"/>
+                <line x1="38" y1="38" x2="54" y2="54" stroke="#c084fc" stroke-width="4" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="feature-content">
+              • <span class="feature-highlight-super">Auto nhặt đồ thông minh – Hồn, Cốt, Phù Văn tự chọn</span>.
+              <span class="feature-subtext">Bộ lọc theo từng cấp độ (level) và phẩm chất màu sắc. Bạn chính là "người được chọn".</span>
+            </div>
+          </div>
+
+          <!-- Item 4: Tự động hóa hoạt động -->
+          <div class="feature-item">
+            <div class="icon-container">
+              <svg class="icon-svg-art" viewBox="0 0 64 64">
+                <defs>
+                  <radialGradient id="svPortalGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fdf4ff"/>
+                    <stop offset="40%" stop-color="#e879f9"/>
+                    <stop offset="80%" stop-color="#86198f"/>
+                    <stop offset="100%" stop-color="#2e1065"/>
+                  </radialGradient>
+                </defs>
+                <circle cx="32" cy="32" r="22" fill="url(#svPortalGrad)" stroke="#f0abfc" stroke-width="2"/>
+                <circle cx="32" cy="32" r="15" fill="#1a0629" stroke="#c084fc" stroke-width="1.5" stroke-dasharray="4 2"/>
+                <path d="M20 20 Q10 32 20 44" fill="none" stroke="#f0abfc" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M44 20 Q54 32 44 44" fill="none" stroke="#f0abfc" stroke-width="2.5" stroke-linecap="round"/>
+                <rect x="26" y="30" width="12" height="10" rx="1" fill="#c084fc"/>
+                <rect x="26" y="26" width="4" height="6" rx="1" fill="#f0abfc"/>
+                <rect x="34" y="26" width="4" height="6" rx="1" fill="#f0abfc"/>
+              </svg>
+            </div>
+            <div class="feature-content">
+              • <span class="feature-highlight-super">Tự động hóa hoạt động – Huyết Lâu, Quảng Trường Quỷ, Boss</span>.
+              <span class="feature-subtext">Hoàn thành nhiệm vụ, tự động quay về đúng bãi farm chỉ định.</span>
+            </div>
+          </div>
+
+          <!-- Item 5: Hỗ trợ 24/7 -->
+          <div class="feature-item">
+            <div class="icon-container">
+              <svg class="icon-svg-art" viewBox="0 0 64 64">
+                <defs>
+                  <linearGradient id="svShieldGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#fdf2f8"/>
+                    <stop offset="40%" stop-color="#f472b6"/>
+                    <stop offset="80%" stop-color="#be185d"/>
+                    <stop offset="100%" stop-color="#500724"/>
+                  </linearGradient>
+                </defs>
+                <path d="M32 4 C46 4 54 12 54 22 C54 36 32 56 32 56 C32 56 10 36 10 22 C10 12 18 4 32 4 Z" fill="url(#svShieldGrad)" stroke="#f9a8d4" stroke-width="2"/>
+                <path d="M32 10 C42 10 48 16 48 22 C48 32 32 48 32 48 C32 48 16 32 16 22 C16 16 22 10 32 10 Z" fill="none" stroke="#fce7f3" stroke-width="1" opacity="0.6"/>
+                <text x="32" y="31" font-family="'Be Vietnam Pro','Montserrat',sans-serif" font-size="13" font-weight="900" fill="#ffffff" text-anchor="middle">24/7</text>
+                <circle cx="22" cy="20" r="2" fill="#fde047"/>
+                <circle cx="42" cy="20" r="2" fill="#fde047"/>
+              </svg>
+            </div>
+            <div class="feature-content">
+              • <span class="feature-highlight-super">Đặc quyền hỗ trợ 24/7 – Chăm sóc riêng biệt, tận tình</span>.
+              <span class="feature-subtext">Chỉ cần bạn hỏi, đội ngũ kỹ thuật sẵn sàng giải đáp ngay lập tức.</span>
             </div>
           </div>
 
@@ -1548,12 +1612,12 @@
 
         <!-- Footer / Price Button -->
         <div class="card-footer">
-          <a href="javascript:void(0)" class="price-pill price-super" onclick="openOrderModal('Gói Super VIP', 'LIÊN HỆ')">
-            LIÊN HỆ
+          <a href="javascript:void(0)" class="price-pill price-super" onclick="openOrderModal('Super VIP', '1.500.000đ / 30 ngày')">
+            1.500K / 30 NGÀY
           </a>
           <div class="footer-guarantee">
             <svg viewBox="0 0 20 20"><path d="M10 0C4.5 0 0 4.5 0 10s4.5 10 10 10 10-4.5 10-10S15.5 0 10 0zm4.5 7.5l-6 6c-.3.3-.7.3-1 0l-3-3c-.3-.3-.3-.7 0-1s.7-.3 1 0l2.5 2.5 5.5-5.5c.3-.3.7-.3 1 0s.3.7 0 1z"/></svg>
-            Phiên bản giới hạn • Đăng ký nhận thông báo sớm
+            Phiên bản giới hạn • Trải nghiệm đỉnh cao dành riêng cho bạn
           </div>
         </div>
       </div>
@@ -1766,7 +1830,7 @@
 
     function copyContactInfo() {
       playFantasyChime('click');
-      const textToCopy = "VỤT MOD TEAM - TOOL AUTO MU VĨNH HẰNG\nBản Thường: 400K\nBản VIP: 600K\nGói Super VIP: Sắp ra mắt\nLiên hệ Admin để kích hoạt ngay!";
+      const textToCopy = "VỤT MOD TEAM - TOOL AUTO MU VĨNH HẰNG\nBản Thường: 400K / 30 ngày\nBản VIP: 600K / 30 ngày\nSuper VIP: 1.500K / 30 ngày\nLiên hệ Admin để kích hoạt ngay!";
       if (navigator.clipboard) {
         navigator.clipboard.writeText(textToCopy).then(() => {
           showToast('Đã sao chép bảng giá vào bộ nhớ tạm!');
